@@ -184,7 +184,7 @@ class ItemGraph(nx.DiGraph):
     item in the graph via an item's item ID (assuming the item has been indexed into the
     graph), at which point they'll get an ItemNode to work with. Users can manually add
     items or relationships to the graph if desired, but most of the time this will be taken
-    care by other functions, such as the create_item_graph function. The graph is built on
+    care by other functions, such as the create_dependency_graph function. The graph is built on
     top of the NetworkX DiGraph class, meaning it also inherits all of its methods and
     properties as well.
 
@@ -403,7 +403,7 @@ def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
     return ig
 
 
-def create_item_graph(
+def create_dependency_graph(
     gis: GIS, item_list: list[Item, str], outside_org: bool = True, **kwargs
 ):
     """

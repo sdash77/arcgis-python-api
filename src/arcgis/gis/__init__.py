@@ -1912,44 +1912,47 @@ class GroupMigrationManager(object):
         Imports an EPK Item to a Group.  This will import items associated with this group.
         :return: Boolean
         """
-        if self._gis.users.me.role == "org_admin":
-            try_json = True
-            if preview_only:
-                try_json = False
-            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
-            if isinstance(item, Item):
-                item = item.itemid
-            params = {
-                "f": "json",
-                "itemId": item,
-                "itemIdList": "",
-                "folderId": "",
-                "folderOwnerUsername": "",
-                "token": self._con.token,
-            }
-            if import_content_folder:
-                params["importContentFolder"] = import_content_folder
-            if keep_package_item_after_import in [True, False]:
-                params["keepPackageItemAfterImport"] = json.dumps(
-                    keep_package_item_after_import
-                )
-            if item_id_list:
-                params["itemIdList"] = item_id_list
-            if overwrite is not None:
-                params["overwriteExistingItems"] = overwrite
-            if preview_only:
-                params["previewOnly"] = preview_only
-            if run_async:
-                params["async"] = run_async
-            if folder_id and self._gis.version >= [8, 4]:
-                params["folderId"] = folder_id
-            if folder_owner and self._gis.version >= [8, 4]:
-                params["folderOwnerUsername"] = folder_owner
-            return self._con.post(url, params, try_json=try_json)
+        # admin or group owner has the ability to import content
+        owner = self._group.owner == self._gis.users.me.username
 
-        else:
-            raise Exception("Must be an administrator to perform this action")
-        pass
+        if not owner and not self._gis.users.me.role == "org_admin":
+            raise Exception(
+                "Must be an administrator or group owner to perform this action"
+            )
+
+        try_json = not preview_only
+        url = (
+            f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
+        )
+        if isinstance(item, Item):
+            item = item.itemid
+        params = {
+            "f": "json",
+            "itemId": item,
+            "itemIdList": "",
+            "folderId": "",
+            "folderOwnerUsername": "",
+            "token": self._con.token,
+        }
+        if import_content_folder:
+            params["importContentFolder"] = import_content_folder
+        if keep_package_item_after_import in [True, False]:
+            params["keepPackageItemAfterImport"] = json.dumps(
+                keep_package_item_after_import
+            )
+        if item_id_list:
+            params["itemIdList"] = item_id_list
+        if overwrite is not None:
+            params["overwriteExistingItems"] = overwrite
+        if preview_only:
+            params["previewOnly"] = preview_only
+        if run_async:
+            params["async"] = run_async
+        if folder_id and self._gis.version >= [8, 4]:
+            params["folderId"] = folder_id
+        if folder_owner and self._gis.version >= [8, 4]:
+            params["folderOwnerUsername"] = folder_owner
+        return self._con.post(url, params, try_json=try_json)
 
     # ----------------------------------------------------------------------
     def _status(self, job_id, key=None):
@@ -4666,7 +4669,7 @@ class UserManager(object):
         The ``advanced_search`` method allows for the full control of the query operations
         by any given user.  The searches are performed against a high performance
         index that indexes the most popular fields of an user. See the
-        `Search reference page <https://developers.arcgis.com/web-scene-specification/objects/search/>`_ for information
+        `Search reference page <https://developers.arcgis.com/rest/users-groups-and-items/search-reference/>`_ for information
         on the fields and the syntax of the query. The ``advanced_search`` method is
         quite similar to the :attr:`~arcgis.gis.UserManager.search` method, which is less refined.
 
@@ -6750,6 +6753,10 @@ class ContentManager(object):
         access                      Optional string. Valid values are private, org, or public. Defaults to private.
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
+
+                                    .. note::
+                                        Configuring items for ovewrite is no longer supported when adding
+                                        an :class:`~arcgis.gis.Item`
         ==========================  =====================================================================
 
 
@@ -18275,9 +18282,9 @@ class Item(dict):
                 A list containing the dependencies of the item, in either Item or Item ID form.
         """
 
-        from arcgis.apps.itemgraph import create_item_graph
+        from arcgis.apps.itemgraph import create_dependency_graph
 
-        graph = create_item_graph(self._gis, [self], outside_org=outside_org)
+        graph = create_dependency_graph(self._gis, [self], outside_org=outside_org)
         if out_format.lower() == "graph":
             return graph
         node = graph.get_item(self.id)

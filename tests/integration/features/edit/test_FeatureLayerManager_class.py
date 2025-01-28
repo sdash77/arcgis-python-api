@@ -3,55 +3,16 @@
 # Purpose:     Tests for reading, editing FeatureLayer definitions
 # -------------------------------------------------------------------------------
 import unittest
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_precondition_checks import PortalUtils
-from integration.dino_utils.dino_configs import DinoConfigs
-from integration.config import QALAB_ROOT_PATH
-from configparser import ConfigParser
+import os
 import datetime
-from utils.decorators import integration_test
-
-# region PreCondition check
-test_skip = False
-class_skip = False
-module_skip = False
-
-r1 = PreconditionChecks.check_API_import()
-r2 = PreconditionChecks.check_Python_version()
-
-if r1 & r2:
-    print("## Precondition checks passed ##")
-    module_skip = False
-else:
-    module_skip = True
-    print("Pre condition checks failed. Quitting tests")
-    raise (exit())
-
-# Import the module after Precondition checks pass
-try:
-    import arcgis
-    from arcgis.gis import GIS
-    from arcgis import features
-except ImportError:
-    print("API import error. Quitting test")
-    raise (exit())
-# endregion PreCondition Check
-
-# TestModule
-@unittest.skipIf(
-    module_skip, "Precondition check failed. Skipping tests in Features module"
-)
-def setUpModule():
-    """
-    Set up code for full arcgis.features module Featurelayer class tests
-    :return:
-    """
-    # Get environment status
-    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
-    print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
-    print("Host OS: " + PreconditionChecks.get_OS())
+import arcgis
+from arcgis.gis import GIS
+from arcgis import features
+from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test, profiles
 
 
+@profiles.enterprise_and_agol
 @integration_test
 class Test_FeatureLayerManager_portal(unittest.TestCase):
     """
@@ -65,129 +26,35 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         Get class test asset location
         :return:
         """
-
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["teamportal"]["url"]
-        cls.portal_username = _conf_reader["teamportal"]["admin_user"]
-        cls.portal_password = _conf_reader["teamportal"]["admin_password"]
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
+        cls.items = []
         cls.qalab_base_path = QALAB_ROOT_PATH
-        cls.qalab_cls_path = (
-            cls.qalab_base_path
-            + _conf_reader2["test_data"]["qalab_FeatureLayerManager_cls"]
+        cls.qalab_cls_path = os.path.join(
+            cls.qalab_base_path, "features_mod_FeatureLayerManager_cls"
         )
-        # endregion
-
-        # region precondition checks and sign in
-        cls.gis = GIS(profile="your_ent_admin_profile")
-        if cls.gis is None:
-            cls.class_skip = True
-        # endregion
 
         # region Publish the feature layer if it does not exist
-        cls.namePrefix = "dino_FeatureLayerManager_"
-        layer_name = cls.namePrefix + "basic"
-
-        search_result = PortalUtils.search_portal_item(
-            cls.gis, layer_name, "Feature Layer"
+        cls.namePrefix = "dino_FeatureLayerManager"
+        layer_name_basic = f"{cls.namePrefix}_basic"
+        csv_path = os.path.join(
+            cls.qalab_cls_path, "edit_feature_definition_points_test.csv"
         )
-        if search_result is not None:
-            print("Found necessary feature layer")
-            cls.feature_layer1_item = search_result
-        else:
-            print("Cannot find necessary feature layer, publishing a new layer")
-            csv_path = cls.qalab_cls_path + "edit_feature_definition_points.csv"
-            csv_item = cls.gis.content.add({"title": layer_name}, data=csv_path)
 
-            # publish the csv item
-            if csv_item is not None:
-                cls.feature_layer1_item = csv_item.publish({"title": layer_name})
-                if cls.feature_layer1_item is not None:
-                    print("Published edit_feature_definition_points feature layer")
-                else:
-                    print("Failed to publish csv to feature layer")
-                    class_skip = True
-            else:
-                print("Failed to add necessary csv file to portal")
-                class_skip = True
+        cls.feature_layer_item = cls.publish_test_item(
+            cls.gis, layer_name_basic, "Feature Layer", csv_path
+        )
 
-        # ensure feature layer has necessary capabilities enabled
-        flc = features.FeatureLayerCollection.fromitem(cls.feature_layer1_item)
-        if flc is not None:
-            if "Editing" not in flc.properties.capabilities:
-                result = flc.manager.update_definition(
-                    {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
-                    }
-                )
-                if result.get("success"):
-                    print("Enabled necessary capabilities on feature layer")
-                else:
-                    print(str(result))
-                    class_skip = True
-        else:
-            print("Cannot create a FeatureLayerCollection manager class")
-            class_skip = True
         # endregion
 
         # region Publish the feature layer for truncate if it does not exist
         cls.namePrefix = "dino_FeatureLayerManager_"
         layer_name_truncate = cls.namePrefix + "truncate"
-
-        search_result = PortalUtils.search_portal_item(
-            cls.gis, layer_name_truncate, "Feature Layer"
+        fgdb_path = os.path.join(
+            cls.qalab_cls_path, "set1_fortune10_trunc2_FLMtest.gdb.zip"
         )
-        if search_result is not None:
-            print("Found necessary feature layer")
-            cls.feature_layer2_item = search_result
-        else:
-            print("Cannot find necessary feature layer, publishing a new layer")
-            fgdb_path = cls.qalab_cls_path + "set1_fortune10_trunc2.gdb.zip"
-            fgdb_item = cls.gis.content.add(
-                {"title": layer_name_truncate}, data=fgdb_path
-            )
 
-            # publish the csv item
-            if fgdb_item is not None:
-                cls.feature_layer2_item = fgdb_item.publish()
-                if cls.feature_layer2_item is not None:
-                    print("Published set1_fortune10_trunc feature layer")
-                else:
-                    print("Failed to publish csv to feature layer")
-                    class_skip = True
-            else:
-                print("Failed to add necessary csv file to portal")
-                class_skip = True
-
-        # ensure feature layer has necessary capabilities enabled
-        flc = features.FeatureLayerCollection.fromitem(cls.feature_layer2_item)
-        if flc is not None:
-            if "Editing" not in flc.properties.capabilities:
-                result = flc.manager.update_definition(
-                    {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
-                    }
-                )
-                if result.get("success"):
-                    print("Enabled necessary capabilities on feature layer")
-                else:
-                    print(str(result))
-                    class_skip = True
-        else:
-            print("Cannot create a FeatureLayerCollection manager class")
-            class_skip = True
-        # endregion
-
-        # region print banner
-        print("==================================================================")
-        print("Beginning tests in Test_FeatureLayer_portal class")
-        # endregion
+        cls.feature_layer_item_truncate = cls.publish_test_item(
+            cls.gis, layer_name_truncate, "Feature Layer", fgdb_path
+        )
 
     def setUp(self):
         test_skip = False  # reset the skip flag
@@ -211,7 +78,16 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print("\n==================================================================")
+        rel_items = cls.feature_layer_item.related_items("Service2Data", "forward")
+        for rel_item in rel_items:
+            rel_item.delete(permanent=True)
+        cls.feature_layer_item.delete(permanent=True)
+        rel_trunc_items = cls.feature_layer_item_truncate.related_items(
+            "Service2Data", "forward"
+        )
+        for rel_trunc_item in rel_trunc_items:
+            rel_trunc_item.delete(permanent=True)
+        cls.feature_layer_item_truncate.delete(permanent=True)
 
     def test_create_FeatureLayerManager_object(self):
         """
@@ -219,7 +95,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         :return:
         """
         try:
-            test_item = self.feature_layer1_item
+            test_item = self.feature_layer_item
             self.assertIsInstance(
                 test_item,
                 arcgis.gis.Item,
@@ -274,7 +150,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
 
         try:
             # access the feature layer and its feature for editing
-            flayers = self.feature_layer1_item.layers
+            flayers = self.feature_layer_item.layers
             flayer0 = flayers[0]
             flm = flayer0.manager
 
@@ -333,7 +209,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
 
         try:
             # access the feature layer and its feature for editing
-            flayers = self.feature_layer1_item.layers
+            flayers = self.feature_layer_item.layers
             flayer0 = flayers[0]
             flm = flayer0.manager
 
@@ -383,7 +259,6 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    @unittest.skipIf(True, "Yet to fix bug for portals. Works for AGO")
     def test_truncate_feature_layer(self):
         """
         This test case calls truncate() which will drop all features in 1 go.
@@ -395,7 +270,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
 
         try:
             # access the feature layer and its feature for editing
-            flayers = self.feature_layer2_item.layers
+            flayers = self.feature_layer_item_truncate.layers
             flayer0 = flayers[0]
             flm = flayer0.manager
 
@@ -452,7 +327,66 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    @classmethod
+    def publish_test_item(
+        cls, gis: GIS, layer_name: str, item_type: str, source_data_path: str
+    ):
+        # Clean out existing items
+        item_types = ["CSV", "File Geodatabase", "Feature Layer"]
+        for itm_type in item_types:
+            search_result = gis.content.search(layer_name, item_type=itm_type)
+            for search_item in search_result:
+                search_item.delete(permanent=True)
+        try:
+            root_folder = gis.content.folders.get()
+            source_item = root_folder.add(
+                item_properties={
+                    "title": layer_name,
+                    "type": (
+                        "CSV"
+                        if source_data_path[-3:].upper() == "CSV"
+                        else "File Geodatabase"
+                    ),
+                    "tags": "integration-test",
+                    "snippet": "Item for Feature Layer integration testing",
+                },
+                file=source_data_path,
+            ).result()
+            # publish the item
+            if source_item is not None:
+                feature_layer_item = source_item.publish(
+                    {"name": layer_name, "tags": "integration-test"}
+                )
+                if feature_layer_item is not None:
+                    print("Published edit_feature_definition_points feature layer")
+                    is_prepped_for_editing = cls.prep_test_item(feature_layer_item)
+                    if is_prepped_for_editing:
+                        return feature_layer_item
+                    else:
+                        raise Exception("Could not update editing capabilities")
+        except Exception as ex:
+            print("Failed to add necessary item file to portal", ex)
+
+    @classmethod
+    def prep_test_item(cls, feature_layer):
+        # ensure feature layer has necessary capabilities enabled
+        flc = features.FeatureLayerCollection.fromitem(feature_layer)
+        if flc is not None:
+            if "Editing" in flc.properties.capabilities:
+                return True
+            else:
+                result = flc.manager.update_definition(
+                    {
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
+                    }
+                )
+                return result
+
 
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
+
+
+if __name__ == "__main__":
+    unittest.main()
