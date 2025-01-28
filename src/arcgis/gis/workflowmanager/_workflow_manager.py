@@ -4215,17 +4215,16 @@ class NotificationManager:
         """
         Establishes a websocket connection to the workflow manager server.
         """
-        if self.websocket_connection is None:
+        if self.websocket_connection:
             logger.debug(f"Creating websocket connection to {self.websocket_url}")
             self.websocket_connection = self._connect()
             self._connected = True
-        # TODO handle reconnection
 
     def disconnect(self):
         """
         Removes and disconnects the websocket connection to the workflow manager server.
         """
-        if self.websocket_connection is not None:
+        if self.websocket_connection:
             self.websocket_connection.disconnect()
             self._connected = False
 
