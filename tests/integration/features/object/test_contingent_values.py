@@ -1,12 +1,10 @@
-import shutil
 import time
 import unittest
 
-import data_utils
 from arcgis.features import FeatureLayer
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
-import utils.data_utils
+from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
 
 # enable_verbose_logging()
 FILE_PATH = QALAB_ROOT_PATH + r"\ContingentValues\CV_Gas_forTest.zip"
@@ -21,8 +19,8 @@ class TestContingentValues(unittest.TestCase):
         """create and publish test item"""
         uid = int(time.time())
         layer_name = f"CV_Gas_1_issue_{uid}"
-        item_type = data_utils.ItemType.FGDB.value
-        cls.published_item = data_utils.publish_test_item(
+        item_type = ItemType.FGDB.value
+        cls.published_item = publish_test_item(
             gis=cls.gis,
             layer_name=layer_name,
             source_data_path=FILE_PATH,
@@ -45,7 +43,7 @@ class TestContingentValues(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        data_utils.cleanup_published_items([cls.published_item])
+        cleanup_published_items([cls.published_item])
 
 
 if __name__ == "__main__":
