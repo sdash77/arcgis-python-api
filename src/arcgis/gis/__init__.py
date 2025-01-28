@@ -553,7 +553,7 @@ class GIS(object):
                     from getpass import getpass
 
                     password = getpass("Enter PFX password: ")
-                from arcgis.auth.tools.certificate import pfx_to_pem
+                from arcgis.auth.tools._adapter import pfx_to_pem
 
                 cert_file, key_file = pfx_to_pem(cert_file, password)
             else:
