@@ -93,7 +93,7 @@ class PlacesAPI:
     @lru_cache(maxsize=255)
     def _check_privileges(self, gis: GIS) -> bool:
         """
-        Checks to see if the current login has the proper permisions to use
+        Checks to see if the current login has the proper permissions to use
         the Places API
 
         :return: bool

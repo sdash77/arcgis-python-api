@@ -52,7 +52,7 @@ class EsriSession:
 
         `auth1 + auth2 + auth3`
 
-    It is recommended that you do not stack unneeded authenicators because they
+    It is recommended that you do not stack unneeded authenticators because they
     can caused unintended failures.
 
     ==================     ====================================================================
@@ -103,7 +103,7 @@ class EsriSession:
     status_to_retry        Optional Tuple. The status codes to run retries on.  The default is
                            (413, 429, 503, 500, 502, 504).
     ------------------     --------------------------------------------------------------------
-    method_whitelist       Optional List.  When `retries` is specified, the user can specifiy what methods are retried.
+    method_whitelist       Optional List.  When `retries` is specified, the user can specify what methods are retried.
                            The default is `'POST', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT', 'TRACE'`
     ------------------     --------------------------------------------------------------------
     proxies                Optional Dict. A key/value mapping where the keys are the transfer protocol and the value is the <url>:<port>.
@@ -225,15 +225,20 @@ class EsriSession:
         self._session.mount("https://", self._adapter)
         self.auth = auth
 
-        if cert and len(cert) > 1:
-            self._session.auth = EsriPKIAuth(session=self)
-        elif sys.platform == "win32" and HAS_GSSAPI:  # Default Case Load IWA/WinAuth
-            self._session.auth = EsriWindowsAuth(
-                referer=referer,
-                session=self,
-            )
-        elif HAS_KERBEROS:
-            self._session.auth = EsriKerberosAuth(referer=self._referer, session=self)
+        if auth is None:
+            if cert and len(cert) > 1:
+                self._session.auth = EsriPKIAuth(session=self)
+            elif (
+                sys.platform == "win32" and HAS_GSSAPI
+            ):  # Default Case Load IWA/WinAuth
+                self._session.auth = EsriWindowsAuth(
+                    referer=referer,
+                    session=self,
+                )
+            elif HAS_KERBEROS:
+                self._session.auth = EsriKerberosAuth(
+                    referer=self._referer, session=self
+                )
 
     # ----------------------------------------------------------------------
     def close(self):
@@ -379,7 +384,7 @@ class EsriSession:
             self._session.mount("https://", self._adapter)
 
     # ----------------------------------------------------------------------
-    def mount(self, prefix: str, adapter: "HTTPAdatper"):
+    def mount(self, prefix: str, adapter: "HTTPAdapter"):
         """
         Registers a connection adapter to a prefix.
 
