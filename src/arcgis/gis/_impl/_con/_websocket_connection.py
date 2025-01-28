@@ -117,10 +117,8 @@ class WebsocketConnection:
         self.ws.close()
         self.thread.join(self.timeout)
 
-    def get_token(self, token_request_url: str, use_gis_connection_token=True) -> str:
-        # TODO Angel, Kevin: verify if this token cannot be used for websocket connections
-        # this would be preferred if it works
-        if use_gis_connection_token:
+    def get_token(self, token_request_url: str) -> str:
+        if self._gis._con.token:
             return self._gis._con.token
 
         # TODO this is always going to make the request even when the token is cached, but would need to expose more to avoid
