@@ -1,6 +1,6 @@
 import unittest
 from arcgis.gis import Item
-from arcgis.apps.itemgraph import ItemGraph, ItemNode, create_item_graph, load_from_file
+from arcgis.apps.itemgraph import ItemGraph, ItemNode, create_dependency_graph, load_from_file
 import pathlib
 import os
 import tempfile
@@ -16,7 +16,7 @@ class TestCreateGraph(unittest.TestCase):
         # establish gis connection
         gis = self.gis
         sm_list = gis.content.search("", item_type="StoryMap", max_items=10)
-        graph = create_item_graph(gis, sm_list)
+        graph = create_dependency_graph(gis, sm_list)
         graph_items = graph.all_items(out_format = "item")
         assert len(graph_items) >= len(sm_list)
         for item in sm_list:
@@ -28,9 +28,9 @@ class TestCreateGraph(unittest.TestCase):
         gis = self.gis
         surv = gis.content.get("d78a3338d1cc485bb61342d00dc65e07")
         # graph with only forward dependencies
-        fwd_graph = create_item_graph(gis, [surv])
+        fwd_graph = create_dependency_graph(gis, [surv])
         # graph with forward and reverse dependencies
-        rev_graph = create_item_graph(gis, [surv], include_reverse=True)
+        rev_graph = create_dependency_graph(gis, [surv], include_reverse=True)
         assert len(rev_graph.all_items()) > len(fwd_graph.all_items())
         fwd_node = fwd_graph.get_item("d78a3338d1cc485bb61342d00dc65e07")
         rev_node = rev_graph.get_item("d78a3338d1cc485bb61342d00dc65e07")
