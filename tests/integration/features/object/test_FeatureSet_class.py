@@ -3,13 +3,8 @@
 # Purpose:     Tests for checking the save function of the feature class works properly.
 # -------------------------------------------------------------------------------
 import unittest
-
 from arcgis import features
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_precondition_checks import PortalUtils
-from integration.dino_utils.dino_configs import DinoConfigs
 from integration.config import QALAB_ROOT_PATH
-from configparser import ConfigParser
 import datetime
 import os
 import tempfile
@@ -34,13 +29,9 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
 
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
-
         cls.qalab_base_path = QALAB_ROOT_PATH
-        cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureSet_cls"]
+        cls.qalab_cls_path = os.path.join(
+            cls.qalab_base_path, "features_mod_FeatureSet_cls"
         )
 
         print("==================================================================")

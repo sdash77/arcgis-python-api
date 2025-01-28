@@ -74,7 +74,6 @@ def prep_test_item(feature_layer):
 
 def cleanup_published_items(items: list[Item]):
     for item in items:
-        print(item)
         try:
             source_item = item.related_items("Service2Data", "forward")[0]
             if source_item:

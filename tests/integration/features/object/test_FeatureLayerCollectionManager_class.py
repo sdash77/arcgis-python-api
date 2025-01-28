@@ -33,7 +33,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             cls.qalab_base_path, "features_mod_FeatureLayerCollectionManager_cls_short"
         )
 
-        cls.is_agol = cls.profile == "your_online_profile"
+        is_agol = cls.profile == "your_online_profile"
         # Hold all Items for cleanup
         cls.items = []
 

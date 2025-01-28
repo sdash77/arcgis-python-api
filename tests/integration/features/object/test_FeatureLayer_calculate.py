@@ -1,10 +1,9 @@
 import time
 import unittest
 import concurrent.futures
-
-import data_utils
 from arcgis.gis import ContentManager
 from utils.decorators import integration_test, profiles
+from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
 
 
 @profiles.enterprise_and_agol
@@ -15,8 +14,8 @@ class TestFeatureLayerCalculate(unittest.TestCase):
         file_path = "./calculate_sd.zip"
         uid = int(time.time())
         layer_name = f"calculate_sd_{uid}"
-        item_type = data_utils.ItemType.FGDB.value
-        cls.published_item = data_utils.publish_test_item(
+        item_type = ItemType.FGDB.value
+        cls.published_item = publish_test_item(
             gis=cls.gis,
             layer_name=layer_name,
             source_data_path=file_path,
@@ -65,7 +64,7 @@ class TestFeatureLayerCalculate(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        data_utils.cleanup_published_items([cls.published_item])
+        cleanup_published_items([cls.published_item])
 
 
 if __name__ == "__main__":
