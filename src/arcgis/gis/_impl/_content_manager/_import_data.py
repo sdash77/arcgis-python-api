@@ -84,15 +84,15 @@ def _create_file(df, file_type, output_dir=None, **kwargs):
     if file_type in ["File Geodatabase", "Shapefile"]:
         temp_zip = os.path.join(temp_dir, f"{service_name}.zip")
 
-        if file_type == "File Geodatabase" and has_gdal:
-            zip_loc = location
-        elif file_type == "File Geodatabase" and has_arcpy:
+        if file_type == "File Geodatabase" and has_arcpy:
             # Create empty File Geodatabase with ArcPy
             fgdb = _tool_utils.run_and_hide(
                 fn=arcpy.CreateFileGDB_management,
                 **{"out_folder_path": temp_dir, "out_name": name},
             )[0]
             location = os.path.join(fgdb, os.path.basename(temp_dir))
+            zip_loc = location
+        elif file_type == "File Geodatabase" and has_gdal:
             zip_loc = location
         else:
             zip_loc = temp_dir

@@ -2168,18 +2168,29 @@ class GeoAccessor(object):
         ]:
             location = os.path.abspath(path=location)
 
-        service_name = kwargs.pop("service_name", None)
-        if service_name is None:
-            service_name = "a" + uuid.uuid4().hex[0:5]
-        if service_name.endswith(".gdb"):
-            file_type = "OpenFileGDB"
-        elif service_name.endswith(".shp"):
-            file_type = "Esri Shapefile"
-        else:
-            file_type = "OpenFileGDB"
-            service_name = service_name + ".gdb"
+        has_arcpy = self._check_geometry_engine()[0]
+        if has_arcpy:
+            table = _tools_utils.run_and_hide(
+                to_table,
+                **{
+                    "geo": self,
+                    "location": location,
+                    "overwrite": overwrite,
+                    "sanitize_columns": sanitize_columns,
+                },
+            )
 
-        if has_gdal:
+        elif has_gdal:
+            service_name = kwargs.pop("service_name", None)
+            if service_name is None:
+                service_name = "a" + uuid.uuid4().hex[0:5]
+            if service_name.endswith(".gdb"):
+                file_type = "OpenFileGDB"
+            elif service_name.endswith(".shp"):
+                file_type = "Esri Shapefile"
+            else:
+                file_type = "OpenFileGDB"
+                service_name = service_name + ".gdb"
 
             # Define the full path for the geodatabase
             gdb_path = os.path.join(location, service_name)
@@ -2197,15 +2208,8 @@ class GeoAccessor(object):
             )
 
         else:
-            table = _tools_utils.run_and_hide(
-                to_table,
-                **{
-                    "geo": self,
-                    "location": location,
-                    "overwrite": overwrite,
-                    "sanitize_columns": sanitize_columns,
-                },
-            )
+            raise Exception("Environment must have arcpy or gdal to convert to table.")
+
         self._data.columns = origin_columns
         self._data.index = origin_index
         return table

@@ -1042,30 +1042,7 @@ def to_featureclass(
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
 
-    if HASGDAL:
-        if fc_name.endswith(".gdb"):
-            out_type = "OpenFileGDB"
-            layer_name = fc_name[:-4]
-        elif fc_name.endswith(".shp"):
-            out_type = "Esri Shapefile"
-            fc_name = fc_name[:-4]
-            layer_name = fc_name
-        elif fc_name.endswith(".dbf"):
-            out_type = "DBF"
-            layer_name = fc_name
-        else:
-            layer_name = fc_name
-            fc_name = "%s.gdb" % fc_name
-            out_type = "OpenFileGDB"
-        return _gdal_to_fc(
-            df,
-            os.path.join(out_location, fc_name),
-            out_type,
-            layer_name=layer_name,
-            overwrite=overwrite,
-        )
-
-    elif HASARCPY:
+    if HASARCPY:
         try:
             # 1. Create the Save Feature Class
             #
@@ -1283,6 +1260,29 @@ def to_featureclass(
             df.columns = original_columns
             df.set_index(old_idx)
         return fc
+
+    elif HASGDAL:
+        if fc_name.endswith(".gdb"):
+            out_type = "OpenFileGDB"
+            layer_name = fc_name[:-4]
+        elif fc_name.endswith(".shp"):
+            out_type = "Esri Shapefile"
+            fc_name = fc_name[:-4]
+            layer_name = fc_name
+        elif fc_name.endswith(".dbf"):
+            out_type = "DBF"
+            layer_name = fc_name
+        else:
+            layer_name = fc_name
+            fc_name = "%s.gdb" % fc_name
+            out_type = "OpenFileGDB"
+        return _gdal_to_fc(
+            df,
+            os.path.join(out_location, fc_name),
+            out_type,
+            layer_name=layer_name,
+            overwrite=overwrite,
+        )
 
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:
