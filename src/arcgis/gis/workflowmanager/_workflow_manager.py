@@ -4215,7 +4215,7 @@ class NotificationManager:
         """
         Establishes a websocket connection to the workflow manager server.
         """
-        if self.websocket_connection:
+        if not self.websocket_connection:
             logger.debug(f"Creating websocket connection to {self.websocket_url}")
             self.websocket_connection = self._connect()
             self._connected = True
