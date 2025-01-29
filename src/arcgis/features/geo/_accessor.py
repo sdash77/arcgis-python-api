@@ -2574,7 +2574,7 @@ class GeoAccessor(object):
         ====================    =========================================================
         **Parameter**            **Description**
         --------------------    ---------------------------------------------------------
-        layer                   Required FeatureLayer or TableLayer. The service to convert
+        layer                   Required FeatureLayer or Table. The service to convert
                                 to a Spatially enabled DataFrame.
         ====================    =========================================================
 

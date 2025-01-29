@@ -20,22 +20,21 @@ pd = LazyLoader("pandas")
 # Check for available engines
 from arcgis._impl._geometry_engine import SELECTED_ENGINE
 
-# Available engines
-ENGINES = {
-    "arcpy": {"module": LazyLoader("arcpy", strict=True), "flag": "USE_ARCPY"},
-    "shapely": {"module": LazyLoader("shapefile", strict=True), "flag": "USE_PYSHP"},
-    "gdal": {"module": LazyLoader("osgeo.ogr", strict=True), "flag": "USE_GDAL"},
-}
+USE_ARCPY = USE_GDAL = USE_PYSHP = False
 
-# Default all flags to False
-USE_ARCPY = USE_PYSHP = USE_GDAL = False
+if SELECTED_ENGINE == "shapely":
+    import shapefile
 
-# Set the correct engine's flag and import the module
-if SELECTED_ENGINE in ENGINES:
-    globals()[ENGINES[SELECTED_ENGINE]["flag"]] = True
-    globals()[SELECTED_ENGINE] = ENGINES[SELECTED_ENGINE][
-        "module"
-    ]  # Lazy load the module
+    SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
+    USE_PYSHP = True
+elif SELECTED_ENGINE == "gdal":
+    from osgeo import ogr, osr
+
+    USE_GDAL = True
+elif SELECTED_ENGINE == "arcpy":
+    import arcpy
+
+    USE_ARCPY = True
 
 
 def _json_encode_params(postdata):

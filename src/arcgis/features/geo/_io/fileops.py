@@ -1799,11 +1799,11 @@ def _pyshp2(df, out_path, out_name):
 
         for idx, row in df.iterrows():
             geom = row[df.spatial.name]
-            if geom.type == "Polygon":
+            if geom and geom.type == "Polygon":
                 shpfile.poly(geom["rings"])
-            elif geom.type == "Polyline":
+            elif geom and geom.type == "Polyline":
                 shpfile.line(geom["paths"])
-            elif geom.type == "Point":
+            elif geom and geom.type == "Point":
                 shpfile.point(x=geom.x, y=geom.y)
             else:
                 shpfile.null()
