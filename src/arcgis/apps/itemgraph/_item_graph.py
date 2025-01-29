@@ -464,7 +464,7 @@ def create_dependency_graph(
                     finally:
                         continue
 
-                if "http" in dep or "https" in dep:
+                if "http://" in dep or "https://" in dep:
                     dep_item = None
                 else:
                     dep_item = gis.content.get(dep)
