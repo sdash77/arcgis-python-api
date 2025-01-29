@@ -1179,21 +1179,15 @@ class GeoAccessor(object):
     def _check_geometry_engine(self):
         from arcgis._impl._geometry_engine import (
             HAS_ARCPY,
-            HAS_GDAL,
             HAS_PYSHP,
             SELECTED_ENGINE,
         )
 
-        if self._HASARCPY is None:
-            self._HASARCPY = HAS_ARCPY
-        if self._HASSHAPELY is None:
-            self._HASSHAPELY = HAS_PYSHP
-        if self._USE_ARCPY is None:
-            self._USE_ARCPY = SELECTED_ENGINE == "ARCPY"
-        if self._USE_PYSHP is None:
-            self._USE_PYSHP = SELECTED_ENGINE == "PYSHP"
-        if self._USE_GDAL is None:
-            self._USE_GDAL = SELECTED_ENGINE == "GDAL"
+        self._HASARCPY = self._HASARCPY or HAS_ARCPY
+        self._HASSHAPELY = self._HASSHAPELY or HAS_PYSHP
+        self._USE_ARCPY = self._USE_ARCPY or SELECTED_ENGINE == "arcpy"
+        self._USE_PYSHP = self._USE_PYSHP or SELECTED_ENGINE == "shapely"
+        self._USE_GDAL = self._USE_GDAL or SELECTED_ENGINE == "gdal"
         return self._HASARCPY, self._HASSHAPELY
 
     # ----------------------------------------------------------------------
@@ -2003,7 +1997,7 @@ class GeoAccessor(object):
         if _is_geoenabled(self._data):
             # layer
             self._check_geometry_engine()  # we will use populated self properties
-            if not self._USE_ARCPY and not self._USE_PYSHP and not self._USE_GDAL:
+            if not any([self._USE_ARCPY, self._USE_PYSHP, self._USE_GDAL]):
                 raise Exception(
                     "Spatially enabled DataFrame's must have either gdal, shapely, or"
                     + " arcpy available to use import_data"
@@ -2190,15 +2184,9 @@ class GeoAccessor(object):
             )
 
         elif self._USE_GDAL:
-            service_name = kwargs.pop("service_name", None)
-            if service_name is None:
-                service_name = "a" + uuid.uuid4().hex[0:5]
-            if service_name.endswith(".gdb"):
-                file_type = "OpenFileGDB"
-            elif service_name.endswith(".shp"):
-                file_type = "Esri Shapefile"
-            else:
-                file_type = "OpenFileGDB"
+            service_name = kwargs.pop("service_name", "a" + uuid.uuid4().hex[0:5])
+            file_type = "Esri Shapefile" if location.endswith(".shp") else "OpenFileGDB"
+            if file_type == "OpenFileGDB" and not service_name.endswith(".gdb"):
                 service_name = service_name + ".gdb"
 
             # Define the full path for the geodatabase
@@ -3782,7 +3770,7 @@ class GeoAccessor(object):
 
         """
         self._check_geometry_engine()
-        if self._HASARCPY is False and self._HASSHAPELY is False:
+        if not self._HASARCPY and not self._HASSHAPELY:
             return None
         if rebuild:
             self._kdtree = None
@@ -3929,13 +3917,13 @@ class GeoAccessor(object):
             that matches 1:1 to the original dataset.
 
         .. note::
-            The ``voronoi`` method requires SciPy. Your environment must have either shapely or arcpy installed.
+            The ``voronoi`` method requires SciPy and either shapely or arcpy.
 
         :return:
             A Pandas Series (pd.Series)
         """
         self._check_geometry_engine()
-        if self._HASARCPY is False and self._HASSHAPELY is False:
+        if not self._HASARCPY and not self._HASSHAPELY:
             return None
         radius = max(
             abs(self.full_extent[0] - self.full_extent[2]),

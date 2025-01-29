@@ -1498,10 +1498,14 @@ def _gdal_to_sedf(file_path):
 
     # Open the data source
     # Special handling for geodatabases
-    if is_gdb or ".gdb\\" in file_path.lower():
+    if is_gdb or ".gdb" + os.sep in file_path.lower():
         # Extract gdb path and feature class
-        if ".gdb\\" in file_path.lower():  # Path includes feature class
-            gdb_path, layer_name = file_path.split(".gdb\\")
+        gdb_sep = ".gdb" + os.sep  # Handles both Windows (`.gdb\`) and POSIX (`.gdb/`)
+
+        if gdb_sep in file_path.lower():  # Path includes feature class
+            gdb_path, layer_name = file_path.split(
+                gdb_sep, 1
+            )  # Split only at the first occurrence
             gdb_path += ".gdb"  # Ensure proper geodatabase path
         else:
             gdb_path = file_path
@@ -1528,9 +1532,8 @@ def _gdal_to_sedf(file_path):
             if out_layer is None:
                 raise ValueError(f"Layer '{layer_name}' not found in geodatabase.")
         else:
-            out_layer = data_source.GetLayer(
-                0
-            )  # Default to first layer if none provided
+            # Default to first layer if none provided
+            out_layer = data_source.GetLayer(0)
 
     # Handling for Shapefiles and DBFs
     elif is_shp or is_dbf:
