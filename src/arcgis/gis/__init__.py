@@ -18115,10 +18115,16 @@ class Item(dict):
                 orig_item = self._gis.content.get(k)
                 new_item = self._gis.content.get(v)
                 if new_item is None:
-                    raise ValueError(f"Item with id {v} does not exist in the GIS")
-                if orig_item and (orig_item.type != new_item.type):
                     raise ValueError(
-                        f"Items with ids {k} and {v} are not of the same type"
+                        f"Replacement item with id {v} does not exist in the GIS. Please use the force parameter to bypass this check."
+                    )
+                if orig_item is None:
+                    raise ValueError(
+                        f"String {k} is not a valid item ID in the GIS. Please use the force parameter to bypass this check and replace the string."
+                    )
+                if orig_item.type != new_item.type:
+                    raise ValueError(
+                        f"Items with ids {k} and {v} are not of the same type."
                     )
 
         # _replace_related_items(self, item_mapping)
