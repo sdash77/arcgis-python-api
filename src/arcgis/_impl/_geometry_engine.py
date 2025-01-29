@@ -63,7 +63,7 @@ class GeometryEngineManager:
 
 
 # Create a global instance so all modules can import it
-ge = GeometryEngine()
+ge = GeometryEngineManager()
 SELECTED_ENGINE = ge.engine.value
 HAS_ARCPY = ge.available_engines[GeometryEngine.ARCPY]
 HAS_PYSHP = ge.available_engines[GeometryEngine.SHAPELY]
