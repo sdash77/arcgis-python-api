@@ -18,20 +18,20 @@ json = LazyLoader("json")
 pd = LazyLoader("pandas")
 
 # Check for available engines
-from arcgis._impl._geometry_engine import SELECTED_ENGINE
+from arcgis._impl._geometry_engine import SELECTED_ENGINE, GeometryEngine
 
 USE_ARCPY = USE_GDAL = USE_PYSHP = False
 
-if SELECTED_ENGINE == "shapely":
+if SELECTED_ENGINE == GeometryEngine.SHAPELY:
     import shapefile
 
     SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
     USE_PYSHP = True
-elif SELECTED_ENGINE == "gdal":
+elif SELECTED_ENGINE == GeometryEngine.GDAL:
     from osgeo import ogr, osr
 
     USE_GDAL = True
-elif SELECTED_ENGINE == "arcpy":
+elif SELECTED_ENGINE == GeometryEngine.ARCPY:
     import arcpy
 
     USE_ARCPY = True

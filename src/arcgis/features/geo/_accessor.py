@@ -1181,13 +1181,14 @@ class GeoAccessor(object):
             HAS_ARCPY,
             HAS_PYSHP,
             SELECTED_ENGINE,
+            GeometryEngine,
         )
 
         self._HASARCPY = self._HASARCPY or HAS_ARCPY
         self._HASSHAPELY = self._HASSHAPELY or HAS_PYSHP
-        self._USE_ARCPY = self._USE_ARCPY or SELECTED_ENGINE == "arcpy"
-        self._USE_PYSHP = self._USE_PYSHP or SELECTED_ENGINE == "shapely"
-        self._USE_GDAL = self._USE_GDAL or SELECTED_ENGINE == "gdal"
+        self._USE_ARCPY = self._USE_ARCPY or SELECTED_ENGINE == GeometryEngine.ARCPY
+        self._USE_PYSHP = self._USE_PYSHP or SELECTED_ENGINE == GeometryEngine.SHAPELY
+        self._USE_GDAL = self._USE_GDAL or SELECTED_ENGINE == GeometryEngine.GDAL
         return self._HASARCPY, self._HASSHAPELY
 
     # ----------------------------------------------------------------------

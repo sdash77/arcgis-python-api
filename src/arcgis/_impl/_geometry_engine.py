@@ -13,7 +13,7 @@ class GeometryEngine(Enum):
 class GeometryEngineManager:
     """
     Manages detection and selection of a spatial geometry engine.
-    
+
     Setting "ARCGIS_GEOMETRY_ENGINE" environment variable to "arcpy", "gdal", "fiona", or "shapely" will prioritize your preferred engine.
     """
 
@@ -68,7 +68,7 @@ class GeometryEngineManager:
 
 # Create a global instance so all modules can import it
 ge = GeometryEngineManager()
-SELECTED_ENGINE = ge.engine.value if ge.engine else None
+SELECTED_ENGINE = ge.engine
 HAS_ARCPY = ge.available_engines[GeometryEngine.ARCPY]
 HAS_PYSHP = ge.available_engines[GeometryEngine.SHAPELY]
 HAS_GDAL = ge.available_engines[GeometryEngine.GDAL]
