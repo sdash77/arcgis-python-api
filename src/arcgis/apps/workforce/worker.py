@@ -1,5 +1,4 @@
-""" Defines the Worker class.
-"""
+"""Defines the Worker class."""
 
 from ..workforce import _store
 from .exceptions import ValidationError

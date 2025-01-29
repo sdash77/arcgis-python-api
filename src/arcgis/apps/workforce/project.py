@@ -1,5 +1,4 @@
-""" Defines the Project object.
-"""
+"""Defines the Project object."""
 
 import arcgis
 from arcgis.features import FeatureLayer, Table

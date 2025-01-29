@@ -736,7 +736,9 @@ def from_featureclass(filename, **kwargs):
         or filename.lower().endswith(".gdb") in os.path.dirname(filename).lower()
     ):
         return _fiona_workflow(filename)
-    raise Exception("Unsupported data format or missing required libraries.")
+    raise Exception(
+        "Unsupported data format or missing required libraries. Please ensure you either have arcpy, shapely, fiona, or GDAL installed."
+    )
 
 
 def _http_workflow(filename):
@@ -1498,10 +1500,6 @@ def _gdal_to_sedf(file_path):
             return value  # Fallback to original value
         return value
 
-    # Validate the file path
-    if not os.path.exists(file_path):
-        raise ValueError("File path does not exist.")
-
     # Determine file type
     file_ext = os.path.splitext(file_path)[1].lower()
     is_gdb = file_ext == ".gdb"
@@ -1509,30 +1507,56 @@ def _gdal_to_sedf(file_path):
     is_dbf = file_ext == ".dbf"
 
     # Open the data source
-    if is_gdb:
-        gdb_path, layer_name = (
-            os.path.split(file_path)
-            if not file_path.endswith(".gdb")
-            else (file_path, None)
-        )
-        data_source = ogr.Open(gdb_path)
+    # Special handling for geodatabases
+    if is_gdb or ".gdb\\" in file_path.lower():
+        # Extract gdb path and feature class
+        if ".gdb\\" in file_path.lower():  # Path includes feature class
+            gdb_path, layer_name = file_path.split(".gdb\\")
+            gdb_path += ".gdb"  # Ensure proper geodatabase path
+        else:
+            gdb_path = file_path
+            layer_name = None  # Will select the first layer by default
+
+        # Validate if geodatabase exists
+        if not os.path.exists(gdb_path):
+            raise ValueError(f"Geodatabase does not exist: {gdb_path}")
+
+        # Try using OpenFileGDB driver (read-only)
+        driver = ogr.GetDriverByName("OpenFileGDB")
+        if driver is None:
+            raise RuntimeError(
+                "GDAL OpenFileGDB driver not available. Check GDAL installation."
+            )
+
+        data_source = driver.Open(gdb_path, 0)  # Open read-only
         if data_source is None:
-            raise ValueError("Unable to open geodatabase.")
+            raise ValueError(f"Unable to open geodatabase: {gdb_path}")
+
+        # Get the requested layer (feature class)
         if layer_name:
             out_layer = data_source.GetLayerByName(layer_name)
             if out_layer is None:
                 raise ValueError(f"Layer '{layer_name}' not found in geodatabase.")
         else:
-            out_layer = data_source.GetLayer()  # Default to the first layer
+            out_layer = data_source.GetLayer(
+                0
+            )  # Default to first layer if none provided
+
+    # Handling for Shapefiles and DBFs
     elif is_shp or is_dbf:
+        if not os.path.exists(file_path):
+            raise ValueError(f"File does not exist: {file_path}")
+
         data_source = ogr.Open(file_path)
         if data_source is None:
             raise ValueError(f"Unable to open file: {file_path}")
-        out_layer = data_source.GetLayer()
-    else:
-        data_source = ogr.Open(file_path)
+
         out_layer = data_source.GetLayer()
 
+    else:
+        raise ValueError(f"Unsupported file type: {file_path}")
+
+    # Get layer name for debugging or further processing
     layer_name = out_layer.GetName()
 
     # Extract field names and spatial reference

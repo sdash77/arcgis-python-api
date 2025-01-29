@@ -1,5 +1,4 @@
-""" Defines util functions used internally by the workforce-python-api.
-"""
+"""Defines util functions used internally by the workforce-python-api."""
 
 import datetime
 

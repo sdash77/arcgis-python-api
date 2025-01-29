@@ -1,5 +1,4 @@
-""" Defines the Integration class.
-"""
+"""Defines the Integration class."""
 
 from .exceptions import ValidationError
 from .feature_model import FeatureModel

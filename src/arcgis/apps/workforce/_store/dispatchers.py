@@ -1,5 +1,4 @@
-""" Defines store functions for working with Dispatchers.
-"""
+"""Defines store functions for working with Dispatchers."""
 
 import math
 from ... import workforce

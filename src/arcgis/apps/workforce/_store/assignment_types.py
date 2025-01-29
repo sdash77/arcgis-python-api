@@ -1,5 +1,4 @@
-""" Defines store functions for working with AssignmentTypes.
-"""
+"""Defines store functions for working with AssignmentTypes."""
 
 from ... import workforce
 from .utils import validate

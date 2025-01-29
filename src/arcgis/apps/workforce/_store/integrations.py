@@ -1,5 +1,4 @@
-""" Defines store functions for working with Integrations.
-"""
+"""Defines store functions for working with Integrations."""
 
 from ... import workforce
 from .utils import add_features, update_features, remove_features, validate

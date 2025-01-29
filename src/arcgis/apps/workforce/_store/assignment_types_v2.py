@@ -1,5 +1,4 @@
-""" Defines store functions for working with AssignmentTypes in Version 2 projects.
-"""
+"""Defines store functions for working with AssignmentTypes in Version 2 projects."""
 
 from ... import workforce
 from .utils import validate, add_features, update_features, remove_features

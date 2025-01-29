@@ -1,5 +1,4 @@
-""" Defines store functions for working with assignments.
-"""
+"""Defines store functions for working with assignments."""
 
 from ... import workforce
 from .dispatchers import query_dispatchers

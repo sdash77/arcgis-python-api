@@ -1,5 +1,4 @@
-""" Defines the Attachment object.
-"""
+"""Defines the Attachment object."""
 
 import os
 

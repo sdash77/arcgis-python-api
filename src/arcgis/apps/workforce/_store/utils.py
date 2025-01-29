@@ -1,5 +1,4 @@
-""" Utility functions internally used by the store.
-"""
+"""Utility functions internally used by the store."""
 
 from arcgis.features import FeatureSet
 from arcgis.apps import workforce

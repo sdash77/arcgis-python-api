@@ -305,6 +305,7 @@ def tf_fit(epochs, model, loss_func, opt, data, callbacks, metrics):
 @dataclass
 class TfLearner:
     "Train `model` using `data` to minimize `loss_func` with optimizer `opt_func`."
+
     data: DataBunch
     model: "keras_model"
     opt_func: Callable

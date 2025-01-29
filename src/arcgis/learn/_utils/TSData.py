@@ -248,6 +248,7 @@ class TSPreProcessor(PreProcessor):
 
 class TimeSeriesList(ItemList):
     "`ItemList` suitable for time series"
+
     _bunch = TSDataBunch
     _processor = TSPreProcessor
     _label_cls = None
