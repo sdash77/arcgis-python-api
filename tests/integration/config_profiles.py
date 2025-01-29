@@ -19,6 +19,7 @@ def setup_profiles(
     kube_admin_name="your_kubernetes_admin_profile",
     devext_admin_name="your_dev_online_profile",
     utility_network_name="your_utility_network_profile",
+    workflow_manager_name="your_workflow_manager_profile",
     reset=False,
 ):
     """create profiles"""
@@ -34,6 +35,7 @@ def setup_profiles(
         kube_admin_name,
         devext_admin_name,
         utility_network_name,
+        workflow_manager_name,
     ]
 
     pm = ProfileManager()
@@ -146,6 +148,16 @@ def setup_profiles(
             password="python_api_team.109",
         )
         print(f"Created profile {utility_network_name}")
+
+    if not workflow_manager_name in updated_list:
+        pm.create(
+            workflow_manager_name,
+            url="https://mcstest165.esri.com/portal",
+            username="admin",
+            password="esri.agp",
+        )
+        print(f"Created profile {workflow_manager_name}")
+
     print("------------------")
     print(pm.get(online_name))
     print(pm.get(online_admin_name))
@@ -158,6 +170,7 @@ def setup_profiles(
     print(pm.get(kube_admin_name))
     print(pm.get(devext_admin_name))
     print(pm.get(utility_network_name))
+    print(pm.get(workflow_manager_name))
     print("------------------")
 
 

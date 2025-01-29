@@ -301,7 +301,7 @@ class FeatureLayer(Layer):
         part2 = url[res[1] :]
         admin_url = "%s%s%s" % (part1, add_text, part2)
 
-        res = FeatureLayerManager(admin_url, self._gis)
+        res = FeatureLayerManager(admin_url, self._gis, fl=self)
         return res
 
     @property
@@ -1013,7 +1013,7 @@ class FeatureLayer(Layer):
         return_exceeded_limit_features     Optional Boolean. When set to ``True``, features are returned even
                                            when the results include ``"exceededTransferLimit": true``. This
                                            allows a client to find the resolution in which the transfer limit
-                                           is no longer exceeded withou making multiple calls. The default
+                                           is no longer exceeded without making multiple calls. The default
                                            value is ``False``.
         ==============================     ====================================================================
 
@@ -1194,10 +1194,10 @@ class FeatureLayer(Layer):
         The ``top_filter`` parameter is used to set the group by, order by, and count criteria used in
         generating the result. The operation also has many of the same parameters (for example, where
         and geometry) as the layer query operation. However, unlike the layer query operation,
-        ``query_top_feaures`` does not support parameters such as outStatistics and its related parameters
+        ``query_top_features`` does not support parameters such as outStatistics and its related parameters
         or return distinct values. Consult the ``advancedQueryCapabilities`` layer property for more details.
 
-        If the feature layer collection supports the `query_top_feaures` operation, it will include
+        If the feature layer collection supports the `query_top_features` operation, it will include
         `"supportsTopFeaturesQuery": True`, in the ``advancedQueryCapabilities`` layer property.
 
         .. note::
@@ -2196,7 +2196,7 @@ class FeatureLayer(Layer):
                     'outStatisticFieldName': "total",
                     'statisticType': "count"
                 }]
-            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containting total count
+            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containing total count
 
         .. code-block:: python
 
@@ -2524,6 +2524,13 @@ class FeatureLayer(Layer):
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
+        .. note::
+            Please reference specific deployment documentation for important information on criteria that
+            must be met before appending data will work:
+
+            * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#APPEND>`_
+            * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#APPEND>`_
+
         ========================   ====================================================================
         **Parameter**               **Description**
         ------------------------   --------------------------------------------------------------------
@@ -2531,14 +2538,27 @@ class FeatureLayer(Layer):
                                    file.
                                    Used in conjunction with editsUploadFormat.
         ------------------------   --------------------------------------------------------------------
-        upload_format              Required string. The source append data format. The default is
-                                   featureCollection.
-                                   Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
-                                   'geojson' | 'csv' | 'excel'
+        upload_format              Required string. The source append data format. Supported formats
+                                   vary by deployment and layer. See documentation for details:
+
+                                   * `ArcGIS Enterprise append <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#APPEND>`_
+                                   * `ArcGIS Online append <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#APPEND>`_
 
                                    .. note::
-                                        You can find the Feature Layer's supported formats by checking
-                                        the `featureLayer.properties.supportedAppendFormats` property.
+                                        You can find whether append is supported on a Feature Layer,
+                                        and the specific formats the layer supports by checking the
+                                        properties:
+
+                                        .. code-block:: python
+
+                                            >>> featurelayer.properties.supportsAppend
+
+                                            True
+
+                                            >>> featureLayer.properties.supportedAppendFormats
+
+                                            'sqlite,geoPackage,shapefile,filegdb,featureCollection'
+                                            'geojson,csv,excel,jsonl,featureService,pbf'
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
@@ -2605,7 +2625,9 @@ class FeatureLayer(Layer):
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ------------------------   --------------------------------------------------------------------
-        layer_mappings             Optional list of dictionaries. This is needed if the source is featureService. It is used to map a source layer to a destination layer. Only one source can be mapped to a layer.
+        layer_mappings             Optional list of dictionaries. This is needed if the source is a
+                                   feature service. It is used to map a source layer to a destination
+                                   layer. Only one source can be mapped to a layer.
 
                                     Syntax: layerMappings=[{"id": <layerID>, "sourceId": <layer id>}]
         ------------------------   --------------------------------------------------------------------
@@ -2614,14 +2636,21 @@ class FeatureLayer(Layer):
                                    not be returned.  This alters the output to be a tuple consisting of
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
-        future                     Optional boolean. If True, a future object will be returned and the process
-                                   will not wait for the task to complete. The default is False, which means wait for results.
+        future                     Optional boolean.
+
+                                   * If *True*, method runs asynchronously and a future object will be
+                                     returned. The process will return control to the user.
+                                   * If *False*, method runs synchronously and process waits until the
+                                     operation completes before returning control back to user. This is
+                                     the default value.
         ========================   ====================================================================
 
         :return:
-            A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
-            response messages will be return in addition to the boolean as a `tuple`.
-            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+            * If *future=False*, A boolean indicating success (True), or failure (False). When
+              *return_messages* is *True*, the response will return a tuple with a boolean indicating
+              success or failure, and dictionary with the return messages.
+            * If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object.
+              Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2634,10 +2663,6 @@ class FeatureLayer(Layer):
                                     append_fields = ["fieldName1", "fieldName2",...., fieldname22],
                                     return_messages = False)
             <True>
-
-
-
-
         """
         import copy
 
@@ -2999,7 +3024,7 @@ class FeatureLayer(Layer):
                                     --------     --------------------------------
                                     adds         List of attachments to add.
                                     --------     --------------------------------
-                                    updates      List of attachements to update
+                                    updates      List of attachments to update
                                     --------     --------------------------------
                                     deletes      List of attachments to delete
                                     ========     ================================
@@ -3014,7 +3039,7 @@ class FeatureLayer(Layer):
                                 to the server that the client is not true curves capable. The default value is false.
         ---------------------   --------------------------------------------------------------------------------------
         session_id              Optional String. Introduced at 10.6. The `session_id` is a GUID value that clients
-                                establish at the beginning and use throughout the edit session. The sessonID ensures
+                                establish at the beginning and use throughout the edit session. The sessionID ensures
                                 isolation during the edit session. The `session_id` parameter is set by a client
                                 during long transaction editing on a branch version.
         ---------------------   --------------------------------------------------------------------------------------
@@ -3153,7 +3178,7 @@ class FeatureLayer(Layer):
             and isinstance(adds, pd.DataFrame)
             and _is_geoenabled(adds) == False
         ):
-            # we have a regular panadas dataframe
+            # we have a regular pandas dataframe
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
@@ -3399,7 +3424,7 @@ class FeatureLayer(Layer):
                                 version. The sessionid is a GUID value that clients
                                 establish at the beginning and use throughout the
                                 edit session.
-                                The sessonid ensures isolation during the edit
+                                The sessionid ensures isolation during the edit
                                 session. This parameter applies only if the
                                 `isDataBranchVersioned` property of the layer is
                                 true.
@@ -3799,7 +3824,7 @@ class OrientedImageryLayer(FeatureLayer):
             return cls(url=f"{url}/{index}", gis=item._gis)
         else:
             raise Exception(
-                "The layer index is not an Oriented Imagergy Layer, please verify the index and try again."
+                "The layer index is not an Oriented Imagery Layer, please verify the index and try again."
             )
 
 

@@ -109,7 +109,7 @@ class LocationTrackingManager:
             if folder["title"] == folder_title:
                 break
         else:
-            self._gis.content.create_folder(folder_title)
+            self._gis.content.folders.create(folder_title)
         service_name = "location_tracking"
         if not self._gis.content.is_service_name_available(
             service_name, service_type="featureService"
@@ -273,8 +273,8 @@ class LocationTrackingManager:
         folder = None
         if self.item.ownerFolder is not None:
             for f in self._gis.users.get(self.item.owner).folders:
-                if f["id"] == self.item.ownerFolder:
-                    folder = f["title"]
+                if f._fid == self.item.ownerFolder:
+                    folder = f.name
                     break
         group = self._gis.groups.create(
             title,

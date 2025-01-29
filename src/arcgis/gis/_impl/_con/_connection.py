@@ -71,7 +71,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.3.1"
+__version__ = "2.4.1"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -106,6 +106,7 @@ class Connection(object):
     _custom_adapter = None
     legacy = None
     _server_log = None
+    _ca_bundles: list[str] | str | None = None
 
     # ----------------------------------------------------------------------
     def __init__(
@@ -144,6 +145,7 @@ class Connection(object):
         """
         from arcgis.gis import GIS
 
+        self._ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._ags_file = kwargs.pop("ags_file", None)
         self._security_kwargs = kwargs.pop("security_kwargs", {})
         self._use_gen_token = kwargs.pop("use_gen_token", False)
@@ -503,6 +505,7 @@ class Connection(object):
             verify_cert=self._verify_cert,
             proxies=proxies,
             retries=5,
+            ca_bundles=self._ca_bundles,
         )
         self._session.verify = self._verify_cert
         self._session.stream = True
@@ -669,7 +672,9 @@ class Connection(object):
                 )
         elif self._username and self._password and self._auth.lower() != "iwa":
             self._session.auth = GuessAuth(
-                username=self._username, password=self._password, session=self._session
+                username=self._username,
+                password=self._password,
+                session=self._session,
             )
         elif self._auth.lower() in ["iwa", "ntlm"] and HAS_SSPI:
             self._session.auth = EsriWindowsAuth(
