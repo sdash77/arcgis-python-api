@@ -269,8 +269,8 @@ class EsriSession:
 
     # ----------------------------------------------------------------------
     @property
-    def ca_bundle(self) -> list[str] | str:
-        """returns the path to the extra CA bundle"""
+    def ca_bundles(self) -> list[str] | str:
+        """returns the path to the extra CA bundles"""
         return self._adapter.additional_certs
 
     # ----------------------------------------------------------------------
