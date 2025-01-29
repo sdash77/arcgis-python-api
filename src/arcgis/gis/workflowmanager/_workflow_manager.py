@@ -4279,7 +4279,9 @@ class NotificationManager:
         self._manually_connected = False
 
         # need baseAddress/ server address, orgid, and workflow item id
-        base = self._server_url.replace("http://", "ws://").replace("https://", "wss://")
+        base = self._server_url.replace("http://", "ws://").replace(
+            "https://", "wss://"
+        )
         item_url = f"{self.org_id}/{self.workflow_item_id}"
         self.websocket_url = f"{base}/{item_url}/notificationWs"
         self.token_request_url = f"{self._server_url}/{item_url}"
