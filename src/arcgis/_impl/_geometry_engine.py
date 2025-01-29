@@ -40,8 +40,8 @@ class GeometryEngineManager:
 
     def _select_engine(self):
         """Select the best available engine, prioritizing user preference."""
-        # Get the preferred engine from the environment variable GEOMETRY_ENGINE
-        preferred_engine = os.getenv("GEOMETRY_ENGINE", "").lower()
+        # Get the preferred engine from the environment variable ARCGIS_GEOMETRY_ENGINE
+        preferred_engine = os.getenv("ARCGIS_GEOMETRY_ENGINE", "").lower()
 
         # Check if the preferred engine is in the list of available engines
         if preferred_engine in GeometryEngine._value2member_map_:
