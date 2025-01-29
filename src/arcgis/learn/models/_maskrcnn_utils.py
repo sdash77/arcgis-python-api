@@ -230,7 +230,6 @@ def is_no_color(color_mapping):
 
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
-
     _processor = SegmentationProcessor
 
     def __init__(
@@ -329,7 +328,6 @@ class ArcGISSegmentationLabelList(ImageList):
 
 class ArcGISInstanceSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
-
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
     _div = None
     _imagery_type = None
@@ -409,7 +407,6 @@ class ArcGISInstanceSegmentationItemList(ImageList):
 
 class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
     "`ItemList` suitable for segmentation tasks."
-
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
 
     def open(self, fn):

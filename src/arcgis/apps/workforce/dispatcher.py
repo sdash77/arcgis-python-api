@@ -1,4 +1,4 @@
-""" Defines the Dispatcher object.
+""" Defines the Dispatcher class.
 """
 
 from .. import workforce

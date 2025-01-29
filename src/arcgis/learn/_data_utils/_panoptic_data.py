@@ -219,7 +219,6 @@ class PanopticSegmentationLabelList(ImageList):
 
 class PanopticSegmentationItemList(ImageList):
     "`ItemList` suitable for Panoptic tasks."
-
     _label_cls = PanopticSegmentationLabelList
     _square_show_res = False
     _div = None

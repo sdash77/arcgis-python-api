@@ -906,7 +906,6 @@ def split_layer_groups(learn):
 
 class METRICS:
     "Datastore"
-
     precision = None
     recall = None
     f1 = None

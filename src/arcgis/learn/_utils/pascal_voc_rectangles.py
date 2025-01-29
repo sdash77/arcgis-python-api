@@ -50,7 +50,6 @@ class ObjectDetectionCategoryList(ObjectCategoryList):
 
 class ObjectDetectionItemList(ObjectItemList):
     "`ItemList` suitable for object detection."
-
     _label_cls, _square_show_res = ObjectDetectionCategoryList, False
     _div = None
     _imagery_type = None
@@ -167,7 +166,6 @@ def _reconstruct(t, x, pad_idx, classes):
 
 class ObjectMSItemList(ObjectItemList):
     "`ItemList` suitable for object detection on Multispectral Data."
-
     _label_cls, _square_show_res = ObjectDetectionCategoryList, False
 
     def open(self, fn):

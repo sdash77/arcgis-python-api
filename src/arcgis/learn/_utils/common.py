@@ -275,7 +275,6 @@ class ArcGISMSImage(Image):
 
 class ArcGISImageList(ImageList):
     "`ImageList` suitable for classification tasks."
-
     _square_show_res = False
     _div = None
     _imagery_type = None

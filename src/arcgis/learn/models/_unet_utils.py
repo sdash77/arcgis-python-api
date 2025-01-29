@@ -292,7 +292,6 @@ def map_to_contiguous(tensor, mapping):
 
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
-
     _processor = SegmentationProcessor
 
     def __init__(
@@ -356,7 +355,6 @@ class ArcGISSegmentationLabelList(ImageList):
 
 class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
-
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
     _div = None
     _imagery_type = None
