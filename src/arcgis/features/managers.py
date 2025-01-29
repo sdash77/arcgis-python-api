@@ -3234,8 +3234,8 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": json.dumps(future),
         }
         u_url = self._url + "/deleteFromDefinition"
-        status_url: str = _get_value_case_insensitive(res, "statusurl")
         res = self._con.post(u_url, params)
+        status_url: str = _get_value_case_insensitive(res, "statusurl")
         if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
             futureobj = executor.submit(
