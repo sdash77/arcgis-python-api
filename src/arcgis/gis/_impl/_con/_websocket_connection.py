@@ -143,7 +143,7 @@ class WebsocketConnection:
         for d in cookies.list_domains():
             if not parsed_url.hostname.endswith(d):
                 continue
-            matched_cookies.append(cookies.get_dict(domain=d).items())
+            matched_cookies.extend(cookies.get_dict(domain=d).items())
 
         result = "; ".join([f"{k}={v}" for k, v in matched_cookies])
         # return None if no matching cookies found
