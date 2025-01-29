@@ -22,34 +22,27 @@ import warnings
 from arcgis.geometry import Geometry
 
 arcgis = LazyLoader("arcgis")
-try:
-    arcpy = LazyLoader("arcpy", strict=True)
-    HASARCPY = True
-except:
-    HASARCPY = False
+from arcgis._impl._geometry_engine import SELECTED_ENGINE
+# Dictionary mapping engines to their respective lazy-loaded modules
+ENGINE_MODULES = {
+    "arcpy": {"module": LazyLoader("arcpy", strict=True), "flag": "USE_ARCPY"},
+    "shapely": {"module": LazyLoader("shapefile", strict=True), "flag": "USE_PYSHP"},
+    "gdal": {"module": LazyLoader("osgeo.ogr", strict=True), "flag": "USE_GDAL"},
+    "fiona": {"module": LazyLoader("fiona", strict=True), "flag": "USE_FIONA"},
+}
 
-try:
-    fiona = LazyLoader("fiona", strict=True)
+# Set only the selected engine's flag to True
+USE_ARCPY = USE_PYSHP = USE_GDAL = USE_FIONA = False  # Initialize all to False
 
-    HASFIONA = True
-except:
-    HASFIONA = False
+if SELECTED_ENGINE in ENGINE_MODULES:
+    globals()[ENGINE_MODULES[SELECTED_ENGINE]["flag"]] = True  # Set only the selected flag
+    module = ENGINE_MODULES[SELECTED_ENGINE]["module"]  # Load the required module
+    globals()[SELECTED_ENGINE] = module  # Assign it for use
 
-try:
-    import shapefile
-
-    HASPYSHP = True
+# If using PyShp, extract version
+if USE_PYSHP:
     SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
-except:
-    HASPYSHP = False
-
-try:
-    from osgeo import ogr, osr
-
-    HASGDAL = True
-except:
-    HASGDAL = False
-
+    
 _logging = logging.getLogger(__name__)
 
 
@@ -281,6 +274,9 @@ def _ensure_path_string(input_path):
 def from_url(url: str) -> list:
     """
     Loads a `shapefile` from a URL endpoint into a spatially enabled dataframe.
+    
+    .. note:: 
+        Either GDAL or shapely is required to read hosted shapefiles.
 
     ===========================     ====================================================================
     **Parameter**                    **Description**
@@ -291,12 +287,11 @@ def from_url(url: str) -> list:
     :return: List[pd.DataFrame]
 
     """
-    if HASGDAL:
-        return from_featureclass(url)
-
-    if HASPYSHP == False:
+    if not HAS_GDAL and not HAS_PYSHP == False:
         raise Exception("GDAL or pyshp is required to read hosted shapefiles.")
-    import requests
+
+    if HAS_GDAL:
+        return from_featureclass(url)
 
     r = requests.get(url)
     with closing(r), zipfile.ZipFile(io.BytesIO(r.content)) as archive:
@@ -442,9 +437,7 @@ def from_table(filename, **kwargs):
 
     filename = _ensure_path_string(filename)
 
-    if HASARCPY and not filename.lower().endswith(".dbf"):
-        import arcpy
-
+    if USE_ARCPY and not filename.lower().endswith(".dbf"):
         where = kwargs.pop("where", None)
         fields = kwargs.pop("fields", "*")
         skip_nulls = kwargs.pop("skip_nulls", True)
@@ -457,9 +450,7 @@ def from_table(filename, **kwargs):
             null_value=null_value,
         )
         return pd.DataFrame(arr)
-    elif HASARCPY and filename.lower().endswith(".dbf"):
-        import arcpy
-
+    elif USE_ARCPY and filename.lower().endswith(".dbf"):
         with arcpy.da.SearchCursor(
             in_table=filename,
             field_names=kwargs.pop("fields", "*"),
@@ -472,9 +463,9 @@ def from_table(filename, **kwargs):
             except:
                 return df
         return None
-    elif filename.lower().endswith(".dbf") and HASGDAL:
+    elif filename.lower().endswith(".dbf") and USE_GDAL:
         return _gdal_to_sedf(file_path=filename)
-    elif filename.lower().endswith(".dbf") and HASPYSHP:
+    elif filename.lower().endswith(".dbf") and USE_PYSHP:
         with open(filename, "rb") as f:
             reader = shapefile.Reader(dbf=f)
             return pd.DataFrame([record.as_dict() for record in reader.iterRecords()])
@@ -532,9 +523,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         if not old_index is None:
             geo._data.index = old_index
         return location
-    elif HASARCPY:
-        import arcpy
-
+    elif HAS_ARCPY:
         columns = df.convert_dtypes().columns.tolist()
         join_dummy = "AEIOUYAJC81Z"
         try:
@@ -690,7 +679,7 @@ def from_featureclass(filename, **kwargs):
     ===========================     ====================================================================
     **Parameter**                    **Description**
     ---------------------------     --------------------------------------------------------------------
-    filename                        Required string or pathlib.Path. Full path to the feature class or URL (shapefiles only).
+    filename                        Required string or pathlib.Path. Full path to the feature class or URL.
     ===========================     ====================================================================
 
     *Optional parameters when ArcPy library is available in the current environment*:
@@ -725,13 +714,13 @@ def from_featureclass(filename, **kwargs):
 
     filename = _ensure_path_string(filename)
 
-    if HASARCPY:
+    if USE_ARCPY:
         return _arcpy_workflow(filename, **kwargs)
-    if HASGDAL:
+    if USE_GDAL:
         return _gdal_workflow(filename)
-    if HASPYSHP and filename.lower().endswith(".shp"):
+    if USE_PYSHP and filename.lower().endswith(".shp"):
         return _shapefile_workflow(filename)
-    if HASFIONA and (
+    if USE_FIONA and (
         filename.lower().endswith(".shp")
         or filename.lower().endswith(".gdb") in os.path.dirname(filename).lower()
     ):
@@ -1044,7 +1033,7 @@ def to_featureclass(
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
 
-    if HASARCPY:
+    if USE_ARCPY:
         try:
             # 1. Create the Save Feature Class
             #
@@ -1263,7 +1252,7 @@ def to_featureclass(
             df.set_index(old_idx)
         return fc
 
-    elif HASGDAL:
+    elif USE_GDAL:
         if fc_name.endswith(".gdb"):
             out_type = "OpenFileGDB"
             layer_name = fc_name[:-4]
@@ -1286,7 +1275,7 @@ def to_featureclass(
             overwrite=overwrite,
         )
 
-    elif HASPYSHP:
+    elif USE_PYSHP:
         if fc_name.endswith(".shp") == False:
             fc_name = "%s.shp" % fc_name
         if SHPVERSION < [2]:
@@ -1297,10 +1286,10 @@ def to_featureclass(
             res = _pyshp2(df=df, out_path=out_location, out_name=fc_name)
             df.set_index(old_idx)
             return res
-    elif HASARCPY == False and HASPYSHP == False and HASGDAL == False:
+    elif USE_ARCPY == False and USE_PYSHP == False and USE_GDAL == False:
         raise Exception(
             (
-                "Cannot Export the data without ArcPy, PyShp, or GDAL libraries."
+                "Cannot Export the data without ArcPy, Shapely, or GDAL libraries."
                 " Please install one and try again."
             )
         )
@@ -1628,7 +1617,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
      path to the shapefile or None if pyshp isn't installed or
      spatial dataframe does not have a geometry column.
     """
-    if HASPYSHP:
+    if USE_PYSHP:
         GEOMTYPELOOKUP = {
             "Polygon": shapefile.POLYGON,
             "Point": shapefile.POINT,
@@ -1746,7 +1735,7 @@ def _pyshp2(df, out_path, out_name):
      path to the shapefile or None if pyshp isn't installed or
      spatial dataframe does not have a geometry column.
     """
-    if HASPYSHP:
+    if USE_PYSHP:
         GEOMTYPELOOKUP = {
             "Polygon": shapefile.POLYGON,
             "Point": shapefile.POINT,

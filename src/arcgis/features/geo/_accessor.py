@@ -36,15 +36,7 @@ _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
 _pa = LazyLoader("pyarrow")
-_common_utils = LazyLoader("arcgis._impl.common._utils")
 _tools_utils = LazyLoader("arcgis._impl.common._tools._utils")
-
-try:
-    from osgeo import ogr, osr
-
-    has_gdal = True
-except:
-    has_gdal = False
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -1173,6 +1165,9 @@ class GeoAccessor(object):
     _renderer = None
     _HASARCPY = None
     _HASSHAPELY = None
+    _USE_ARCPY = None
+    _USE_PYSHP = None
+    _USE_GDAL = None
     # ----------------------------------------------------------------------
 
     def __init__(self, obj):
@@ -1180,6 +1175,21 @@ class GeoAccessor(object):
         self._index = obj.index
         self._name = None
 
+    # ----------------------------------------------------------------------
+    def _check_geometry_engine(self):
+        from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_GDAL, HAS_PYSHP, SELECTED_ENGINE
+        if self._HASARCPY is None:
+            self._HASARCPY = HAS_ARCPY
+        if self._HASSHAPELY is None:
+            self._HASSHAPELY = HAS_PYSHP
+        if self._USE_ARCPY is None:
+            self._USE_ARCPY = SELECTED_ENGINE == "ARCPY"
+        if self._USE_PYSHP is None:
+            self._USE_PYSHP = SELECTED_ENGINE == "PYSHP"
+        if self._USE_GDAL is None:
+            self._USE_GDAL = SELECTED_ENGINE == "GDAL"
+        return self._HASARCPY, self._HASSHAPELY
+        
     # ----------------------------------------------------------------------
     @property
     def _meta(self):
@@ -1985,21 +1995,14 @@ class GeoAccessor(object):
                     "This service name is unavailable for Feature Service."
                 )
         if _is_geoenabled(self._data):
-            try:
-                import osgeo
-
-                _HAS_GDAL = True
-            except:
-                _HAS_GDAL = False
-
-            _HAS_ARCPY, _HAS_SHAPELY = self._check_geometry_engine()
             # layer
-            if not _HAS_ARCPY and not _HAS_SHAPELY and not _HAS_GDAL:
+            self._check_geometry_engine() # we will use populated self properties
+            if not self._USE_ARCPY and not self._USE_PYSHP and not self._USE_GDAL:
                 raise Exception(
                     "Spatially enabled DataFrame's must have either gdal, shapely, or"
                     + " arcpy available to use import_data"
                 )
-            file_type = "File Geodatabase" if _HAS_ARCPY else "Shapefile"
+            file_type = "File Geodatabase" if self._USE_ARCPY else "Shapefile"
         else:
             # table
             file_type = "CSV"
@@ -2168,8 +2171,8 @@ class GeoAccessor(object):
         ]:
             location = os.path.abspath(path=location)
 
-        has_arcpy = self._check_geometry_engine()[0]
-        if has_arcpy:
+        self._check_geometry_engine()
+        if self._USE_ARCPY:
             table = _tools_utils.run_and_hide(
                 to_table,
                 **{
@@ -2180,7 +2183,7 @@ class GeoAccessor(object):
                 },
             )
 
-        elif has_gdal:
+        elif self._USE_GDAL:
             service_name = kwargs.pop("service_name", None)
             if service_name is None:
                 service_name = "a" + uuid.uuid4().hex[0:5]
@@ -3059,31 +3062,6 @@ class GeoAccessor(object):
         return fs
 
     # ----------------------------------------------------------------------
-    def _check_geometry_engine(self):
-        if self._HASARCPY is None:
-            try:
-                import arcpy
-
-                self._HASARCPY = True
-            except ImportError:
-                self._HASARCPY = False
-        if self._HASSHAPELY is None:
-            self._HASSHAPELY = False
-            try:
-                import shapely
-
-                self._HASSHAPELY = True
-            except ImportError:
-                pass
-            try:
-                import shapefile
-
-                self._HASSHAPELY = True
-            except ImportError:
-                pass
-        return self._HASARCPY, self._HASSHAPELY
-
-    # ----------------------------------------------------------------------
     @property
     def sr(self):
         """
@@ -3115,8 +3093,8 @@ class GeoAccessor(object):
         """
         See main ``sr`` property docstring
         """
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
+        self._check_geometry_engine()
+        if self._HASARCPY:
             try:
                 sr = self.sr
             except Exception:
@@ -3781,7 +3759,7 @@ class GeoAccessor(object):
         The ``distance_matrix`` creates a k-d tree to calculate the nearest-neighbor problem.
 
         .. note::
-            The ``distance_matrix`` method requires SciPy
+            The ``distance_matrix`` method requires SciPy. Your environment must have either shapely or arcpy installed.
 
         ====================     ====================================================================
         **Parameter**             **Description**
@@ -3797,8 +3775,8 @@ class GeoAccessor(object):
         :return: scipy's KDTree class
 
         """
-        _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
-        if _HASARCPY is False and _HASSHAPELY is False:
+        self._check_geometry_engine()
+        if self._HASARCPY is False and self._HASSHAPELY is False:
             return None
         if rebuild:
             self._kdtree = None
@@ -3945,13 +3923,13 @@ class GeoAccessor(object):
             that matches 1:1 to the original dataset.
 
         .. note::
-            The ``voronoi`` method requires SciPy
+            The ``voronoi`` method requires SciPy. Your environment must have either shapely or arcpy installed.
 
         :return:
             A Pandas Series (pd.Series)
         """
-        _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
-        if _HASARCPY is False and _HASSHAPELY is False:
+        self._check_geometry_engine()
+        if self._HASARCPY is False and self._HASSHAPELY is False:
             return None
         radius = max(
             abs(self.full_extent[0] - self.full_extent[2]),
@@ -4027,7 +4005,7 @@ class GeoAccessor(object):
         This is an inplace operation meaning that it will update the defined geometry column from the ``set_geometry``.
 
         .. note::
-            The ``project`` method requires ArcPy or pyproj v4
+            The ``project`` method requires ArcPy or pyproj v4.
 
         ====================     ====================================================================
         **Parameter**             **Description**
@@ -4041,7 +4019,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating success (True), or failure (False)
         """
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
+        self._check_geometry_engine()
         HASPYPROJ = True
         try:
             import importlib
@@ -4052,7 +4030,7 @@ class GeoAccessor(object):
         except ImportError:
             HASPYPROJ = False
         try:
-            if isinstance(spatial_reference, (int, str)) and HASARCPY:
+            if isinstance(spatial_reference, (int, str)) and self._HASARCPY:
                 import arcpy
 
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
@@ -4064,7 +4042,7 @@ class GeoAccessor(object):
                 )
                 self._data[self.name] = vals
                 return True
-            elif isinstance(spatial_reference, _geometry.SpatialReference) and HASARCPY:
+            elif isinstance(spatial_reference, _geometry.SpatialReference) and self._HASARCPY:
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference.as_arcpy,
@@ -4073,7 +4051,7 @@ class GeoAccessor(object):
                 )
                 self._data[self.name] = vals
                 return True
-            elif isinstance(spatial_reference, dict) and HASARCPY:
+            elif isinstance(spatial_reference, dict) and self._HASARCPY:
                 spatial_reference = _geometry.SpatialReference(
                     spatial_reference
                 ).as_arcpy

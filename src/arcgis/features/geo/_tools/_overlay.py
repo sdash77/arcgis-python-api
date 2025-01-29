@@ -10,29 +10,11 @@ from arcgis.features.geo._accessor import GeoSeriesAccessor
 from arcgis.features.geo._accessor import _is_geoenabled
 from arcgis.features.geo._array import GeoArray
 
-_HASARCPY, _HASSHAPELY = None, None
-
-
-# ----------------------------------------------------------------------
-def _check_geometry_engine():
-    """checks if the geometry engine exists"""
-    global _HASARCPY
-    global _HASSHAPELY
-    if _HASARCPY is None:
-        try:
-            import arcpy
-
-            _HASARCPY = True
-        except:
-            _HASARCPY = False
-    if _HASSHAPELY is None:
-        try:
-            import shapely
-
-            _HASSHAPELY = True
-        except:
-            _HASSHAPELY = False
-    return _HASARCPY, _HASSHAPELY
+from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_PYSHP
+if HAS_SHAPELY:
+    import shapely
+if HAS_ARCPY:
+    import arcpy
 
 
 # --------------------------------------------------------------------------
@@ -238,11 +220,9 @@ def overlay(sdf1, sdf2, op="union"):
             ("symmetric_difference is only supported for " "polygon geometries.")
         )
 
-    _hasao, _hasshp = _check_geometry_engine()
-
     if (
-        _hasao == False
-        and _hasshp
+        HAS_ARCPY == False
+        and HAS_PYSHP
         and sdf1.spatial.geometry_type != ["polygon"]
         and sdf2.spatial.geometry_type != ["polygon"]
     ):
@@ -250,7 +230,7 @@ def overlay(sdf1, sdf2, op="union"):
             ("Using shapely's geometry engine only " "support Polygon geometries.")
         )
 
-    if (_hasao or _hasshp) and op in allowed_hows:
+    if (HAS_ARCPY or HAS_PYSHP) and op in allowed_hows:
         if op in ["union", "identity"]:
             return _overlay_union(sdf1, sdf2)
         elif op in ["difference", "erase"]:

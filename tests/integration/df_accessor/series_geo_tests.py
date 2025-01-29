@@ -9,8 +9,8 @@ import pandas as pd
 from utils.decorators import integration_test
 
 try:
-    HASARCPY = True
     import arcpy
+    HASARCPY = True
 except ImportError:
     HASARCPY = False
 

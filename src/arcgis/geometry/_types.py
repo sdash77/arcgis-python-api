@@ -17,34 +17,12 @@ from functools import partial, lru_cache
 
 _number_type = (int, float)
 _empty_value = [None, "NaN"]
+from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_PYSHP
 
-try:
+if HAS_ARCPY:
     arcpy = LazyLoader("arcpy", strict=True)
-    _HASARCPY = True
-except:
-    _HASARCPY = False
-try:
+if HAS_PYSHP:
     shapely = LazyLoader("shapely", strict=True)
-    _HASSHAPELY = True
-except:
-    _HASSHAPELY = False
-
-
-@lru_cache(maxsize=100)
-def _check_geometry_engine():
-    _HASARCPY = True
-    try:
-        arcpy = LazyLoader("arcpy", strict=True)
-    except:
-        _HASARCPY = False
-
-    _HASSHAPELY = True
-    try:
-        shapely = LazyLoader("shapely", strict=True)
-    except:
-        _HASSHAPELY = False
-
-    return _HASARCPY, _HASSHAPELY
 
 
 def _is_valid(value):
@@ -145,15 +123,15 @@ class BaseGeometry(dict):
     _ao = None
     _type = None
     _typ = None
-    _HASARCPY = None
-    _HASSHAPELY = None
+    _HAS_ARCPY = None
+    _HAS_PYSHP = None
     _properties = None
     _class_attributes = {
         "_ao",
         "_type",
         "_typ",
-        "_HASARCPY",
-        "_HASSHAPELY",
+        "_HAS_ARCPY",
+        "_HAS_PYSHP",
         "_ipython_canary_method_should_not_exist_",
         "_properties",
     }
@@ -169,10 +147,11 @@ class BaseGeometry(dict):
 
     @lru_cache(maxsize=10)
     def _check_geometry_engine(self):
-        self._HASARCPY, self._HASSHAPELY = _check_geometry_engine()
-        return self._HASARCPY, self._HASSHAPELY
-
-
+        if HAS_ARCPY:
+            self._HAS_ARCPY = True
+        if HAS_PYSHP:
+            self._HAS_PYSHP = True
+        return self._HAS_ARCPY, self._HAS_PYSHP
 class GeometryFactory(type):
     """
     Creates the Geometry Objects Based on JSON
@@ -180,7 +159,7 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_wkb(iterable):
-        if _HASARCPY:
+        if HAS_ARCPY:
             return _ujson.loads(arcpy.FromWKB(iterable).JSON)
         else:
             from geomet import wkb
@@ -191,7 +170,7 @@ class GeometryFactory(type):
     @staticmethod
     def _from_wkt(iterable):
         """Create a geometry from wkt"""
-        if _HASARCPY:
+        if HAS_ARCPY:
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
                 geom = _ujson.loads(arcpy.FromWKT(iterable).JSON)
@@ -213,8 +192,7 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_gj(iterable):
-        global _HASARCPY
-        if _HASARCPY:
+        if HAS_ARCPY:
             gj = _ujson.loads(arcpy.AsShape(iterable, False).JSON)
             gj["spatialReference"]["wkid"] = 4326
             return gj
@@ -329,8 +307,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
     @lru_cache(maxsize=10)
     def _check_geometry_engine(self):
-        self._HASARCPY, self._HASSHAPELY = _check_geometry_engine()
-        return self._HASARCPY, self._HASSHAPELY
+        if HAS_ARCPY:
+            self._HAS_ARCPY = True
+        if HAS_PYSHP:
+            self._HAS_PYSHP = True
+        return self._HAS_ARCPY, self._HAS_PYSHP
 
     def __setattr__(self, key, value):
         """Sets the attribute"""
@@ -400,13 +381,12 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: string
         """
-        _HASARCPY, _HASSHAPELY = _check_geometry_engine()
-        if _HASARCPY:
+        if HAS_ARCPY:
             if isinstance(self.as_arcpy, arcpy.Point):
                 return arcpy.PointGeometry(self.as_arcpy).__geo_interface__
             else:
                 return self.as_arcpy.__geo_interface__
-        elif _HASSHAPELY:
+        elif HAS_PYSHP:
             if isinstance(self, Point):
                 return {"type": "Point", "coordinates": (self.x, self.y)}
             elif isinstance(self, Polygon):
@@ -602,8 +582,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             An :class:`~arcgis.geometry.Geometry` object
 
         """
-        _HASARCPY, _HASSHAPELY = _check_geometry_engine()
-        if self._ao is not None or not _HASARCPY:
+        if self._ao is not None or not HAS_ARCPY:
             return self._ao
         if isinstance(self, (Point, MultiPoint, Polygon, Polyline)):
             self._ao = arcpy.AsShape(json.dumps(dict(self._properties)), True)
@@ -685,8 +664,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: tuple
         """
-        _HASARCPY, _HASSHAPELY = _check_geometry_engine()
-
         if not hasattr(self, "type"):
             return None
 
@@ -695,7 +672,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if "rings" in self:
                 a = self["rings"]
             elif "curveRings" in self:
-                if not _HASARCPY:
+                if not HAS_ARCPY:
                     raise Exception(
                         "Cannot calculate the geoextent with curves without ArcPy."
                     )
@@ -709,7 +686,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if "paths" in self:
                 a = self["paths"]
             elif "curvePaths" in self:
-                if not _HASARCPY:
+                if not HAS_ARCPY:
                     raise Exception(
                         "Cannot calculate the geoextent with curves without ArcPy."
                     )
@@ -948,8 +925,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A shapely :class:`~arcgis.geometry.Geometry` object.
             If shapely is not installed, None is returned
         """
-        _, _HASSHAPELY = _check_geometry_engine()
-        if _HASSHAPELY:
+        if HAS_PYSHP:
             if isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
                 from shapely.geometry import shape
                 from shapely.validation import explain_validity
@@ -975,8 +951,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A string representing a :class:`~arcgis.geometry.Geometry` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
+        if HAS_ARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
             return getattr(self.as_arcpy, "JSON", None)
         elif "coordinates" in self:
             from geomet import esri
@@ -1021,7 +996,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             )
 
         """
-        if _HASSHAPELY:
+        if HAS_PYSHP:
             gj = shapely_geometry.__geo_interface__
             geom_cls = _geojson_type_to_esri_type(gj["type"])
 
@@ -1049,18 +1024,17 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A String
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             try:
                 p = getattr(self.as_arcpy, "polygon", None)
                 sr = self.spatial_reference.get("wkid", 4326)
                 return f"SRID={sr};{p.WKT}"
             except:
                 return None
-        if HASARCPY:
+        if HAS_ARCPY:
             sr = self.spatial_reference.get("wkid", 4326)
             return f"SRID={sr};{getattr(self.as_arcpy, 'WKT', None)}"
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             try:
                 sr = self.spatial_reference.get("wkid", 4326)
                 return f"SRID={sr};{self.as_shapely.wkt}"
@@ -1086,16 +1060,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A string
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             try:
                 p = getattr(self.as_arcpy, "polygon", None)
                 return p.WKT
             except:
                 return None
-        if HASARCPY:
+        if HAS_ARCPY:
             return getattr(self.as_arcpy, "WKT", None)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             try:
                 return self.as_shapely.wkt
             except:
@@ -1117,19 +1090,18 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             bytes
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             try:
                 p = getattr(self.as_arcpy, "polygon", None)
                 return p.WKB
             except:
                 return None
-        if HASARCPY:
+        if HAS_ARCPY:
             try:
                 return getattr(self.as_arcpy, "WKB", None)
             except:
                 return None
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             try:
                 return self.as_shapely.wkb
             except:
@@ -1166,16 +1138,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A float
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             try:
                 p = getattr(self.as_arcpy, "polygon", None)
                 return p.area
             except:
                 return None
-        if HASARCPY:
+        if HAS_ARCPY:
             return getattr(self.as_arcpy, "area", None)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             return self.as_shapely.area
         elif isinstance(self, Polygon):
             return self._shoelace_area(parts=self["rings"])
@@ -1222,14 +1193,13 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A tuple(x,y) indicating the center
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             try:
                 p = getattr(self.as_arcpy, "polygon", None)
                 return p.centroid
             except:
                 return None
-        if HASARCPY:
+        if HAS_ARCPY:
             if isinstance(self, Point):
                 return tuple(self)
             else:
@@ -1237,7 +1207,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 if g is None:
                     return g
                 return tuple(Geometry(arcpy.PointGeometry(g, self.spatial_reference)))
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             c = tuple(list(self.as_shapely.centroid.coords)[0])
             return c
         return
@@ -1266,7 +1236,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A tuple
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
         ptX = []
         ptY = []
         if isinstance(self, Envelope):
@@ -1274,10 +1243,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return tuple(self.coordinates.tolist())
             except:
                 return None
-        if HASARCPY:
+        if HAS_ARCPY:
             ext = getattr(self.as_arcpy, "extent", None)
             return ext.XMin, ext.YMin, ext.XMax, ext.YMax
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             return self.as_shapely.bounds
         elif isinstance(self, Polygon):
             for pts in self["rings"]:
@@ -1320,8 +1289,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A :class:`~arcgis.geometry.Geometry` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             try:
                 return Geometry(
                     {
@@ -1332,7 +1300,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 )
             except:
                 return None
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return Geometry(
                 _ujson.loads(
                     arcpy.PointGeometry(
@@ -1441,12 +1409,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A space-delimited string
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "hullRectangle", None)
-        if HASARCPY:
+        if HAS_ARCPY:
             return getattr(self.as_arcpy, "hullRectangle", None)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             return self.as_shapely.convex_hull
         return
 
@@ -1474,12 +1441,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A boolean indicating yes (True), or no (False)
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             return False
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return getattr(self.as_arcpy, "isMultipart", None)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             if self.type.lower().find("multi") > -1:
                 return True
             else:
@@ -1511,10 +1477,9 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Point` object
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "labelPoint", None)
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.as_arcpy, "labelPoint", None),
@@ -1544,8 +1509,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A :class:`~arcgis.geometry.Point` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             return Geometry(
                 {
                     "x": self["XMax"],
@@ -1553,7 +1517,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                     "spatialReference": self["spatialReference"],
                 }
             )
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.as_arcpy, "lastPoint", None),
@@ -1613,12 +1577,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A float
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "length", None)
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return getattr(self.as_arcpy, "length", None)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             return self.as_shapely.length
 
         return None
@@ -1650,12 +1613,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A float
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        if HAS_ARCPY and isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "length3D", None)
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return getattr(self.as_arcpy, "length3D", None)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             return self.as_shapely.length
 
         return self.length
@@ -1680,10 +1642,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: An Integer representing the amount of :class:`~arcgis.geometry.Geometry` parts
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        
+        if HAS_ARCPY and isinstance(self, Envelope):
             return 1
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return getattr(self.as_arcpy, "partCount", None)
         elif isinstance(self, Polygon):
             return len(self["rings"])
@@ -1715,10 +1677,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: An Integer representing the amount of :class:`~arcgis.geometry.Point` objects
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        
         if isinstance(self, Envelope):
             return 4
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return getattr(self.as_arcpy, "pointCount", None)
         elif isinstance(self, Polygon):
             return sum([len(part) for part in self["rings"]])
@@ -1751,12 +1713,12 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         """
         if getattr(self, "spatialReference", None) is None:
             return None
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        
+        if HAS_ARCPY and isinstance(self, Envelope):
             v = getattr(self.polygon.as_arcpy, "spatialReference", None)
             if v:
                 return SpatialReference(v)
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return SpatialReference(self["spatialReference"])
         if "spatialReference" in self:
             return SpatialReference(self["spatialReference"])
@@ -1785,22 +1747,22 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A :class:`~arcgis.geometry.Point` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, Envelope):
+        
+        if HAS_ARCPY and isinstance(self, Envelope):
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.polygon.as_arcpy, "trueCentroid", None),
                     self.spatial_reference.as_arcpy,
                 )
             )
-        elif HASARCPY:
+        elif HAS_ARCPY:
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.as_arcpy, "trueCentroid", None),
                     self.spatial_reference.as_arcpy,
                 )
             )
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             centroid_tuple = self.centroid
             return Point(
                 {
@@ -1886,9 +1848,9 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 {54.5530, 1000.1111}
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        
 
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
             if isinstance(second_geometry, Geometry):
@@ -1906,11 +1868,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        
 
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.boundary())
-        elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_shapely.boundary.buffer(1).__geo_interface__)
         return None
 
@@ -1933,10 +1895,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A :class:`~arcgis.geometry.Polygon` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.buffer(distance))
-        elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_shapely.buffer(distance).__geo_interface__,
                 sr=self.spatial_reference,
@@ -1962,8 +1924,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             The :class:`~arcgis.geometry.Geometry` object clipped to the extent
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(envelope, (list, tuple)) and len(envelope) == 4:
+        
+        if HAS_ARCPY and isinstance(envelope, (list, tuple)) and len(envelope) == 4:
             envelope = arcpy.Extent(
                 XMin=envelope[0],
                 YMin=envelope[1],
@@ -1972,13 +1934,13 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             )
             return Geometry(self.as_arcpy.clip(envelope))
         elif (
-            HASARCPY
+            HAS_ARCPY
             and isinstance(self, (Point, Polygon, Polyline, MultiPoint))
             and isinstance(envelope, arcpy.Extent)
         ):
             return Geometry(self.as_arcpy.clip(envelope))
         elif (
-            HASARCPY
+            HAS_ARCPY
             and isinstance(self, (Point, Polygon, Polyline, MultiPoint))
             and isinstance(envelope, Envelope)
         ):
@@ -2021,15 +1983,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                               relation="CLEMENTINI")
                 True
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        
 
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.contains(
                 second_geometry=second_geometry, relation=relation
             )
-        elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.contains(second_geometry)
@@ -2044,8 +2006,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.convexHull())
         elif self.type.lower() == "polygon":
             from ._convexhull import convex_hull
@@ -2128,14 +2090,14 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.crosses(second_geometry=second_geometry)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             return self.as_shapely.crosses(other=second_geometry.as_shapely)
         return None
 
@@ -2157,8 +2119,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return: a list of two :class:`~arcgis.geometry.Geometry` objects
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if isinstance(cutter, Polyline) and HASARCPY:
+        
+        if isinstance(cutter, Polyline) and HAS_ARCPY:
             if isinstance(cutter, Geometry):
                 cutter = cutter.as_arcpy
             return Geometry(self.as_arcpy.cut(other=cutter))
@@ -2208,8 +2170,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                                      deviation = 100.0)
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.densify(
                     method=method, distance=distance, deviation=deviation
@@ -2236,13 +2198,13 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Geometry` object
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             g = self.as_arcpy.difference(other=second_geometry)
             return Geometry(g)
-        elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return Geometry(
@@ -2270,12 +2232,12 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             (False)
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
+        
+        if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.disjoint(second_geometry=second_geometry)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.disjoint(second_geometry)
@@ -2302,14 +2264,14 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return: A float
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.distanceTo(other=second_geometry)
-        elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.distance(other=second_geometry)
@@ -2335,12 +2297,12 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
+        
+        if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.equals(second_geometry=second_geometry)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.equals(other=second_geometry)
@@ -2365,10 +2327,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Geometry` object
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.generalize(distance=max_offset))
-        elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_shapely.simplify(max_offset).__geo_interface__)
         return None
 
@@ -2378,7 +2340,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         Retrieves the area of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
         .. note::
-            The ``get_area`` method requires ArcPy or Shapely**
+            The ``get_area`` method requires ArcPy**
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -2398,10 +2360,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return: A float representing the area of the :class:`~arcgis.geometry.Geometry` object
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return self.as_arcpy.getArea(method=method, units=units)
-        elif HASARCPY and isinstance(self, Envelope):
+        elif HAS_ARCPY and isinstance(self, Envelope):
             return self.polygon.as_arcpy.getArea(method=method, units=units)
         return None
 
@@ -2411,7 +2373,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         Retrieves the length of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
         .. note::
-            The ``get_length`` method requires ArcPy or Shapely
+            The ``get_length`` method requires ArcPy
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -2431,10 +2393,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A float representing the length of the :class:`~arcgis.geometry.Geometry` object
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return self.as_arcpy.getLength(method=method, units=units)
-        elif HASARCPY and isinstance(self, Envelope):
+        elif HAS_ARCPY and isinstance(self, Envelope):
             return self.polygon.as_arcpy.getLength(method=method, units=units)
         return None
 
@@ -2457,8 +2419,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Geometry` object
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return self.as_arcpy.getPart(index)
         return None
 
@@ -2503,8 +2465,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 arcgis.geometry._types.Polygon
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
                 dimension = 4
@@ -2518,7 +2480,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             else:
                 return r
 
-        elif HASARCPY and isinstance(self, Envelope):
+        elif HAS_ARCPY and isinstance(self, Envelope):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
                 dimension = 4
@@ -2533,7 +2495,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return None
             else:
                 return r
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return Geometry(
@@ -2575,8 +2537,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 0.33
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.measureOnLine(
@@ -2604,12 +2566,12 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating an intersection of same shape type (True), or different type (False)
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
+        
+        if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.overlaps(second_geometry=second_geometry)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.overlaps(other=second_geometry)
@@ -2657,8 +2619,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             >>> point.type
                 "POINT"
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.pointFromAngleAndDistance(
                     angle=angle, distance=distance, method=method
@@ -2693,14 +2655,14 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Geometry` object
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.positionAlongLine(
                     value=value, use_percentage=use_percentage
                 )
             )
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             return Geometry(
                 self.as_shapely.interpolate(
                     value, normalized=use_percentage
@@ -2748,9 +2710,9 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 arcgis.geometry.Geometry
         """
 
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        
 
-        if HASARCPY:
+        if HAS_ARCPY:
             if isinstance(spatial_reference, SpatialReference):
                 spatial_reference = spatial_reference.as_arcpy
             elif isinstance(spatial_reference, dict):
@@ -2861,9 +2823,9 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A tuple of the point and the distance
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        
         if (
-            HASARCPY
+            HAS_ARCPY
             and isinstance(self, Polyline)
             and isinstance(second_geometry, Point)
         ):
@@ -2923,8 +2885,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                                         use_percentage = True)
                 0.56
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.segmentAlongLine(
                     start_measure=start_measure,
@@ -2953,8 +2915,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Point` object
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return Geometry(self.as_arcpy.snapToLine(in_point=second_geometry))
@@ -2981,15 +2943,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        
 
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return Geometry(self.as_arcpy.symmetricDifference(other=second_geometry))
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return Geometry(
@@ -3019,12 +2981,12 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             touch (False)
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
+        
+        if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.touches(second_geometry=second_geometry)
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.touches(second_geometry)
@@ -3048,14 +3010,14 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        
+        if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return Geometry(self.as_arcpy.union(other=second_geometry))
-        elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return Geometry(self.as_shapely.union(second_geometry).__geo_interface__)
@@ -3087,14 +3049,14 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating the :class:`~arcgis.geometry.Geometry` object is within (True), or not within (False)
 
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
+        
+        if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.within(
                 second_geometry=second_geometry, relation=relation
             )
-        elif HASSHAPELY:
+        elif HAS_PYSHP:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.within(second_geometry)
@@ -3945,12 +3907,8 @@ class SpatialReference(dict):
         if isinstance(iterable, int):
             iterable = {"wkid": iterable}
         elif isinstance(iterable, str):
-            iterable = {"wkt": iterable}
-
-        # Assuming _check_geometry_engine is defined elsewhere
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-
-        if HASARCPY and isinstance(iterable, arcpy.SpatialReference):
+            iterable = {"wkt": iterable}        
+        if HAS_ARCPY and isinstance(iterable, arcpy.SpatialReference):
             if iterable.factoryCode:
                 iterable = {"wkid": iterable.factoryCode}
             else:
@@ -3991,8 +3949,8 @@ class SpatialReference(dict):
         :return:
             A string representing a :class:`~arcgis.geometry.Geometry` object
         """
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
+        
+        if HAS_ARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
             return getattr(self.as_arcpy, "JSON", None)
 
         return json.dumps(self)
@@ -4048,8 +4006,8 @@ class SpatialReference(dict):
     @property
     def as_arcpy(self):
         """Gets the arcpy SpatialReference object."""
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
+        
+        if HAS_ARCPY:
             if "wkid" in self:
                 return arcpy.SpatialReference(self["wkid"])
             elif "wkt" in self:

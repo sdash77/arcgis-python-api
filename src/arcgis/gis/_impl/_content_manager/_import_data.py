@@ -17,29 +17,22 @@ features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
 pd = LazyLoader("pandas")
 
+# Check for available engines
+from arcgis._impl._geometry_engine import SELECTED_ENGINE
+# Available engines
+ENGINES = {
+    "arcpy": {"module": LazyLoader("arcpy", strict=True), "flag": "USE_ARCPY"},
+    "shapely": {"module": LazyLoader("shapefile", strict=True), "flag": "USE_PYSHP"},
+    "gdal": {"module": LazyLoader("osgeo.ogr", strict=True), "flag": "USE_GDAL"},
+}
 
-try:
-    import arcpy
+# Default all flags to False
+USE_ARCPY = USE_PYSHP = USE_GDAL = False
 
-    has_arcpy = True
-except ImportError:
-    has_arcpy = False
-except RuntimeError:
-    has_arcpy = False
-try:
-    import shapefile
-
-    has_pyshp = True
-except ImportError:
-    has_pyshp = False
-
-try:
-    import osgeo
-
-    has_gdal = True
-except:
-    has_gdal = False
-
+# Set the correct engine's flag and import the module
+if SELECTED_ENGINE in ENGINES:
+    globals()[ENGINES[SELECTED_ENGINE]["flag"]] = True
+    globals()[SELECTED_ENGINE] = ENGINES[SELECTED_ENGINE]["module"]  # Lazy load the module
 
 def _json_encode_params(postdata):
     for k, v in postdata.items():
@@ -84,7 +77,7 @@ def _create_file(df, file_type, output_dir=None, **kwargs):
     if file_type in ["File Geodatabase", "Shapefile"]:
         temp_zip = os.path.join(temp_dir, f"{service_name}.zip")
 
-        if file_type == "File Geodatabase" and has_arcpy:
+        if file_type == "File Geodatabase" and USE_ARCPY:
             # Create empty File Geodatabase with ArcPy
             fgdb = _tool_utils.run_and_hide(
                 fn=arcpy.CreateFileGDB_management,
@@ -92,7 +85,7 @@ def _create_file(df, file_type, output_dir=None, **kwargs):
             )[0]
             location = os.path.join(fgdb, os.path.basename(temp_dir))
             zip_loc = os.path.join(temp_dir, name)
-        elif file_type == "File Geodatabase" and has_gdal:
+        elif file_type == "File Geodatabase" and USE_GDAL:
             zip_loc = location
         else:
             zip_loc = temp_dir
@@ -257,12 +250,12 @@ def import_as_item(gis, df, **kwargs):
     # Check whether it will be a layer or a table
     if features.geo._is_geoenabled(df):
         # layer
-        if has_arcpy == False and has_pyshp == False and has_gdal == False:
+        if USE_ARCPY == False and USE_PYSHP == False and USE_GDAL == False:
             raise Exception(
                 "Spatially enabled DataFrame's must have either pyshp, gdal, or"
                 + " arcpy available to use import_data"
             )
-        if has_arcpy or has_gdal:
+        if USE_ARCPY or USE_GDAL:
             file_type = "File Geodatabase"
         else:
             file_type = "Shapefile"

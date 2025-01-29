@@ -50,27 +50,6 @@ try:
     import pandas as pd
 except ImportError:
     pass
-try:
-    import arcpy
-
-    has_arcpy = True
-except ImportError:
-    has_arcpy = False
-except RuntimeError:
-    has_arcpy = False
-try:
-    import shapefile
-
-    has_pyshp = True
-except ImportError:
-    has_pyshp = False
-
-try:
-    from osgeo import ogr, osr
-
-    has_gdal = True
-except:
-    has_gdal = False
 
 import concurrent.futures
 
@@ -8447,6 +8426,7 @@ class ContentManager(object):
         returns: Published Hosted Table Item
 
         """
+        from arcgis._impl._geometry_engine import HAS_GDAL
         # Do some error handling
         assert isinstance(
             df, pd.DataFrame
@@ -8467,7 +8447,7 @@ class ContentManager(object):
         if not folder:
             folder = self.folders.get()
         # If gdal is present, prioritize it
-        if has_gdal:
+        if HAS_GDAL:
             if not service_name.endswith(".gdb"):
                 service_name += ".gdb"
             # create a temporary file
