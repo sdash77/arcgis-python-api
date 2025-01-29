@@ -176,7 +176,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def upgrade_item(self, item): # TODO TypeHint removed in order to avoid import
+    def upgrade_item(self, item):  # TODO TypeHint removed in order to avoid import
         """
         Upgrades an outdated Workflow Manager schema. Requires the Workflow Manager
         Advanced Administrator privilege or the Portal Admin Update Content privilege.
@@ -202,7 +202,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def delete_item(self, item): # TODO TypeHint removed in order to avoid import
+    def delete_item(self, item):  # TODO TypeHint removed in order to avoid import
         """
         Delete a Workflow Manager schema. Does not delete the Workflow Manager Admin group.
         Requires the administrator or publisher role. If the user has the publisher role,
@@ -273,7 +273,7 @@ class WorkflowManagerAdmin:
 
     def export_item(
         self,
-        item, # TODO TypeHint removed in order to avoid import
+        item,  # TODO TypeHint removed in order to avoid import
         job_template_ids: Optional[str] = None,
         diagram_ids: Optional[str] = None,
         include_other_configs: bool = True,
@@ -327,7 +327,9 @@ class WorkflowManagerAdmin:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj
 
-    def import_item(self, item, config_file, passphrase: Optional[str] = None): # TODO TypeHint removed in order to avoid import
+    def import_item(
+        self, item, config_file, passphrase: Optional[str] = None
+    ):  # TODO TypeHint removed in order to avoid import
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatibility. This will
@@ -458,7 +460,7 @@ class JobManager:
         complete: Optional[str] = None,
         notes: Optional[str] = None,
         parent: Optional[str] = None,
-        location: Optional = None, # TODO TypeHint removed in order to avoid import
+        location: Optional = None,  # TODO TypeHint removed in order to avoid import
         extended_properties: Optional[dict] = None,
         related_properties: Optional[dict] = None,
         job_id: Optional[str] = None,
