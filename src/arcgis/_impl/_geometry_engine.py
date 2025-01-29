@@ -71,8 +71,9 @@ class GeometryEngine:
 
 
 # Create a global instance so all modules can import it
-SELECTED_ENGINE = GeometryEngine().engine
-HAS_ARCPY = GeometryEngine().has_arcpy
-HAS_PYSHP = GeometryEngine().has_pyshp
-HAS_GDAL = GeometryEngine().has_gdal
-HAS_FIONA = GeometryEngine().has_fiona
+ge = GeometryEngine()
+SELECTED_ENGINE = ge.engine
+HAS_ARCPY = ge.has_arcpy
+HAS_PYSHP = ge.has_pyshp
+HAS_GDAL = ge.has_gdal
+HAS_FIONA = ge.has_fiona
