@@ -91,7 +91,7 @@ def _create_file(df, file_type, output_dir=None, **kwargs):
                 **{"out_folder_path": temp_dir, "out_name": name},
             )[0]
             location = os.path.join(fgdb, os.path.basename(temp_dir))
-            zip_loc = location
+            zip_loc = os.path.join(temp_dir, name)
         elif file_type == "File Geodatabase" and has_gdal:
             zip_loc = location
         else:
