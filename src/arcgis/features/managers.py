@@ -3234,8 +3234,8 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": json.dumps(future),
         }
         u_url = self._url + "/deleteFromDefinition"
-        status_url: str = _get_value_case_insensitive(res, "statusurl")
         res = self._con.post(u_url, params)
+        status_url: str = _get_value_case_insensitive(res, "statusurl")
         if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
             futureobj = executor.submit(
@@ -3560,16 +3560,30 @@ class FeatureLayerCollectionManager(_GISResource):
 ###########################################################################
 class FeatureLayerManager(_GISResource):
     """
-    Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayer`.
-    This class is not created by users
-    directly.
-    An instance of this class, called 'manager', is available as a property of the :class:`~arcgis.features.FeatureLayer`
-    object, if the layer can be managed by the user.
-    Users call methods on this 'manager' object to manage the feature layer.
+    If the *user* has the appropriate privileges to access this class, it allows
+    for updating the definition of a :class:`~arcgis.features.FeatureLayer`.
+    This class is not typically initialized by end users, but instead accessed
+    as the :attr:`~arcgis.features.FeatureLayer.manager` property of the
+    :class:`~arcgis.features.FeatureLayer`.
+
+    .. code-block:: python
+
+        # Usage Example
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_user_profile")
+
+        >>> item = gis.content.search("Flood Damage", "Feature Layer")[0]
+        >>> flood_flyr = item.layers[0]
+        >>> flood_mgr = flood_flyr.manager
+        >>> type(flood_mgr)
+
+        <class 'arcgis.features.managers.FeatureLayerManager'>
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url, gis=None, **kwargs):
+        """initializer"""
         super(FeatureLayerManager, self).__init__(url, gis)
+        self._fl = kwargs.pop("fl", None)
         self._hydrate()
 
     # ----------------------------------------------------------------------
@@ -3622,33 +3636,97 @@ class FeatureLayerManager(_GISResource):
         res = self._con.post(u_url, params)
 
         super(FeatureLayerManager, self)._refresh()
-
+        if self._fl:
+            self._fl._refresh()
         return res
 
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
-        The addToDefinition operation supports adding a definition
-        property to a hosted feature layer.
-
-        This function will allow users to change add additional values
-        to an already published service.
+        This method adds a definition property to a previously published service.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
-                            can be derived from the `properties` property.
-                            For layer level modifications, run updates on each individual feature
-                            service layer object.
+                            can be derived from the `properties` property. For layer level
+                            modifications, run updates on each individual feature layer of the
+                            service.
         ---------------     --------------------------------------------------------------------
-        future              Optional boolean. If True, a future object will be returned and the process
-                            will not wait for the task to complete. The default is False, which means wait for results.
+        future              Optional boolean. The default is *False*, which means to run the
+                            method synchronously and wait for results. If *True*, the method runs
+                            asynchronously.
+
+                              * Asynchronous operation only supported in ArcGIS Online and
+                                ArcGIS Enterprise.
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary indicating 'success' or 'error'. If ``future = True``,
-           then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
+           * If run synchronously (*future=False*), a JSON message as a dictionary indicating 'success' or 'error'
+           * If run asynchronously (*future = True*):
+
+             * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
+               object. Call ``result()`` to get the response.
+             * Asynchronous operation not supported in ArcGIS Online for Kubernetes.
+
+        .. code-block:: python
+
+            # Usage Example: ArcGIS Enterprise for Kubernetes:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_kubernetes_profile")
+
+            >>> item = gis.content.get("<feature_layer_item_id>")
+            >>> fl = item.layers[0]
+
+            >>> new_field = {
+                              "fields": [
+                                    {
+                                        "name": "Loc Identifier",
+                                        "type": "esriFieldTypeString",
+                                        "alias": "safa",
+                                        "nullable": True,
+                                        "editable": True,
+                                        "length": 256,
+                                    }
+                                ]
+                             }
+           >>> res = fl.manager.add_to_definition(
+                                json_dict=add_field
+                    )
+           >>> res
+
+           {'success': True}
+
+           # Usage Example 2: ArcGIS Online asynchronous
+           >>> gis = GIS(profile="your_online_profile")
+
+           >>> item = gis.content.get("<feature_layer_item_id>")
+           >>> fl = item.layers[0]
+
+           >>> new_field = {
+                              "fields": [
+                                    {
+                                        "name": "Loc Identifier",
+                                        "type": "esriFieldTypeString",
+                                        "alias": "safa",
+                                        "nullable": True,
+                                        "editable": True,
+                                        "length": 256,
+                                    }
+                                ]
+                             }
+
+          >>> future = fl.manager.add_to_definition(
+                                            json_dict=add_field,
+                                            future=True
+                       )
+          >>> res = future.result()
+          >>> res
+
+          {'submissionTime': <time_value>,
+            'lastUpdatedTime': <time_value>,
+            'status': 'Completed'}
+
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -3681,10 +3759,7 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
-        The `update_definition` operation supports updating a definition
-        property in a hosted feature layer. The result of this
-        operation is a response indicating success or failure with error
-        code and description.
+        This method modifies a definition of a hosted feature layer.
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -3694,14 +3769,21 @@ class FeatureLayerManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process
-                            will not wait for the task to complete.
-                            The default is False, which means wait for results.
+        future              Optional boolean. The default is *False*, which means to run the
+                            method synchronously and wait for results. If *True*, the method runs
+                            asynchronously.
+
+                              * Asynchronous operation only supported in ArcGIS Online and
+                                ArcGIS Enteprise.
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``,
-           then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
+           * If run synchronously (*future=False*), a JSON message as a dictionary indicating 'success' or 'error'
+           * If run asynchronously (*future = True*):
+
+             * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
+               object. Call ``result()`` to get the response.
+             * Asynchronous operation not supported in ArcGIS Online for Kubernetes.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -3735,10 +3817,7 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def delete_from_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
-        The deleteFromDefinition operation supports deleting a
-        definition property from a hosted feature layer. The result of
-        this operation is a response indicating success or failure with
-        error code and description.
+        This method deletes a definition property from a hosted feature layer.
         See: `Delete From Definition (Feature Service) <https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm>`_
         for additional information on this function.
 
@@ -3751,15 +3830,21 @@ class FeatureLayerManager(_GISResource):
                             service layer object.
                             Only include the items you want to remove from the FeatureService or layer.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process
-                            will not wait for the task to complete.
-                            The default is False, which means wait for results.
+        future              Optional boolean. The default is *False*, which means to run the
+                            method synchronously and wait for results. If *True*, the method runs
+                            asynchronously.
+
+                              * Asynchronous operation only supported in ArcGIS Online and
+                                ArcGIS Enterprise.
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``,
-           then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
+           * If run synchronously (*future=False*), a JSON message as a dictionary indicating 'success' or 'error'
+           * If run asynchronously (*future = True*):
 
+             * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
+               object. Call ``result()`` to get the response.
+             * Asynchronous operation not supported in ArcGIS Online for Kubernetes.
         """
 
         if isinstance(json_dict, PropertyMap):
