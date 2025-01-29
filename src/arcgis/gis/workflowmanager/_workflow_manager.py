@@ -4186,6 +4186,14 @@ class NotificationManager:
         self.websocket_url = f"{base}/{item_url}/notificationWs"
         self.token_request_url = f"{self._server_url}/{item_url}"
 
+    def _disconnect_check(self, job_id):
+        if job_id in self.subscribed_jobs:
+            self.unsubscribe([job_id])
+            # If this list is empty, all job executions have terminated, can disconnect.
+            logger.debug(f"Jobs: {self.subscribed_jobs}. Manually connected: {self._manually_connected}")
+            if not self.subscribed_jobs and not self._manually_connected:
+                self.disconnect()
+
     @property
     def is_connected(self) -> bool:
         return self._connected
