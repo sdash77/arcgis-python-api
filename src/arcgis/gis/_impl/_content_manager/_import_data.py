@@ -19,6 +19,7 @@ pd = LazyLoader("pandas")
 
 # Check for available engines
 from arcgis._impl._geometry_engine import SELECTED_ENGINE
+
 # Available engines
 ENGINES = {
     "arcpy": {"module": LazyLoader("arcpy", strict=True), "flag": "USE_ARCPY"},
@@ -32,7 +33,10 @@ USE_ARCPY = USE_PYSHP = USE_GDAL = False
 # Set the correct engine's flag and import the module
 if SELECTED_ENGINE in ENGINES:
     globals()[ENGINES[SELECTED_ENGINE]["flag"]] = True
-    globals()[SELECTED_ENGINE] = ENGINES[SELECTED_ENGINE]["module"]  # Lazy load the module
+    globals()[SELECTED_ENGINE] = ENGINES[SELECTED_ENGINE][
+        "module"
+    ]  # Lazy load the module
+
 
 def _json_encode_params(postdata):
     for k, v in postdata.items():

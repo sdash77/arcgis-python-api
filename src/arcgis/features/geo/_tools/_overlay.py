@@ -11,6 +11,7 @@ from arcgis.features.geo._accessor import _is_geoenabled
 from arcgis.features.geo._array import GeoArray
 
 from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_PYSHP
+
 if HAS_SHAPELY:
     import shapely
 if HAS_ARCPY:

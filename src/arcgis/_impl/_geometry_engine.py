@@ -1,13 +1,14 @@
 import os
 
+
 class GeometryEngine:
     """Manages detection and selection of a spatial geometry engine."""
-    
+
     _available_engines = {
         "arcpy": False,
         "shapely": False,
         "gdal": False,
-        "fiona": False
+        "fiona": False,
     }
 
     def __init__(self):
@@ -23,24 +24,28 @@ class GeometryEngine:
         """Check for installed spatial libraries."""
         try:
             import arcpy
+
             self._available_engines["arcpy"] = True
         except ImportError:
             pass
 
         try:
             import shapely
+
             self._available_engines["shapely"] = True
         except ImportError:
             pass
 
         try:
             import osgeo
+
             self._available_engines["gdal"] = True
         except ImportError:
             pass
 
         try:
             import fiona
+
             self._available_engines["fiona"] = True
         except ImportError:
             pass
@@ -49,7 +54,10 @@ class GeometryEngine:
         """Select the best available engine, prioritizing user preference."""
         preferred_engine = os.getenv("GEOMETRY_ENGINE", "").lower()
 
-        if preferred_engine in self._available_engines and self._available_engines[preferred_engine]:
+        if (
+            preferred_engine in self._available_engines
+            and self._available_engines[preferred_engine]
+        ):
             return preferred_engine  # Use user-specified engine if available
 
         # Default priority order: arcpy > gdal > shapely > fiona
@@ -60,6 +68,7 @@ class GeometryEngine:
         raise ImportError(
             "No valid spatial library found. Install `arcpy`, `shapely`, `gdal`, or `fiona`."
         )
+
 
 # Create a global instance so all modules can import it
 SELECTED_ENGINE = GeometryEngine().engine

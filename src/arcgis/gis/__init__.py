@@ -8427,6 +8427,7 @@ class ContentManager(object):
 
         """
         from arcgis._impl._geometry_engine import HAS_GDAL
+
         # Do some error handling
         assert isinstance(
             df, pd.DataFrame

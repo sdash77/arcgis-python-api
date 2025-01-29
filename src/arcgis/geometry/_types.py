@@ -152,6 +152,8 @@ class BaseGeometry(dict):
         if HAS_PYSHP:
             self._HAS_PYSHP = True
         return self._HAS_ARCPY, self._HAS_PYSHP
+
+
 class GeometryFactory(type):
     """
     Creates the Geometry Objects Based on JSON
@@ -1642,7 +1644,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: An Integer representing the amount of :class:`~arcgis.geometry.Geometry` parts
         """
-        
+
         if HAS_ARCPY and isinstance(self, Envelope):
             return 1
         elif HAS_ARCPY:
@@ -1677,7 +1679,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: An Integer representing the amount of :class:`~arcgis.geometry.Point` objects
         """
-        
+
         if isinstance(self, Envelope):
             return 4
         elif HAS_ARCPY:
@@ -1713,7 +1715,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         """
         if getattr(self, "spatialReference", None) is None:
             return None
-        
+
         if HAS_ARCPY and isinstance(self, Envelope):
             v = getattr(self.polygon.as_arcpy, "spatialReference", None)
             if v:
@@ -1747,7 +1749,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A :class:`~arcgis.geometry.Point` object
         """
-        
+
         if HAS_ARCPY and isinstance(self, Envelope):
             return Geometry(
                 arcpy.PointGeometry(
@@ -1848,7 +1850,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 {54.5530, 1000.1111}
 
         """
-        
 
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
@@ -1868,7 +1869,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
-        
 
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.boundary())
@@ -1895,7 +1895,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A :class:`~arcgis.geometry.Polygon` object
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.buffer(distance))
         elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -1924,7 +1924,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             The :class:`~arcgis.geometry.Geometry` object clipped to the extent
         """
-        
+
         if HAS_ARCPY and isinstance(envelope, (list, tuple)) and len(envelope) == 4:
             envelope = arcpy.Extent(
                 XMin=envelope[0],
@@ -1983,7 +1983,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                               relation="CLEMENTINI")
                 True
         """
-        
 
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
@@ -2006,7 +2005,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.convexHull())
         elif self.type.lower() == "polygon":
@@ -2090,7 +2089,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
@@ -2119,7 +2118,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return: a list of two :class:`~arcgis.geometry.Geometry` objects
 
         """
-        
+
         if isinstance(cutter, Polyline) and HAS_ARCPY:
             if isinstance(cutter, Geometry):
                 cutter = cutter.as_arcpy
@@ -2170,7 +2169,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                                      deviation = 100.0)
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.densify(
@@ -2198,7 +2197,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Geometry` object
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -2232,7 +2231,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             (False)
 
         """
-        
+
         if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -2264,7 +2263,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return: A float
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
@@ -2297,7 +2296,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
 
         """
-        
+
         if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -2327,7 +2326,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Geometry` object
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.generalize(distance=max_offset))
         elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -2360,7 +2359,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return: A float representing the area of the :class:`~arcgis.geometry.Geometry` object
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return self.as_arcpy.getArea(method=method, units=units)
         elif HAS_ARCPY and isinstance(self, Envelope):
@@ -2393,7 +2392,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A float representing the length of the :class:`~arcgis.geometry.Geometry` object
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return self.as_arcpy.getLength(method=method, units=units)
         elif HAS_ARCPY and isinstance(self, Envelope):
@@ -2419,7 +2418,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Geometry` object
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return self.as_arcpy.getPart(index)
         return None
@@ -2465,7 +2464,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 arcgis.geometry._types.Polygon
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
@@ -2537,7 +2536,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 0.33
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -2566,7 +2565,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating an intersection of same shape type (True), or different type (False)
 
         """
-        
+
         if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -2619,7 +2618,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             >>> point.type
                 "POINT"
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.pointFromAngleAndDistance(
@@ -2655,7 +2654,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Geometry` object
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.positionAlongLine(
@@ -2709,8 +2708,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             >>> geom2.type
                 arcgis.geometry.Geometry
         """
-
-        
 
         if HAS_ARCPY:
             if isinstance(spatial_reference, SpatialReference):
@@ -2823,7 +2820,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A tuple of the point and the distance
 
         """
-        
+
         if (
             HAS_ARCPY
             and isinstance(self, Polyline)
@@ -2885,7 +2882,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                                         use_percentage = True)
                 0.56
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.segmentAlongLine(
@@ -2915,7 +2912,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A :class:`~arcgis.geometry.Point` object
 
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -2943,7 +2940,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
-        
 
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
@@ -2981,7 +2977,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             touch (False)
 
         """
-        
+
         if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -3010,7 +3006,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
-        
+
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
@@ -3049,7 +3045,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating the :class:`~arcgis.geometry.Geometry` object is within (True), or not within (False)
 
         """
-        
+
         if HAS_ARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -3907,7 +3903,7 @@ class SpatialReference(dict):
         if isinstance(iterable, int):
             iterable = {"wkid": iterable}
         elif isinstance(iterable, str):
-            iterable = {"wkt": iterable}        
+            iterable = {"wkt": iterable}
         if HAS_ARCPY and isinstance(iterable, arcpy.SpatialReference):
             if iterable.factoryCode:
                 iterable = {"wkid": iterable.factoryCode}
@@ -3949,7 +3945,7 @@ class SpatialReference(dict):
         :return:
             A string representing a :class:`~arcgis.geometry.Geometry` object
         """
-        
+
         if HAS_ARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
             return getattr(self.as_arcpy, "JSON", None)
 
@@ -4006,7 +4002,7 @@ class SpatialReference(dict):
     @property
     def as_arcpy(self):
         """Gets the arcpy SpatialReference object."""
-        
+
         if HAS_ARCPY:
             if "wkid" in self:
                 return arcpy.SpatialReference(self["wkid"])

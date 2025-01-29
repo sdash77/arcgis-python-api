@@ -23,6 +23,7 @@ from arcgis.geometry import Geometry
 
 arcgis = LazyLoader("arcgis")
 from arcgis._impl._geometry_engine import SELECTED_ENGINE
+
 # Dictionary mapping engines to their respective lazy-loaded modules
 ENGINE_MODULES = {
     "arcpy": {"module": LazyLoader("arcpy", strict=True), "flag": "USE_ARCPY"},
@@ -35,14 +36,16 @@ ENGINE_MODULES = {
 USE_ARCPY = USE_PYSHP = USE_GDAL = USE_FIONA = False  # Initialize all to False
 
 if SELECTED_ENGINE in ENGINE_MODULES:
-    globals()[ENGINE_MODULES[SELECTED_ENGINE]["flag"]] = True  # Set only the selected flag
+    globals()[
+        ENGINE_MODULES[SELECTED_ENGINE]["flag"]
+    ] = True  # Set only the selected flag
     module = ENGINE_MODULES[SELECTED_ENGINE]["module"]  # Load the required module
     globals()[SELECTED_ENGINE] = module  # Assign it for use
 
 # If using PyShp, extract version
 if USE_PYSHP:
     SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
-    
+
 _logging = logging.getLogger(__name__)
 
 
@@ -274,8 +277,8 @@ def _ensure_path_string(input_path):
 def from_url(url: str) -> list:
     """
     Loads a `shapefile` from a URL endpoint into a spatially enabled dataframe.
-    
-    .. note:: 
+
+    .. note::
         Either GDAL or shapely is required to read hosted shapefiles.
 
     ===========================     ====================================================================

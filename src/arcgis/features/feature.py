@@ -33,9 +33,9 @@ from arcgis.geometry import (
 from arcgis.gis import Layer
 
 from arcgis._impl._geometry_engine import HAS_ARCPY
+
 if HAS_ARCPY:
     arcpy = LazyLoader("arcpy", strict=True)
-
 
 
 class Feature(object):

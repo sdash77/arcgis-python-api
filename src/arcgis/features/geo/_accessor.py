@@ -1177,7 +1177,13 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def _check_geometry_engine(self):
-        from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_GDAL, HAS_PYSHP, SELECTED_ENGINE
+        from arcgis._impl._geometry_engine import (
+            HAS_ARCPY,
+            HAS_GDAL,
+            HAS_PYSHP,
+            SELECTED_ENGINE,
+        )
+
         if self._HASARCPY is None:
             self._HASARCPY = HAS_ARCPY
         if self._HASSHAPELY is None:
@@ -1189,7 +1195,7 @@ class GeoAccessor(object):
         if self._USE_GDAL is None:
             self._USE_GDAL = SELECTED_ENGINE == "GDAL"
         return self._HASARCPY, self._HASSHAPELY
-        
+
     # ----------------------------------------------------------------------
     @property
     def _meta(self):
@@ -1996,7 +2002,7 @@ class GeoAccessor(object):
                 )
         if _is_geoenabled(self._data):
             # layer
-            self._check_geometry_engine() # we will use populated self properties
+            self._check_geometry_engine()  # we will use populated self properties
             if not self._USE_ARCPY and not self._USE_PYSHP and not self._USE_GDAL:
                 raise Exception(
                     "Spatially enabled DataFrame's must have either gdal, shapely, or"
@@ -4042,7 +4048,10 @@ class GeoAccessor(object):
                 )
                 self._data[self.name] = vals
                 return True
-            elif isinstance(spatial_reference, _geometry.SpatialReference) and self._HASARCPY:
+            elif (
+                isinstance(spatial_reference, _geometry.SpatialReference)
+                and self._HASARCPY
+            ):
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference.as_arcpy,
