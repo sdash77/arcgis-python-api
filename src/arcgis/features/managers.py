@@ -3658,7 +3658,7 @@ class FeatureLayerManager(_GISResource):
                             asynchronously.
 
                               * Asynchronous operation only supported in ArcGIS Online and
-                                ArcGIS Enteprise.
+                                ArcGIS Enterprise.
         ===============     ====================================================================
 
         :return:
@@ -3835,7 +3835,7 @@ class FeatureLayerManager(_GISResource):
                             asynchronously.
 
                               * Asynchronous operation only supported in ArcGIS Online and
-                                ArcGIS Enteprise.
+                                ArcGIS Enterprise.
         ===============     ====================================================================
 
         :return:
