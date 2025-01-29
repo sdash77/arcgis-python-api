@@ -24,7 +24,7 @@ from arcgis.gis._impl._con import (
 from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 
-__version__ = "2.3.1"
+__version__ = "2.4.1"
 
 _log = logging.getLogger(__name__)
 
@@ -60,6 +60,7 @@ class KbertnetesPy(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._security_kwargs = kwargs.pop("security_kwargs", None)
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
@@ -155,6 +156,7 @@ class KbertnetesPy(object):
                     use_gen_token=kwargs.get("use_gen_token", False),
                     security_kwargs=self._security_kwargs,
                     is_hosted_nb_home=kwargs.pop("is_hosted_nb_home", False),
+                    ca_bundles=self._ca_bundles,
                 )
             else:
                 if token == api_key:
@@ -184,6 +186,7 @@ class KbertnetesPy(object):
                     use_gen_token=kwargs.get("use_gen_token", False),
                     security_kwargs=self._security_kwargs,
                     is_hosted_nb_home=kwargs.pop("is_hosted_nb_home", False),
+                    ca_bundles=self._ca_bundles,
                 )
         # self.get_version(True)
         self.get_properties(True)
