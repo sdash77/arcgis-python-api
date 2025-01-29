@@ -32,7 +32,7 @@ if SELECTED_ENGINE == "shapely":
     SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
     USE_PYSHP = True
 elif SELECTED_ENGINE == "gdal":
-    from osgeo import ogr as _ogr
+    from osgeo import ogr, osr
 
     USE_GDAL = True
 elif SELECTED_ENGINE == "fiona":

@@ -22,6 +22,7 @@ or
     >>> function_res = function(...
                                 in_sr = sr,
                                 ...)
+                                
 For further details and explanation of concepts, see
 `Using Spatial References <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_.
 Also see the `Working with Geometries Introduction <https://developers.arcgis.com/python/guide/part1-introduction-what-is-geometry>`_ guide in the *Editing*
