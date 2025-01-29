@@ -3279,7 +3279,12 @@ class Job(object):
         return return_obj["jobComments"]
 
     def set_job_version(
-        self, data_source_name=None, version_guid=None, version_name=None, administered=False, data_reference_id=None
+        self,
+        data_source_name=None,
+        version_guid=None,
+        version_name=None,
+        administered=False,
+        data_reference_id=None,
     ):
         """
         Sets the version of the job.
