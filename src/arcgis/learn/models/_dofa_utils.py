@@ -6,7 +6,7 @@
 from functools import partial
 from typing import Any
 
-import kornia.augmentation as K
+# import kornia.augmentation as K
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
