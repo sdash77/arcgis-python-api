@@ -50,7 +50,7 @@ dependencies:
 # as this is only to build the docs locally
 # docs should NOT be published from this environment
 # for testing only
-- fastchan::fastai 
+- fastai::fastai
 - pytorch >=2
 - timm 0.4.12.*
 - torchvision >=0.15.0

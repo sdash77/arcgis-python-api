@@ -125,8 +125,9 @@ class TestApplyEditsAsync(unittest.TestCase):
     def test_async_edits(self):
 
         df = pd.DataFrame(data)
-        df.spatial.name
-        item = self.gis.content.import_data(df)
+        item = self.gis.content.import_data(
+            df, title="test_async_edits", tags="ntgrtn-tst"
+        )
         edit_data = [
             {
                 "geometry": {

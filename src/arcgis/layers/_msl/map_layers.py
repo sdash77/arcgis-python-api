@@ -16,6 +16,7 @@ from arcgis.gis import Item, Layer
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis._impl._util import _get_item_url
 from arcgis._impl.common._utils import _validate_url
+from arcgis._impl.common._deprecate import deprecated
 
 _dt = LazyLoader("_dt.datetime")
 os = LazyLoader("os")
@@ -113,10 +114,18 @@ class MapFeatureLayer(Layer):
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
+    @deprecated(
+        deprecated_in="2.4.1",
+        details="Use the attachments property instead.",
+    )
+    @property
+    def attachements(self):
+        return self.attachments
+
     # ----------------------------------------------------------------------
     @property
     @lru_cache(maxsize=10)
-    def attachements(self) -> _features.managers.AttachmentManager:
+    def attachments(self) -> _features.managers.AttachmentManager:
         """
         The ``attachments`` property provides a manager to work with attachments if the ``MapFeatureLayer``
         supports this functionality.
@@ -688,7 +697,7 @@ class MapFeatureLayer(Layer):
                                             and the extent.
         -------------------------------     --------------------------------------------------------------------
         return_extent_only                  Optional boolean. If `True`, the response only includes the extent
-                                            of the features satisying the query. If `returnCountOnly=true`, the
+                                            of the features satisfying the query. If `returnCountOnly=true`, the
                                             response will return both the count and the extent. The default is
                                             `False`. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is `true`.
@@ -2218,6 +2227,8 @@ class MapImageLayer(_gis.Layer):
 
         self._populate_layers()
         self._admin = None
+        if gis is None:
+            gis = _gis.GIS()
         if hasattr(gis, "session"):
 
             self._session = gis.session

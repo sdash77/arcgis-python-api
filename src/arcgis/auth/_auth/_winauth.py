@@ -217,7 +217,6 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
 
     def __init__(
         self,
-        session,
         *,
         username: str | None = None,
         password: str | None = None,
@@ -259,9 +258,24 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                     **kwargs,
                 )
             else:
-                self.auth = requests_kerberos.HTTPKerberosAuth(
-                    mutual_authentication=mutual_auth, **kwargs
-                )
+                allowed_values = [
+                    "service",
+                    "delegate",
+                    "force_preemptive",
+                    "principal",
+                    "hostname_override",
+                    "sanitize_mutual_error_response",
+                    "send_cbt",
+                ]
+                extras = {kwargs[key] for key in kwargs if key in allowed_values}
+                if extras:
+                    self.auth = requests_kerberos.HTTPKerberosAuth(
+                        mutual_authentication=mutual_auth, **extras
+                    )
+                else:
+                    self.auth = requests_kerberos.HTTPKerberosAuth(
+                        mutual_authentication=mutual_auth
+                    )
         except ImportError:
             raise Exception(
                 "Kerberos authentication requires `requests_kerberos` module."

@@ -125,7 +125,7 @@ class AGOLAdminManager(object):
             :class:`~arcgis.gis.admin.PartneredCollabManager`
         """
         if self._collabmgr is None:
-            url: str = self._gis.resturl + "portal/self/tustedOrgs"
+            url: str = self._gis.resturl + "portal/self/trustedOrgs"
             self._collabmgr = PartneredCollabManager(url=url, gis=self._gis)
         return self._collabmgr
 
@@ -506,12 +506,12 @@ class AGOLAdminManager(object):
                                   cwp (collaboration workspace participate), g (group), i (item),
                                   idp (identity provider), inv (invitation), r (role), u (user)
         ----------------  -------------------------------------------------------------------------------
-        actors            Optional String. Comma seperated list of usernames.
+        actors            Optional String. Comma separated list of usernames.
         ----------------  -------------------------------------------------------------------------------
         owners            Optional String. Filter events by a comma-separated list of user names who own
                           the action targets in a batch result set.
         ----------------  -------------------------------------------------------------------------------
-        actions           Optional String. Comma seperated list of actions to query for.
+        actions           Optional String. Comma separated list of actions to query for.
 
                           Values: `add`, `addusers`, `create`, `delete`, `removeusers`, `share`, `unshare`,
                           `update`, `failedlogin`, `login`, and `updateUsers`.
@@ -523,16 +523,16 @@ class AGOLAdminManager(object):
 
                           Values: `asc` or `desc`
         ----------------  -------------------------------------------------------------------------------
-        data_format       Optional String.  The way the data is returned to the user.  The response can
-                          be a `df`, `csv`, or 'raw'.  'df' returns a DataFrame, 'csv' returns a comma
-                          seperated file, and 'raw' returns the JSON string as a dictionary.
+        data_format       Optional String.  The default 'csv' value returns a comma-separate file of the
+                          results. It is the only currently available format.
 
-                          Values: `df`, `csv`, 'raw'
+                          Values: `csv`
         ----------------  -------------------------------------------------------------------------------
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :return: string or pd.DataFrame or dict
+        :return:
+            A string representing the file path of the csv file results.
 
         """
         _date_handler = _utils._date_handler

@@ -138,7 +138,7 @@ class NotebookServer(object):
         has been created, and that its Docker environment has been
         correctly configured.
 
-        **This is only avaible if the site can be accessed around the web adapter**
+        **This is only available if the site can be accessed around the web adapter**
 
         :return: Boolean
 
@@ -246,7 +246,7 @@ class NotebookServer(object):
     @property
     def services(self):
         """
-        Provices access to managing notebook created geoprocessing tools
+        Provides access to managing notebook created geoprocessing tools
 
 
         :return:
