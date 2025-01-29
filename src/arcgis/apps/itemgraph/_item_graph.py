@@ -464,7 +464,10 @@ def create_dependency_graph(
                     finally:
                         continue
 
-                dep_item = gis.content.get(dep)
+                if "http" in dep or "https" in dep:
+                    dep_item = None
+                else:
+                    dep_item = gis.content.get(dep)
 
                 # check if item is outside of the organization
                 if not dep_item or gis.url not in dep_item.homepage:
