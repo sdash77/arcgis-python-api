@@ -1910,20 +1910,23 @@ def geocode(
     .. code-block:: python
 
         # Usage Example
-        >>> geocoded = geocode(addresses = {
-                                                    Street: "1234 W Main St",
-                                                    City: "Small Town",
-                                                    State: "WA",
-                                                    Zone: "99027"
-                                                    },
-                                            distance = 1000,
-                                            max_locations = 50,
-                                            as_featureset = True,
-                                            match_out_of_range = True,
-                                            location_type = "Street"
-                                            )
+        >>> geocoded = geocode(
+                        addresses = {
+                            Street: "1234 W Main St",
+                            City: "Small Town",
+                            State: "WA",
+                            Zone: "99027"
+                        },
+                        distance = 1000,
+                        max_locations = 50,
+                        as_featureset = True,
+                        match_out_of_range = True,
+                        location_type = "Street"
+                       )
+
         >>> type(geocoded)
-        <:class:`~arcgis.features.FeatureSet>
+
+        <class arcgis.features.FeatureSet>
 
     :return:
        A dictionary or :class:`~arcgis.features.FeatureSet` object.
