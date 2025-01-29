@@ -80,7 +80,7 @@ def _initialize(instance, gis, is_admin=False):
     else:
         instance.org_id = info_result["id"]
         helper_services = info_result.get("helperServices", {})
-        instance.server_url = instance._url = helper_services.get(
+        instance._server_url = instance._url = helper_services.get(
             "workflowManager", {}
         ).get("url")
         if not instance._url:
