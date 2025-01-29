@@ -18,7 +18,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
     # Add fields to allow for the cleanup method to work
     data_item = None
     wfl_item = None
-    is_agol = False
+    is_agol = True
 
     @classmethod
     def setUpClass(cls):
@@ -33,10 +33,11 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             cls.qalab_base_path, "features_mod_FeatureLayerCollectionManager_cls_short"
         )
 
-        is_agol = cls.profile == "your_online_profile"
         # Hold all Items for cleanup
         cls.items = []
 
+    def setUp(self):
+        is_agol = self.profile == "your_online_profile"
     def test_create_FeatureLayerCollectionManager_object(self):
         """
         Test creating instances of FeatureLayerCollectionManager class in multiple ways
