@@ -1,4 +1,5 @@
-"""Defines store functions for working with Attachments."""
+""" Defines store functions for working with Attachments.
+"""
 
 from ... import workforce
 

@@ -1,4 +1,5 @@
-"""Defines store functions for working with Projects."""
+""" Defines store functions for working with Projects.
+"""
 
 import arcgis
 from arcgis.gis import Item

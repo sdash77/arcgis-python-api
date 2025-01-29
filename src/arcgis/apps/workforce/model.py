@@ -1,4 +1,5 @@
-"""Defines the Model abstract base class."""
+""" Defines the Model abstract base class.
+"""
 
 
 class Model:

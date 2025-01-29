@@ -1,4 +1,5 @@
-"""Defines the Dispatcher class."""
+""" Defines the Dispatcher object.
+"""
 
 from .. import workforce
 from .exceptions import ValidationError

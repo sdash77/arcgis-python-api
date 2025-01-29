@@ -1,4 +1,5 @@
-"""Defines the FeatureModel object."""
+""" Defines the FeatureModel object.
+"""
 
 from arcgis.features import Feature
 from .exceptions import ValidationError

@@ -1,4 +1,5 @@
-"""Defines public exports for the workforce module."""
+""" Defines public exports for the workforce module.
+"""
 
 from .assignment import Assignment
 from .assignment_type import AssignmentType

@@ -1,4 +1,5 @@
-"""Defines the Assignment object."""
+""" Defines the Assignment object.
+"""
 
 from .feature_model import FeatureModel
 from .managers import *

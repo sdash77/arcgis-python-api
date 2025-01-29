@@ -1,4 +1,5 @@
-"""Defines the Track object."""
+""" Defines the Track object.
+"""
 
 from .feature_model import FeatureModel
 from ._store import *

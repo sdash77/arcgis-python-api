@@ -1,4 +1,5 @@
-"""Defines store functions for working with Workers."""
+""" Defines store functions for working with Workers.
+"""
 
 import math
 from ... import workforce
