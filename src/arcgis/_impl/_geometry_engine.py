@@ -11,7 +11,11 @@ class GeometryEngine(Enum):
 
 
 class GeometryEngineManager:
-    """Manages detection and selection of a spatial geometry engine."""
+    """
+    Manages detection and selection of a spatial geometry engine.
+    
+    Setting "ARCGIS_GEOMETRY_ENGINE" environment variable to "arcpy", "gdal", "fiona", or "shapely" will prioritize your preferred engine.
+    """
 
     def __init__(self):
         """Initialize and select an engine."""
