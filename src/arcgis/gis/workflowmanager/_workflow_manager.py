@@ -10,6 +10,7 @@ import urllib.parse
 from enum import Enum
 from ssl import SSLContext
 from typing import Optional, Callable
+from contextlib import contextmanager
 
 import websocket
 from requests.adapters import HTTPAdapter
@@ -3536,7 +3537,7 @@ class JobExecution:
         self._event = threading.Event()
         self._execution_type = execution_type
 
-    def _callback(self, msg: Notification):
+    def _callback(self, msg: Notification, nm: NotificationManager):
         if (
             "jobId" in msg.message
             and msg.message["jobId"] == self._job.job_id
@@ -3553,6 +3554,7 @@ class JobExecution:
                 ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
+                    nm._disconnect_check(self._job.job_id)
             elif self._execution_type is ExecutionType.STOP:
                 if msg.msg_type in [
                     MessageType.STEP_PAUSED,
@@ -3562,6 +3564,7 @@ class JobExecution:
                 ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
+                    nm._disconnect_check(self._job.job_id)
             elif self._execution_type is ExecutionType.FINISH:
                 if msg.msg_type in [
                     MessageType.STEP_STARTED,
@@ -3570,6 +3573,7 @@ class JobExecution:
                 ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
+                    nm._disconnect_check(self._job.job_id)
 
     def _started(self):
         self._start_time = datetime.datetime.now()
@@ -4272,6 +4276,7 @@ class NotificationManager:
         self.subscribed_jobs = {}
         self._workflow_manager = workflow_manager
         self._connected = False
+        self._manually_connected = False
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self._server_url.replace("http://", "ws://").replace("https://", "wss://")
@@ -4307,6 +4312,13 @@ class NotificationManager:
 
         return domain_cookies
 
+    def _disconnect_check(self, job_id):
+        if job_id in self.subscribed_jobs:
+            self.unsubscribe([job_id])
+            # If this list is empty, all job executions have terminated, can disconnect.
+            if not self.subscribed_jobs and not self._manually_connected:
+                self.disconnect()
+
     @property
     def is_connected(self) -> bool:
         return self._connected
@@ -4321,7 +4333,7 @@ class NotificationManager:
                     job_id = msg.message["jobId"]
                     if job_id in self.subscribed_jobs.keys():
                         callback = self.subscribed_jobs[job_id]
-                        callback(msg)
+                        callback(msg, self)
         except Exception as e:
             logger.error(e)
 
@@ -4348,14 +4360,30 @@ class NotificationManager:
         ws.connect(self.websocket_url, token, cookie)
         return ws
 
+    @contextmanager
     def connect(self):
         """
         Establishes a websocket connection to the workflow manager server.
+
+        .. code-block:: python
+            # USAGE EXAMPLE: Manage websocket connection manually
+
+            # create a WorkflowManager object from the workflow item
+            wf_item = gis.content.get('d6e25f2db0514520b32d6e65e7ad49a0')
+            wm = WorkflowManager(wf_item)
+
+            nm = NotificationManager(wf_item, wm)
+
+            with nm.connect() as connection:
+                # subscribe, unsubscribe, manage jobs etc
+                nm.subscribe([job_id])
+
         """
         if self.websocket_connection is None:
             logger.debug(f"Creating websocket connection to {self.websocket_url}")
             self.websocket_connection = self._connect()
             self._connected = True
+            self._manually_connected = True
 
     def disconnect(self):
         """
@@ -4364,6 +4392,7 @@ class NotificationManager:
         if self.websocket_connection is not None:
             self.websocket_connection.disconnect()
             self._connected = False
+            self._manually_connected = False
 
     def subscribe(self, job_ids: list, callback: Callable[[Notification], None]):
         """
