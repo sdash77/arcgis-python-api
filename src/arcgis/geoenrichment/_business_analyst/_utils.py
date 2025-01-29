@@ -393,7 +393,7 @@ def get_sanitized_names(names: Union[str, list, tuple, pd.Series]) -> pd.Series:
 
 
 def validate_spatial_reference(
-    spatial_reference: Union[str, int, dict, SpatialReference],
+    spatial_reference: Union[str, int, dict, SpatialReference]
 ) -> SpatialReference:
     """Validate the variety of ways a spatial reference can be inputted. This does not validate the WKID."""
     # instantiate the output spatial reference variable

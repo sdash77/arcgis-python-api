@@ -994,7 +994,6 @@ class _AsyncResource(_GISResource):
 
 class Toolbox(_AsyncResource):
     "A collection of geoprocessing tools."
-
     _token = None
 
     def __init__(self, url, gis=None):

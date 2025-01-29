@@ -9,7 +9,6 @@ well-known ID of each reference.
 .. code-block:: python
 
     >>> from arcgis.geometry input SpatialReference
-
     >>> sr = SpatialReference(iterable={"wkid": 3857})
     >>> function_res = function_name(...
                                      spatial_ref = sr,
@@ -23,7 +22,6 @@ or
     >>> function_res = function(...
                                 in_sr = sr,
                                 ...)
-
 For further details and explanation of concepts, see
 `Using Spatial References <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_.
 Also see the `Working with Geometries Introduction <https://developers.arcgis.com/python/guide/part1-introduction-what-is-geometry>`_ guide in the *Editing*

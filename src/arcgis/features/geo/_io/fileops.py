@@ -7,7 +7,7 @@ import io
 import os
 import uuid
 import copy
-from pathlib import Path, PurePath
+from pathlib import Path
 import logging
 import datetime
 import ujson as _ujson
@@ -24,27 +24,25 @@ from arcgis.geometry import Geometry
 arcgis = LazyLoader("arcgis")
 from arcgis._impl._geometry_engine import SELECTED_ENGINE
 
-# Dictionary mapping engines to their respective lazy-loaded modules
-ENGINE_MODULES = {
-    "arcpy": {"module": LazyLoader("arcpy", strict=True), "flag": "USE_ARCPY"},
-    "shapely": {"module": LazyLoader("shapefile", strict=True), "flag": "USE_PYSHP"},
-    "gdal": {"module": LazyLoader("osgeo.ogr", strict=True), "flag": "USE_GDAL"},
-    "fiona": {"module": LazyLoader("fiona", strict=True), "flag": "USE_FIONA"},
-}
+USE_ARCPY = USE_FIONA = USE_GDAL = USE_PYSHP = False
 
-# Set only the selected engine's flag to True
-USE_ARCPY = USE_PYSHP = USE_GDAL = USE_FIONA = False  # Initialize all to False
+if SELECTED_ENGINE == "shapely":
+    import shapefile
 
-if SELECTED_ENGINE in ENGINE_MODULES:
-    globals()[
-        ENGINE_MODULES[SELECTED_ENGINE]["flag"]
-    ] = True  # Set only the selected flag
-    module = ENGINE_MODULES[SELECTED_ENGINE]["module"]  # Load the required module
-    globals()[SELECTED_ENGINE] = module  # Assign it for use
-
-# If using PyShp, extract version
-if USE_PYSHP:
     SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
+    USE_PYSHP = True
+elif SELECTED_ENGINE == "gdal":
+    from osgeo import ogr as _ogr
+
+    USE_GDAL = True
+elif SELECTED_ENGINE == "fiona":
+    import fiona
+
+    USE_FIONA = True
+elif SELECTED_ENGINE == "arcpy":
+    import arcpy
+
+    USE_ARCPY = True
 
 _logging = logging.getLogger(__name__)
 
