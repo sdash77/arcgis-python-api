@@ -427,9 +427,9 @@ class Briefing(object):
         ===================     ====================================================================
         **Parameter**           **Description**
         -------------------     --------------------------------------------------------------------
-        layout                  Required LayoutType or string, the layout type of the slide.
+        layout                  Required SlideLayout or string, the layout type of the slide.
         -------------------     --------------------------------------------------------------------
-        sublayout               Optional SubLayoutType or string, the sublayout type of the slide.
+        sublayout               Optional SlideSubLayout or string, the sublayout type of the slide.
                                 Only applicable when the layout is "double" or "titleless-double".
         -------------------     --------------------------------------------------------------------
         title                   Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
