@@ -4211,8 +4211,7 @@ class NotificationManager:
         )
         ws.connect(
             self.websocket_url,
-            ws.get_token(self.token_request_url),
-            ws.get_cookie(self.token_request_url),
+            self.token_request_url,
         )
         return ws
 

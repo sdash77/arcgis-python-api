@@ -58,7 +58,7 @@ class WebsocketConnection:
         except Exception as e:
             logger.error(f"Error when processing a incoming message: {e}")
 
-    def connect(self, url: str, token: str, cookie: str):
+    def connect(self, url: str, token_request_url: str):
         self._url = url
         context = self._get_session_adapter_ssl_context()
         self.sslopt = {"context": context} if context else None
@@ -67,6 +67,8 @@ class WebsocketConnection:
         # TODO Header does not work (bug with web adaptors), so use query parameter until that is fixed.
         # Sending all headers from requests also causes issues
         # self.headers["X-Esri-Authorization"] = f"Bearer {token}"
+        token = self.get_token(token_request_url)
+        cookie = self._get_cookie(token_request_url)
         headers = {"X-Esri-Authorization": f"Bearer {token}"}
         url_with_token = url + "?token=" + token
 
@@ -131,7 +133,7 @@ class WebsocketConnection:
         _, token = resp.request.headers["X-Esri-Authorization"].split()
         return token
 
-    def get_cookie(self, url: str) -> str:
+    def _get_cookie(self, url: str) -> str:
         """
         Returns semicolon-delimited cookies for a specified domain by url
 
