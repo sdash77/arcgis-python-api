@@ -4190,7 +4190,9 @@ class NotificationManager:
         if job_id in self.subscribed_jobs:
             self.unsubscribe([job_id])
             # If this list is empty, all job executions have terminated, can disconnect.
-            logger.debug(f"Jobs: {self.subscribed_jobs}. Manually connected: {self._manually_connected}")
+            logger.debug(
+                f"Jobs: {self.subscribed_jobs}. Manually connected: {self._manually_connected}"
+            )
             if not self.subscribed_jobs and not self._manually_connected:
                 self.disconnect()
 
@@ -4203,8 +4205,7 @@ class NotificationManager:
             message_dict = json.loads(message)
 
             # ensure we are connected via setting an event before subscribing
-            if "connected" in message_dict.keys() and message_dict['connected']:
-                print('Super Recieved connected message')
+            if "connected" in message_dict.keys() and message_dict["connected"]:
                 self._received_connected_msg.set()
 
             if "msgType" in message_dict.keys():
@@ -4219,18 +4220,13 @@ class NotificationManager:
             logger.error(f"Error with messages and callbacks: {e}")
 
     def _connect(self) -> WebsocketConnection:
-        ws = WebsocketConnection(
-            self._subscriber,
-            self._gis,
-            self._timeout
-        )
+        ws = WebsocketConnection(self._subscriber, self._gis, self._timeout)
         self._received_connected_msg = threading.Event()
         ws.connect(
             self.websocket_url,
             self.token_request_url,
         )
         self._received_connected_msg.wait(self._timeout)
-        print('Received connected message')
         return ws
 
     @contextmanager
@@ -4298,7 +4294,9 @@ class NotificationManager:
                 subscribe_obj = {
                     "msgType": "subscribe",
                     "jobIds": ids,
-                    "token": self.websocket_connection.get_token(self.token_request_url),
+                    "token": self.websocket_connection.get_token(
+                        self.token_request_url
+                    ),
                 }
 
                 self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
