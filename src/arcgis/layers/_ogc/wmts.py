@@ -108,7 +108,7 @@ class WMTSLayer(BaseOGC):
                         "<Capabilities xmlns" in resp.text
                         and "<?xml" not in resp.text.lower()
                     ):
-                        # add the xml tag to beggining of text and return
+                        # add the xml tag to beginning of text and return
                         resp_text = resp.text
                         xml_tag = (
                             f'<?xml version="{self._version}" encoding="UTF-8"?>\n'

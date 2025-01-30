@@ -297,8 +297,8 @@ def connect_origins_to_destinations(
                                               origins and destinations. This is the default value when using a
                                               travel mode.
                                             + StraightLine - The shape is a straight line connecting
-                                              the origin-destination pair. This option is best when you want to g
-                                              enerate spider diagrams or desire lines (for example, to show which
+                                              the origin-destination pair. This option is best when you want to
+                                              generate spider diagrams or desire lines (for example, to show which
                                               stores customers are visiting). This is the default value when not using
                                               a travel mode.
 
@@ -316,7 +316,7 @@ def connect_origins_to_destinations(
 
     .. code-block:: python
 
-        # USAGE EXAMPLE: To retrieve trvel modes and run connect_origins_to_destinations tool.
+        # USAGE EXAMPLE: To retrieve travel modes and run connect_origins_to_destinations tool.
 
         This example creates route between esri regional offices to esri headquarter.
 
@@ -447,7 +447,7 @@ def create_buffers(
     -------------------------    -----------------------------------------------------------------------------------------------------------------------
     distances                    Optional list of floats to buffer the input features. The distance(s) that will be buffered. You must supply values
                                  for either the ``distances`` or ``field`` parameter. You can enter a single distance value or multiple values.
-                                 The units of the distance values is suppied by the units parameter.
+                                 The units of the distance values is supplied by the units parameter.
     -------------------------    -----------------------------------------------------------------------------------------------------------------------
     field                        Optional string. A field on the ``input_layer`` containing a buffer distance. Buffers will be created using field values.
                                  Unlike the ``distances`` parameter, multiple distances are not supported on field input.
@@ -496,7 +496,7 @@ def create_buffers(
                                  Choice list: ['Full', 'Left', 'Right', 'Outside']
 
                                  +---------------+----------------------------------------------------------------------------------------------------+
-                                 | |Full|        | ``Full``-both sides of the line will be buffered. This is the default for line featuress.          |
+                                 | |Full|        | ``Full``-both sides of the line will be buffered. This is the default for line features.           |
                                  |               |                                                                                                    |
                                  +---------------+----------------------------------------------------------------------------------------------------+
                                  | |Left|        | ``Left``-only the right side of the line will be buffered.                                         |
@@ -1443,7 +1443,7 @@ def plan_routes(
                                     Choice list: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
     ----------------------------    --------------------------------------------------------------------------------------------------
     stop_service_time               Optional float. Indicates how much time, in minutes, is spent at each stop.
-                                    The units are minutes. All stops are assinged the same service duration from
+                                    The units are minutes. All stops are assigned the same service duration from
                                     this parameter unique values for individual stops cannot be specified with this service.
     ----------------------------    --------------------------------------------------------------------------------------------------
     max_route_time                  Optional float. The amount of time you specify here limits the maximum duration of each route.

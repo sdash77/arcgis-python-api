@@ -221,6 +221,7 @@ class ItemProperties:
     text: dict | str | None = None
     extension: str | None = None
     overwrite: bool | None = None
+    """Support for this parameter will be removed in 2.4.3+."""
     file_name: str | None = None
     classification: dict | None = None
     _dict_data: dict | None = field(init=False)
