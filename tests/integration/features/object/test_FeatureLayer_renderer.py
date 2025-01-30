@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 from arcgis._impl.common._isd import InsensitiveDict
 from utils.decorators import integration_test, profiles
@@ -14,6 +15,7 @@ class TestRendererProperty(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.item = cls.gis.content.search("*", "Feature Layer", outside_org=True)[0]
+        cls.uid = int(time.time())
 
     def test_get_renderer(self):
         lyr = self.item.layers[0]
@@ -36,14 +38,14 @@ class TestRendererProperty(unittest.TestCase):
         lyr = self.item.layers[0]
         wm = arcgismapping.Map()
         lyr.renderer.symbol.color = [0, 255, 0, 100]
-        wm.content.add(lyr)
+        wm.content.add(lyr, {"title": f"fl_renderer_{self.uid}", "tags": "ntgrtn-tst"})
         assert list(wm.content.layers[0].renderer.symbol.color) == [0, 255, 0, 100]
 
     def test_plot_webmap(self):
         lyr = self.item.layers[0]
         wm = arcgismapping.Map()
         lyr.renderer.symbol.color = [255, 0, 0, 100]
-        wm.content.add(lyr)
+        wm.content.add(lyr, {"title": f"fl_renderer_{self.uid}", "tags": "ntgrtn-tst"})
         assert list(
             wm.content.layers[0].layerDefinition.drawingInfo.renderer.symbol.color
         ) == [255, 0, 0, 100]

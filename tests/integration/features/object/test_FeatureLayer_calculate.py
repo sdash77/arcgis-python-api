@@ -1,24 +1,33 @@
+import os
 import time
 import unittest
 import concurrent.futures
 from arcgis.gis import ContentManager
+from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
-from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
+from utils.data_utils import publish_test_item, cleanup_published_items
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
+
 
 @profiles.enterprise_and_agol
 @integration_test
 class TestFeatureLayerCalculate(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        file_path = "./calculate_sd.zip"
+        cls.qalab_base_path = QALAB_ROOT_PATH
+        cls.qalab_cls_path = os.path.join(
+            cls.qalab_base_path,
+            "features_mod_FeatureLayer_calculate_cls",
+            "calculate_sd.zip",
+        )
+
         uid = int(time.time())
         layer_name = f"calculate_sd_{uid}"
         item_type = ItemTypeEnum.FILE_GEODATABASE
         cls.published_item = publish_test_item(
             gis=cls.gis,
             layer_name=layer_name,
-            source_data_path=file_path,
+            source_data_path=cls.qalab_cls_path,
             item_type=item_type,
             prep_for_editing=False,
         )
