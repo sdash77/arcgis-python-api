@@ -604,7 +604,12 @@ class FasterRCNN(ModelExtension):
     box_positive_fraction           Optional float. Proportion of positive proposals in a
                                     mini-batch during training of the classification head.
                                     Default: 0.25
-    =============================   =============================================
+    -----------------------------   -------------------------------------------
+    dofa_wavelengths                Required list, if backbone in ['dofa_base', 'dofa_large'],
+                                    Optional otherwise.
+                                    list of central wavelengths corresponding to
+                                    each data band (in micrometers).
+    =============================   ===========================================
 
     :return:
         :class:`~arcgis.learn.FasterRCNN` Object
@@ -689,6 +694,7 @@ class FasterRCNN(ModelExtension):
 
     @staticmethod
     def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
         dofa_backbone = list(dofa_config.keys())
         return dofa_backbone
 

@@ -296,6 +296,11 @@ class SingleShotDetector(ArcGISModel):
                             for this model, which is 'pytorch' by default.
 
                             valid options are 'pytorch', 'tensorflow'
+    ---------------------   -------------------------------------------
+    dofa_wavelengths        Required list, if backbone in ['dofa_base', 'dofa_large'],
+                            Optional otherwise.
+                            list of central wavelengths corresponding to
+                            each data band (in micrometers).
     =====================   ===========================================
 
     :return:
@@ -560,6 +565,7 @@ class SingleShotDetector(ArcGISModel):
 
     @staticmethod
     def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
         dofa_backbone = list(dofa_config.keys())
         return dofa_backbone
 

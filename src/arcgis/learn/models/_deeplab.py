@@ -277,6 +277,11 @@ class DeepLab(ArcGISModel):
     keep_dilation           Optional boolean. When PointRend architecture is used,
                             keep_dilation=True can potentially improves accuracy
                             at the cost of memory consumption. Default: False
+    ---------------------   -------------------------------------------
+    dofa_wavelengths        Required list, if backbone in ['dofa_base', 'dofa_large'],
+                            Optional otherwise.
+                            list of central wavelengths corresponding to
+                            each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.DeepLab` Object
@@ -446,6 +451,7 @@ class DeepLab(ArcGISModel):
 
     @staticmethod
     def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
         from ._dofa_utils import dofa_backbones_downstream
 
         return dofa_backbones_downstream

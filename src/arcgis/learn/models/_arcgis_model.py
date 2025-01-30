@@ -604,6 +604,11 @@ def get_backbone_func(backbone, data, **kwargs):
                     'DOFA models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value for the "dofa_wavelenghts" keyword argument.',
                 )
 
+            if len(wavelengths) != len(data._extract_bands):
+                raise Exception(
+                    'The number of wavelengths provided in the "dofa_wavelengths" keyword argument does not match the number of bands in the input data.\nPlease provide a wavelength for each band in the data.',
+                )
+
             backbone = partial(
                 dofa_backbone,
                 backbone_name=backbone,
