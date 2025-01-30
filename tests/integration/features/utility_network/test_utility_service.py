@@ -3,7 +3,7 @@ from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 from utils.decorators import integration_test, profiles
 
-utility_network_url = "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric26_SQLServer/UtilityNetworkServer"
+utility_network_url = "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric31_SQLServer/UtilityNetworkServer"
 
 
 # Server gets updated at 2:30PM PST Everyday. Do not test around then.
