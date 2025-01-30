@@ -4,7 +4,8 @@ import unittest
 from arcgis.features import FeatureLayer
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
-from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
+from utils.data_utils import publish_test_item, cleanup_published_items
+from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 
 # enable_verbose_logging()
 FILE_PATH = QALAB_ROOT_PATH + r"\ContingentValues\CV_Gas_forTest.zip"
@@ -19,7 +20,7 @@ class TestContingentValues(unittest.TestCase):
         """create and publish test item"""
         uid = int(time.time())
         layer_name = f"CV_Gas_1_issue_{uid}"
-        item_type = ItemType.FGDB.value
+        item_type = ItemTypeEnum.FILE_GEODATABASE
         cls.published_item = publish_test_item(
             gis=cls.gis,
             layer_name=layer_name,

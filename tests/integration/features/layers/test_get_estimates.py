@@ -2,9 +2,8 @@ import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
 import unittest
-from utils.decorators import integration_test
-
-PROFILES = ["your_online_profile", "your_enterprise_profile"]
+from utils.decorators import integration_test, profiles
+from utils.data_utils import cleanup_published_items
 DATA = [
     {
         "ADMIN_NAME": "Mato Grosso",
@@ -114,6 +113,7 @@ DATA = [
 ]
 
 
+@profiles.enterprise_and_agol
 @integration_test
 class TestFeatureLayerGetEstimates(unittest.TestCase):
     """tests the get estimates property on HFL"""
@@ -123,21 +123,18 @@ class TestFeatureLayerGetEstimates(unittest.TestCase):
         this will depend on the version of enterprise you are using. Estimates is supported
         starting at 10.9.1"""
 
-        for profile in PROFILES:
-            print(profile)
-            item = None
-            try:
-                gis = GIS(profile=profile, verify_cert=False)
-                sdf = pd.DataFrame(data=DATA)
-                sdf.spatial.set_geometry("SHAPE")
-                item = gis.content.import_data(sdf)
-                # if unsupported, estimates returns an empty dict
-                assert item.layers[0].estimates == {} or item.layers[0].estimates
-            except Exception as e:
-                raise e
-            finally:
-                if item:
-                    item.delete()
+        item = None
+        try:
+            sdf = pd.DataFrame(data=DATA)
+            sdf.spatial.set_geometry("SHAPE")
+            item = self.gis.content.import_data(sdf, {"tags": "ntgrtn-tst"})
+            # if unsupported, estimates returns an empty dict
+            assert item.layers[0].estimates == {} or item.layers[0].estimates
+        except Exception as e:
+            raise e
+        finally:
+            if item:
+                item.delete(permanent=True)
 
     def test_HFL_get_estimates_supported(self):
         """tests the HFL get estimates endpoints"""

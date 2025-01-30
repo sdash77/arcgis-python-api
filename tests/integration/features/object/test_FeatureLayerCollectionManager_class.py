@@ -5,7 +5,8 @@ from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
 from arcgis.gis import Item
 from arcgis.features.managers import FeatureLayerCollectionManager
-from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
+from utils.data_utils import publish_test_item, cleanup_published_items
+from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 
 
 @profiles.enterprise_and_agol
@@ -52,7 +53,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
                 gis=self.gis,
                 layer_name=layer_name,
                 source_data_path=data_path,
-                item_type=ItemType.CSV.value,
+                item_type=ItemTypeEnum.CSV,
                 prep_for_editing=False,
             )
             self.assertIsInstance(published_item, Item)
@@ -92,7 +93,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
                 gis=self.gis,
                 layer_name=layer_name,
                 source_data_path=data_path,
-                item_type=ItemType.CSV.value,
+                item_type=ItemTypeEnum.CSV,
                 prep_for_editing=False,
             )
             self.assertIsInstance(published_item, Item)
@@ -155,7 +156,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
                 gis=self.gis,
                 layer_name=layer_name,
                 source_data_path=data_path,
-                item_type=ItemType.EXCEL.value,
+                item_type=ItemTypeEnum.MICROSOFT_EXCEL,
                 prep_for_editing=False,
             )
             self.assertIsInstance(published_item, Item)
@@ -218,7 +219,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
                 gis=self.gis,
                 layer_name=layer_name,
                 source_data_path=data_path,
-                item_type=ItemType.FGDB.value,
+                item_type=ItemTypeEnum.FILE_GEODATABASE,
                 prep_for_editing=False,
             )
             self.assertIsInstance(published_item, Item)
@@ -281,7 +282,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
                 gis=self.gis,
                 layer_name=layer_name,
                 source_data_path=data_path,
-                item_type=ItemType.SHP.value,
+                item_type=ItemTypeEnum.SHAPEFILE,
                 prep_for_editing=False,
             )
             self.assertIsInstance(published_item, Item)
@@ -346,7 +347,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
                 gis=self.gis,
                 layer_name=layer_name,
                 source_data_path=data_path,
-                item_type=ItemType.SD.value,
+                item_type=ItemTypeEnum.SERVICE_DEFINITION,
                 prep_for_editing=False,
             )
             self.assertIsInstance(published_item, Item)

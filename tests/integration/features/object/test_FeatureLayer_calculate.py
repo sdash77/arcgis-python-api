@@ -4,7 +4,7 @@ import concurrent.futures
 from arcgis.gis import ContentManager
 from utils.decorators import integration_test, profiles
 from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
-
+from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 
 @profiles.enterprise_and_agol
 @integration_test
@@ -14,7 +14,7 @@ class TestFeatureLayerCalculate(unittest.TestCase):
         file_path = "./calculate_sd.zip"
         uid = int(time.time())
         layer_name = f"calculate_sd_{uid}"
-        item_type = ItemType.FGDB.value
+        item_type = ItemTypeEnum.FILE_GEODATABASE
         cls.published_item = publish_test_item(
             gis=cls.gis,
             layer_name=layer_name,

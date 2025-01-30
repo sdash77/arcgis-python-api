@@ -1,31 +1,21 @@
 from enum import Enum
-
+from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 from arcgis import GIS, features
 from arcgis.gis import ItemProperties, Item
-
-
-# Enum of potential ItemTypes
-class ItemType(Enum):
-    CSV = "CSV"
-    EXCEL = "Microsoft Excel"
-    FGDB = "File Geodatabase"
-    SD = "Service Definition"
-    SHP = "Shapefile"
-    SQLITE = "SQLite Geodatabase"
 
 
 def publish_test_item(
     gis: GIS,
     layer_name: str,
     source_data_path: str,
-    item_type: str,
+    item_type: ItemTypeEnum,
     prep_for_editing=True,
 ) -> Item:
     source_item = None
     try:
         ip = ItemProperties(
             title=layer_name,
-            item_type=item_type,
+            item_type=item_type.value,
             tags=["ntgrtn-tst"],
             snippet="Item for Feature Layer integration testing",
         )

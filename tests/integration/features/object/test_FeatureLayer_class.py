@@ -2,10 +2,12 @@ import os
 import time
 import unittest
 from arcgis.features import FeatureLayer, FeatureLayerCollection, FeatureSet, Feature
+from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
+
 from pandas import DataFrame
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
-from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
+from utils.data_utils import publish_test_item, cleanup_published_items
 
 
 @profiles.enterprise_and_agol
@@ -33,7 +35,7 @@ class TestFeatureLayerClass(unittest.TestCase):
         layer_name = f"dino_FeatureLayer_basic_{uid}"
         csv_path = os.path.join(cls.qalab_cls_path, "edit_features_points.csv")
         cls.feature_layer_item = publish_test_item(
-            cls.gis, layer_name, csv_path, ItemType.CSV.value
+            cls.gis, layer_name, csv_path, ItemTypeEnum.CSV
         )
         assert cls.feature_layer_item, "Feature layer item not found"
 
@@ -43,7 +45,7 @@ class TestFeatureLayerClass(unittest.TestCase):
             cls.qalab_cls_path, "set1_fortune10_delfeatures.gdb.zip"
         )
         cls.feature_layer_del_features = publish_test_item(
-            cls.gis, layer_name_delfeatures, fgdb_path, ItemType.FGDB.value
+            cls.gis, layer_name_delfeatures, fgdb_path, ItemTypeEnum.FILE_GEODATABASE
         )
         assert (
             cls.feature_layer_del_features
