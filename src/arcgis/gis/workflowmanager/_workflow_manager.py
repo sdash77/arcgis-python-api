@@ -1037,10 +1037,8 @@ class WorkflowManager:
 
     @property
     def _notification_manager(self):
-        # TODO We are never disconnecting after the connection is made
         if not self._nm:
             self._nm = NotificationManager(self._item, self)
-            self._nm.connect()
 
         return self._nm
 
@@ -4177,6 +4175,8 @@ class NotificationManager:
         self._connected = False
         self._manually_connected = False
         self._server_url = self._workflow_manager._server_url
+        self._received_connected_msg = None
+        self._timeout = 30
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self._server_url.replace("http://", "ws://").replace(
@@ -4201,6 +4201,12 @@ class NotificationManager:
     def _subscriber(self, message):
         try:
             message_dict = json.loads(message)
+
+            # ensure we are connected via setting an event before subscribing
+            if "connected" in message_dict.keys() and message_dict['connected']:
+                print('Super Recieved connected message')
+                self._received_connected_msg.set()
+
             if "msgType" in message_dict.keys():
                 msg = Notification(message_dict)
 
@@ -4210,17 +4216,21 @@ class NotificationManager:
                         callback = self.subscribed_jobs[job_id]
                         callback(msg, self)
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error with messages and callbacks: {e}")
 
     def _connect(self) -> WebsocketConnection:
         ws = WebsocketConnection(
             self._subscriber,
             self._gis,
+            self._timeout
         )
+        self._received_connected_msg = threading.Event()
         ws.connect(
             self.websocket_url,
             self.token_request_url,
         )
+        self._received_connected_msg.wait(self._timeout)
+        print('Received connected message')
         return ws
 
     @contextmanager
@@ -4284,14 +4294,14 @@ class NotificationManager:
                 logger.debug(
                     f"Creating temporary websocket connection to {self.websocket_url}"
                 )
-                with self._connect() as ws:
-                    subscribe_obj = {
-                        "msgType": "subscribe",
-                        "jobIds": ids,
-                        "token": ws.get_token(self.token_request_url),
-                    }
+                self.websocket_connection = self._connect()
+                subscribe_obj = {
+                    "msgType": "subscribe",
+                    "jobIds": ids,
+                    "token": self.websocket_connection.get_token(self.token_request_url),
+                }
 
-                    ws.send_and_wait(json.dumps(subscribe_obj))
+                self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
             else:
                 ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
                 subscribe_obj = {
