@@ -117,7 +117,8 @@ class WebsocketConnection:
         if not self.ws:
             return
         self.ws.close()
-        self.thread.join(self.timeout)
+        if not self.thread is threading.current_thread():
+            self.thread.join(self.timeout)
 
     def get_token(self, token_request_url: str) -> str:
         if self._gis._con.token:
