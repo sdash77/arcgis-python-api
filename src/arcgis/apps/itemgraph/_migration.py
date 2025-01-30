@@ -136,6 +136,8 @@ def _export_content(
     for node in node_list:
         # if it's a hosted FS with no data file, must export data
         item = node.item
+        if item is None:
+            continue
         # if item.type in JSON_BASED_WITH_DATA_TYPES and node.requires("id") == []:
         #     fc_item = item.export(item.title, service_format)
         #     graph.add_relationship(item.id, fc_item.id)
