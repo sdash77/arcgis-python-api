@@ -3279,25 +3279,32 @@ class Job(object):
         return return_obj["jobComments"]
 
     def set_job_version(
-        self, data_source_name, version_guid=None, version_name=None, administered=False
+        self,
+        data_source_name=None,
+        version_guid=None,
+        version_name=None,
+        administered=False,
+        data_reference_id=None,
     ):
         """
         Sets the version of the job.
 
-        ================    ===================================================================
-        **Argument**        **Description**
-        ----------------    -------------------------------------------------------------------
-        data_source_name    Required. The name of the data source for the job version to be set.
-        ----------------    -------------------------------------------------------------------
-        version_guid        Optional. The guid of the version to be set. If the value is null or not defined,
-                            the versionName must be defined. versionGuid is preferred to be defined for better
-                            performance.
-        ----------------    -------------------------------------------------------------------
-        version_name        Optional. The name of the version to be set. If the value is null or not defined,
-                            the versionGuid must be defined.
-        ----------------    -------------------------------------------------------------------
-        administered        Optional. If true, the version can be claimed. If not defined, the default value is false.
-        ================    ===================================================================
+        =================    ===================================================================
+        **Argument**         **Description**
+        -----------------    -------------------------------------------------------------------
+        data_source_name     The name of the data source for the job version to be set. Required if the job diagram is using the data sources format.
+        -----------------    -------------------------------------------------------------------
+        version_guid         Optional. The guid of the version to be set. If the value is null or not defined,
+                             the versionName must be defined. versionGuid is preferred to be defined for better
+                             performance.
+        -----------------    -------------------------------------------------------------------
+        version_name         Optional. The name of the version to be set. If the value is null or not defined,
+                             the versionGuid must be defined.
+        -----------------    -------------------------------------------------------------------
+        administered         Optional. If true, the version can be claimed. If not defined, the default value is false.
+        -----------------    -------------------------------------------------------------------
+        data_reference_id    The id of the data reference for the job version to be set. Required if the job diagram is using the data references format.
+        =================    ===================================================================
 
         :return:
             success object
@@ -3307,9 +3314,12 @@ class Job(object):
         url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=self.job_id)
 
         params = {
-            "dataSourceName": data_source_name,
             "workflowAdministered": administered,
         }
+        if data_source_name:
+            params["dataSourceName"] = data_source_name
+        if data_reference_id:
+            params["dataReferenceId"] = data_reference_id
         if version_guid is not None:
             params["versionGuid"] = version_guid
         if version_name is not None:
