@@ -320,28 +320,30 @@ def _parse_webmap(item):
 def _parse_dashboard(item):
     # credit to Dan Yaw for this one
     deps = []
+    structure = item.get_data()
+    widgets1 = structure.get("widgets")
+    widgets2 = structure.get("desktopView").get("widgets")
 
-    widgets = item.get_data().get("widgets")
+    for widgets in [widgets1, widgets2]:
+        if widgets is not None:
+            for widget in widgets:
+                if widget.get("type") == "mapWidget":
+                    deps.append(widget.get("itemId"))
 
-    if widgets is not None:
-        for widget in widgets:
-            if widget.get("type") == "mapWidget":
-                deps.append(widget.get("itemId"))
+                else:
+                    try:
+                        for dataset in widget.get("datasets"):
+                            if dataset.get("type") == "serviceDataset":
+                                data_source = dataset.get("dataSource")
 
-            else:
-                try:
-                    for dataset in widget.get("datasets"):
-                        if dataset.get("type") == "serviceDataset":
-                            data_source = dataset.get("dataSource")
+                                if data_source.get("type") == "itemDataSource":
+                                    deps.append(data_source.get("itemId"))
 
-                            if data_source.get("type") == "itemDataSource":
-                                deps.append(data_source.get("itemId"))
-
-                            elif data_source.get("type") == "arcadeDataSource":
-                                script = data_source.get("script")
-                                deps.extend(_find_regex(script, _REGEX_GUID, []))
-                except:
-                    pass
+                                elif data_source.get("type") == "arcadeDataSource":
+                                    script = data_source.get("script")
+                                    deps.extend(_find_regex(script, _REGEX_GUID, []))
+                    except:
+                        pass
 
     return deps
 
