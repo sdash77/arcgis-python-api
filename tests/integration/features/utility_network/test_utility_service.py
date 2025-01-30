@@ -1,11 +1,10 @@
 import unittest
-from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 from utils.decorators import integration_test, profiles
 
-utility_network_url = "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric31_SQLServer/UtilityNetworkServer"
-   
+utility_network_url = "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric26_SQLServer/UtilityNetworkServer"
+
 
 # Server gets updated at 2:30PM PST Everyday. Do not test around then.
 @profiles.utility_network
@@ -14,9 +13,8 @@ class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 
     def setUp(self):
-        self.utility_netowrk_manager = UtilityNetworkManager(
-            utility_network_url,
-            gis=self.gis,
+        self.utility_network_manager = UtilityNetworkManager(
+            utility_network_url, gis=self.gis
         )
         assert self.utility_network_manager
 
@@ -63,8 +61,12 @@ class TestUtilityNetworkManager(unittest.TestCase):
             ],
             locations=True,
         )
-        assert locations
-        assert locations["success"] is True
+        self.assertIsNotNone(locations, "Locations object is None")
+        self.assertTrue(locations["success"], "Locations result not successful")
+        self.assertTrue(len(locations) >= 1, "Unexpected length of Locations result")
+        self.assertIsNotNone(
+            locations["objects"][0]["globalId"], "Result global ID is emtpy"
+        )
 
     def test_trace_configurations(self):
         """Test getting trace configurations and the methods associated with them."""
