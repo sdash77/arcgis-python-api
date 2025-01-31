@@ -318,7 +318,7 @@ def _parse_webmap(item):
 
 
 def _parse_dashboard(item):
-    # credit to Dan Yaw for this one
+    # shoutout Dan Yaw for first iteration of this function
     deps = []
     structure = item.get_data()
     widgets1 = structure.get("widgets", [])
@@ -328,7 +328,6 @@ def _parse_dashboard(item):
     for widget in widgets:
         if widget.get("type") == "mapWidget":
             deps.append(widget.get("itemId"))
-            continue
         try:
             for dataset in widget.get("datasets", []):
                 if dataset.get("type") == "serviceDataset":
