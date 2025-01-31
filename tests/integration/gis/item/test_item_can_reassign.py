@@ -1,7 +1,7 @@
 import unittest
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
-from config import QALAB_ROOT_PATH
+from config import get_web_resource
 
 
 enable_verbose_logging()
@@ -12,7 +12,7 @@ enable_verbose_logging()
 class TestCanReassignItems(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fp = QALAB_ROOT_PATH + r"\gis_mod_Item_cls\issue_10434.zip"
+        fp = get_web_resource("major_cities_shp.zip", unique_copy=True)
         cls.folder = cls.gis.content.folders._get_or_create("integration_test_gis_item_reassign")
         cls.item = cls.folder.add(
             item_properties={
