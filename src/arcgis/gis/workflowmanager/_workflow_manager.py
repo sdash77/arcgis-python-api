@@ -1657,7 +1657,9 @@ class WorkflowManager:
 
         """
         try:
-            return self._gis._con.get(f"{self._url}/diagrams/{diagram_id}/{version_id}/upgraded")
+            return self._gis._con.get(
+                f"{self._url}/diagrams/{diagram_id}/{version_id}/upgraded"
+            )
         except:
             self._handle_error(sys.exc_info())
 
