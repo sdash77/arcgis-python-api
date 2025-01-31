@@ -526,10 +526,14 @@ class ImportPackage:
                     remap_dict[orig_url] = new_url
 
             structure_file_path = os.path.join(data_folder, "structure.json")
-            with open(structure_file_path, "r") as structure_file:
-                structure_data = json.load(structure_file)
-                structure_text = json.dumps(structure_data, ensure_ascii=False)
-                props["text"] = _remap_json(structure_text, remap_dict)
+            if os.path.exists(structure_file_path):
+                with open(structure_file_path, "r") as structure_file:
+                    structure_data = json.load(structure_file)
+                    structure_text = json.dumps(structure_data, ensure_ascii=False)
+                    props["text"] = _remap_json(structure_text, remap_dict)
+            else:
+                # unpublished storymap draft case
+                props["text"] = None
 
             job = folder.add(
                 **{
