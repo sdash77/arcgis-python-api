@@ -217,7 +217,6 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
 
     def __init__(
         self,
-        session,
         *,
         username: str | None = None,
         password: str | None = None,

@@ -252,7 +252,7 @@ class WorkflowManagerAdmin:
         includes the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and
         queries, templates, and user settings of the indicated item. This file can be used with the import endpoint
         to update other item configurations. Configurations from Workflow items with a server that is on a more
-        recent version will not import due to incompatability.
+        recent version will not import due to incompatibility.
 
         =====================  =========================================================
         **Argument**           **Description**
@@ -298,7 +298,7 @@ class WorkflowManagerAdmin:
     def import_item(self, item: Item, config_file, passphrase: Optional[str] = None):
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
-        items with a server that is on a more recent version will not import due to incompatability. This will
+        items with a server that is on a more recent version will not import due to incompatibility. This will
         completely replace the version, job templates, diagrams, roles, role-group associations, lookup tables,
         charts and queries, templates, and user settings of the indicated item, and it is recommended to back
         up configurations before importing. Any encrypted settings included will only have their key imported
@@ -3538,25 +3538,32 @@ class Job(object):
         return return_obj["jobComments"]
 
     def set_job_version(
-        self, data_source_name, version_guid=None, version_name=None, administered=False
+        self,
+        data_source_name=None,
+        version_guid=None,
+        version_name=None,
+        administered=False,
+        data_reference_id=None,
     ):
         """
         Sets the version of the job.
 
-        ================    ===================================================================
-        **Argument**        **Description**
-        ----------------    -------------------------------------------------------------------
-        data_source_name    Required. The name of the data source for the job version to be set.
-        ----------------    -------------------------------------------------------------------
-        version_guid        Optional. The guid of the version to be set. If the value is null or not defined,
-                            the versionName must be defined. versionGuid is preferred to be defined for better
-                            performance.
-        ----------------    -------------------------------------------------------------------
-        version_name        Optional. The name of the version to be set. If the value is null or not defined,
-                            the versionGuid must be defined.
-        ----------------    -------------------------------------------------------------------
-        administered        Optional. If true, the version can be claimed. If not defined, the default value is false.
-        ================    ===================================================================
+        =================    ===================================================================
+        **Argument**         **Description**
+        -----------------    -------------------------------------------------------------------
+        data_source_name     The name of the data source for the job version to be set. Required if the job diagram is using the data sources format.
+        -----------------    -------------------------------------------------------------------
+        version_guid         Optional. The guid of the version to be set. If the value is null or not defined,
+                             the versionName must be defined. versionGuid is preferred to be defined for better
+                             performance.
+        -----------------    -------------------------------------------------------------------
+        version_name         Optional. The name of the version to be set. If the value is null or not defined,
+                             the versionGuid must be defined.
+        -----------------    -------------------------------------------------------------------
+        administered         Optional. If true, the version can be claimed. If not defined, the default value is false.
+        -----------------    -------------------------------------------------------------------
+        data_reference_id    The id of the data reference for the job version to be set. Required if the job diagram is using the data references format.
+        =================    ===================================================================
 
         :return:
             success object
@@ -3566,9 +3573,12 @@ class Job(object):
         url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=self.job_id)
 
         params = {
-            "dataSourceName": data_source_name,
             "workflowAdministered": administered,
         }
+        if data_source_name:
+            params["dataSourceName"] = data_source_name
+        if data_reference_id:
+            params["dataReferenceId"] = data_reference_id
         if version_guid is not None:
             params["versionGuid"] = version_guid
         if version_name is not None:
@@ -3965,7 +3975,7 @@ class JobDiagram(object):
     can be created by calling the :attr:`~arcgis.gis.workflowmanager.WorkflowManager.diagrams` property
     of the :class:`~arcgis.gis.workflowmanager.WorkflowManager` to retrieve a list of diagrams. Then
     the :meth:`~arcgis.gis.workflowmanager.WorkflowManager.diagram` method can be used with the appropriate
-    ID of the digram to retrieve the :class:`job diagram <arcgis.gis.workflowmanager.JobDiagram>`.
+    ID of the diagram to retrieve the :class:`job diagram <arcgis.gis.workflowmanager.JobDiagram>`.
 
     """
 

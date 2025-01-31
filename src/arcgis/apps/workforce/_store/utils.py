@@ -2,7 +2,7 @@
 """
 
 from arcgis.features import FeatureSet
-from ... import workforce
+from arcgis.apps import workforce
 
 
 def _should_use_async_apply_edits(feature_layer):
@@ -59,7 +59,12 @@ def update_features(feature_layer, features):
             future=_should_use_async_apply_edits(feature_layer),
         )
         if _should_use_async_apply_edits(feature_layer):
-            update_results = response.result()[0]["updateResults"]
+            if feature_layer._gis._is_agol:
+                # online
+                update_results = response.result()[0]["updateResults"]
+            else:
+                # enterprise
+                update_results = response.result()["updateResults"]
         else:
             update_results = response["updateResults"]
         errors = [result["error"] for result in update_results if not result["success"]]
@@ -83,7 +88,12 @@ def remove_features(feature_layer, features):
             deletes=object_ids, future=_should_use_async_apply_edits(feature_layer)
         )
         if _should_use_async_apply_edits(feature_layer):
-            delete_results = response.result()[0]["deleteResults"]
+            if feature_layer._gis._is_agol:
+                # online
+                delete_results = response.result()[0]["deleteResults"]
+            else:
+                # enterprise
+                delete_results = response.result()["deleteResults"]
         else:
             delete_results = response["deleteResults"]
         errors = [result["error"] for result in delete_results if not result["success"]]
