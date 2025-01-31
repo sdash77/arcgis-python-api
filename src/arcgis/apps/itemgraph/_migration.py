@@ -319,11 +319,6 @@ class ImportPackage:
         # read the data folder
         data_folder = os.path.join(item_folder, "data")
         res_folder_path = os.path.join(item_folder, "resources")
-        if item_properties["type"] in JSON_BASED_TYPES:
-            path_name = "structure.json"
-            data_path = os.path.join(data_folder, path_name)
-        else:
-            data_path = None
 
         # import the item
         if isinstance(folder, str):
