@@ -229,6 +229,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     elif item.type in JSON_BASED_WITH_DATA_TYPES:
         # views are annoying
         if "View Service" in item.typeKeywords:
+            # add check for proxy services like below (hosted elsewhere)
             view_props = dict(item.layers[0].container.manager.properties)
             view_props_file_path = os.path.join(data_folder, "view_props.json")
             with open(view_props_file_path, "w") as view_props_file:
@@ -244,10 +245,19 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
                     break
             # if no data file associated, export data to specified format
             if needs_export:
-                fc_item = item.export(item.title, service_format)
-                download_path = fc_item.download(data_folder)
-                fc_item.delete()
-                item_dict["data_item_type"] = service_format
+                try:
+                    fc_item = item.export(item.title, service_format)
+                    download_path = fc_item.download(data_folder)
+                    fc_item.delete()
+                    item_dict["data_item_type"] = service_format
+                except:
+                    # this means that this references data hosted elsewhere
+                    # will have to recreate as new flc referencing og services
+                    # flc_props = dict(item.layers[0].container.properties)
+                    # flc_props_file_path = os.path.join(data_folder, "flc_props.json")
+                    # with open(flc_props_file_path, "w") as flc_props_file:
+                    #     json.dump(flc_props, flc_props_file, indent=4, ensure_ascii=False)
+                    pass
 
         # fc_zip = zipfile.ZipFile(download_path)
     else:
@@ -446,8 +456,8 @@ class ImportPackage:
                         service_item = self.gis.content.get(service_id)
                         break
 
-            if service_item is None:
-                # check if data file exists
+            if service_item is None and len(os.listdir(data_folder)) > 0:
+                # this is case where data was newly exported into package
                 for file in os.listdir(data_folder):
                     if file.endswith(".zip"):
                         fp = os.path.join(data_folder, file)
@@ -459,9 +469,7 @@ class ImportPackage:
                         service_item = _add_data_item(fp, dt)
                         break
 
-            # publish the service
-            if service_item:
-                # pub_params = {"name": item_properties["title"]}
+                # publish the service
                 pub_params = props
                 try:
                     new_item = service_item.publish(
@@ -476,8 +484,22 @@ class ImportPackage:
                     new_item = service_item.publish(
                         publish_parameters=pub_params, item_id=item_id
                     )
+            else:
+                # this is case of referencing service from outside server
+                # just have to republish assuming service is public
+                service_url = props.pop("url")
+                job = folder.add(
+                    **{
+                        "item_properties": props,
+                        "item_id": new_item_id,
+                        "url": service_url,
+                        "stream": False,
+                    }
+                )
+                new_item = job.result()
 
-            self._service_mapping[item_id] = (item_properties["url"], new_item.url)
+            if new_item:
+                self._service_mapping[item_id] = (item_properties["url"], new_item.url)
 
         elif item_properties["type"] in FILE_BASED_TYPES:
             for file in os.listdir(data_folder):
