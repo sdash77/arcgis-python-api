@@ -9698,7 +9698,33 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if future:
             return job
         return job.result()
+    # --------------------------------------------------------------------
+    def create_mission(
+        self,
+        project_item,
+        mission_definition,
+        input_rasters,
+        image_collection,
+        raster_type=None,
+        context=None,
+        future=False,
+        **kwargs,
+        ):
+        task = "ReconstructSurface"
+        gis = self._gis
 
+        job = self._tbx.create_mission(
+            project_item,
+            mission_definition,
+            input_rasters,
+            image_collection,
+            raster_type=raster_type,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        return job
 
 ###########################################################################
 class _RasterAnalysisTools(BaseAnalytics):

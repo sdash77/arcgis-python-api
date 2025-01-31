@@ -2478,6 +2478,55 @@ class RMProject:
 
         except:
             raise RuntimeError("Failed to add the mission to the project")
+        
+    def create_mission(
+        project,
+        image_list,
+        mission_name=None,
+        image_collection=None,
+        raster_type_name=None,
+        raster_type_params=None,
+        out_sr=None,
+        context=None,
+        *,
+        gis=None,
+        future=False,
+        **kwargs,
+    ):
+        gis = arcgis.env.active_gis if gis is None else gis
+
+        if image_collection is None:
+            image_collection = "image_collection" + "_" + _id_generator()
+
+        if raster_type_name is None:
+            raster_type_name = "UAV/UAS"
+
+        _ra = gis._tools.rasteranalysis
+        input_rasters, image_collection, raster_type, context, _ = (
+            _ra._sanitize_inputs(
+                gis=gis,
+                image_collection=image_collection,
+                input_rasters=image_list,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                otu_sr=out_sr,
+                context=context,
+                **kwargs,
+            )
+        )
+
+        mission_def = {}
+
+        return gis._tools.realitymapping.create_mission(
+            project_item=project,
+            mission_definition=mission_def,
+            input_rasters=input_rasters,
+            image_collection=image_collection,
+            raster_type=raster_type,
+            context=context,
+            future=True,
+            **kwargs,
+        )
 
     def get_mission(self, name):
         """
