@@ -11,6 +11,7 @@ from arcgis.gis import GIS
 from tests.integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from utils.decorators import integration_test
+import uuid
 
 
 ###########################################################################
@@ -100,7 +101,7 @@ class TestWorkflowManager(unittest.TestCase):
         )
 
     def create_diagram_with_cdr(self):
-        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+        uniqueness = uuid.uuid4().hex
         return self.connection.workflow_manager.create_diagram(
             name="Test New Diagram123 " + uniqueness,
             display_grid=True,

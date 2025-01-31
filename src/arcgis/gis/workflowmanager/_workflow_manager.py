@@ -1657,11 +1657,7 @@ class WorkflowManager:
 
         """
         try:
-            return self._gis._con.get(
-                "{base}/diagrams/{diagram}/{diagramVersion}/upgraded".format(
-                    base=self._url, diagram=diagram_id, diagramVersion=version_id
-                )
-            )
+            return self._gis._con.get(f"{self._url}/diagrams/{diagram_id}/{version_id}/upgraded")
         except:
             self._handle_error(sys.exc_info())
 
@@ -1839,7 +1835,7 @@ class WorkflowManager:
         annotations: Optional[list] = [],
         data_sources: Optional[list] = [],
         diagram_id: Optional[str] = None,
-        centralized_data_references: Optional[list] = [],
+        centralized_data_references: list = [],
         use_centralized_data_references: bool = False,
     ):
         """
@@ -1878,7 +1874,7 @@ class WorkflowManager:
         :return:
             :class:`Workflow Manager Diagram <arcgis.gis.workflowmanager.JobDiagram>` ID
 
-        CentralizedDataReference Object
+        CentralizedDataReference Dictionary
         ===============================
 
         ===============              ====================================================================
@@ -2096,10 +2092,7 @@ class WorkflowManager:
                     else False
                 ),
             }
-            if (
-                "centralized_data_references" in body
-                and body["centralized_data_references"]
-            ):
+            if body.get("centralized_data_references"):
                 diagram_obj["centralizedDataReferences"] = body[
                     "centralized_data_references"
                 ]
