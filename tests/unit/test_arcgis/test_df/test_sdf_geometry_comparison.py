@@ -28,9 +28,12 @@ class TestSRCompareOnSeDF(unittest.TestCase):
         sdf3 = sdf1.spatial.join(sdf2)
         assert sdf3.columns.tolist() == [
             "OID_left",
+            "global_var_left",
+            "test",
             "SHAPE",
             "index_right",
             "OID_right",
+            "global_var_right",
         ]
 
     def test_sr_equals(self):
