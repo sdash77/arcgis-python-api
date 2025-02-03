@@ -119,6 +119,7 @@ class WebsocketConnection:
         self.ws.close()
         if not self.thread is threading.current_thread():
             self.thread.join(self.timeout)
+        print(f"Disconnected from {self._url}")
 
     def get_token(self, token_request_url: str) -> str:
         if self._gis._con.token:

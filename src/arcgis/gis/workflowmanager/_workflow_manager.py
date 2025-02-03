@@ -4124,6 +4124,7 @@ class NotificationManager:
         self._server_url = self._workflow_manager._server_url
         self._received_connected_msg = None
         self._timeout = 30
+        self._connecting_lock = threading.Lock()
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self._server_url.replace("http://", "ws://").replace(
@@ -4167,14 +4168,16 @@ class NotificationManager:
             logger.exception(f"Error with messages and callbacks")
 
     def _connect(self) -> WebsocketConnection:
-        ws = WebsocketConnection(self._subscriber, self._gis, self._timeout)
-        self._received_connected_msg = threading.Event()
-        ws.connect(
-            self.websocket_url,
-            self.token_request_url,
-        )
-        self._received_connected_msg.wait(self._timeout)
-        return ws
+        with self._connecting_lock:
+            ws = WebsocketConnection(self._subscriber, self._gis, self._timeout)
+            self._received_connected_msg = threading.Event()
+            ws.connect(
+                self.websocket_url,
+                self.token_request_url,
+            )
+            self._received_connected_msg.wait(self._timeout)
+            self._connected = True
+            return ws
 
     def connect(self):
         """
@@ -4197,18 +4200,18 @@ class NotificationManager:
         if not self.websocket_connection:
             logger.debug(f"Creating websocket connection to {self.websocket_url}")
             self.websocket_connection = self._connect()
-            self._connected = True
             self._manually_connected = True
 
     def disconnect(self):
         """
         Removes and disconnects the websocket connection to the workflow manager server.
         """
-        if self.websocket_connection:
-            self.websocket_connection.disconnect()
-            self.websocket_connection = None
-            self._connected = False
-            self._manually_connected = False
+        with self._connecting_lock:
+            if self.websocket_connection:
+                self.websocket_connection.disconnect()
+                self.websocket_connection = None
+                self._connected = False
+                self._manually_connected = False
 
     def subscribe(self, job_ids: list, callback: Callable[[Notification], None]):
         """
