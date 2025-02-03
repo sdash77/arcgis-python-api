@@ -1215,7 +1215,7 @@ class TestFolder(unittest.TestCase):
         unique_folder_name: str = "integration_exists_ok_false"
         gis = self.gis
         folder = gis.content.folders.create(
-            folder=unique_folder_name, exists_ok=False
+            folder=unique_folder_name, exists_ok=True
         )
         with self.assertRaises(FolderException) as context:
             folder = gis.content.folders.create(
