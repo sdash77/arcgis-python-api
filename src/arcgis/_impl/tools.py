@@ -9710,7 +9710,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         future=False,
         **kwargs,
         ):
-        task = "ReconstructSurface"
+        task = "CreateMission"
         gis = self._gis
 
         job = self._tbx.create_mission(
@@ -9724,7 +9724,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             future=True,
         )
 
-        return job
+        job = RMJob(job)
+        if future:
+            return job
+        return job.result()
 
 ###########################################################################
 class _RasterAnalysisTools(BaseAnalytics):
