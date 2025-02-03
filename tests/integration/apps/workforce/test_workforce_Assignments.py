@@ -4,8 +4,6 @@
 # -------------------------------------------------------------------------------
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_configs import DinoConfigs
-from configparser import ConfigParser
 import datetime
 
 # region PreCondition check
@@ -26,8 +24,6 @@ else:
 
 # Import the module after Precondition checks pass
 try:
-    from arcgis.gis import GIS, Group, User
-    from arcgis.features import Feature, FeatureLayer
     from arcgis.apps.workforce import *
     from arcgis.apps.workforce._schemas import *
     from arcgis.apps.workforce.managers import *
@@ -49,9 +45,10 @@ def setUpModule():
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 
+@profiles.admin_enterprise_and_agol
 @integration_test
 class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
     """
@@ -165,13 +162,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         Check if ArcGIS.com can be reached
         :return:
         """
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["workforce_ago"]["url"]
-        cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
-        cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         t = datetime.datetime.now()
         cls.time_stamp = str.format(
             "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
@@ -184,9 +174,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         )
         cls.project = create_project(cls.time_stamp)
 
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
         print("==================================================================")
         print("Beginning tests in Test_Workforce_AssignmentManager class")
 
@@ -475,13 +462,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
         Check if ArcGIS.com can be reached
         :return:
         """
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["workforce_ago"]["url"]
-        cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
-        cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         t = datetime.datetime.now()
         cls.time_stamp = str.format(
             "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
@@ -494,7 +474,7 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
         )
         cls.project = create_project(cls.time_stamp)
 
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(cls.gis.url)
         if not r1:
             cls.class_skip = True
         print("==================================================================")

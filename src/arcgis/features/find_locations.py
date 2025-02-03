@@ -1303,7 +1303,7 @@ def choose_best_facilities(
 
     .. code-block:: python
 
-        USAGE EXAMPLE: To minimize overall distance travelled for travelling from esri offices to glider airports.
+        USAGE EXAMPLE: To minimize overall distance traveled for traveling from esri offices to glider airports.
 
         best_facility = choose_best_facilities(goal="MinimizeImpedance",
                                     demand_locations_layer=esri_offices,
