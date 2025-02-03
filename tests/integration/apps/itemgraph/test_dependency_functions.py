@@ -67,12 +67,20 @@ class TestDependencyFunctions(unittest.TestCase):
                 assert itemid in deps
 
         with self.subTest(msg="dashboard"):
+            # widgets outside of desktopView
             db = gis.content.get("b2cd4978e44e41949a83529b0d77afc4")
+            # widgets in desktopView
+            db2 = gis.content.get("c28fe863e1c64adab100a5a9809a905d")
             deps = gd._parse_dashboard(db)
+            deps2 = gd._parse_dashboard(db2)
             assert isinstance(deps, list)
+            assert isinstance(deps2, list)
             assert isinstance(deps[0], str)
+            assert isinstance(deps2[0], str)
             for itemid in ["70c2c5a1c9354682a19bbef156d91851"]:
                 assert itemid in deps
+            for itemid in ["95c25c28709a4ccebf6d4cab92fe2d67"]:
+                assert itemid in deps2
 
         with self.subTest(msg="experience builder"):
             exp = gis.content.get("1d69afc7e86c4ab59c4781e67d51fa9c")
