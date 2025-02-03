@@ -435,16 +435,16 @@ class AutoDL:
                             The list of models that will be used in the training.
                             For eg:
                             Supported Object Detection models:
-                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MaskRCNN", "DETReg" ,"ATSS",
+                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MaskRCNN", "DETReg" ,"RTDetrV2","ATSS",
                             "CARAFE", "CascadeRCNN", "CascadeRPN", "DCN", 'Detectors',
                             'DoubleHeads', 'DynamicRCNN', 'EmpiricalAttention', 'FCOS', 'FoveaBox',
                             'FSAF', 'GHM', 'LibraRCNN', 'PaFPN', 'PISA', 'RegNet','RepPoints',
                             'Res2Net', 'SABL', 'VFNet']
                             Supported Pixel Classification models:
-                            ["DeepLab", "UnetClassifier", "PSPNetClassifier",
-                                "ANN", "APCNet", "CCNet", "CGNet", "HRNet", 'DeepLabV3Plus',
-                                'DMNet', 'DNLNet', 'FastSCNN', 'FCN', 'GCNet', 'MobileNetV2',
-                                'NonLocalNet','OCRNet', 'PSANet', 'SemFPN', 'UperNet']
+                            ["DeepLab", "UnetClassifier", "PSPNetClassifier", "SamLoRA",
+                            "ANN", "APCNet", "CCNet", "CGNet", "HRNet", 'DeepLabV3Plus', "Mask2Former",
+                            'DMNet', 'DNLNet', 'FastSCNN', 'FCN', 'GCNet', 'MobileNetV2',
+                            'NonLocalNet', 'PSANet', 'SemFPN', 'UperNet']
 
     ---------------------   -------------------------------------------
     verbose                 Optional Boolean.
@@ -497,11 +497,13 @@ class AutoDL:
             "DeepLab",
             "UnetClassifier",
             "PSPNetClassifier",
+            "SamLoRA",
             "ANN",
             "APCNet",
             "CCNet",
             "CGNet",
             "HRNet",
+            "Mask2Former",
             "DeepLabV3Plus",
             "DMNet",
             "DNLNet",
@@ -511,7 +513,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",
@@ -521,6 +522,7 @@ class AutoDL:
             "FasterRCNN",
             "YOLOv3",
             "DETReg",
+            "RTDetrV2",
             "ATSS",
             "CARAFE",
             "CascadeRPN",
@@ -550,6 +552,7 @@ class AutoDL:
             "CCNet",
             "CGNet",
             "HRNet",
+            "Mask2Former",
             "ATSS",
             "CARAFE",
             "CascadeRCNN",
@@ -580,7 +583,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",
@@ -672,8 +674,10 @@ class AutoDL:
             "MaskRCNN",
             "RetinaNet",
             "DETReg",
+            "RTDetrV2",
             "FasterRCNN",
             "PSPNetClassifier",
+            "SamLoRA",
             "UnetClassifier",
             "DeepLab",
         ]
@@ -835,7 +839,10 @@ class AutoDL:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-            backbone = getattr(self, model)._backbone.__name__
+            if model in ["SamLoRA"]:
+                backbone = str(getattr(self, model)._backbone)
+            else:
+                backbone = getattr(self, model)._backbone.__name__
         else:
             if not self._model_stats()[model]["is_mm"]:
                 setattr(
@@ -1733,6 +1740,17 @@ class AutoDL:
                     "type_float": {"dice_loss_fraction": (0, 1)},
                 },
             },
+            "SamLoRA": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": ["vit_h", "vit_l", "vit_b"],
+                        "class_balancing": [True, False],
+                    },
+                },
+            },
             "ANN": {
                 "time": 1600,
                 "is_mm": True,
@@ -1753,6 +1771,7 @@ class AutoDL:
                 "time": 4200,
                 "is_mm": True,
             },
+            "Mask2Former": {"time": 4200, "is_mm": True},
             "DeepLabV3Plus": {
                 "time": 4200,
                 "is_mm": True,
@@ -1786,10 +1805,6 @@ class AutoDL:
                 "is_mm": True,
             },
             "NonLocalNet": {
-                "time": 4200,
-                "is_mm": True,
-            },
-            "OCRNet": {
                 "time": 4200,
                 "is_mm": True,
             },
@@ -1889,6 +1904,21 @@ class AutoDL:
                             "resnet50",
                             "resnet101",
                             "resnet152",
+                        ]
+                    }
+                },
+            },
+            "RTDetrV2": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
                         ]
                     }
                 },
@@ -2021,11 +2051,13 @@ class AutoDL:
             "DeepLab",
             "UnetClassifier",
             "PSPNetClassifier",
+            "SamLoRA",
             "ANN",
             "APCNet",
             "CCNet",
             "CGNet",
             "HRNet",
+            "Mask2Former",
             "DeepLabV3Plus",
             "DMNet",
             "DNLNet",
@@ -2035,7 +2067,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",
@@ -2051,6 +2082,7 @@ class AutoDL:
             "FasterRCNN",
             "YOLOv3",
             "DETReg",
+            "RTDetrV2",
             "ATSS",
             "CARAFE",
             "CascadeRCNN",

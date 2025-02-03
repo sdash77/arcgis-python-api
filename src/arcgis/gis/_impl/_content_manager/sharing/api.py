@@ -45,7 +45,7 @@ class SharingGroupManager:
                       object for a specific :class:`~arcgis.gis.Item`.
     ================  ===============================================================
 
-    Objects of this class are not meant to be intialized
+    Objects of this class are not meant to be initialized
     directly, but rather accessed through the
     :attr:`~arcgis.gis._impl._content_manager.SharingManager.groups`
     property of an *item's* *SharingManager*.
@@ -471,8 +471,7 @@ class SharingManager:
         .. code-block:: python
 
             # Usage example: Setting the sharing level to organization
-            >>> from arcgis.gis import GIS
-            >>> from arcgis.gis._impl._content_manager import SharingLevel
+            >>> from arcgis.gis import GIS, SharingLevel
 
             >>> data_item = gis.content.search(query="Hurricanes 2022")
             >>> sharing_mgr = data_item.sharing

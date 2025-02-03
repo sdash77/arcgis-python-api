@@ -895,7 +895,7 @@ def join_features(
                                                                * *Kilometers*
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     attribute_relationship                                     Optional list of dicts. Defines an attribute relationship used to join features.
-                                                               Features are matched when the field values in the join layer are equql to
+                                                               Features are matched when the field values in the join layer are equal to
                                                                field values in the target layer.
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     join_operation                                             Optional string. A string representing the type of join that will be applied
