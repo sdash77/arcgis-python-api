@@ -1064,7 +1064,7 @@ class Folders:
         self,
         folder: str,
         owner: str | "User" = None,
-        exists_ok: bool = False,
+        exist_ok: bool = False,
     ) -> Folder:
         """
         The ``create`` method creates a folder named with the value of the
@@ -1087,7 +1087,7 @@ class Folders:
                           .. note::
                               Must have administrator privileges to create content for another *user*.
         ----------------  --------------------------------------------------------------------------
-        exists_ok         Optional Bool. If exist_ok is False (the default), a FolderException is raised
+        exist_ok          Optional Bool. If exist_ok is False (the default), a FolderException is raised
                           if the target directory already exists.
         ================  ==========================================================================
 
@@ -1103,7 +1103,7 @@ class Folders:
             >>> new_folder.name
                 'Hurricane_Data'
         """
-        if exists_ok:
+        if exist_ok:
             return self._get_or_create(folder=folder, owner=owner)
         if folder in ["/", None, ""]:  # we don't create root folder
             logger.warning("Cannot create the root folder, just returning the root.")
