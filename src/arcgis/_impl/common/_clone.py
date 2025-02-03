@@ -4155,7 +4155,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         new_item.title,
                         force_add_guid_suffix=True,
                     )
-                    self.target.content.folders.create(folder_name)
+                    self.target.content.folders._get_or_create(folder_name)
                     new_item.move(folder_name)
                     worker_webmap_item.move(folder_name)
                     dispatcher_webmap_item.move(folder_name)
