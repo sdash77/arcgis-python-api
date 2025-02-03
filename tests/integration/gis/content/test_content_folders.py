@@ -1,3 +1,7 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
 import os
 import io
 import uuid
@@ -8,7 +12,7 @@ from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
 from integration.config import QALAB_ROOT_PATH
 import pandas as pd
-
+from arcgis.gis._impl._content_manager.folder import FolderException
 
 enable_verbose_logging()
 QA_LABS_FOLDER = os.path.join(QALAB_ROOT_PATH, "folder_add_content")
@@ -1148,7 +1152,9 @@ class TestFolderAddContent(unittest.TestCase):
     def test_add_small_file_folder_owner(self):
         """"""
         gis = self.gis
-        unique_folder_name: str = "integration_testing_folder_add_small_file_owner"
+        unique_folder_name: str = (
+            "integration_testing_folder_add_small_file_owner"
+        )
         mgr = gis.content.folders
         owner = [user for user in gis.users.search("*")][0]
         folder = mgr.create(unique_folder_name)
@@ -1185,7 +1191,9 @@ class TestFolderAddContent(unittest.TestCase):
         )
         item = item.result()
         assert (
-            os.stat(os.path.join(QA_LABS_FOLDER, "servicedefinition.sd")).st_size
+            os.stat(
+                os.path.join(QA_LABS_FOLDER, "servicedefinition.sd")
+            ).st_size
             == item.size
         )
         assert isinstance(item, Item)
@@ -1196,6 +1204,27 @@ class TestFolderAddContent(unittest.TestCase):
 @integration_test
 @profiles.enterprise_and_agol
 class TestFolder(unittest.TestCase):
+
+    def test_folder_delete_exists_ok(self):
+        unique_folder_name: str = "integration_exists_ok_true"
+        gis = self.gis
+        folder = gis.content.folders.create(
+            folder=unique_folder_name, exists_ok=True
+        )
+        assert isinstance(folder, Folder)
+        assert folder.delete(permanent=True)
+
+    def test_folder_delete_exists_ok_false(self):
+        unique_folder_name: str = "integration_exists_ok_false"
+        gis = self.gis
+        folder = gis.content.folders.create(
+            folder=unique_folder_name, exists_ok=False
+        )
+        with self.assertRaises(FolderException) as context:
+            folder = gis.content.folders.create(
+                folder=unique_folder_name, exists_ok=False
+            )
+        assert folder.delete(permanent=True)
 
     def test_folder_delete(self):
         unique_folder_name: str = "integration_testing_folder_delete"
@@ -1248,7 +1277,9 @@ class TestFolders(unittest.TestCase):
 
     def test_create_folder(self):
         gis = self.gis
-        folder = gis.content.folders.create(folder="integration_testing_folders_create")
+        folder = gis.content.folders.create(
+            folder="integration_testing_folders_create"
+        )
         assert isinstance(folder, Folder)
         assert folder.delete(permanent=True)
 
@@ -1259,7 +1290,9 @@ class TestFolders(unittest.TestCase):
             if user["username"] != gis.users.me.username:
                 owner = user["username"]
                 break
-        folder = gis.content.folders.create(folder="integration_testing_folder_create_for_owner", owner=owner)
+        folder = gis.content.folders.create(
+            folder="integration_testing_folder_create_for_owner", owner=owner
+        )
         assert isinstance(folder, Folder)
         assert folder.delete(permanent=True)
 
