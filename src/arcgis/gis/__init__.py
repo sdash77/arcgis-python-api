@@ -21,6 +21,7 @@ import tempfile
 import warnings
 import zipfile
 import configparser
+import urllib.parse
 from contextlib import contextmanager
 import functools
 import logging
@@ -206,9 +207,6 @@ class GIS(object):
                         certificate or is being accessed via the IP or hostname instead
                         of the name on the certificate, set this value to ``False``.
                         This will ensure that all SSL certificate issues are ignored.
-                        Users can pass verify_cert a path to a CA_BUNDLE file or directory
-                        with certificates of trusted CAs as well. This will use these
-                        certificates over the system's certificates.
                         The default is ``True``.
 
                         .. warning::
@@ -231,6 +229,11 @@ class GIS(object):
 
     ======================    ===============================================================
     **kwargs**                **Description**
+    ----------------------    ---------------------------------------------------------------
+    ca_bundles                list[str], str, or None. Users can pass verify_cert a path to
+                              a CA_BUNDLE file or directory with certificates of trusted CAs
+                              as well. This will use these certificates over the system's certificates.
+                              The default is `None`.
     ----------------------    ---------------------------------------------------------------
     proxy_host                (Deprecated, use proxy)
                               Optional string. The host name of the proxy server used to allow HTTP/S
@@ -389,7 +392,13 @@ class GIS(object):
 
         # Usage Example 10: Using a CA_BUNDLE specifying SSL certificates
         certs = r"./CA_CERTS/cacert.pem"
-        gis = GIS(profile="your_enterprise_admin_profile", verify_cert=certs)
+        gis = GIS(profile="your_enterprise_admin_profile", ca_bundles=certs)
+
+    .. code-block:: python
+
+        # Usage Example 11: Using a CA_BUNDLE specifying multiple SSL certificates
+        certs = [r"./CA_CERTS/cacert.pem", r"./CA_CERTS/cacert2.pem", ..., r"./CA_CERTS/cacertN.pem"]
+        gis = GIS(profile="your_enterprise_admin_profile", ca_bundles=certs)
 
     """
 
@@ -441,6 +450,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._is_home = (url or "").lower() == "home"
         self._validate_item_url = kwargs.pop("validate_url", False)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
@@ -552,7 +562,7 @@ class GIS(object):
                     from getpass import getpass
 
                     password = getpass("Enter PFX password: ")
-                from arcgis.auth.tools.certificate import pfx_to_pem
+                from arcgis.auth.tools import pfx_to_pem
 
                 cert_file, key_file = pfx_to_pem(cert_file, password)
             else:
@@ -622,6 +632,7 @@ class GIS(object):
                 is_hosted_nb_home=self._is_hosted_nb_home,
                 use_gen_token=self._use_gen_token,
                 security_kwargs=security_kwargs,
+                ca_bundles=ca_bundles,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -648,6 +659,7 @@ class GIS(object):
                     is_hosted_nb_home=self._is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                     security_kwargs=security_kwargs,
+                    ca_bundles=ca_bundles,
                 )
             if self._is_hosted_nb_home:
                 self._portal.con._referer = ""
@@ -717,6 +729,7 @@ class GIS(object):
                         is_hosted_nb_home=self._is_hosted_nb_home,
                         use_gen_token=self._use_gen_token,
                         security_kwargs=security_kwargs,
+                        ca_bundles=ca_bundles,
                     )
                     self._portal = pp
         except Exception:
@@ -742,7 +755,9 @@ class GIS(object):
                 self._con._auth = "PRO"
 
         if self._con._auth != "anon":
-            me = self.users.me
+            # ensure `me` at least has a backing dict
+            # for cases such as API key when there is no user
+            me = self.users.me or {}
 
         if (
             self._con._auth.lower() != "anon"
@@ -769,7 +784,7 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url = self._portal.url + "/admin"
+                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -800,7 +815,7 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url = self._portal.url + "/admin"
+                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -838,7 +853,7 @@ class GIS(object):
                             KubernetesAdmin,
                         )
 
-                        url = self._portal.url + "/admin"
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                         self.admin = KubernetesAdmin(url=url, gis=self)
                     else:
                         from .admin.portaladmin import PortalAdminManager
@@ -1911,44 +1926,47 @@ class GroupMigrationManager(object):
         Imports an EPK Item to a Group.  This will import items associated with this group.
         :return: Boolean
         """
-        if self._gis.users.me.role == "org_admin":
-            try_json = True
-            if preview_only:
-                try_json = False
-            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
-            if isinstance(item, Item):
-                item = item.itemid
-            params = {
-                "f": "json",
-                "itemId": item,
-                "itemIdList": "",
-                "folderId": "",
-                "folderOwnerUsername": "",
-                "token": self._con.token,
-            }
-            if import_content_folder:
-                params["importContentFolder"] = import_content_folder
-            if keep_package_item_after_import in [True, False]:
-                params["keepPackageItemAfterImport"] = json.dumps(
-                    keep_package_item_after_import
-                )
-            if item_id_list:
-                params["itemIdList"] = item_id_list
-            if overwrite is not None:
-                params["overwriteExistingItems"] = overwrite
-            if preview_only:
-                params["previewOnly"] = preview_only
-            if run_async:
-                params["async"] = run_async
-            if folder_id and self._gis.version >= [8, 4]:
-                params["folderId"] = folder_id
-            if folder_owner and self._gis.version >= [8, 4]:
-                params["folderOwnerUsername"] = folder_owner
-            return self._con.post(url, params, try_json=try_json)
+        # admin or group owner has the ability to import content
+        owner = self._group.owner == self._gis.users.me.username
 
-        else:
-            raise Exception("Must be an administrator to perform this action")
-        pass
+        if not owner and not self._gis.users.me.role == "org_admin":
+            raise Exception(
+                "Must be an administrator or group owner to perform this action"
+            )
+
+        try_json = not preview_only
+        url = (
+            f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
+        )
+        if isinstance(item, Item):
+            item = item.itemid
+        params = {
+            "f": "json",
+            "itemId": item,
+            "itemIdList": "",
+            "folderId": "",
+            "folderOwnerUsername": "",
+            "token": self._con.token,
+        }
+        if import_content_folder:
+            params["importContentFolder"] = import_content_folder
+        if keep_package_item_after_import in [True, False]:
+            params["keepPackageItemAfterImport"] = json.dumps(
+                keep_package_item_after_import
+            )
+        if item_id_list:
+            params["itemIdList"] = item_id_list
+        if overwrite is not None:
+            params["overwriteExistingItems"] = overwrite
+        if preview_only:
+            params["previewOnly"] = preview_only
+        if run_async:
+            params["async"] = run_async
+        if folder_id and self._gis.version >= [8, 4]:
+            params["folderId"] = folder_id
+        if folder_owner and self._gis.version >= [8, 4]:
+            params["folderOwnerUsername"] = folder_owner
+        return self._con.post(url, params, try_json=try_json)
 
     # ----------------------------------------------------------------------
     def _status(self, job_id, key=None):
@@ -4665,7 +4683,7 @@ class UserManager(object):
         The ``advanced_search`` method allows for the full control of the query operations
         by any given user.  The searches are performed against a high performance
         index that indexes the most popular fields of an user. See the
-        `Search reference page <https://developers.arcgis.com/web-scene-specification/objects/search/>`_ for information
+        `Search reference page <https://developers.arcgis.com/rest/users-groups-and-items/search-reference/>`_ for information
         on the fields and the syntax of the query. The ``advanced_search`` method is
         quite similar to the :attr:`~arcgis.gis.UserManager.search` method, which is less refined.
 
@@ -6749,6 +6767,10 @@ class ContentManager(object):
         access                      Optional string. Valid values are private, org, or public. Defaults to private.
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
+
+                                    .. note::
+                                        Configuring items for ovewrite is no longer supported when adding
+                                        an :class:`~arcgis.gis.Item`
         ==========================  =====================================================================
 
 
@@ -15477,8 +15499,8 @@ class Item(dict):
                 fileName = self.name
                 item_properties["fileName"] = fileName
 
-        # Make sure thumbnail doesn't get reset in the update
-        if thumbnail is None and self.thumbnail:
+        # Make sure thumbnail doesn't get reset in the update if new data passed in
+        if data and thumbnail is None and self.thumbnail:
             thumbnail = io.BytesIO()
             thumbnail.write(self.get_thumbnail())
             thumbnail.seek(0)
@@ -15530,24 +15552,25 @@ class Item(dict):
                 self._hydrate()
             return ret
         else:
-            if data is not None:
-                # Need to add the data first and then update the item to avoid overwriting from the file
-                self._portal.update_item(
-                    self.itemid,
-                    data=data,
-                )
-                data = None
-
+            # call update the first time to update everything but the thumbnail
             ret = self._portal.update_item(
-                self.itemid,
-                item_properties,
-                data,
-                thumbnail,
-                metadata,
-                owner,
-                folder,
-                large_thumbnail,
+                itemid=self.itemid,
+                item_properties=item_properties,
+                data=data,
+                thumbnail=None,
+                metadata=metadata,
+                owner=owner,
+                folder=folder,
+                large_thumbnail=None,
             )
+
+            if thumbnail or large_thumbnail:
+                # Update the thumbnail last otherwise it gets overwritten
+                ret = self._portal.update_item(
+                    itemid=self.itemid,
+                    thumbnail=thumbnail,
+                    large_thumbnail=large_thumbnail,
+                )
             if ret:
                 self._hydrate()
             return ret
@@ -18094,6 +18117,8 @@ class Item(dict):
             "Data Pipeline",
             "Hub Site Application",
             "Hub Page",
+            "QuickCapture Project",
+            "Geoprocessing Service",
         ]
 
         def _replace_related_items(item, item_mapping):
@@ -18101,11 +18126,19 @@ class Item(dict):
 
         if not force:
             for k, v in item_mapping.items():
-                if self._gis.content.get(v) is None:
-                    raise ValueError(f"Item with id {v} does not exist in the GIS")
-                if self._gis.content.get(k).type != self._gis.content.get(v).type:
+                orig_item = self._gis.content.get(k)
+                new_item = self._gis.content.get(v)
+                if new_item is None:
                     raise ValueError(
-                        f"Items with ids {k} and {v} are not of the same type"
+                        f"Replacement item with id {v} does not exist in the GIS. Please use the force parameter to bypass this check."
+                    )
+                if orig_item is None:
+                    raise ValueError(
+                        f"String {k} is not a valid item ID in the GIS. Please use the force parameter to bypass this check and replace the string."
+                    )
+                if orig_item.type != new_item.type:
+                    raise ValueError(
+                        f"Items with ids {k} and {v} are not of the same type."
                     )
 
         # _replace_related_items(self, item_mapping)
@@ -18159,12 +18192,11 @@ class Item(dict):
                     return structure
                 for k, v in expanded_dict.items():
                     r_name = "r-" + k
-                    if r_name in structure["resources"]:
+                    rep_item = self._gis.content.get(v)
+                    if r_name in structure["resources"] and rep_item:
                         if structure["resources"][r_name]["type"] == "webmap":
                             new_layers = []
-                            for layer in self._gis.content.get(v).get_data()[
-                                "operationalLayers"
-                            ]:
+                            for layer in rep_item.get_data()["operationalLayers"]:
                                 lay = {
                                     "id": layer["id"],
                                     "title": layer["title"],
@@ -18273,9 +18305,9 @@ class Item(dict):
                 A list containing the dependencies of the item, in either Item or Item ID form.
         """
 
-        from arcgis.apps.itemgraph import create_item_graph
+        from arcgis.apps.itemgraph import create_dependency_graph
 
-        graph = create_item_graph(self._gis, [self], outside_org=outside_org)
+        graph = create_dependency_graph(self._gis, [self], outside_org=outside_org)
         if out_format.lower() == "graph":
             return graph
         node = graph.get_item(self.id)
