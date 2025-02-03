@@ -4,6 +4,7 @@ from arcgis.features import FeatureLayer
 import unittest
 from utils.decorators import integration_test, profiles
 from utils.data_utils import cleanup_published_items
+
 DATA = [
     {
         "ADMIN_NAME": "Mato Grosso",
@@ -130,8 +131,6 @@ class TestFeatureLayerGetEstimates(unittest.TestCase):
             item = self.gis.content.import_data(sdf, {"tags": "ntgrtn-tst"})
             # if unsupported, estimates returns an empty dict
             assert item.layers[0].estimates == {} or item.layers[0].estimates
-        except Exception as e:
-            raise e
         finally:
             if item:
                 item.delete(permanent=True)

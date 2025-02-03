@@ -1,8 +1,5 @@
-import sys
 import logging
 import unittest, os, uuid
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
 from arcgis.features.layer import OrientedImageryLayer
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
@@ -11,21 +8,9 @@ from arcgis.gis._impl._dataclasses._contentds import (
 from utils.decorators import integration_test, profiles
 from integration.config import QALAB_ROOT_PATH
 from utils.data_utils import cleanup_published_items
-__logger__ = logging.getLogger()
+from utils._logging import enable_verbose_logging
 
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-# enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 QA_LABS = QALAB_ROOT_PATH + r"\oriented_image_layer"
 DATASET = "OI_sample.gdb.zip"
@@ -58,7 +43,9 @@ class TestOrientedImageryLayer(unittest.TestCase):
 
     def test_create_OIL(self):
         """create OI Layer"""
-        lyr = OrientedImageryLayer(url=f"{self.published_item.url}/0", gis=self.published_item._gis)
+        lyr = OrientedImageryLayer(
+            url=f"{self.published_item.url}/0", gis=self.published_item._gis
+        )
         assert isinstance(lyr, OrientedImageryLayer)
 
     @classmethod
