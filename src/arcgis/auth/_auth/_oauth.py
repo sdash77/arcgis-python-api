@@ -130,7 +130,9 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                     "refresh_token": self._refresh_token,
                     "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
                 }
-                token_info_request = self._session.post(tu, data=parameters)
+                token_info_request = self._session.post(
+                    tu, data=parameters, drop_auth=True
+                )
                 token_info = token_info_request.json()
                 if not token_info_request.ok or (
                     token_info
@@ -268,7 +270,11 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                     "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
                     "allow_verification": "false",
                 }
-                content = str(self._session.get(auth_url, params=parameters).content)
+                content = str(
+                    self._session.get(
+                        auth_url, params=parameters, drop_auth=True
+                    ).content
+                )
 
                 pattern = re.compile("var oAuthInfo = ({.*?});", re.DOTALL)
                 if len(pattern.findall(content)) == 0:
@@ -317,16 +323,17 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                         verify=False,
                         proxies=self._proxies,
                         allow_redirects=False,
+                        drop_auth=True,
                     )
                 if resp.status_code == 302:
                     url = resp.headers["Location"]
                     if url.find("acceptTermsAndConditions") > -1:
                         r2 = self._session.post(
-                            url, data={"acceptTermsAndConditions": True}
+                            url, data={"acceptTermsAndConditions": True}, drop_auth=True
                         )
                         content = r2.text
                     elif url.find("oauth2/approval") > -1:
-                        r2 = self._session.get(url)
+                        r2 = self._session.get(url, drop_auth=True)
                         content = r2.text
 
                 soup = lxml.html.fromstring(content)
