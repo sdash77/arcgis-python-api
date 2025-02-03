@@ -159,6 +159,9 @@ class KnowledgeGraph:
                             The allowed values are: both, entities, relationships,
                             both_entity_relationship, and meta_entity_provenance. Both and
                             both_entity_relationship are functionally the same.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. note::
@@ -168,12 +171,14 @@ class KnowledgeGraph:
         .. code-block:: python
 
             #Perform a search on the knowledge graph
-            search_result = knowledge_graph.search("cat")
+            for search_result in knowledge_graph.search("cat", as_dict=False):
+                print(search_result)
 
             # Perform a search on only entities in the knowledge graph
-            searchentities_result = knowledge_graph.search("cat", "entities")
+            for searchentities_result in knowledge_graph.search("cat", "entities", as_dict=False):
+            print(searchentities_result)
 
-        :return: List[list]
+        :return: List[list] or Generator[Sequence[Any], None, None]
 
         """
         return list(self._search(search=search, category=category, as_dict=as_dict))
@@ -232,9 +237,10 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, UpdateSearchIndexResponse]:
         """
-        Allows users to add or delete search index properties for different entities and
-        relationships from the graph's data model. Can only be existent properties for a given
-        entity/relationship. Note that an empty dictionary result indicates success.
+        Allows users to add or delete :class:`arcgis.graph.search_types.SearchIndexProperties` for different
+        :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`s
+        from the :class:`arcgis.graph.data_model_types.GraphDataModel`. Can only be existent properties for a given 
+        entity/relationship type.
 
         =========================   ===============================================================
         **Parameter**                **Description**
@@ -244,19 +250,20 @@ class KnowledgeGraph:
         -------------------------   ---------------------------------------------------------------
         deletes                     Optional dict. See below for structure. The properties to
                                     delete from the search index, specified by entity/relationship.
+        -------------------------    ---------------------------------------------------------------
+        as_dict                     Optional Boolean. Determines whether the result is returned as
+                                    a dictionary or an object. The default is True. False is recommended.
         =========================   ===============================================================
 
         .. code-block:: python
+            from arcgis.graph import SearchIndexProperties
 
-            # example of an adds or deletes dictionary
-            {
-                "Entity1" : { "property_names": ["prop1", "prop2"]},
-                "Entity2" : {"property_names": ["prop1"]},
-                "RelationshipType1" : { "property_names": ["prop1", "prop2"]},
-                "RelationshipType2" : {"property_names": ["prop1"]},
-            }
+            graph.update_search_index(
+                adds={"Person": SearchIndexProperties(property_names=["name"])},
+                as_dict=False
+            )
 
-        :return: A `dict`. Empty dict indicates success, errors will be returned in the dict.
+        :return: dict or :class:`arcgis.graph.response_types.UpdateSearchIndexResponse`
 
         """
 
@@ -406,7 +413,7 @@ class KnowledgeGraph:
                                relationships in a graph, as well as the properties of those
                                entities and relationships, by providing an openCypher query.
         -------------------    ---------------------------------------------------------------
-        input_transform        Optional dict. Allows a user to specify custom quantization
+        input_transform        Optional dict or Transform. Allows a user to specify custom quantization
                                parameters for input geometry, which dictate how geometries are
                                compressed and transferred to the server. Defaults to lossless
                                WGS84 quantization.
@@ -443,7 +450,7 @@ class KnowledgeGraph:
             first_result = next(query_gen)
             second_result = next(query_gen)
 
-
+        :return: `Generator[Sequence[Any], None, None]`
         """
 
         raw_input_transform: Optional[dict[str, Any]] = (
@@ -544,6 +551,8 @@ class KnowledgeGraph:
     def datamodel(self) -> dict:
         """
         Returns the datamodel for the Knowledge Graph service
+
+        :return: dict
         """
         self._validate_import()
         url = f"{self._url}/dataModel/queryDataModel"
@@ -561,6 +570,20 @@ class KnowledgeGraph:
     def query_data_model(self, as_dict: bool = True) -> Union[dict, GraphDataModel]:
         """
         Returns the datamodel for the Knowledge Graph service
+
+        ===================    ===============================================================
+        **Parameter**           **Description**
+        -------------------    ---------------------------------------------------------------
+        as_dict                Optional Boolean. Determines whether the result is returned as
+                               a dictionary or an object. The default is True. False is recommended.
+        ===================    ===============================================================
+
+        .. code-block:: python
+
+            # Query knowledge graph data model
+            knowledge_graph.query_data_model(as_dict=False)
+
+        :return: :class:`arcgis.graph.data_model_types.GraphDataModel`
         """
         return (
             self.datamodel if as_dict else GraphDataModel.model_validate(self.datamodel)
@@ -573,12 +596,20 @@ class KnowledgeGraph:
         Synchronizes the Knowledge Graph Service's data model with any changes made
         in the database. Will return any errors or warnings from the sync.
 
+        ===================    ===============================================================
+        **Parameter**           **Description**
+        -------------------    ---------------------------------------------------------------
+        as_dict                Optional Boolean. Determines whether the result is returned as
+                               a dictionary or an object. The default is True. False is recommended.
+        ===================    ===============================================================
+
         .. code-block:: python
 
             # Synchronize the data model
-            sync_result = knowledge_graph.sync_data_model()
+            sync_result = knowledge_graph.sync_data_model(as_dict=False)
 
-
+        :return: :class:`arcgis.graph.response_types.SyncDataModelResponse`
+        
         """
         url = self._url + "/dataModel/syncDataModel"
         session = self._gis._con._session
@@ -606,10 +637,8 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, ApplyEditsResponse]:
         """
-        Allows users to add new graph entities/relationships, update existing
-        entities/relationships, or delete existing entities/relationships. For details on how the
-        dictionaries for each of these operations should be structured, please refer to the samples
-        further below.
+        Allows users to add, update, and delete :class:`arcgis.graph.graph_types.Entity` and
+        :class:`arcgis.graph.graph_types.Relationship`s.
 
         .. note::
             objectid values are not supported in dictionaries for apply_edits
@@ -617,19 +646,24 @@ class KnowledgeGraph:
         =========================   ===============================================================
         **Parameter**                **Description**
         -------------------------   ---------------------------------------------------------------
-        adds                        Optional list of dicts. The list of objects to add to the
-                                    graph, represented in dictionary format.
+        adds                        Optional list of :class:`arcgis.graph.graph_types.Entity` or 
+                                    :class:`arcgis.graph.graph_types.Relationship`. The list of 
+                                    objects to add to the graph, represented in dictionary format.
         -------------------------   ---------------------------------------------------------------
-        updates                     Optional list of dicts. The list of existent graph objects that
-                                    are to be updated, represented in dictionary format.
+        updates                     Optional list of :class:`arcgis.graph.graph_types.Entity` or 
+                                    :class:`arcgis.graph.graph_types.Relationship`. The list of 
+                                    existent graph objects that are to be updated, represented 
+                                    in dictionary format.
         -------------------------   ---------------------------------------------------------------
-        deletes                     Optional list of dicts. The list of existent objects to remove
-                                    from the graph, represented in dictionary format.
+        deletes                     Optional list of :class:`arcgis.graph.graph_types.EntityDelete` or 
+                                    :class:`arcgis.graph.graph_types.RelationshipDelete`. The list 
+                                    of existent objects to remove from the graph, represented in 
+                                    dictionary format.
         -------------------------   ---------------------------------------------------------------
-        input_transform             Optional dict. Allows a user to specify custom quantization
-                                    parameters for input geometry, which dictate how geometries are
-                                    compressed and transferred to the server. Defaults to lossless
-                                    WGS84 quantization.
+        input_transform             Optional :class:`arcgis.graph.graph_types.Transform`. 
+                                    Allows a user to specify custom quantization parameters for input 
+                                    geometry, which dictate how geometries are compressed and 
+                                    transferred to the server. Defaults to lossless WGS84 quantization.
         -------------------------   ---------------------------------------------------------------
         cascade_delete              Optional boolean. When `True`, relationships connected to
                                     entities that are being deleted will automatically be deleted
@@ -642,39 +676,21 @@ class KnowledgeGraph:
                                     `False`, `apply_edits()` will fail if there are provenance
                                     records connected to entities/relationships intended for
                                     deletion or having their properties set to null.
+        -------------------         ---------------------------------------------------------------
+        as_dict                     Optional Boolean. Determines whether the result is returned as
+                                    a dictionary or an object. The default is True. False is recommended.
         =========================   ===============================================================
 
         .. code-block:: python
 
-            # example of an add dictionary- include all properties
-            {
-                "_objectType": "entity",
-                "_typeName": "Person",
-                "_id": "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"
-                "_properties": {
-                    "name": "PythonAPILover",
-                    "hometown": "Redlands",
-                }
-            }
+            from arcgis.graph import Entity, Relationship
 
-            # update dictionary- include only properties being changed
-            {
-                "_objectType": "entity",
-                "_typeName": "Person",
-                "_id": "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"
-                "_properties": {
-                    "hometown": "Lisbon",
-                }
-            }
+            add_entity = Entity(type_name="Company", properties={"name": "Esri"})
+            delete_relationship = DeleteRelationship(type_name="WorksAt", ids=[UUID("783bd422-3hfp-45c7-87aa-8adbbdac0a3d")])
 
-            # delete dictionary- pass a list of id's to be deleted
-            {
-                "_objectType": "entity",
-                "_typeName": "Person",
-                "_ids": ["{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"]
-            }
+            graph.apply_edits(adds=[add_entity], deletes=[delete_relationship], as_dict=False)
 
-        :return: A `dict` showing the results of the edits.
+        :return: :class:`arcgis.graph.response_types.ApplyEditsResult`
 
         """
 
@@ -771,54 +787,35 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, NamedObjectTypeAddsResponse]:
         """
-        Adds entity and relationship types to the data model
+        Adds :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`s 
+        to the data model
 
         `Learn more about adding named types to a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-add.htm>`_
 
         ==================  ===============================================================
         **Parameter**        **Description**
         ------------------  ---------------------------------------------------------------
-        entity_types        Optional list of dicts. The list of entity types to add to the
-                            data model, represented in dictionary format.
+        entity_types        Optional list of EntityTypes. The list of entity types 
+                            to add to the data model, represented in dictionary format.
         ------------------  ---------------------------------------------------------------
-        relationship_types  Optional list of dicts. The list of relationship types to add
-                            to the data model, represented in dictionary format.
+        relationship_types  Optional list of RelationshipTypes. The list of 
+                            relationship types to add to the data model, represented in 
+                            dictionary format.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ==================  ===============================================================
 
         .. code-block:: python
 
-            # example of a named type to be added to the data model
-            {
-                "name": "Person",
-                "alias": "Person",
-                "role": "esriGraphNamedObjectRegular",
-                "strict": False,
-                "properties": {
-                    "Name": {
-                        "name": "Name",
-                        "alias": "Name",
-                        "fieldType": "esriFieldTypeString",
-                        "editable": True,
-                        "visible": True,
-                        "required": False,
-                        "isSystemMaintained": False,
-                        "role": "esriGraphPropertyRegular"
-                    },
-                    "Nickname": {
-                        "name": "Nickname",
-                        "alias": "Nickname",
-                        "fieldType": "esriFieldTypeString",
-                        "editable": True,
-                        "visible": True,
-                        "required": False,
-                        "isSystemMaintained": False,
-                        "role": "esriGraphPropertyRegular"
-                    }
-                }
-            }
+            from arcgis.graph import EntityType, RelationshipType, GraphProperty
 
+            entity_type_add = EntityType(name="Vehicle", properties={"make": GraphProperty(name="make")})
+            relationship_type_add = RelationshipType(name="Drives")
 
-        :return: A `dict` showing the results of the named type adds.
+            graph.named_object_type_adds(entity_types=[entity_type_add], relationship_types=[relationship_type_add], as_dict=False)
+
+        :return: :class:`arcgis.graph.response_types.NamedObjectTypeAddsResponse`
 
         """
 
@@ -883,7 +880,7 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, NamedObjectTypeUpdateResponse]:
         """
-        Updates an entity or relationship type in the data model
+        Updates an :class:`arcgis.graph.data_model_types.EntityType` or :class:`arcgis.graph.data_model_types.RelationshipType` in the data model
 
         `Learn more about updating named types in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-update.htm>`_
 
@@ -892,37 +889,31 @@ class KnowledgeGraph:
         -----------------   ---------------------------------------------------------------
         type_name           Required string. The named type to be updated.
         -----------------   ---------------------------------------------------------------
-        named_type_update   Required dict. The entity or relationship type to be updated,
-                            represented in dictionary format.
+        named_type_update   Required Union[:class:`arcgis.graph.data_model_types.EntityType`, 
+                            :class:`arcgis.graph.data_model_types.RelationshipType`]. The entity or
+                            relationship type to be updated.
         -----------------   ---------------------------------------------------------------
-        mask                Required dict. A dictionary representing the properties of the
-                            named type to be updated.
+        mask                Required :class:`arcgis.graph.data_model_types.NamedObjectTypeMask`. 
+                            The properties of the named type to be updated.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         =================   ===============================================================
 
         .. code-block:: python
 
-            # example of a named type to be updated
-            {
-                "name": "Person",
-                "alias": "Person",
-                "role": "esriGraphNamedObjectRegular",
-                "strict": False
-            }
+            from arcgis.graph import EntityType, NamedObjectTypeMask
 
-            # update the named type's alias:
-            {
-                "update_alias": True
-            }
-            # OR
-            {
-                "update_name": False,
-                "update_alias": True,
-                "update_role": False,
-                "update_strict": False
-            }
+            type_update = EntityType(name="Vehicle", alias="Car")
 
+            graph.named_object_type_update(
+                type_name="Vehicle", 
+                named_type_update=type_update, 
+                mask=NamedObjectTypeMask(update_alias=True),
+                as_dict=False
+            )
 
-        :return: A `dict` showing the results of the named type update.
+        :return: :class:`arcgis.graph.data_model_types.NamedObjectTypeUpdateResponse`
 
         """
 
@@ -981,7 +972,7 @@ class KnowledgeGraph:
         self, type_name: str, as_dict: bool = True
     ) -> Union[dict, NamedObjectTypeDeleteResponse]:
         """
-        Deletes an entity or relationship type in the data model
+        Deletes an :class:`arcgis.graph.data_model_types.EntityType` or :class:`arcgis.graph.data_model_types.RelationshipType` in the data model
 
         `Learn more about deleting named types in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-delete.htm>`_
 
@@ -989,15 +980,17 @@ class KnowledgeGraph:
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         type_name           Required string. The named type to be deleted.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
             # Delete a named type in the data model
-            delete_result = knowledge_graph.named_object_type_delete("Person")
+            delete_result = graph.named_object_type_delete("Person")
 
-
-        :return: A `dict` showing the results of the named type delete.
+        :return: :class:`arcgis.graph.response_types.NamedObjectTypeDeleteResponse`
 
         """
         self._validate_import()
@@ -1032,7 +1025,7 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, PropertyAddsResponse]:
         """
-        Adds properties to a named type in the data model
+        Adds set of :class:`arcgis.graph.data_model_types.GraphProperty` to a named type in the data model
 
         `Learn more about adding properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-add.htm>`_
 
@@ -1042,45 +1035,20 @@ class KnowledgeGraph:
         type_name           Required string. The entity or relationship type to which the
                             properties will be added.
         ----------------    ---------------------------------------------------------------
-        graph_properties    Required list of dicts. The list of properties to add
-                            to the named type, represented in dictionary format.
+        graph_properties    Required Sequence of :class:`arcgis.graph.data_model_types.GraphProperty`. 
+                            The Sequence of properties to add to the named type.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # example of a shape property to be added to a named type
-            {
-                "name": "MyPointGeometry",
-                "alias": "MyPointGeometry",
-                "fieldType": "esriFieldTypeGeometry",
-                "geometryType": "esriGeometryPoint",
-                "hasZ": False,
-                "hasM": False,
-                "nullable": True,
-                "editable": True,
-                "visible": True,
-                "required": False,
-                "isSystemMaintained": False,
-                "role": "esriGraphPropertyRegular"
-            }
+            from arcgis.graph import GraphProperty
 
-            # example of an integer property to be added to a named type
-            {
-                "name": "MyInt",
-                "alias": "MyInt",
-                "fieldType": "esriFieldTypeInteger",
-                "nullable": True,
-                "editable": True,
-                "defaultValue": 123,
-                "visible": True,
-                "required": False,
-                "isSystemMaintained": False,
-                "role": "esriGraphPropertyRegular",
-                "domain": "MyIntegerDomain"
-            }
+            graph.graph_property_adds(type_name="Vehicle", graph_properties=[GraphProperty(name="year")])
 
-
-        :return: A `dict` showing the results of the property adds.
+        :return: :class:`arcgis.graph.response_types.PropertyAddsResponse`
 
         """
 
@@ -1136,7 +1104,7 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, PropertyUpdateResponse]:
         """
-        Updates a property for a named type in the data model
+        Updates a :class:`arcgis.graph.data_model_types.GraphProperty` for a named type in the data model
 
         `Learn more about updating properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-update.htm>`_
 
@@ -1148,53 +1116,29 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         property_name       Required string. The property to be updated.
         ----------------    ---------------------------------------------------------------
-        graph_property      Required dict. The graph property to be updated,
-                            represented in dictionary format.
+        graph_property      Required :class:`arcgis.graph.data_model_types.GraphProperty`. 
+                            The graph property to be updated.
         ----------------    ---------------------------------------------------------------
-        mask                Required dict. A dictionary representing the properties of the
-                            field to be updated.
+        mask                Required :class:`arcgis.graph.data_model_types.GraphPropertyMask`.
+                            The properties of the field to be updated.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # example of a shape property to be updated
-            {
-                "name": "MyPointGeometry",
-                "alias": "MyPointGeometry",
-                "fieldType": "esriFieldTypeGeometry",
-                "geometryType": "esriGeometryPoint",
-                "hasZ": False,
-                "hasM": False,
-                "nullable": True,
-                "editable": True,
-                "visible": True,
-                "required": False,
-                "isSystemMaintained": False,
-                "role": "esriGraphPropertyRegular"
-            }
+            from arcgis.graph import GraphProperty, GraphPropertyMask
 
-            # example: update the property's alias
-            {
-                "update_alias": True
-            }
-            # OR
-            {
-                "update_name": False,
-                "update_alias": True,
-                "update_field_type": False,
-                "update_geometry_type": False,
-                "update_default_value": False,
-                "update_nullable": False,
-                "update_editable": False,
-                "update_visible": False,
-                "update_required": False,
-                "update_has_z": False,
-                "update_has_m": False,
-                "update_domain:" False
-            }
+            graph.graph_property_update(
+                type_name="Vehicle", 
+                property_name="year", 
+                graph_property=GraphProperty(name="year", alias="year_made"), 
+                mask=GraphPropertyMask(update_alias=True),
+                as_dict=False
+            )
 
-
-        :return: A `dict` showing the results of the property update.
+        :return: :class:`arcgis.graph.response_types.PropertyUpdateResponse`
 
         """
 
@@ -1247,7 +1191,7 @@ class KnowledgeGraph:
         self, type_name: str, property_name: str, as_dict: bool = True
     ) -> Union[dict, PropertyDeleteResponse]:
         """
-        Delete a property for a named type in the data model
+        Delete a :class:`arcgis.graph.data_model_types.GraphProperty` for a named type in the data model
 
         `Learn more about deleting properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-delete.htm>`_
 
@@ -1258,15 +1202,18 @@ class KnowledgeGraph:
                             the property to be deleted.
         ----------------    ---------------------------------------------------------------
         property_name       Required string. The property to be deleted.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
             # Delete a named type's property in the data model
-            delete_result = knowledge_graph.graph_property_delete("Person", "Address")
+            delete_result = knowledge_graph.graph_property_delete("Person", "Address", as_dict=False)
 
 
-        :return: A `dict` showing the results of the property delete.
+        :return: :class:`arcgis.graph.response_types.PropertyDeleteResponse`
 
         """
         self._validate_import()
@@ -1309,7 +1256,8 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, IndexAddsResponse]:
         """
-        Adds indexes to a field or multiple fields associated with a named type in the data model.
+        Adds one or more :class:`arcgis.graph.data_model_types.FieldIndex` to a field or multiple fields 
+        associated with a named type in the data model.
 
         `Learn more about adding graph property indexes in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-add.htm>`_
 
@@ -1321,24 +1269,22 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         field_indexes       Required list of dicts. The indexes to add for the type.
                             See below for an example of the structure.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # Add a list of index dicts to fields for a Knowledge Graph type
-            add_result = knowledge_graph.graph_property_index_adds(
-                "Project", [
-                    {
-                        "name" : "title",
-                        "isAscending": True,
-                        "isUnique": True,
-                        "fields": ["title"]
-                    }
-                ]
+            from arcgis.graph import FieldIndex
+
+            graph.graph_property_index_adds(
+                type_name="Person",
+                field_indexes=[FieldIndex(name="name_index", is_ascending=True, is_unique=False, fields=["name"])],
+                as_dict=False
             )
 
-
-        :return: A `dict` showing the results of adding the indexes.
+        :return: :class:`arcgis.graph.response_types.IndexAddsResponse`
 
         """
 
@@ -1390,7 +1336,8 @@ class KnowledgeGraph:
         self, type_name: str, field_indexes: Sequence[str], as_dict: bool = True
     ) -> Union[dict, IndexDeletesResponse]:
         """
-        Deletes indexes from fields associated with a named type in the data model.
+        Deletes one or more :class:`arcgis.graph.data_model_types.FieldIndex` from fields 
+        associated with a named type in the data model.
 
         `Learn more about deleting graph property indexes from a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-delete.htm>`_
 
@@ -1400,17 +1347,20 @@ class KnowledgeGraph:
         type_name           Required string. The entity or relationship type to delete the
                             field indexes from.
         ----------------    ---------------------------------------------------------------
-        field_indexes       Required list of strings. The field indexes to delete from the
-                            type. See below for an example of the structure.
+        field_indexes       Required Sequence of strings. The field indexes to delete from the
+                            type.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # Delete a list of field index dicts from a Knowledge Graph type
-            delete_result = knowledge_graph.graph_property_index_deletes("Project", ["title"])
+            # Delete field indexes from a Knowledge Graph type
+            delete_result = graph.graph_property_index_deletes("Project", ["title"], as_dict=False)
 
 
-        :return: A `dict` showing the results of deleting the indexes.
+        :return: :class:`arcgis.graph.data_model_types.IndexDeletesResponse`
 
         """
 
@@ -1460,41 +1410,34 @@ class KnowledgeGraph:
     ) -> Union[dict, ConstraintRuleAddsResponse]:
         """
         Adds constraint rules for entities & relationships to the data model.
+        :class:`arcgis.graph.data_model_types.RelationshipExclusionRule` is a constraint rule.
 
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        rules               Required list of dicts. The dictionaries defining the
-                            constraint rules to be added. See below for an example of the
-                            structure.
+        rules               Required Sequence of :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`. 
+                            Defines the constraint rules to be added.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
+            from arcgis.graph import RelationshipExclusionRule
+            
+            graph.constraint_rule_adds(
+                rules=[
+                    RelationshipExclusionRule(
+                        name="PersonCanOnlyWorkAtCompany",
+                        origin_entity_types=SetOfNamedTypes(set_complement=["Person"]),
+                        relationship_types=SetOfNamedTypes(set_complement=["WorksAt"]),
+                        destination_entity_types=SetOfNamedTypes(set_complement=["Company"])
+                    )
+                ],
+                as_dict=False
+            )
 
-            # Create a constraint rule and add it to the Knowledge Graph's data model.
-            person = {"set": ["Person"]}
-
-            works_at = {"set": ["WorksAt"]}
-
-            company = {"set_complement": ["Company"]}
-
-            relationship_exclusion_rule = {
-                "origin_entity_types": person,
-                "relationship_types": works_at,
-                "destination_entity_types": company
-            }
-
-            constraint_rule = {
-                "name": "PersonCS",
-                "alias": "officespace",
-                "disabled": False,
-                "relationship_exclusion_rule": relationship_exclusion_rule
-            }
-
-            knowledge_graph.constraint_rule_adds([constraint_rule])
-
-
-        :return: A `dict` showing the results of adding the rule(s).
+        :return: :class:`arcgis.graph.response_types.ConstraintRuleAddsResponse`
 
         """
 
@@ -1554,57 +1497,39 @@ class KnowledgeGraph:
     ) -> Union[dict, ConstraintRuleUpdatesResponse]:
         """
         Update constraint rules for entities & relationships in the data model.
+        :class:`arcgis.graph.data_model_types.RelationshipExclusionRule` is a constraint rule.
 
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        rules               Required list of dicts. The dictionaries defining the
-                            constraint rules to be updated. See below for an example of the
-                            structure.
+        rules               Required Sequence of :class:`arcgis.graph.data_model_types.RelationshipExclusionRuleUpdate`. 
+                            Defines the constraint rules to be updated.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
+            from arcgis.graph import RelationshipExclusionRuleUpdate, RelationshipExclusionRule, ConstraintRuleMask, UpdateSetOfNamedTypes
 
-            # Update a constraint rule in the Knowledge Graph's data model.
+            graph.constraint_rule_updates(
+                rules=[
+                    RelationshipExclusionRuleUpdate(
+                        rule_name="PersonCanOnlyWorkForCompany",
+                        mask=ConstraintRuleMask(update_name=True, update_alias=True),
+                        constraint_rule=RelationshipExclusionRule(
+                            name="PersonCanWorkForCompanyOrPark", 
+                            alias="Person Can Work For Company or Park",
+                            origin_entity_types=UpdateSetOfNamedTypes(add_named_types=["Employee"]),
+                            relationship_types=UpdateSetOfNamedTypes(add_named_types=["WorksFor"], remove_named_types=["WorksAt"]),
+                            destination_entity_types=UpdateSetOfNamedTypes(add_named_types=["Park"])
+                        )
+                    )
+                ],
+                as_dict=False
+            )
 
-            constraint_rule = {
-                "name": "PersonCS",
-                "alias": "officespace",
-                "disabled": False,
-            }
-
-            mask = {
-                "update_name": False,
-                "update_alias": True,
-                "update_disabled": True
-            }
-
-            relationship_exclusion_rule_update =  {
-                "update_origin_entity_types": {
-                    "add_named_types": ["animal"],
-                    "remove_named_types": ["person"]
-                },
-                "update_relationship_types": {
-                    "add_named_types": ["lives_in"],
-                    "remove_named_types": ["works_at"]
-                },
-                "update_destination_entity_types": {
-                    "add_named_types": ["habitat"],
-                    "remove_named_types": ["company"]
-                }
-            }
-
-            constraint_rule_update = {
-                "rule_name": "PersonCS",
-                "mask": mask,
-                "constraint_rule": constraint_rule,
-                "relationship_exclusion_rule_update": relationship_exclusion_rule_update
-            }
-
-            knowledge_graph.constraint_rule_updates([constraint_rule_update])
-
-
-        :return: A `dict` showing the results of updating the rule(s).
+        :return: :class:`arcgis.graph.response_types.ConstraintRuleUpdatesResponse`
 
         """
 
@@ -1666,21 +1591,25 @@ class KnowledgeGraph:
     ) -> Union[dict, ConstraintRuleDeletesResponse]:
         """
         Deletes existing constraint rules for entities & relationships from the data model.
+        :class:`arcgis.graph.data_model_types.RelationshipExclusionRule` is a constraint rule.
 
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        rule_names          Required list of strings. The names of the constraint rules to
+        rule_names          Required Sequence of strings. The names of the constraint rules to
                             be deleted, as defined in a rule's 'name' attribute.
+        ------------------- ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
             # Delete a constraint rule from the Knowledge Graph's data model.
-            knowledge_graph.constraint_rule_deletes(["constraint_rule_1"])
+            graph.constraint_rule_deletes(["constraint_rule_1"], as_dict=False)
 
 
-        :return: A `dict` showing the results of deleting the rule(s).
+        :return: :class:`arcgis.graph.response_types.ConstraintRuleDeletesResponse`
 
         """
 

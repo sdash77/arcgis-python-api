@@ -65,6 +65,54 @@ esriGeometryType = Literal[
 
 
 class GraphProperty(BaseModel):
+    """
+    Represents a property of an :class:`arcgis.graph.data_model_types.EntityType` or 
+    :class:`arcgis.graph.data_model_types.RelationshipType` in the Knowledge Graph.
+    
+    ==================     ===============================================================================================
+    **Parameter**           **Description**
+    ------------------     -----------------------------------------------------------------------------------------------
+    name                    Required String. Name for the property. The default value is "".
+    ------------------     -----------------------------------------------------------------------------------------------
+    alias                   Optional String. Alias for the property. The default value is "".
+    ------------------     -----------------------------------------------------------------------------------------------
+    domain                  Optional String. Name of domain for the property. The default value is "".
+    ------------------     -----------------------------------------------------------------------------------------------
+    field_type              Optional `esriFieldType` string. The default value is "esriFieldTypeString".
+    ------------------     -----------------------------------------------------------------------------------------------
+    geometry_type           Optional `esriGeometryType` string. The default is None. 
+    ------------------     -----------------------------------------------------------------------------------------------
+    has_z                   Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    has_m                   Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    default_value           Optional Any value. The default value is None.
+    ------------------     -----------------------------------------------------------------------------------------------
+    nullable                Optional Boolean. The default value is True.
+    ------------------     -----------------------------------------------------------------------------------------------
+    visible                 Optional Boolean. The default value is True.
+    ------------------     -----------------------------------------------------------------------------------------------
+    editable                Optional Boolean. The default value is True.
+    ------------------     -----------------------------------------------------------------------------------------------
+    required                Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    role                    Optional `esriGraphPropertyRole` string. The default value is "esriGraphPropertyRegular".
+    ==================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import GraphProperty
+
+        # Example 1: simple string property
+        GraphProperty(name="name", alias="name", required=True)
+
+        # Example 2: geometry property
+        GraphProperty(name="shape", field_type="esriFieldTypeGeoemtry", geometry_type="esriGeometryPolygon")
+
+        # Example 3: get GraphProperty information from data model
+        data_model = graph.query_data_model()
+        data_model.entity_types['Person'].properties['name'].required # accesses the required property on the GraphProperty 'name'.
+        
+    """
     name: str = Field(..., description="The name of the property.")
     alias: str = Field(default="", description="The alias of the property.")
     domain: str = Field(default="", description="The domain of the property.")
@@ -139,6 +187,44 @@ class GraphProperty(BaseModel):
 
 
 class GraphPropertyMask(BaseModel):
+    """
+    Allows users to define which settings should be updated for a :class:`arcgis.graph.data_model_types.GraphProperty`
+    during a :function:`arcgis.graph.GraphClient.graph_property_update`.
+    
+    ==================     ===============================================================================================
+    **Parameter**           **Description**
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_name             Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_alias            Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_domain           Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_field_type       Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_geometry_type    Optional Boolean. The default value is False. 
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_has_z            Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_has_m            Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_default_value    Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_nullable         Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_visible          Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_editable         Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_required         Optional Boolean. The default value is False.
+    ==================     ===============================================================================================
+    
+    .. code-block:: python
+        from arcgis.graph import GraphPropertyMask
+
+        GraphPropertyMask(update_name=True, update_visible=True, update_editable=True)
+
+    """
     update_name: bool = Field(
         default=False, description="Whether to update the property name."
     )
@@ -178,6 +264,32 @@ class GraphPropertyMask(BaseModel):
 
 
 class FieldIndex(BaseModel):
+    """
+    Represents a field index to be used in :function:`arcgis.graph.GraphClient.graph_property_index_adds`.
+
+    ==================     ===============================================================================================
+    **Parameter**           **Description**
+    ------------------     -----------------------------------------------------------------------------------------------
+    name                    Required String. Name for the field index.
+    ------------------     -----------------------------------------------------------------------------------------------
+    is_ascending            Required Boolean.
+    ------------------     -----------------------------------------------------------------------------------------------
+    is_unique               Required Boolean.
+    ------------------     -----------------------------------------------------------------------------------------------
+    fields                  Required List(String). List of field names for the index.
+    ==================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import FieldIndex
+
+        # Example 1: create a FieldIndex to use
+        FieldIndex(name="name_index", is_ascending=True, is_unique=False, fields=["name"])
+
+        # Example 2: access FieldIndex in the data model
+        data_model = graph.query_data_model()
+        data_model.entity_types["Person"].field_indexes['name_index'].fields
+
+    """
     name: str = Field(..., description="The index name.")
     is_ascending: bool = Field(..., description="Whether the index is ascending.")
     is_unique: bool = Field(..., description="Whether the index is unique.")
@@ -233,10 +345,61 @@ class NamedObjectType(BaseModel):
         return data
 
 
-class EntityType(NamedObjectType): ...
+class EntityType(NamedObjectType): 
+    """
+    Represents an entity named object type for a Knowledge Graph.
+
+    ==================     ===============================================================================================
+    **Parameter**           **Description**
+    ------------------     -----------------------------------------------------------------------------------------------
+    name                    Required String. Name for the Entity Type.
+    ------------------     -----------------------------------------------------------------------------------------------
+    alias                   Optional String. The default value is "".
+    ------------------     -----------------------------------------------------------------------------------------------
+    role                    Optional `esriGraphNamedObjectRole` String. The default value is "esriGraphNamedObjectRegular".
+    ------------------     -----------------------------------------------------------------------------------------------
+    strict                  Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    properties              Optional Dict(String, :class:`arcgis.graph.data_model_types.GraphProperty`). The default value is {}.
+    ------------------     -----------------------------------------------------------------------------------------------
+    field_indexes           Optional Dict(String, :class:`arcgis.graph.data_model_types.FieldIndex`). The default value is {}.
+    ==================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import EntityType
+
+        # Example 1: Define an entity type
+        EntityType(
+            name="Person", 
+            properties={"name": GraphProperty(name="name")},
+            field_indexes={"name_index": FieldIndex(name="name_index", is_ascending=True, is_unique=False, fields=["name"])}
+        )
+
+        # Example 2: Access information about an entity type from the data model
+        data_model = graph.query_data_model()
+        data_model.entity_types['Person'].properties
+
+    """
+    ...
 
 
 class EndPoint(BaseModel):
+    """
+    Represents a set of origin and destination entity types for a relationship type
+
+    ========================     ===============================================================================================
+    **Parameter**                 **Description**
+    ------------------------     -----------------------------------------------------------------------------------------------
+    origin_enity_type             Required String. Name of origin entity type.
+    ------------------------     -----------------------------------------------------------------------------------------------
+    destination_entity_type       Required String. Name of destination entity type.
+    ========================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import EndPoint
+
+        EndPoint("Person", "Company")
+    """
     origin_entity_type: str = Field(
         ..., description="The origin entity type for the relationship type."
     )
@@ -262,6 +425,42 @@ class EndPoint(BaseModel):
 
 
 class RelationshipType(NamedObjectType):
+    """
+    Represents a relationship named object type for a Knowledge Graph.
+
+    ==================     ===============================================================================================
+    **Parameter**           **Description**
+    ------------------     -----------------------------------------------------------------------------------------------
+    name                    Required String. Name for the Entity Type.
+    ------------------     -----------------------------------------------------------------------------------------------
+    alias                   Optional String. The default value is "".
+    ------------------     -----------------------------------------------------------------------------------------------
+    role                    Optional `esriGraphNamedObjectRole` String. The default value is "esriGraphNamedObjectRegular".
+    ------------------     -----------------------------------------------------------------------------------------------
+    strict                  Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    properties              Optional Dict(String, :class:`arcgis.graph.data_model_types.GraphProperty`). The default value is {}.
+    ------------------     -----------------------------------------------------------------------------------------------
+    field_indexes           Optional Dict(String, :class:`arcgis.graph.data_model_types.FieldIndex`). The default value is {}.
+    ------------------     -----------------------------------------------------------------------------------------------
+    end_points              Optional List[:class:`EndPoint`]. The default value is [].
+    ==================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import RelationshipType
+
+        # Example 1: Define a relationship type
+        RelationshipType(
+            name="WorksAt", 
+            properties={"name": GraphProperty(name="name")}, 
+            field_indexes={"name_index": FieldIndex(name="name_index", is_ascending=True, is_unique=False, fields=["name"])}
+        )
+
+        # Example 2: Access a relationship type from the data model
+        data_model = graph.query_data_model()
+        data_model.relationship_types['WorksAt'].properties
+
+    """
     observed_end_points: list[EndPoint] = Field(
         default=[],
         description="The observed origin and destination entity type pairs in the database for the relationship type.",
@@ -294,6 +493,27 @@ class RelationshipType(NamedObjectType):
 
 
 class NamedObjectTypeMask(BaseModel):
+    """
+    Allows user to define what should be updated when performing a :function:`arcgis.graph.GraphClient.named_object_type_update`.
+
+    ==================     ===============================================================================================
+    **Parameter**           **Description**
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_name             Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_alias            Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_role             Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_strict           Optional Boolean. The default value is False.
+    ==================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import NamedObjectTypeMask
+
+        NamedObjectTypeMask(update_name=True, update_alias=True, update_strict=True)
+
+    """
     update_name: bool = Field(
         default=False,
         description="Whether to update the name in the entity or relationship type.",
@@ -322,6 +542,33 @@ esriGraphConstraintRuleRole = Literal[
 
 
 class ConstraintRule(BaseModel):
+    """
+    Represents an constraint rule to define how data can be created in 
+    the knowledge graph.
+
+    ========================     ===============================================================================================
+    **Parameter**                 **Description**
+    ------------------------     -----------------------------------------------------------------------------------------------
+    name                          Required String. Name for the exclusion rule.
+    ------------------------     -----------------------------------------------------------------------------------------------
+    alias                         Optional String. The default value is "".
+    ------------------------     -----------------------------------------------------------------------------------------------
+    disabled                      Optional Boolean. The default value is False.
+    ------------------------     -----------------------------------------------------------------------------------------------
+    role                          Optional `esriGraphConstraintRuleRole`. The default value is "esriGraphConstraintRuleRoleRegular"..
+    ========================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import ConstraintRule, SetOfNamedTypes
+
+        # Example 1: Define an exclusion rule
+        ConstraintRule(name="PersonCanOnlyWorkAtCompany")
+
+        # Example 2: Access an exclusion rule from the data model
+        data_model = graph.query_data_model()
+        data_model.constraint_rules
+
+    """
     name: str = Field(..., description="The constraint rule name.")
     alias: str = Field(default="", description="The constraint rule alias.")
     disabled: bool = Field(
@@ -343,6 +590,32 @@ class TypeOfSet(Enum):
 
 
 class SetOfNamedTypes(BaseModel):
+    """
+    Allows users to define the set of named types for a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+
+    Defining a `set` will exclude the set of named type names from being created in the graph 
+    once the exclusion rule is applied.
+    Defining a `set_complement` will exclude anything other than the set of named type names 
+    from being created in the graph once the exclusion rule is applied.
+
+    ==================     ===============================================================================================
+    **Parameter**           **Description**
+    ------------------     -----------------------------------------------------------------------------------------------
+    set                     Optional List of Strings. The default value is [].
+    ------------------     -----------------------------------------------------------------------------------------------
+    set_complement          Optional List of Strings. The default value is [].
+    ==================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import SetOfNamedTypes
+
+        # Example 1: set
+        SetOfNamedTypes(set=["Person","Animal"])
+
+        # Example 2: set_complement
+        SetOfNamedTypes(set_complement=["Company"])
+
+    """
     set: list[str] = Field(default=[], description="The set of types.")
     set_complement: list[str] = Field(
         default=[], description="The complement of the set of types."
@@ -370,6 +643,44 @@ class SetOfNamedTypes(BaseModel):
 
 
 class RelationshipExclusionRule(ConstraintRule):
+    """
+    Represents an exclusion rule to define how relationships can be created in 
+    the knowledge graph between defined entity types.
+
+    ========================     ===============================================================================================
+    **Parameter**                 **Description**
+    ------------------------     -----------------------------------------------------------------------------------------------
+    name                          Required String. Name for the exclusion rule.
+    ------------------------     -----------------------------------------------------------------------------------------------
+    alias                         Optional String. The default value is "".
+    ------------------------     -----------------------------------------------------------------------------------------------
+    disabled                      Optional Boolean. The default value is False.
+    ------------------------     -----------------------------------------------------------------------------------------------
+    role                          Optional `esriGraphConstraintRuleRole`. The default value is "esriGraphConstraintRuleRoleRegular".
+    ------------------------     -----------------------------------------------------------------------------------------------
+    origin_entity_types           Required :class:`SetOfNamedTypes`.
+    ------------------------     -----------------------------------------------------------------------------------------------
+    relationship_types            Required :class:`SetOfNamedTypes`.
+    ------------------------     -----------------------------------------------------------------------------------------------
+    destination_entity_types      Required :class:`SetOfNamedTypes`.
+    ========================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import RelationshipExclusionRule, SetOfNamedTypes
+
+        # Example 1: Define an exclusion rule
+        RelationshipExclusionRule(
+            name="PersonCanOnlyWorkAtCompany",
+            origin_entity_types=SetOfNamedTypes(set_complement=["Person"]),
+            relationship_types=SetOfNamedTypes(set_complement=["WorksAt"]),
+            destination_entity_types=SetOfNamedTypes(set_complement=["Company"])
+        )
+
+        # Example 2: Access an exclusion rule from the data model
+        data_model = graph.query_data_model()
+        data_model.constraint_rules
+
+    """
     type: Literal["esriGraphRelationshipExclusionRuleType"] = Field(default="esriGraphRelationshipExclusionRuleType", description="The constraint rule type.")  # type: ignore
     origin_entity_types: SetOfNamedTypes = Field(
         ..., description="The origin entity types in the rule."
@@ -416,6 +727,25 @@ class RelationshipExclusionRule(ConstraintRule):
 
 
 class ConstraintRuleMask(BaseModel):
+    """
+    Allows users to define which settings to update for a contraint rule
+
+    ==================     ===============================================================================================
+    **Parameter**           **Description**
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_name             Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_alias            Optional Boolean. The default value is False.
+    ------------------     -----------------------------------------------------------------------------------------------
+    update_disabled         Optional Boolean. The default value is False.
+    ==================     ===============================================================================================
+    
+    .. code-block:: python
+        from arcgis.graph import ConstraintRuleMask
+
+        ConstraintRuleMask(update_name=True, update_alias=True, update_disabled=True)
+
+    """
     update_name: bool = Field(
         default=False, description="Whether to update the name in the constraint rule."
     )
@@ -443,6 +773,23 @@ class ConstraintRuleUpdate(BaseModel):
 
 
 class UpdateSetOfNamedTypes(BaseModel):
+    """
+    Allows a user to define named types to add or remove from a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+
+    ==============================     ===============================================================================================
+    **Parameter**                       **Description**
+    ------------------------------     -----------------------------------------------------------------------------------------------
+    add_named_types                     Required List of Strings. Names of types to add to rule.
+    ------------------------------     -----------------------------------------------------------------------------------------------
+    remove_named_types                  Required List of Strings. Names of types to remove from rule.
+    ==============================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import UpdateSetOfNamedTypes
+
+        UpdateSetOfNamedTypes(add_named_types=["Individual"], remove_named_types=["Person"])
+
+    """
     add_named_types: list[str] = Field(
         ..., description="The named types to add to the set."
     )
@@ -452,6 +799,45 @@ class UpdateSetOfNamedTypes(BaseModel):
 
 
 class RelationshipExclusionRuleUpdate(ConstraintRuleUpdate):
+    """
+    Allows a user to provide information for updating a relationship exclusion rule
+    
+
+    ==============================     ===============================================================================================
+    **Parameter**                       **Description**
+    ------------------------------     -----------------------------------------------------------------------------------------------
+    rule_name                           Required String. Name of the constraint rule to update
+    ------------------------------     -----------------------------------------------------------------------------------------------
+    mask                                Required :class:`arcgis.graph.data_model_types.ConstraintRuleMask`.
+    ------------------------------     -----------------------------------------------------------------------------------------------
+    constraint_rule                     Required :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+    ------------------------------     -----------------------------------------------------------------------------------------------
+    update_origin_entity_types          Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    ------------------------------     -----------------------------------------------------------------------------------------------
+    update_relationship_types           Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    ------------------------------     -----------------------------------------------------------------------------------------------
+    update_destination_entity_types     Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    ==============================     ===============================================================================================
+
+    .. code-block:: python
+        from arcgis.graph import RelationshipExclusionRuleUpdate, RelationshipExclusionRule, ConstraintRuleMask
+
+        RelationshipExclusionRuleUpdate(
+            rule_name="PersonCanOnlyWorkForCompany",
+            mask=ConstraintRuleMask(update_name=True, update_alias=True),
+            constraint_rule=RelationshipExclusionRule(
+                name="PersonCanOnlyWorkAtCompany",
+                alais="Person Works At Company",
+                origin_entity_types=SetOfNamedTypes(set_complement=["Person"]),
+                relationship_types=SetOfNamedTypes(set_complement=["WorksAt"]),
+                destination_entity_types=SetOfNamedTypes(set_complement=["Company"])
+            ),
+            update_origin_entity_types=UpdateSetOfNamedTypes(add_named_types=["Employee"],remove_named_types=[]),
+            update_relationship_types=UpdateSetOfNamedTypes(add_named_types=["WorksFor"],remove_named_types=["WorksAt"]),
+            update_destination_entity_types=UpdateSetOfNamedTypes(add_named_types=["Park"],remove_named_types=[])
+        )
+
+    """
     update_origin_entity_types: UpdateSetOfNamedTypes = Field(
         ..., description="Updates to the set of origin entity types."
     )
@@ -593,6 +979,56 @@ class ProvenanceSourceTypeValues(BaseModel):
 
 
 class GraphDataModel(BaseModel):
+    """
+    Allows users to access information about the knowledge graph's data model.
+
+    .. code-block:: python
+        from arcgis.gis import GIS
+        from arcgis.graph import GraphClient, GraphDataModel
+
+        graph = GraphClient("URL to Knowledge Graph Service", gis=GIS("home"))
+        data_model = graph.query_data_model()
+
+        # Access the timestamp the data model was last update. The response will be an integer timestamp.
+        data_model.data_model_timestamp
+
+        # Access the spatial reference. The response will be a dictionary containing the spatial reference information.
+        data_model.spatial_reference
+
+        # Access entity types. The response will be a dictionary of string names and EntityType objects.
+        data_model.entity_types 
+
+        # Access relationship types. The response will be a dictionary of string names and RelationshipType objects.
+        data_model.relationship_types 
+
+        # Access meta entity types (example: Provenance). The response will be a dictionary of string names and EntityType objects.
+        data_model.meta_entity_types
+
+        # Access the boolean value of whether the data model is strict
+        data_model.strict
+
+        # Access the object id property name. The response will be a string.
+        data_model.objectid_property
+
+        # Access the global id property name. The response will be a string.
+        data_model.globalid_property
+
+        # Access the boolean value of whether the knowledge graph is ArcGIS managed.
+        data_model.arcgis_managed
+
+        # Access the identifier info. The response will be a IdentifierInfo object.
+        data_model.identifier_info
+
+        # Access the search indexes. The response will be a list of SearchIndex objects.
+        data_model.search_indexes
+
+        # Access the provenance source type values
+        data_model.provenance_source_type_values
+
+        # Access the constraint rules
+        data_model.constraint_rules
+
+    """
     data_model_timestamp: int = Field(
         ..., description="The timestamp of the last change to the data model."
     )

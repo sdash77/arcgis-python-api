@@ -82,6 +82,35 @@ class NamedObject(GraphObject):
 
 
 class Entity(NamedObject):
+    """
+    Represents an entity instance in the knowledge graph
+
+    ==============================     =======================================================================
+    **Parameter**                       **Description**
+    ------------------------------     -----------------------------------------------------------------------
+    type_name                           Required String. Name of the :class:`arcgis.graph.data_model_types.EntityType`
+    ------------------------------     -----------------------------------------------------------------------
+    id                                  Optional UUID. The default value is None. If not provided, an id will 
+                                        be assigned to the entity when it is created. 
+    ------------------------------     -----------------------------------------------------------------------
+    properties                          Required Dictionary of Strings and Any values. String is the property 
+                                        name and Any value is the value for that property.
+    ==============================     =======================================================================
+
+    .. code-block:: python
+        from arcgis.graph import Entity
+
+        # Example 1: Define an entity
+        Entity(
+            type_name="Company",
+            properties={"name":"Esri"}
+        )
+
+        # Example 2: Access an entity in a query response
+        query_result = graph.query("MATCH (n) RETURN n")
+        next(query_result)[0].properties
+
+    """
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
         model_dict: dict[str, Any] = {
@@ -114,6 +143,43 @@ class Entity(NamedObject):
 
 
 class Relationship(NamedObject):
+    """
+    Represents a relationship instance in the knowledge graph
+
+    ==============================     =======================================================================
+    **Parameter**                       **Description**
+    ------------------------------     -----------------------------------------------------------------------
+    type_name                           Required String. Name of the :class:`arcgis.graph.data_model_types.EntityType`
+    ------------------------------     -----------------------------------------------------------------------
+    id                                  Optional UUID or String. The default value is None. If not provided, an id will 
+                                        be assigned to the entity when it is created. 
+    ------------------------------     -----------------------------------------------------------------------
+    origin_entity_id                    Required UUID or String. The id of the origin :class:`arcgis.graph.graph_types.Entity` in the graph.
+    ------------------------------     -----------------------------------------------------------------------
+    destiation_entity_id                Required UUID or String. The id of the destination :class:`arcgis.graph.graph_types.Entity` in the graph.
+    ------------------------------     -----------------------------------------------------------------------
+    properties                          Optional Dictionary of Strings and Any values. String is the property 
+                                        name and Any value is the value for that property.
+    ==============================     =======================================================================
+
+    .. code-block:: python
+        from arcgis.graph import Relationship
+        from datetime import datetime
+        from uuid import UUID
+
+        # Example 1: Define a relationship
+        Relationship(
+            type_name="WorksAt",
+            origin_entity_id=UUID("488bd414-3afd-4547-89aa-4adbbdac0a8d"),
+            destination_entity_id=UUID("783bd422-3hfp-45c7-87aa-8adbbdac0a3d"),
+            properties={"start_date":datetime.fromtimestamp(1578247200000)}
+        )
+
+        # Example 2: Access an relationship in a query response
+        query_result = graph.query("MATCH ()-[n]-() RETURN n")
+        next(query_result)[0].properties
+    
+    """
     origin_entity_id: Any = Field(
         ..., description="The unique identifier of the relationship's origin entity."
     )
@@ -158,6 +224,19 @@ class Relationship(NamedObject):
 
 
 class Path(BaseModel):
+    """
+    A list of :class:`arcgis.graph.graph_types.Entity` and :class:`arcgis.graph.graph_types.Relationship`s
+    required to traverse a graph from one entity to another. 
+
+    .. code-block:: python
+        graph.query("MATCH path=()-[]-() RETURN path LIMIT 1")
+        path = list(result)[0][0]
+        
+        path.path[0] # first entity in path
+        path.path[1] # first relationship in path
+        path.path[-1] # last entity in path
+
+    """
     path: list[Union[Entity, Relationship]] = Field(
         ..., description="The list of entities and relationships in the path."
     )
@@ -211,6 +290,28 @@ class NamedObjectDelete(BaseModel):
 
 
 class EntityDelete(NamedObjectDelete):
+    """
+    Allows a user to define which entities to delete from a :class:`arcgis.graph.data_model_types.EntityType`.
+
+    ==============================     =======================================================================
+    **Parameter**                       **Description**
+    ------------------------------     -----------------------------------------------------------------------
+    type_name                           Required String. Name of the :class:`arcgis.graph.data_model_types.EntityType`
+    ------------------------------     -----------------------------------------------------------------------
+    ids                                 Required List of UUID or Strings. Ids of the entities to delete. 
+    ==============================     =======================================================================
+
+    .. code-block:: python
+        from arcgis.graph import EntityDelete
+
+        # Example 1: Provide entity id values manually
+        EntityDelete(type_name="Person", ids=[UUID("783bd422-3hfp-45c7-87aa-8adbbdac0a3d")])
+
+        # Example 2: Delete from results of a query
+        results = graph.query("MATCH (n:Person) WHERE n.name CONTAINS "delete" RETURN n.globalid")
+        EntityDelete(type_name="Person", ids=list(results)[0])
+
+    """
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
         return {
@@ -232,6 +333,28 @@ class EntityDelete(NamedObjectDelete):
 
 
 class RelationshipDelete(NamedObjectDelete):
+    """
+    Allows a user to define which relationships to delete from a :class:`arcgis.graph.data_model_types.RelationshipType`.
+
+    ==============================     =======================================================================
+    **Parameter**                       **Description**
+    ------------------------------     -----------------------------------------------------------------------
+    type_name                           Required String. Name of the :class:`arcgis.graph.data_model_types.RelationshipType`
+    ------------------------------     -----------------------------------------------------------------------
+    ids                                 Required List of UUID or Strings. Ids of the relationships to delete. 
+    ==============================     =======================================================================
+
+    .. code-block:: python
+        from arcgis.graph import RelationshipDelete
+
+        # Example 1: Provide relationship id values manually
+        RelationshipDelete(type_name="WorksAt", ids=[UUID("783bd422-3hfp-45c7-87aa-8adbbdac0a3d")])
+
+        # Example 2: Delete from results of a query
+        results = graph.query("MATCH ()-[n:WorksAt]-() WHERE n.name CONTAINS "delete" RETURN n.globalid")
+        RelationshipDelete(type_name="WorksAt", ids=list(results)[0])
+        
+    """
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
         return {
@@ -253,6 +376,29 @@ class RelationshipDelete(NamedObjectDelete):
 
 
 class Transform(BaseModel):
+    """
+    Allows a user to specify custom quantization parameters for input geometry, 
+    which dictate how geometries are compressed and transferred to the server.
+
+    ==============================     ==============================
+    **Parameter**                       **Description**
+    ------------------------------     ------------------------------
+    xy_resolution                       Required float.
+    ------------------------------     ------------------------------
+    x_false_origin                      Required float. 
+    ------------------------------     ------------------------------
+    y_false_origin                      Required float. 
+    ------------------------------     ------------------------------
+    z_resolution                        Required float. 
+    ------------------------------     ------------------------------
+    z_false_origin                      Required float. 
+    ------------------------------     ------------------------------
+    m_resolution                        Required float. 
+    ------------------------------     ------------------------------
+    m_false_origin                      Required float. 
+    ==============================     ==============================
+
+    """
     xy_resolution: float = Field(..., description="The XY resolution.")
     x_false_origin: float = Field(..., description="The X false origin.")
     y_false_origin: float = Field(..., description="The Y false origin.")
