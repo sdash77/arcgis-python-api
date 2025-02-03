@@ -494,5 +494,5 @@ class TraceConfiguration:
             ],
             allow_indeterminate_flow=config["allowIndeterminateFlow"],
             use_digitized_direction=config["useDigitizedDirection"],
-            synthesize_geometry=config["synthesizeGeometry"],
+            synthesize_geometry=config["synthesizeGeometries"],
         )
