@@ -9544,7 +9544,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -10435,7 +10436,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_dict = gis.content.folders.create(folder, user).properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -12307,7 +12308,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                         owner = gis.properties.user.username
                         folderId = gis._portal.get_folder_id(owner, folder)
                     if folderId is None:
-                        folder_dict = gis.content.create_folder(folder, owner)
+                        folder_dict = gis.content.folders.create(
+                            folder, owner
+                        ).properties
                         folder = folder_dict["title"]
                         folderId = folder_dict["id"]
 
@@ -12596,7 +12599,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                         owner = gis.properties.user.username
                         folderId = gis._portal.get_folder_id(owner, folder)
                     if folderId is None:
-                        folder_dict = gis.content.create_folder(folder, owner)
+                        folder_dict = gis.content.folders.create(
+                            folder, owner
+                        ).properties
                         folder = folder_dict["title"]
                         folderId = folder_dict["id"]
 
@@ -15772,7 +15777,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                         owner = gis.properties.user.username
                         folderId = gis._portal.get_folder_id(owner, folder)
                     if folderId is None:
-                        folder_dict = gis.content.create_folder(folder, owner)
+                        folder_dict = gis.content.folders.create(
+                            folder, owner
+                        ).properties
                         folder = folder_dict["title"]
                         folderId = folder_dict["id"]
 
@@ -17894,7 +17901,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties returned by the gis.content.folders.create() can also be passed in as input.
 
                                                  Example:
                                                     {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -18501,7 +18508,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties returned by the gis.content.fodlers.create() can also be passed in as input.
 
                                                  Example:
                                                     {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -18698,7 +18705,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties returned by the gis.content.fodlers.create() can also be passed in as input.
 
                                                  Example:
                                                     {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}

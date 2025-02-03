@@ -105,8 +105,9 @@ class LocationTrackingManager:
         folder_title = (
             "Location Sharing" if self._use_location_sharing else "Location Tracking"
         )
-        for folder in self._gis.users.me.folders:
-            if folder["title"] == folder_title:
+        folders = self._gis.users.me.folders
+        for folder in folders:
+            if folder.name == folder_title:
                 break
         else:
             self._gis.content.folders.create(folder_title)
@@ -251,8 +252,8 @@ class LocationTrackingManager:
                 else "Location Tracking"
             )
             for folder in self._gis.users.get(item.owner).folders:
-                if folder["title"] == folder_title:
-                    self._gis.content.delete_folder(folder["title"], owner=item.owner)
+                if folder.name == folder_title:
+                    folder.delete(permanent=True)
                     break
         self._gis._properties = None
         return True
