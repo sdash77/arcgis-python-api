@@ -1060,7 +1060,12 @@ class Folders:
         return None
 
     # ---------------------------------------------------------------------
-    def create(self, folder: str, owner: str | "User" = None) -> Folder:
+    def create(
+        self,
+        folder: str,
+        owner: str | "User" = None,
+        exist_ok: bool = False,
+    ) -> Folder:
         """
         The ``create`` method creates a folder named with the value of the
         *folder* argument owned by the :class:`user <arcgis.gis.User>` entered
@@ -1081,6 +1086,9 @@ class Folders:
 
                           .. note::
                               Must have administrator privileges to create content for another *user*.
+        ----------------  --------------------------------------------------------------------------
+        exist_ok          Optional Bool. If exist_ok is False (the default), a FolderException is raised
+                          if the target directory already exists.
         ================  ==========================================================================
 
         :return:
@@ -1095,6 +1103,8 @@ class Folders:
             >>> new_folder.name
                 'Hurricane_Data'
         """
+        if exist_ok:
+            return self._get_or_create(folder=folder, owner=owner)
         if folder in ["/", None, ""]:  # we don't create root folder
             logger.warning("Cannot create the root folder, just returning the root.")
             return Folder(gis=self._gis)
