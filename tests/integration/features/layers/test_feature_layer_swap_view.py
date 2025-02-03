@@ -8,24 +8,9 @@ from arcgis.features import FeatureLayerCollection, FeatureLayer
 from utils.decorators import integration_test, profiles
 from integration.config import QALAB_ROOT_PATH
 
-__logger__ = logging.getLogger()
+from utils._logging import enable_verbose_logging
 
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-# profiles = ['your_online_profile', 'your_enterprise_profile']
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-
-
-# enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 
 @profiles.enterprise_and_agol
@@ -41,24 +26,42 @@ class TestFeatureLayerCollectionSwap(unittest.TestCase):
 
         content = cls.gis.content
         folder = content.folders.get()
-        ip = ItemProperties(title=f"swap_{uid}_source", item_type=ItemTypeEnum.SHAPEFILE)
+        ip = ItemProperties(
+            title=f"swap_{uid}_source", item_type=ItemTypeEnum.SHAPEFILE
+        )
 
         cls.item_source = folder.add(item_properties=ip, file=cls.path1).result()
         cls.pitem_source = cls.item_source.publish(
-            {"name": f"swap_{uid}_source", "maxRecordCount": 2000, "hasStaticData": True, "layerInfo": {"capabilities": "Query"}})
+            {
+                "name": f"swap_{uid}_source",
+                "maxRecordCount": 2000,
+                "hasStaticData": True,
+                "layerInfo": {"capabilities": "Query"},
+            }
+        )
 
         mgr = cls.pitem_source.layers[0].container.manager
         cls.view_item_source = mgr.create_view(name=f"swap_{uid}_view")
-        ip = ItemProperties(title=f"swap_{uid}_replace", item_type=ItemTypeEnum.SHAPEFILE)
+        ip = ItemProperties(
+            title=f"swap_{uid}_replace", item_type=ItemTypeEnum.SHAPEFILE
+        )
 
         cls.item_replace = folder.add(item_properties=ip, file=cls.path2).result()
         cls.pitem_replace = cls.item_replace.publish(
-            {"name": f"swap_{uid}_replace", "maxRecordCount": 2000, "hasStaticData": True, "layerInfo": {"capabilities": "Query"}})
+            {
+                "name": f"swap_{uid}_replace",
+                "maxRecordCount": 2000,
+                "hasStaticData": True,
+                "layerInfo": {"capabilities": "Query"},
+            }
+        )
 
         print("stop")
 
     def test_run_it(self):
-        flc: FeatureLayerCollection = FeatureLayerCollection.fromitem(self.view_item_source)
+        flc: FeatureLayerCollection = FeatureLayerCollection.fromitem(
+            self.view_item_source
+        )
         layer: FeatureLayer = FeatureLayer.fromitem(self.pitem_replace)
         index: int = 0
         mgr = flc.manager

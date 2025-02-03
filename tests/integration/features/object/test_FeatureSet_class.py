@@ -38,23 +38,6 @@ class Test_Feature_class(unittest.TestCase):
         print("Beginning tests in Test_Feature_class")
         # endregion
 
-    def setUp(self):
-        test_skip = False  # reset the skip flag
-        print("Test: " + self._testMethodName)
-        self.namePrefix = "dino_NetworkAnalysis_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
-
     def test_save_featureSet_withFeatures_to_csv_method(self):
         """
         Test to check if the save function operates successfully when a non-empty featureSet is to be saved to a CSV file

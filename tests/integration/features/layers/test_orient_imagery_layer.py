@@ -1,4 +1,3 @@
-import logging
 import unittest, os, uuid
 from arcgis.features.layer import OrientedImageryLayer
 from arcgis.gis._impl._dataclasses._contentds import (
