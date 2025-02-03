@@ -3254,6 +3254,50 @@ class Job(object):
         }
         return return_obj
 
+    def _execute_step(self, step_ids: Optional[list], execution_type: ExecutionType):
+        # Create a JobExecution object
+        je = JobExecution(self, execution_type)
+        # Subscribe to this job
+        self._workflow_manager._notification_manager.subscribe(
+            [self.job_id], je._callback
+        )
+
+        # Call the action endpoint
+        url = f"{self._url}/jobs/{self.job_id}/action"
+        post_obj = {}
+        if execution_type is ExecutionType.RUN:
+            post_obj["type"] = "Run"
+        elif execution_type is ExecutionType.FINISH:
+            post_obj["type"] = "Finish"
+        elif execution_type is ExecutionType.STOP:
+            post_obj["type"] = "Stop"
+
+        if step_ids is not None:
+            post_obj["stepIds"] = step_ids
+
+        try:
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+            # If it fails, unsubscribe then throw
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception(return_obj["stepResponses"])
+        except:
+            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
+            raise
+
+        # If it succeeds, return the JobExecution
+        je._started()
+        return je
+
     def run(self, step_ids: Optional[list] = None):
         """
         Starts running the current step(s). Running a step marks it as finished, if the step is set to proceed to next.
@@ -3297,42 +3341,7 @@ class Job(object):
                 print(m.message)
 
         """
-        # Create a JobExecution object
-        je = JobExecution(self, ExecutionType.RUN)
-        # Subscribe to this job
-        self._workflow_manager._notification_manager.subscribe(
-            [self.job_id], je._callback
-        )
-
-        # Call the action endpoint
-        url = f"{self._url}/jobs/{self.job_id}/action"
-        post_obj = {"type": "Run"}
-
-        if step_ids is not None:
-            post_obj["stepIds"] = step_ids
-
-        try:
-            return_obj = json.loads(
-                self._gis._con.post(
-                    url,
-                    post_obj,
-                    post_json=True,
-                    try_json=False,
-                    json_encode=False,
-                )
-            )
-            # If it fails, unsubscribe then throw
-            if "error" in return_obj:
-                self._gis._con._handle_json_error(return_obj["error"], 0)
-            elif "success" in return_obj and return_obj["success"] is False:
-                raise Exception(return_obj["stepResponses"])
-        except:
-            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
-            raise
-
-        # If it succeeds, return the JobExecution
-        je._started()
-        return je
+        return self._execute_step(step_ids, execution_type=ExecutionType.RUN)
 
     def stop(self, step_ids: Optional[list] = None):
         """
@@ -3380,43 +3389,7 @@ class Job(object):
                 print(m.message)
 
         """
-        # Create a JobExecution object
-        je = JobExecution(self, ExecutionType.STOP)
-        # Subscribe to this job
-        self._workflow_manager._notification_manager.subscribe(
-            [self.job_id], je._callback
-        )
-
-        # Call the action endpoint
-        url = f"{self._url}/jobs/{self.job_id}/action"
-        post_obj = {"type": "Stop"}
-
-        if step_ids is not None:
-            post_obj["stepIds"] = step_ids
-
-        try:
-            return_obj = json.loads(
-                self._gis._con.post(
-                    url,
-                    post_obj,
-                    post_json=True,
-                    try_json=False,
-                    json_encode=False,
-                )
-            )
-
-            # If it fails, unsubscribe then throw
-            if "error" in return_obj:
-                self._gis._con._handle_json_error(return_obj["error"], 0)
-            elif "success" in return_obj and return_obj["success"] is False:
-                raise Exception(return_obj["stepResponses"])
-        except:
-            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
-            raise
-
-        # If it succeeds, return the JobExecution
-        je._started()
-        return je
+        return self._execute_step(step_ids, execution_type=ExecutionType.STOP)
 
     def finish(self, step_ids: Optional[list] = None):
         """
@@ -3461,42 +3434,7 @@ class Job(object):
                 print(m.message)
 
         """
-        # Create a JobExecution object
-        je = JobExecution(self, ExecutionType.FINISH)
-        # Subscribe to this job
-        self._workflow_manager._notification_manager.subscribe(
-            [self.job_id], je._callback
-        )
-
-        # Call the action endpoint
-        url = f"{self._url}/jobs/{self.job_id}/action"
-        post_obj = {"type": "Finish"}
-
-        if step_ids is not None:
-            post_obj["stepIds"] = step_ids
-
-        try:
-            return_obj = json.loads(
-                self._gis._con.post(
-                    url,
-                    post_obj,
-                    post_json=True,
-                    try_json=False,
-                    json_encode=False,
-                )
-            )
-
-            # If it fails, unsubscribe then throw
-            if "error" in return_obj:
-                self._gis._con._handle_json_error(return_obj["error"], 0)
-            elif "success" in return_obj and return_obj["success"] is False:
-                raise Exception(return_obj["stepResponses"])
-        except:
-            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
-            raise
-        # If it succeeds, return the JobExecution
-        je._started()
-        return je
+        return self._execute_step(step_ids, execution_type=ExecutionType.FINISH)
 
 
 class JobExecution:
@@ -3646,7 +3584,7 @@ class JobExecution:
         return not self.running()
 
     def __repr__(self):
-        return f"Job execution for job {self._job.job_id}. This job is currently {'' if self.running() else 'not'} running"
+        return f'JobExecution({"job": {self._job.job_id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}'
 
 
 class WMRole(object):
@@ -4388,7 +4326,7 @@ class Notification:
         self.msg_type = MessageType(init_data["msgType"].upper())
 
     def __repr__(self):
-        return f"{self.timestamp}: {self.msg_type} - {self.message}"
+        return f'Notification({"timestamp": "{self.timestamp}", "msgType": "{self.msg_type}", "message": "{self.message}"})'
 
 
 class MessageType(Enum):
