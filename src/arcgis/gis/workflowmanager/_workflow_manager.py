@@ -3305,7 +3305,7 @@ class Job(object):
         )
 
         # Call the action endpoint
-        url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
+        url = f"{self._url}/jobs/{self.job_id}/action"
         post_obj = {"type": "Run"}
 
         if step_ids is not None:
@@ -3388,7 +3388,7 @@ class Job(object):
         )
 
         # Call the action endpoint
-        url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
+        url = f"{self._url}/jobs/{self.job_id}/action"
         post_obj = {"type": "Stop"}
 
         if step_ids is not None:
@@ -3469,7 +3469,7 @@ class Job(object):
         )
 
         # Call the action endpoint
-        url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
+        url = f"{self._url}/jobs/{self.job_id}/action"
         post_obj = {"type": "Finish"}
 
         if step_ids is not None:
@@ -3611,8 +3611,8 @@ class JobExecution:
         """
         if self._event.wait(timeout):
             return self._messages[-1]
-        else:
-            raise TimeoutError("Timeout waiting for result")
+
+        raise TimeoutError("Timeout waiting for result")
 
     @property
     def elapse_time(self):
@@ -3622,8 +3622,8 @@ class JobExecution:
         """
         if self._end_time:
             return self._end_time - self._start_time
-        else:
-            return datetime.datetime.now() - self._start_time
+
+        return datetime.datetime.now() - self._start_time
 
     def running(self):
         """
@@ -4205,10 +4205,10 @@ class NotificationManager:
             message_dict = json.loads(message)
 
             # ensure we are connected via setting an event before subscribing
-            if "connected" in message_dict.keys() and message_dict["connected"]:
+            if message_dict.get("connected"):
                 self._received_connected_msg.set()
 
-            if "msgType" in message_dict.keys():
+            if "msgType" in message_dict:
                 msg = Notification(message_dict)
 
                 if "jobId" in msg.message:
@@ -4229,7 +4229,6 @@ class NotificationManager:
         self._received_connected_msg.wait(self._timeout)
         return ws
 
-    @contextmanager
     def connect(self):
         """
         Establishes a websocket connection to the workflow manager server.
