@@ -26,9 +26,16 @@ class TestImageContent(unittest.TestCase):
         assert img.properties
         assert img.caption
         assert img.alt_text
-
+        
+        # set link
+        img.link = "www.google.com"
+        assert img.link == "www.google.com"
+        
+        img.full_view = True
+        assert img.full_view == True
+        
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_create_gallery(self):
         """Test creating a gallery and adding images to it"""
@@ -60,7 +67,7 @@ class TestImageContent(unittest.TestCase):
         assert gallery.images
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":

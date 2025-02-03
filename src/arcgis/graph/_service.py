@@ -4,6 +4,7 @@ from typing import Generator
 from arcgis.geometry import Geometry
 import copy
 import datetime
+from arcgis.gis._impl._util import _get_item_url
 
 try:
     import arcgis.graph._arcgisknowledge as _kgparser
@@ -50,7 +51,7 @@ class KnowledgeGraph:
     def _validate_import(self):
         if HAS_KG == False:
             raise ImportError(
-                "An error occured with importing the Knowledge Graph libraries. Please ensure you "
+                "An error occurred with importing the Knowledge Graph libraries. Please ensure you "
                 "are using Python 3.9, 3.10 or 3.11 on Windows or Linux platforms."
             )
 
@@ -72,7 +73,11 @@ class KnowledgeGraph:
             raise ValueError(
                 "Invalid item type, please provide a 'Knowledge Graph' item."
             )
-        return cls(url=item.url, gis=item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = item.url
+        return cls(url=url, gis=item._gis)
 
     @property
     def properties(self) -> _isd.InsensitiveDict:

@@ -11,67 +11,78 @@ import json as _json
 import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
-from ._scannedmapdigitizer import ScannedMapDigitizer
-from .models._timm_utils import load_timm_bckbn_pretrained
+
+try:
+    from ._scannedmapdigitizer import ScannedMapDigitizer
+    from .models._timm_utils import load_timm_bckbn_pretrained
+except ImportError as ie:
+    pass
 
 # from timm.models import helpers
 
 # helpers.load_pretrained = load_timm_bckbn_pretrained
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
-    from .models import (
-        SingleShotDetector,
-        UnetClassifier,
-        FeatureClassifier,
-        RetinaNet,
-        PSPNetClassifier,
-        MaskRCNN,
-        DeepLab,
-        PointCNN,
-        ModelExtension,
-        FasterRCNN,
-        SuperResolution,
-        FullyConnectedNetwork,
-        MLModel,
-        YOLOv3,
-        HEDEdgeDetector,
-        BDCNEdgeDetector,
-        ImageCaptioner,
-        TimeSeriesModel,
-        CycleGAN,
-        MultiTaskRoadExtractor,
-        ChangeDetector,
-        Pix2Pix,
-        ConnectNet,
-        SiamMask,
-        Track,
-        Embeddings,
-        MMDetection,
-        MMSegmentation,
-        AutoML,
-        DeepSort,
-        Pix2PixHD,
-        AutoDL,
-        ImageryModel,
-        MaXDeepLab,
-        WNet_cGAN,
-        DETReg,
-        RandLANet,
-        EfficientDet,
-        SQNSeg,
-        PSETAE,
-        MMDetection3D,
-        SamLoRA,
-        RTDetrV2,
-        ClimaX,
-    )
+    try:
+        from .models import (
+            SingleShotDetector,
+            UnetClassifier,
+            FeatureClassifier,
+            RetinaNet,
+            PSPNetClassifier,
+            MaskRCNN,
+            DeepLab,
+            PointCNN,
+            ModelExtension,
+            FasterRCNN,
+            SuperResolution,
+            FullyConnectedNetwork,
+            MLModel,
+            YOLOv3,
+            HEDEdgeDetector,
+            BDCNEdgeDetector,
+            ImageCaptioner,
+            TimeSeriesModel,
+            CycleGAN,
+            MultiTaskRoadExtractor,
+            ChangeDetector,
+            Pix2Pix,
+            ConnectNet,
+            SiamMask,
+            Track,
+            Embeddings,
+            MMDetection,
+            MMSegmentation,
+            AutoML,
+            DeepSort,
+            Pix2PixHD,
+            AutoDL,
+            ImageryModel,
+            MaXDeepLab,
+            WNet_cGAN,
+            DETReg,
+            RandLANet,
+            EfficientDet,
+            SQNSeg,
+            PSETAE,
+            MMDetection3D,
+            SamLoRA,
+            RTDetrV2,
+            ClimaX,
+            PTv3Seg,
+        )
 
-    from ._object_tracker import ObjectTracker
+        from ._object_tracker import ObjectTracker
 
-    from ._utils.pointcloud_data import Transform3d
-from ._data import prepare_data, prepare_tabulardata, prepare_textdata
-from ._process_df import process_df, add_datepart
-from ._utils.evaluate_batchsize import estimate_batch_size
+        from ._utils.pointcloud_data import Transform3d
+    except:
+        pass
+try:
+    from ._data import prepare_data, prepare_tabulardata, prepare_textdata
+    from ._process_df import process_df, add_datepart
+    from ._utils.evaluate_batchsize import estimate_batch_size
+except:
+    pass
 
 
 _point_cloud_classification_model_list = ["PointCNN", "RandLANet", "SQNSeg"]
@@ -1638,7 +1649,10 @@ class Model:
             model = _json.loads(self._model)
             if "url" in model.keys():
                 return "<Model:%s>" % self._model
-            return "<Model Title:%s owner:%s>" % (self.item.title, self.item.owner)
+            return "<Model Title:%s owner:%s>" % (
+                self.item.title,
+                self.item.owner,
+            )
 
         else:
             try:
@@ -1907,5 +1921,10 @@ def export_point_dataset(
     from ._utils.pointcloud_data import prepare_las_data
 
     prepare_las_data(
-        data_path, block_size, max_points, output_path, extra_features, **kwargs
+        data_path,
+        block_size,
+        max_points,
+        output_path,
+        extra_features,
+        **kwargs,
     )

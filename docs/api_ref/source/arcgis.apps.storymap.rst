@@ -168,7 +168,7 @@ Separator
 
 BriefingSlide
 -----------------
-.. autoclass:: arcgis.apps.storymap.briefing.BriefingSlide
+.. autoclass:: arcgis.apps.storymap.BriefingSlide
    :members:
    :undoc-members:
    :show-inheritance:
@@ -213,6 +213,41 @@ SlideSubLayout
 Language
 ^^^^^^^^
 .. autoclass:: arcgis.apps.storymap.story_content.Language
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+CoverType
+^^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.CoverType
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+VerticalPosition
+^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.VerticalPosition
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+HorizontalPosition
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.HorizontalPosition
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+CoverStyle
+^^^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.CoverStyle
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+CoverSize
+^^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.CoverSize
    :members:
    :undoc-members:
    :show-inheritance:

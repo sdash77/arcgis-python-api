@@ -21,6 +21,8 @@ import arcgis.gis
 from arcgis.gis import Item, Layer
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 from arcgis.geocoding import Geocoder
 from arcgis.geometry import (
     Point,
@@ -7832,6 +7834,22 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         return self._gptbx
 
     # ----------------------------------------------------------------------
+    @property
+    def _current_version(self):
+        current_version = None
+        if self._is_ortho:
+            if "currentVersion" in self._gis._tools.orthomapping.properties.keys():
+                current_version = self._gis._tools.orthomapping.properties[
+                    "currentVersion"
+                ]
+        else:
+            if "currentVersion" in self._gis._tools.realitymapping.properties.keys():
+                current_version = self._gis._tools.realitymapping.properties[
+                    "currentVersion"
+                ]
+        return current_version
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
 
@@ -8593,6 +8611,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         gis=None,
         future=False,
         flight_json_details=None,
+        classify_ground_options=None,
         **kwargs,
     ):
         """
@@ -8715,16 +8734,36 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                         output_properties=kwargs,
                     )
 
-        job = tool(
-            image_collection=image_collection,
-            cell_size=cell_size,
-            output_dem=output_dem,
-            surface_type=surface_type,
-            matching_method=matching_method,
-            context=context,
-            gis=gis,
-            future=True,
-        )
+        if classify_ground_options is not None and surface_type.lower() != "dtm":
+            raise RuntimeError(
+                "Classify ground options can only be specified for DTM surface type."
+            )
+
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version >= 11.4:
+                job = tool(
+                    image_collection=image_collection,
+                    cell_size=cell_size,
+                    output_dem=output_dem,
+                    surface_type=surface_type,
+                    matching_method=matching_method,
+                    context=context,
+                    classify_ground_options=classify_ground_options,
+                    gis=gis,
+                    future=True,
+                )
+            else:
+                job = tool(
+                    image_collection=image_collection,
+                    cell_size=cell_size,
+                    output_dem=output_dem,
+                    surface_type=surface_type,
+                    matching_method=matching_method,
+                    context=context,
+                    gis=gis,
+                    future=True,
+                )
 
         final_job = None
         if self._is_ortho:
@@ -10741,7 +10780,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.0")
+    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.1")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -18348,7 +18387,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_item_name = "TrainDeepLearningModel_" + _id_generator()
             output_name = output_item_name.replace(" ", "_")
 
-        if "/fileShares/" in output_name or "/rasterStores/" in output_name:
+        if (
+            "/fileShares/" in output_name
+            or "/rasterStores/" in output_name
+            or "/cloudStores/" in output_name
+        ):
             output_name = {"uri": output_name}
         else:
             if folderId is not None:
@@ -21453,7 +21496,11 @@ class _GeometryService(_GISService):
     def fromitem(cls, item):
         if not item.type == "Geometry Service":
             raise TypeError("item must be a type of Geometry Service, not " + item.type)
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     # ----------------------------------------------------------------------
     def areas_and_lengths(

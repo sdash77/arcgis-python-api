@@ -905,7 +905,7 @@ class TextClassifier(ArcGISModel):
                         "Validation set is empty. Data object must not be empty or None."
                     )
 
-                validation_dataframe = self._data._valid_df
+                validation_dataframe = self._data._valid_df.sample(n=rows)
                 predictions = [
                     x[1]
                     for x in self.predict(
@@ -1127,10 +1127,9 @@ class TextClassifier(ArcGISModel):
 
                     # There are some instances where extra information are not generated with \n as separator.
                     for value in i:
-                        for j in re.split("[- ]", value):
-                            if j in classes:
-                                temp_val.append(j)
-
+                        for j in re.split("[-]", value):
+                            if j.strip() in classes:
+                                temp_val.append(j.strip())
                     # check if any value is there. if there is no match put empty string
                     if not len(temp_val):
                         temp_val = [""]

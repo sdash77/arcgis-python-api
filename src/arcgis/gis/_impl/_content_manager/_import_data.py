@@ -3,6 +3,7 @@ import random
 from uuid import uuid4
 import string
 import os
+import re
 import tempfile
 import shutil
 from arcgis.auth.tools import LazyLoader
@@ -82,11 +83,11 @@ def _create_file(df, file_type, **kwargs):
         # Create filegdb or shapefile
         if file_type == "File Geodatabase":
             # create empty filegdb
-            emtpy_fgdb = _tool_utils.run_and_hide(
+            empty_fgdb = _tool_utils.run_and_hide(
                 fn=arcpy.CreateFileGDB_management,
                 **{"out_folder_path": temp_dir, "out_name": name},
             )
-            fgdb = emtpy_fgdb[0]
+            fgdb = empty_fgdb[0]
             location = os.path.join(fgdb, os.path.basename(temp_dir))
             zip_loc = os.path.join(temp_dir, name)
         else:
@@ -174,11 +175,15 @@ def _create_items(gis, file, file_type, **kwargs):
         publish_parameters["locationType"] = None
     else:
         # start creating publish params from new file item
-        publish_parameters = gis.content.analyze(
-            item=file_item, file_type=file_type.lower()
-        )["publishParameters"]
+        publish_parameters = {
+            "name": "data",
+            "maxRecordCount": 2000,
+            "hasStaticData": True,
+            "layerInfo": {"capabilities": "Query"},
+        }
         if service_name is None:
-            service_name = publish_parameters["name"]
+            service_name = re.sub(r"[\s\W]", "_", title.replace(" ", ""))
+
         #  get a unique service name
         service_name = _find_service_name(gis, service_name, "featureService")
         publish_parameters["name"] = service_name

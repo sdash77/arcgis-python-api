@@ -2908,11 +2908,10 @@ class SecuritySettings(object):
 
         :return: Dictionary json response indicating success and IDP Id
         """
-        url = self._portal.resturl + "portals/self/idp/register"
-        params = {
+        url: str = self._portal.resturl + "portals/self/idp/register"
+        params: dict = {
             "f": "json",
             "name": name,
-            "idpMetadataFile": metadata_file,
             "idpMetadataUrl": metadata_url,
             "bindingUrl": binding_url,
             "postBindingUrl": post_binding_url,
@@ -2926,8 +2925,18 @@ class SecuritySettings(object):
             "updateProfileAtSignin": update_profile_at_signin,
             "updateGroupsAtSignin": update_groups_at_signin,
         }
-
-        return self._gis._con.post(url, params)
+        params = {k: v for k, v in params.items() if v}
+        files: list[tuple] = None
+        if metadata_file:
+            files = []
+            files.append(
+                (
+                    "idpMetadataFile",
+                    metadata_file,
+                    os.path.basename(metadata_file),
+                )
+            )
+        return self._gis._con.post(url, params, files=files)
 
     # ----------------------------------------------------------------------
     def unregister_idp(self, idp: str):
@@ -3104,7 +3113,8 @@ class UtilityServicesSettings:
                     item_type=item_props["type"],
                 )
                 this_item = next(
-                    (x for x in search_result if x.title == item_props["title"]), ""
+                    (x for x in search_result if x.title == item_props["title"]),
+                    "",
                 )
                 if not this_item:
                     if helper_svc == "orthomappingElevation":
@@ -3255,10 +3265,16 @@ class UtilityServicesSettings:
                     )
                 elif helper_svc == "route":
                     self._gis.update_properties(
-                        {helper_svc + "ServiceLayer": "", "clearEmptyFields": True}
+                        {
+                            helper_svc + "ServiceLayer": "",
+                            "clearEmptyFields": True,
+                        }
                     )
                 else:
                     self._gis.update_properties(
-                        {helper_svc + "Service": "", "clearEmptyFields": True}
+                        {
+                            helper_svc + "Service": "",
+                            "clearEmptyFields": True,
+                        }
                     )
         return True

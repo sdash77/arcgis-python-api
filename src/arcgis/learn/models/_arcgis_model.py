@@ -1640,6 +1640,16 @@ class ArcGISModel(object):
                         raise Exception(
                             "This pytorch model cannot be saved in torchscript format"
                         )
+                if self._backend == "pytorch" and _framework == "onnx":
+                    supported_models = ["RTDetrV2"]
+                    if type(self).__name__ in supported_models:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            onnx_paths = self._save_pytorch_onnx(name)
+                    else:
+                        raise Exception(
+                            "This pytorch model cannot be saved in onnx format"
+                        )
                 if self._backbone != "llm":
                     if isinstance(self.learn.model, DistributedDataParallel):
                         if not int(os.environ.get("RANK", 0)):
@@ -1724,6 +1734,13 @@ class ArcGISModel(object):
                     "sm": tflite_paths[1],
                 }
                 _emd_template["TFLite"] = _script_save_params
+
+        if framework.lower() == "onnx":
+            if len(onnx_paths) != 0:
+                _script_save_params = {
+                    "INFER": onnx_paths[0],
+                }
+                _emd_template["ONNX"] = _script_save_params
 
         # TODO: merge all
         if framework.lower() == "torchscript":
@@ -1906,7 +1923,6 @@ class ArcGISModel(object):
             self._publish_dlpk(
                 (saved_path.parent / os.path.basename(saved_path)).with_suffix(".dlpk"),
                 gis=gis,
-                overwrite=kwargs.get("overwrite", False),
             )
 
         return saved_path.parent
@@ -1978,6 +1994,9 @@ class ArcGISModel(object):
     def _save_pytorch_torchscript(self, name):
         pass
 
+    def _save_pytorch_onnx(self, name):
+        pass
+
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
@@ -2030,6 +2049,7 @@ class ArcGISModel(object):
             "<RandLANet>",
             "<SQNSeg>",
             "<MMDetection3D>",
+            "<PTv3Seg>",
         ]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
@@ -2093,7 +2113,6 @@ class ArcGISModel(object):
                 "type": "Deep Learning Package",
                 "description": formatted_description,
                 "title": dlpk_path.stem,
-                "overwrite": "true" if overwrite else "false",
             },
             file=str(dlpk_path.absolute()),
         ).result()
@@ -2217,9 +2236,7 @@ class ArcGISModel(object):
                                 If False, the model will not work with ArcGIS Pro 2.6
                                 or earlier. Default is set to True.
         ---------------------   -------------------------------------------
-        kwargs                  Optional Parameters:
-                                Boolean `overwrite` if True, it will overwrite
-                                the item on ArcGIS Online/Enterprise, default False.
+        kwargs                  Optional Parameters.
         =====================   ===========================================
         """
         if int(os.environ.get("RANK", 0)):

@@ -71,7 +71,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.3.1"
+__version__ = "2.4.1"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -106,6 +106,7 @@ class Connection(object):
     _custom_adapter = None
     legacy = None
     _server_log = None
+    _ca_bundles: list[str] | str | None = None
 
     # ----------------------------------------------------------------------
     def __init__(
@@ -144,6 +145,7 @@ class Connection(object):
         """
         from arcgis.gis import GIS
 
+        self._ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._ags_file = kwargs.pop("ags_file", None)
         self._security_kwargs = kwargs.pop("security_kwargs", {})
         self._use_gen_token = kwargs.pop("use_gen_token", False)
@@ -214,125 +216,130 @@ class Connection(object):
         self._client_id = kwargs.pop("client_id", None)
         self._client_secret = kwargs.pop("client_secret", None)
         self._token_url = kwargs.pop("token_url", None)
-        if str(baseurl).lower() == "pro":
-            self._auth = "PRO"
-            auth_check = [""]
-        elif str(baseurl).lower() != "pro":
-            auth_check = [""]
-        if self._is_hosted_nb_home:
-            auth_check = [""]
-        elif self._key_file is None and self._cert_file is None:
-            auth_check = self._auth_check(baseurl, proxies=self._assemble_proxy())
-        else:
-            auth_check = [""]
-        if self._is_hosted_nb_home:
-            self._auth = "HOME"  # NB AUTH
-            self._token = kwargs.pop("token", None)
-            self._expiration = 10080
-            self._referer = ""
-        elif self._ags_file:
-            self._auth = "AGS_AUTH"  # AGS AUTH
-        elif "token" in kwargs and kwargs["token"]:
-            self._auth = "USER_TOKEN"
-            self._token = kwargs.pop("token", None)
-        elif "api_key" in kwargs and kwargs["api_key"]:
-            self._auth = "API_KEY"
-            self._api_key = kwargs.pop("api_key", None)
-        elif (
-            self._key_file is None
-            and self._key_file is None
-            and username is None
-            and password is None
-            and self._portal_connection is None
-            and self._client_id is None
-            and str(baseurl).lower() != "pro"
-            and any(
-                [
-                    a in auth_check
-                    for a in [
-                        "Negotiate",
-                        "NTLM",
-                        "Negotiate, NTLM",
-                        "Basic",
-                        "basic",
-                    ]
-                ]
-            )
-            == False
-        ):
-            self._auth = "ANON"
-        elif self._client_id:
-            self._auth = "OAUTH"
-        elif (not username is None and not password is None) and (
-            "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
-        ):
-            self._auth = "KERBEROS"
-        elif (username is None and password is None) and (
-            "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
-        ):
-            self._auth = "KERBEROS"
-        elif (not username is None and not password is None) and len(
-            username.split("\\")
-        ) > 1:
-            self._auth = "IWA"
-        elif (
-            not username is None
-            and not password is None
-            and any([ac.lower().find("basic") > -1 for ac in auth_check])
-        ):
-            self._auth = "BASIC_REALM"
-        elif (
-            not username is None
-            and not password is None
-            and any([ac.lower().find("ntlm") > -1 for ac in auth_check])
-        ):
-            self._auth = "NTLM"
-        elif (not username is None and not password is None) or (
-            self._portal_connection and self._portal_connection._auth == "BUILTIN"
-        ):
-            self._auth = "BUILTIN"
-        elif (not username is None and not password is None) or (
-            self._portal_connection and self._portal_connection._auth == "BASIC_REALM"
-        ):
-            self._auth = "BASIC_REALM"
-        elif (not username is None and not password is None) or (
-            self._portal_connection and self._portal_connection._auth == "NTLM"
-        ):
-            self._auth = "NTLM"
-        elif (
-            (username and password)
-            and self._client_id is None
-            and str(baseurl).lower() != "pro"
-        ):
-            self._auth = "BUILTIN"
-        elif self._portal_connection:
-            self._auth = "BUILTIN"
-        elif baseurl.lower() == "pro":
-            self._auth = "PRO"
-            portal_url = arcpy.GetActivePortalURL()
-            if portal_url.lower().find("/sharing/rest") == -1:
-                if arcpy.GetActivePortalURL().endswith("/"):
-                    self._baseurl = arcpy.GetActivePortalURL() + "sharing/rest"
-                else:
-                    self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
+        session = kwargs.pop("session", None)
+        if session is None:
+            if str(baseurl).lower() == "pro":
+                self._auth = "PRO"
+                auth_check = [""]
+            elif str(baseurl).lower() != "pro":
+                auth_check = [""]
+            if self._is_hosted_nb_home:
+                auth_check = [""]
+            elif self._key_file is None and self._cert_file is None:
+                auth_check = self._auth_check(baseurl, proxies=self._assemble_proxy())
             else:
-                self._baseurl = arcpy.GetActivePortalURL()
-        elif self._cert_file or (self._cert_file and self._key_file):
-            self._auth = "PKI"
+                auth_check = [""]
+            if self._is_hosted_nb_home:
+                self._auth = "HOME"  # NB AUTH
+                self._token = kwargs.pop("token", None)
+                self._expiration = 10080
+                self._referer = ""
+            elif self._ags_file:
+                self._auth = "AGS_AUTH"  # AGS AUTH
+            elif "token" in kwargs and kwargs["token"]:
+                self._auth = "USER_TOKEN"
+                self._token = kwargs.pop("token", None)
+            elif "api_key" in kwargs and kwargs["api_key"]:
+                self._auth = "API_KEY"
+                self._api_key = kwargs.pop("api_key", None)
+            elif (
+                self._key_file is None
+                and self._key_file is None
+                and username is None
+                and password is None
+                and self._portal_connection is None
+                and self._client_id is None
+                and str(baseurl).lower() != "pro"
+                and any(
+                    [
+                        a in auth_check
+                        for a in [
+                            "Negotiate",
+                            "NTLM",
+                            "Negotiate, NTLM",
+                            "Basic",
+                            "basic",
+                        ]
+                    ]
+                )
+                == False
+            ):
+                self._auth = "ANON"
+            elif self._client_id:
+                self._auth = "OAUTH"
+            elif (not username is None and not password is None) and (
+                "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
+            ):
+                self._auth = "KERBEROS"
+            elif (username is None and password is None) and (
+                "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
+            ):
+                self._auth = "KERBEROS"
+            elif (not username is None and not password is None) and len(
+                username.split("\\")
+            ) > 1:
+                self._auth = "IWA"
+            elif (
+                not username is None
+                and not password is None
+                and any([ac.lower().find("basic") > -1 for ac in auth_check])
+            ):
+                self._auth = "BASIC_REALM"
+            elif (
+                not username is None
+                and not password is None
+                and any([ac.lower().find("ntlm") > -1 for ac in auth_check])
+            ):
+                self._auth = "NTLM"
+            elif (not username is None and not password is None) or (
+                self._portal_connection and self._portal_connection._auth == "BUILTIN"
+            ):
+                self._auth = "BUILTIN"
+            elif (not username is None and not password is None) or (
+                self._portal_connection
+                and self._portal_connection._auth == "BASIC_REALM"
+            ):
+                self._auth = "BASIC_REALM"
+            elif (not username is None and not password is None) or (
+                self._portal_connection and self._portal_connection._auth == "NTLM"
+            ):
+                self._auth = "NTLM"
+            elif (
+                (username and password)
+                and self._client_id is None
+                and str(baseurl).lower() != "pro"
+            ):
+                self._auth = "BUILTIN"
+            elif self._portal_connection:
+                self._auth = "BUILTIN"
+            elif baseurl.lower() == "pro":
+                self._auth = "PRO"
+                portal_url = arcpy.GetActivePortalURL()
+                if portal_url.lower().find("/sharing/rest") == -1:
+                    if arcpy.GetActivePortalURL().endswith("/"):
+                        self._baseurl = arcpy.GetActivePortalURL() + "sharing/rest"
+                    else:
+                        self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
+                else:
+                    self._baseurl = arcpy.GetActivePortalURL()
+            elif self._cert_file or (self._cert_file and self._key_file):
+                self._auth = "PKI"
 
-        if self._portal_connection and self._portal_connection._auth in [
-            "BASIC_REALM",
-            "IWA",
-            "NTLM",
-            "KERBEROS",
-            "PKI",
-        ]:
-            self._session = self._portal_connection._session
+            if self._portal_connection and self._portal_connection._auth in [
+                "BASIC_REALM",
+                "IWA",
+                "NTLM",
+                "KERBEROS",
+                "PKI",
+            ]:
+                self._session = self._portal_connection._session
+            else:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self._create_session()
         else:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self._create_session()
-
+            self._session = session
+            self._auth = "CUSTOM"
         #  Product Info
         if self._client_id:
             self._product = "PORTAL"
@@ -498,6 +505,7 @@ class Connection(object):
             verify_cert=self._verify_cert,
             proxies=proxies,
             retries=5,
+            ca_bundles=self._ca_bundles,
         )
         self._session.verify = self._verify_cert
         self._session.stream = True
@@ -541,7 +549,7 @@ class Connection(object):
             self._session.auth = EsriNotebookAuth(
                 token=self._token,
                 referer=self._referer,
-                auth=GuessAuth(username=None, password=None),
+                auth=GuessAuth(username=None, password=None, session=self._session),
             )
         elif self._auth.lower() == "ags_auth":
             from arcgis.auth._auth import ArcGISServerAuth
@@ -561,6 +569,7 @@ class Connection(object):
                 expiration=self._expiration,
                 verify_cert=self._verify_cert,
                 proxies=proxies,
+                session=self._session,
             )
         elif self._auth.lower() == "builtin":
             if self._check_product() == "SERVER":
@@ -579,6 +588,7 @@ class Connection(object):
                     verify_cert=self._verify_cert,
                     legacy=self.legacy,
                     proxies=proxies,
+                    session=self._session,
                 )
             else:
                 if self._use_gen_token:
@@ -594,6 +604,7 @@ class Connection(object):
                         verify_cert=self._verify_cert,
                         legacy=self.legacy,
                         proxies=proxies,
+                        session=self._session,
                     )
                 else:
                     self._session.auth = EsriBuiltInAuth(
@@ -627,6 +638,7 @@ class Connection(object):
                 password=self._password,
                 referer=self._referer,
                 verify_cert=self._verify_cert,
+                session=self._session,
             )
         elif self._auth.lower() in ["kerberos"] and HAS_KERBEROS:
             if self._security_kwargs:
@@ -634,6 +646,7 @@ class Connection(object):
                     proxies=self._proxy,
                     username=self._username,
                     password=self._password,
+                    session=self._session,
                     verify_cert=self._verify_cert,
                     legacy=False,
                     **self._security_kwargs,
@@ -645,6 +658,7 @@ class Connection(object):
                     verify_cert=self._verify_cert,
                     legacy=False,
                     proxies=self._proxy,
+                    session=self._session,
                 )
             else:
                 self._session.auth = EsriKerberosAuth(
@@ -653,11 +667,14 @@ class Connection(object):
                     password=self._password,
                     verify_cert=self._verify_cert,
                     legacy=False,
+                    session=self._session,
                     **self._security_kwargs,
                 )
         elif self._username and self._password and self._auth.lower() != "iwa":
             self._session.auth = GuessAuth(
-                username=self._username, password=self._password
+                username=self._username,
+                password=self._password,
+                session=self._session,
             )
         elif self._auth.lower() in ["iwa", "ntlm"] and HAS_SSPI:
             self._session.auth = EsriWindowsAuth(
@@ -666,10 +683,12 @@ class Connection(object):
                 verify_cert=self._verify_cert,
                 legacy=False,
                 proxies=self._proxy,
+                session=self._session,
             )
         elif self._auth.lower() == "pro":
             self._session.auth = (
-                GuessAuth(None, None, legacy=False) + ArcGISProAuth()
+                GuessAuth(None, None, legacy=False, session=self._session)
+                + ArcGISProAuth()
             )  # GuessAuth(None, None, legacy=False)
         elif not self._cert_file and not self._key_file:
             # else:
@@ -680,6 +699,7 @@ class Connection(object):
                         verify_cert=self._verify_cert,
                         legacy=False,
                         proxies=self._proxy,
+                        session=self._session,
                     )
                 except:
                     ...
@@ -689,6 +709,7 @@ class Connection(object):
                         verify_cert=self._verify_cert,
                         legacy=False,
                         proxies=self._proxy,
+                        session=self._session,
                     )
                 except:
                     ...

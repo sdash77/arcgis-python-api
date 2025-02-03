@@ -1486,12 +1486,12 @@ def edit_vehicle_routing_problem(
 
                                             .. note::
                                                 'default' has to be present if you want to pass in any locate_settings to the
-                                                service. In addition, locate setttings for default have to be complete, meaning
+                                                service. In addition, locate settings for default have to be complete, meaning
                                                 all properties need to be present.
                                                 For each override, the keys do not have to be complete.
 
                                             .. note::
-                                                for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_units are
                                                 not supported.
 
                                             .. code-block:: python
@@ -1781,7 +1781,7 @@ def solve_vehicle_routing_problem(
                                                 * ``MaxViolationTime2``: The maximum allowable violation time for the second time window of the order. This field is analogous to the ``MaxViolationTime1`` field.
                                                 * ``InboundArriveTime``: Defines when the item to be delivered to the order will be ready at the starting depot. The order can be assigned to a route only if the inbound arrive time the route's latest start time value; this way, the route cannot leave the depot before the item is ready to be loaded onto it.
 
-                                                    This field can help model scenarios involving inbound-wave transshipments. For example, a
+                                                    This field can help model scenarios involving inbound-wave transshipment. For example, a
                                                     job at an order requires special materials that are not currently
                                                     available at the depot. The materials are being shipped from another location and will arrive
                                                     at the depot at 11:00 a.m. To ensure a route that leaves before the shipment arrives isn't
@@ -1804,7 +1804,7 @@ def solve_vehicle_routing_problem(
                                                     The order can be assigned to a route only if the route can visit the order and reach its end depot before
                                                     the specified outbound depart time.
 
-                                                    This field can help model scenarios involving outbound-wave transshipments.
+                                                    This field can help model scenarios involving outbound-wave transshipment.
                                                     For instance, a shipping company sends out delivery trucks to pick up packages from orders and bring them into a
                                                     depot where they are forwarded on to other facilities, en route to their final destination.
                                                     At 3:00 p.m. every day, a semitrailer stops at the depot to pick up the high-priority packages and take them
@@ -2624,7 +2624,7 @@ def solve_vehicle_routing_problem(
                                                                                             adjacent streets meet.
                                                 ----------------------------------------  ------------------------------------------------
                                                 ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY|
-                                                                                            U-turns are prohibited at all junctions and interesections
+                                                                                            U-turns are prohibited at all junctions and intersections
                                                                                             and are permitted only at dead ends.
                                                 ----------------------------------------  ------------------------------------------------
                                                 NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends.
@@ -3515,7 +3515,7 @@ def solve_vehicle_routing_problem(
                                                 tool does not have to lookup the settings based on the travel mode name.
 
                                                 The default value, Custom, allows you to configure your own travel mode using the custom travel mode parameters (UTurn at Junctions, Use Hierarchy, Restrictions, Attribute Parameter Values,  and Impedance).
-                                                The default values of the custom travel mode parameters model travelling by car. You may want to choose Custom and set the custom travel mode parameters listed above to model a pedestrian with a fast walking speed
+                                                The default values of the custom travel mode parameters model traveling by car. You may want to choose Custom and set the custom travel mode parameters listed above to model a pedestrian with a fast walking speed
                                                 or a truck with a given height, weight, and cargo of certain hazardous materials. You may choose to do this to try out different settings to get desired analysis results.
                                                 Once you have identified the analysis settings, you should work with your organization's administrator and save these settings as part of new or existing travel mode so that
                                                 everyone in your organization can rerun the analysis with the same settings.
@@ -3627,12 +3627,12 @@ def solve_vehicle_routing_problem(
 
                                                 .. note::
                                                     'default' has to be present if you want to pass in any locate_settings to the
-                                                    service. In addition, locate setttings for default have to be complete, meaning
+                                                    service. In addition, locate settings for default have to be complete, meaning
                                                     all properties need to be present.
                                                     For each override, the keys do not have to be complete.
 
                                                 .. note::
-                                                    for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                    for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_units are
                                                     not supported.
 
                                                 .. code-block:: python

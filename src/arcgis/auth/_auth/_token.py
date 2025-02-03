@@ -23,6 +23,14 @@ requests = LazyLoader("requests")
 requests_oauthlib = LazyLoader("requests_oauthlib")
 warnings = LazyLoader("warnings")
 
+
+__all__ = [
+    "ArcGISProAuth",
+    "EsriBuiltInAuth",
+    "EsriGenTokenAuth",
+    "ArcGISServerAuth",
+]
+
 _MSG = """
 
 You need to a security question by integer:
@@ -479,14 +487,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
 
     # ----------------------------------------------------------------------
     def create_authorization_response(self, redirect_uri: str | None = None) -> str:
-        """creats the authorization URL"""
-        if redirect_uri is None:
-            redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+        """creates the authorization URL"""
+        redirect_uri = redirect_uri or "urn:ietf:wg:oauth:2.0:oob"
 
         session = requests_oauthlib.OAuth2Session(
             self._clientid,
             client=self._client,
-            redirect_uri=redirect_uri,  # "urn:ietf:wg:oauth:2.0:oob",  #
+            redirect_uri=redirect_uri,
         )
         auth_url, state = session.authorization_url(
             self._auth_url,
@@ -875,22 +882,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     @property
     def token(self):
-        """
-        Obtains the login token for the session.
-
-        .. code-block:: python
-
-            # Usage Example: Get token for built-in authenticated user
-            >>> gis = GIS(
-                         url="url_to_Web_GIS",
-                         username="valid_username",
-                         password="strong_password"
-                      )
-
-            >>> token = gis.session.auth.token
-
-            '6ABHt6i4urlQtqPu ... adKfJhTrM4cYBWkO7WGo.'
-        """
+        """obtains the login token"""
         try:
             if self._auth_token:
                 if (
@@ -1150,7 +1142,6 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             return self.expiration
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=255, ttl=60))
     def token(self, server_url=None) -> str:
         if self._token:
             if (_dt.datetime.now() - _dt.timedelta(minutes=5)) >= self.expiration:
@@ -1206,7 +1197,6 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             self._thread_local.num_401_calls = None
 
     # ----------------------------------------------------------------------
-
     def handle_401(self, r, **kwargs):
         # if r.status_code in [401, 402, 403]:
         # raise Exception(f"Error: {r.status_code}, {r.text}")
@@ -1253,15 +1243,14 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
         return r
 
     # ----------------------------------------------------------------------
-
     def handle_redirect(self, r, **kwargs):
         if r.is_redirect:
             self._thread_local.num_401_calls = 1
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=255, ttl=60))
     def _init_token_auth_handshake(self, server_url=None):
         """gets the token"""
+        auth_holder = None
         if self.username and self.password:  # Basic Generate Token Logic
             self.time_out = 60
             postdata = {
@@ -1272,12 +1261,18 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                 "expiration": 60,  # self.time_out,
                 "f": "json",
             }
+
+            if self._session.auth:
+                auth_holder = self._session.auth
+                self._session.auth = None
             resp = self._session.post(
                 url=self._token_url,
                 data=postdata,
                 verify=self.verify_cert,
                 proxies=self.proxies,
             )
+            if auth_holder:
+                self._session.auth = auth_holder
             if resp.status_code == 200:
                 data = resp.json()
                 if "error" in data:
@@ -1307,12 +1302,16 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                 "request": "getToken",
                 "referer": self.referer,
             }
+            if self._session.auth:
+                auth_holder = self._session.auth
             resp = self._session.post(
                 url=self._token_url,
                 data=postdata,
                 verify=self.verify_cert,
                 proxies=self.proxies,
             )
+            if auth_holder:
+                self._session.auth = auth_holder
             if resp.status_code == 200:
                 data = resp.json()
                 if "error" in data:

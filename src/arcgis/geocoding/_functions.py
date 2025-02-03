@@ -12,6 +12,7 @@ import logging
 from ..features import FeatureSet
 from ..geometry import Geometry, Point, SpatialReference
 from arcgis._impl.common._utils import _validate_url, chunks
+from arcgis.gis._impl._util import _get_item_url
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,7 +83,10 @@ class Geocoder(_GISResource):
             raise TypeError(
                 "item must be a type of Geocoding Service, not " + item.type
             )
-        url = _validate_url(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
         return cls(url, item._gis)
 
     def geocode(
@@ -158,7 +162,7 @@ class Geocoder(_GISResource):
                                  passed in a request with or without the text
                                  parameter.
         --------------------     ----------------------------------------------------
-        out_fields               Optional string. Name of all the fields to inlcude.
+        out_fields               Optional string. Name of all the fields to include.
                                  The default is "*" which means all fields.
         --------------------     ----------------------------------------------------
         max_locations            Optional integer. The number of locations to be
@@ -210,7 +214,7 @@ class Geocoder(_GISResource):
         --------------------     ----------------------------------------------------
         source_country           Optional str. Limits the returned candidates to the
                                  specified country or countries for either single-field
-                                 or multifield requests. Acceptable values include
+                                 or multifields requests. Acceptable values include
                                  the 3-character country code.
         ====================     ====================================================
 
@@ -309,7 +313,7 @@ class Geocoder(_GISResource):
                                  passed in a request with or without the text
                                  parameter.
         --------------------     ----------------------------------------------------
-        out_fields               Optional string. Name of all the fields to inlcude.
+        out_fields               Optional string. Name of all the fields to include.
                                  The default is "*" which means all fields.
         --------------------     ----------------------------------------------------
         max_locations            Optional integer. The number of locations to be
@@ -363,7 +367,7 @@ class Geocoder(_GISResource):
         --------------------     ----------------------------------------------------
         source_country           Optional str. Limits the returned candidates to the
                                  specified country or countries for either single-field
-                                 or multifield requests. Acceptable values include
+                                 or multifields requests. Acceptable values include
                                  the 3-character country code.
         ====================     ====================================================
 
@@ -715,7 +719,7 @@ class Geocoder(_GISResource):
                                       a single value or a comma-delimited collection of values as input.
                                       e.g. ='matchedCity,primaryStreet'
         -------------------------     ----------------------------------------------------------------
-        out_fields                    Optional String. A string of comma seperated fields names used to
+        out_fields                    Optional String. A string of comma separated fields names used to
                                       limit the return attributes of a geocoded location.
         =========================     ================================================================
 
@@ -1611,7 +1615,10 @@ def geocode_from_items(
         del gcs
     elif isinstance(geocode_service_url, Geocoder):
         geocode_service_url = geocode_service_url.url
-        kwargs["geocode_service_url"] = geocode_service_url.url
+        if hasattr(geocode_service_url, "url"):
+            kwargs["geocode_service_url"] = geocode_service_url.url
+        elif isinstance(geocode_service_url, str):
+            kwargs["geocode_service_url"] = geocode_service_url
     elif isinstance(geocode_service_url, str) == False:
         raise ValueError("Invalid geocoder service given.")
     if geocode_service_url is None:
@@ -1903,20 +1910,23 @@ def geocode(
     .. code-block:: python
 
         # Usage Example
-        >>> geocoded = geocode(addresses = {
-                                                    Street: "1234 W Main St",
-                                                    City: "Small Town",
-                                                    State: "WA",
-                                                    Zone: "99027"
-                                                    },
-                                            distance = 1000,
-                                            max_locations = 50,
-                                            as_featureset = True,
-                                            match_out_of_range = True,
-                                            location_type = "Street"
-                                            )
+        >>> geocoded = geocode(
+                        addresses = {
+                            Street: "1234 W Main St",
+                            City: "Small Town",
+                            State: "WA",
+                            Zone: "99027"
+                        },
+                        distance = 1000,
+                        max_locations = 50,
+                        as_featureset = True,
+                        match_out_of_range = True,
+                        location_type = "Street"
+                       )
+
         >>> type(geocoded)
-        <:class:`~arcgis.features.FeatureSet>
+
+        <class arcgis.features.FeatureSet>
 
     :return:
        A dictionary or :class:`~arcgis.features.FeatureSet` object.
@@ -2171,7 +2181,7 @@ def batch_geocode(
                                   a single value or a comma-delimited collection of values as input.
                                   e.g. ='matchedCity,primaryStreet'
     -------------------------     ----------------------------------------------------------------
-    out_fields                    Optional String. A string of comma seperated fields names used to
+    out_fields                    Optional String. A string of comma separated fields names used to
                                   limit the return attributes of a geocoded location.
     =========================     ================================================================
 
@@ -2229,7 +2239,7 @@ def suggest(
     A geocoder must meet the following requirements to support
     the suggest operation:
 
-    1. The address locator from which the geocoder was published
+    1.) The address locator from which the geocoder was published
       must support suggestions.
 
     .. note::
@@ -2238,10 +2248,10 @@ def suggest(
         the Create Address Locator geoprocessing tool help topic for more
         information.
 
-    2. The geocoder must have the Suggest capability enabled.
+    2.) The geocoder must have the Suggest capability enabled.
 
     .. note::
-            Only ``geocoders`` published using ArcGIS 10.3 for Server or
+        Only ``geocoders`` published using ArcGIS 10.3 for Server or
         later support the Suggest capability.
 
     The ``suggest`` operation allows character-by-character auto-complete
@@ -2252,20 +2262,19 @@ def suggest(
     list of suggestions that is updated with each character typed by a
     user until the address they are looking for appears in the list.
 
-    ===============================     =================================================================
-    **Parameter**                      **Description**
-    -------------------------------     -----------------------------------------------------------------
+    ==============================      =================================================================
+    **Parameter**                       **Description**
+    ------------------------------      -----------------------------------------------------------------
     text                                The input text provided by a user that is used by the
                                         suggest operation to generate a list of possible
                                         matches. This is a required parameter.
-    -------------------------------     -----------------------------------------------------------------
-    location                            Optional tuple[float, float] | Point. Defines an origin point location that is used
-                                        with the distance parameter to sort suggested candidates
-                                        based on their proximity to the location. The
-                                        distance parameter specifies the radial distance from
-                                        the location in meters. The priority of candidates
-                                        within this radius is boosted relative to those
-                                        outside the radius.
+    ------------------------------      -----------------------------------------------------------------
+    location                            Optional tuple[float, float] | Point. Defines an origin point
+                                        location that is used with the distance parameter to sort
+                                        suggested candidates based on their proximity to the location.
+                                        The *search_extent* parameter specifies the radial distance from
+                                        the location in meters. The priority of candidates within this
+                                        radius is boosted relative to those outside the radius.
                                         This is useful in mobile applications where a user
                                         wants to search for places in the vicinity of their
                                         current GPS location. It is also useful for web
@@ -2277,14 +2286,14 @@ def suggest(
                                             specifying a ``distance``. If distance is not specified,
                                             it defaults to 2000 meters.
 
-    -------------------------------     -----------------------------------------------------------------
+    ------------------------------      -----------------------------------------------------------------
     category                            The category parameter is only supported by geocode
                                         services published using StreetMap Premium locators.
-    -------------------------------     -----------------------------------------------------------------
+    ------------------------------      -----------------------------------------------------------------
     geocoder                            Optional :class:`~arcgis.geocoding.Geocoder` - the geocoder to
                                         be used. If not specified, the active
                                         :class:`~arcgis.gis.GIS` object's first geocoder is used.
-    -------------------------------     -----------------------------------------------------------------
+    ------------------------------      -----------------------------------------------------------------
     search_extent                       Optional String/Dict. A set of bounding box coordinates that
                                         limit the search area to a specific region. You can specify the
                                         spatial reference of the `search_extent` coordinates, which is
@@ -2299,7 +2308,7 @@ def suggest(
                                             The ``search_extent`` coordinates should always use a
                                             period as the decimal separator, even in countries where
                                             traditionally a comma is used.
-    -------------------------------     -----------------------------------------------------------------
+    ------------------------------      -----------------------------------------------------------------
     max_suggestions                     Optional Int.  The maximum number of suggestions returned by the
                                         suggest operation, up to the maximum number allowed by the
                                         service.
@@ -2308,7 +2317,7 @@ def suggest(
                                             If ``maxSuggestions`` is not included in the suggest
                                             request, the default value is 5. The maximum suggestions value
                                             can be modified in the source address locator.
-    -------------------------------     -----------------------------------------------------------------
+    ------------------------------      -----------------------------------------------------------------
     country_code                        Optional Str. Limits the returned suggestions to values in a
                                         particular country. Valid two- and three-character country code
                                         values for each country are available in geocode coverage.
@@ -2318,18 +2327,18 @@ def suggest(
                                             suggest request, the corresponding ``geocode`` call must
                                             also include the ``country_code`` parameter with the
                                             same value.
-    ------------------------------     -----------------------------------------------------------------
-    preferred_label_values             Optional str. Allows simple configuration of suggestion labels
-                                       returned in a response from the geocode service by specifying
-                                       which address component values should be included in the label. A
-                                       single value is supported as input. If the parameter is blank or
-                                       excluded from a request, the default address formats are used.
-    ------------------------------     -----------------------------------------------------------------
-    return_collections                 Optional Boolean. The parameter is used to prevent collections
-                                       from being returned in suggest responses. The default value is
-                                       `True`, which means that collections are included in suggest
-                                       responses by default.
-    ==============================     =================================================================
+    ------------------------------      -----------------------------------------------------------------
+    preferred_label_values              Optional str. Allows simple configuration of suggestion labels
+                                        returned in a response from the geocode service by specifying
+                                        which address component values should be included in the label. A
+                                        single value is supported as input. If the parameter is blank or
+                                        excluded from a request, the default address formats are used.
+    ------------------------------      -----------------------------------------------------------------
+    return_collections                  Optional Boolean. The parameter is used to prevent collections
+                                        from being returned in suggest responses. The default value is
+                                        `True`, which means that collections are included in suggest
+                                        responses by default.
+    ==============================      =================================================================
 
     .. code-block:: python
 

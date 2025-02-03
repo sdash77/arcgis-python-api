@@ -120,19 +120,21 @@ class _DeepCloner:
         self._temp_dir = tempfile.TemporaryDirectory()
 
         self._cloned_items = []
-        for index, item in enumerate(self._items):
+        self._dashboards = []
+        for item in self._items:
             if (
                 item["type"] == "Dashboard"
                 and "desktopView" in item.get_data()
                 and not from_dash
             ):
-                self._items.pop(index)
+                self._dashboards.append(item)
                 dash_list = self._clone_dashboard(item)
                 if len(dash_list) > 0:
                     for cloned_item in dash_list:
                         self._cloned_items.append(cloned_item)
 
         # parse the config and get values
+        self._items = [i for i in self._items if i not in self._dashboards]
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
@@ -1740,9 +1742,7 @@ class _DeepCloner:
                 preserve_item_id=self._preserve_item_id,
             )
         elif item["type"] == "Web Experience":
-            from arcgis._impl.common._itemdef._expbuilder import (
-                _WebExperience,
-            )
+            from arcgis._impl.common._itemdef._expbuilder import _WebExperience
 
             return _WebExperience(
                 target=self.target,
@@ -2656,7 +2656,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             features = feature_layer.query(
                 out_sr=spatial_reference,
                 result_offset=offset,
-                result_record_count=max_record_count,
+                result_record_count=record_count,
                 return_z=return_z,
                 return_m=return_m,
             ).features
@@ -2823,7 +2823,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     "enableEditorTracking": False,
                 }
             }
-            layers[0].container.manager.update_definition(edit_params)
+            for key in layers.keys():
+                layers[key].container.manager.update_definition(edit_params)
 
         for layer_id in layer_ids:
             pre_fields = copy.deepcopy(layers[layer_id].properties["fields"])
@@ -2896,7 +2897,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             edit_params = {
                 "editorTrackingInfo": self.service_definition["editorTrackingInfo"]
             }
-            layers[0].container.manager.update_definition(edit_params)
+            for key in layers.keys():
+                layers[key].container.manager.update_definition(edit_params)
 
         # Add attachments
         for original_layer in original_layers:
@@ -3029,8 +3031,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     source_user = self.portal_item._gis.users.me
                     if (
                         source_user.role == "org_admin"
-                        or self.portal_item.owner == source_user.username
-                    ):
+                        and self.portal_item._gis.url.lower() == self.target.url.lower()
+                    ) or self.portal_item.owner == source_user.username:
                         can_export = True
                 except:
                     pass
@@ -3042,7 +3044,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Modify the definition before passing to create the new service
                 name = original_item["name"]
-                if name is None:
+                if not name or not isinstance(name, str):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
                 name = re.sub("\W+", "_", name)
@@ -3174,7 +3176,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     temp_export.delete()
 
                 else:
-                    for key in ["layers", "tables", "fullExtent", "hasViews"]:
+                    for key in [
+                        "layers",
+                        "tables",
+                        "fullExtent",
+                        "hasViews",
+                    ]:
                         if key in service_definition:
                             del service_definition[key]
 
@@ -6530,13 +6537,10 @@ class _ItemCreateException(Exception):
 def _get_feature_service_related_item(service_url, source):
     try:
         service = FeatureLayerCollection(service_url, source)
+        item_id = service.properties.get("serviceItemId")
+        return source.content.get(item_id) if item_id else None
     except Exception:
-        return
-
-    if "serviceItemId" in service.properties and service.properties["serviceItemId"]:
-        item_id = service.properties["serviceItemId"]
-        return source.content.get(item_id)
-    return
+        return None
 
 
 def _compare_service(new_item, original_item, currentVersion):
