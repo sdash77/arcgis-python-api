@@ -15,9 +15,8 @@ from contextlib import contextmanager
 logger = logging.getLogger(__name__)
 
 import arcgis.gis
-from arcgis.geometry import Geometry
+from arcgis.auth.tools import parse_url
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
-from arcgis.gis import Item
 from arcgis.gis._impl._con._websocket_connection import WebsocketConnection
 
 logger = logging.getLogger(__name__)
@@ -186,7 +185,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def upgrade_item(self, item: Item):
+    def upgrade_item(self, item):  # TODO TypeHint removed in order to avoid import
         """
         Upgrades an outdated Workflow Manager schema. Requires the Workflow Manager
         Advanced Administrator privilege or the Portal Admin Update Content privilege.
@@ -212,7 +211,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def delete_item(self, item: Item):
+    def delete_item(self, item):  # TODO TypeHint removed in order to avoid import
         """
         Delete a Workflow Manager schema. Does not delete the Workflow Manager Admin group.
         Requires the administrator or publisher role. If the user has the publisher role,
@@ -283,7 +282,7 @@ class WorkflowManagerAdmin:
 
     def export_item(
         self,
-        item: Item,
+        item,  # TODO TypeHint removed in order to avoid import
         job_template_ids: Optional[str] = None,
         diagram_ids: Optional[str] = None,
         include_other_configs: bool = True,
@@ -337,7 +336,9 @@ class WorkflowManagerAdmin:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj
 
-    def import_item(self, item: Item, config_file, passphrase: Optional[str] = None):
+    def import_item(
+        self, item, config_file, passphrase: Optional[str] = None
+    ):  # TODO TypeHint removed in order to avoid import
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatibility. This will
@@ -472,7 +473,7 @@ class JobManager:
         complete: Optional[str] = None,
         notes: Optional[str] = None,
         parent: Optional[str] = None,
-        location: Optional[Geometry] = None,
+        location: Optional = None,  # TODO TypeHint removed in order to avoid import
         extended_properties: Optional[dict] = None,
         related_properties: Optional[dict] = None,
         job_id: Optional[str] = None,
@@ -3196,25 +3197,32 @@ class Job(object):
         return return_obj["jobComments"]
 
     def set_job_version(
-        self, data_source_name, version_guid=None, version_name=None, administered=False
+        self,
+        data_source_name=None,
+        version_guid=None,
+        version_name=None,
+        administered=False,
+        data_reference_id=None,
     ):
         """
         Sets the version of the job.
 
-        ================    ===================================================================
-        **Argument**        **Description**
-        ----------------    -------------------------------------------------------------------
-        data_source_name    Required. The name of the data source for the job version to be set.
-        ----------------    -------------------------------------------------------------------
-        version_guid        Optional. The guid of the version to be set. If the value is null or not defined,
-                            the versionName must be defined. versionGuid is preferred to be defined for better
-                            performance.
-        ----------------    -------------------------------------------------------------------
-        version_name        Optional. The name of the version to be set. If the value is null or not defined,
-                            the versionGuid must be defined.
-        ----------------    -------------------------------------------------------------------
-        administered        Optional. If true, the version can be claimed. If not defined, the default value is false.
-        ================    ===================================================================
+        =================    ===================================================================
+        **Argument**         **Description**
+        -----------------    -------------------------------------------------------------------
+        data_source_name     The name of the data source for the job version to be set. Required if the job diagram is using the data sources format.
+        -----------------    -------------------------------------------------------------------
+        version_guid         Optional. The guid of the version to be set. If the value is null or not defined,
+                             the versionName must be defined. versionGuid is preferred to be defined for better
+                             performance.
+        -----------------    -------------------------------------------------------------------
+        version_name         Optional. The name of the version to be set. If the value is null or not defined,
+                             the versionGuid must be defined.
+        -----------------    -------------------------------------------------------------------
+        administered         Optional. If true, the version can be claimed. If not defined, the default value is false.
+        -----------------    -------------------------------------------------------------------
+        data_reference_id    The id of the data reference for the job version to be set. Required if the job diagram is using the data references format.
+        =================    ===================================================================
 
         :return:
             success object
@@ -3224,9 +3232,12 @@ class Job(object):
         url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=self.job_id)
 
         params = {
-            "dataSourceName": data_source_name,
             "workflowAdministered": administered,
         }
+        if data_source_name:
+            params["dataSourceName"] = data_source_name
+        if data_reference_id:
+            params["dataReferenceId"] = data_reference_id
         if version_guid is not None:
             params["versionGuid"] = version_guid
         if version_name is not None:
