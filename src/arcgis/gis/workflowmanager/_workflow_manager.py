@@ -9,8 +9,6 @@ import threading
 import urllib.parse
 from enum import Enum
 from typing import Optional, Callable
-from contextlib import contextmanager
-
 
 logger = logging.getLogger(__name__)
 
@@ -3595,7 +3593,7 @@ class JobExecution:
         return not self.running()
 
     def __repr__(self):
-        return f'JobExecution({"job": {self._job.job_id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}'
+        return f'JobExecution({{"job": {self._job.job_id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
 
 
 class WMRole(object):
@@ -4165,8 +4163,8 @@ class NotificationManager:
                     if job_id in self.subscribed_jobs.keys():
                         callback = self.subscribed_jobs[job_id]
                         callback(msg, self)
-        except Exception as e:
-            logger.error(f"Error with messages and callbacks: {e}")
+        except:
+            logger.exception(f"Error with messages and callbacks")
 
     def _connect(self) -> WebsocketConnection:
         ws = WebsocketConnection(self._subscriber, self._gis, self._timeout)
@@ -4337,7 +4335,7 @@ class Notification:
         self.msg_type = MessageType(init_data["msgType"].upper())
 
     def __repr__(self):
-        return f'Notification({"timestamp": "{self.timestamp}", "msgType": "{self.msg_type}", "message": "{self.message}"})'
+        return f'Notification({{"timestamp": "{self.timestamp}", "msgType": "{self.msg_type}", "message": "{self.message}"}})'
 
 
 class MessageType(Enum):
