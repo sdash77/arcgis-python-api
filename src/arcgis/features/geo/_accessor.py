@@ -2913,7 +2913,7 @@ class GeoAccessor(object):
             pd.UInt64Dtype: "esriFieldTypeBigInteger",
             pd.UInt64Dtype(): "esriFieldTypeBigInteger",
         }
-        fields = []
+
         for idx, dtype in enumerate(self._data.dtypes):
             column = None
             col = self._data.dtypes.index[idx]
