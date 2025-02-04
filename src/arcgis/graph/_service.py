@@ -284,22 +284,28 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
-        raw_adds: dict[str, Any] = {
-            type_name: (
-                search_index_properties.model_dump(by_alias=True)
-                if isinstance(search_index_properties, SearchIndexProperties)
-                else search_index_properties
-            )
-            for type_name, search_index_properties in adds.items()
-        }
-        raw_deletes: dict[str, Any] = {
-            type_name: (
-                search_index_properties.model_dump(by_alias=True)
-                if isinstance(search_index_properties, SearchIndexProperties)
-                else search_index_properties
-            )
-            for type_name, search_index_properties in deletes.items()
-        }
+        raw_adds: dict[str, Any] = {}
+        for type_name, search_index_properties in adds.items():
+            if isinstance(search_index_properties, SearchIndexProperties):
+                raw_adds[type_name] = search_index_properties.model_dump(by_alias=True)
+            else:
+                warnings.warn(
+                    message="Dictionary values of type dict for adds is deprecated. Please migrate to SearchIndexProperties.",
+                    category=DeprecationWarning,
+                )
+                raw_adds[type_name] = search_index_properties
+        raw_deletes: dict[str, Any] = {}
+        for type_name, search_index_properties in deletes.items():
+            if isinstance(search_index_properties, SearchIndexProperties):
+                raw_deletes[type_name] = search_index_properties.model_dump(
+                    by_alias=True
+                )
+            else:
+                warnings.warn(
+                    message="Dictionary values of type dict for deletes is deprecated. Please migrate to SearchIndexProperties.",
+                    category=DeprecationWarning,
+                )
+                raw_deletes[type_name] = search_index_properties
 
         self._validate_import()
         url = self._url + "/dataModel/searchIndex/update"
@@ -475,11 +481,15 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
-        raw_input_transform: Optional[dict[str, Any]] = (
-            input_transform
-            if not isinstance(input_transform, Transform)
-            else input_transform.model_dump(by_alias=True)
-        )
+        raw_input_transform: Optional[dict[str, Any]] = None
+        if isinstance(input_transform, Transform):
+            raw_input_transform = input_transform.model_dump(by_alias=True)
+        elif input_transform:
+            warnings.warn(
+                message="Input transform of type dict is deprecated. Please migrate to Transform.",
+                category=DeprecationWarning,
+            )
+            raw_input_transform = input_transform
         raw_bind_param: dict[str, Any] = {
             key: _python_to_client_core_value(value)
             for key, value in bind_param.items()
@@ -731,35 +741,45 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
-        raw_adds: list[dict[str, Any]] = [
-            (
-                named_object.model_dump(by_alias=True)
-                if isinstance(named_object, (Entity, Relationship))
-                else named_object
+        raw_adds: list[dict[str, Any]] = []
+        for named_object in adds:
+            if isinstance(named_object, (Entity, Relationship)):
+                raw_adds.append(named_object.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for adds is deprecated. Please migrate to Entity or Relationship.",
+                    category=DeprecationWarning,
+                )
+                raw_adds.append(named_object)
+        raw_updates: list[dict[str, Any]] = []
+        for named_object in updates:
+            if isinstance(named_object, (Entity, Relationship)):
+                raw_updates.append(named_object.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for updates is deprecated. Please migrate to Entity or Relationship.",
+                    category=DeprecationWarning,
+                )
+                raw_updates.append(named_object)
+        raw_deletes: list[dict[str, Any]] = []
+        for named_object_delete in deletes:
+            if isinstance(named_object_delete, (EntityDelete, RelationshipDelete)):
+                raw_deletes.append(named_object_delete.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for deletes is deprecated. Please migrate to EntityDelete or RelationshipDelete.",
+                    category=DeprecationWarning,
+                )
+                raw_deletes.append(named_object_delete)
+        raw_input_transform: Optional[dict[str, Any]] = None
+        if isinstance(input_transform, Transform):
+            raw_input_transform = input_transform.model_dump(by_alias=True)
+        elif input_transform:
+            warnings.warn(
+                message="Input transform of type dict is deprecated. Please migrate to Transform.",
+                category=DeprecationWarning,
             )
-            for named_object in adds
-        ]
-        raw_updates: list[dict[str, Any]] = [
-            (
-                named_object.model_dump(by_alias=True)
-                if isinstance(named_object, (Entity, Relationship))
-                else named_object
-            )
-            for named_object in updates
-        ]
-        raw_deletes: list[dict[str, Any]] = [
-            (
-                named_object_delete.model_dump(by_alias=True)
-                if isinstance(named_object_delete, (EntityDelete, RelationshipDelete))
-                else named_object_delete
-            )
-            for named_object_delete in deletes
-        ]
-        raw_input_transform: Optional[dict[str, Any]] = (
-            input_transform
-            if not isinstance(input_transform, Transform)
-            else input_transform.model_dump(by_alias=True)
-        )
+            raw_input_transform = input_transform
 
         url = self._url + "/graph/applyEdits"
 
@@ -861,22 +881,28 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
-        raw_entity_types: list[dict[str, Any]] = [
-            (
-                entity_type.model_dump(by_alias=True)
-                if isinstance(entity_type, EntityType)
-                else entity_type
-            )
-            for entity_type in entity_types
-        ]
-        raw_relationship_types: list[dict[str, Any]] = [
-            (
-                relationship_type.model_dump(by_alias=True)
-                if isinstance(relationship_type, RelationshipType)
-                else relationship_type
-            )
-            for relationship_type in relationship_types
-        ]
+        raw_entity_types: list[dict[str, Any]] = []
+        for entity_type in entity_types:
+            if isinstance(entity_type, EntityType):
+                raw_entity_types.append(entity_type.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for entity_types is deprecated. Please migrate to EntityType.",
+                    category=DeprecationWarning,
+                )
+                raw_entity_types.append(entity_type)
+        raw_relationship_types: list[dict[str, Any]] = []
+        for relationship_type in relationship_types:
+            if isinstance(relationship_type, RelationshipType):
+                raw_relationship_types.append(
+                    relationship_type.model_dump(by_alias=True)
+                )
+            else:
+                warnings.warn(
+                    message="List value of type dict for relationship_types is deprecated. Please migrate to RelationshipType.",
+                    category=DeprecationWarning,
+                )
+                raw_relationship_types.append(relationship_type)
 
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/add"
@@ -964,11 +990,21 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
+        if not isinstance(named_type_update, (EntityType, RelationshipType)):
+            warnings.warn(
+                message="Type dict is deprecated for named_type_update. Please migrate to EntityType or RelationshipType.",
+                category=DeprecationWarning,
+            )
         raw_named_type_update: dict[str, Any] = (
             named_type_update.model_dump(by_alias=True)
             if isinstance(named_type_update, (EntityType, RelationshipType))
             else named_type_update
         )
+        if not isinstance(mask, NamedObjectTypeMask):
+            warnings.warn(
+                message="Type dict is deprecated for mask. Please migrate to NamedObjectTypeMask.",
+                category=DeprecationWarning,
+            )
         raw_mask: dict[str, Any] = (
             mask.model_dump(by_alias=True)
             if isinstance(mask, NamedObjectTypeMask)
@@ -1109,14 +1145,16 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
-        raw_graph_properties: list[dict[str, Any]] = [
-            (
-                graph_property.model_dump(by_alias=True)
-                if isinstance(graph_property, GraphProperty)
-                else graph_property
-            )
-            for graph_property in graph_properties
-        ]
+        raw_graph_properties: list[dict[str, Any]] = []
+        for graph_property in graph_properties:
+            if isinstance(graph_property, GraphProperty):
+                raw_graph_properties.append(graph_property.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List values of type dict for graph_properties is deprecated. Please migrate to GraphProperty.",
+                    category=DeprecationWarning,
+                )
+                raw_graph_properties.append(graph_property)
 
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/add"
@@ -1204,11 +1242,21 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
+        if not isinstance(graph_property, GraphProperty):
+            warnings.warn(
+                message="Type dict for graph_property is deprecated. Please migrate to GraphProperty.",
+                category=DeprecationWarning,
+            )
         raw_graph_property: dict[str, Any] = (
             graph_property.model_dump(by_alias=True)
             if isinstance(graph_property, GraphProperty)
             else graph_property
         )
+        if not isinstance(mask, GraphPropertyMask):
+            warnings.warn(
+                message="Type dict for mask is deprecated. Please migrate to GraphPropertyMask.",
+                category=DeprecationWarning,
+            )
         raw_mask: dict[str, Any] = (
             mask.model_dump(by_alias=True)
             if isinstance(mask, GraphPropertyMask)
@@ -1360,14 +1408,16 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
-        raw_field_indexes: list[dict[str, Any]] = [
-            (
-                field_index.model_dump(by_alias=True)
-                if isinstance(field_index, FieldIndex)
-                else field_index
-            )
-            for field_index in field_indexes
-        ]
+        raw_field_indexes: list[dict[str, Any]] = []
+        for field_index in field_indexes:
+            if isinstance(field_index, FieldIndex):
+                raw_field_indexes.append(field_index.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for field_indexes is deprecated. Please migrate to FieldIndex.",
+                    category=DeprecationWarning,
+                )
+                raw_field_indexes.append(field_index)
 
         self._validate_import()
         url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/add"
@@ -1523,10 +1573,16 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
-        raw_rules: list[dict[str, Any]] = [
-            rule.model_dump(by_alias=True) if isinstance(rule, ConstraintRule) else rule
-            for rule in rules
-        ]
+        raw_rules: list[dict[str, Any]] = []
+        for rule in rules:
+            if isinstance(rule, ConstraintRule):
+                raw_rules.append(rule.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for rules is deprecated. Please migrate to ConstraintRule.",
+                    category=DeprecationWarning,
+                )
+                raw_rules.append(rule)
 
         self._validate_import()
         split_url = self._url.split("/rest/")
@@ -1620,14 +1676,16 @@ class KnowledgeGraph:
                 category=DeprecationWarning,
             )
 
-        raw_rules: list[dict[str, Any]] = [
-            (
-                rule.model_dump(by_alias=True)
-                if isinstance(rule, ConstraintRuleUpdate)
-                else rule
-            )
-            for rule in rules
-        ]
+        raw_rules: list[dict[str, Any]] = []
+        for rule in rules:
+            if isinstance(rule, ConstraintRuleUpdate):
+                raw_rules.append(rule.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for rules is deprecated. Please migrate to ConstraintRuleUpdate.",
+                    category=DeprecationWarning,
+                )
+                raw_rules.append(rule)
 
         self._validate_import()
         split_url = self._url.split("/rest/")
