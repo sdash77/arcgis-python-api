@@ -355,7 +355,7 @@ class ImportPackage:
             props["metadata"] = os.path.join(item_folder, "files/metadata.xml")
         item_id = item_properties["id"]
         new_item_id = None
-        if preserve_id and self.gis._portal.is_arcgisonline == False:
+        if preserve_id and self.gis._portal.is_arcgisonline == False and self.gis.content.get(item_id) is None:
             new_item_id = item_id
 
         def _add_data_item(fp, item_type, props=None):
@@ -372,7 +372,7 @@ class ImportPackage:
                     **{
                         "item_properties": data_props,
                         "file": fp,
-                        "stream": False,
+                        "stream": True,
                     }
                 )
             except:
@@ -384,7 +384,7 @@ class ImportPackage:
                     **{
                         "item_properties": data_props,
                         "file": new_fp,
-                        "stream": False,
+                        "stream": True,
                     }
                 )
             return job.result()
@@ -477,7 +477,7 @@ class ImportPackage:
                     new_name = new_name.replace("/", "_")
                     pub_params["name"] = new_name
                     new_item = service_item.publish(
-                        publish_parameters=pub_params, item_id=item_id
+                        publish_parameters=pub_params, item_id=new_item_id
                     )
             else:
                 # this is case of referencing service from outside server
