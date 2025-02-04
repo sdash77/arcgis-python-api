@@ -9548,6 +9548,13 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 if "id" in folder:
                     folderId = folder["id"]
                     folder = folder["title"]
+            elif hasattr(folder, "properties") and hasattr(
+                folder, "_add_async_streaming"
+            ):
+                folder, folderId = (
+                    folder.properties["title"],
+                    folder.properties["id"],
+                )
             else:
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
