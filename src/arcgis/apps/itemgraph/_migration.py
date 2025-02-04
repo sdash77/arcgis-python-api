@@ -230,6 +230,14 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
             view_props_file_path = os.path.join(data_folder, "view_props.json")
             with open(view_props_file_path, "w") as view_props_file:
                 json.dump(view_props, view_props_file, indent=4, ensure_ascii=False)
+            fl_layers = item.layers
+            for i in range(len(fl_layers)):
+                layer_props = dict(fl_layers[i].manager.properties)
+                layer_props_file_path = os.path.join(
+                    data_folder, f"layer_{i}_props.json"
+                )
+                with open(layer_props_file_path, "w") as layer_props_file:
+                    json.dump(layer_props, layer_props_file, indent=4, ensure_ascii=False)
 
         else:
             reqs = node.requires("item")
