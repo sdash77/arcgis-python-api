@@ -71,3 +71,5 @@ def cleanup_published_items(items: list[Item]):
                 item.delete(permanent=True)
         except IndexError as ie:
             item.delete(permanent=True)
+        except Exception as ex:
+            print("Failed to delete item:", item, ex)

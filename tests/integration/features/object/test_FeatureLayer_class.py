@@ -38,6 +38,9 @@ class TestFeatureLayerClass(unittest.TestCase):
             cls.gis, layer_name, csv_path, ItemTypeEnum.CSV
         )
         assert cls.feature_layer_item, "Feature layer item not found"
+        assert (
+            len(cls.feature_layer_item.layers) > 0
+        ), f"No layers found in collection: {layer_name}"
 
         # Publish feature layer
         layer_name_delfeatures = f"dino_FeatureLayer_delfeatures_{uid}"
@@ -50,6 +53,9 @@ class TestFeatureLayerClass(unittest.TestCase):
         assert (
             cls.feature_layer_del_features
         ), f"Error publishing test item: {layer_name_delfeatures}"
+        assert (
+            len(cls.feature_layer_del_features.layers) > 0
+        ), f"No layers found in collection: {layer_name_delfeatures}"
 
     def test_feature_mod_classes(self):
         """
