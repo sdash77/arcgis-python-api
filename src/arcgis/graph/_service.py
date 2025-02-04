@@ -55,6 +55,11 @@ from arcgis.graph.response_types import (
 )
 
 
+AS_DICT_DEPRECATION_WARNING: str = (
+    "In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended."
+)
+
+
 class KnowledgeGraph:
     """
     Provides access to the Knowledge Graph service data model and properties, as well as
@@ -185,7 +190,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
         return list(self._search(search=search, category=category, as_dict=as_dict))
@@ -275,7 +280,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -466,7 +471,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -604,7 +609,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
         return (
@@ -635,7 +640,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
         url = self._url + "/dataModel/syncDataModel"
@@ -722,7 +727,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -852,7 +857,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -955,7 +960,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -1037,7 +1042,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
         self._validate_import()
@@ -1100,7 +1105,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -1195,7 +1200,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -1275,7 +1280,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
         self._validate_import()
@@ -1351,7 +1356,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -1432,7 +1437,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -1514,7 +1519,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -1611,7 +1616,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
@@ -1696,7 +1701,7 @@ class KnowledgeGraph:
         """
         if as_dict:
             warnings.warn(
-                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
             )
 
