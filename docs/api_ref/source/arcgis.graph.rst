@@ -36,6 +36,12 @@ FieldIndex
     :members:
     :undoc-members:
 
+GraphDataModel
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.graph.data_model_types.GraphDataModel
+    :members:
+    :undoc-members:
+
 GraphProperty
 ^^^^^^^^^^^^^
 .. autoclass:: arcgis.graph.data_model_types.GraphProperty
@@ -89,7 +95,7 @@ Graph Types
 
 Entity
 ^^^^^^
-.. autoclass:: esri.graph.graph_types.Entity
+.. autoclass:: arcgis.graph.graph_types.Entity
     :members:
     :undoc-members:
 

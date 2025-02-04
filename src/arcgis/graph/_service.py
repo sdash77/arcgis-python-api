@@ -185,7 +185,7 @@ class KnowledgeGraph:
             for searchentities_result in knowledge_graph.search("cat", "entities", as_dict=False):
             print(searchentities_result)
 
-        :return: List[list] or Generator[Sequence[Any], None, None]
+        :return: `Generator[Sequence[Any], None, None]`
 
         """
         if as_dict:
@@ -276,7 +276,7 @@ class KnowledgeGraph:
                 as_dict=False
             )
 
-        :return: dict or :class:`arcgis.graph.response_types.UpdateSearchIndexResponse`
+        :return: :class:`arcgis.graph.response_types.UpdateSearchIndexResponse`
 
         """
         if as_dict:
@@ -368,7 +368,7 @@ class KnowledgeGraph:
             query_result = knowledge_graph.query("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
 
 
-        :return: List[list]
+        :return: `List[list]`
 
         """
         self._validate_import()
