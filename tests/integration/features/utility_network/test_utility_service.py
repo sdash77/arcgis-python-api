@@ -1,11 +1,10 @@
 import unittest
-from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 from utils.decorators import integration_test, profiles
 
 utility_network_url = "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric31_SQLServer/UtilityNetworkServer"
-   
+
 
 # Server gets updated at 2:30PM PST Everyday. Do not test around then.
 @profiles.utility_network
@@ -14,9 +13,8 @@ class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 
     def setUp(self):
-        self.utility_netowrk_manager = UtilityNetworkManager(
-            utility_network_url,
-            gis=self.gis,
+        self.utility_network_manager = UtilityNetworkManager(
+            utility_network_url, gis=self.gis
         )
         assert self.utility_network_manager
 
@@ -63,8 +61,12 @@ class TestUtilityNetworkManager(unittest.TestCase):
             ],
             locations=True,
         )
-        assert locations
-        assert locations["success"] is True
+        self.assertIsNotNone(locations, "Locations object is None")
+        self.assertTrue(locations["success"], "Locations result not successful")
+        self.assertTrue(len(locations) >= 1, "Unexpected length of Locations result")
+        self.assertIsNotNone(
+            locations["objects"][0]["globalId"], "Result global ID is emtpy"
+        )
 
     def test_trace_configurations(self):
         """Test getting trace configurations and the methods associated with them."""
@@ -84,6 +86,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         # Try out TraceConfiguration class
         a_trace = trace_configs["traceConfigurations"][0]
         trace_config = TraceConfiguration.from_config(a_trace["traceConfiguration"])
+
         assert trace_config
         assert isinstance(trace_config.to_dict(), dict)
 
@@ -182,7 +185,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_validate_topology(self):
         """Test validate topology method. Validate edit made to network. If improper then gets marked as dirty rather than clean."""
-        try:
+        with self.assertRaises(Exception) as ex:
             validate = self.utility_network_manager.validate_topology(
                 envelope={
                     "xmin": 1034659.2752358826,
@@ -193,13 +196,11 @@ class TestUtilityNetworkManager(unittest.TestCase):
                 },
                 return_edits=True,
             )
-        except Exception as e:
-            if (
-                "A dirty area is not present within the validate network topology input extent. A validate network topology process did not occur."
-                in e.args[0]
-            ):
-                # Normal exception to have
-                return True
+        self.assertTrue(
+            "A dirty area is not present within the validate network topology input extent."
+            in str(ex.exception),
+            f"Unexpected exception occurred: {str(ex.exception)}",
+        )
 
     def test_query_network(self):
         """Test query network method"""
@@ -271,7 +272,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_export_subnetwork(self):
         """Test export of subnetwork"""
-        try:
+        with self.assertRaises(Exception) as ex:
             export = self.utility_network_manager.export_subnetwork(
                 domain_name="electric",
                 tier_name="Electric Distribution",
@@ -279,10 +280,14 @@ class TestUtilityNetworkManager(unittest.TestCase):
             )
             assert export
             assert export["success"] is True
-        except Exception as e:
-            if "Dirty subnetwork" in e.args[0]:
-                # This is an expected error if we don't have a clean subnetwork.
-                return True
+        self.assertTrue(
+            "Dirty subnetwork" in str(ex.exception),
+            f"Unexpected error message: {str(ex.exception)}",
+        )
+        # except Exception as e:
+        #     if "Dirty subnetwork" in e.args[0]:
+        #         # This is an expected error if we don't have a clean subnetwork.
+        #         return True
 
 
 if __name__ == "__main__":

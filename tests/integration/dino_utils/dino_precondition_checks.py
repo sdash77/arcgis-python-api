@@ -658,7 +658,7 @@ class PortalUtils:
         for folder in new_folder_list:
             print("Creating : " + folder, end=" ")
             try:
-                create_result = gis.content.create_folder(folder)
+                create_result = gis.content.folders.create(folder)
                 if create_result is not None:
                     print("created")
                 else:
@@ -686,7 +686,7 @@ class PortalUtils:
         for folder in new_folder_list:
             print("Creating : " + folder, end=" ")
             try:
-                create_result = gis.content.create_folder(folder)
+                create_result = gis.content.folders.create(folder)
                 if create_result is not None:
                     print("created")
                 else:

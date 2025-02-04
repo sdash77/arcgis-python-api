@@ -4,18 +4,10 @@ arcgis.auth.tools package
 Submodules
 ----------
 
-arcgis.auth.tools.certificate module
+arcgis.auth.tools.nbauth module
 ------------------------------------
 
-.. automodule:: arcgis.auth.tools.certificate
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-arcgis.auth.tools.verifycontext module
---------------------------------------
-
-.. automodule:: arcgis.auth.tools.verifycontext
+.. automodule:: arcgis.auth.tools.nbauth
    :members:
    :undoc-members:
    :show-inheritance:

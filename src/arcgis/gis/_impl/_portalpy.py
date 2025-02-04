@@ -22,7 +22,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.3.1"
+__version__ = "2.4.1"
 
 _log = logging.getLogger(__name__)
 
@@ -107,6 +107,7 @@ class Portal(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._security_kwargs = kwargs.pop("security_kwargs", None)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         url = url.strip()  # be permissive in accepting home app urls
@@ -203,6 +204,7 @@ class Portal(object):
                     is_hosted_nb_home=is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                     security_kwargs=self._security_kwargs,
+                    ca_bundles=self._ca_bundles,
                 )
             else:
                 if token == api_key:
@@ -232,6 +234,7 @@ class Portal(object):
                     is_hosted_nb_home=is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                     security_kwargs=self._security_kwargs,
+                    ca_bundles=self._ca_bundles,
                 )
         # self.get_version(True)
         self.get_properties(True)
