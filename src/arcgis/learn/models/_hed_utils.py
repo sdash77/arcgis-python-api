@@ -114,6 +114,7 @@ def get_hooks(backbone, chip_size):
 class _HEDModel(nn.Module):
     def __init__(self, backbone_fn, chip_size=224, pretrained=True):
         super().__init__()
+        self._dofa = False
         if backbone_fn.__name__ in swin_config.keys():
             self.backbone = backbone_fn(pretrained=pretrained)
             backbone_out = self.backbone(
@@ -148,6 +149,7 @@ class _HEDModel(nn.Module):
                 0, len(self.backbone.base_net.patch_embed.wavelengths)
             )
             self._dofa = True
+            self._transformer = False
             self._stride = 2
         else:
             self.backbone = get_backbone(backbone_fn, pretrained)
