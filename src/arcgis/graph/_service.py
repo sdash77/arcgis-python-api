@@ -726,7 +726,7 @@ class KnowledgeGraph:
                                     `False`, `apply_edits()` will fail if there are provenance
                                     records connected to entities/relationships intended for
                                     deletion or having their properties set to null.
-        -------------------         ---------------------------------------------------------------
+        -------------------------   ---------------------------------------------------------------
         as_dict                     Optional Boolean. Determines whether the result is returned as
                                     a dictionary or an object. The default is True. False is recommended.
         =========================   ===============================================================
@@ -740,7 +740,7 @@ class KnowledgeGraph:
 
             graph.apply_edits(adds=[add_entity], deletes=[delete_relationship], as_dict=False)
 
-        :return: :class:`arcgis.graph.response_types.ApplyEditsResult`
+        :return: :class:`arcgis.graph.response_types.ApplyEditsResponse`
 
         """
         if as_dict:
@@ -997,7 +997,7 @@ class KnowledgeGraph:
                 as_dict=False
             )
 
-        :return: :class:`arcgis.graph.data_model_types.NamedObjectTypeUpdateResponse`
+        :return: :class:`arcgis.graph.response_types.NamedObjectTypeUpdateResponse`
 
         """
         if as_dict:
@@ -1510,7 +1510,7 @@ class KnowledgeGraph:
             delete_result = graph.graph_property_index_deletes("Project", ["title"], as_dict=False)
 
 
-        :return: :class:`arcgis.graph.data_model_types.IndexDeletesResponse`
+        :return: :class:`arcgis.graph.response_types.IndexDeletesResponse`
 
         """
         if as_dict:
