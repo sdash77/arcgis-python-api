@@ -1036,14 +1036,7 @@ class ProfileManager(object):
     # ----------------------------------------------------------------------
     def _retrieve_dict(self, profile):
         """gets the login information as a dictionary"""
-        result = {
-            "url": None,
-            "username": None,
-            "password": None,
-            "key_file": None,
-            "cert_file": None,
-            "client_id": None,
-        }
+        result = {}
         if profile.lower() in [p.lower() for p in self.list()]:
             cfg_file_path = self._cfg_file_path
             config = configparser.ConfigParser()
@@ -1067,10 +1060,10 @@ class ProfileManager(object):
         """gets the login information"""
         result = self._retrieve_dict(profile)
         return (
-            result["url"],
-            result["username"],
-            result["password"],
-            result["key_file"],
-            result["cert_file"],
-            result["client_id"],
+            result.get("url"),
+            result.get("username"),
+            result.get("password"),
+            result.get("key_file"),
+            result.get("cert_file"),
+            result.get("client_id"),
         )
