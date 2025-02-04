@@ -4259,7 +4259,9 @@ class NotificationManager:
                         ),
                     }
                     if len(ids) > 0:
-                        self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
+                        self.websocket_connection.send_and_wait(
+                            json.dumps(subscribe_obj)
+                        )
                     else:
                         # check if the new ids are already subscribed to, so we set the callback correctly.
                         ids = [i for i in job_ids if i in self.subscribed_jobs.keys()]
