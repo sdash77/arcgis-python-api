@@ -854,7 +854,7 @@ class CascadingProvenanceDelete(BaseModel):
 class ApplyEditsResponse(BaseModel):
     """
     Response for applying edits to :class:`arcgis.graph.graph_types.Entity`
-    or :class:`arcgis.graph.graph_types.Relationship`s in the graph.
+    or :class:`arcgis.graph.graph_types.Relationship` in the graph.
 
     .. code-block:: python
         # Example of a response without errors

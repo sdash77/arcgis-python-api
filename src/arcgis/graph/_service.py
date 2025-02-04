@@ -251,7 +251,7 @@ class KnowledgeGraph:
     ) -> Union[dict, UpdateSearchIndexResponse]:
         """
         Allows users to add or delete :class:`arcgis.graph.search_types.SearchIndexProperties` for different
-        :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`s
+        :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`
         from the :class:`arcgis.graph.data_model_types.GraphDataModel`. Can only be existent properties for a given
         entity/relationship type.
 
@@ -688,7 +688,7 @@ class KnowledgeGraph:
     ) -> Union[dict, ApplyEditsResponse]:
         """
         Allows users to add, update, and delete :class:`arcgis.graph.graph_types.Entity` and
-        :class:`arcgis.graph.graph_types.Relationship`s.
+        :class:`arcgis.graph.graph_types.Relationship`.
 
         .. note::
             objectid values are not supported in dictionaries for apply_edits
@@ -857,7 +857,7 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, NamedObjectTypeAddsResponse]:
         """
-        Adds :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`s
+        Adds :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`
         to the data model
 
         `Learn more about adding named types to a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-add.htm>`_

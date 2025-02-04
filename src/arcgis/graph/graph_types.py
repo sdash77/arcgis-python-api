@@ -227,7 +227,7 @@ class Relationship(NamedObject):
 
 class Path(BaseModel):
     """
-    A list of :class:`arcgis.graph.graph_types.Entity` and :class:`arcgis.graph.graph_types.Relationship`s
+    A list of :class:`arcgis.graph.graph_types.Entity` and :class:`arcgis.graph.graph_types.Relationship`
     required to traverse a graph from one entity to another.
 
     .. code-block:: python
