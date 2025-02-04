@@ -15,6 +15,7 @@ class UpdateSearchIndexResponse(BaseModel):
     Response for updating a search index.
 
     .. code-block:: python
+
         # Example of a successful response
         UpdateSearchIndexResponse(error=None)
 
@@ -78,6 +79,7 @@ class SyncDataModelResponse(BaseModel):
     Response for syncing the data model.
 
     .. code-block:: python
+
         # Example of a successful response
         SyncDataModelResponse(error=None)
 
@@ -158,6 +160,7 @@ class NamedObjectTypeAddsResponse(BaseModel):
     Response for adding a named object type to the graph.
 
     .. code-block:: python
+
         # Example of a successful response
         NamedObjectTypeAddsResponse(
             error=None,
@@ -233,6 +236,7 @@ class NamedObjectTypeUpdateResponse(BaseModel):
     Response for updating a named object type in the graph.
 
     .. code-block:: python
+
         # Example of a successful response
         NamedObjectTypeUpdateResponse(error=None)
 
@@ -262,6 +266,7 @@ class NamedObjectTypeDeleteResponse(BaseModel):
     Response for deleting a named object type in the graph.
 
     .. code-block:: python
+
         # Example of a successful response
         NamedObjectTypeDeleteResponse(error=None)
 
@@ -308,6 +313,7 @@ class PropertyAddsResponse(BaseModel):
     :class:`arcgis.graph.data_model_types.RelationshipType` in the graph.
 
     .. code-block:: python
+
         # Example of a successful response
         PropertyAddsResponse(
             error=None,
@@ -361,6 +367,7 @@ class PropertyUpdateResponse(BaseModel):
     Response for updating a :class:`arcgis.graph.data_model_types.GraphProperty` in the graph.
 
     .. code-block:: python
+
         # Example of a successful response
         PropertyUpdateResponse(error=None)
 
@@ -385,6 +392,7 @@ class PropertyDeleteResponse(BaseModel):
     Response for deleting a :class:`arcgis.graph.data_model_types.GraphProperty` in the graph.
 
     .. code-block:: python
+
         # Example of a successful response
         PropertyDeleteResponse(error=None)
 
@@ -430,6 +438,7 @@ class IndexAddsResponse(BaseModel):
     :class:`arcgis.graph.data_model_types.GraphProperty`.
 
     .. code-block:: python
+
         # Example of a successful response
         IndexAddsResponse(
             error=None,
@@ -500,6 +509,7 @@ class IndexDeletesResponse(BaseModel):
     :class:`arcgis.graph.data_model_types.GraphProperty`.
 
     .. code-block:: python
+
         # Example of a successful response
         IndexDeletesResponse(
             error=None,
@@ -576,6 +586,7 @@ class ConstraintRuleAddsResponse(BaseModel):
     Response for adding a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule` constraint rule.
 
     .. code-block:: python
+
         # Example of successful add result
         ConstraintRuleAddsResponse(
             error=None,
@@ -650,6 +661,7 @@ class ConstraintRuleUpdatesResponse(BaseModel):
     Response for updating a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
 
     .. code-block:: python
+
         # Example of a response without errors
         ConstraintRuleUpdatesResponse(
             error=None,
@@ -729,6 +741,7 @@ class ConstraintRuleDeletesResponse(BaseModel):
     Response for deleting a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
 
     .. code-block:: python
+
         # Example of a response without errors
         ConstraintRuleDeletesResponse(
             error=None,
@@ -857,6 +870,7 @@ class ApplyEditsResponse(BaseModel):
     or :class:`arcgis.graph.graph_types.Relationship` in the graph.
 
     .. code-block:: python
+    
         # Example of a response without errors
         ApplyEditsResponse(
             error=None,

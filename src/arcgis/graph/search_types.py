@@ -27,6 +27,7 @@ class SearchIndexProperties(BaseModel):
     ==============================     ========================================================================
 
     .. code-block:: python
+
         from arcgis.graph import SearchIndexProperties
 
         SearchIndexProperties(property_names=["name","comment"])
@@ -44,6 +45,7 @@ class SearchIndex(BaseModel):
     Search indexes can be accessed in the :class:`arcgis.graph.data_model_types.GraphDataModel`.
 
     .. code-block:: python
+    
         data_model = graph.query_data_model()
         data_model.search_indexes
 

@@ -269,6 +269,7 @@ class KnowledgeGraph:
         =========================   ===============================================================
 
         .. code-block:: python
+        
             from arcgis.graph import SearchIndexProperties
 
             graph.update_search_index(
@@ -871,7 +872,7 @@ class KnowledgeGraph:
         relationship_types  Optional list of RelationshipTypes. The list of
                             relationship types to add to the data model, represented in
                             dictionary format.
-        ------------------- ---------------------------------------------------------------
+        ------------------  ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ==================  ===============================================================
@@ -979,7 +980,7 @@ class KnowledgeGraph:
         -----------------   ---------------------------------------------------------------
         mask                Required :class:`arcgis.graph.data_model_types.NamedObjectTypeMask`.
                             The properties of the named type to be updated.
-        ------------------- ---------------------------------------------------------------
+        -----------------   ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         =================   ===============================================================
@@ -1082,7 +1083,7 @@ class KnowledgeGraph:
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         type_name           Required string. The named type to be deleted.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
@@ -1145,7 +1146,7 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         graph_properties    Required Sequence of :class:`arcgis.graph.data_model_types.GraphProperty`.
                             The Sequence of properties to add to the named type.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
@@ -1238,7 +1239,7 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         mask                Required :class:`arcgis.graph.data_model_types.GraphPropertyMask`.
                             The properties of the field to be updated.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
@@ -1337,7 +1338,7 @@ class KnowledgeGraph:
                             the property to be deleted.
         ----------------    ---------------------------------------------------------------
         property_name       Required string. The property to be deleted.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
@@ -1410,7 +1411,7 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         field_indexes       Required list of dicts. The indexes to add for the type.
                             See below for an example of the structure.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
@@ -1499,7 +1500,7 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         field_indexes       Required Sequence of strings. The field indexes to delete from the
                             type.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
@@ -1573,12 +1574,13 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         rules               Required Sequence of :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
                             Defines the constraint rules to be added.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
+
             from arcgis.graph import RelationshipExclusionRule
 
             graph.constraint_rule_adds(
@@ -1673,12 +1675,13 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         rules               Required Sequence of :class:`arcgis.graph.data_model_types.RelationshipExclusionRuleUpdate`.
                             Defines the constraint rules to be updated.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
+
             from arcgis.graph import RelationshipExclusionRuleUpdate, RelationshipExclusionRule, ConstraintRuleMask, UpdateSetOfNamedTypes
 
             graph.constraint_rule_updates(
@@ -1776,7 +1779,7 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         rule_names          Required Sequence of strings. The names of the constraint rules to
                             be deleted, as defined in a rule's 'name' attribute.
-        ------------------- ---------------------------------------------------------------
+        ----------------    ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
                             a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================

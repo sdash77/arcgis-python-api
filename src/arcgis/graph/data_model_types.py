@@ -100,6 +100,7 @@ class GraphProperty(BaseModel):
     ==================     ===============================================================================================
 
     .. code-block:: python
+    
         from arcgis.graph import GraphProperty
 
         # Example 1: simple string property
@@ -221,6 +222,7 @@ class GraphPropertyMask(BaseModel):
     ==================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import GraphPropertyMask
 
         GraphPropertyMask(update_name=True, update_visible=True, update_editable=True)
@@ -369,6 +371,7 @@ class EntityType(NamedObjectType):
     ==================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import EntityType
 
         # Example 1: Define an entity type
@@ -400,6 +403,7 @@ class EndPoint(BaseModel):
     ========================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import EndPoint
 
         EndPoint("Person", "Company")
@@ -452,6 +456,7 @@ class RelationshipType(NamedObjectType):
     ==================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import RelationshipType
 
         # Example 1: Define a relationship type
@@ -515,6 +520,7 @@ class NamedObjectTypeMask(BaseModel):
     ==================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import NamedObjectTypeMask
 
         NamedObjectTypeMask(update_name=True, update_alias=True, update_strict=True)
@@ -566,6 +572,7 @@ class ConstraintRule(BaseModel):
     ========================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import ConstraintRule, SetOfNamedTypes
 
         # Example 1: Define an exclusion rule
@@ -615,6 +622,7 @@ class SetOfNamedTypes(BaseModel):
     ==================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import SetOfNamedTypes
 
         # Example 1: set
@@ -675,6 +683,7 @@ class RelationshipExclusionRule(ConstraintRule):
     ========================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import RelationshipExclusionRule, SetOfNamedTypes
 
         # Example 1: Define an exclusion rule
@@ -751,6 +760,7 @@ class ConstraintRuleMask(BaseModel):
     ==================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import ConstraintRuleMask
 
         ConstraintRuleMask(update_name=True, update_alias=True, update_disabled=True)
@@ -796,6 +806,7 @@ class UpdateSetOfNamedTypes(BaseModel):
     ==============================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import UpdateSetOfNamedTypes
 
         UpdateSetOfNamedTypes(add_named_types=["Individual"], remove_named_types=["Person"])
@@ -832,6 +843,7 @@ class RelationshipExclusionRuleUpdate(ConstraintRuleUpdate):
     ==============================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import RelationshipExclusionRuleUpdate, RelationshipExclusionRule, ConstraintRuleMask
 
         RelationshipExclusionRuleUpdate(
@@ -996,6 +1008,7 @@ class GraphDataModel(BaseModel):
     Allows users to access information about the knowledge graph's data model.
 
     .. code-block:: python
+
         from arcgis.gis import GIS
         from arcgis.graph import GraphClient, GraphDataModel
 

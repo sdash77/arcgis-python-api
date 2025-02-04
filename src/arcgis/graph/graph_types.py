@@ -98,6 +98,7 @@ class Entity(NamedObject):
     ==============================     =======================================================================
 
     .. code-block:: python
+    
         from arcgis.graph import Entity
 
         # Example 1: Define an entity
@@ -164,6 +165,7 @@ class Relationship(NamedObject):
     ==============================     =======================================================================
 
     .. code-block:: python
+
         from arcgis.graph import Relationship
         from datetime import datetime
         from uuid import UUID
@@ -231,6 +233,7 @@ class Path(BaseModel):
     required to traverse a graph from one entity to another.
 
     .. code-block:: python
+
         graph.query("MATCH path=()-[]-() RETURN path LIMIT 1")
         path = list(result)[0][0]
 
@@ -305,6 +308,7 @@ class EntityDelete(NamedObjectDelete):
     ==============================     =======================================================================
 
     .. code-block:: python
+
         from arcgis.graph import EntityDelete
 
         # Example 1: Provide entity id values manually
@@ -349,6 +353,7 @@ class RelationshipDelete(NamedObjectDelete):
     ==============================     =======================================================================
 
     .. code-block:: python
+
         from arcgis.graph import RelationshipDelete
 
         # Example 1: Provide relationship id values manually
