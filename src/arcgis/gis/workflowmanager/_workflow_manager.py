@@ -4124,7 +4124,7 @@ class NotificationManager:
         self._server_url = self._workflow_manager._server_url
         self._received_connected_msg = None
         self._timeout = 30
-        self._connecting_lock = threading.Lock()
+        self._subscription_lock = threading.RLock()
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self._server_url.replace("http://", "ws://").replace(
@@ -4135,14 +4135,15 @@ class NotificationManager:
         self.token_request_url = f"{self._server_url}/{item_url}"
 
     def _disconnect_check(self, job_id):
-        if job_id in self.subscribed_jobs:
-            self.unsubscribe([job_id])
-            # If this list is empty, all job executions have terminated, can disconnect.
-            logger.debug(
-                f"Jobs: {self.subscribed_jobs}. Manually connected: {self._manually_connected}"
-            )
-            if not self.subscribed_jobs and not self._manually_connected:
-                self.disconnect()
+        with self._subscription_lock:
+            if job_id in self.subscribed_jobs:
+                self.unsubscribe([job_id])
+                # If this list is empty, all job executions have terminated, can disconnect.
+                logger.debug(
+                    f"Jobs: {self.subscribed_jobs}. Manually connected: {self._manually_connected}"
+                )
+                if not self.subscribed_jobs and not self._manually_connected:
+                    self.disconnect()
 
     @property
     def is_connected(self) -> bool:
@@ -4168,16 +4169,15 @@ class NotificationManager:
             logger.exception(f"Error with messages and callbacks")
 
     def _connect(self) -> WebsocketConnection:
-        with self._connecting_lock:
-            ws = WebsocketConnection(self._subscriber, self._gis, self._timeout)
-            self._received_connected_msg = threading.Event()
-            ws.connect(
-                self.websocket_url,
-                self.token_request_url,
-            )
-            self._received_connected_msg.wait(self._timeout)
-            self._connected = True
-            return ws
+        ws = WebsocketConnection(self._subscriber, self._gis, self._timeout)
+        self._received_connected_msg = threading.Event()
+        ws.connect(
+            self.websocket_url,
+            self.token_request_url,
+        )
+        self._received_connected_msg.wait(self._timeout)
+        self._connected = True
+        return ws
 
     def connect(self):
         """
@@ -4206,12 +4206,11 @@ class NotificationManager:
         """
         Removes and disconnects the websocket connection to the workflow manager server.
         """
-        with self._connecting_lock:
-            if self.websocket_connection:
-                self.websocket_connection.disconnect()
-                self.websocket_connection = None
-                self._connected = False
-                self._manually_connected = False
+        if self.websocket_connection:
+            self.websocket_connection.disconnect()
+            self.websocket_connection = None
+            self._connected = False
+            self._manually_connected = False
 
     def subscribe(self, job_ids: list, callback: Callable[[Notification], None]):
         """
@@ -4234,40 +4233,41 @@ class NotificationManager:
 
         """
         try:
-            ids = job_ids
-            if self.websocket_connection is None:
-                logger.debug(
-                    f"Creating temporary websocket connection to {self.websocket_url}"
-                )
-                self.websocket_connection = self._connect()
-                subscribe_obj = {
-                    "msgType": "subscribe",
-                    "jobIds": ids,
-                    "token": self.websocket_connection.get_token(
-                        self.token_request_url
-                    ),
-                }
+            with self._subscription_lock:
+                ids = job_ids
+                if self.websocket_connection is None:
+                    logger.debug(
+                        f"Creating temporary websocket connection to {self.websocket_url}"
+                    )
+                    self.websocket_connection = self._connect()
+                    subscribe_obj = {
+                        "msgType": "subscribe",
+                        "jobIds": ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
 
-                self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
-            else:
-                ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
-                subscribe_obj = {
-                    "msgType": "subscribe",
-                    "jobIds": ids,
-                    "token": self.websocket_connection.get_token(
-                        self.token_request_url
-                    ),
-                }
-                if len(ids) > 0:
                     self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
                 else:
-                    # check if the new ids are already subscribed to, so we set the callback correctly.
-                    ids = [i for i in job_ids if i in self.subscribed_jobs.keys()]
+                    ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
+                    subscribe_obj = {
+                        "msgType": "subscribe",
+                        "jobIds": ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
+                    if len(ids) > 0:
+                        self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
+                    else:
+                        # check if the new ids are already subscribed to, so we set the callback correctly.
+                        ids = [i for i in job_ids if i in self.subscribed_jobs.keys()]
 
-            for jid in ids:
-                self.subscribed_jobs[jid] = callback
-        except Exception as e:
-            logger.error(f"Error when trying to subscribe: {e}")
+                for jid in ids:
+                    self.subscribed_jobs[jid] = callback
+        except:
+            logger.exception(f"Error when trying to subscribe")
 
     def unsubscribe(self, job_ids: list):
         """
@@ -4287,20 +4287,21 @@ class NotificationManager:
 
         """
         try:
-            if self.websocket_connection is not None:
-                unsubscribe_obj = {
-                    "msgType": "unsubscribe",
-                    "jobIds": job_ids,
-                    "token": self.websocket_connection.get_token(
-                        self.token_request_url
-                    ),
-                }
-                self.websocket_connection.send(json.dumps(unsubscribe_obj))
+            with self._subscription_lock:
+                if self.websocket_connection is not None:
+                    unsubscribe_obj = {
+                        "msgType": "unsubscribe",
+                        "jobIds": job_ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
+                    self.websocket_connection.send(json.dumps(unsubscribe_obj))
 
-                for jid in job_ids:
-                    self.subscribed_jobs.pop(jid)
-        except Exception as e:
-            logger.error(f"Error when trying to unsubscribe: {e}")
+                    for jid in job_ids:
+                        self.subscribed_jobs.pop(jid)
+        except:
+            logger.exception(f"Error when trying to unsubscribe")
 
 
 class Notification:
