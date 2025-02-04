@@ -21,12 +21,13 @@ class UpdateSearchIndexResponse(BaseModel):
         # Example of a response with errors
         UpdateSearchIndexResponse(
             error=Error(
-                error_code=112093, 
+                error_code=112093,
                 error_message="The entity or relationship type, 'NotAType', does not exist."
             )
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -83,12 +84,13 @@ class SyncDataModelResponse(BaseModel):
         # Example of a response with errors
         SyncDataModelResponse(
             error=Error(
-                error_code=113005, 
+                error_code=113005,
                 error_message="The service's graph data source does not support the operation."
             )
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -158,16 +160,16 @@ class NamedObjectTypeAddsResponse(BaseModel):
     .. code-block:: python
         # Example of a successful response
         NamedObjectTypeAddsResponse(
-            error=None, 
+            error=None,
             entity_add_results=[
                 NamedObjectTypeAddResult(
-                    name='Vehicle', 
+                    name='Vehicle',
                     error=None
                 )
-            ], 
+            ],
             relationship_add_results=[
                 NamedObjectTypeAddResult(
-                    name='Drives', 
+                    name='Drives',
                     error=None
                 )
             ]
@@ -175,21 +177,21 @@ class NamedObjectTypeAddsResponse(BaseModel):
 
         # Example of a response with errors
         NamedObjectTypeAddsResponse(
-            error=None, 
+            error=None,
             entity_add_results=[
                 NamedObjectTypeAddResult(
-                    name='Vehicle', 
+                    name='Vehicle',
                     error=Error(
-                        error_code=112092, 
+                        error_code=112092,
                         error_message="The entity or relationship type, 'Vehicle', already exists, please provide a new type name."
                     )
                 )
-            ], 
+            ],
             relationship_add_results=[
                 NamedObjectTypeAddResult(
-                    name='Drives', 
+                    name='Drives',
                     error=Error(
-                        error_code=112092, 
+                        error_code=112092,
                         error_message="The entity or relationship type, 'Drives', already exists, please provide a new type name."
                     )
                 )
@@ -197,6 +199,7 @@ class NamedObjectTypeAddsResponse(BaseModel):
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -236,12 +239,13 @@ class NamedObjectTypeUpdateResponse(BaseModel):
         # Example of a response with errors
         NamedObjectTypeUpdateResponse(
             error=Error(
-                error_code=112075, 
+                error_code=112075,
                 error_message='Updating the name of an entity or relationship type is not allowed.'
             )
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -264,12 +268,13 @@ class NamedObjectTypeDeleteResponse(BaseModel):
         # Example of a response with errors
         NamedObjectTypeDeleteResponse(
             error=Error(
-                error_code=112020, 
+                error_code=112020,
                 error_message="The entity or relationship type definition, 'Vehicle', was not found."
             )
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -299,16 +304,16 @@ class PropertyAddResult(BaseModel):
 
 class PropertyAddsResponse(BaseModel):
     """
-    Response for adding a :class:`arcgis.graph.data_model_types.GraphProperty` to an :class:`arcgis.graph.data_model_types.EntityType` or 
+    Response for adding a :class:`arcgis.graph.data_model_types.GraphProperty` to an :class:`arcgis.graph.data_model_types.EntityType` or
     :class:`arcgis.graph.data_model_types.RelationshipType` in the graph.
 
     .. code-block:: python
         # Example of a successful response
         PropertyAddsResponse(
-            error=None, 
+            error=None,
             property_add_results=[
                 PropertyAddResult(
-                    name='age', 
+                    name='age',
                     error=None
                 )
             ]
@@ -316,12 +321,12 @@ class PropertyAddsResponse(BaseModel):
 
         # Example of a response with errors
         PropertyAddsResponse(
-            error=None, 
+            error=None,
             property_add_results=[
                 PropertyAddResult(
-                    name='age', 
+                    name='age',
                     error=Error(
-                        error_code=112043, 
+                        error_code=112043,
                         error_message="Graph property, 'age', already exists in data model."
                     )
                 )
@@ -329,6 +334,7 @@ class PropertyAddsResponse(BaseModel):
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -362,6 +368,7 @@ class PropertyUpdateResponse(BaseModel):
         PropertyUpdateResponse(error=Error(error_code=112068, error_message="Graph property, 'current_age', does not exist in data model."))
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -385,6 +392,7 @@ class PropertyDeleteResponse(BaseModel):
         PropertyDeleteResponse(error=Error(error_code=112068, error_message="Graph property, 'age', does not exist in data model."))
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -418,16 +426,16 @@ class IndexAddResult(BaseModel):
 
 class IndexAddsResponse(BaseModel):
     """
-    Response for adding a :class:`arcgis.graph.data_model_types.FieldIndex` to a 
+    Response for adding a :class:`arcgis.graph.data_model_types.FieldIndex` to a
     :class:`arcgis.graph.data_model_types.GraphProperty`.
 
     .. code-block:: python
         # Example of a successful response
         IndexAddsResponse(
-            error=None, 
+            error=None,
             index_add_results=[
                 IndexAddResult(
-                    name='name_index', 
+                    name='name_index',
                     error=None
                 )
             ]
@@ -435,12 +443,12 @@ class IndexAddsResponse(BaseModel):
 
         # Example of a response with errors
         IndexAddsResponse(
-            error=None, 
+            error=None,
             index_add_results=[
                 IndexAddResult(
                     name='name_index',
                     error=Error(
-                        error_code=112047, 
+                        error_code=112047,
                         error_message="Graph Index, 'name_index', already exists."
                     )
                 )
@@ -448,6 +456,7 @@ class IndexAddsResponse(BaseModel):
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -487,16 +496,16 @@ class IndexDeleteResult(BaseModel):
 
 class IndexDeletesResponse(BaseModel):
     """
-    Response for deleting a :class:`arcgis.graph.data_model_types.FieldIndex` from a 
+    Response for deleting a :class:`arcgis.graph.data_model_types.FieldIndex` from a
     :class:`arcgis.graph.data_model_types.GraphProperty`.
 
     .. code-block:: python
         # Example of a successful response
         IndexDeletesResponse(
-            error=None, 
+            error=None,
             index_delete_results=[
                 IndexDeleteResult(
-                    name='name_index', 
+                    name='name_index',
                     error=None
                 )
             ]
@@ -504,12 +513,12 @@ class IndexDeletesResponse(BaseModel):
 
         # Example of a response with errors
         IndexDeletesResponse(
-            error=None, 
+            error=None,
             index_delete_results=[
                 IndexDeleteResult(
-                    name='name_index', 
+                    name='name_index',
                     error=Error(
-                        error_code=112051, 
+                        error_code=112051,
                         error_message="Graph Index, 'name_index', does not exist in the data model."
                     )
                 )
@@ -517,6 +526,7 @@ class IndexDeletesResponse(BaseModel):
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -568,11 +578,11 @@ class ConstraintRuleAddsResponse(BaseModel):
     .. code-block:: python
         # Example of successful add result
         ConstraintRuleAddsResponse(
-            error=None, 
+            error=None,
             constraint_rule_add_results=[
                 ConstraintRuleAddResult(
-                    name='PersonCanOnlyWorkAtCompany', 
-                    error=None, 
+                    name='PersonCanOnlyWorkAtCompany',
+                    error=None,
                     warnings=[]
                 )
             ]
@@ -580,20 +590,21 @@ class ConstraintRuleAddsResponse(BaseModel):
 
         # Example of a response with errors
         ConstraintRuleAddsResponse(
-            error=None, 
+            error=None,
             constraint_rule_add_results=[
                 ConstraintRuleAddResult(
-                    name='PersonCanOnlyWorkAtCompany', 
+                    name='PersonCanOnlyWorkAtCompany',
                     error=Error(
-                        error_code=112237, 
+                        error_code=112237,
                         error_message="Error adding the constraint rule, 'PersonCanOnlyWorkAtCompany', to the data model."
-                    ), 
+                    ),
                     warnings=[]
                 )
             ]
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -641,34 +652,34 @@ class ConstraintRuleUpdatesResponse(BaseModel):
     .. code-block:: python
         # Example of a response without errors
         ConstraintRuleUpdatesResponse(
-            error=None, 
+            error=None,
             constraint_rule_update_results=[
                 ConstraintRuleUpdateResult(
-                    name='PersonCanOnlyWorkAtCompany', 
-                    error=None, 
+                    name='PersonCanOnlyWorkAtCompany',
+                    error=None,
                     warnings=[]
                 )
             ]
         )
-        
+
         # Example of a response with errors
         ConstraintRuleUpdatesResponse(
-            error=None, 
+            error=None,
             constraint_rule_update_results=[
                 ConstraintRuleUpdateResult(
-                    name='PersonCanOnlyWorkAtCompany', 
-                    error=None, 
+                    name='PersonCanOnlyWorkAtCompany',
+                    error=None,
                     warnings=[
                         Error(
-                            error_code=112225, 
+                            error_code=112225,
                             error_message="A relationship with origin entity type 'Employee', relationship type 'WorksFor', and destination entity type 'Park' is explicitly allowed by relationship exclusion rule 'PersonCanOnlyWorkAtCompany', but not allowed by relationship exclusion rule 'PersonCanOnlyWorkAtCompany3'."
-                        ), 
+                        ),
                         Error(
-                            error_code=112244, 
+                            error_code=112244,
                             error_message='The following entity types do not exist in the data model: [Employee, Park].'
-                        ), 
+                        ),
                         Error(
-                            error_code=112245, 
+                            error_code=112245,
                             error_message='The following relationship types do not exist in the data model: [WorksFor].'
                         )
                     ]
@@ -677,6 +688,7 @@ class ConstraintRuleUpdatesResponse(BaseModel):
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -719,7 +731,7 @@ class ConstraintRuleDeletesResponse(BaseModel):
     .. code-block:: python
         # Example of a response without errors
         ConstraintRuleDeletesResponse(
-            error=None, 
+            error=None,
             constraint_rule_delete_results=[
                 ConstraintRuleDeleteResult(name='PersonCanOnlyWorkAtCompany', error=None)
             ]
@@ -727,12 +739,12 @@ class ConstraintRuleDeletesResponse(BaseModel):
 
         # Example of a response with errors
         ConstraintRuleDeletesResponse(
-            error=None, 
+            error=None,
             constraint_rule_delete_results=[
                 ConstraintRuleDeleteResult(
-                    name='PersonCanOnlyWorkAtCompany2', 
+                    name='PersonCanOnlyWorkAtCompany2',
                     error=Error(
-                        error_code=112242, 
+                        error_code=112242,
                         error_message="The constraint rule 'PersonCanOnlyWorkAtCompany2' with role 'REGULAR' does not exist in the data model."
                     )
                 )
@@ -740,6 +752,7 @@ class ConstraintRuleDeletesResponse(BaseModel):
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
@@ -840,48 +853,49 @@ class CascadingProvenanceDelete(BaseModel):
 
 class ApplyEditsResponse(BaseModel):
     """
-    Response for applying edits to :class:`arcgis.graph.graph_types.Entity` 
+    Response for applying edits to :class:`arcgis.graph.graph_types.Entity`
     or :class:`arcgis.graph.graph_types.Relationship`s in the graph.
 
     .. code-block:: python
         # Example of a response without errors
         ApplyEditsResponse(
-            error=None, 
+            error=None,
             edits_result={
                 'Person': EditResults(
-                    add_results=[EditResult(id=UUID('ab913bcb-1781-4137-9513-b3c942c23bc2'), error=None)], 
-                    update_results=[], 
+                    add_results=[EditResult(id=UUID('ab913bcb-1781-4137-9513-b3c942c23bc2'), error=None)],
+                    update_results=[],
                     delete_results=[]
-                ), 
+                ),
                 'Company': EditResults(
-                    add_results=[EditResult(id=UUID('26419c98-5521-4611-b2c2-196c35acc06d'), error=None)], 
-                    update_results=[], 
+                    add_results=[EditResult(id=UUID('26419c98-5521-4611-b2c2-196c35acc06d'), error=None)],
+                    update_results=[],
                     delete_results=[]
-                ), 
+                ),
                 'WorksAt': EditResults(
-                    add_results=[EditResult(id=UUID('1da2f6fc-e407-4561-97db-bba4745bd803'), error=None)], 
-                    update_results=[], 
+                    add_results=[EditResult(id=UUID('1da2f6fc-e407-4561-97db-bba4745bd803'), error=None)],
+                    update_results=[],
                     delete_results=[]
                 )
-            }, 
-            cascaded_deletes={}, 
-            relationship_schema_changes={}, 
+            },
+            cascaded_deletes={},
+            relationship_schema_changes={},
             cascaded_provenance_deletes=[]
         )
 
         # Example of a response with errors
         ApplyEditsResponse(
             error=Error(
-                error_code=111188, 
+                error_code=111188,
                 error_message="The destination identifier '{6F445050-0037-4308-8EE4-4B52C83763DC}' was not found."
-            ), 
-            edits_result={}, 
-            cascaded_deletes={}, 
-            relationship_schema_changes={}, 
+            ),
+            edits_result={},
+            cascaded_deletes={},
+            relationship_schema_changes={},
             cascaded_provenance_deletes=[]
         )
 
     """
+
     error: Optional[Error] = Field(
         default=None, description="The error, or None if the operation was successful."
     )
