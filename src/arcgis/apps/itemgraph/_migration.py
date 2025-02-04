@@ -355,7 +355,11 @@ class ImportPackage:
             props["metadata"] = os.path.join(item_folder, "files/metadata.xml")
         item_id = item_properties["id"]
         new_item_id = None
-        if preserve_id and self.gis._portal.is_arcgisonline == False and self.gis.content.get(item_id) is None:
+        if (
+            preserve_id
+            and self.gis._portal.is_arcgisonline == False
+            and self.gis.content.get(item_id) is None
+        ):
             new_item_id = item_id
 
         def _add_data_item(fp, item_type, props=None):
