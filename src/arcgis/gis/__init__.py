@@ -7084,30 +7084,54 @@ class ContentManager(object):
             >>> gis.content.analyze(item = "9311d21a9a2047d19c0faaebd6f2cca6", file_type = "csv")
 
         """
-        surl = "%s/sharing/rest/content/features/analyze" % self._gis._url
-        params = {"f": "json", "analyzeParameters": {}}
-        files = None
+        surl = f"{self._gis._url}/sharing/rest/content/features/analyze"
+        files = {"file": file_path} if file_path and os.path.isfile(file_path) else None
+        params = self._get_analyze_params(
+            is_arcgis_online=self._gis._portal.is_arcgisonline,
+            url=url,
+            item=item,
+            file_path=file_path,
+            text=text,
+            file_type=file_type,
+            source_locale=source_locale,
+            geocoding_service=geocoding_service,
+            location_type=location_type,
+            source_country=source_country,
+            country_hint=country_hint,
+            enable_global_geocoding=enable_global_geocoding,
+        )
+        return self._gis._con.post(path=surl, postdata=params, files=files)
+
+    @staticmethod
+    def _get_analyze_params(
+        is_arcgis_online: bool,
+        url: Optional[str] = None,
+        item: Optional[Union[str, Item]] = None,
+        file_path: Optional[str] = None,
+        text: Optional[str] = None,
+        file_type: Optional[str] = None,
+        source_locale: str = "en",
+        geocoding_service: Optional[str] = None,
+        location_type: Optional[str] = None,
+        source_country: str = "world",
+        country_hint: Optional[str] = None,
+        enable_global_geocoding: Optional[bool] = None,
+    ):
         if not (text or file_path or item or url):
-            return Exception(
+            raise Exception(
                 "Must provide an itemid, file_path or text to analyze data."
             )
+
+        params = {"f": "json", "analyzeParameters": {}, "sourcelocale": source_locale}
         if item:
-            if isinstance(item, str):
-                params["itemid"] = item
-            elif isinstance(item, Item):
-                params["itemid"] = item.itemid
-        elif file_path and os.path.isfile(file_path):
-            files = {"file": file_path}
+            params["itemid"] = item.itemid if isinstance(item, Item) else item
         elif text:
             params["text"] = text
         elif url:
             params["sourceUrl"] = url
 
-        params["analyzeParameters"]["sourcelocale"] = source_locale
         if geocoding_service:
-            from arcgis.geocoding._functions import Geocoder
-
-            if isinstance(geocoding_service, Geocoder):
+            if type(geocoding_service).__name__ == "Geocoder":
                 params["analyzeParameters"]["geocodeServiceUrl"] = geocoding_service.url
             else:
                 params["analyzeParameters"]["geocodeServiceUrl"] = geocoding_service
@@ -7133,10 +7157,7 @@ class ContentManager(object):
             "shapefile",
             "geojson",
         ]:
-            if (
-                str(file_type).lower() == "geojson"
-                and not self._gis._portal.is_arcgisonline
-            ):
+            if str(file_type).lower() == "geojson" and not is_arcgis_online:
                 raise ValueError("GeoJSON is not supported in ArcGIS Enterprise")
             params["fileType"] = file_type
             params["analyzeParameters"]["enableGlobalGeocoding"] = False
@@ -7148,10 +7169,8 @@ class ContentManager(object):
             params["analyzeParameters"][
                 "enableGlobalGeocoding"
             ] = enable_global_geocoding
-        gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
-
-        return gis._con.post(path=surl, postdata=params, files=files)
+        return params
 
     # ----------------------------------------------------------------------
     def create_empty_service(
