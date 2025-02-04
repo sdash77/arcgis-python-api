@@ -138,9 +138,6 @@ def _export_content(
         item = node.item
         if item is None:
             continue
-        # if item.type in JSON_BASED_WITH_DATA_TYPES and node.requires("id") == []:
-        #     fc_item = item.export(item.title, service_format)
-        #     graph.add_relationship(item.id, fc_item.id)
         create_item_folder(node, main_dir)
         manifest[item.id] = {
             "title": item.title,
@@ -194,7 +191,6 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     # resources
     res_folder = os.path.join(output_folder, "resources")
     # rm = item.resources
-    # rm.export(res_folder, "archive.zip")
     rm = item.resources
     resources_list = rm.list()
     res_manifest = {}
@@ -252,11 +248,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
                     item_dict["data_item_type"] = service_format
                 except:
                     # this means that this references data hosted elsewhere
-                    # will have to recreate as new flc referencing og services
-                    # flc_props = dict(item.layers[0].container.properties)
-                    # flc_props_file_path = os.path.join(data_folder, "flc_props.json")
-                    # with open(flc_props_file_path, "w") as flc_props_file:
-                    #     json.dump(flc_props, flc_props_file, indent=4, ensure_ascii=False)
+                    # will have to recreate as new flc referencing og service
                     pass
 
         # fc_zip = zipfile.ZipFile(download_path)
@@ -617,17 +609,6 @@ class ImportPackage:
             )
             if new_item:
                 created_items.append(new_item)
-            # # if we changed the item id, update mapping so other items adjust
-            # if itemid != new_item.id:
-            #     item_mapping[itemid] = new_item.id
-            # reqs = node.requires("id")
-            # # Check if any item in the reqs is a key in the mapping
-            # # maybe put this in the _import_item part instead?
-            # if any(req in item_mapping for req in reqs):
-            #     try:
-            #         new_item.remap_data(item_mapping)
-            #     except:
-            #         pass
         # have to wait until all items are created to restore related items
         # due to possible presence of reverse relationships
         self._restore_related_items()
