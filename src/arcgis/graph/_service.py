@@ -3,6 +3,8 @@ from arcgis.auth.tools import LazyLoader
 from arcgis.geometry import Geometry
 from arcgis.gis._impl._util import _get_item_url
 
+import warnings
+
 try:
     import arcgis.graph._arcgisknowledge as _kgparser
 
@@ -181,6 +183,11 @@ class KnowledgeGraph:
         :return: List[list] or Generator[Sequence[Any], None, None]
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
         return list(self._search(search=search, category=category, as_dict=as_dict))
 
     def _search(
@@ -239,7 +246,7 @@ class KnowledgeGraph:
         """
         Allows users to add or delete :class:`arcgis.graph.search_types.SearchIndexProperties` for different
         :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`s
-        from the :class:`arcgis.graph.data_model_types.GraphDataModel`. Can only be existent properties for a given 
+        from the :class:`arcgis.graph.data_model_types.GraphDataModel`. Can only be existent properties for a given
         entity/relationship type.
 
         =========================   ===============================================================
@@ -266,6 +273,11 @@ class KnowledgeGraph:
         :return: dict or :class:`arcgis.graph.response_types.UpdateSearchIndexResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_adds: dict[str, Any] = {
             type_name: (
@@ -452,6 +464,11 @@ class KnowledgeGraph:
 
         :return: `Generator[Sequence[Any], None, None]`
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_input_transform: Optional[dict[str, Any]] = (
             input_transform
@@ -585,6 +602,11 @@ class KnowledgeGraph:
 
         :return: :class:`arcgis.graph.data_model_types.GraphDataModel`
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
         return (
             self.datamodel if as_dict else GraphDataModel.model_validate(self.datamodel)
         )
@@ -609,8 +631,13 @@ class KnowledgeGraph:
             sync_result = knowledge_graph.sync_data_model(as_dict=False)
 
         :return: :class:`arcgis.graph.response_types.SyncDataModelResponse`
-        
+
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
         url = self._url + "/dataModel/syncDataModel"
         session = self._gis._con._session
         params = {
@@ -646,23 +673,23 @@ class KnowledgeGraph:
         =========================   ===============================================================
         **Parameter**                **Description**
         -------------------------   ---------------------------------------------------------------
-        adds                        Optional list of :class:`arcgis.graph.graph_types.Entity` or 
-                                    :class:`arcgis.graph.graph_types.Relationship`. The list of 
+        adds                        Optional list of :class:`arcgis.graph.graph_types.Entity` or
+                                    :class:`arcgis.graph.graph_types.Relationship`. The list of
                                     objects to add to the graph, represented in dictionary format.
         -------------------------   ---------------------------------------------------------------
-        updates                     Optional list of :class:`arcgis.graph.graph_types.Entity` or 
-                                    :class:`arcgis.graph.graph_types.Relationship`. The list of 
-                                    existent graph objects that are to be updated, represented 
+        updates                     Optional list of :class:`arcgis.graph.graph_types.Entity` or
+                                    :class:`arcgis.graph.graph_types.Relationship`. The list of
+                                    existent graph objects that are to be updated, represented
                                     in dictionary format.
         -------------------------   ---------------------------------------------------------------
-        deletes                     Optional list of :class:`arcgis.graph.graph_types.EntityDelete` or 
-                                    :class:`arcgis.graph.graph_types.RelationshipDelete`. The list 
-                                    of existent objects to remove from the graph, represented in 
+        deletes                     Optional list of :class:`arcgis.graph.graph_types.EntityDelete` or
+                                    :class:`arcgis.graph.graph_types.RelationshipDelete`. The list
+                                    of existent objects to remove from the graph, represented in
                                     dictionary format.
         -------------------------   ---------------------------------------------------------------
-        input_transform             Optional :class:`arcgis.graph.graph_types.Transform`. 
-                                    Allows a user to specify custom quantization parameters for input 
-                                    geometry, which dictate how geometries are compressed and 
+        input_transform             Optional :class:`arcgis.graph.graph_types.Transform`.
+                                    Allows a user to specify custom quantization parameters for input
+                                    geometry, which dictate how geometries are compressed and
                                     transferred to the server. Defaults to lossless WGS84 quantization.
         -------------------------   ---------------------------------------------------------------
         cascade_delete              Optional boolean. When `True`, relationships connected to
@@ -693,6 +720,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.ApplyEditsResult`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_adds: list[dict[str, Any]] = [
             (
@@ -787,7 +819,7 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, NamedObjectTypeAddsResponse]:
         """
-        Adds :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`s 
+        Adds :class:`arcgis.graph.data_model_types.EntityType` and :class:`arcgis.graph.data_model_types.RelationshipType`s
         to the data model
 
         `Learn more about adding named types to a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-add.htm>`_
@@ -795,11 +827,11 @@ class KnowledgeGraph:
         ==================  ===============================================================
         **Parameter**        **Description**
         ------------------  ---------------------------------------------------------------
-        entity_types        Optional list of EntityTypes. The list of entity types 
+        entity_types        Optional list of EntityTypes. The list of entity types
                             to add to the data model, represented in dictionary format.
         ------------------  ---------------------------------------------------------------
-        relationship_types  Optional list of RelationshipTypes. The list of 
-                            relationship types to add to the data model, represented in 
+        relationship_types  Optional list of RelationshipTypes. The list of
+                            relationship types to add to the data model, represented in
                             dictionary format.
         ------------------- ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
@@ -818,6 +850,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.NamedObjectTypeAddsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_entity_types: list[dict[str, Any]] = [
             (
@@ -889,11 +926,11 @@ class KnowledgeGraph:
         -----------------   ---------------------------------------------------------------
         type_name           Required string. The named type to be updated.
         -----------------   ---------------------------------------------------------------
-        named_type_update   Required Union[:class:`arcgis.graph.data_model_types.EntityType`, 
+        named_type_update   Required Union[:class:`arcgis.graph.data_model_types.EntityType`,
                             :class:`arcgis.graph.data_model_types.RelationshipType`]. The entity or
                             relationship type to be updated.
         -----------------   ---------------------------------------------------------------
-        mask                Required :class:`arcgis.graph.data_model_types.NamedObjectTypeMask`. 
+        mask                Required :class:`arcgis.graph.data_model_types.NamedObjectTypeMask`.
                             The properties of the named type to be updated.
         ------------------- ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
@@ -907,8 +944,8 @@ class KnowledgeGraph:
             type_update = EntityType(name="Vehicle", alias="Car")
 
             graph.named_object_type_update(
-                type_name="Vehicle", 
-                named_type_update=type_update, 
+                type_name="Vehicle",
+                named_type_update=type_update,
                 mask=NamedObjectTypeMask(update_alias=True),
                 as_dict=False
             )
@@ -916,6 +953,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.data_model_types.NamedObjectTypeUpdateResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_named_type_update: dict[str, Any] = (
             named_type_update.model_dump(by_alias=True)
@@ -993,6 +1035,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.NamedObjectTypeDeleteResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/delete"
 
@@ -1035,7 +1082,7 @@ class KnowledgeGraph:
         type_name           Required string. The entity or relationship type to which the
                             properties will be added.
         ----------------    ---------------------------------------------------------------
-        graph_properties    Required Sequence of :class:`arcgis.graph.data_model_types.GraphProperty`. 
+        graph_properties    Required Sequence of :class:`arcgis.graph.data_model_types.GraphProperty`.
                             The Sequence of properties to add to the named type.
         ------------------- ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
@@ -1051,6 +1098,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.PropertyAddsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_graph_properties: list[dict[str, Any]] = [
             (
@@ -1116,7 +1168,7 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         property_name       Required string. The property to be updated.
         ----------------    ---------------------------------------------------------------
-        graph_property      Required :class:`arcgis.graph.data_model_types.GraphProperty`. 
+        graph_property      Required :class:`arcgis.graph.data_model_types.GraphProperty`.
                             The graph property to be updated.
         ----------------    ---------------------------------------------------------------
         mask                Required :class:`arcgis.graph.data_model_types.GraphPropertyMask`.
@@ -1131,9 +1183,9 @@ class KnowledgeGraph:
             from arcgis.graph import GraphProperty, GraphPropertyMask
 
             graph.graph_property_update(
-                type_name="Vehicle", 
-                property_name="year", 
-                graph_property=GraphProperty(name="year", alias="year_made"), 
+                type_name="Vehicle",
+                property_name="year",
+                graph_property=GraphProperty(name="year", alias="year_made"),
                 mask=GraphPropertyMask(update_alias=True),
                 as_dict=False
             )
@@ -1141,6 +1193,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.PropertyUpdateResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_graph_property: dict[str, Any] = (
             graph_property.model_dump(by_alias=True)
@@ -1216,6 +1273,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.PropertyDeleteResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/delete"
 
@@ -1256,7 +1318,7 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, IndexAddsResponse]:
         """
-        Adds one or more :class:`arcgis.graph.data_model_types.FieldIndex` to a field or multiple fields 
+        Adds one or more :class:`arcgis.graph.data_model_types.FieldIndex` to a field or multiple fields
         associated with a named type in the data model.
 
         `Learn more about adding graph property indexes in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-add.htm>`_
@@ -1287,6 +1349,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.IndexAddsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_field_indexes: list[dict[str, Any]] = [
             (
@@ -1336,7 +1403,7 @@ class KnowledgeGraph:
         self, type_name: str, field_indexes: Sequence[str], as_dict: bool = True
     ) -> Union[dict, IndexDeletesResponse]:
         """
-        Deletes one or more :class:`arcgis.graph.data_model_types.FieldIndex` from fields 
+        Deletes one or more :class:`arcgis.graph.data_model_types.FieldIndex` from fields
         associated with a named type in the data model.
 
         `Learn more about deleting graph property indexes from a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-delete.htm>`_
@@ -1363,6 +1430,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.data_model_types.IndexDeletesResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         indexes: list[str] = [index for index in field_indexes]
 
@@ -1415,7 +1487,7 @@ class KnowledgeGraph:
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        rules               Required Sequence of :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`. 
+        rules               Required Sequence of :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
                             Defines the constraint rules to be added.
         ------------------- ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
@@ -1424,7 +1496,7 @@ class KnowledgeGraph:
 
         .. code-block:: python
             from arcgis.graph import RelationshipExclusionRule
-            
+
             graph.constraint_rule_adds(
                 rules=[
                     RelationshipExclusionRule(
@@ -1440,6 +1512,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.ConstraintRuleAddsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_rules: list[dict[str, Any]] = [
             rule.model_dump(by_alias=True) if isinstance(rule, ConstraintRule) else rule
@@ -1502,7 +1579,7 @@ class KnowledgeGraph:
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        rules               Required Sequence of :class:`arcgis.graph.data_model_types.RelationshipExclusionRuleUpdate`. 
+        rules               Required Sequence of :class:`arcgis.graph.data_model_types.RelationshipExclusionRuleUpdate`.
                             Defines the constraint rules to be updated.
         ------------------- ---------------------------------------------------------------
         as_dict             Optional Boolean. Determines whether the result is returned as
@@ -1518,7 +1595,7 @@ class KnowledgeGraph:
                         rule_name="PersonCanOnlyWorkForCompany",
                         mask=ConstraintRuleMask(update_name=True, update_alias=True),
                         constraint_rule=RelationshipExclusionRule(
-                            name="PersonCanWorkForCompanyOrPark", 
+                            name="PersonCanWorkForCompanyOrPark",
                             alias="Person Can Work For Company or Park",
                             origin_entity_types=UpdateSetOfNamedTypes(add_named_types=["Employee"]),
                             relationship_types=UpdateSetOfNamedTypes(add_named_types=["WorksFor"], remove_named_types=["WorksAt"]),
@@ -1532,6 +1609,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.ConstraintRuleUpdatesResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         raw_rules: list[dict[str, Any]] = [
             (
@@ -1612,6 +1694,11 @@ class KnowledgeGraph:
         :return: :class:`arcgis.graph.response_types.ConstraintRuleDeletesResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message="In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended.",
+                category=DeprecationWarning,
+            )
 
         rules: list[str] = [rule_name for rule_name in rule_names]
 
