@@ -192,6 +192,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         return list(self._search(search=search, category=category, as_dict=as_dict))
 
@@ -282,6 +283,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         raw_adds: dict[str, Any] = {}
@@ -292,6 +294,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="Dictionary values of type dict for adds is deprecated. Please migrate to SearchIndexProperties.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_adds[type_name] = search_index_properties
         raw_deletes: dict[str, Any] = {}
@@ -304,6 +307,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="Dictionary values of type dict for deletes is deprecated. Please migrate to SearchIndexProperties.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_deletes[type_name] = search_index_properties
 
@@ -479,6 +483,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         raw_input_transform: Optional[dict[str, Any]] = None
@@ -488,6 +493,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message="Input transform of type dict is deprecated. Please migrate to Transform.",
                 category=DeprecationWarning,
+                stacklevel=2,
             )
             raw_input_transform = input_transform
         raw_bind_param: dict[str, Any] = {
@@ -621,6 +627,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         return (
             self.datamodel if as_dict else GraphDataModel.model_validate(self.datamodel)
@@ -652,6 +659,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         url = self._url + "/dataModel/syncDataModel"
         session = self._gis._con._session
@@ -739,6 +747,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         raw_adds: list[dict[str, Any]] = []
@@ -749,6 +758,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List value of type dict for adds is deprecated. Please migrate to Entity or Relationship.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_adds.append(named_object)
         raw_updates: list[dict[str, Any]] = []
@@ -759,6 +769,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List value of type dict for updates is deprecated. Please migrate to Entity or Relationship.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_updates.append(named_object)
         raw_deletes: list[dict[str, Any]] = []
@@ -769,6 +780,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List value of type dict for deletes is deprecated. Please migrate to EntityDelete or RelationshipDelete.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_deletes.append(named_object_delete)
         raw_input_transform: Optional[dict[str, Any]] = None
@@ -778,6 +790,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message="Input transform of type dict is deprecated. Please migrate to Transform.",
                 category=DeprecationWarning,
+                stacklevel=2,
             )
             raw_input_transform = input_transform
 
@@ -879,6 +892,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         raw_entity_types: list[dict[str, Any]] = []
@@ -889,6 +903,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List value of type dict for entity_types is deprecated. Please migrate to EntityType.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_entity_types.append(entity_type)
         raw_relationship_types: list[dict[str, Any]] = []
@@ -901,6 +916,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List value of type dict for relationship_types is deprecated. Please migrate to RelationshipType.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_relationship_types.append(relationship_type)
 
@@ -988,12 +1004,14 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         if not isinstance(named_type_update, (EntityType, RelationshipType)):
             warnings.warn(
                 message="Type dict is deprecated for named_type_update. Please migrate to EntityType or RelationshipType.",
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         raw_named_type_update: dict[str, Any] = (
             named_type_update.model_dump(by_alias=True)
@@ -1004,6 +1022,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message="Type dict is deprecated for mask. Please migrate to NamedObjectTypeMask.",
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         raw_mask: dict[str, Any] = (
             mask.model_dump(by_alias=True)
@@ -1080,6 +1099,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/delete"
@@ -1143,6 +1163,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         raw_graph_properties: list[dict[str, Any]] = []
@@ -1153,6 +1174,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List values of type dict for graph_properties is deprecated. Please migrate to GraphProperty.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_graph_properties.append(graph_property)
 
@@ -1240,12 +1262,14 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         if not isinstance(graph_property, GraphProperty):
             warnings.warn(
                 message="Type dict for graph_property is deprecated. Please migrate to GraphProperty.",
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         raw_graph_property: dict[str, Any] = (
             graph_property.model_dump(by_alias=True)
@@ -1256,6 +1280,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message="Type dict for mask is deprecated. Please migrate to GraphPropertyMask.",
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         raw_mask: dict[str, Any] = (
             mask.model_dump(by_alias=True)
@@ -1330,6 +1355,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/delete"
@@ -1406,6 +1432,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         raw_field_indexes: list[dict[str, Any]] = []
@@ -1416,6 +1443,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List value of type dict for field_indexes is deprecated. Please migrate to FieldIndex.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_field_indexes.append(field_index)
 
@@ -1489,6 +1517,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         indexes: list[str] = [index for index in field_indexes]
@@ -1571,6 +1600,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         raw_rules: list[dict[str, Any]] = []
@@ -1581,6 +1611,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List value of type dict for rules is deprecated. Please migrate to ConstraintRule.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_rules.append(rule)
 
@@ -1674,6 +1705,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         raw_rules: list[dict[str, Any]] = []
@@ -1684,6 +1716,7 @@ class KnowledgeGraph:
                 warnings.warn(
                     message="List value of type dict for rules is deprecated. Please migrate to ConstraintRuleUpdate.",
                     category=DeprecationWarning,
+                    stacklevel=2,
                 )
                 raw_rules.append(rule)
 
@@ -1761,6 +1794,7 @@ class KnowledgeGraph:
             warnings.warn(
                 message=AS_DICT_DEPRECATION_WARNING,
                 category=DeprecationWarning,
+                stacklevel=2,
             )
 
         rules: list[str] = [rule_name for rule_name in rule_names]
