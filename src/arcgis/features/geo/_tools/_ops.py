@@ -15,7 +15,7 @@ from arcgis.features.geo._accessor import GeoSeriesAccessor
 from arcgis.features.geo._accessor import _is_geoenabled
 from arcgis.features.geo._array import GeoArray
 
-from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_PYSHP
+from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_SHAPELY
 
 
 # --------------------------------------------------------------------------
@@ -45,7 +45,7 @@ def contains(sdf, other, relation="CLEMENTINI"):
     :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
-    if HAS_ARCPY == False and HAS_PYSHP == False:
+    if HAS_ARCPY == False and HAS_SHAPELY == False:
         return None
 
     ud = pd.Series([False] * len(sdf))
@@ -103,7 +103,7 @@ def crosses(sdf, other):
     :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
-    if HAS_ARCPY == False and HAS_PYSHP == False:
+    if HAS_ARCPY == False and HAS_SHAPELY == False:
         return None
 
     ud = pd.Series([False] * len(sdf))
@@ -156,7 +156,7 @@ def disjoint(sdf, other):
     :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
-    if HAS_ARCPY == False and HAS_PYSHP == False:
+    if HAS_ARCPY == False and HAS_SHAPELY == False:
         return None
 
     ud = pd.Series([True] * len(sdf))
@@ -210,7 +210,7 @@ def equals(sdf, other):
     :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
-    if HAS_ARCPY == False and HAS_PYSHP == False:
+    if HAS_ARCPY == False and HAS_SHAPELY == False:
         return None
 
     ud = pd.Series([False] * len(sdf))
@@ -264,7 +264,7 @@ def overlaps(sdf, other):
     :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
-    if HAS_ARCPY == False and HAS_PYSHP == False:
+    if HAS_ARCPY == False and HAS_SHAPELY == False:
         return None
 
     ud = pd.Series([False] * len(sdf))
@@ -321,7 +321,7 @@ def touches(sdf, other):
     :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
-    if HAS_ARCPY == False and HAS_PYSHP == False:
+    if HAS_ARCPY == False and HAS_SHAPELY == False:
         return None
 
     ud = pd.Series([False] * len(sdf))
@@ -384,7 +384,7 @@ def within(sdf, other, relation="CLEMENTINI"):
     :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
-    if HAS_ARCPY == False and HAS_PYSHP == False:
+    if HAS_ARCPY == False and HAS_SHAPELY == False:
         return None
 
     ud = pd.Series([False] * len(sdf))

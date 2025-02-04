@@ -22,7 +22,13 @@ import warnings
 from arcgis.geometry import Geometry
 
 arcgis = LazyLoader("arcgis")
-from arcgis._impl._geometry_engine import SELECTED_ENGINE, GeometryEngine
+from arcgis._impl._geometry_engine import (
+    SELECTED_ENGINE,
+    GeometryEngine,
+    HAS_ARCPY,
+    HAS_GDAL,
+    HAS_PYSHP,
+)
 
 USE_ARCPY = USE_FIONA = USE_GDAL = USE_PYSHP = False
 

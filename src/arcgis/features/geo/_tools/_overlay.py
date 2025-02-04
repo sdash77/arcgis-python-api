@@ -10,7 +10,7 @@ from arcgis.features.geo._accessor import GeoSeriesAccessor
 from arcgis.features.geo._accessor import _is_geoenabled
 from arcgis.features.geo._array import GeoArray
 
-from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_PYSHP
+from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_SHAPELY
 
 
 # --------------------------------------------------------------------------
@@ -218,7 +218,7 @@ def overlay(sdf1, sdf2, op="union"):
 
     if (
         HAS_ARCPY == False
-        and HAS_PYSHP
+        and HAS_SHAPELY
         and sdf1.spatial.geometry_type != ["polygon"]
         and sdf2.spatial.geometry_type != ["polygon"]
     ):
@@ -226,7 +226,7 @@ def overlay(sdf1, sdf2, op="union"):
             ("Using shapely's geometry engine only " "support Polygon geometries.")
         )
 
-    if (HAS_ARCPY or HAS_PYSHP) and op in allowed_hows:
+    if (HAS_ARCPY or HAS_SHAPELY) and op in allowed_hows:
         if op in ["union", "identity"]:
             return _overlay_union(sdf1, sdf2)
         elif op in ["difference", "erase"]:

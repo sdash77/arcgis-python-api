@@ -17,11 +17,11 @@ from functools import partial, lru_cache
 
 _number_type = (int, float)
 _empty_value = [None, "NaN"]
-from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_PYSHP
+from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_SHAPELY
 
 if HAS_ARCPY:
     arcpy = LazyLoader("arcpy", strict=True)
-if HAS_PYSHP:
+if HAS_SHAPELY:
     shapely = LazyLoader("shapely", strict=True)
 
 
@@ -124,14 +124,14 @@ class BaseGeometry(dict):
     _type = None
     _typ = None
     _HAS_ARCPY = None
-    _HAS_PYSHP = None
+    _HAS_SHAPELY = None
     _properties = None
     _class_attributes = {
         "_ao",
         "_type",
         "_typ",
         "_HAS_ARCPY",
-        "_HAS_PYSHP",
+        "_HAS_SHAPELY",
         "_ipython_canary_method_should_not_exist_",
         "_properties",
     }
@@ -149,9 +149,9 @@ class BaseGeometry(dict):
     def _check_geometry_engine(self):
         if HAS_ARCPY:
             self._HAS_ARCPY = True
-        if HAS_PYSHP:
-            self._HAS_PYSHP = True
-        return self._HAS_ARCPY, self._HAS_PYSHP
+        if HAS_SHAPELY:
+            self._HAS_SHAPELY = True
+        return self._HAS_ARCPY, self._HAS_SHAPELY
 
 
 class GeometryFactory(type):
@@ -311,9 +311,9 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
     def _check_geometry_engine(self):
         if HAS_ARCPY:
             self._HAS_ARCPY = True
-        if HAS_PYSHP:
-            self._HAS_PYSHP = True
-        return self._HAS_ARCPY, self._HAS_PYSHP
+        if HAS_SHAPELY:
+            self._HAS_SHAPELY = True
+        return self._HAS_ARCPY, self._HAS_SHAPELY
 
     def __setattr__(self, key, value):
         """Sets the attribute"""
@@ -388,7 +388,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return arcpy.PointGeometry(self.as_arcpy).__geo_interface__
             else:
                 return self.as_arcpy.__geo_interface__
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if isinstance(self, Point):
                 return {"type": "Point", "coordinates": (self.x, self.y)}
             elif isinstance(self, Polygon):
@@ -927,7 +927,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A shapely :class:`~arcgis.geometry.Geometry` object.
             If shapely is not installed, None is returned
         """
-        if HAS_PYSHP:
+        if HAS_SHAPELY:
             if isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
                 from shapely.geometry import shape
                 from shapely.validation import explain_validity
@@ -998,7 +998,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             )
 
         """
-        if HAS_PYSHP:
+        if HAS_SHAPELY:
             gj = shapely_geometry.__geo_interface__
             geom_cls = _geojson_type_to_esri_type(gj["type"])
 
@@ -1036,7 +1036,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         if HAS_ARCPY:
             sr = self.spatial_reference.get("wkid", 4326)
             return f"SRID={sr};{getattr(self.as_arcpy, 'WKT', None)}"
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             try:
                 sr = self.spatial_reference.get("wkid", 4326)
                 return f"SRID={sr};{self.as_shapely.wkt}"
@@ -1070,7 +1070,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return None
         if HAS_ARCPY:
             return getattr(self.as_arcpy, "WKT", None)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             try:
                 return self.as_shapely.wkt
             except:
@@ -1103,7 +1103,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return getattr(self.as_arcpy, "WKB", None)
             except:
                 return None
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             try:
                 return self.as_shapely.wkb
             except:
@@ -1148,7 +1148,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return None
         if HAS_ARCPY:
             return getattr(self.as_arcpy, "area", None)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             return self.as_shapely.area
         elif isinstance(self, Polygon):
             return self._shoelace_area(parts=self["rings"])
@@ -1209,7 +1209,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 if g is None:
                     return g
                 return tuple(Geometry(arcpy.PointGeometry(g, self.spatial_reference)))
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             c = tuple(list(self.as_shapely.centroid.coords)[0])
             return c
         return
@@ -1248,7 +1248,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         if HAS_ARCPY:
             ext = getattr(self.as_arcpy, "extent", None)
             return ext.XMin, ext.YMin, ext.XMax, ext.YMax
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             return self.as_shapely.bounds
         elif isinstance(self, Polygon):
             for pts in self["rings"]:
@@ -1415,7 +1415,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             return getattr(self.polygon.as_arcpy, "hullRectangle", None)
         if HAS_ARCPY:
             return getattr(self.as_arcpy, "hullRectangle", None)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             return self.as_shapely.convex_hull
         return
 
@@ -1447,7 +1447,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             return False
         elif HAS_ARCPY:
             return getattr(self.as_arcpy, "isMultipart", None)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if self.type.lower().find("multi") > -1:
                 return True
             else:
@@ -1583,7 +1583,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             return getattr(self.polygon.as_arcpy, "length", None)
         elif HAS_ARCPY:
             return getattr(self.as_arcpy, "length", None)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             return self.as_shapely.length
 
         return None
@@ -1619,7 +1619,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             return getattr(self.polygon.as_arcpy, "length3D", None)
         elif HAS_ARCPY:
             return getattr(self.as_arcpy, "length3D", None)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             return self.as_shapely.length
 
         return self.length
@@ -1764,7 +1764,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                     self.spatial_reference.as_arcpy,
                 )
             )
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             centroid_tuple = self.centroid
             return Point(
                 {
@@ -1872,7 +1872,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.boundary())
-        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_SHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_shapely.boundary.buffer(1).__geo_interface__)
         return None
 
@@ -1898,7 +1898,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.buffer(distance))
-        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_SHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_shapely.buffer(distance).__geo_interface__,
                 sr=self.spatial_reference,
@@ -1990,7 +1990,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             return self.as_arcpy.contains(
                 second_geometry=second_geometry, relation=relation
             )
-        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_SHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.contains(second_geometry)
@@ -2096,7 +2096,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.crosses(second_geometry=second_geometry)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             return self.as_shapely.crosses(other=second_geometry.as_shapely)
         return None
 
@@ -2203,7 +2203,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 second_geometry = second_geometry.as_arcpy
             g = self.as_arcpy.difference(other=second_geometry)
             return Geometry(g)
-        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_SHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return Geometry(
@@ -2236,7 +2236,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.disjoint(second_geometry=second_geometry)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.disjoint(second_geometry)
@@ -2270,7 +2270,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.distanceTo(other=second_geometry)
-        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_SHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.distance(other=second_geometry)
@@ -2301,7 +2301,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.equals(second_geometry=second_geometry)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.equals(other=second_geometry)
@@ -2329,7 +2329,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         if HAS_ARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.generalize(distance=max_offset))
-        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_SHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_shapely.simplify(max_offset).__geo_interface__)
         return None
 
@@ -2494,7 +2494,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return None
             else:
                 return r
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return Geometry(
@@ -2570,7 +2570,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.overlaps(second_geometry=second_geometry)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.overlaps(other=second_geometry)
@@ -2661,7 +2661,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                     value=value, use_percentage=use_percentage
                 )
             )
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             return Geometry(
                 self.as_shapely.interpolate(
                     value, normalized=use_percentage
@@ -2947,7 +2947,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return Geometry(self.as_arcpy.symmetricDifference(other=second_geometry))
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return Geometry(
@@ -2982,7 +2982,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.touches(second_geometry=second_geometry)
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.touches(second_geometry)
@@ -3013,7 +3013,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return Geometry(self.as_arcpy.union(other=second_geometry))
-        elif HAS_PYSHP and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        elif HAS_SHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return Geometry(self.as_shapely.union(second_geometry).__geo_interface__)
@@ -3052,7 +3052,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             return self.as_arcpy.within(
                 second_geometry=second_geometry, relation=relation
             )
-        elif HAS_PYSHP:
+        elif HAS_SHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
             return self.as_shapely.within(second_geometry)

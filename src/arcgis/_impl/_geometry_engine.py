@@ -7,6 +7,7 @@ class GeometryEngine(Enum):
     ARCPY = "arcpy"
     GDAL = "gdal"
     SHAPELY = "shapely"
+    SHAPEFILE = "shapefile"
     FIONA = "fiona"
 
 
@@ -30,6 +31,7 @@ class GeometryEngineManager:
         self.available_engines = {
             GeometryEngine.ARCPY: self._is_installed("arcpy"),
             GeometryEngine.SHAPELY: self._is_installed("shapely"),
+            GeometryEngine.SHAPEFILE: self._is_installed("shapefile"),
             GeometryEngine.GDAL: self._is_installed("osgeo"),
             GeometryEngine.FIONA: self._is_installed("fiona"),
         }
@@ -60,6 +62,7 @@ class GeometryEngineManager:
             GeometryEngine.ARCPY,
             GeometryEngine.GDAL,
             GeometryEngine.SHAPELY,
+            GeometryEngine.SHAPEFILE,
             GeometryEngine.FIONA,
         ]:
             if self.available_engines[engine]:
@@ -70,6 +73,7 @@ class GeometryEngineManager:
 ge = GeometryEngineManager()
 SELECTED_ENGINE = ge.engine
 HAS_ARCPY = ge.available_engines[GeometryEngine.ARCPY]
-HAS_PYSHP = ge.available_engines[GeometryEngine.SHAPELY]
+HAS_PYSHP = ge.available_engines[GeometryEngine.SHAPEFILE]
+HAS_SHAPELY = ge.available_engines[GeometryEngine.SHAPELY]
 HAS_GDAL = ge.available_engines[GeometryEngine.GDAL]
 HAS_FIONA = ge.available_engines[GeometryEngine.FIONA]
