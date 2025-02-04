@@ -777,9 +777,9 @@ class PortalDataStore(object):
         if folder is None:
             isinstance(self._gis, GIS)
             cm = self._gis.content
-            folder = cm.create_folder(folder=f"srvc_folder_{uuid.uuid4().hex[:5]}")[
-                "id"
-            ]
+            folder = cm.folders.create(
+                folder=f"srvc_folder_{uuid.uuid4().hex[:5]}"
+            ).properties["id"]
         if isinstance(item, Item):
             item_id = item.id
         else:
