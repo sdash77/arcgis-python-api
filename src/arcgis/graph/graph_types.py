@@ -98,7 +98,7 @@ class Entity(NamedObject):
     ==============================     =======================================================================
 
     .. code-block:: python
-    
+
         from arcgis.graph import Entity
 
         # Example 1: Define an entity

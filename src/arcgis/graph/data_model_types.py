@@ -100,7 +100,7 @@ class GraphProperty(BaseModel):
     ==================     ===============================================================================================
 
     .. code-block:: python
-    
+
         from arcgis.graph import GraphProperty
 
         # Example 1: simple string property

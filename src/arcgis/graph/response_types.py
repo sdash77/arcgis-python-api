@@ -870,7 +870,7 @@ class ApplyEditsResponse(BaseModel):
     or :class:`arcgis.graph.graph_types.Relationship` in the graph.
 
     .. code-block:: python
-    
+
         # Example of a response without errors
         ApplyEditsResponse(
             error=None,

@@ -269,7 +269,7 @@ class KnowledgeGraph:
         =========================   ===============================================================
 
         .. code-block:: python
-        
+
             from arcgis.graph import SearchIndexProperties
 
             graph.update_search_index(
