@@ -12,6 +12,7 @@ import re
 import uuid
 import random
 import string
+import warnings
 
 JSON_BASED_TYPES = [
     "Application",
@@ -31,6 +32,7 @@ JSON_BASED_TYPES = [
 
 JSON_BASED_WITH_DATA_TYPES = [
     "Feature Service",
+    "Image Service",
 ]
 
 SERVICE_BASED_TYPES = [
@@ -69,6 +71,7 @@ FILE_BASED_TYPES = [
     "Geoprocessing Package",
     "Globe Document",
     "Image",
+    "Image Collection",
     "iWork Keynote",
     "iWork Numbers",
     "iWork Pages",
@@ -440,7 +443,7 @@ class ImportPackage:
             #         view_def = vds,
             #     )
 
-        elif item_properties["type"] == "Feature Service":
+        elif item_properties["type"] in JSON_BASED_WITH_DATA_TYPES:
             # check if dependent file already was uploaded
             reqs = self.graph.get_item(item_id).requires("id")
             service_item = None
@@ -542,6 +545,11 @@ class ImportPackage:
                 }
             )
             new_item = job.result()
+        
+        else:
+            # if not a covered type, then skip
+            warnings.warn(f"Item type '{item_properties['type']}' is not eligible to be created.")
+            return None
 
         self.created_item_mapping[item_id] = new_item.id
         if item_properties["title"] != new_item.title:
