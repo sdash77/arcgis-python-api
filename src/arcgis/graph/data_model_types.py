@@ -191,7 +191,7 @@ class GraphProperty(BaseModel):
 class GraphPropertyMask(BaseModel):
     """
     Allows users to define which settings should be updated for a :class:`arcgis.graph.data_model_types.GraphProperty`
-    during a :function:`arcgis.graph.KnowledgeGraph.graph_property_update()`.
+    during a `arcgis.graph.KnowledgeGraph.graph_property_update()`.
 
     =====================   ===============================================================================================
     **Parameter**           **Description**
@@ -269,7 +269,7 @@ class GraphPropertyMask(BaseModel):
 
 class FieldIndex(BaseModel):
     """
-    Represents a field index to be used in :function:`arcgis.graph.KnowledgeGraph.graph_property_index_adds()`.
+    Represents a field index to be used in `arcgis.graph.KnowledgeGraph.graph_property_index_adds()`.
 
     ==================     ===============================================================================================
     **Parameter**           **Description**
@@ -506,7 +506,7 @@ class RelationshipType(NamedObjectType):
 
 class NamedObjectTypeMask(BaseModel):
     """
-    Allows user to define what should be updated when performing a :function:`arcgis.graph.KnowledgeGraph.named_object_type_update()`.
+    Allows user to define what should be updated when performing a `arcgis.graph.KnowledgeGraph.named_object_type_update()`.
 
     ==================     ===============================================================================================
     **Parameter**           **Description**
