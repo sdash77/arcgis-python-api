@@ -3710,7 +3710,9 @@ class TestWorkflowManager(unittest.TestCase):
             job_exec.result().msg_type,
             "last message should be stepinforequired.",
         )
-        self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
+        self.assertEqual(
+            ExecutionStatus.COMPLETE, job_exec.status, "Incorrect return type"
+        )
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
     def test_finish_step_returns_successfully(self):
@@ -3736,7 +3738,9 @@ class TestWorkflowManager(unittest.TestCase):
             job_exec.result().msg_type,
             "last message should be stepinforequired.",
         )
-        self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
+        self.assertEqual(
+            ExecutionStatus.COMPLETE, job_exec.status, "Incorrect return type"
+        )
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
     def test_consecutive_calls_and_parallel_steps_returns_successfully(self):
