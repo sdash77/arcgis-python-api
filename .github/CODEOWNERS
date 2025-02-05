@@ -3,10 +3,13 @@
 /src/arcgis/apps/storymap @PraetorianRP
 /src/arcgis/apps/survey123 @Zachary-Sutherby
 /src/arcgis/geoenrichment  @dmitrykozlov @paverman @msattarov
+/src/arcgis/gis/agonb @xlt208
+/src/arcgis/gis/nb @xlt208
 /src/arcgis/gis/workflowmanager @AngelVDelgadillo @kbedel
 /src/arcgis/graph @CamBDignan @mbana641
 /src/arcgis/learn @karthikdutt @priyankatuteja @rohitgeo @vikashranjan26
 /src/arcgis/network @deelesh @max-zeng
+/src/arcgis/notebook @xlt208
 /src/arcgis/raster       @rhea-j @kreetichandran @ppoply
 /build      @jtroe @cariashuang0417
 /tests      @jtroe @cariashuang0417
