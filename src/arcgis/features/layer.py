@@ -2956,9 +2956,9 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def edit_features(
         self,
-        adds: Optional[list[FeatureSet]] = None,
-        updates: Optional[list[FeatureSet]] = None,
-        deletes: Optional[list[FeatureSet]] = None,
+        adds: Optional[Union[FeatureSet, list[dict]]] = None,
+        updates: Optional[Union[FeatureSet, list[dict]]] = None,
+        deletes: Optional[Union[FeatureSet, list[dict]]] = None,
         gdb_version: Optional[str] = None,
         use_global_ids: bool = False,
         rollback_on_failure: bool = True,
