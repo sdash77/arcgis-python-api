@@ -8040,8 +8040,8 @@ class ContentManager(object):
         # Get folder
         folders = self._gis.users.get(username).folders
         for folder in folders:
-            if folder["id"] == folder_id:
-                return folder["title"]
+            if folder._fid == folder_id:
+                return folder.name
         return None
 
     @_common_deprecated.deprecated(
@@ -11623,21 +11623,20 @@ class User(dict):
         else:
             raise ValueError("target_user must be a string or User object")
         target_user: User = target_user
-        target_user.folders
         if folder is None:
             folder_dest: str = username
         else:
             folder_dest: str = None
             for f in target_user.folders:
-                if folder.lower() == f["id"].lower():
-                    folder_dest = f["title"]
+                if folder.lower() == f._fid:
+                    folder_dest = f.name
                     break
-                elif folder.lower() == f["title"].lower():
-                    folder_dest = f["title"]
+                elif folder.lower() == f.name.lower():
+                    folder_dest = f.name
                     break
             if folder_dest is None:
                 cm: ContentManager = self._gis.content
-                cm.create_folder(folder=folder, owner=target_user)
+                cm.folders.create(folder=folder, owner=target_user)
                 folder_dest = folder
         params: dict[str, Any] = {
             "f": "json",
@@ -13213,7 +13212,7 @@ class User(dict):
             user = User(gis, username)
             folders = user.folders
             for folder in folders:
-                items = user.items(folder=folder["title"])
+                items = user.items(folder=folder.name)
                 for item in items:
                     print(item, folder)
 
