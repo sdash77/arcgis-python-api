@@ -32,7 +32,7 @@ from arcgis._impl._geometry_engine import (
 
 USE_ARCPY = USE_FIONA = USE_GDAL = USE_PYSHP = False
 
-if SELECTED_ENGINE == GeometryEngine.SHAPELY:
+if SELECTED_ENGINE == GeometryEngine.SHAPEFILE:
     import shapefile
 
     SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
