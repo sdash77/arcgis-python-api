@@ -18,6 +18,7 @@ JSON_BASED_TYPES = [
     "Application",
     "Dashboard",
     "Feature Collection",
+    "Map Service",
     "Scene Service",
     "Site Application",
     "Site Page",
@@ -621,9 +622,9 @@ class ImportPackage:
         for node in sorted_nodes:
             # maybe just take it out of the set beforehand?
             itemid = node.id
-            if itemid in item_mapping:
-                continue
             item_folder = os.path.join(self._temp_package, itemid)
+            if itemid in item_mapping or not os.path.exists(item_folder):
+                continue
             new_item = self._import_item(
                 item_folder, preserve_id=preserve_ids, folder=folder
             )
