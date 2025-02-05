@@ -242,7 +242,10 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
                 )
                 with open(layer_props_file_path, "w") as layer_props_file:
                     json.dump(
-                        layer_props, layer_props_file, indent=4, ensure_ascii=False
+                        layer_props,
+                        layer_props_file,
+                        indent=4,
+                        ensure_ascii=False,
                     )
 
         else:
@@ -389,7 +392,8 @@ class ImportPackage:
                 rand_name = "_" + "".join(random.choices(string.ascii_letters, k=5))
                 # switch this to removing extension and then re-adding
                 new_fp = fp[:-4] + rand_name + ".zip"
-                os.rename(fp, new_fp)
+                shutil.copy(fp, new_fp)  #  should copy not rename.
+                # os.rename(fp, new_fp)
                 job = folder.add(
                     **{
                         "item_properties": data_props,
@@ -415,37 +419,66 @@ class ImportPackage:
             and "View Service" in item_properties["typeKeywords"]
         ):
             # completely different process for views. they're such a pain
-            return None
+            # completely different process for views. they're such a pain
+            # return None
             # this stuff below doesn't quite work yet but leaving it there to come back to
-            # view_props_path = os.path.join(data_folder, "view_props.json")
-            # with open(view_props_path, "r") as view_props_file:
-            #     view_props = json.load(view_props_file)
+            view_props_path = os.path.join(data_folder, "view_props.json")
+            with open(view_props_path, "r") as view_props_file:
+                view_props = json.load(view_props_file)
+            view_layers: dict[str, Any] = (
+                {}
+            )  #  holds the view definition for each layer/table in the view
 
-            # reqs = self.graph.get_item(item_id).requires("id")
-            # if len(reqs) == 0:
-            #     raise RuntimeError("View Service does not have a valid data item")
-            # elif len(reqs) == 1:
-            #     flc_item = self.gis.content.get(self.created_item_mapping[reqs[0]])
-            #     flc = flc_item.layers[0].container
-            #     flc_props = flc.manager.properties
-            #     v_layers = []
-            #     v_tables = []
-            #     if "layers" in view_props:
-            #         v_layers = view_props["layers"]
-            #     if "tables" in view_props:
-            #         v_tables = view_props["tables"]
-            #     vds = []
-            #     for layer in v_layers:
-            #         if "viewLayerDefinition" in layer["adminLayerInfo"]:
-            #             vds.append(layer["adminLayerInfo"]["viewLayerDefinition"])
-            #     for table in v_tables:
-            #         if "viewLayerDefinition" in table["adminLayerInfo"]:
-            #             vds.append(table["adminLayerInfo"]["viewLayerDefinition"])
-            #     new_item = flc.manager.create_view(
-            #         name = item_properties["title"],
-            #         view_def = vds,
-            #     )
+            for lyr in view_props.get("layers", []) + view_props.get("tables", []):
+                idx = lyr["id"]
+                layer_props_file: str = os.path.join(
+                    data_folder, f"layer_{idx}_props.json"
+                )
+                if os.path.isfile(layer_props_file):
+                    with open(layer_props_file, "rb") as reader:
+                        val: dict = json.load(reader)
+                        query: str = val.get("viewDefinitionQuery", "")
+                        spatial_filter: dict = val["adminLayerInfo"][
+                            "viewLayerDefinition"
+                        ]["table"].get("filter", None)
+                        fields: list[dict] = [
+                            {
+                                "name": fld["name"],
+                                "visible": fld.get("visible", True),
+                            }
+                            for fld in val.get("fields", [])
+                        ]
 
+                        view_def: dict = {
+                            "viewDefinitionQuery": "",
+                            "viewLayerDefinition": None,
+                            "fields": [],
+                        }
+                        if fields:
+                            view_def["fields"] = fields
+                        if spatial_filter:
+                            view_def["viewLayerDefinition"] = {
+                                "filter": spatial_filter,
+                            }
+                        if isinstance(query, str):
+                            view_def["viewDefinitionQuery"] = query
+                        view_layers[idx] = view_def
+
+            reqs = self.graph.get_item(item_id).requires("id")
+            if len(reqs) == 0:
+                raise RuntimeError("View Service does not have a valid data item")
+            elif len(reqs) == 1:
+                flc_item = self.gis.content.get(self.created_item_mapping[reqs[0]])
+                flc = flc_item.layers[0].container
+                flc_mgr = flc.manager  #  get the manager
+                new_view = flc_mgr.create_view(
+                    item_properties["title"].replace(" ", "_"),
+                )
+
+                for idx in view_layers.keys():
+                    lyr = new_view.layers[idx]
+                    lyr.manager.update_definition(view_layers[idx])
+            return new_view
         elif item_properties["type"] in JSON_BASED_WITH_DATA_TYPES:
             # check if dependent file already was uploaded
             reqs = self.graph.get_item(item_id).requires("id")
@@ -504,7 +537,10 @@ class ImportPackage:
                 new_item = job.result()
 
             if new_item:
-                self._service_mapping[item_id] = (item_properties["url"], new_item.url)
+                self._service_mapping[item_id] = (
+                    item_properties["url"],
+                    new_item.url,
+                )
 
         elif item_properties["type"] in FILE_BASED_TYPES:
             for file in os.listdir(data_folder):
@@ -558,7 +594,10 @@ class ImportPackage:
 
         self.created_item_mapping[item_id] = new_item.id
         if item_properties["title"] != new_item.title:
-            self._name_mapping[item_id] = (item_properties["title"], new_item.title)
+            self._name_mapping[item_id] = (
+                item_properties["title"],
+                new_item.title,
+            )
 
         # import the resources
         for res_name in resources.keys():
@@ -576,7 +615,9 @@ class ImportPackage:
                     res_text = json.dumps(res_data, ensure_ascii=False)
                     res_text = _remap_json(res_text, remap_dict)
                     new_item.resources.add(
-                        folder_name=res_folder, file_name=res_basename, text=res_text
+                        folder_name=res_folder,
+                        file_name=res_basename,
+                        text=res_text,
                     )
             else:
                 new_item.resources.add(file=res_path, folder_name=res_folder)
