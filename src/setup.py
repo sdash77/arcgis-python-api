@@ -85,7 +85,7 @@ else:
         "requests-gssapi",
         "dask >=2023.3.2",
         "matplotlib-inline",
-        "pyarrow >=11.0.0",
+        "pyarrow >=16,<17",
         "puremagic >=1.15,<2",
         "pydantic >=2.8.2, <3",
         "networkx >=3.3, <4",
