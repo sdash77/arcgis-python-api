@@ -1,3 +1,4 @@
+import threading
 import unittest
 import datetime
 import re
@@ -3783,9 +3784,7 @@ class TestWorkflowManager(unittest.TestCase):
     # region Notification Manager
     def test_connect_notification_manager_returns_successfully(self):
         # Arrange
-        nm = NotificationManager(
-            self.connection.workflow_item, self.connection.workflow_manager
-        )
+        nm = self.connection.workflow_manager._notification_manager
         nm.connect()
 
         self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
@@ -3796,9 +3795,8 @@ class TestWorkflowManager(unittest.TestCase):
     def test_subscribe_to_job_catalogs_messages_successfully(self):
         # Arrange
         msgs = []
-        nm = NotificationManager(
-            self.connection.workflow_item, self.connection.workflow_manager
-        )
+        event = threading.Event()
+        nm = self.connection.workflow_manager._notification_manager
         nm.connect()
 
         self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
@@ -3808,11 +3806,13 @@ class TestWorkflowManager(unittest.TestCase):
 
         def test_callback(notification: Notification):
             msgs.append(notification)
+            event.set()
 
         nm.subscribe([job_id], test_callback)
 
         # add a comment get some messages:
         job.add_comment("Hello World")
+        self.assertTrue(event.wait(10))
         self.assertTrue(len(msgs), "Messages were added when subscribed")
         self.assertEqual(
             msgs[0].msg_type,
@@ -3826,10 +3826,8 @@ class TestWorkflowManager(unittest.TestCase):
     def test_unsubscribe_to_job_catalogs_messages_successfully(self):
         # Arrange
         msgs = []
-        nm = NotificationManager(
-            self.connection.workflow_item, self.connection.workflow_manager
-        )
-        nm.connect()
+        event = threading.Event()
+        nm = self.connection.workflow_manager._notification_managernm.connect()
 
         self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
 
@@ -3838,11 +3836,13 @@ class TestWorkflowManager(unittest.TestCase):
 
         def test_callback(notification: Notification):
             msgs.append(notification)
+            event.set()
 
         nm.subscribe([job_id], test_callback)
 
         # add a comment get some messages:
         job.add_comment("Hello World")
+        self.assertTrue(event.wait())
         self.assertTrue(len(msgs) < 2, "Messages were added when subscribed")
         self.assertEqual(
             msgs[0].msg_type,
@@ -3853,6 +3853,7 @@ class TestWorkflowManager(unittest.TestCase):
         nm.unsubscribe([job_id])
 
         job.add_comment("Hello World")
+        self.assertFalse(event.wait(5), "Should have timed out")
         self.assertTrue(len(msgs) < 2, "Messages were not added when unsubscribed")
 
         nm.disconnect()
