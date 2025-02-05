@@ -105,11 +105,7 @@ class LocationTrackingManager:
         folder_title = (
             "Location Sharing" if self._use_location_sharing else "Location Tracking"
         )
-        for folder in self._gis.users.me.folders:
-            if folder["title"] == folder_title:
-                break
-        else:
-            self._gis.content.folders.create(folder_title)
+        self._gis.content.folders._get_or_create(folder_title)
         service_name = "location_tracking"
         if not self._gis.content.is_service_name_available(
             service_name, service_type="featureService"
@@ -251,8 +247,8 @@ class LocationTrackingManager:
                 else "Location Tracking"
             )
             for folder in self._gis.users.get(item.owner).folders:
-                if folder["title"] == folder_title:
-                    self._gis.content.delete_folder(folder["title"], owner=item.owner)
+                if folder.name == folder_title:
+                    folder.delete(permanent=True)
                     break
         self._gis._properties = None
         return True

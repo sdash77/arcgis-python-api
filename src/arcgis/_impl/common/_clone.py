@@ -1131,13 +1131,13 @@ class _DeepCloner:
         if self.folder is not None:
             folders = user.folders
             target_folder = next(
-                (f for f in folders if f["title"].lower() == self.folder.lower()),
+                (f for f in folders if f.name.lower() == self.folder.lower()),
                 None,
             )
             if target_folder is None:
-                target_folder = self.target.content.create_folder(
+                target_folder = self.target.content.folders.create(
                     self.folder, self.owner
-                )
+                ).properties
 
         # Validate the item mapping and build service mapping for Feature Service and Map Service items
         for original_item_id, new_item_id in self._clone_mapping["Item IDs"].items():
@@ -4155,7 +4155,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         new_item.title,
                         force_add_guid_suffix=True,
                     )
-                    self.target.content.create_folder(folder_name)
+                    self.target.content.folders._get_or_create(folder_name)
                     new_item.move(folder_name)
                     worker_webmap_item.move(folder_name)
                     dispatcher_webmap_item.move(folder_name)
@@ -5058,7 +5058,7 @@ class _ApplicationDefinition(_TextItemDefinition):
                                         (
                                             f
                                             for f in folders
-                                            if f["title"].lower() == self.folder.lower()
+                                            if f.name.lower() == self.folder.lower()
                                         ),
                                         None,
                                     )
@@ -6112,7 +6112,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                             (
                                 f
                                 for f in folders
-                                if f["title"].lower() == self.folder.lower()
+                                if f.name.lower() == self.folder.lower()
                             ),
                             None,
                         )
