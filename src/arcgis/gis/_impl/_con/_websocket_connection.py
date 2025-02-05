@@ -30,7 +30,11 @@ class WebsocketConnection:
         self.timeout = timeout
 
     def _get_session_adapter_ssl_context(self):
-        scheme = parse_url(self._url).scheme
+        ws_scheme = parse_url(self._url).scheme
+        if ws_scheme == "ws":
+            scheme = "http"
+        else:
+            scheme = "https"
         adapter = self._gis.session.adapters.get(f"{scheme}://", None)
         if isinstance(adapter, EsriTrustStoreAdapter):
             return adapter.ssl_context
