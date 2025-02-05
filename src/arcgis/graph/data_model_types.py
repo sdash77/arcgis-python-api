@@ -191,35 +191,35 @@ class GraphProperty(BaseModel):
 class GraphPropertyMask(BaseModel):
     """
     Allows users to define which settings should be updated for a :class:`arcgis.graph.data_model_types.GraphProperty`
-    during a :function:`arcgis.graph.GraphClient.graph_property_update`.
+    during a :function:`arcgis.graph.KnowledgeGraph.graph_property_update()`.
 
-    ==================     ===============================================================================================
+    =====================   ===============================================================================================
     **Parameter**           **Description**
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_name             Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_alias            Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_domain           Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_field_type       Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_geometry_type    Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_has_z            Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_has_m            Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_default_value    Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_nullable         Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_visible          Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_editable         Optional Boolean. The default value is False.
-    ------------------     -----------------------------------------------------------------------------------------------
+    ---------------------   -----------------------------------------------------------------------------------------------
     update_required         Optional Boolean. The default value is False.
-    ==================     ===============================================================================================
+    =====================   ===============================================================================================
 
     .. code-block:: python
 
@@ -269,7 +269,7 @@ class GraphPropertyMask(BaseModel):
 
 class FieldIndex(BaseModel):
     """
-    Represents a field index to be used in :function:`arcgis.graph.GraphClient.graph_property_index_adds`.
+    Represents a field index to be used in :function:`arcgis.graph.KnowledgeGraph.graph_property_index_adds()`.
 
     ==================     ===============================================================================================
     **Parameter**           **Description**
@@ -284,6 +284,7 @@ class FieldIndex(BaseModel):
     ==================     ===============================================================================================
 
     .. code-block:: python
+
         from arcgis.graph import FieldIndex
 
         # Example 1: create a FieldIndex to use
@@ -505,7 +506,7 @@ class RelationshipType(NamedObjectType):
 
 class NamedObjectTypeMask(BaseModel):
     """
-    Allows user to define what should be updated when performing a :function:`arcgis.graph.GraphClient.named_object_type_update`.
+    Allows user to define what should be updated when performing a :function:`arcgis.graph.KnowledgeGraph.named_object_type_update()`.
 
     ==================     ===============================================================================================
     **Parameter**           **Description**
@@ -825,22 +826,21 @@ class RelationshipExclusionRuleUpdate(ConstraintRuleUpdate):
     """
     Allows a user to provide information for updating a relationship exclusion rule
 
-
-    ==============================     ===============================================================================================
-    **Parameter**                       **Description**
-    ------------------------------     -----------------------------------------------------------------------------------------------
-    rule_name                           Required String. Name of the constraint rule to update
-    ------------------------------     -----------------------------------------------------------------------------------------------
-    mask                                Required :class:`arcgis.graph.data_model_types.ConstraintRuleMask`.
-    ------------------------------     -----------------------------------------------------------------------------------------------
-    constraint_rule                     Required :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
-    ------------------------------     -----------------------------------------------------------------------------------------------
-    update_origin_entity_types          Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
-    ------------------------------     -----------------------------------------------------------------------------------------------
-    update_relationship_types           Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
-    ------------------------------     -----------------------------------------------------------------------------------------------
-    update_destination_entity_types     Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
-    ==============================     ===============================================================================================
+    ===============================   ===============================================================================================
+    **Parameter**                     **Description**
+    -------------------------------   -----------------------------------------------------------------------------------------------
+    rule_name                         Required String. Name of the constraint rule to update
+    -------------------------------   -----------------------------------------------------------------------------------------------
+    mask                              Required :class:`arcgis.graph.data_model_types.ConstraintRuleMask`.
+    -------------------------------   -----------------------------------------------------------------------------------------------
+    constraint_rule                   Required :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+    -------------------------------   -----------------------------------------------------------------------------------------------
+    update_origin_entity_types        Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    -------------------------------   -----------------------------------------------------------------------------------------------
+    update_relationship_types         Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    -------------------------------   -----------------------------------------------------------------------------------------------
+    update_destination_entity_types   Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    ===============================   ===============================================================================================
 
     .. code-block:: python
 
@@ -1010,9 +1010,9 @@ class GraphDataModel(BaseModel):
     .. code-block:: python
 
         from arcgis.gis import GIS
-        from arcgis.graph import GraphClient, GraphDataModel
+        from arcgis.graph import KnowledgeGraph, GraphDataModel
 
-        graph = GraphClient("URL to Knowledge Graph Service", gis=GIS("home"))
+        graph = KnowledgeGraph("URL to Knowledge Graph Service", gis=GIS("home"))
         data_model = graph.query_data_model()
 
         # Access the timestamp the data model was last update. The response will be an integer timestamp.

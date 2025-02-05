@@ -12,7 +12,7 @@ class Error(BaseModel):
 
 class UpdateSearchIndexResponse(BaseModel):
     """
-    Response for updating a search index.
+    Response for updating a :class:`arcgis.graph.search_types.SearchIndex` using :function:`arcgis.graph.KnowledgeGraph.update_search_index()`.
 
     .. code-block:: python
 
@@ -76,7 +76,7 @@ class SyncDataModelResult(BaseModel):
 
 class SyncDataModelResponse(BaseModel):
     """
-    Response for syncing the data model.
+    Response for syncing the :class:`arcgis.graph.data_model_types.GraphDataModel` using :function:`arcgis.graph.KnowledgeGraph.sync_data_model()`.
 
     .. code-block:: python
 
