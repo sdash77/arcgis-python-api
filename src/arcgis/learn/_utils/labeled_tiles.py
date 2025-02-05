@@ -179,7 +179,6 @@ def plot_multi_top_losses_modified(
         converted_truthclass_labels.append(
             [i if value == 1 else None for i, value in enumerate(row)]
         )
-    # print(predclass, truthlabels, losses2)
     from itertools import chain  # Import chain to flatten nested lists
 
     # Flatten the lists of predicted and ground truth class labels
