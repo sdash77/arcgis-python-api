@@ -151,61 +151,92 @@ def plot_multi_top_losses_modified(
     self, samples=3, figsize=(8, 8), save_misclassified=False
 ):
     "Show images in `top_losses` along with their prediction, actual, loss, and probability of predicted class in a multilabeled dataset."
-    if samples > 20:
-        print("Max 20 samples")
-        return
-    predclass, truthlabels, losses = self.learn.get_preds(with_loss=True)
-    # convert it to one hot labels
-    predclass_label = (predclass > 0.5).float()
+    # global probability_per_class, truthlabels, losses,predclass_label,flattened_truthclass_labels, flattened_predclass_labels,mismatches,combined_list,mismatches,idx_img
+    # Get predicted probabilities as a 2D tensor with shape (num_valid_img, num_classes), ground truth labels 2-D, and corresponding losses from the model 1D num_class*num_valid_img
+    probability_per_class, truthlabels, losses = self.learn.get_preds(with_loss=True)
+    # #probability_per_class Each row corresponds to a validation image, and each column represents the probability of a class.
+    # Convert predicted probabilities into binary class labels (threshold > 0.5)
+    predclass_label = (probability_per_class > 0.5).float()
+    # Get the number of classes in the dataset
     num_classes = len(self.data.classes)
+    # Get the number of validation images
     num_valid_img = len(self.data.valid_ds)
+    # Create an index list that repeats each image index for the number of classes
     idx_img = [x for x in range(num_valid_img) for _ in range(num_classes)]
     converted_predclass_labels = []
     converted_truthclass_labels = []
+    # Convert predicted class labels: store class indices where the prediction is 1, otherwise store None
     for row in predclass_label:
         converted_predclass_labels.append(
-            [i if value == 1 else None for i, value in enumerate(row)]
+            [
+                (
+                    i if value == 1 else None
+                )  # Store class index if predicted, otherwise None
+                for i, value in enumerate(row)
+            ]
         )
     for row in truthlabels:
         converted_truthclass_labels.append(
             [i if value == 1 else None for i, value in enumerate(row)]
         )
-    from itertools import chain
+    # print(predclass, truthlabels, losses2)
+    from itertools import chain  # Import chain to flatten nested lists
 
-    # Flatten the lists
+    # Flatten the lists of predicted and ground truth class labels
     flattened_predclass_labels = list(chain.from_iterable(converted_predclass_labels))
     flattened_truthclass_labels = list(chain.from_iterable(converted_truthclass_labels))
-    # combined_list will have at position 0 validation image id , 1 truth labels , 2 prediction  , 3 losses & 4 probability
-    combined_list = []
-    for num1 in range(len(losses)):
-        if flattened_predclass_labels[num1] is not None:
-            # checking the mismatch
-            if flattened_truthclass_labels[num1] != flattened_predclass_labels[num1]:
-                combined_list.append(
-                    (
-                        idx_img[num1],
-                        flattened_truthclass_labels[num1],
-                        flattened_predclass_labels[num1],
-                        losses[num1],
-                        predclass.view(-1)[num1],
-                    )
-                )
 
+    combined_list = []
+
+    for i, (truth_labels, pred_labels) in enumerate(
+        zip(flattened_truthclass_labels, flattened_predclass_labels)
+    ):
+        # The below if statement eliminates cases where both truth and prediction are None
+        if not ((truth_labels == None) and (pred_labels == None)):
+            # Append relevant data to combined_list:
+            # 0: Image ID (idx_img[i])
+            # 1: Ground truth labels (truth_labels)
+            # 2: Predicted labels (pred_labels)
+            # 3: Loss value (losses[i])
+            # 4: Predicted probability (predclass.view(-1)[i])
+
+            combined_list.append(
+                (
+                    idx_img[i],
+                    truth_labels,
+                    pred_labels,
+                    losses[i],
+                    probability_per_class.view(-1)[i],
+                )
+            )
+
+    if len(combined_list) == 0:
+        ## This can occur when all predictions and actual labels are None, resulting in an empty combined_list.
+        raise Exception("There are no mismatches in the prediction.")
+    # Sort mismatches based on the loss value in descending order
     mismatches = sorted(combined_list, key=lambda x: x[3].item(), reverse=True)
-    print(
-        f"{str(len(mismatches))} misclassified samples over {str(len(self.data.valid_ds))} samples in the validation set."
-    )
+
     samples = min(samples, len(mismatches))
     from arcgis.learn._utils.common import ArcGISMSImage
     from itertools import compress
 
     for sampleN in range(samples):
-        predictedclasses = ""
-        predictedclasses = f"{predictedclasses} -- {str(r''.join(self.data.classes[mismatches[sampleN][2]]))}"
         imag = (self.data.valid_ds[mismatches[sampleN][0]])[0]
         imag = ArcGISMSImage.show(imag, return_ax=True)
+        predicted_idx = mismatches[sampleN][2]
+        actual_idx = mismatches[sampleN][1]
+        predictedclasses = (
+            str(self.data.classes[predicted_idx])
+            if predicted_idx is not None
+            else f"not predicted as { str(self.data.classes[actual_idx])}"
+        )
+        actualclasses = (
+            str(self.data.classes[actual_idx])
+            if actual_idx is not None
+            else f"not labelled as {str(self.data.classes[predicted_idx])}"
+        )
         imag.set_title(
-            f"""Incorrectly predicted as class: {predictedclasses} \nLoss: {mismatches[sampleN][3].numpy()}\nProbability: {mismatches[sampleN][4]}""",
+            f"""Actual: {actualclasses} \nPredict: {predictedclasses} \nLoss: {mismatches[sampleN][3].numpy()}\nProbability: {mismatches[sampleN][4]}""",
             loc="left",
         )
         plt.show()
