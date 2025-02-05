@@ -210,9 +210,9 @@ class credentials:
         STANDARD_ENTERPRISE_USERNAME,
         STANDARD_ENTERPRISE_PASSWORD,
         None,
-        environ.get("ENTERPRISE_OAUTH_CLIENT_ID", "SUNKY9CZtx6bSGvH"),
+        environ.get("ENTERPRISE_OAUTH_CLIENT_ID", "8L1tmD9aVTGeUKH0"),
         environ.get(
-            "ENTERPRISE_OAUTH_CLIENT_SECRET", "e600165a5aa5476c8c879fc6bb3b17a7"
+            "ENTERPRISE_OAUTH_CLIENT_SECRET", "d916012205374179abefba3636993c18"
         ),
     )
 
