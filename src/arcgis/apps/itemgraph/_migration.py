@@ -240,7 +240,9 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
                     data_folder, f"layer_{i}_props.json"
                 )
                 with open(layer_props_file_path, "w") as layer_props_file:
-                    json.dump(layer_props, layer_props_file, indent=4, ensure_ascii=False)
+                    json.dump(
+                        layer_props, layer_props_file, indent=4, ensure_ascii=False
+                    )
 
         else:
             reqs = node.requires("item")
@@ -545,10 +547,12 @@ class ImportPackage:
                 }
             )
             new_item = job.result()
-        
+
         else:
             # if not a covered type, then skip
-            warnings.warn(f"Item type '{item_properties['type']}' is not eligible to be created.")
+            warnings.warn(
+                f"Item type '{item_properties['type']}' is not eligible to be created."
+            )
             return None
 
         self.created_item_mapping[item_id] = new_item.id
