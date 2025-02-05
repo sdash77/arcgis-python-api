@@ -689,10 +689,10 @@ class RelationshipExclusionRule(ConstraintRule):
 
         # Example 1: Define an exclusion rule
         RelationshipExclusionRule(
-            name="PersonCanOnlyWorkAtCompany",
+            name="OnlyPersonCanWorkAtCompany",
             origin_entity_types=SetOfNamedTypes(set_complement=["Person"]),
-            relationship_types=SetOfNamedTypes(set_complement=["WorksAt"]),
-            destination_entity_types=SetOfNamedTypes(set_complement=["Company"])
+            relationship_types=SetOfNamedTypes(set=["WorksAt"]),
+            destination_entity_types=SetOfNamedTypes(set=["Company"])
         )
 
         # Example 2: Access an exclusion rule from the data model
@@ -847,14 +847,14 @@ class RelationshipExclusionRuleUpdate(ConstraintRuleUpdate):
         from arcgis.graph import RelationshipExclusionRuleUpdate, RelationshipExclusionRule, ConstraintRuleMask
 
         RelationshipExclusionRuleUpdate(
-            rule_name="PersonCanOnlyWorkForCompany",
+            rule_name="OnlyPersonCanWorkForCompany",
             mask=ConstraintRuleMask(update_name=True, update_alias=True),
             constraint_rule=RelationshipExclusionRule(
                 name="PersonCanOnlyWorkAtCompany",
                 alais="Person Works At Company",
                 origin_entity_types=SetOfNamedTypes(set_complement=["Person"]),
-                relationship_types=SetOfNamedTypes(set_complement=["WorksAt"]),
-                destination_entity_types=SetOfNamedTypes(set_complement=["Company"])
+                relationship_types=SetOfNamedTypes(set=["WorksAt"]),
+                destination_entity_types=SetOfNamedTypes(set=["Company"])
             ),
             update_origin_entity_types=UpdateSetOfNamedTypes(add_named_types=["Employee"],remove_named_types=[]),
             update_relationship_types=UpdateSetOfNamedTypes(add_named_types=["WorksFor"],remove_named_types=["WorksAt"]),

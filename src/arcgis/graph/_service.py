@@ -1586,10 +1586,10 @@ class KnowledgeGraph:
             graph.constraint_rule_adds(
                 rules=[
                     RelationshipExclusionRule(
-                        name="PersonCanOnlyWorkAtCompany",
+                        name="OnlyPersonCanWorkAtCompany",
                         origin_entity_types=SetOfNamedTypes(set_complement=["Person"]),
-                        relationship_types=SetOfNamedTypes(set_complement=["WorksAt"]),
-                        destination_entity_types=SetOfNamedTypes(set_complement=["Company"])
+                        relationship_types=SetOfNamedTypes(set=["WorksAt"]),
+                        destination_entity_types=SetOfNamedTypes(set=["Company"])
                     )
                 ],
                 as_dict=False
@@ -1687,7 +1687,7 @@ class KnowledgeGraph:
             graph.constraint_rule_updates(
                 rules=[
                     RelationshipExclusionRuleUpdate(
-                        rule_name="PersonCanOnlyWorkForCompany",
+                        rule_name="OnlyPersonCanWorkForCompany",
                         mask=ConstraintRuleMask(update_name=True, update_alias=True),
                         constraint_rule=RelationshipExclusionRule(
                             name="PersonCanWorkForCompanyOrPark",
