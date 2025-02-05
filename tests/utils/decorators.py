@@ -12,7 +12,26 @@ from arcgis.auth.tools._util import detect_proxy
 from integration.config import get_resource_path
 from threading import TIMEOUT_MAX
 
-configured_profiles = ProfileManager().list()
+profile_manager = ProfileManager()
+configured_profiles = {
+    profile: profile_manager._retrieve_dict(profile)
+    for profile in profile_manager.list()
+}
+
+STANDARD_ENTERPRISE_PROFILE = "your_enterprise_profile"
+STANDARD_ENTERPRISE_PROFILE_CONFIG = configured_profiles.get(STANDARD_ENTERPRISE_PROFILE, {})
+STANDARD_ENTERPRISE_URL = environ.get(
+    "STANDARD_ENTERPRISE_URL",
+    STANDARD_ENTERPRISE_PROFILE_CONFIG.get("url") or "https://pythonapitestnb.dev.geocloud.com/portal",
+)
+STANDARD_ENTERPRISE_USERNAME = environ.get(
+    "STANDARD_ENTERPRISE_USERNAME",
+    STANDARD_ENTERPRISE_PROFILE_CONFIG.get("username") or "arcgis_python",
+)
+STANDARD_ENTERPRISE_PASSWORD = environ.get(
+    "STANDARD_ENTERPRISE_PASSWORD",
+    STANDARD_ENTERPRISE_PROFILE_CONFIG.get("password") or "amazing_arcgis_123",
+)
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
@@ -94,22 +113,12 @@ class credentials:
     _avworld_username = "creator2"
     _avworld_username_with_domain = rf"avworld\{_avworld_username}"
     _avworld_password = "portalaccount1"
-    _standard_enterprise_url = environ.get(
-        "STANDARD_ENTERPRISE_URL",
-        "https://pythonapitest.dev.geocloud.com/portal",
-    )
-    _standard_enterprise_username = environ.get(
-        "STANDARD_ENTERPRISE_USERNAME", "arcgis_python"
-    )
-    _standard_enterprise_password = environ.get(
-        "STANDARD_ENTERPRISE_PASSWORD", "amazing_arcgis_123"
-    )
 
     _enterprise_credential_parameters = (
         "enterprise",
-        _standard_enterprise_url,
-        _standard_enterprise_username,
-        _standard_enterprise_password,
+        STANDARD_ENTERPRISE_URL,
+        STANDARD_ENTERPRISE_USERNAME,
+        STANDARD_ENTERPRISE_PASSWORD,
     )
     _enterprise_pki_credential_parameters = (
         "enterprise_pki",
@@ -197,13 +206,13 @@ class credentials:
     )
     _enterprise_oauth_credential_parameters = (
         "enterprise_oauth",
-        _standard_enterprise_url,
-        _standard_enterprise_username,
-        _standard_enterprise_password,
+        STANDARD_ENTERPRISE_URL,
+        STANDARD_ENTERPRISE_USERNAME,
+        STANDARD_ENTERPRISE_PASSWORD,
         None,
-        environ.get("ENTERPRISE_OAUTH_CLIENT_ID", "SUNKY9CZtx6bSGvH"),
+        environ.get("ENTERPRISE_OAUTH_CLIENT_ID", "8L1tmD9aVTGeUKH0"),
         environ.get(
-            "ENTERPRISE_OAUTH_CLIENT_SECRET", "e600165a5aa5476c8c879fc6bb3b17a7"
+            "ENTERPRISE_OAUTH_CLIENT_SECRET", "d916012205374179abefba3636993c18"
         ),
     )
 
@@ -358,7 +367,7 @@ class profiles:
     )
     _enterprise_profile_parameters = (
         "enterprise",
-        "your_enterprise_profile",
+        STANDARD_ENTERPRISE_PROFILE,
     )
     _enterprise_admin_profile_parameters = (
         "enterprise_admin",
