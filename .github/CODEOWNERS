@@ -13,5 +13,7 @@
 /src/arcgis/raster       @rhea-j @kreetichandran @ppoply
 /build      @jtroe @cariashuang0417
 /tests      @jtroe @cariashuang0417
+/tests/integration/gis/notebook_server @xlt208
+/tests/integration/notebook @xlt208
 /.github    @jtroe @cariashuang0417
 /.jenkins   @jtroe @cariashuang0417
