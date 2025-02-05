@@ -148,8 +148,8 @@ class Project:
         self.group.protected = False
         self.group.delete()
         for folder in self.gis.users.get(owner).folders:
-            if folder["title"] == title:
-                self.gis.content.delete_folder(folder["title"], owner=owner)
+            if folder.name == title:
+                folder.delete(permanent=True)
 
     def _update_data(self):
         # this function is used by v1 projects only

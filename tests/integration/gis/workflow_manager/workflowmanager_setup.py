@@ -14,7 +14,7 @@ class WorkflowManagerSetup:
 
     # region Setup
 
-    def __init__(self):
+    def __init__(self, override_gis: GIS = None):
         """
         Check if ArcGIS.com can be reached
         :return:
@@ -32,7 +32,7 @@ class WorkflowManagerSetup:
             self.item_name = "Testing Item"
             self.workflow_item_id = "77f3d5c6ab9d46d3ba17967c32b9b00e"
 
-            self._gis = GIS(
+            self._gis = override_gis or GIS(
                 url=self.portal_url,
                 username=self.portal_username,
                 password=self.portal_password,
@@ -48,7 +48,7 @@ class WorkflowManagerSetup:
             self.portal_username = _conf_reader["credentials"]["username"]
             self.portal_password = _conf_reader["credentials"]["password"]
 
-            self._gis = GIS(
+            self._gis = override_gis or GIS(
                 url=self.portal_url,
                 username=self.portal_username,
                 password=self.portal_password,
