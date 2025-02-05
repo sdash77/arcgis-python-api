@@ -965,7 +965,7 @@ class OfflineMapAreaManager(object):
 
         # region build input parameters - for CreateMapArea tool
         if folder:
-            user_folders = self._gis.users.me.folders
+            user_folders = list(self._gis.users.me.folders)
             if user_folders:
                 matching_folder_ids = [
                     f["id"] for f in user_folders if f["title"] == folder
