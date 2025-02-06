@@ -17,28 +17,24 @@ features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
 pd = LazyLoader("pandas")
 
+# Check for available engines
+from arcgis._impl._geometry_engine import SELECTED_ENGINE, GeometryEngine
 
-try:
-    import arcpy
+USE_ARCPY = USE_GDAL = USE_PYSHP = False
 
-    has_arcpy = True
-except ImportError:
-    has_arcpy = False
-except RuntimeError:
-    has_arcpy = False
-try:
+if SELECTED_ENGINE == GeometryEngine.SHAPEFILE:
     import shapefile
 
-    has_pyshp = True
-except ImportError:
-    has_pyshp = False
+    SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
+    USE_PYSHP = True
+elif SELECTED_ENGINE == GeometryEngine.GDAL:
+    from osgeo import ogr, osr
 
-try:
-    import osgeo
+    USE_GDAL = True
+elif SELECTED_ENGINE == GeometryEngine.ARCPY:
+    import arcpy
 
-    has_gdal = True
-except:
-    has_gdal = False
+    USE_ARCPY = True
 
 
 def _json_encode_params(postdata):
@@ -84,15 +80,15 @@ def _create_file(df, file_type, output_dir=None, **kwargs):
     if file_type in ["File Geodatabase", "Shapefile"]:
         temp_zip = os.path.join(temp_dir, f"{service_name}.zip")
 
-        if file_type == "File Geodatabase" and has_gdal:
-            zip_loc = location
-        elif file_type == "File Geodatabase" and has_arcpy:
+        if file_type == "File Geodatabase" and USE_ARCPY:
             # Create empty File Geodatabase with ArcPy
             fgdb = _tool_utils.run_and_hide(
                 fn=arcpy.CreateFileGDB_management,
                 **{"out_folder_path": temp_dir, "out_name": name},
             )[0]
             location = os.path.join(fgdb, os.path.basename(temp_dir))
+            zip_loc = os.path.join(temp_dir, name)
+        elif file_type == "File Geodatabase" and USE_GDAL:
             zip_loc = location
         else:
             zip_loc = temp_dir
@@ -257,12 +253,12 @@ def import_as_item(gis, df, **kwargs):
     # Check whether it will be a layer or a table
     if features.geo._is_geoenabled(df):
         # layer
-        if has_arcpy == False and has_pyshp == False and has_gdal == False:
+        if USE_ARCPY == False and USE_PYSHP == False and USE_GDAL == False:
             raise Exception(
                 "Spatially enabled DataFrame's must have either pyshp, gdal, or"
                 + " arcpy available to use import_data"
             )
-        if has_arcpy or has_gdal:
+        if USE_ARCPY or USE_GDAL:
             file_type = "File Geodatabase"
         else:
             file_type = "Shapefile"
