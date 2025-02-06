@@ -281,7 +281,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     return output_folder
 
 
-class ImportPackage:
+class _ImportPackage:
     def __init__(self, package_path: str, gis: GIS):
         self.package_path = package_path
         self.gis = gis

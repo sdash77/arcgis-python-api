@@ -45,6 +45,7 @@ from arcgis.gis._impl._dataclasses._sfilters import (
 )
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
+from arcgis.gis._impl._content_manager.folder import Folder
 
 try:
     import pandas as pd
@@ -1870,6 +1871,141 @@ class Datastore(dict):
         res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
 
         return res["datasets"]
+
+
+###########################################################################
+class OfflineContentManager(object):
+    """
+    The ``OfflineContentManager`` class provides methods to export a subset of
+    items and all of their dependencies from your GIS org into a compressed
+    binary format that can then be viewed by and uploaded into any other org.
+
+    .. code-block:: python
+
+        # Usage Example: Initializing an ``OfflineContentManager`` object:
+
+        >>> gis = GIS(profile="your_online_profile")
+
+        >>> offline_mgr = gis.content.offline
+
+    """
+
+    def __init__(self, gis):
+        self._gis = gis
+
+    def export_items(
+        self,
+        items: list,
+        output_folder: str = None,
+        package_name: str = None,
+        service_format: str = "File Geodatabase",
+    ) -> str:
+        """
+        The ``export_items`` method exports a subset of items and all of their
+        dependencies from your GIS org into a compressed binary format with the
+        extension '.contentexport'. When decompressed, it contains some metadata
+        about all of the items and subfolders pertaining to each item that was
+        exported. The contents of this file can then be listed by the ``list_items``
+        method.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        items               Required list. The items to export. All of the deep dependencies of
+                            these items will also be included in the export package.
+        ---------------     --------------------------------------------------------------------
+        output_folder       Optional string. The location where the export package will be
+                            saved. If left blank, a temporary directory will be created and the
+                            package will be saved there.
+        ---------------     --------------------------------------------------------------------
+        package_name        Optional string. The name of the offline package. If left blank, it
+                            will be given a random now begginning with "exported_content".
+        ---------------     --------------------------------------------------------------------
+        service_format      Optional string. The format of the services in the export. Default
+                            is "File Geodatabase".
+        ---------------     --------------------------------------------------------------------
+
+        """
+
+        from arcgis.apps.itemgraph import create_dependency_graph
+        from arcgis.apps.itemgraph._migration import _export_content
+
+        graph = create_dependency_graph(self._gis, items, outside_org=False)
+        return _export_content(graph, output_folder, package_name, service_format)
+
+    # ----------------------------------------------------------------------
+    def import_content(
+        self,
+        package_path: str,
+        item_ids: list[str] = [],
+        preserve_ids: bool = False,
+        folder: Folder | str = None,
+        failure_rollback: bool = False,
+    ) -> list:
+        """
+        The ``import_content()`` method takes a `.contentexport` file made from offline cloning
+        (see `export_items()`) and uploads its contents to the GIS. These packages contain all of
+        the deep dependencies of an item, assuming they were available, and will recreate them
+        in the same fashion in the new GIS org.
+
+        .. note::
+            This function is still in beta and may not have full capabilities yet. Known item
+            limitations are Survey123 Forms and Geoprocessing Services.
+
+        ================     ======================================================================
+        **Parameter**         **Description**
+        ----------------     ----------------------------------------------------------------------
+        package_path         Required string. The path to the `.contentexport` file to import.
+        ----------------     ----------------------------------------------------------------------
+        item_ids             Optional list of strings. The item ids to import from the package.
+                             If none provided, all items in the package will be imported.
+        ----------------     ----------------------------------------------------------------------
+        preserve_ids         Optional boolean. If True, the original item ids will be preserved,
+                             assuming they are available. Only available for ArcGIS Enterprise.
+                             Default is False.
+        ----------------     ----------------------------------------------------------------------
+        folder               Optional `Folder` or string. The folder to import the content into.
+                             If none provided, will default to the user's root folder.
+        ----------------     ----------------------------------------------------------------------
+        failure_rollback     Optional boolean. If True, the import will be rolled back and the
+                             created items will be deleted if any error occurs during the process.
+                             If False, any item that fails to import will be skipped over and the
+                             process will continue. Default is False.
+        ================     ======================================================================
+
+        :return:
+            A List of the created `Item` objects.
+
+        """
+
+        from arcgis.apps.itemgraph._migration import _ImportPackage
+
+        ip = _ImportPackage(package_path, self._gis)
+        return ip.import_items(
+            items=item_ids,
+            preserve_ids=preserve_ids,
+            folder=folder,
+            failure_rollback=failure_rollback,
+        )
+
+    # ----------------------------------------------------------------------
+    def list_items(self, package_path: str) -> dict:
+        """
+        The ``list_items()`` method takes a `.contentexport` file made from offline cloning
+        (see `export_items()`) and returns a dictionary of the contained items and some
+        metadata about them.
+
+        ================     ======================================================================
+        **Parameter**         **Description**
+        ----------------     ----------------------------------------------------------------------
+        package_path         Required string. The path to the `.contentexport` file to list.
+        ================     ======================================================================
+
+        """
+        from arcgis.apps.itemgraph._migration import _ImportPackage
+
+        ip = _ImportPackage(package_path, self._gis)
+        return ip.items
 
 
 ###########################################################################
@@ -6241,6 +6377,28 @@ class ContentManager(object):
         curl = f"{self._gis._portal.resturl}portals/checkUrl"
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
+    @property
+    def offline(self):
+        """
+        The `offline` property is a manager object to import, export, and
+        view offline content using the `OfflineContentManager` class.
+
+        :return:
+            A :class:`~arcgis.gis.OfflineContentManager` object.
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> offline_obj = gis.content.offline
+            >>> type(offline_obj)
+
+        """
+        return OfflineContentManager(self._gis)
 
     # ----------------------------------------------------------------------
     @property
