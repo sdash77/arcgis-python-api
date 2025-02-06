@@ -702,12 +702,12 @@ class Query:
             ):
                 # For certain parameters, we do not expect all records to be returned or they have to be returned in a specific order
                 features = self._fetch_all_features_single_thread(url, features, result)
-            elif self.parameters.get("resultRecordCount"):
-                # When a user specifies either of these we can make pre-defined chunks
-                features = self._fetch_all_features_by_chunk(url)
-            else:
+            elif self.parameters.get("resultOffset") is not None:
                 # Otherwise, we use a concurrent workflow to fetch all features
                 features = self._fetch_all_features_concurrent(url, features)
+            else:
+                # Chunk as default
+                features = self._fetch_all_features_by_chunk(url)
 
         result["features"] = features
         if self.as_df:
@@ -827,7 +827,7 @@ class Query:
 
     def _fetch_all_features_by_chunk(self, url):
         """
-        This workflow is used when users specify either resultOffset or resultRecordCount.
+        This workflow is used when users specify resultRecordCount.
         """
         features = []  # start from an empty list
         # Step 1: Query for all the ids using the parameters set
@@ -835,7 +835,8 @@ class Query:
         self.parameters["resultRecordCount"] = (
             None  # we got the number of ids, so no need to limit the records
         )
-        self.parameters["resultOffset"] = 0  # reset the offset to 0
+        if "resultOffset" in self.parameters:
+            del self.parameters["resultOffset"]
 
         # Step 2: Define function to fetch a page of features
         def fetch_page(ids_subset):
