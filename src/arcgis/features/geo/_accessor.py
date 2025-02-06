@@ -1163,7 +1163,7 @@ class GeoAccessor(object):
             import os
             os.environ["ARCGIS_GEOMETRY_ENGINE"] = "shapefile"  # Options: "shapefile", "gdal", "arcpy"
 
-    * Recommened Libraries:
+    * Recommended Libraries:
         - `arcpy` - Best for full compatibility with Esri's ArcGIS ecosystem, including advanced geoprocessing tools. Requires an ArcGIS license.
         - `gdal` - A good balance of performance and compatibility with multiple GIS formats. Ideal for working with large datasets and open-source workflows.
         - `shapefile` - A lightweight option that works well for simple shapefile operations but lacks advanced capabilities of the other two.
