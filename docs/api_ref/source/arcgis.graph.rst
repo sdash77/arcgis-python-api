@@ -14,219 +14,149 @@ Data Model Types
 
 ConstraintRuleMask
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.ConstraintRuleMask
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.ConstraintRuleMask
 
 EndPoint
 ^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.EndPoint
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.EndPoint
 
 EntityType
 ^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.EntityType
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.EntityType
 
 FieldIndex
 ^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.FieldIndex
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.FieldIndex
 
 GraphDataModel
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.GraphDataModel
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.GraphDataModel
 
 GraphProperty
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.GraphProperty
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.GraphProperty
 
 GraphPropertyMask
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.GraphPropertyMask
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.GraphPropertyMask
 
 NamedObjectTypeMask
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.NamedObjectTypeMask
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.NamedObjectTypeMask
 
 RelationshipExclusionRule
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.RelationshipExclusionRule
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.RelationshipExclusionRule
 
 RelationshipExclusionRuleUpdate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.RelationshipExclusionRuleUpdate
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.RelationshipExclusionRuleUpdate
 
 RelationshipType
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.RelationshipType
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.RelationshipType
 
 SetOfNamedTypes
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.SetOfNamedTypes
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.SetOfNamedTypes
 
 UpdateSetOfNamedTypes
 ^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.data_model_types.UpdateSetOfNamedTypes
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.data_model_types.UpdateSetOfNamedTypes
 
 Graph Types
 -----------
 
 Entity
 ^^^^^^
-.. autoclass:: arcgis.graph.graph_types.Entity
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.graph_types.Entity
 
 EntityDelete
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.graph_types.EntityDelete
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.graph_types.EntityDelete
 
 Path
 ^^^^
-.. autoclass:: arcgis.graph.graph_types.Path
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.graph_types.Path
 
 Relationship
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.graph_types.Relationship
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.graph_types.Relationship
 
 RelationshipDelete
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.graph_types.RelationshipDelete
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.graph_types.RelationshipDelete
 
 Transform
 ^^^^^^^^^
-.. autoclass:: arcgis.graph.graph_types.Transform
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.graph_types.Transform
 
 Search Types
 ------------
 
 SearchIndex
 ^^^^^^^^^^^
-.. autoclass:: arcgis.graph.search_types.SearchIndex
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.search_types.SearchIndex
 
 SearchIndexProperties
 ^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.search_types.SearchIndexProperties
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.search_types.SearchIndexProperties
 
 Response Types
 --------------
 
 ApplyEditsResponse
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.ApplyEditsResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.ApplyEditsResponse
 
 ConstraintRuleAddsResponse
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.ConstraintRuleAddsResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.ConstraintRuleAddsResponse
 
 ConstraintRuleDeletesResponse
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.ConstraintRuleDeletesResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.ConstraintRuleDeletesResponse
 
 ConstraintRuleUpdatesResponse
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.ConstraintRuleUpdatesResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.ConstraintRuleUpdatesResponse
 
 IndexAddsResponse
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.IndexAddsResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.IndexAddsResponse
 
 IndexDeletesResponse
 ^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.IndexDeletesResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.IndexDeletesResponse
 
 NamedObjectTypeAddsResponse
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.NamedObjectTypeAddsResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.NamedObjectTypeAddsResponse
 
 NamedObjectTypeUpdateResponse
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.NamedObjectTypeUpdateResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.NamedObjectTypeUpdateResponse
 
 NamedObjectTypeDeleteResponse
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.NamedObjectTypeDeleteResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.NamedObjectTypeDeleteResponse
 
 PropertyAddsResponse
 ^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.PropertyAddsResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.PropertyAddsResponse
 
 PropertyUpdateResponse
 ^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.PropertyUpdateResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.PropertyUpdateResponse
 
 PropertyDeleteResponse
 ^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.PropertyDeleteResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.PropertyDeleteResponse
 
 SyncDataModelResponse
 ^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.SyncDataModelResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.SyncDataModelResponse
 
 UpdateSearchIndexResponse
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.graph.response_types.UpdateSearchIndexResponse
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.graph.response_types.UpdateSearchIndexResponse
