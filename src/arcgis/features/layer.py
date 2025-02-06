@@ -1989,8 +1989,6 @@ class FeatureLayer(Layer):
                                             option supersedes the returnIdsOnly parameter. If
                                             returnCountOnly = true, the response will return both the count and
                                             the extent.
-                                            This parameter cannot be specified if querying a service being hosted
-                                            in an oracle database.
         -------------------------------     --------------------------------------------------------------------
         return_extent_only                  Optional boolean. If true, the response only includes the extent of
                                             the features that would be returned by the query. If
@@ -2056,8 +2054,7 @@ class FeatureLayer(Layer):
                                             by skipping the specified number of records and starting from the
                                             next record (that is, resultOffset + 1th). This option is ignored
                                             if return_all_records is True (i.e. by default).
-                                            This parameter cannot be specified if querying a service being hosted
-                                            in an oracle database.
+                                            This parameter cannot be specified if the service does not support pagination.
         -------------------------------     --------------------------------------------------------------------
         result_record_count                 Optional integer. This option can be used for fetching query results
                                             up to the result_record_count specified. When result_offset is

@@ -753,8 +753,7 @@ class MapFeatureLayer(Layer):
                                             by skipping the specified number of records and starting from the
                                             next record (that is, `resultOffset + ith` value). This option is
                                             ignored if `return_all_records` is `True` (i.e. by default).
-                                            This parameter cannot be specified if querying a service being hosted
-                                            in an oracle database.
+                                            This parameter cannot be specified if the service does not support pagination.
         -------------------------------     --------------------------------------------------------------------
         result_record_count                 Optional integer. This option can be used for fetching query results
                                             up to the `result_record_count` specified. When `result_offset` is
@@ -762,8 +761,7 @@ class MapFeatureLayer(Layer):
                                             `max_record_count`. The maximum value for this parameter is the value
                                             of the layer's `maxRecordCount` property. This option is ignored if
                                             `return_all_records` is True (i.e. by default).
-                                            This parameter cannot be specified if querying a service being hosted
-                                            in an oracle database.
+                                            This parameter cannot be specified if the service does not support pagination.
         -------------------------------     --------------------------------------------------------------------
         quantization_parameters             Optional dict. Used to project the geometry onto a virtual grid,
                                             likely representing pixels on the screen.
