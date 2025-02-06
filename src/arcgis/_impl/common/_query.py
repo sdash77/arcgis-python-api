@@ -586,12 +586,14 @@ class Query:
         is_layer: bool = True,
         query_3d: bool = False,
         as_df: bool = False,
+        supports_pagination: bool = False,
     ):
         self.layer = layer
         self.is_layer = is_layer
         self.query_3d = query_3d
         self.as_df = as_df
         self.parameters = self.create_parameters(parameters)
+        self.supports_pagination = supports_pagination
 
     def create_parameters(
         self,
@@ -702,11 +704,11 @@ class Query:
             ):
                 # For certain parameters, we do not expect all records to be returned or they have to be returned in a specific order
                 features = self._fetch_all_features_single_thread(url, features, result)
-            elif self.parameters.get("resultOffset") is not None:
-                # Otherwise, we use a concurrent workflow to fetch all features
+            elif self.supports_pagination:
+                # Otherwise, we use a concurrent workflow to fetch all features using pagination
                 features = self._fetch_all_features_concurrent(url, features)
             else:
-                # Chunk as default
+                # Chunk as ids by default/last resort
                 features = self._fetch_all_features_by_chunk(url)
 
         result["features"] = features
