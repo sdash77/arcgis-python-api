@@ -549,6 +549,16 @@ class ImportPackage:
                     item_properties["url"],
                     new_item.url,
                 )
+                # if map service, update data
+                if item_properties["type"] == "Map Service":
+                    structure_file_path = os.path.join(data_folder, "structure.json")
+                    if os.path.exists(structure_file_path):
+                        with open(structure_file_path, "r") as structure_file:
+                            structure_data = json.load(structure_file)
+                            structure_text = json.dumps(
+                                structure_data, ensure_ascii=False
+                            )
+                            new_item.update(data=structure_text)
 
         elif item_properties["type"] in FILE_BASED_TYPES:
             for file in os.listdir(data_folder):
