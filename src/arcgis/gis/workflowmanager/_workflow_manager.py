@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 import datetime
 import functools
 import json
 import logging
 import sys
+import threading
 import urllib.parse
-from typing import Optional
+from enum import Enum
+from typing import Optional, Callable
+
+logger = logging.getLogger(__name__)
 
 import arcgis.gis
 from arcgis.auth.tools import parse_url
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
+from arcgis.gis._impl._con._websocket_connection import WebsocketConnection
 
 logger = logging.getLogger(__name__)
 
@@ -388,16 +395,20 @@ class JobManager:
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                The Workflow Manager Item
+    ---------------     --------------------------------------------------------------------
+    workflow_manager    The :class:`~arcgis.gis.workflowmanager.WorkflowManager` object
     ===============     ====================================================================
 
     """
 
-    def __init__(self, item):
+    def __init__(self, item, workflow_manager):
         """initializer"""
         if item is None:
             raise ValueError("Item cannot be None")
+        self._workflow_manager = workflow_manager
         self._item = item
-        _initialize(self, item._gis)
+        self._gis = self._item._gis
+        _initialize(self, self._item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
@@ -657,7 +668,7 @@ class JobManager:
             job_dict = self._gis._con.get(
                 url, {"extProps": get_ext_props, "holds": get_holds}
             )
-            return Job(job_dict, self._gis, self._url)
+            return Job(job_dict, self._gis, self._url, self._workflow_manager)
         except:
             self._handle_error(sys.exc_info())
 
@@ -993,6 +1004,8 @@ class WorkflowManager:
         >> [{}...{}]  # returns a list of dictionaries representing each user
     """
 
+    _nm: NotificationManager = None
+
     def __init__(self, item):
         if item is None:
             raise ValueError("Item cannot be None")
@@ -1000,7 +1013,7 @@ class WorkflowManager:
         _initialize(self, item._gis)
         _check_license(item._gis)
 
-        self.job_manager = JobManager(item)
+        self.job_manager = JobManager(item, self)
         self.saved_searches_manager = SavedSearchesManager(item)
 
     def _handle_error(self, info):
@@ -1020,6 +1033,13 @@ class WorkflowManager:
         """
 
         return self.job_manager
+
+    @property
+    def _notification_manager(self):
+        if not self._nm:
+            self._nm = NotificationManager(self._item, self)
+
+        return self._nm
 
     def evaluate_arcade(
         self,
@@ -2606,7 +2626,7 @@ class Job(object):
     _camelCase_to_underscore = _camelCase_to_underscore
     _underscore_to_camelcase = _underscore_to_camelcase
 
-    def __init__(self, init_data, gis=None, url=None):
+    def __init__(self, init_data, gis=None, url=None, workflow_manager=None):
         self.job_status = None
         self.notes = None
         self.diagram_id = None
@@ -2638,6 +2658,7 @@ class Job(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
         self._url = url
+        self._workflow_manager = workflow_manager
 
     def post(self):
         post_dict = {
@@ -3242,6 +3263,338 @@ class Job(object):
         }
         return return_obj
 
+    def _execute_step(self, step_ids: Optional[list], execution_type: ExecutionType):
+        # Create a JobExecution object
+        je = JobExecution(self, execution_type)
+        # Subscribe to this job
+        self._workflow_manager._notification_manager.subscribe(
+            [self.job_id], je._callback
+        )
+
+        # Call the action endpoint
+        url = f"{self._url}/jobs/{self.job_id}/action"
+        post_obj = {}
+        if execution_type is ExecutionType.RUN:
+            post_obj["type"] = "Run"
+        elif execution_type is ExecutionType.FINISH:
+            post_obj["type"] = "Finish"
+        elif execution_type is ExecutionType.STOP:
+            post_obj["type"] = "Stop"
+
+        if step_ids is not None:
+            post_obj["stepIds"] = step_ids
+
+        try:
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+            # If it fails, unsubscribe then throw
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception(return_obj["stepResponses"])
+        except:
+            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
+            raise
+
+        # If it succeeds, return the JobExecution
+        je._started()
+        return je
+
+    def run(self, step_ids: Optional[list] = None):
+        """
+        Starts running the current step(s). Running a step marks it as finished, if the step is set to proceed to next.
+
+        The step will not be started under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
+
+        ================    ===================================================================
+        **Argument**        **Description**
+        ----------------    -------------------------------------------------------------------
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
+        ================    ===================================================================
+
+        :return:
+            :class:`~arcgis.gis.workflowmanager.JobExecution`
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Run the current active steps
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will run the current active steps, if no param is given, i.e job.run()
+            run_execution = job.run(step_ids=['stepid'])
+
+            print(f'Result = { run_execution.result() }')
+            print(f'Status = { run_execution.status }')
+            print(f'Elapsed Time = { run_execution.elapse_time }')
+            print(f'Messages:')
+            for m in run_execution.messages:
+                print(m.message)
+
+        """
+        return self._execute_step(step_ids, execution_type=ExecutionType.RUN)
+
+    def stop(self, step_ids: Optional[list] = None):
+        """
+        Stops the current running step(s). The step(s) can be Run again or Finish can be used to complete it. In case of
+        GP step and question step, the processing of the step is cancelled. In case of manual and open app step,
+        the step is paused. The step can be forced to stop by a user not assigned to the step with the
+        jobForceStop privilege.
+
+        The step will not be stopped under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
+
+        ================    ===================================================================
+        **Argument**        **Description**
+        ----------------    -------------------------------------------------------------------
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
+        ================    ===================================================================
+
+        :return:
+            :class:`~arcgis.gis.workflowmanager.JobExecution`
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Stop the current active steps
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will stop the current active steps, if no param is given
+            stop_execution = job.stop()
+
+            print(f'Result = { stop_execution.result() }')
+            print(f'Status = { stop_execution.status }')
+            print(f'Elapsed Time = { stop_execution.elapse_time }')
+            print(f'Messages: ')
+            for m in stop_execution.messages:
+                print(m.message)
+
+        """
+        return self._execute_step(step_ids, execution_type=ExecutionType.STOP)
+
+    def finish(self, step_ids: Optional[list] = None):
+        """
+        Finishes the current step(s).
+
+        The step will not be finished under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
+
+        ================    ===================================================================
+        **Argument**        **Description**
+        ----------------    -------------------------------------------------------------------
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
+        ================    ===================================================================
+
+        :return:
+            :class:`~arcgis.gis.workflowmanager.JobExecution`
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Finish the current active steps
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will finish the current active steps, if no param is given
+            finish_execution = job.finish()
+
+            print(f'Result = { finish_execution.result() }')
+            print(f'Status = { finish_execution.status }')
+            print(f'Elapsed Time = { finish_execution.elapse_time }')
+            print(f'Messages: ')
+            for m in finish_execution.messages:
+                print(m.message)
+
+        """
+        return self._execute_step(step_ids, execution_type=ExecutionType.FINISH)
+
+
+class JobExecution:
+    """
+    Represents a single step executing in a workflow manager job.  The `JobExecution` class allows for the asynchronous
+    operation of an executing step. The status of the step execution can then be queried by the class properties,
+    status, result, elapse_time and messages. This class is not intended for users to call directly.
+
+    See :attr:`~arcgis.gis.workflowmanager.Job.run`, :attr:`~arcgis.gis.workflowmanager.Job.stop` or
+    :attr:`~arcgis.gis.workflowmanager.Job.finish` for examples.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    job                 Required :class:`~arcgis.gis.workflowmanager.Job` The job to execute
+    ---------------     --------------------------------------------------------------------
+    execution_type      Required :class:`~arcgis.gis.workflowmanager.ExecutionType`. The execution type
+    ===============     ====================================================================
+
+    """
+
+    _start_time = None
+    _end_time = None
+    _execution_type = None
+
+    def __init__(self, job: Job, execution_type: ExecutionType):
+        self._job = job
+        self._messages = []
+        self._event = threading.Event()
+        self._execution_type = execution_type
+
+    def _callback(self, msg: Notification, nm: NotificationManager):
+        if (
+            "jobId" in msg.message
+            and msg.message["jobId"] == self._job.job_id
+            and msg.msg_type not in [MessageType.JOB_STATE, MessageType.CREATED]
+        ):
+            logger.debug(f"Received {msg}")
+            self._messages.append(msg)
+            if self._execution_type is ExecutionType.RUN:
+                if msg.msg_type in [
+                    MessageType.STEP_FINISHED,
+                    MessageType.STEP_STOPPED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_INFO_REQUIRED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+            elif self._execution_type is ExecutionType.STOP:
+                if msg.msg_type in [
+                    MessageType.STEP_PAUSED,
+                    MessageType.STEP_STOPPED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_CANCELLED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+            elif self._execution_type is ExecutionType.FINISH:
+                if msg.msg_type in [
+                    MessageType.STEP_STARTED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_FINISHED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+
+    def _started(self):
+        self._start_time = datetime.datetime.now()
+
+    @property
+    def messages(self):
+        """
+        Gets the messages collected during execution
+
+        :return:
+            List of :class:`~arcgis.gis.workflowmanager.Notification`
+
+        """
+        return self._messages
+
+    @property
+    def status(self):
+        """
+        Returns the execution status
+
+        :return:
+            string
+
+        """
+        return (
+            ExecutionStatus.COMPLETE
+            if self._event.is_set()
+            else ExecutionStatus.RUNNING
+        )
+
+    def result(self, timeout: Optional[int] = 300):
+        """
+        Returns the last :class:`~arcgis.gis.workflowmanager.Notification` message received at the end of the execution
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        timeout             Optional integer. The timeout argument specifies a timeout for the operation in seconds.
+        ===============     ====================================================================
+
+        :return:
+            string
+
+        """
+        if self._event.wait(timeout):
+            return self._messages[-1]
+
+        raise TimeoutError("Timeout waiting for result")
+
+    @property
+    def elapse_time(self):
+        """
+        Get the amount of time that passed while the
+        :class:`~arcgis.gis.workflowmanager.JobExecution` ran.
+        """
+        if self._end_time:
+            return self._end_time - self._start_time
+
+        return datetime.datetime.now() - self._start_time
+
+    def running(self):
+        """
+        Returns a boolean indicating whether the execution is running.
+
+        :return:
+            boolean
+
+        """
+        return self._start_time and not self._event.is_set()
+
+    def done(self):
+        """
+        Returns a boolean indicating whether the execution is done.
+
+        :return:
+            boolean
+
+        """
+        return not self.running()
+
+    def __repr__(self):
+        return f'JobExecution({{"job": {self._job.job_id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
+
 
 class WMRole(object):
     """
@@ -3743,3 +4096,302 @@ class JobLocation(object):
     def get(self, gis, url, params):
         job_location_dict = gis._con.get(url, params)
         return JobLocation(job_location_dict)
+
+
+class NotificationManager:
+    """
+    Represents a helper class for workflow manager websocket notifications. Accessible as the
+    :attr:`~arcgis.gis.workflowmanager.WorkflowManager.notifications` property of the
+    :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                The Workflow Manager Item
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager):
+        self._item = item
+        _initialize(self, item._gis)
+        self.workflow_item_id = item.id
+        self.websocket_connection = None
+        self.subscribed_jobs = {}
+        self._workflow_manager = workflow_manager
+        self._connected = False
+        self._manually_connected = False
+        self._server_url = self._workflow_manager._server_url
+        self._received_connected_msg = None
+        self._timeout = 30
+        self._subscription_lock = threading.RLock()
+
+        # need baseAddress/ server address, orgid, and workflow item id
+        base = self._server_url.replace("http://", "ws://").replace(
+            "https://", "wss://"
+        )
+        item_url = f"{self.org_id}/{self.workflow_item_id}"
+        self.websocket_url = f"{base}/{item_url}/notificationWs"
+        self.token_request_url = f"{self._server_url}/{item_url}"
+
+    def _disconnect_check(self, job_id):
+        with self._subscription_lock:
+            if job_id in self.subscribed_jobs:
+                self.unsubscribe([job_id])
+                # If this list is empty, all job executions have terminated, can disconnect.
+                logger.debug(
+                    f"Jobs: {self.subscribed_jobs}. Manually connected: {self._manually_connected}"
+                )
+                if not self.subscribed_jobs and not self._manually_connected:
+                    self.disconnect()
+
+    @property
+    def is_connected(self) -> bool:
+        return self._connected
+
+    def _subscriber(self, message):
+        try:
+            message_dict = json.loads(message)
+
+            # ensure we are connected via setting an event before subscribing
+            if message_dict.get("connected"):
+                self._received_connected_msg.set()
+
+            if "msgType" in message_dict:
+                msg = Notification(message_dict)
+
+                if "jobId" in msg.message:
+                    job_id = msg.message["jobId"]
+                    if job_id in self.subscribed_jobs.keys():
+                        callback = self.subscribed_jobs[job_id]
+                        callback(msg, self)
+        except:
+            logger.exception(f"Error with messages and callbacks")
+
+    def _connect(self) -> WebsocketConnection:
+        ws = WebsocketConnection(self._subscriber, self._gis, self._timeout)
+        self._received_connected_msg = threading.Event()
+        ws.connect(
+            self.websocket_url,
+            self.token_request_url,
+        )
+        self._received_connected_msg.wait(self._timeout)
+        self._connected = True
+        return ws
+
+    def connect(self):
+        """
+        Establishes a websocket connection to the workflow manager server.
+
+        .. code-block:: python
+            # USAGE EXAMPLE: Manage websocket connection manually
+
+            # create a WorkflowManager object from the workflow item
+            wf_item = gis.content.get('d6e25f2db0514520b32d6e65e7ad49a0')
+            wm = WorkflowManager(wf_item)
+
+            nm = NotificationManager(wf_item, wm)
+
+            with nm.connect() as connection:
+                # subscribe, unsubscribe, manage jobs etc
+                nm.subscribe([job_id])
+
+        """
+        if not self.websocket_connection:
+            logger.debug(f"Creating websocket connection to {self.websocket_url}")
+            self.websocket_connection = self._connect()
+            self._manually_connected = True
+
+    def disconnect(self):
+        """
+        Removes and disconnects the websocket connection to the workflow manager server.
+        """
+        if self.websocket_connection:
+            self.websocket_connection.disconnect()
+            self.websocket_connection = None
+            self._connected = False
+            self._manually_connected = False
+
+    def subscribe(self, job_ids: list, callback: Callable[[Notification], None]):
+        """
+        Subscribes to the notifications provided job ids. Register a callback for the specified jobId when subscribing to a job.
+        Whenever messages containing the specified jobId are received, the callback will be invoked with the contents
+        of the job notification message.
+
+        Refer to the WebSocket Message API for the list of subscribed job messages. (https://developers.arcgis.com/workflow-manager/api-reference/web-sockets/)
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_ids             Required list. The list of job ids to subscribe to.
+        ---------------     --------------------------------------------------------------------
+        callback            Required Callable. A Callable function that takes one parameter of type
+                            :class:`~arcgis.gis.workflowmanager.Notification`
+        ===============     ====================================================================
+
+        :return:
+            Workflow Manager :class:`Role <arcgis.gis.workflowmanager.WMRole>` Object
+
+        """
+        try:
+            with self._subscription_lock:
+                ids = job_ids
+                if self.websocket_connection is None:
+                    logger.debug(
+                        f"Creating temporary websocket connection to {self.websocket_url}"
+                    )
+                    self.websocket_connection = self._connect()
+                    subscribe_obj = {
+                        "msgType": "subscribe",
+                        "jobIds": ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
+
+                    self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
+                else:
+                    ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
+                    subscribe_obj = {
+                        "msgType": "subscribe",
+                        "jobIds": ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
+                    if len(ids) > 0:
+                        self.websocket_connection.send_and_wait(
+                            json.dumps(subscribe_obj)
+                        )
+                    else:
+                        # check if the new ids are already subscribed to, so we set the callback correctly.
+                        ids = [i for i in job_ids if i in self.subscribed_jobs.keys()]
+
+                for jid in ids:
+                    self.subscribed_jobs[jid] = callback
+        except:
+            logger.exception(f"Error when trying to subscribe")
+
+    def unsubscribe(self, job_ids: list):
+        """
+        Unsubscribes to the notifications for provided job ids. Removes the callback for the corresponding callbackId.
+        If no callbacks remain for a particular jobId, an unsubscribe message will be sent to Workflow Manager
+        Server for that particular jobId.
+
+        Refer to the WebSocket Message API for the list of subscribed job messages. (https://developers.arcgis.com/workflow-manager/api-reference/web-sockets/)
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_ids             Required list. The list of job ids to subscribe to
+        ===============     ====================================================================
+
+        :return:
+            Workflow Manager :class:`Role <arcgis.gis.workflowmanager.WMRole>` Object
+
+        """
+        try:
+            with self._subscription_lock:
+                if self.websocket_connection is not None:
+                    unsubscribe_obj = {
+                        "msgType": "unsubscribe",
+                        "jobIds": job_ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
+                    self.websocket_connection.send(json.dumps(unsubscribe_obj))
+
+                    for jid in job_ids:
+                        self.subscribed_jobs.pop(jid)
+        except:
+            logger.exception(f"Error when trying to unsubscribe")
+
+
+class Notification:
+    """
+    Represents a Workflow Manager Notification object. The Notification contains the
+    :class:`~arcgis.gis.workflowmanager.MessageType`, the message object and the timestamp the notification was received
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    init_data           data object representing relevant properties of a notification
+    ===============     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: Print Notification Properties
+
+        # create a WorkflowManager object from the workflow item
+        wm = WorkflowManager(wf_item)
+
+        job = wm.jobs.get('job_id')
+        run_execution = job.run(step_ids=['stepid'])
+
+        print(f'Result = { run_execution.result() }')
+        print(f'Messages:')
+        for m in run_execution.messages:
+            print(m.msg_type)
+            print(m.message)
+            print(m.timestamp)
+    """
+
+    def __init__(self, init_data):
+        self.message = init_data["message"]
+        self.timestamp = init_data["timestamp"]
+        self.msg_type = MessageType(init_data["msgType"].upper())
+
+    def __repr__(self):
+        return f'Notification({{"timestamp": "{self.timestamp}", "msgType": "{self.msg_type}", "message": "{self.message}"}})'
+
+
+class MessageType(Enum):
+    """
+    The Workflow Manager Message Types
+
+    This enum class represents the list of all possible message types when sending or receiving messages.
+    """
+
+    CREATED = "CREATED"
+    ERROR = "ERROR"
+    JOB_STATE = "JOBSTATE"
+    JOB_UPDATED = "JOBUPDATED"
+    JOB_COMMENT_UPDATED = "JOBCOMMENTUPDATED"
+    JOB_ATTACHMENT_UPDATED = "JOBATTACHMENTUPDATED"
+    JOB_LOCATION_UPDATED = "JOBLOCATIONUPDATED"
+    STEP_STARTED = "STEPSTARTED"
+    STEP_PROGRESS = "STEPPROGRESS"
+    STEP_CANCELLED = "STEPCANCELLED"
+    STEP_PAUSED = "STEPPAUSED"
+    STEP_STOPPING = "STEPSTOPPING"
+    STEP_STOPPED = "STEPSTOPPED"
+    STEP_WARNING_STOPPED = "STEPWARNINGSTOPPED"
+    STEP_FINISHED = "STEPFINISHED"
+    STEP_REASSIGNED = "STEPREASSIGNED"
+    STEP_HELD = "STEPHELD"
+    STEP_HOLD_RELEASED = "STEPHOLDRELEASED"
+    STEP_ERROR = "STEPERROR"
+    STEP_INFO_REQUIRED = "STEPINFOREQUIRED"
+    STEP_INFORMATION = "STEPINFORMATION"
+
+
+class ExecutionType(Enum):
+    """
+    The Workflow Manager Execution Types
+
+    This enum class represents the possible step execution types to be run with websocket messaging.
+    """
+
+    RUN = "RUN"
+    STOP = "STOP"
+    FINISH = "FINISH"
+
+
+class ExecutionStatus(Enum):
+    """
+    The Workflow Manager Execution Statuses
+
+    This enum class represents the possible step execution statuses.
+    """
+
+    RUNNING = "RUNNING"
+    COMPLETE = "COMPLETE"
