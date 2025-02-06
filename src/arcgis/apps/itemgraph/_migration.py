@@ -686,8 +686,7 @@ class ImportPackage:
                         f"Failed to import item {itemid} due to error: {str(e)}. Rolling back...",
                         RuntimeWarning,
                     )
-                    for item in created_items:
-                        item.delete()
+                    self.gis.content.delete_items(created_items)
                     return []
                 warnings.warn(
                     f"Failed to import item {itemid} due to error: {str(e)}. Skipping...",
