@@ -39,8 +39,9 @@ JSON_BASED_WITH_DATA_TYPES = [
 ]
 
 
-OTHER_BASED_TYPES = [
+DISALLOWED_TYPES = [
     "Geoprocessing Service",
+    "Form",
 ]
 
 
@@ -312,6 +313,11 @@ class ImportPackage:
         # read the properties.json file
         with open(os.path.join(item_folder, "properties.json"), "r") as prop_file:
             item_properties = json.load(prop_file)
+
+        if item_properties["type"] in DISALLOWED_TYPES:
+            raise RuntimeError(
+                f"Item type '{item_properties['type']}' is not yet compatible with this functionality."
+            )
 
         # read the relationships.json file
         with open(os.path.join(item_folder, "relationships.json"), "r") as rel_file:
@@ -703,7 +709,7 @@ class ImportPackage:
                         f"Failed to import item {itemid} due to error: {str(e)}. Rolling back...",
                         RuntimeWarning,
                     )
-                    for item in created_items:
+                    for item in reversed(created_items):
                         item.delete(permanent=True)
                     return []
                 warnings.warn(
