@@ -139,13 +139,13 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                     and "error" in token_info
                     and "access_token" not in token_info
                 ):
+                    # token is invalid, need to re-authenticate
                     self._refresh_token = None
                 else:
                     self._create_time = _dt.datetime.now()
                     self._expiration = token_info["expires_in"] / 60 - 2
                     self._token = token_info["access_token"]
                     return self._token
-                return self._token
             elif (
                 self._client_id
                 and self._client_secret
@@ -212,7 +212,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                             return res["token"]
                         if "access_token" in res:
                             return res["access_token"]
-            elif (
+            if (
                 self._client_id
                 and self._username is None
                 and self._password is None
