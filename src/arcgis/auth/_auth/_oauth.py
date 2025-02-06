@@ -14,7 +14,6 @@ from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url, assemble_url
 
-warnings = LazyLoader("warnings")
 re = LazyLoader("re")
 json = LazyLoader("json")
 webbrowser = LazyLoader("webbrowser")
@@ -225,7 +224,6 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 if self._proxies:
                     oauth.proxies = self._proxies
                 oauth.verify = False
-                import warnings
 
                 with warnings.catch_warnings():
                     warnings.simplefilter(

@@ -195,9 +195,6 @@ class GIS(object):
                         certificate or is being accessed via the IP or hostname instead
                         of the name on the certificate, set this value to ``False``.
                         This will ensure that all SSL certificate issues are ignored.
-                        Users can pass verify_cert a path to a CA_BUNDLE file or directory
-                        with certificates of trusted CAs as well. This will use these
-                        certificates over the system's certificates.
                         The default is ``True``.
 
                         .. warning::
@@ -220,6 +217,11 @@ class GIS(object):
 
     ======================    ===============================================================
     **kwargs**                **Description**
+    ----------------------    ---------------------------------------------------------------
+    ca_bundles                list[str], str, or None. Users can pass verify_cert a path to
+                              a CA_BUNDLE file or directory with certificates of trusted CAs
+                              as well. This will use these certificates over the system's certificates.
+                              The default is `None`.
     ----------------------    ---------------------------------------------------------------
     proxy_host                (Deprecated, use proxy)
                               Optional string. The host name of the proxy server used to allow HTTP/S
@@ -378,7 +380,13 @@ class GIS(object):
 
         # Usage Example 10: Using a CA_BUNDLE specifying SSL certificates
         certs = r"./CA_CERTS/cacert.pem"
-        gis = GIS(profile="your_enterprise_admin_profile", verify_cert=certs)
+        gis = GIS(profile="your_enterprise_admin_profile", ca_bundles=certs)
+
+    .. code-block:: python
+
+        # Usage Example 11: Using a CA_BUNDLE specifying multiple SSL certificates
+        certs = [r"./CA_CERTS/cacert.pem", r"./CA_CERTS/cacert2.pem", ..., r"./CA_CERTS/cacertN.pem"]
+        gis = GIS(profile="your_enterprise_admin_profile", ca_bundles=certs)
 
     """
 
@@ -430,6 +438,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._is_home = (url or "").lower() == "home"
         self._validate_item_url = kwargs.pop("validate_url", False)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
@@ -541,7 +550,7 @@ class GIS(object):
                     from getpass import getpass
 
                     password = getpass("Enter PFX password: ")
-                from arcgis.auth.tools.certificate import pfx_to_pem
+                from arcgis.auth.tools import pfx_to_pem
 
                 cert_file, key_file = pfx_to_pem(cert_file, password)
             else:
@@ -611,6 +620,7 @@ class GIS(object):
                 is_hosted_nb_home=self._is_hosted_nb_home,
                 use_gen_token=self._use_gen_token,
                 security_kwargs=security_kwargs,
+                ca_bundles=ca_bundles,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -637,6 +647,7 @@ class GIS(object):
                     is_hosted_nb_home=self._is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                     security_kwargs=security_kwargs,
+                    ca_bundles=ca_bundles,
                 )
             if self._is_hosted_nb_home:
                 self._portal.con._referer = ""
@@ -706,6 +717,7 @@ class GIS(object):
                         is_hosted_nb_home=self._is_hosted_nb_home,
                         use_gen_token=self._use_gen_token,
                         security_kwargs=security_kwargs,
+                        ca_bundles=ca_bundles,
                     )
                     self._portal = pp
         except Exception:
@@ -731,7 +743,9 @@ class GIS(object):
                 self._con._auth = "PRO"
 
         if self._con._auth != "anon":
-            me = self.users.me
+            # ensure `me` at least has a backing dict
+            # for cases such as API key when there is no user
+            me = self.users.me or {}
 
         if (
             self._con._auth.lower() != "anon"
@@ -7058,30 +7072,54 @@ class ContentManager(object):
             >>> gis.content.analyze(item = "9311d21a9a2047d19c0faaebd6f2cca6", file_type = "csv")
 
         """
-        surl = "%s/sharing/rest/content/features/analyze" % self._gis._url
-        params = {"f": "json", "analyzeParameters": {}}
-        files = None
+        surl = f"{self._gis._url}/sharing/rest/content/features/analyze"
+        files = {"file": file_path} if file_path and os.path.isfile(file_path) else None
+        params = self._get_analyze_params(
+            is_arcgis_online=self._gis._portal.is_arcgisonline,
+            url=url,
+            item=item,
+            file_path=file_path,
+            text=text,
+            file_type=file_type,
+            source_locale=source_locale,
+            geocoding_service=geocoding_service,
+            location_type=location_type,
+            source_country=source_country,
+            country_hint=country_hint,
+            enable_global_geocoding=enable_global_geocoding,
+        )
+        return self._gis._con.post(path=surl, postdata=params, files=files)
+
+    @staticmethod
+    def _get_analyze_params(
+        is_arcgis_online: bool,
+        url: Optional[str] = None,
+        item: Optional[Union[str, Item]] = None,
+        file_path: Optional[str] = None,
+        text: Optional[str] = None,
+        file_type: Optional[str] = None,
+        source_locale: str = "en",
+        geocoding_service: Optional[str] = None,
+        location_type: Optional[str] = None,
+        source_country: str = "world",
+        country_hint: Optional[str] = None,
+        enable_global_geocoding: Optional[bool] = None,
+    ):
         if not (text or file_path or item or url):
-            return Exception(
+            raise Exception(
                 "Must provide an itemid, file_path or text to analyze data."
             )
+
+        params = {"f": "json", "analyzeParameters": {}, "sourcelocale": source_locale}
         if item:
-            if isinstance(item, str):
-                params["itemid"] = item
-            elif isinstance(item, Item):
-                params["itemid"] = item.itemid
-        elif file_path and os.path.isfile(file_path):
-            files = {"file": file_path}
+            params["itemid"] = item.itemid if isinstance(item, Item) else item
         elif text:
             params["text"] = text
         elif url:
             params["sourceUrl"] = url
 
-        params["analyzeParameters"]["sourcelocale"] = source_locale
         if geocoding_service:
-            from arcgis.geocoding._functions import Geocoder
-
-            if isinstance(geocoding_service, Geocoder):
+            if type(geocoding_service).__name__ == "Geocoder":
                 params["analyzeParameters"]["geocodeServiceUrl"] = geocoding_service.url
             else:
                 params["analyzeParameters"]["geocodeServiceUrl"] = geocoding_service
@@ -7107,10 +7145,7 @@ class ContentManager(object):
             "shapefile",
             "geojson",
         ]:
-            if (
-                str(file_type).lower() == "geojson"
-                and not self._gis._portal.is_arcgisonline
-            ):
+            if str(file_type).lower() == "geojson" and not is_arcgis_online:
                 raise ValueError("GeoJSON is not supported in ArcGIS Enterprise")
             params["fileType"] = file_type
             params["analyzeParameters"]["enableGlobalGeocoding"] = False
@@ -7122,10 +7157,8 @@ class ContentManager(object):
             params["analyzeParameters"][
                 "enableGlobalGeocoding"
             ] = enable_global_geocoding
-        gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
-
-        return gis._con.post(path=surl, postdata=params, files=files)
+        return params
 
     # ----------------------------------------------------------------------
     def create_empty_service(
@@ -8014,8 +8047,8 @@ class ContentManager(object):
         # Get folder
         folders = self._gis.users.get(username).folders
         for folder in folders:
-            if folder["id"] == folder_id:
-                return folder["title"]
+            if folder._fid == folder_id:
+                return folder.name
         return None
 
     @_common_deprecated.deprecated(
@@ -11639,21 +11672,20 @@ class User(dict):
         else:
             raise ValueError("target_user must be a string or User object")
         target_user: User = target_user
-        target_user.folders
         if folder is None:
             folder_dest: str = username
         else:
             folder_dest: str = None
             for f in target_user.folders:
-                if folder.lower() == f["id"].lower():
-                    folder_dest = f["title"]
+                if folder.lower() == f._fid:
+                    folder_dest = f.name
                     break
-                elif folder.lower() == f["title"].lower():
-                    folder_dest = f["title"]
+                elif folder.lower() == f.name.lower():
+                    folder_dest = f.name
                     break
             if folder_dest is None:
                 cm: ContentManager = self._gis.content
-                cm.create_folder(folder=folder, owner=target_user)
+                cm.folders.create(folder=folder, owner=target_user)
                 folder_dest = folder
         params: dict[str, Any] = {
             "f": "json",
@@ -13229,7 +13261,7 @@ class User(dict):
             user = User(gis, username)
             folders = user.folders
             for folder in folders:
-                items = user.items(folder=folder["title"])
+                items = user.items(folder=folder.name)
                 for item in items:
                     print(item, folder)
 
@@ -18133,6 +18165,8 @@ class Item(dict):
             "Data Pipeline",
             "Hub Site Application",
             "Hub Page",
+            "QuickCapture Project",
+            "Geoprocessing Service",
         ]
 
         def _replace_related_items(item, item_mapping):
@@ -18140,11 +18174,19 @@ class Item(dict):
 
         if not force:
             for k, v in item_mapping.items():
-                if self._gis.content.get(v) is None:
-                    raise ValueError(f"Item with id {v} does not exist in the GIS")
-                if self._gis.content.get(k).type != self._gis.content.get(v).type:
+                orig_item = self._gis.content.get(k)
+                new_item = self._gis.content.get(v)
+                if new_item is None:
                     raise ValueError(
-                        f"Items with ids {k} and {v} are not of the same type"
+                        f"Replacement item with id {v} does not exist in the GIS. Please use the force parameter to bypass this check."
+                    )
+                if orig_item is None:
+                    raise ValueError(
+                        f"String {k} is not a valid item ID in the GIS. Please use the force parameter to bypass this check and replace the string."
+                    )
+                if orig_item.type != new_item.type:
+                    raise ValueError(
+                        f"Items with ids {k} and {v} are not of the same type."
                     )
 
         # _replace_related_items(self, item_mapping)
@@ -18198,12 +18240,11 @@ class Item(dict):
                     return structure
                 for k, v in expanded_dict.items():
                     r_name = "r-" + k
-                    if r_name in structure["resources"]:
+                    rep_item = self._gis.content.get(v)
+                    if r_name in structure["resources"] and rep_item:
                         if structure["resources"][r_name]["type"] == "webmap":
                             new_layers = []
-                            for layer in self._gis.content.get(v).get_data()[
-                                "operationalLayers"
-                            ]:
+                            for layer in rep_item.get_data()["operationalLayers"]:
                                 lay = {
                                     "id": layer["id"],
                                     "title": layer["title"],

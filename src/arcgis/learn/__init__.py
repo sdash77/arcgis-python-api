@@ -219,7 +219,7 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
         if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
+            folder_dict = gis.content.folders.create(folder, owner).properties
             folder = folder_dict["title"]
             folderId = folder_dict["id"]
 

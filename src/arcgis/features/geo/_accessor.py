@@ -2962,7 +2962,7 @@ class GeoAccessor(object):
             pd.UInt64Dtype: "esriFieldTypeBigInteger",
             pd.UInt64Dtype(): "esriFieldTypeBigInteger",
         }
-        fields = []
+
         for idx, dtype in enumerate(self._data.dtypes):
             column = None
             col = self._data.dtypes.index[idx]
@@ -3528,7 +3528,7 @@ class GeoAccessor(object):
             if column.endswith("_old"):
                 added_rows = added_rows.drop(columns=[column])
             # Renaming the new
-            if column.endswith("_new"):
+            if column.endswith("_new") and column != f"{match_field}_new":
                 new_column_name = column[: -len("_new")]
                 added_rows = added_rows.rename(columns={column: new_column_name})
         diff["added_rows"] = added_rows
@@ -3542,8 +3542,9 @@ class GeoAccessor(object):
             if column.endswith("_new"):
                 deleted_rows = deleted_rows.drop(columns=[column])
             # Renaming the old
-            new_column_name = column[: -len("_old")]
-            deleted_rows = deleted_rows.rename(columns={column: new_column_name})
+            if column.endswith("_old") and column != f"{match_field}_old":
+                new_column_name = column[: -len("_old")]
+                deleted_rows = deleted_rows.rename(columns={column: new_column_name})
         diff["deleted_rows"] = deleted_rows
 
         # Finding modified rows

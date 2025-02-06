@@ -1669,7 +1669,7 @@ class SyncManager(object):
         if os.path.isfile(db) == False:
             raise Exception("Could not create the replica")
         destination_content = destination_gis.content
-        folder = destination_content.folders().get()
+        folder = destination_content.folders.get()
         item = folder.add(
             item_properties={
                 "type": "SQLite Geodatabase",
@@ -3658,7 +3658,7 @@ class FeatureLayerManager(_GISResource):
                             asynchronously.
 
                               * Asynchronous operation only supported in ArcGIS Online and
-                                ArcGIS Enteprise.
+                                ArcGIS Enterprise.
         ===============     ====================================================================
 
         :return:
@@ -3835,7 +3835,7 @@ class FeatureLayerManager(_GISResource):
                             asynchronously.
 
                               * Asynchronous operation only supported in ArcGIS Online and
-                                ArcGIS Enteprise.
+                                ArcGIS Enterprise.
         ===============     ====================================================================
 
         :return:
