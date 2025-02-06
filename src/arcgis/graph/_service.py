@@ -372,6 +372,11 @@ class KnowledgeGraph:
         :return: `List[list]`
 
         """
+        warnings.warn(
+            message="query is deprecated. Please migrate to query_streaming.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         self._validate_import()
         url = f"{self._url}/graph/query"
         params = {
