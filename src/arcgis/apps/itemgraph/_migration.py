@@ -642,6 +642,7 @@ class ImportPackage:
         preserve_ids: bool = False,
         item_mapping: dict = {},
         folder: Folder | str = None,
+        failure_rollback: bool = False,
     ):
         if len(items) == 0:
             nodes = set(self.graph.all_items())
@@ -680,8 +681,16 @@ class ImportPackage:
                 if new_item:
                     created_items.append(new_item)
             except Exception as e:
+                if failure_rollback:
+                    warnings.warn(
+                        f"Failed to import item {itemid} due to error: {str(e)}. Rolling back...",
+                        RuntimeWarning,
+                    )
+                    for item in created_items:
+                        item.delete()
+                    return []
                 warnings.warn(
-                    f"Failed to import item {itemid} due to error: {str(e)}",
+                    f"Failed to import item {itemid} due to error: {str(e)}. Skipping...",
                     RuntimeWarning,
                 )
         # have to wait until all items are created to restore related items
