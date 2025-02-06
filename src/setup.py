@@ -81,8 +81,6 @@ else:
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",
-        "requests-kerberos",
-        "requests-gssapi",
         "dask >=2023.3.2",
         "matplotlib-inline",
         "pyarrow >=16,<17",
@@ -257,6 +255,10 @@ kwargs = {
     # $ pip install -e .[dev,test]
     "extras_require": {
         "gp": ["dill"],
+        "kerberos": [
+            "requests-kerberos",
+            "requests-gssapi",
+        ],
     },
     "distclass": BinaryDistribution,
     # extras_require={
