@@ -35,9 +35,6 @@ JSON_BASED_TYPES = [
 JSON_BASED_WITH_DATA_TYPES = [
     "Feature Service",
     "Image Service",
-]
-
-SERVICE_BASED_TYPES = [
     "Map Service",
 ]
 
@@ -501,7 +498,11 @@ class ImportPackage:
                         service_item = self.gis.content.get(service_id)
                         break
 
-            if service_item is None and len(os.listdir(data_folder)) > 0:
+            if (
+                service_item is None
+                and len(os.listdir(data_folder)) > 0
+                and item_properties["type"] != "Map Service"
+            ):
                 # this is case where data was newly exported into package
                 for file in os.listdir(data_folder):
                     if file.endswith(".zip"):
