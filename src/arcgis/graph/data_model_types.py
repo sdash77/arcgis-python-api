@@ -574,10 +574,20 @@ class ConstraintRule(BaseModel):
 
     .. code-block:: python
 
-        from arcgis.graph import ConstraintRule, SetOfNamedTypes
+        from arcgis.graph import ConstraintRule
 
-        # Example 1: Define an exclusion rule
-        ConstraintRule(name="PersonCanOnlyWorkAtCompany")
+        # Example 1: Update a constraint rule
+        person_company_constraint = ConstraintRule(name="PersonCanWorkForCompanyOrPark", alias="Person Can Work For Company or Park")
+        graph.constraint_rule_updates(
+            rules=[
+                RelationshipExclusionRuleUpdate(
+                    rule_name="OnlyPersonCanWorkForCompany",
+                    mask=ConstraintRuleMask(update_name=True, update_alias=True),
+                    constraint_rule=person_company_constraint
+                )
+            ],
+            as_dict=False
+        )
 
         # Example 2: Access an exclusion rule from the data model
         data_model = graph.query_data_model()

@@ -12,6 +12,10 @@ KnowledgeGraph
 Data Model Types
 ----------------
 
+ConstraintRule
+^^^^^^^^^^^^^^
+.. autopydantic_model:: arcgis.graph.data_model_types.ConstraintRule
+
 ConstraintRuleMask
 ^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.graph.data_model_types.ConstraintRuleMask

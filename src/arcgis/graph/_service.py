@@ -2,6 +2,7 @@ from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from arcgis.geometry import Geometry
 from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._deprecate import deprecated
 
 import warnings
 
@@ -349,6 +350,11 @@ class KnowledgeGraph:
         results = dec.get_results()
         return results if as_dict else UpdateSearchIndexResponse.model_validate(results)
 
+    @deprecated(
+        deprecated_in="2.4.1",
+        removed_in="3.0.0",
+        details="Use query_streaming instead.",
+    )
     def query(self, query: str) -> List[dict]:
         """
         Queries the Knowledge Graph using openCypher
@@ -372,11 +378,6 @@ class KnowledgeGraph:
         :return: `List[list]`
 
         """
-        warnings.warn(
-            message="query is deprecated. Please migrate to query_streaming.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
         self._validate_import()
         url = f"{self._url}/graph/query"
         params = {
@@ -1672,8 +1673,8 @@ class KnowledgeGraph:
         as_dict: bool = True,
     ) -> Union[dict, ConstraintRuleUpdatesResponse]:
         """
-        Update constraint rules for entities & relationships in the data model.
-        :class:`arcgis.graph.data_model_types.RelationshipExclusionRule` is a constraint rule.
+        Update :class:`arcgis.graph.data_model_types.ConstraintRule` for entities & relationships in the data model.
+        :class:`arcgis.graph.data_model_types.RelationshipExclusionRule` is a type of constraint rule.
 
         ================    ===============================================================
         **Parameter**        **Description**
@@ -1687,19 +1688,16 @@ class KnowledgeGraph:
 
         .. code-block:: python
 
-            from arcgis.graph import RelationshipExclusionRuleUpdate, RelationshipExclusionRule, ConstraintRuleMask, UpdateSetOfNamedTypes
+            from arcgis.graph import RelationshipExclusionRuleUpdate, ConstraintRule, ConstraintRuleMask, UpdateSetOfNamedTypes
 
             graph.constraint_rule_updates(
                 rules=[
                     RelationshipExclusionRuleUpdate(
                         rule_name="OnlyPersonCanWorkForCompany",
                         mask=ConstraintRuleMask(update_name=True, update_alias=True),
-                        constraint_rule=RelationshipExclusionRule(
+                        constraint_rule=ConstraintRule(
                             name="PersonCanWorkForCompanyOrPark",
-                            alias="Person Can Work For Company or Park",
-                            origin_entity_types=UpdateSetOfNamedTypes(add_named_types=["Employee"]),
-                            relationship_types=UpdateSetOfNamedTypes(add_named_types=["WorksFor"], remove_named_types=["WorksAt"]),
-                            destination_entity_types=UpdateSetOfNamedTypes(add_named_types=["Park"])
+                            alias="Person Can Work For Company or Park"
                         )
                     )
                 ],
