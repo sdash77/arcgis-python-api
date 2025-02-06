@@ -45,7 +45,6 @@ from arcgis.gis._impl._dataclasses._sfilters import (
 )
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
-from arcgis.gis._impl._content_manager.folder import Folder
 
 try:
     import pandas as pd
@@ -8709,10 +8708,6 @@ class ContentManager(object):
         preserve_item_id: bool = False,
         export_service: bool = False,
         preserve_editing_info: bool = False,
-        to_offline: Optional[bool] = False,
-        out_folder: Optional[str] = None,
-        package_name: Optional[str] = None,
-        service_format: Optional[str] = "File Geodatabase",
         **kwargs,
     ):
         """
@@ -8789,25 +8784,6 @@ class ContentManager(object):
                                   .. note::
                                       `export_service` must be False in order for this to work if
                                       the target GIS is on ArcGIS Online.
-        ---------------------     --------------------------------------------------------------------
-        to_offline                Optional Boolean.  When True, the normal cloning process will be
-                                  ignored and the items & all their dependencies will be exported to a
-                                  compressed offline package, which can then imported to any org using
-                                  the `content.import_content()` method. All items must come from the
-                                  same source org. See the following three parameters for details on
-                                  how to specify offline location and format of exported services.
-        ---------------------     --------------------------------------------------------------------
-        out_folder                Optional string, only applicable when `to_offline` is True. The
-                                  location where the offline package will be saved. If left blank,
-                                  a temporary directory will be created and the package will be saved
-                                  there.
-        ---------------------     --------------------------------------------------------------------
-        package_name              Optional string, only applicable when `to_offline` is True. The name
-                                  of the offline package. If left blank, it will be named
-                                  "exported_content" by default.
-        ---------------------     --------------------------------------------------------------------
-        service_format            Optional string, only applicable when `to_offline` is True. The
-                                  format of the exported services. Default is "File Geodatabase".
         =====================     ====================================================================
 
         **keyword arguments**
@@ -8830,19 +8806,6 @@ class ContentManager(object):
 
 
         """
-        # ignore everything else if to_offline is True
-        if to_offline:
-            from arcgis.apps.itemgraph import create_dependency_graph
-            from arcgis.apps.itemgraph._migration import _export_content
-            gis = items[0]._gis
-            for item in items:
-                if item._gis != gis:
-                    raise ValueError(
-                        "All items must come from the same source organization."
-                    )
-
-            graph = create_dependency_graph(gis, items, outside_org=False)
-            return _export_content(graph, out_folder, package_name, service_format)
 
         import arcgis._impl.common._clone as clone
 
@@ -8885,51 +8848,6 @@ class ContentManager(object):
             wab_code_attach=kwargs.pop("copy_code_attachment", True),
         )
         return deep_cloner.clone()
-
-    def import_content(
-        self,
-        package_path: str,
-        preserve_ids: bool = False,
-        folder: Folder | str = None,
-        failure_rollback: bool = False,
-    ):
-        """
-        The ``import_content()`` method takes a `.contentexport` file made from offline cloning
-        (see `clone_items()`) and uploads its contents to the GIS. These packages contain all of
-        the deep dependencies of an item, assuming they were available, and will recreate them
-        in the same fashion in the new GIS org.
-
-        .. note::
-            This function is still in beta and may not have full capabilities yet. Known item
-            limitations are Survey123 Forms and Geoprocessing Services.
-
-        ================  ======================================================================
-        **Parameter**      **Description**
-        ----------------  ----------------------------------------------------------------------
-        package_path      Required string. The path to the `.contentexport` file to import.
-        ----------------  ----------------------------------------------------------------------
-        preserve_ids      Optional boolean. If True, the original item ids will be preserved,
-                          assuming they are available. Only available for ArcGIS Enterprise.
-                          Default is False.
-        ----------------  ----------------------------------------------------------------------
-        folder            Optional `Folder` or string. The folder to import the content into.
-                          If none provided, will default to the user's root folder.
-        ----------------  ----------------------------------------------------------------------
-        failure_rollback  Optional boolean. If True, the import will be rolled back and the
-                          created items will be deleted if any error occurs during the process.
-                          If False, any item that fails to import will be skipped over and the
-                          process will continue. Default is False.
-        ================  ======================================================================
-
-        :return:
-            A List of the created `Item` objects.
-
-        """
-        from arcgis.apps.itemgraph._migration import ImportPackage
-        ip = ImportPackage(package_path, self._gis)
-        return ip.import_items(
-            preserve_ids=preserve_ids, folder=folder, failure_rollback=failure_rollback
-        )
 
     def bulk_update(
         self,
