@@ -18,6 +18,7 @@ from .admin._mode import Mode
 from .admin._security import Role, RoleManager, User, UserManager
 from .admin._services import (
     ServiceManager,
+    Service, 
     ItemInformationManager,
     JobManager,
     Job,
