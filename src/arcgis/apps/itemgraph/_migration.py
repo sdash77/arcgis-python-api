@@ -402,6 +402,7 @@ class ImportPackage:
             return job.result()
 
         remap_dict = {}
+        added_items = []
 
         def _remap_json(json_text, remap_dict):
             if len(remap_dict) > 0:
@@ -433,9 +434,11 @@ class ImportPackage:
                     with open(layer_props_file, "rb") as reader:
                         val: dict = json.load(reader)
                         query: str = val.get("viewDefinitionQuery", "")
-                        spatial_filter: dict = val["adminLayerInfo"][
-                            "viewLayerDefinition"
-                        ]["table"].get("filter", None)
+                        spatial_filter: dict = (
+                            val["adminLayerInfo"]["viewLayerDefinition"]
+                            .get("table", {})
+                            .get("filter", None)
+                        )
                         fields: list[dict] = [
                             {
                                 "name": fld["name"],
@@ -479,7 +482,7 @@ class ImportPackage:
                         lyr = new_view.layers[i]
                         lyr.manager.update_definition(view_layers[i])
 
-                return new_view
+                new_item = new_view
             else:
                 raise RuntimeError("Multi-source views are not yet supported.")
 
@@ -513,6 +516,7 @@ class ImportPackage:
                                 "Feature Service does not have a valid data item"
                             )
                         service_item = _add_data_item(fp, dt)
+                        added_items.append(service_item)
                         break
 
                 # publish the service
@@ -644,7 +648,8 @@ class ImportPackage:
         # add the related_items relationships to dict for reconstruction
         self._item_relationships[item_id] = relationships["related_items"]
         # return the item
-        return new_item
+        added_items.append(new_item)
+        return added_items
 
     def import_items(
         self,
@@ -686,18 +691,20 @@ class ImportPackage:
             if itemid in item_mapping or not os.path.exists(item_folder):
                 continue
             try:
-                new_item = self._import_item(
+                new_items = self._import_item(
                     item_folder, preserve_id=preserve_ids, folder=folder
                 )
-                if new_item:
-                    created_items.append(new_item)
+                if new_items:
+                    created_items.extend(new_items)
             except Exception as e:
+                # raise e
                 if failure_rollback:
                     warnings.warn(
                         f"Failed to import item {itemid} due to error: {str(e)}. Rolling back...",
                         RuntimeWarning,
                     )
-                    self.gis.content.delete_items(created_items)
+                    for item in created_items:
+                        item.delete(permanent=True)
                     return []
                 warnings.warn(
                     f"Failed to import item {itemid} due to error: {str(e)}. Skipping...",
