@@ -220,6 +220,7 @@ def _text_replace(text, replacements: dict[str, str]):
     new_text = pattern.sub(replacement_func, text)
     return new_text
 
+
 def _get_unique_name(target, name, force_add_guid_suffix=False):
     """Create a new unique name for a service.
     Keyword arguments:

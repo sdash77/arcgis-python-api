@@ -481,7 +481,7 @@ class ImportPackage:
                     for i in view_layers.keys():
                         lyr = new_view.layers[i]
                         lyr.manager.update_definition(view_layers[i])
-            
+
                 return new_view
             else:
                 raise RuntimeError("Multi-source views are not yet supported.")
@@ -712,4 +712,3 @@ class ImportPackage:
                         new_item.add_relationship(new_rel_item, rel_type)
             except:
                 continue
-
