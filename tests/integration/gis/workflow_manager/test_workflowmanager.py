@@ -3670,11 +3670,15 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         job = self.connection.workflow_manager.jobs.get(job_id)
         job_exec = job.run()
+        counter = 0
 
         while not job_exec.done():
             print(f"Status = {job_exec.status}")
             print(f"{job_exec.messages}")
             time.sleep(5)
+            counter = counter + 1
+            if counter > 10:
+                raise TimeoutError('Step did not complete in time')
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
@@ -3698,11 +3702,15 @@ class TestWorkflowManager(unittest.TestCase):
         job.run().result()
 
         job_exec = job.stop()
+        counter = 0
 
         while not job_exec.done():
             print(f"Status = {job_exec.status}")
             print(f"{job_exec.messages}")
             time.sleep(5)
+            counter = counter + 1
+            if counter > 10:
+                raise TimeoutError('Step did not complete in time')
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
@@ -3726,11 +3734,15 @@ class TestWorkflowManager(unittest.TestCase):
         job.run().result()
         job.stop().result()
         job_exec = job.finish()
+        counter = 0
 
         while not job_exec.done():
             print(f"Status = {job_exec.status}")
             print(f"{job_exec.messages}")
             time.sleep(5)
+            counter = counter + 1
+            if counter > 10:
+                raise TimeoutError('Step did not complete in time')
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
