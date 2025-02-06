@@ -1152,6 +1152,22 @@ class GeoAccessor(object):
     The ``GeoAccessor`` class adds a spatial namespace that performs spatial operations on the given Pandas
     `DataFrame. <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
     The ``GeoAccessor`` class includes visualization, spatial indexing, IO and dataset level properties.
+
+    * Setting the Geometry Engine:
+        By default, the library used for spatial transformations (e.g., reading/writing
+        shapefiles, file geodatabases, or spatial DataFrames) is determined based on the
+        available libraries in the environment. However, users can explicitly specify which
+        library to use by setting the `ARCGIS_GEOMETRY_ENGINE` environment variable at the top of your script:
+
+        .. code-block:: python
+            import os
+            os.environ["ARCGIS_GEOMETRY_ENGINE"] = "shapefile"  # Options: "shapefile", "gdal", "arcpy"
+
+    * Recommened Libraries:
+        - `arcpy` - Best for full compatibility with Esri's ArcGIS ecosystem, including advanced geoprocessing tools. Requires an ArcGIS license.
+        - `gdal` - A good balance of performance and compatibility with multiple GIS formats. Ideal for working with large datasets and open-source workflows.
+        - `shapefile` - A lightweight option that works well for simple shapefile operations but lacks advanced capabilities of the other two.
+
     """
 
     _viz = None
@@ -1673,7 +1689,7 @@ class GeoAccessor(object):
         op                        Required string. The operation to use to perform the join.
                                   The default is `intersects`.
 
-                                  supported perations: `intersects`, `within`, and `contains`
+                                  supported operations: `intersects`, `within`, and `contains`
         ----------------------    ---------------------------------------------------------
         left_tag                  Optional String. If the same column is in the left and
                                   right dataframe, this will append that string value to
@@ -1717,7 +1733,7 @@ class GeoAccessor(object):
                 "'{0}' and '{1}' cannot be names in the frames being"
                 " joined".format(index_left, index_right)
             )
-        # Setup the Indexes in temporary coumns
+        # Setup the Indexes in temporary columns
         #
         left_df = self._data.copy(deep=True)
         left_df.spatial.set_geometry(self.name)
@@ -1923,6 +1939,12 @@ class GeoAccessor(object):
         .. note::
             Inserting table data in Enterprise is not currently supported.
 
+        .. note::
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
+
         ============================    ====================================================================
         **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
@@ -2087,6 +2109,12 @@ class GeoAccessor(object):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
 
+        .. note::
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
+
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2143,6 +2171,12 @@ class GeoAccessor(object):
             Null integer values will be changed to 0 when using shapely instead
             of ArcPy due to shapely conventions.
             With ArcPy null integer values will remain null.
+
+        .. note::
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
 
         ===========================     ====================================================================
         **Parameter**                    **Description**
@@ -2285,6 +2319,13 @@ class GeoAccessor(object):
             of ArcPy due to shapely conventions.
             With ArcPy null integer values will remain null.
 
+        .. note::
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
+
+
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2293,10 +2334,10 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         gis                             Optional GIS. The GIS connection object
         ---------------------------     --------------------------------------------------------------------
-        tags                            Optional list of strings. A comma seperated list of descriptive
+        tags                            Optional list of strings. A comma separated list of descriptive
                                         words for the service.
         ---------------------------     --------------------------------------------------------------------
-        folder                          Optional string. Name of the folder where the featurelayer item
+        folder                          Optional string. Name of the folder where the feature layer item
                                         and imported data would be stored.
         ---------------------------     --------------------------------------------------------------------
         sanitize_columns                Optional Boolean. If True, column names will be converted to string,
@@ -2607,6 +2648,12 @@ class GeoAccessor(object):
             of ArcPy due to shapely conventions.
             With ArcPy null integer values will remain null.
 
+        .. note::
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
+
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2652,7 +2699,10 @@ class GeoAccessor(object):
         The ``from_table`` method allows a :class:`~arcgis.gis.User` to read from a non-spatial table
 
         .. note::
-            The ``from_table`` method requires ArcPy
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
 
         ===============     ====================================================
         **Parameter**        **Description**
