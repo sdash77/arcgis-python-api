@@ -220,6 +220,45 @@ def _text_replace(text, replacements: dict[str, str]):
     new_text = pattern.sub(replacement_func, text)
     return new_text
 
+def _get_unique_name(target, name, force_add_guid_suffix=False):
+    """Create a new unique name for a service.
+    Keyword arguments:
+    target - The instance of arcgis.gis.GIS (the portal) to clone the feature service to.
+    name - The original name.
+    force_add_guid_suffix - Indicates if a guid suffix should automatically be added to the end of the service name
+    """
+
+    if name[0].isdigit():
+        name = "_" + name
+    name = name.replace(" ", "_")
+
+    if not force_add_guid_suffix:
+        guids = re.findall("[0-9A-F]{32}", name, re.IGNORECASE)
+        for guid in guids:
+            new_guid = uuid.uuid4().hex[0:5]
+            name = name.replace(guid, new_guid)
+
+        while True:
+            if target.content.is_service_name_available(name, "featureService"):
+                break
+
+            guid = uuid.uuid4().hex[0:5]
+            ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
+            if len(ends_with_guid) > 0:
+                name = name[: len(name) - 32] + guid
+            else:
+                name = "{0}_{1}".format(name, guid)
+
+    else:
+        guid = uuid.uuid4().hex[0:5]
+        ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
+        if len(ends_with_guid) > 0:
+            name = name[: len(name) - 32] + guid
+        else:
+            name = "{0}_{1}".format(name, guid)
+
+    return name
+
 
 ###########################################################################
 class Error(Exception):

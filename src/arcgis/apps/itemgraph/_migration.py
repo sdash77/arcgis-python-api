@@ -2,7 +2,7 @@ from ._item_graph import ItemGraph, ItemNode, load_from_file
 from ._get_dependencies import _get_related_item_dict
 from arcgis.gis import GIS
 from arcgis.gis._impl._content_manager.folder import Folder
-from arcgis._impl.common._utils import _text_replace
+from arcgis._impl.common._utils import _text_replace, _get_unique_name
 import os
 import shutil
 import tempfile
@@ -13,6 +13,7 @@ import uuid
 import random
 import string
 import warnings
+import time
 
 JSON_BASED_TYPES = [
     "Application",
@@ -419,9 +420,6 @@ class ImportPackage:
             and "View Service" in item_properties["typeKeywords"]
         ):
             # completely different process for views. they're such a pain
-            # completely different process for views. they're such a pain
-            # return None
-            # this stuff below doesn't quite work yet but leaving it there to come back to
             view_props_path = os.path.join(data_folder, "view_props.json")
             with open(view_props_path, "r") as view_props_file:
                 view_props = json.load(view_props_file)
@@ -466,7 +464,7 @@ class ImportPackage:
 
             reqs = self.graph.get_item(item_id).requires("id")
             if len(reqs) == 0:
-                raise RuntimeError("View Service does not have a valid data item")
+                raise RuntimeError("View Service does not have a valid data item.")
             elif len(reqs) == 1:
                 flc_item = self.gis.content.get(self.created_item_mapping[reqs[0]])
                 flc = flc_item.layers[0].container
@@ -474,11 +472,20 @@ class ImportPackage:
                 new_view = flc_mgr.create_view(
                     item_properties["title"].replace(" ", "_"),
                 )
+                try:
+                    for i in view_layers.keys():
+                        lyr = new_view.layers[i]
+                        lyr.manager.update_definition(view_layers[i])
+                except:
+                    time.sleep(5)
+                    for i in view_layers.keys():
+                        lyr = new_view.layers[i]
+                        lyr.manager.update_definition(view_layers[i])
+            
+                return new_view
+            else:
+                raise RuntimeError("Multi-source views are not yet supported.")
 
-                for idx in view_layers.keys():
-                    lyr = new_view.layers[idx]
-                    lyr.manager.update_definition(view_layers[idx])
-            return new_view
         elif item_properties["type"] in JSON_BASED_WITH_DATA_TYPES:
             # check if dependent file already was uploaded
             reqs = self.graph.get_item(item_id).requires("id")
@@ -666,11 +673,17 @@ class ImportPackage:
             item_folder = os.path.join(self._temp_package, itemid)
             if itemid in item_mapping or not os.path.exists(item_folder):
                 continue
-            new_item = self._import_item(
-                item_folder, preserve_id=preserve_ids, folder=folder
-            )
-            if new_item:
-                created_items.append(new_item)
+            try:
+                new_item = self._import_item(
+                    item_folder, preserve_id=preserve_ids, folder=folder
+                )
+                if new_item:
+                    created_items.append(new_item)
+            except Exception as e:
+                warnings.warn(
+                    f"Failed to import item {itemid} due to error: {str(e)}",
+                    RuntimeWarning,
+                )
         # have to wait until all items are created to restore related items
         # due to possible presence of reverse relationships
         self._restore_related_items()
@@ -692,42 +705,3 @@ class ImportPackage:
             except:
                 continue
 
-
-def _get_unique_name(target, name, force_add_guid_suffix=False):
-    """Create a new unique name for the service.
-    Keyword arguments:
-    target - The instance of arcgis.gis.GIS (the portal) to clone the feature service to.
-    name - The original name.
-    force_add_guid_suffix - Indicates if a guid suffix should automatically be added to the end of the service name
-    """
-
-    if name[0].isdigit():
-        name = "_" + name
-    name = name.replace(" ", "_")
-
-    if not force_add_guid_suffix:
-        guids = re.findall("[0-9A-F]{32}", name, re.IGNORECASE)
-        for guid in guids:
-            new_guid = uuid.uuid4().hex[0:5]
-            name = name.replace(guid, new_guid)
-
-        while True:
-            if target.content.is_service_name_available(name, "featureService"):
-                break
-
-            guid = uuid.uuid4().hex[0:5]
-            ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
-            if len(ends_with_guid) > 0:
-                name = name[: len(name) - 32] + guid
-            else:
-                name = "{0}_{1}".format(name, guid)
-
-    else:
-        guid = uuid.uuid4().hex[0:5]
-        ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
-        if len(ends_with_guid) > 0:
-            name = name[: len(name) - 32] + guid
-        else:
-            name = "{0}_{1}".format(name, guid)
-
-    return name
