@@ -20,3 +20,23 @@ from ._workflow_manager import Notification
 from ._workflow_manager import JobExecution
 from ._workflow_manager import MessageType
 from ._workflow_manager import ExecutionStatus
+
+__all__ = [
+    "WorkflowManager",
+    "WorkflowManagerAdmin",
+    "JobManager",
+    "JobLocation",
+    "JobTemplate",
+    "Job",
+    "JobDiagram",
+    "Group",
+    "SavedSearchesManager",
+    "WMRole",
+    "LookUpTable",
+    "Template",
+    "NotificationManager",
+    "Notification",
+    "JobExecution",
+    "MessageType",
+    "ExecutionStatus",
+]

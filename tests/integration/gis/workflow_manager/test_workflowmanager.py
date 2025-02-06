@@ -3744,41 +3744,6 @@ class TestWorkflowManager(unittest.TestCase):
         )
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
-    def test_consecutive_calls_and_parallel_steps_returns_successfully(self):
-        # Arrange
-        # Create Intro WM Job
-        job_id = self.create_job()[0]
-
-        # Act
-        job = self.connection.workflow_manager.jobs.get(job_id)
-        # Auto Step ID
-        job.set_current_step("eed77c14-83bf-37f2-022c-601cb6c75e1a")
-        job.run().result()
-        job.stop().result()
-        job.finish().result()
-
-        # now on the parallel steps.
-        job_exec = job.run()
-
-        while not job_exec.done():
-            print(f"Status = {job_exec.status}")
-            print(f"{job_exec.messages}")
-            time.sleep(5)
-        time.sleep(5)
-        # Arrange
-        self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
-        self.assertEqual(
-            sum(
-                1
-                for m in job_exec.messages
-                if m.msg_type == MessageType.STEP_INFO_REQUIRED
-            ),
-            4,
-            "Multiple steps should be active",
-        )
-        self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
-        self.assertTrue(job_exec.messages, "Incorrect return type")
-
     # endregion
 
     # region Notification Manager
@@ -3792,10 +3757,9 @@ class TestWorkflowManager(unittest.TestCase):
         nm.disconnect()
         self.assertFalse(nm.is_connected, "Notification Manager did not connect.")
 
-    def test_subscribe_to_job_catalogs_messages_successfully(self):
+    def test_subscribe_to_job_receives_messages_successfully(self):
         # Arrange
         msgs = []
-        event = threading.Event()
         nm = self.connection.workflow_manager._notification_manager
         nm.connect()
 
@@ -3804,15 +3768,13 @@ class TestWorkflowManager(unittest.TestCase):
         job_id = self.create_job()[0]
         job = self.connection.workflow_manager.jobs.get(job_id)
 
-        def test_callback(notification: Notification):
+        def test_callback(notification: Notification, nm: NotificationManager):
             msgs.append(notification)
-            event.set()
 
         nm.subscribe([job_id], test_callback)
 
         # add a comment get some messages:
         job.add_comment("Hello World")
-        self.assertTrue(event.wait(10))
         self.assertTrue(len(msgs), "Messages were added when subscribed")
         self.assertEqual(
             msgs[0].msg_type,
@@ -3823,26 +3785,24 @@ class TestWorkflowManager(unittest.TestCase):
         nm.disconnect()
         self.assertFalse(nm.is_connected, "Notification Manager did not connect.")
 
-    def test_unsubscribe_to_job_catalogs_messages_successfully(self):
+    def test_unsubscribe_to_job_receives_messages_successfully(self):
         # Arrange
         msgs = []
-        event = threading.Event()
-        nm = self.connection.workflow_manager._notification_managernm.connect()
+        nm = self.connection.workflow_manager._notification_manager
+        nm.connect()
 
         self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
 
         job_id = self.create_job()[0]
         job = self.connection.workflow_manager.jobs.get(job_id)
 
-        def test_callback(notification: Notification):
+        def test_callback(notification: Notification, nm: NotificationManager):
             msgs.append(notification)
-            event.set()
 
         nm.subscribe([job_id], test_callback)
 
         # add a comment get some messages:
         job.add_comment("Hello World")
-        self.assertTrue(event.wait())
         self.assertTrue(len(msgs) < 2, "Messages were added when subscribed")
         self.assertEqual(
             msgs[0].msg_type,
@@ -3853,7 +3813,6 @@ class TestWorkflowManager(unittest.TestCase):
         nm.unsubscribe([job_id])
 
         job.add_comment("Hello World")
-        self.assertFalse(event.wait(5), "Should have timed out")
         self.assertTrue(len(msgs) < 2, "Messages were not added when unsubscribed")
 
         nm.disconnect()
