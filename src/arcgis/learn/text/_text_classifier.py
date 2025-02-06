@@ -594,6 +594,7 @@ class TextClassifier(ArcGISModel):
         Package(DLPK) or Esri Model Definition (EMD) file.
 
         To load a custom DLPK using the model extensibility support, instantiate an object of the class using this method.
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -710,12 +711,12 @@ class TextClassifier(ArcGISModel):
 
     def load(self, name_or_path):
         """
-        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
         Loads a saved TextClassifier model from disk.
 
         This method is not supported when the backbone is configured as llm/mistral and model extension.
 
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -1075,6 +1076,7 @@ class TextClassifier(ArcGISModel):
                                 memory errors.
                                 Default value : 64
         =====================   ===========================================
+
         **kwargs**
 
         =====================   ===========================================
