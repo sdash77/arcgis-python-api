@@ -73,7 +73,7 @@ class EntityRecognizer:
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
-    data                    Optional data object returned from :meth:`~arcgis.learn.prepare_data` function.
+    data                    Optional data object returned from :meth:`~arcgis.learn.prepare_textdata` function.
                             data object can be `None`, in case where someone wants to use a
                             Hugging Face Transformer model fine-tuned on entity-recognition
                             task. In this case the model should be used directly for inference.
@@ -472,11 +472,12 @@ class EntityRecognizer:
 
     def load(self, name_or_path):
         """
-        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
         Loads a saved EntityRecognizer model from disk.
 
         This method is not supported when the backbone is configured as llm/mistral.
+
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -502,6 +503,7 @@ class EntityRecognizer:
         This method is not supported when the backbone is configured as llm/mistral.
 
         To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -597,8 +599,16 @@ class EntityRecognizer:
         with open(emd_path) as f:
             emd_json = json.load(f)
         backbone = emd_json.get("ModelType", "spacy").lower()
+        # backward compatibility
+        IS_INFERENCE_FUNCTION_SUPPORTED = False
+        version = emd_json.get("ArcGISLearnVersion", None)
+        if version is not None:
+            major_version = int(version.split(".")[0])
+            minor_version = int(version.split(".")[1])
+            if minor_version >= 4 and major_version >= 2:
+                IS_INFERENCE_FUNCTION_SUPPORTED = True
 
-        if "InferenceFunction" in emd_json:
+        if "InferenceFunction" in emd_json and IS_INFERENCE_FUNCTION_SUPPORTED:
             extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
             if extensible_model.model_loaded:
                 cls_object = cls(
@@ -659,7 +669,7 @@ class EntityRecognizer:
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
-        Field defined as 'address_tag' in :meth:`~arcgis.learn.prepare_data`  function's class mapping
+        Field defined as 'address_tag' in :meth:`~arcgis.learn.prepare_data` function's class mapping
         attribute will be treated as a location. In cases where trained model extracts
         multiple locations from a single document, that document will be replicated
         for each location in the resulting dataframe.
@@ -684,6 +694,7 @@ class EntityRecognizer:
                                 progress bar depicting the items processed so far.
                                 Applicable only when a list of text is passed
         =====================   ===========================================
+
         **kwargs**
 
         =====================   ===========================================
