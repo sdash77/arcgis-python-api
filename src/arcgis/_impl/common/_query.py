@@ -781,25 +781,41 @@ class Query:
             page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
             page_params["resultOffset"] = offset
             page_params = _encode_params(page_params)
-            return self.layer._con._session.get(url, params=page_params).json()
+            response = self.layer._con._session.get(url, params=page_params).json()
+            return (
+                offset,
+                response.get("features", []),
+            )  # Return offset to maintain order
 
         # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
-            futures = []
+            futures = {}
             # Ensure we don’t request more than needed
             for offset in range(
                 original_offset + len(features),
                 min(total_count, original_offset + requested_count),
                 page_size,
             ):
-                futures.append(executor.submit(fetch_page, offset, self.parameters))
+                futures[executor.submit(fetch_page, offset, self.parameters)] = offset
 
-            # Step 5: Process the results
+            # Step 5: Process results and store them in an ordered dictionary
+            results_by_offset = {}
             for future in concurrent.futures.as_completed(futures):
-                result = future.result()
-                features += result.get("features", [])
+                offset, result = future.result()
+                results_by_offset[offset] = result
 
-        return features
+            # Step 6: Merge results in the correct order
+            sorted_offsets = sorted(
+                results_by_offset.keys()
+            )  # Ensure ordered concatenation
+            for offset in sorted_offsets:
+                features.extend(results_by_offset[offset])
+
+                # Stop fetching if we reach requested_count
+                if len(features) >= requested_count:
+                    return features[:requested_count]  # Trim excess records safely
+
+        return features[:requested_count]  # Final trim to ensure correctness
 
     def _fetch_total_records_count(self, url):
         count_params = copy.deepcopy(self.parameters)
