@@ -751,6 +751,7 @@ class GIS(object):
 
         if self._url.lower() == "pro":
             self._url = self._portal.url
+            self.resturl = self._portal.resturl
             if self._con._auth != "ANON":
                 self._con._auth = "PRO"
 
