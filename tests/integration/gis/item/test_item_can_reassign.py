@@ -1,7 +1,7 @@
 import unittest
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
-from config import get_web_resource
+from config import get_web_resource_path
 
 
 enable_verbose_logging()
@@ -12,7 +12,7 @@ enable_verbose_logging()
 class TestCanReassignItems(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fp = get_web_resource("major_cities_shp.zip", unique_copy=True)
+        fp = get_web_resource_path("major_cities_shp.zip", unique_copy=True)
         cls.folder = cls.gis.content.folders._get_or_create("integration_test_gis_item_reassign")
         cls.item = cls.folder.add(
             item_properties={
