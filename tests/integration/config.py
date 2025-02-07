@@ -2,7 +2,7 @@ import os
 import pathlib
 import requests
 import shutil
-import urllib
+import urllib.parse
 import uuid
 
 INTEGRATION_TEST_ITEM_TAG = "ntgrtn-tst"
@@ -40,7 +40,7 @@ def get_web_resource_path(relative_path, unique_copy=False):
         ...
     
     # download the resource from the web
-    resource_url = urllib.urljoin(WEB_RESOURCE_ROOT_PATH, relative_path)
+    resource_url = urllib.parse.urljoin(WEB_RESOURCE_ROOT_PATH, relative_path)
     try:
         response = requests.get(resource_url)
         response.raise_for_status()
