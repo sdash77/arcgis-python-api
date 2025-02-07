@@ -4107,7 +4107,7 @@ class FeatureLayerCollection(_GISResource):
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_organization_profile")
 
-        >>> flyr_item = gis.content.search("storm damage", "Feature Layer)[0]
+        >>> flyr_item = gis.content.search("storm damage", "Feature Layer")[0]
         >>> flc = flyr_item.layers[0].container
         >>> flc
 
