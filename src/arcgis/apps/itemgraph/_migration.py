@@ -525,6 +525,7 @@ class _ImportPackage:
                         added_items.append(service_item)
                         break
 
+            elif service_item:
                 # publish the service
                 pub_params = props
                 try:
