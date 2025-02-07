@@ -1095,6 +1095,7 @@ class GIS(object):
                 json_data = json.load(nb_auth_file)
                 assert required_json_keys.issubset(json_data)
                 self._url = json_data["privatePortalUrl"]
+                self.resturl = _create_base_url(self._url)
                 self._public_portal_url = json_data["publicPortalUrl"]
                 self._referer = json_data.get("referer", "")
                 if "token" in json_data:
@@ -7122,7 +7123,11 @@ class ContentManager(object):
                 "Must provide an itemid, file_path or text to analyze data."
             )
 
-        params = {"f": "json", "analyzeParameters": {}, "sourcelocale": source_locale}
+        params = {
+            "f": "json",
+            "analyzeParameters": {},
+            "sourcelocale": source_locale,
+        }
         if item:
             params["itemid"] = item.itemid if isinstance(item, Item) else item
         elif text:
@@ -12989,7 +12994,7 @@ class User(dict):
             A boolean indicating success (True) or failure (False).
 
         """
-        url: str = f"{self._gis.resturl}content/users/{self.username}"
+        url: str = f"{self._gis._portal.resturl}content/users/{self.username}"
         params: dict = {
             "f": "json",
             "types": "",
@@ -13038,6 +13043,7 @@ class User(dict):
             ]
         if self._gis._portal.is_arcgisonline:
             self.esri_access = "arcgisonly"
+            [i.delete() for i in self.recyclebin.content]
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username: str):
