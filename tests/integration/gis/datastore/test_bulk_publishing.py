@@ -45,9 +45,9 @@ class TestBulkPublishing(unittest.TestCase):
         """tests the publish and deleting of the layers"""
         assert self.dstore.validate(server_id=self.server_id, item=self.item)
         cm: ContentManager = self.gis.content
-        folder = cm.create_folder(
+        folder = cm.folders.create(
             folder=f"bulk_publish_{uuid.uuid4().hex[:4]}"
-        ).get("id")
+        ).properties.get("id")
 
         srv_config = {
             'type': 'MapServer',
