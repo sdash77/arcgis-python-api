@@ -799,11 +799,7 @@ class Query:
                 result = future.result()
                 features += result.get("features", [])
 
-                # Stop fetching if we reach requested_count
-                if len(features) >= requested_count:
-                    return features[:requested_count]  # Trim any extra records
-
-        return features[:requested_count]  # Final trim to ensure correctness
+        return features
 
     def _fetch_total_records_count(self, url):
         count_params = copy.deepcopy(self.parameters)
