@@ -846,16 +846,12 @@ def prepare_textdata(
                             For `csv` dataset type. If an entity has multiple values. It should be
                             separated by `,`.
     ---------------------   -------------------------------------------
-    class_mapping           Optional dictionary. Mapping from id to
-                            its string label.
-                            For dataset_type=IOB, BILUO or ner_json:
-                            Provide address field as class mapping
-                            in below format:
-                            class_mapping={'address_tag':'address_field'}.
-                            Field defined as 'address_tag' will be treated
-                            as a location. In cases where trained model extracts
-                            multiple locations from a single document, that
-                            document will be replicated for each location.
+    class_mapping           Optional dictionary. This parameter is optional and can only be used when the
+                            task is entity recognition. The dictionary specifies the location entity. Use the format:
+                            class_mapping={'address_tag': 'location'}.
+                            The value linked to the 'address_tag' key will be identified as a location entity.
+                            If the model extracts multiple location entities from a single document,
+                            each location will be listed separately in the results.
     =====================   ===========================================
 
     **Keyword Arguments**
