@@ -1534,6 +1534,96 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def diagram_upgraded_version(self, diagram_id: str, version_id: str):
+        """
+        Get an upgraded version of a workflow diagram that uses centralized data references. If the version number does
+        not exist, an error saying the specific diagram version does not exist is returned. The adminBasic or
+        adminAdvanced privilege is required to get an upgraded diagram.
+
+        Note: You can upgrade a diagram by placing the transformedDiagram dictionary in the diagram
+        parameter of update_diagram.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        diagram_id          Required string. Diagram ID
+        ---------------     --------------------------------------------------------------------
+        version_id          Required string. Diagram Version ID
+        ===============     ====================================================================
+
+        :return:
+             Success Object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Using the transformedDiagram from the result object to update a diagram.
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            upgrade_obj = wm.diagram_upgraded_version("gb1GBilqT4yk68Hfs5ghxw", diagram_version=1)
+
+            # update diagram draft
+            wm.update_diagram( body=upgrade_obj['transformedDiagram'] )
+
+        .. code-block:: python
+
+            # Success Object Example:
+            {
+                "transformedDiagram": {
+                    "diagramId": "gb1GBilqT4yk68Hfs5ghxw",
+                    "diagramVersion": 1,
+                    "diagramName": "Test New Diagram123 2024_12_13_11_59_54_764959",
+                    "description": "Test Description",
+                    "initialStepId": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                    "initialStepName": "Start/End",
+                    "steps": [
+                        {
+                            "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                            "name": "Start/End",
+                            "description": "Start and end of a workflow",
+                            "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                            "automatic": false,
+                            "proceedNext": true,
+                            "canSkip": false,
+                            "position": "0,0,100,50",
+                            "shape": 3,
+                            "color": "130, 202, 237",
+                            "outlineColor": "130, 202, 237",
+                            "labelColor": "black",
+                            "action": { "actionType": "Manual" },
+                            "paths": [
+                                {
+                                    "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                    "points": [ { "x": 0, "y": 26 }, { "x": 0,  "y": 74 } ],
+                                    "ports": [  "BOTTOM", "TOP" ],
+                                    "assignedType": "Unassigned",
+                                    "notifications": [],
+                                    "lineColor": "black"
+                                }
+                            ],
+                            "helpUrl": "Start/End help url",
+                            "helpText": "Start/End help text"
+                        }
+                    ],
+                    "centralizedDataReferences": [],
+                    "displayGrid": true,
+                    "useCentralizedDataReferences": true
+                },
+                "modifiedStepIds": [],
+                "failedStepIds": [],
+                "modifiedDataSourceNames": [],
+                "failedDataSourceNames": []
+            }
+
+        """
+        try:
+            return self._gis._con.get(
+                f"{self._url}/diagrams/{diagram_id}/{version_id}/upgraded"
+            )
+        except:
+            self._handle_error(sys.exc_info())
+
     def create_wm_role(self, name, description="", privileges=[]):
         """
         Adds a role to the Workflow Manager instance given a user-defined name
@@ -1708,51 +1798,171 @@ class WorkflowManager:
         annotations: list = [],
         data_sources: list = [],
         diagram_id: Optional[str] = None,
+        centralized_data_references: list = [],
+        use_centralized_data_references: bool = False,
     ):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        name                Required string. Diagram Name
-        ---------------     --------------------------------------------------------------------
-        steps               Required list. List of Step objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        display_grid        Required boolean. Boolean indicating whether the grid will be displayed in the Diagram
-        ---------------     --------------------------------------------------------------------
-        description         Optional string. Diagram description
-        ---------------     --------------------------------------------------------------------
-        active              Optional Boolean. Indicates whether the Diagram is active
-        ---------------     --------------------------------------------------------------------
-        annotations         Optinal list. List of Annotation objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        data_sources        Optional list. List of Data Source objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        diagram_id          Optional string. The unique ID of the diagram to be created.
-        ===============     ====================================================================
+        =============================== ====================================================================
+        **Parameter**                   **Description**
+        ------------------------------- --------------------------------------------------------------------
+        name                            Required string. Diagram Name
+        ------------------------------- --------------------------------------------------------------------
+        steps                           Required list. List of Step objects associated with the Diagram
+        ------------------------------- --------------------------------------------------------------------
+        display_grid                    Required boolean. Boolean indicating whether the grid will be displayed in the
+                                        Diagram
+        ------------------------------- --------------------------------------------------------------------
+        description                     Optional string. Diagram description
+        ------------------------------- --------------------------------------------------------------------
+        active                          Optional Boolean. Indicates whether the Diagram is active
+        ------------------------------- --------------------------------------------------------------------
+        annotations                     Optional list. List of Annotation objects associated with the Diagram
+        ------------------------------- --------------------------------------------------------------------
+        data_sources                    Optional list. Spatial data that will be used in the steps of the diagram.
+                                        Note: It is recommended to use centralizedDataReferences for new diagrams.
+                                        Data sources are not supported in ArcGIS Online.
+        ------------------------------- --------------------------------------------------------------------
+        diagram_id                      Optional string. The unique ID of the diagram to be created.
+        ------------------------------- --------------------------------------------------------------------
+        centralized_data_references     Optional list. The Centralized references to data and other content that will be
+                                        used in the steps of the diagram. See details for CentralizedDataReference below
+        ------------------------------- --------------------------------------------------------------------
+        use_centralized_data_references Optional boolean. Indicates that the diagram's step configurations make use of
+                                        CentralizedDataReferences. Defaults to false. Note: It is recommended that this
+                                        is set to True for new diagrams
+        =============================== ====================================================================
 
         :return:
             :class:`Workflow Manager Diagram <arcgis.gis.workflowmanager.JobDiagram>` ID
 
+        CentralizedDataReference Dictionary
+        ===============================
+
+        ===============              ====================================================================
+        **Parameter**                **Description**
+        ---------------              --------------------------------------------------------------------
+        id                           Required string. The unique identifier of the data reference to be stored in the diagram.
+        ---------------              --------------------------------------------------------------------
+        alias                        Required string. The unique name of the data reference to be stored in the diagram.
+        ---------------              --------------------------------------------------------------------
+        isValidated                  Required boolean. Indicates whether the data reference has been validated.
+                                     Note: Pro Items and Pro Commands are not validated.
+        ---------------              --------------------------------------------------------------------
+        referenceType                Required string. The type of data reference. Accepted values include FeatureService,
+                                     Survey, GeoprocessingService, WebMap, ProProject, ProMapItem, ProSceneItem,
+                                     ProTaskItem, ProLayoutItem, ProSystemToolboxItem, or ProCommand. Note: Geoprocessing
+                                     services must use either standaloneGPUrl or portalItem.
+        ---------------              --------------------------------------------------------------------
+        capabilities                 Optional list. The capabilities of a branch versioned feature service. Valid values
+                                     include SupportsBranchVersioning, SupportsCreateReplica, and SupportsDataQuality.
+        ---------------              --------------------------------------------------------------------
+        portalItem                   Optional portalItem dict. The item information for the reference. Required for
+                                     referencesTypes set to FeatureService, Survey, WebMap, or ProProject. For more
+                                     details, see PortalItem below.
+        ---------------              --------------------------------------------------------------------
+        proItemName                  Optional string. The name of the Pro item. Required when the referenceType is set
+                                     to ProMapItem, ProSceneItem, ProTaskItem, ProLayoutItem, or ProSystemToolboxItem
+        ---------------              --------------------------------------------------------------------
+        command                      Optional string. The Pro command DAML id. Required when the referenceType is ProCommand.
+        ---------------              --------------------------------------------------------------------
+        standaloneGPUrl              Optional string. The service URL for the Geoprocessing Service. Required when the
+                                     referenceType is GeoprocessingService and portalItem is not defined.
+        ===============              ====================================================================
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 1:
+            {
+              "id": "50c6a626-2e45-4cfa-b149-3add455f9d72",
+              "alias": "ParcelFabricDataQuality",
+              "portalItem": {
+                "itemId": "a64fdcf5e7b44a27bd98d098ca02ca57",
+                "portalType": "Current",
+                "portalUrl": null
+              },
+              "isValidated": true,
+              "referenceType": "FeatureService",
+              "capabilities": [
+                "SupportsBranchVersioning",
+                "SupportsDataQuality"
+              ]
+            }
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 2:
+            {
+                "id": "f9f002b0-ea3e-49a3-b40c-5e08687282f0",
+                "alias": "GeocodingTools",
+                "portalItem": {
+                    "itemId": "7eacbbfff9a24bc0a7fc0e9d7b805ccd",
+                    "portalType": "Current",
+                    "portalUrl": null
+                },
+                "isValidated": true,
+                "referenceType": "GeoprocessingService"
+            }
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 3:
+            {
+              "id": "b09ae444-3400-49ca-9a1b-1f3795332139",
+              "alias": "Echo Tool",
+              "isValidated": true,
+              "referenceType": "GeoprocessingService",
+              "standaloneGPUrl": "https://example.esri.com/arcgis/rest/services/ProcessingTool/GPServer/ProcessingTool"
+            }
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 4:
+            {
+              "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+              "proItemName": "MyProMap",
+              "referenceType": "ProMapItem"
+            }
+
+
+        PortalItem Object
+        ========================
+
+        ===============              ====================================================================
+        **Parameter**                **Description**
+        ---------------              --------------------------------------------------------------------
+        itemId                       Required string. The unique item identifier of the Portal item.
+        ---------------              --------------------------------------------------------------------
+        portalType                   Optional string. The hosting Portal location of the data reference relative to the
+                                     workflow item. Accepted values include Current, ArcGIS Online, and Other. This value
+                                     is set to Current by default.
+        ---------------              --------------------------------------------------------------------
+        portalUrl                    Optional string. Required when portalType is set to Other, the full URL including
+                                     Web Adaptor for the Portal hosting the item.
+        ===============              ====================================================================
+
         """
         try:
             url = "{base}/diagrams".format(base=self._url)
+            diagram_obj = {
+                "diagramId": diagram_id,
+                "diagramName": name,
+                "description": description,
+                "active": active,
+                "initialStepId": "",
+                "initialStepName": "",
+                "steps": steps,
+                "dataSources": data_sources,
+                "annotations": annotations,
+                "displayGrid": display_grid,
+            }
+            if centralized_data_references:
+                diagram_obj["centralizedDataReferences"] = centralized_data_references
+            if use_centralized_data_references:
+                diagram_obj["useCentralizedDataReferences"] = True
 
-            post_diagram = JobDiagram(
-                {
-                    "diagramId": diagram_id,
-                    "diagramName": name,
-                    "description": description,
-                    "active": active,
-                    "initialStepId": "",
-                    "initialStepName": "",
-                    "steps": steps,
-                    "dataSources": data_sources,
-                    "annotations": annotations,
-                    "displayGrid": display_grid,
-                }
-            )
+            post_diagram = JobDiagram(diagram_obj)
             return post_diagram.post(self._gis, url)["diagram_id"]
         except:
             self._handle_error(sys.exc_info())
@@ -1773,35 +1983,84 @@ class WorkflowManager:
         :return:
             success object
 
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a diagram with centralized data references
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # The update body contains only those fields we wish to update.
+            updated_diagram_body = {
+                                    "diagramName": "Updated Diagram Name",
+                                    "description": "Updated",
+                                    "centralizedDataReferences": [
+                                          {
+                                            "id": "f9f002b0-ea3e-49a3-b40c-5e08687282f0",
+                                            "alias": "GeocodingTools",
+                                            "isValidated": true,
+                                            "portalItem": {
+                                              "itemId": "7eacbbfff9a24bc0a7fc0e9d7b805ccd",
+                                              "portalType": "Current"
+                                            },
+                                            "acceptsToken": true,
+                                            "referenceType": "GeoprocessingService"
+                                          },
+                                          {
+                                            "id": "5a3aa2d1-06ed-49fc-9c38-e1576d9cc5d2",
+                                            "alias": "Example Feature Service",
+                                            "portalItem": {
+                                              "itemId": "a64fdcf5e7b44a27bd98d098ca02ca57",
+                                              "portalType": "Current",
+                                              "portalUrl": null
+                                            },
+                                            "isValidated": true,
+                                            "referenceType": "FeatureService",
+                                            "capabilities": [ "SupportsBranchVersioning", "SupportsDataQuality" ]
+                                          }
+                                        ]
+                                    "useCentralizedDataReferences": True
+                                    }
+
+            wm.update_diagram(update_diagram_body, delete_draft=True)
+
         """
         try:
+            body = {
+                _camelCase_to_underscore(k): v
+                for k, v in body.items()
+                if v is not None and not k.startswith("_")
+            }
             url = "{base}/diagrams/{diagramid}".format(
                 base=self._url, diagramid=body["diagram_id"]
             )
-            post_diagram = JobDiagram(
-                {
-                    "diagramId": body["diagram_id"],
-                    "diagramName": body["diagram_name"],
-                    "description": (
-                        body["description"] if "description" in body else ""
-                    ),
-                    "active": (body["active"] if "active" in body else False),
-                    "initialStepId": (
-                        body["initial_step_id"] if "initial_step_id" in body else ""
-                    ),
-                    "initialStepName": (
-                        body["initial_step_name"] if "initial_step_name" in body else ""
-                    ),
-                    "steps": body["steps"],
-                    "dataSources": (
-                        body["data_sources"] if "data_sources" in body else []
-                    ),
-                    "annotations": (
-                        body["annotations"] if "annotations" in body else ""
-                    ),
-                    "displayGrid": body["display_grid"],
-                }
-            )
+            diagram_obj = {
+                "diagramId": body["diagram_id"],
+                "diagramName": body["diagram_name"],
+                "description": (body["description"] if "description" in body else ""),
+                "active": (body["active"] if "active" in body else False),
+                "initialStepId": (
+                    body["initial_step_id"] if "initial_step_id" in body else ""
+                ),
+                "initialStepName": (
+                    body["initial_step_name"] if "initial_step_name" in body else ""
+                ),
+                "steps": body["steps"],
+                "dataSources": (body["data_sources"] if "data_sources" in body else []),
+                "annotations": (body["annotations"] if "annotations" in body else ""),
+                "displayGrid": body["display_grid"],
+                "useCentralizedDataReferences": (
+                    body["use_centralized_data_references"]
+                    if "use_centralized_data_references" in body
+                    else False
+                ),
+            }
+            if body.get("centralized_data_references"):
+                diagram_obj["centralizedDataReferences"] = body[
+                    "centralized_data_references"
+                ]
+
+            post_diagram = JobDiagram(diagram_obj)
             res = post_diagram.update(self._gis, url, delete_draft)
 
             return res
