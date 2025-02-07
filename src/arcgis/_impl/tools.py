@@ -10348,7 +10348,6 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     def _sanitize_inputs(
         self,
-        gis,
         image_collection,
         input_rasters,
         raster_type_name,
@@ -10363,6 +10362,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         image_collection_properties = None
         use_input_rasters_by_ref = None
         upload_properties = None
+        gis = self._gis
 
         from arcgis.raster import RasterCollection
         from arcgis.raster._layer import _LocalRasterCollection
@@ -11807,14 +11807,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         gis = self._gis
         input_rasters, image_collection, raster_type, context, output_service = (
             self._sanitize_inputs(
-                gis,
-                image_collection,
-                input_rasters,
-                raster_type_name,
-                raster_type_params,
-                out_sr,
-                context,
-                md_to_upload,
+                image_collection=image_collection,
+                input_rasters=input_rasters,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                out_sr=out_sr,
+                context=context,
+                md_to_upload=md_to_upload,
                 **kwargs,
             )
         )
