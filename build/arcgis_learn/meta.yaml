@@ -50,9 +50,7 @@ requirements:
     - mmdet3d 1.2.0.*
     - mmengine 0.8.5.*
     - mmsegmentation 1.1.2.*
-    - numpy 1.22.* # [py <= 39]
-    - numpy 1.23.5.* # [py == 310]
-    - numpy >=1.24.3 # [py >= 311]
+    - numpy >=1.26.4
     - opencv=4.8.1=py311_cuda11.8_cudnn8.7_2 # [py==311 and win]
     - opencv 4.8.* # [linux]
     - opencv 4.9.* # [py<311 and win]
@@ -67,7 +65,7 @@ requirements:
     - python
     - python-graphviz
     - pytorch 2.0.1.*
-    - scipy 1.9.3.*
+    - scipy 1.14.1.*
     - scikit-image
     - scikit-learn >=1.0.0
     - shap >=0.36.0

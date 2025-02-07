@@ -890,7 +890,7 @@ class FeatureSet(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        fs                  Required arcpy.FeatureSet. The featureset objec to consume.
+        fs                  Required arcpy.FeatureSet. The featureset object to consume.
         ===============     ====================================================================
 
         :return:
@@ -942,7 +942,7 @@ class FeatureSet(object):
 
             Input:
              dataframe - spatialdataframe object
-            Ouput:
+            Output:
               field type name
             """
             import numpy as np
@@ -1656,7 +1656,7 @@ class FeatureCollection(Layer):
         ------------------     --------------------------------------------------------------------
         symbol                 Optional dict. Specify your symbol as a dictionary. Symbols for points
                                can be picked from the
-                               `Esri Symbol Page <http://esri.github.io/arcgis-python-api/tools/symbol.html>`_
+                               `Esri Symbol Page <https://developers.arcgis.com/web-map-specification/objects/symbol/>`_
 
                                If not specified, a default symbol will be created.
         ------------------     --------------------------------------------------------------------

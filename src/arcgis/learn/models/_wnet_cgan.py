@@ -153,7 +153,7 @@ class WNet_cGAN(ArcGISModel):
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_wnet_cgan"
         _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
-        _emd_template["ModelType"] = "WNet_cGAN"
+        _emd_template["ModelType"] = "ImageClassification"
         _emd_template["n_channel"] = self._data.n_channel
         _emd_template["n_band_a"] = self._data.nband_a
         _emd_template["n_band_b"] = self._data.nband_b

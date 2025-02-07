@@ -1131,13 +1131,13 @@ class _DeepCloner:
         if self.folder is not None:
             folders = user.folders
             target_folder = next(
-                (f for f in folders if f["title"].lower() == self.folder.lower()),
+                (f for f in folders if f.name.lower() == self.folder.lower()),
                 None,
             )
             if target_folder is None:
-                target_folder = self.target.content.create_folder(
+                target_folder = self.target.content.folders.create(
                     self.folder, self.owner
-                )
+                ).properties
 
         # Validate the item mapping and build service mapping for Feature Service and Map Service items
         for original_item_id, new_item_id in self._clone_mapping["Item IDs"].items():
@@ -1742,9 +1742,7 @@ class _DeepCloner:
                 preserve_item_id=self._preserve_item_id,
             )
         elif item["type"] == "Web Experience":
-            from arcgis._impl.common._itemdef._expbuilder import (
-                _WebExperience,
-            )
+            from arcgis._impl.common._itemdef._expbuilder import _WebExperience
 
             return _WebExperience(
                 target=self.target,
@@ -3046,7 +3044,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Modify the definition before passing to create the new service
                 name = original_item["name"]
-                if name is None:
+                if not name or not isinstance(name, str):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
                 name = re.sub("\W+", "_", name)
@@ -4157,7 +4155,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         new_item.title,
                         force_add_guid_suffix=True,
                     )
-                    self.target.content.create_folder(folder_name)
+                    self.target.content.folders._get_or_create(folder_name)
                     new_item.move(folder_name)
                     worker_webmap_item.move(folder_name)
                     dispatcher_webmap_item.move(folder_name)
@@ -5060,7 +5058,7 @@ class _ApplicationDefinition(_TextItemDefinition):
                                         (
                                             f
                                             for f in folders
-                                            if f["title"].lower() == self.folder.lower()
+                                            if f.name.lower() == self.folder.lower()
                                         ),
                                         None,
                                     )
@@ -6114,7 +6112,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                             (
                                 f
                                 for f in folders
-                                if f["title"].lower() == self.folder.lower()
+                                if f.name.lower() == self.folder.lower()
                             ),
                             None,
                         )
@@ -6539,13 +6537,10 @@ class _ItemCreateException(Exception):
 def _get_feature_service_related_item(service_url, source):
     try:
         service = FeatureLayerCollection(service_url, source)
+        item_id = service.properties.get("serviceItemId")
+        return source.content.get(item_id) if item_id else None
     except Exception:
-        return
-
-    if "serviceItemId" in service.properties and service.properties["serviceItemId"]:
-        item_id = service.properties["serviceItemId"]
-        return source.content.get(item_id)
-    return
+        return None
 
 
 def _compare_service(new_item, original_item, currentVersion):

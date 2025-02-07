@@ -117,12 +117,9 @@ def _search(
         import arcgis
 
         gis = arcgis.env.active_gis
-
-    if max_items == -1:
-        page_size = 100
-    else:
+    page_size: int = 100
+    if max_items > 0 and max_items < 100:
         page_size = min(max_items, 100)
-    max_items = page_size
     items = []
     params = {
         "f": "json",
@@ -181,6 +178,7 @@ def _search(
             "sortOrder",
             "f",
             "token",
+            "filter",
         }
         for k in list(params.keys()):
             if not k in allowed_keys:

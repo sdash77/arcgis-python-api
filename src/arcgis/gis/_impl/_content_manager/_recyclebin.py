@@ -94,9 +94,9 @@ class RecycleItem:
         if folder:
             try:
                 if isinstance(folder, str):
-                    folder_id = self._gis.content.folders.get(folder).properties["id"]
+                    folder_id = self._gis.content.folders.get(folder)._fid
                 elif isinstance(folder, Folder):
-                    folder_id = folder.properties["id"]
+                    folder_id = folder._fid
                 params.update({"folder": folder_id})
             except:
                 raise ValueError(
@@ -166,26 +166,42 @@ class OrgRecycleBin:
         =================================================     ========================================================================
 
 
-        :return: Iterator[RecycleItem]
+        :return:
+            Iterator[:class:`RecycleItems <arcgis.gis._impl._content_manager.RecycleItem>`]
 
         .. code-block:: python
 
-            # Usage Example:
+            # Usage Example: Get all feature layer items in recycle bin
+            >>> from arcgis.gis import GIS, ItemTypeEnums
 
-            >>> gis = GIS(profile="your_online_profile")
+            >>> gis = GIS(profile="your_online_admin_profile")
 
-            >>> my_user = gis.users.me
-            >>> r_bin_content = my_user.recyclebin.content(sord_field='owner')
+            >>> org_rbin = gis.admin.org_recyclebin
+            >>> r_bin_content = org_rbin.content(
+                                    item_types=ItemTypeEnum.FEATURE_SERVICE.value,
+                                    sort_order="desc",
+                                    sort_field="size"
+                                )
             >>> type(r_bin_content)
 
             <class 'generator'>
 
             >>> for r_item in r_bin_content:
-                    print(f"{r_item.properties['title']":15}{r_item.properties['type']}")
+                    print(f"{r_item.properties['title']:25}{r_item.properties['size']}")
 
-            trees_sd        Service Definition
-            trees_flc       Feature Service
+            trees_lyr                90112
+            sewers                   81920
+            Case_1473 Survey         16384
+            water_quality_measures   6568
 
+            # Usage Example #2: Get all items in organization's recycle bin:
+
+            >>> org_rbin = gis.admin.org_recyclebin
+            >>> r_bin_content = org_rbin.content()
+
+            >>> len(list(r_bin_content))
+
+            1380
 
         """
         start: int = 1
@@ -271,7 +287,7 @@ class RecycleBin:
         elif isinstance(user, _arcgis_gis.User):
             self._user = user
         else:
-            raise ValueError("The `user` parametre must be a str, User or None.")
+            raise ValueError("The `user` parameter must be a str, User or None.")
 
     # ----------------------------------------------------------------------
     def __str__(self):

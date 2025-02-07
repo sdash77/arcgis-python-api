@@ -81,13 +81,12 @@ else:
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",
-        "requests-kerberos",
-        "requests-gssapi",
         "dask >=2023.3.2",
         "matplotlib-inline",
-        "pyarrow >=11.0.0",
+        "pyarrow >=16,<17",
         "puremagic >=1.15,<2",
         "pydantic >=2.8.2, <3",
+        "networkx >=3.3, <4",
         "websocket-client >=1.2.3, <2.0.0",
     ]
 
@@ -256,6 +255,10 @@ kwargs = {
     # $ pip install -e .[dev,test]
     "extras_require": {
         "gp": ["dill"],
+        "kerberos": [
+            "requests-kerberos",
+            "requests-gssapi",
+        ],
     },
     "distclass": BinaryDistribution,
     # extras_require={

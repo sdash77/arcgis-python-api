@@ -17,7 +17,7 @@ class GeoRSSLayer(BaseOGC):
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required String. The URL of the GeoRSS sevice.
+    url                 Required String. The URL of the GeoRSS service.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
