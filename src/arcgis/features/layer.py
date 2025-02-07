@@ -2252,12 +2252,14 @@ class FeatureLayer(Layer):
         supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
             "supportsPagination", False
         )
+        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=True,
             as_df=as_df,
             supports_pagination=supports_pagination,
+            max_record_count=max_record_count,
         ).execute()
 
     # ----------------------------------------------------------------------
@@ -3760,12 +3762,14 @@ class FeatureLayer(Layer):
         supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
             "supportsPagination", False
         )
+        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=True,
             query_3d=True,
             supports_pagination=supports_pagination,
+            max_record_count=max_record_count,
         ).execute()
 
 
@@ -4090,12 +4094,14 @@ class Table(FeatureLayer):
         supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
             "supportsPagination", False
         )
+        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=False,
             as_df=as_df,
             supports_pagination=supports_pagination,
+            max_record_count=max_record_count,
         ).execute()
 
 

@@ -587,6 +587,7 @@ class Query:
         query_3d: bool = False,
         as_df: bool = False,
         supports_pagination: bool = False,
+        max_record_count: int = 2000,
     ):
         self.layer = layer
         self.is_layer = is_layer
@@ -594,6 +595,7 @@ class Query:
         self.as_df = as_df
         self.parameters = self.create_parameters(parameters)
         self.supports_pagination = supports_pagination
+        self.max_record_count = max_record_count
 
     def create_parameters(
         self,
@@ -748,6 +750,7 @@ class Query:
                     break
                 self.parameters["resultRecordCount"] = remaining_record_count
 
+            # len of features is the new offset each time
             self.parameters["resultOffset"] = len(features) + original_offset
             encoded_parameters = _encode_params(self.parameters)
             result = self.layer._con._session.get(url, params=encoded_parameters).json()
@@ -759,15 +762,19 @@ class Query:
         """Fetches all features by handling pagination and using concurrent requests."""
         original_offset = self.parameters.get("resultOffset", 0)
 
-        page_size = 1000
-        # Step 1: Preliminary query to determine total count
-        if self.parameters.get("resultRecordCount") is None:
-            total_count = self._fetch_total_records_count(url)
-            self.parameters["resultRecordCount"] = (
-                page_size  # Adjust page size as necessary
-            )
-        else:
-            total_count = self.parameters.get("resultRecordCount")
+        # Step 1: Get total records, but respect user-defined limit
+        total_available = self._fetch_total_records_count(url)
+        requested_count = self.parameters.get(
+            "resultRecordCount", total_available
+        )  # Default if not set
+        page_size = min(
+            self.max_record_count, requested_count
+        )  # Ensure we don’t exceed service limits
+        total_count = min(
+            total_available, requested_count
+        )  # Limit to user-specified max
+
+        self.parameters["resultRecordCount"] = page_size  # Enforce per-request limit
 
         # Step 3: Define function to fetch a page of features
         def fetch_page(offset, params):
@@ -779,9 +786,11 @@ class Query:
         # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
             futures = []
-            # Calculate the number of requests needed, using page_size for offset increment
+            # Ensure we don’t request more than needed
             for offset in range(
-                original_offset + len(features), total_count, page_size
+                original_offset + len(features),
+                min(total_count, original_offset + requested_count),
+                page_size,
             ):
                 futures.append(executor.submit(fetch_page, offset, self.parameters))
 
@@ -790,7 +799,11 @@ class Query:
                 result = future.result()
                 features += result.get("features", [])
 
-        return features
+                # Stop fetching if we reach requested_count
+                if len(features) >= requested_count:
+                    return features[:requested_count]  # Trim any extra records
+
+        return features[:requested_count]  # Final trim to ensure correctness
 
     def _fetch_total_records_count(self, url):
         count_params = copy.deepcopy(self.parameters)
@@ -851,7 +864,7 @@ class Query:
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
             futures = []
             # Calculate the number of requests needed, using page_size for offset increment
-            page_size = 100
+            page_size = self.max_record_count
             for i in range(0, len(ids), page_size):
                 ids_subset = ",".join(str(i) for i in ids[i : i + page_size])
                 futures.append(executor.submit(fetch_page, ids_subset))
