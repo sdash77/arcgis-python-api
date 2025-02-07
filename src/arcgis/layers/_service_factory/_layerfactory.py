@@ -215,7 +215,7 @@ class ServiceFactory(type):
 
     @staticmethod
     def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
-        url: str = f"{gis.resturl}content/items/{itemid}"
+        url: str = f"{gis._portal.resturl}content/items/{itemid}"
         return gis.session.get(url, params={"f": "json"}).json(), url
 
     @staticmethod
