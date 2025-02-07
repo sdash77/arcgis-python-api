@@ -13044,6 +13044,7 @@ class User(dict):
             ]
         if self._gis._portal.is_arcgisonline:
             self.esri_access = "arcgisonly"
+            # recycle bin must be empty to delete user
             [i.delete() for i in self.recyclebin.content]
         return self._portal.delete_user(self._user_id, reassign_to)
 
