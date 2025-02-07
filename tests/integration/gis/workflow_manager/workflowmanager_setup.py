@@ -3,34 +3,32 @@ from tests.integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
-from utils.decorators import integration_test
 
 
 ###########################################################################
 # @unittest.SkipTest
-@integration_test
 class WorkflowManagerSetup:
     """Tests the workflow manager Functionality"""
 
     # region Setup
+    custom_testing = False
 
     def __init__(self, override_gis: GIS = None):
         """
         Check if ArcGIS.com can be reached
         :return:
         """
-        custom_testing = False
 
         _conf_reader = ConfigParser()
         credential_path = QALAB_ROOT_PATH + r"\wmx\config.ini"
         _conf_reader.read(credential_path, "UTF-8")
 
-        if custom_testing:
+        if self.custom_testing:
             self.portal_url = _conf_reader["credentials"]["custom"]
             self.portal_username = _conf_reader["credentials"]["username"]
             self.portal_password = _conf_reader["credentials"]["password"]
-            self.item_name = "Testing Item"
-            self.workflow_item_id = "77f3d5c6ab9d46d3ba17967c32b9b00e"
+            self.item_name = "Python Testing"
+            self.workflow_item_id = "4766fec2f1f94cf0bb43cf2d3a3a64aa"
 
             self._gis = override_gis or GIS(
                 url=self.portal_url,
@@ -63,7 +61,7 @@ class WorkflowManagerSetup:
                 self.workflow_item_id = self.workflow_manager_admin.create_item(
                     self.item_name
                 )
-
+                print("Finished creating workflow item, starting tests")
                 self.workflow_item = self._gis.content.get(self.workflow_item_id)
                 self.workflow_manager = WorkflowManager(self.workflow_item)
             except Exception as testException:
@@ -73,12 +71,13 @@ class WorkflowManagerSetup:
                 )
 
     def remove_item(self):
-        try:
-            item = self._gis.content.get(self.workflow_item_id)
-            self.workflow_manager_admin.delete_item(item)
+        if not self.custom_testing:
+            try:
+                item = self._gis.content.get(self.workflow_item_id)
+                self.workflow_manager_admin.delete_item(item)
 
-        except Exception as testException:
-            print(
-                "Error returned while removing Workflow Manager Item at the end of testing: "
-                + testException.__str__()
-            )
+            except Exception as testException:
+                print(
+                    "Error returned while removing Workflow Manager Item at the end of testing: "
+                    + testException.__str__()
+                )
