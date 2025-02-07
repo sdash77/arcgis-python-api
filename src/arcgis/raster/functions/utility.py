@@ -720,7 +720,8 @@ def _get_geometry_from_feature_layer(lyr):
         return None
     try:
         from arcgis.geometry import Geometry, union
-        feature_set = lyr.query(where = "1=1")
+
+        feature_set = lyr.query(where="1=1")
         for feature in feature_set:
             geometry_list.append(Geometry(feature.geometry))
         union_op = union(geometry_list)
