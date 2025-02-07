@@ -177,7 +177,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     os.makedirs(output_folder, exist_ok=True)
 
     # create all the proper folders
-    for header in ["files", "resources", "data", "proxies"]:
+    for header in ["files", "resources", "data"]:
         os.makedirs(os.path.join(output_folder, header), exist_ok=True)
 
     # download json of item properties based
