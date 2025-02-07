@@ -1,9 +1,6 @@
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
-from typing import Generator
 from arcgis.geometry import Geometry
-import copy
-import datetime
 from arcgis.gis._impl._util import _get_item_url
 
 try:
@@ -13,7 +10,47 @@ try:
 except ImportError as e:
     HAS_KG = False
 _isd = LazyLoader("arcgis._impl.common._isd")
-from typing import List, Any
+from typing import List, Any, Sequence, Generator, Union, Optional
+from arcgis.graph.data_model_types import (
+    FieldIndex,
+    EntityType,
+    RelationshipType,
+    NamedObjectTypeMask,
+    GraphProperty,
+    GraphPropertyMask,
+    ConstraintRule,
+    ConstraintRuleUpdate,
+    GraphDataModel,
+)
+from arcgis.graph.graph_types import (
+    Entity,
+    Relationship,
+    EntityDelete,
+    RelationshipDelete,
+    Transform,
+    _client_core_to_python_value,
+    _python_to_client_core_value,
+)
+from arcgis.graph.search_types import (
+    SearchIndexProperties,
+    esriNamedTypeCategory,
+)
+from arcgis.graph.response_types import (
+    UpdateSearchIndexResponse,
+    SyncDataModelResponse,
+    NamedObjectTypeAddsResponse,
+    NamedObjectTypeUpdateResponse,
+    NamedObjectTypeDeleteResponse,
+    PropertyAddsResponse,
+    PropertyUpdateResponse,
+    PropertyDeleteResponse,
+    IndexAddsResponse,
+    IndexDeletesResponse,
+    ConstraintRuleAddsResponse,
+    ConstraintRuleUpdatesResponse,
+    ConstraintRuleDeletesResponse,
+    ApplyEditsResponse,
+)
 
 
 class KnowledgeGraph:
@@ -101,7 +138,9 @@ class KnowledgeGraph:
             )
             raise Exception(err_message)
 
-    def search(self, search: str, category: str = "both") -> List[dict]:
+    def search(
+        self, search: str, category: str = "both", as_dict: bool = True
+    ) -> List[Sequence[Any]]:
         """
         Allows for the searching of the properties of entities,
         relationships, or both in the graph using a full-text index.
@@ -137,6 +176,11 @@ class KnowledgeGraph:
         :return: List[list]
 
         """
+        return list(self._search(search=search, category=category, as_dict=as_dict))
+
+    def _search(
+        self, search: str, category: str, as_dict: bool
+    ) -> Generator[Sequence[Any], None, None]:
         url = self._url + "/graph/search"
         cat_lu = {
             "both": _kgparser.esriNamedTypeCategory.both,
@@ -167,18 +211,26 @@ class KnowledgeGraph:
         )
 
         self._validate_response(response)
-        rows = []
         query_dec = _kgparser.GraphQueryDecoder()
         query_dec.data_model = self._datamodel
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
-                rows.append(query_dec.get_current_row())
+                row = query_dec.get_current_row()
+                yield (
+                    row
+                    if as_dict
+                    else _client_core_to_python_value(client_core_value=row)
+                )
         if query_dec.has_error():
             raise Exception(query_dec.error.error_message)
-        return rows
 
-    def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
+    def update_search_index(
+        self,
+        adds: dict[str, Union[dict, SearchIndexProperties]] = {},
+        deletes: dict[str, Union[dict, SearchIndexProperties]] = {},
+        as_dict: bool = True,
+    ) -> Union[dict, UpdateSearchIndexResponse]:
         """
         Allows users to add or delete search index properties for different entities and
         relationships from the graph's data model. Can only be existent properties for a given
@@ -208,6 +260,23 @@ class KnowledgeGraph:
 
         """
 
+        raw_adds: dict[str, Any] = {
+            type_name: (
+                search_index_properties.model_dump(by_alias=True)
+                if isinstance(search_index_properties, SearchIndexProperties)
+                else search_index_properties
+            )
+            for type_name, search_index_properties in adds.items()
+        }
+        raw_deletes: dict[str, Any] = {
+            type_name: (
+                search_index_properties.model_dump(by_alias=True)
+                if isinstance(search_index_properties, SearchIndexProperties)
+                else search_index_properties
+            )
+            for type_name, search_index_properties in deletes.items()
+        }
+
         self._validate_import()
         url = self._url + "/dataModel/searchIndex/update"
         params = {
@@ -217,10 +286,10 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphUpdateSearchIndexRequestEncoder()
-        if adds:
-            enc.insert_add_search_property(adds)
-        if deletes:
-            enc.insert_delete_search_property(deletes)
+        if raw_adds:
+            enc.insert_add_search_property(raw_adds)
+        if raw_deletes:
+            enc.insert_delete_search_property(raw_deletes)
 
         enc.encode()
         enc_result = enc.get_encoding_result()
@@ -243,7 +312,7 @@ class KnowledgeGraph:
         dec.decode(content)
 
         results = dec.get_results()
-        return results
+        return results if as_dict else UpdateSearchIndexResponse.model_validate(results)
 
     def query(self, query: str) -> List[dict]:
         """
@@ -293,13 +362,37 @@ class KnowledgeGraph:
                 raise RuntimeError(gqd.error.error_message)
         return rows
 
+    @staticmethod
+    def _convert_to_proper_representation(python_value: Any) -> Any:
+        if isinstance(python_value, Geometry):
+            copy_dict: dict[str, Any] = python_value.copy()
+            copy_dict["_objectType"] = "geometry"
+            return copy_dict
+        if isinstance(python_value, dict):
+            if "_objectType" in python_value:
+                return python_value
+            return {
+                "_objectType": "object",
+                "_properties": {
+                    key: KnowledgeGraph._convert_to_proper_representation(value)
+                    for key, value in python_value.items()
+                },
+            }
+        if isinstance(python_value, list):
+            return [
+                KnowledgeGraph._convert_to_proper_representation(val)
+                for val in python_value
+            ]
+        return python_value
+
     def query_streaming(
         self,
         query: str,
-        input_transform: dict[str, Any] = None,
-        bind_param: dict[str, Any] = None,
+        input_transform: Optional[Union[dict[str, Any], Transform]] = None,
+        bind_param: dict[str, Any] = {},
         include_provenance: bool = False,
-    ):
+        as_dict: bool = True,
+    ) -> Generator[Sequence[Any], None, None]:
         """
         Query the graph using an openCypher query. Allows for more customization than the base
         `query()` function. Creates a generator of the query results, from which users can
@@ -353,6 +446,16 @@ class KnowledgeGraph:
 
         """
 
+        raw_input_transform: Optional[dict[str, Any]] = (
+            input_transform
+            if not isinstance(input_transform, Transform)
+            else input_transform.model_dump(by_alias=True)
+        )
+        raw_bind_param: dict[str, Any] = {
+            key: _python_to_client_core_value(value)
+            for key, value in bind_param.items()
+        }
+
         self._validate_import()
         url = f"{self._url}/graph/query"
         params = {
@@ -366,76 +469,20 @@ class KnowledgeGraph:
         r_enc.open_cypher_query = query
 
         # set quant params
-        if input_transform:
-            quant_params = self._getInputQuantParams(input_transform)
+        if raw_input_transform:
+            quant_params = self._getInputQuantParams(raw_input_transform)
         else:
             quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
         r_enc.input_quantization_parameters = quant_params
 
         # set bind parameters
-        if bind_param:
-
-            def convert_to_properties(dictionary, last_key):
-                if not isinstance(dictionary, dict):
-                    return dictionary
-
-                properties_dict = {}
-                for key, value in dictionary.items():
-                    if isinstance(value, dict):
-                        if key != "_properties" and last_key == False:
-                            properties_dict[key] = {
-                                "_objectType": "object",
-                                "_properties": convert_to_properties(value, False),
-                            }
-                        elif key != "properties" and last_key == True:
-                            properties_dict[key] = convert_to_properties(value, False)
-                        else:
-                            properties_dict[key] = convert_to_properties(value, True)
-                    else:
-                        properties_dict[key] = value
-
-                return properties_dict
-
-            for k, v in bind_param.items():
-                if isinstance(v, Geometry):
-                    if "_objectType" not in v.keys():
-                        copy_dict = copy.deepcopy(v)
-                        copy_dict["_objectType"] = "geometry"
-                        converted = _kgparser.from_value_object(copy_dict)
-                    else:
-                        converted = _kgparser.from_value_object(v)
-                    r_enc.set_param_key_value(k, converted)
-
-                elif isinstance(v, dict):
-                    copy_dict = copy.deepcopy(v)
-                    if "_properties" not in copy_dict.keys():
-                        changed = {
-                            "_objectType": "object",
-                            "_properties": convert_to_properties(copy_dict, False),
-                        }
-                        converted = _kgparser.from_value_object(changed)
-                    else:
-                        if "_objectType" not in copy_dict.keys():
-                            copy_dict["_objectType"] = "object"
-                        copy_dict["_properties"] = convert_to_properties(
-                            copy_dict["_properties"], True
-                        )
-                        converted = _kgparser.from_value_object(copy_dict)
-                    r_enc.set_param_key_value(k, converted)
-
-                elif isinstance(
-                    v,
-                    (
-                        datetime.date,
-                        datetime.time,
-                        datetime.datetime,
-                        datetime.timedelta,
-                    ),
-                ):
-                    r_enc.set_param_key_value(k, v)
+        if raw_bind_param:
+            for k, v in raw_bind_param.items():
+                converted: Any = KnowledgeGraph._convert_to_proper_representation(v)
+                if isinstance(converted, (dict, list)):
+                    r_enc.set_param_key_value(k, _kgparser.from_value_object(converted))
                 else:
-                    converted = _kgparser.from_value_object(v)
-                    r_enc.set_param_key_value(k, converted)
+                    r_enc.set_param_key_value(k, v)
 
         # set provenance behavior
         if include_provenance == True:
@@ -463,7 +510,12 @@ class KnowledgeGraph:
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
-                yield query_dec.get_current_row()
+                row = query_dec.get_current_row()
+                yield (
+                    row
+                    if as_dict
+                    else _client_core_to_python_value(client_core_value=row)
+                )
             if query_dec.has_error():
                 if query_dec.error.error_code == 111098:
                     raise ValueError(query_dec.error.error_message)
@@ -506,7 +558,17 @@ class KnowledgeGraph:
         dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
         return dm.to_value_object()
 
-    def sync_data_model(self):
+    def query_data_model(self, as_dict: bool = True) -> Union[dict, GraphDataModel]:
+        """
+        Returns the datamodel for the Knowledge Graph service
+        """
+        return (
+            self.datamodel if as_dict else GraphDataModel.model_validate(self.datamodel)
+        )
+
+    def sync_data_model(
+        self, as_dict: bool = True
+    ) -> Union[dict, SyncDataModelResponse]:
         """
         Synchronizes the Knowledge Graph Service's data model with any changes made
         in the database. Will return any errors or warnings from the sync.
@@ -531,17 +593,18 @@ class KnowledgeGraph:
         dec = _kgparser.SyncDataModelResponseDecoder()
         dec.decode(sync_response)
         results = dec.get_results()
-        return results
+        return results if as_dict else SyncDataModelResponse.model_validate(results)
 
     def apply_edits(
         self,
-        adds: list[dict[str, Any]] = [],
-        updates: list[dict[str, Any]] = [],
-        deletes: list[dict[str, Any]] = [],
-        input_transform: dict[str, Any] = None,
+        adds: Sequence[Union[dict[str, Any], Entity, Relationship]] = [],
+        updates: Sequence[Union[dict[str, Any], Entity, Relationship]] = [],
+        deletes: Sequence[Union[dict[str, Any], EntityDelete, RelationshipDelete]] = [],
+        input_transform: Optional[Union[dict[str, Any], Transform]] = None,
         cascade_delete: bool = False,
         cascade_delete_provenance: bool = False,
-    ) -> dict:
+        as_dict: bool = True,
+    ) -> Union[dict, ApplyEditsResponse]:
         """
         Allows users to add new graph entities/relationships, update existing
         entities/relationships, or delete existing entities/relationships. For details on how the
@@ -615,10 +678,40 @@ class KnowledgeGraph:
 
         """
 
+        raw_adds: list[dict[str, Any]] = [
+            (
+                named_object.model_dump(by_alias=True)
+                if isinstance(named_object, (Entity, Relationship))
+                else named_object
+            )
+            for named_object in adds
+        ]
+        raw_updates: list[dict[str, Any]] = [
+            (
+                named_object.model_dump(by_alias=True)
+                if isinstance(named_object, (Entity, Relationship))
+                else named_object
+            )
+            for named_object in updates
+        ]
+        raw_deletes: list[dict[str, Any]] = [
+            (
+                named_object_delete.model_dump(by_alias=True)
+                if isinstance(named_object_delete, (EntityDelete, RelationshipDelete))
+                else named_object_delete
+            )
+            for named_object_delete in deletes
+        ]
+        raw_input_transform: Optional[dict[str, Any]] = (
+            input_transform
+            if not isinstance(input_transform, Transform)
+            else input_transform.model_dump(by_alias=True)
+        )
+
         url = self._url + "/graph/applyEdits"
 
-        if input_transform:
-            quant_params = self._getInputQuantParams(input_transform)
+        if raw_input_transform:
+            quant_params = self._getInputQuantParams(raw_input_transform)
         else:
             quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
 
@@ -628,11 +721,11 @@ class KnowledgeGraph:
             quant_params,
         )
 
-        for edit in adds:
+        for edit in raw_adds:
             enc.add(edit)
-        for edit in updates:
+        for edit in raw_updates:
             enc.update(edit)
-        for edit in deletes:
+        for edit in raw_deletes:
             enc.delete_from_ids(edit)
         enc.cascade_delete = cascade_delete
         enc.cascade_delete_provenance = cascade_delete_provenance
@@ -667,13 +760,16 @@ class KnowledgeGraph:
         dec.decode(apply_edits_response)
         results_dict = dec.get_results()
 
-        return results_dict
+        return (
+            results_dict if as_dict else ApplyEditsResponse.model_validate(results_dict)
+        )
 
     def named_object_type_adds(
         self,
-        entity_types: list[dict[str, Any]] = [],
-        relationship_types: list[dict[str, Any]] = [],
-    ) -> dict:
+        entity_types: Sequence[Union[dict[str, Any], EntityType]] = [],
+        relationship_types: Sequence[Union[dict[str, Any], RelationshipType]] = [],
+        as_dict: bool = True,
+    ) -> Union[dict, NamedObjectTypeAddsResponse]:
         """
         Adds entity and relationship types to the data model
 
@@ -725,13 +821,31 @@ class KnowledgeGraph:
         :return: A `dict` showing the results of the named type adds.
 
         """
+
+        raw_entity_types: list[dict[str, Any]] = [
+            (
+                entity_type.model_dump(by_alias=True)
+                if isinstance(entity_type, EntityType)
+                else entity_type
+            )
+            for entity_type in entity_types
+        ]
+        raw_relationship_types: list[dict[str, Any]] = [
+            (
+                relationship_type.model_dump(by_alias=True)
+                if isinstance(relationship_type, RelationshipType)
+                else relationship_type
+            )
+            for relationship_type in relationship_types
+        ]
+
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/add"
 
         r_enc = _kgparser.GraphNamedObjectTypeAddsRequestEncoder()
-        for entity_type in entity_types:
+        for entity_type in raw_entity_types:
             r_enc.add_entity_type(entity_type)
-        for relationship_type in relationship_types:
+        for relationship_type in raw_relationship_types:
             r_enc.add_relationship_type(relationship_type)
 
         r_enc.encode()
@@ -755,11 +869,19 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else NamedObjectTypeAddsResponse.model_validate(results_dict)
+        )
 
     def named_object_type_update(
-        self, type_name: str, named_type_update: dict[str, Any], mask: dict[str, Any]
-    ) -> dict:
+        self,
+        type_name: str,
+        named_type_update: Union[dict[str, Any], EntityType, RelationshipType],
+        mask: Union[dict[str, Any], NamedObjectTypeMask],
+        as_dict: bool = True,
+    ) -> Union[dict, NamedObjectTypeUpdateResponse]:
         """
         Updates an entity or relationship type in the data model
 
@@ -803,6 +925,18 @@ class KnowledgeGraph:
         :return: A `dict` showing the results of the named type update.
 
         """
+
+        raw_named_type_update: dict[str, Any] = (
+            named_type_update.model_dump(by_alias=True)
+            if isinstance(named_type_update, (EntityType, RelationshipType))
+            else named_type_update
+        )
+        raw_mask: dict[str, Any] = (
+            mask.model_dump(by_alias=True)
+            if isinstance(mask, NamedObjectTypeMask)
+            else mask
+        )
+
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/update"
 
@@ -812,9 +946,9 @@ class KnowledgeGraph:
 
         r_enc = _kgparser.GraphNamedObjectTypeUpdateRequestEncoder()
         if entity_type is not None:
-            r_enc.update_entity_type(named_type_update, mask)
+            r_enc.update_entity_type(raw_named_type_update, raw_mask)
         elif relationship_type is not None:
-            r_enc.update_relationship_type(named_type_update, mask)
+            r_enc.update_relationship_type(raw_named_type_update, raw_mask)
 
         r_enc.encode()
         error = r_enc.get_encoding_result().error
@@ -837,9 +971,15 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else NamedObjectTypeUpdateResponse.model_validate(results_dict)
+        )
 
-    def named_object_type_delete(self, type_name: str) -> dict:
+    def named_object_type_delete(
+        self, type_name: str, as_dict: bool = True
+    ) -> Union[dict, NamedObjectTypeDeleteResponse]:
         """
         Deletes an entity or relationship type in the data model
 
@@ -879,11 +1019,18 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else NamedObjectTypeDeleteResponse.model_validate(results_dict)
+        )
 
     def graph_property_adds(
-        self, type_name: str, graph_properties: list[dict[str, Any]]
-    ) -> dict:
+        self,
+        type_name: str,
+        graph_properties: Sequence[Union[dict[str, Any], GraphProperty]],
+        as_dict: bool = True,
+    ) -> Union[dict, PropertyAddsResponse]:
         """
         Adds properties to a named type in the data model
 
@@ -936,11 +1083,21 @@ class KnowledgeGraph:
         :return: A `dict` showing the results of the property adds.
 
         """
+
+        raw_graph_properties: list[dict[str, Any]] = [
+            (
+                graph_property.model_dump(by_alias=True)
+                if isinstance(graph_property, GraphProperty)
+                else graph_property
+            )
+            for graph_property in graph_properties
+        ]
+
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/add"
 
         r_enc = _kgparser.GraphPropertyAddsRequestEncoder()
-        for prop in graph_properties:
+        for prop in raw_graph_properties:
             r_enc.add_property(prop)
 
         r_enc.encode()
@@ -964,15 +1121,20 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else PropertyAddsResponse.model_validate(results_dict)
+        )
 
     def graph_property_update(
         self,
         type_name: str,
         property_name: str,
-        graph_property: dict[str, Any],
-        mask: dict[str, Any],
-    ) -> dict:
+        graph_property: Union[dict[str, Any], GraphProperty],
+        mask: Union[dict[str, Any], GraphPropertyMask],
+        as_dict: bool = True,
+    ) -> Union[dict, PropertyUpdateResponse]:
         """
         Updates a property for a named type in the data model
 
@@ -1035,11 +1197,23 @@ class KnowledgeGraph:
         :return: A `dict` showing the results of the property update.
 
         """
+
+        raw_graph_property: dict[str, Any] = (
+            graph_property.model_dump(by_alias=True)
+            if isinstance(graph_property, GraphProperty)
+            else graph_property
+        )
+        raw_mask: dict[str, Any] = (
+            mask.model_dump(by_alias=True)
+            if isinstance(mask, GraphPropertyMask)
+            else mask
+        )
+
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/update"
 
         r_enc = _kgparser.GraphPropertyUpdateRequestEncoder()
-        r_enc.update_property(graph_property, mask)
+        r_enc.update_property(raw_graph_property, raw_mask)
         r_enc.name = property_name
 
         r_enc.encode()
@@ -1063,9 +1237,15 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else PropertyUpdateResponse.model_validate(results_dict)
+        )
 
-    def graph_property_delete(self, type_name: str, property_name: str) -> dict:
+    def graph_property_delete(
+        self, type_name: str, property_name: str, as_dict: bool = True
+    ) -> Union[dict, PropertyDeleteResponse]:
         """
         Delete a property for a named type in the data model
 
@@ -1116,11 +1296,18 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else PropertyDeleteResponse.model_validate(results_dict)
+        )
 
     def graph_property_index_adds(
-        self, type_name: str, field_indexes: list[dict[str, Any]]
-    ) -> dict:
+        self,
+        type_name: str,
+        field_indexes: Sequence[Union[dict[str, Any], FieldIndex]],
+        as_dict: bool = True,
+    ) -> Union[dict, IndexAddsResponse]:
         """
         Adds indexes to a field or multiple fields associated with a named type in the data model.
 
@@ -1154,6 +1341,16 @@ class KnowledgeGraph:
         :return: A `dict` showing the results of adding the indexes.
 
         """
+
+        raw_field_indexes: list[dict[str, Any]] = [
+            (
+                field_index.model_dump(by_alias=True)
+                if isinstance(field_index, FieldIndex)
+                else field_index
+            )
+            for field_index in field_indexes
+        ]
+
         self._validate_import()
         url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/add"
         params = {
@@ -1163,7 +1360,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphIndexAddsRequestEncoder()
-        enc.add_field_indexes(field_indexes)
+        enc.add_field_indexes(raw_field_indexes)
         enc.encode()
         enc_result = enc.get_encoding_result()
         error = enc_result.error
@@ -1185,11 +1382,13 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict if as_dict else IndexAddsResponse.model_validate(results_dict)
+        )
 
     def graph_property_index_deletes(
-        self, type_name: str, field_indexes: list[str]
-    ) -> dict:
+        self, type_name: str, field_indexes: Sequence[str], as_dict: bool = True
+    ) -> Union[dict, IndexDeletesResponse]:
         """
         Deletes indexes from fields associated with a named type in the data model.
 
@@ -1214,6 +1413,9 @@ class KnowledgeGraph:
         :return: A `dict` showing the results of deleting the indexes.
 
         """
+
+        indexes: list[str] = [index for index in field_indexes]
+
         self._validate_import()
         url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/delete"
         params = {
@@ -1223,7 +1425,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphIndexDeleteRequestEncoder()
-        enc.add_field_index_names(field_indexes)
+        enc.add_field_index_names(indexes)
         enc.encode()
         enc_result = enc.get_encoding_result()
         error = enc_result.error
@@ -1245,9 +1447,17 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else IndexDeletesResponse.model_validate(results_dict)
+        )
 
-    def constraint_rule_adds(self, rules: list[dict[str, Any]]) -> dict:
+    def constraint_rule_adds(
+        self,
+        rules: Sequence[Union[dict[str, Any], ConstraintRule]],
+        as_dict: bool = True,
+    ) -> Union[dict, ConstraintRuleAddsResponse]:
         """
         Adds constraint rules for entities & relationships to the data model.
 
@@ -1288,6 +1498,11 @@ class KnowledgeGraph:
 
         """
 
+        raw_rules: list[dict[str, Any]] = [
+            rule.model_dump(by_alias=True) if isinstance(rule, ConstraintRule) else rule
+            for rule in rules
+        ]
+
         self._validate_import()
         split_url = self._url.split("/rest/")
         url = (
@@ -1303,7 +1518,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphAddConstraintRulesEncoder()
-        for rule in rules:
+        for rule in raw_rules:
             enc.add_constraint_rule(rule)
         enc.encode()
         enc_result = enc.get_encoding_result()
@@ -1326,9 +1541,17 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else ConstraintRuleAddsResponse.model_validate(results_dict)
+        )
 
-    def constraint_rule_updates(self, rules: list[dict[str, Any]]) -> dict:
+    def constraint_rule_updates(
+        self,
+        rules: Sequence[Union[dict[str, Any], ConstraintRuleUpdate]],
+        as_dict: bool = True,
+    ) -> Union[dict, ConstraintRuleUpdatesResponse]:
         """
         Update constraint rules for entities & relationships in the data model.
 
@@ -1385,6 +1608,15 @@ class KnowledgeGraph:
 
         """
 
+        raw_rules: list[dict[str, Any]] = [
+            (
+                rule.model_dump(by_alias=True)
+                if isinstance(rule, ConstraintRuleUpdate)
+                else rule
+            )
+            for rule in rules
+        ]
+
         self._validate_import()
         split_url = self._url.split("/rest/")
         url = (
@@ -1400,7 +1632,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphUpdateConstraintRulesEncoder()
-        for rule in rules:
+        for rule in raw_rules:
             enc.add_constraint_rule_update(rule)
         enc.encode()
         enc_result = enc.get_encoding_result()
@@ -1423,9 +1655,15 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else ConstraintRuleUpdatesResponse.model_validate(results_dict)
+        )
 
-    def constraint_rule_deletes(self, rule_names: list[str]) -> dict:
+    def constraint_rule_deletes(
+        self, rule_names: Sequence[str], as_dict: bool = True
+    ) -> Union[dict, ConstraintRuleDeletesResponse]:
         """
         Deletes existing constraint rules for entities & relationships from the data model.
 
@@ -1445,6 +1683,9 @@ class KnowledgeGraph:
         :return: A `dict` showing the results of deleting the rule(s).
 
         """
+
+        rules: list[str] = [rule_name for rule_name in rule_names]
+
         self._validate_import()
         split_url = self._url.split("/rest/")
         url = (
@@ -1460,7 +1701,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphDeleteConstraintRulesEncoder()
-        enc.add_constraint_rule_names(rule_names)
+        enc.add_constraint_rule_names(rules)
         enc.encode()
         enc_result = enc.get_encoding_result()
         error = enc_result.error
@@ -1482,4 +1723,8 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else ConstraintRuleDeletesResponse.model_validate(results_dict)
+        )
