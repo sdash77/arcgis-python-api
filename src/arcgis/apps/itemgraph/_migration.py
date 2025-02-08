@@ -147,7 +147,7 @@ def _export_content(
             "source": item._gis.url,
         }
 
-    manifest = {"items" : items_manifest}
+    manifest = {"items": items_manifest}
     # Create a metadata file at the top directory
     manifest_file = os.path.join(main_dir, "manifest.json")
     with open(manifest_file, "w") as f:
