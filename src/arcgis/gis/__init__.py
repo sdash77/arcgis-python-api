@@ -1906,10 +1906,10 @@ class OfflineContentManager(object):
 
         Exports a subset of items and all of their dependencies from the
         :class:`~arcgis.gis.GIS` to a compressed binary format with the
-        extension *.contentexport. When decompressed, it contains metadata
+        extension *.contentexport*. When decompressed, it contains metadata
         about all of the items and creates subfolders for each item that was
         exported. The contents of this file can be examined using the
-        :meth:`~arcgis.gis.OfflineManager.list_items` method.
+        :meth:`~arcgis.gis.OfflineContentManager.list_items` method.
 
         ===============     ====================================================================
         **Parameter**       **Description**
@@ -1974,14 +1974,19 @@ class OfflineContentManager(object):
         failure_rollback: bool = False,
     ) -> list:
         """
-        The ``import_content()`` method takes a `.contentexport` file made from offline cloning
-        (see `export_items()`) and uploads its contents to the GIS. These packages contain all of
-        the deep dependencies of an item, assuming they were available, and will recreate them
-        in the same fashion in the new GIS org.
+        Reads a `.contentexport` file (see
+        :meth:`~arcgis.gis.OfflineContentManager.export_items` method) and
+        uploads its contents to the :class:`~arcgis.gis.GIS`. These packages
+        contain the deep dependencies of an :class:`~arcgis.gis.Item`, assuming
+        they were available during export, and will recreate them in the
+        destination GIS
 
         .. note::
-            This function is still in beta and may not have full capabilities yet. Known item
-            limitations are Survey123 Forms and Geoprocessing Services.
+            This function is still in beta and may not have full capabilities. Known item
+            limitations are:
+
+            * Survey123 Forms
+            * Geoprocessing Services
 
         ================     ======================================================================
         **Parameter**         **Description**
@@ -1992,20 +1997,25 @@ class OfflineContentManager(object):
                              If none provided, all items in the package will be imported.
         ----------------     ----------------------------------------------------------------------
         preserve_ids         Optional boolean. If True, the original item ids will be preserved,
-                             assuming they are available. Only available for ArcGIS Enterprise.
-                             Default is False.
+                             if available. Default is *False*.
+
+                             .. note::
+                                 Only available for ArcGIS Enterprise.
         ----------------     ----------------------------------------------------------------------
-        folder               Optional `Folder` or string. The folder to import the content into.
-                             If none provided, will default to the user's root folder.
+        folder               Optional :class:`~arcgis.gis._impl._content_manager.Folder` or string.
+                             The folder to import the content into. If no argument provided, content
+                             placed in the logged-in user's root folder.
         ----------------     ----------------------------------------------------------------------
-        failure_rollback     Optional boolean. If True, the import will be rolled back and the
-                             created items will be deleted if any error occurs during the process.
-                             If False, any item that fails to import will be skipped over and the
-                             process will continue. Default is False.
+        failure_rollback     Optional boolean.
+
+                             * If *True*, the import will be rolled back and the created items will
+                               be deleted if any error occurs during the process.
+                             * If *False*, any item that fails to import will be skipped and the
+                               process will continue. Default is *False*.
         ================     ======================================================================
 
         :return:
-            A List of the created `Item` objects.
+            A List of the created :class:`~argis.gis.Item` objects.
 
         .. code-block:: python
 
