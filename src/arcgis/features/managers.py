@@ -2877,7 +2877,7 @@ class FeatureLayerCollectionManager(_GISResource):
         res = gis._session.post(url=url, data=params).json()
         if res["success"] == False:
             if "error" in res and "already exists" in res["error"]["message"]:
-                new_name = _common_utils._get_unique_name(gis, name, True)
+                new_name = _common_utils._get_unique_name(name)
                 create_params["name"] = new_name
                 params["createParameters"] = json.dumps(create_params)
                 res = gis._session.post(url=url, data=params).json()

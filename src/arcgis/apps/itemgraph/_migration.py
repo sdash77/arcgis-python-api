@@ -531,9 +531,7 @@ class _ImportPackage:
                         publish_parameters=pub_params, item_id=new_item_id
                     )
                 except:
-                    new_name = _get_unique_name(
-                        self.gis, item_properties["title"], True
-                    )
+                    new_name = _get_unique_name(item_properties["title"])
                     new_name = new_name.replace("/", "_")
                     pub_params["name"] = new_name
                     new_item = service_item.publish(
