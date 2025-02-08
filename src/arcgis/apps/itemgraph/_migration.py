@@ -117,8 +117,7 @@ def _export_content(
     service_format: str = "File Geodatabase",
 ):
 
-    if output_folder is None:
-        output_folder = tempfile.mkdtemp()
+    output_folder = output_folder or tempfile.mkdtemp()
     package_name = package_name or "exported_content"
 
     # Create the main directory
