@@ -1903,29 +1903,58 @@ class OfflineContentManager(object):
         service_format: str = "File Geodatabase",
     ) -> str:
         """
-        The ``export_items`` method exports a subset of items and all of their
-        dependencies from your GIS org into a compressed binary format with the
-        extension '.contentexport'. When decompressed, it contains some metadata
-        about all of the items and subfolders pertaining to each item that was
-        exported. The contents of this file can then be listed by the ``list_items``
-        method.
+
+        Exports a subset of items and all of their dependencies from the
+        :class:`~arcgis.gis.GIS` to a compressed binary format with the
+        extension *.contentexport. When decompressed, it contains metadata
+        about all of the items and creates subfolders for each item that was
+        exported. The contents of this file can be examined using the
+        :meth:`~arcgis.gis.OfflineManager.list_items` method.
 
         ===============     ====================================================================
-        **Parameter**        **Description**
+        **Parameter**       **Description**
         ---------------     --------------------------------------------------------------------
         items               Required list. The items to export. All of the deep dependencies of
                             these items will also be included in the export package.
         ---------------     --------------------------------------------------------------------
         output_folder       Optional string. The location where the export package will be
-                            saved. If left blank, a temporary directory will be created and the
-                            package will be saved there.
+                            saved. If no argument provided, the package will be saved to a
+                            temporary directory created during the operation.
         ---------------     --------------------------------------------------------------------
-        package_name        Optional string. The name of the offline package. If left blank, it
-                            will be given a random now begginning with "exported_content".
+        package_name        Optional string. The name of the offline package. If no argument
+                            provided, the package will be named randomly prefaced with the
+                            text *exported_content*.
         ---------------     --------------------------------------------------------------------
-        service_format      Optional string. The format of the services in the export. Default
-                            is "File Geodatabase".
-        ---------------     --------------------------------------------------------------------
+        service_format      Optional string. The format for the source service of any hosted
+                            feature layer items in the dependency tree. Default format is
+                            *File Geodatabase*.
+        ===============     ====================================================================
+
+        :return:
+            The path to the *.exportcontent* file.
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> wma_list = gis.content.search(
+            >>>                "Analyzing Hurricane Landfall Damage",
+            >>>                "Web Mapping Application"
+            >>>            )
+            >>> wma_item = wma_list[0]
+
+            >>> source_offline_mgr = gis.content.offline
+            >>> export_output = source_offline_mgr.export_items(
+            >>>                   items=[wma_item],
+            >>>                   output_folder=r"/path/to/output",
+            >>>                   package_name="webapp_exp_pkg",
+            >>>                   service_format="File Geodatabase"
+            >>>                 )
+            >>> export_output
+
+            /path/to/output/webapp_exp_pkg.contentexport
 
         """
 
@@ -1978,6 +2007,20 @@ class OfflineContentManager(object):
         :return:
             A List of the created `Item` objects.
 
+        .. code-block:: python
+
+            # Usage Example
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organization_profile")
+            >>> dest_gis = GIS(profile="another_organization_profile")
+
+            >>> exp_pkg = "path/to/exportpackage.contentexport"
+
+            >>> imported_content = dest_gis.content.offline.import_content(
+                                    package_path=exp_pkg,
+                                    folder="imported_items",
+                                    failure_rollback=True
+                                )
         """
 
         from arcgis.apps.itemgraph._migration import _ImportPackage
@@ -2003,6 +2046,43 @@ class OfflineContentManager(object):
         package_path         Required string. The path to the `.contentexport` file to list.
         ================     ======================================================================
 
+        :return:
+            A dictionary with each item_id for the exported item as the key, and a dictionary
+            of metadata for each item as the value.
+
+        .. code-block:: python
+
+            # Usage Example: Listing the contents of an exportcontent package:
+
+            >>> from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_organization_profile")
+            >>> offline_mgr = gis.content.offline
+
+            >>> exp_contents = offline_mgr.export_items(
+                                    items=[your_item],
+                                    output_folder="/path/to/migration",
+                                    package_name="exported_item",
+                                    service_format="File Geodatabase"
+                               )
+            >>> exp_contents
+
+            /path/to/migration/exported_item.contentexport
+
+            >>> offline_mgr.list_items(exp_contents)
+
+            {'95c25c24109a4ccebf6d4cab92fe2d67': {'title': 'Example City Web Map',
+                                                  'type': 'Web Map',
+                                                  'created': 1711458724000,
+                                                  'org_source': 'https://example.org.com'},
+             '4552478e7d06492f9fea617704fd1323': {'title': 'City Administration',
+                                                 'type': 'Feature Service',
+                                                 'created': 1703457912000,
+                                                 'org_source': 'https://example.org.com'},
+             '3ab9c944e329416d872b0be7825b23a8': {'title': 'City Administration',
+                                                 'type': 'Service Definition',
+                                                 'created': 1690453814000,
+                                                 'org_source': 'https://example.org.com'}}
         """
         from arcgis.apps.itemgraph._migration import _ImportPackage
 
@@ -6398,6 +6478,8 @@ class ContentManager(object):
 
             >>> offline_obj = gis.content.offline
             >>> type(offline_obj)
+
+            <arcgis.gis.OfflineContentManager object at `maddr`>
 
         """
         return OfflineContentManager(self._gis)
