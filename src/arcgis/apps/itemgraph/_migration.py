@@ -119,8 +119,7 @@ def _export_content(
 
     if output_folder is None:
         output_folder = tempfile.mkdtemp()
-    if package_name is None:
-        package_name = "exported_content"
+    package_name = package_name or "exported_content"
 
     # Create the main directory
     main_dir = os.path.join(output_folder, package_name)
