@@ -1151,25 +1151,25 @@ class GeoAccessor(object):
     """
     Adds a spatial namespace that performs spatial operations on the given `Pandas
     DataFrame. <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
-    The :class:`~arcgis.features.GeoAccessor` class includes visualization, spatial 
+    The :class:`~arcgis.features.GeoAccessor` class includes visualization, spatial
     indexing, IO and dataset level properties. The *GeoAccessor* namespace is accessed
     as the *spatial* property on a Pandas Dataframe that has a geometry column.
-    
+
     .. code-block:: python
-    
+
         # Usage Example: Accessing the spatially enabled dataframe
-        
+
         >>> from arcgis.gis import GIS
         >>> gis = GIS("your_organization_profile")
-        
+
         >>> flyr_item = gis.content.get("<feature layer id>")
         >>> flyr = flyr_item.layers[0]
-        
+
         >>> df = flyr.query(as_df=True)
         >>> df.spatial
-        
+
         <arcgis.features.geo._accessor.GeoAccessor object at <mem_addr>>
-        
+
     .. note::
         **Setting the Geometry Engine:**
         By default, the library used for spatial transformations (e.g., reading/writing
@@ -1178,7 +1178,7 @@ class GeoAccessor(object):
         for certain spatial operations through an environment variable called
         `ARCGIS_GEOMETRY_ENGINE`. The variable **MUST** be set at the top of the script.
         The options available are:
-        
+
         * *shapefile* - for the `Python Shapefile Library (PyShp) <https://github.com/GeospatialPython/pyshp>`_
           A lightweight option that works well for simple shapefile operations but lacks advanced capabilities
           of *gdal* or *arcpy*.
@@ -1190,11 +1190,11 @@ class GeoAccessor(object):
           for working with large datasets and open-source workflows.
         * *fiona* - for the `fiona <https://github.com/Toblerity/Fiona>`_ simple feature data streaming
           library.
-        
+
         To set environment at the top of the script, add:
-        
+
         .. code-block:: python
-            
+
             import os
             os.environ["ARCGIS_GEOMETRY_ENGINE"] = "<engine of choice>"
 
@@ -1970,14 +1970,14 @@ class GeoAccessor(object):
             Inserting table data is not supported for ArcGIS Enterprise deployments.
 
         .. note::
-            The geometry engine used for this operation can be set with the 
+            The geometry engine used for this operation can be set with the
             the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
-            
+
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
             * `"fiona"`
-            
+
             If not set, the first available library in the environment will be used.
 
         ============================    ====================================================================
@@ -2145,14 +2145,14 @@ class GeoAccessor(object):
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
 
         .. note::
-            The geometry engine used for this operation can be set with the 
+            The geometry engine used for this operation can be set with the
             the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
-            
+
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
             * `"fiona"`
-            
+
             If not set, the first available library in the environment will be used.
 
         ===========================     ====================================================================
@@ -2213,14 +2213,14 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         .. note::
-            The geometry engine used for this operation can be set with the 
+            The geometry engine used for this operation can be set with the
             the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
-            
+
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
             * `"fiona"`
-            
+
             If not set, the first available library in the environment will be used.
 
         ===========================     ====================================================================
@@ -2365,14 +2365,14 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         .. note::
-            The geometry engine used for this operation can be set with the 
+            The geometry engine used for this operation can be set with the
             the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
-            
+
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
             * `"fiona"`
-            
+
             If not set, the first available library in the environment will be used.
 
 
@@ -2699,14 +2699,14 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         .. note::
-            The geometry engine used for this operation can be set with the 
+            The geometry engine used for this operation can be set with the
             the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
-            
+
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
             * `"fiona"`
-            
+
             If not set, the first available library in the environment will be used.
 
         ===========================     ====================================================================
@@ -2754,14 +2754,14 @@ class GeoAccessor(object):
         The ``from_table`` method allows a :class:`~arcgis.gis.User` to read from a non-spatial table
 
         .. note::
-            The geometry engine used for this operation can be set with the 
+            The geometry engine used for this operation can be set with the
             the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
-            
+
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
             * `"fiona"`
-            
+
             If not set, the first available library in the environment will be used.
 
         ===============     ====================================================
