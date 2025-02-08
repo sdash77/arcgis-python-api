@@ -131,7 +131,7 @@ def _export_content(
         # Call helper function to export item data
         _export_item_data(item, item_dir, service_format)
 
-    manifest = {}
+    items_manifest = {}
     # Iterate over all items in the graph and create their folders
     node_list = graph.all_items()
     for node in node_list:
@@ -140,13 +140,14 @@ def _export_content(
         if item is None:
             continue
         create_item_folder(node, main_dir)
-        manifest[item.id] = {
+        items_manifest[item.id] = {
             "title": item.title,
             "type": item.type,
             "created": item.created,
-            "org_source": item._gis.url,
+            "source": item._gis.url,
         }
 
+    manifest = {"items" : items_manifest}
     # Create a metadata file at the top directory
     manifest_file = os.path.join(main_dir, "manifest.json")
     with open(manifest_file, "w") as f:
@@ -293,7 +294,7 @@ class _ImportPackage:
         self._service_mapping = {}
         manifest_file_path = os.path.join(self._temp_package, "manifest.json")
         with open(manifest_file_path, "r") as manifest_file:
-            self.items = json.load(manifest_file)
+            self.items = json.load(manifest_file["items"])
         self._item_relationships = {}
 
     def _unpack_package(self):
@@ -412,8 +413,8 @@ class _ImportPackage:
             if len(remap_dict) > 0:
                 json_text = json_text.replace("\\/", "/")
                 json_text = _text_replace(json_text, remap_dict)
-            if self.items[item_id]["org_source"] != self.gis.url:
-                secondary_remap = {self.items[item_id]["org_source"]: self.gis.url}
+            if self.items[item_id]["source"] != self.gis.url:
+                secondary_remap = {self.items[item_id]["source"]: self.gis.url}
                 json_text = _text_replace(json_text, secondary_remap)
             return json_text
 
