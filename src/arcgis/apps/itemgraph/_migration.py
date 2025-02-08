@@ -129,7 +129,16 @@ def _export_content(
         item_dir = os.path.join(parent_dir, item.id)
         os.makedirs(item_dir, exist_ok=True)
         # Call helper function to export item data
-        _export_item_data(item, item_dir, service_format)
+        try:
+            _export_item_data(item, item_dir, service_format)
+            return True
+        except Exception as e:
+            shutil.rmtree(item_dir)
+            warnings.warn(
+                f"Failed to export item {item.id} due to error: {str(e)}. Deleting folder and skipping...",
+                RuntimeWarning,
+            )
+            return False
 
     items_manifest = {}
     # Iterate over all items in the graph and create their folders
@@ -139,13 +148,13 @@ def _export_content(
         item = node.item
         if item is None:
             continue
-        create_item_folder(node, main_dir)
-        items_manifest[item.id] = {
-            "title": item.title,
-            "type": item.type,
-            "created": item.created,
-            "source": item._gis.url,
-        }
+        if create_item_folder(node, main_dir):
+            items_manifest[item.id] = {
+                "title": item.title,
+                "type": item.type,
+                "created": item.created,
+                "source": item._gis.url,
+            }
 
     manifest = {"items": items_manifest}
     # Create a metadata file at the top directory
@@ -228,7 +237,12 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
         # views are annoying
         if "View Service" in item.typeKeywords:
             # add check for proxy services like below (hosted elsewhere)
-            view_props = dict(item.layers[0].container.manager.properties)
+            try:
+                view_props = dict(item.layers[0].container.manager.properties)
+            except:
+                raise RuntimeError(
+                    "Views on services hosted outside of the source cannot be exported."
+                )
             view_props_file_path = os.path.join(data_folder, "view_props.json")
             with open(view_props_file_path, "w") as view_props_file:
                 json.dump(view_props, view_props_file, indent=4, ensure_ascii=False)
