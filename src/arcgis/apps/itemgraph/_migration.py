@@ -294,7 +294,8 @@ class _ImportPackage:
         self._service_mapping = {}
         manifest_file_path = os.path.join(self._temp_package, "manifest.json")
         with open(manifest_file_path, "r") as manifest_file:
-            self.items = json.load(manifest_file["items"])
+            full_manifest = json.load(manifest_file)
+            self.items = full_manifest["items"]
         self._item_relationships = {}
 
     def _unpack_package(self):
