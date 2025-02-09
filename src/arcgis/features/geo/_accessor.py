@@ -1189,7 +1189,7 @@ class GeoAccessor(object):
           library. A good balance of performance and compatibility with multiple GIS formats. Ideal
           for working with large datasets and open-source workflows.
         * *fiona* - for the `fiona <https://github.com/Toblerity/Fiona>`_ simple feature data streaming
-          library.
+          library. Can only be used to read in feature classes.
 
         To set environment at the top of the script, add:
 
@@ -1976,7 +1976,6 @@ class GeoAccessor(object):
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
-            * `"fiona"`
 
             If not set, the first available library in the environment will be used.
 
@@ -2151,7 +2150,6 @@ class GeoAccessor(object):
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
-            * `"fiona"`
 
             If not set, the first available library in the environment will be used.
 
@@ -2219,7 +2217,6 @@ class GeoAccessor(object):
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
-            * `"fiona"`
 
             If not set, the first available library in the environment will be used.
 
@@ -2371,7 +2368,6 @@ class GeoAccessor(object):
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
-            * `"fiona"`
 
             If not set, the first available library in the environment will be used.
 
@@ -2760,7 +2756,6 @@ class GeoAccessor(object):
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
-            * `"fiona"`
 
             If not set, the first available library in the environment will be used.
 
