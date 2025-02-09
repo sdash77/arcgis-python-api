@@ -729,7 +729,7 @@ def from_featureclass(filename, **kwargs):
         return _shapefile_workflow(filename)
     if USE_FIONA and (
         filename.lower().endswith(".shp")
-        or filename.lower().endswith(".gdb") in os.path.dirname(filename).lower()
+        or os.path.dirname(filename).lower().endswith(".gdb")
     ):
         return _fiona_workflow(filename)
     raise Exception(
