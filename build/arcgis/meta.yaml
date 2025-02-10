@@ -19,7 +19,8 @@ requirements:
   - certifi
   - cryptography
   - dask >=2023.3.2
-  - gdal >=3.9.2,<4
+  - gdal >=3.9.2,<4 [win]
+  - gdal >=3.6.2,<4 [osx or linux]
   - geomet
   - keyring >=23.3.0
   - lxml
