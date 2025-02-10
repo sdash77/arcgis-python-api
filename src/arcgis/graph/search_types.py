@@ -42,7 +42,7 @@ class SearchIndexProperties(BaseModel):
 class SearchIndex(BaseModel):
     """
     Allows full-text search capability on the graph for a set of properties for each entity or relationship type.
-    Search indexes can be accessed in the :class:`arcgis.graph.data_model_types.GraphDataModel`.
+    Search indexes can be accessed in the :class:`~arcgis.graph.data_model_types.GraphDataModel`.
 
     .. code-block:: python
 

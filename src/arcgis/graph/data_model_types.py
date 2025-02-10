@@ -66,8 +66,8 @@ esriGeometryType = Literal[
 
 class GraphProperty(BaseModel):
     """
-    Represents a property of an :class:`arcgis.graph.data_model_types.EntityType` or
-    :class:`arcgis.graph.data_model_types.RelationshipType` in the Knowledge Graph.
+    Represents a property of an :class:`~~arcgis.graph.data_model_types.EntityType` or
+    :class:`~~arcgis.graph.data_model_types.RelationshipType` in the Knowledge Graph.
 
     ==================     ===============================================================================================
     **Parameter**           **Description**
@@ -190,8 +190,8 @@ class GraphProperty(BaseModel):
 
 class GraphPropertyMask(BaseModel):
     """
-    Allows users to define which settings should be updated for a :class:`arcgis.graph.data_model_types.GraphProperty`
-    during a `arcgis.graph.KnowledgeGraph.graph_property_update()`.
+    Allows users to define which settings should be updated for a :class:`~~arcgis.graph.data_model_types.GraphProperty`
+    during a :meth:`~arcgis.graph.KnowledgeGraph.graph_property_update()`.
 
     =====================   ===============================================================================================
     **Parameter**           **Description**
@@ -269,7 +269,8 @@ class GraphPropertyMask(BaseModel):
 
 class FieldIndex(BaseModel):
     """
-    Represents a field index to be used in `arcgis.graph.KnowledgeGraph.graph_property_index_adds()`.
+    Represents a field index to be used in
+    :meth:`~arcgis.graph.KnowledgeGraph.graph_property_index_adds()`.
 
     ==================     ===============================================================================================
     **Parameter**           **Description**
@@ -366,9 +367,9 @@ class EntityType(NamedObjectType):
     ------------------     -----------------------------------------------------------------------------------------------
     strict                  Optional Boolean. The default value is False.
     ------------------     -----------------------------------------------------------------------------------------------
-    properties              Optional Dict(String, :class:`arcgis.graph.data_model_types.GraphProperty`). The default value is {}.
+    properties              Optional Dict(String, :class:`~~arcgis.graph.data_model_types.GraphProperty`). The default value is {}.
     ------------------     -----------------------------------------------------------------------------------------------
-    field_indexes           Optional Dict(String, :class:`arcgis.graph.data_model_types.FieldIndex`). The default value is {}.
+    field_indexes           Optional Dict(String, :class:`~~arcgis.graph.data_model_types.FieldIndex`). The default value is {}.
     ==================     ===============================================================================================
 
     .. code-block:: python
@@ -449,11 +450,11 @@ class RelationshipType(NamedObjectType):
     ------------------     -----------------------------------------------------------------------------------------------
     strict                  Optional Boolean. The default value is False.
     ------------------     -----------------------------------------------------------------------------------------------
-    properties              Optional Dict(String, :class:`arcgis.graph.data_model_types.GraphProperty`). The default value is {}.
+    properties              Optional Dict(String, :class:`~arcgis.graph.data_model_types.GraphProperty`). The default value is {}.
     ------------------     -----------------------------------------------------------------------------------------------
-    field_indexes           Optional Dict(String, :class:`arcgis.graph.data_model_types.FieldIndex`). The default value is {}.
+    field_indexes           Optional Dict(String, :class:`~arcgis.graph.data_model_types.FieldIndex`). The default value is {}.
     ------------------     -----------------------------------------------------------------------------------------------
-    end_points              Optional List[:class:`EndPoint`]. The default value is [].
+    end_points              Optional List[:class:`~arcgis.graph.data_model_types.EndPoint`]. The default value is [].
     ==================     ===============================================================================================
 
     .. code-block:: python
@@ -506,7 +507,8 @@ class RelationshipType(NamedObjectType):
 
 class NamedObjectTypeMask(BaseModel):
     """
-    Allows user to define what should be updated when performing a `arcgis.graph.KnowledgeGraph.named_object_type_update()`.
+    Allows user to define what should be updated when performing a
+    :meth:`~arcgis.graph.KnowledgeGraph.named_object_type_update()`.
 
     ==================     ===============================================================================================
     **Parameter**           **Description**
@@ -617,7 +619,7 @@ class TypeOfSet(Enum):
 
 class SetOfNamedTypes(BaseModel):
     """
-    Allows users to define the set of named types for a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+    Allows users to define the set of named types for a :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule`.
 
     Defining a `set` will exclude the set of named type names from being created in the graph
     once the exclusion rule is applied.
@@ -686,11 +688,11 @@ class RelationshipExclusionRule(ConstraintRule):
     ------------------------     -----------------------------------------------------------------------------------------------
     role                          Optional `esriGraphConstraintRuleRole`. The default value is "esriGraphConstraintRuleRoleRegular".
     ------------------------     -----------------------------------------------------------------------------------------------
-    origin_entity_types           Required :class:`SetOfNamedTypes`.
+    origin_entity_types           Required :class:`~SetOfNamedTypes`.
     ------------------------     -----------------------------------------------------------------------------------------------
-    relationship_types            Required :class:`SetOfNamedTypes`.
+    relationship_types            Required :class:`~SetOfNamedTypes`.
     ------------------------     -----------------------------------------------------------------------------------------------
-    destination_entity_types      Required :class:`SetOfNamedTypes`.
+    destination_entity_types      Required :class:`~SetOfNamedTypes`.
     ========================     ===============================================================================================
 
     .. code-block:: python
@@ -806,7 +808,7 @@ class ConstraintRuleUpdate(BaseModel):
 
 class UpdateSetOfNamedTypes(BaseModel):
     """
-    Allows a user to define named types to add or remove from a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+    Allows a user to define named types to add or remove from a :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule`.
 
     ==============================     ===============================================================================================
     **Parameter**                       **Description**
@@ -841,15 +843,15 @@ class RelationshipExclusionRuleUpdate(ConstraintRuleUpdate):
     -------------------------------   -----------------------------------------------------------------------------------------------
     rule_name                         Required String. Name of the constraint rule to update
     -------------------------------   -----------------------------------------------------------------------------------------------
-    mask                              Required :class:`arcgis.graph.data_model_types.ConstraintRuleMask`.
+    mask                              Required :class:`~arcgis.graph.data_model_types.ConstraintRuleMask`.
     -------------------------------   -----------------------------------------------------------------------------------------------
-    constraint_rule                   Required :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+    constraint_rule                   Required :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule`.
     -------------------------------   -----------------------------------------------------------------------------------------------
-    update_origin_entity_types        Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    update_origin_entity_types        Required :class:`~arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
     -------------------------------   -----------------------------------------------------------------------------------------------
-    update_relationship_types         Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    update_relationship_types         Required :class:`~arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
     -------------------------------   -----------------------------------------------------------------------------------------------
-    update_destination_entity_types   Required :class:`arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
+    update_destination_entity_types   Required :class:`~arcgis.graph.data_model_types.UpdateSetOfNamedTypes`.
     ===============================   ===============================================================================================
 
     .. code-block:: python

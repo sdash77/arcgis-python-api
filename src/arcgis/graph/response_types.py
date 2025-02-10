@@ -12,7 +12,8 @@ class Error(BaseModel):
 
 class UpdateSearchIndexResponse(BaseModel):
     """
-    Response for updating a :class:`arcgis.graph.search_types.SearchIndex` using :function:`arcgis.graph.KnowledgeGraph.update_search_index()`.
+    Response for updating a :class:`~arcgis.graph.search_types.SearchIndex` using
+    :meth:`~arcgis.graph.KnowledgeGraph.update_search_index()`.
 
     .. code-block:: python
 
@@ -76,7 +77,8 @@ class SyncDataModelResult(BaseModel):
 
 class SyncDataModelResponse(BaseModel):
     """
-    Response for syncing the :class:`arcgis.graph.data_model_types.GraphDataModel` using :function:`arcgis.graph.KnowledgeGraph.sync_data_model()`.
+    Response for syncing the :class:`~arcgis.graph.data_model_types.GraphDataModel` using
+    :meth:`~arcgis.graph.KnowledgeGraph.sync_data_model()`.
 
     .. code-block:: python
 
@@ -309,8 +311,8 @@ class PropertyAddResult(BaseModel):
 
 class PropertyAddsResponse(BaseModel):
     """
-    Response for adding a :class:`arcgis.graph.data_model_types.GraphProperty` to an :class:`arcgis.graph.data_model_types.EntityType` or
-    :class:`arcgis.graph.data_model_types.RelationshipType` in the graph.
+    Response for adding a :class:`~arcgis.graph.data_model_types.GraphProperty` to an :class:`~arcgis.graph.data_model_types.EntityType` or
+    :class:`~arcgis.graph.data_model_types.RelationshipType` in the graph.
 
     .. code-block:: python
 
@@ -364,7 +366,7 @@ class PropertyAddsResponse(BaseModel):
 
 class PropertyUpdateResponse(BaseModel):
     """
-    Response for updating a :class:`arcgis.graph.data_model_types.GraphProperty` in the graph.
+    Response for updating a :class:`~arcgis.graph.data_model_types.GraphProperty` in the graph.
 
     .. code-block:: python
 
@@ -389,7 +391,7 @@ class PropertyUpdateResponse(BaseModel):
 
 class PropertyDeleteResponse(BaseModel):
     """
-    Response for deleting a :class:`arcgis.graph.data_model_types.GraphProperty` in the graph.
+    Response for deleting a :class:`~arcgis.graph.data_model_types.GraphProperty` in the graph.
 
     .. code-block:: python
 
@@ -434,8 +436,8 @@ class IndexAddResult(BaseModel):
 
 class IndexAddsResponse(BaseModel):
     """
-    Response for adding a :class:`arcgis.graph.data_model_types.FieldIndex` to a
-    :class:`arcgis.graph.data_model_types.GraphProperty`.
+    Response for adding a :class:`~arcgis.graph.data_model_types.FieldIndex` to a
+    :class:`~arcgis.graph.data_model_types.GraphProperty`.
 
     .. code-block:: python
 
@@ -505,8 +507,8 @@ class IndexDeleteResult(BaseModel):
 
 class IndexDeletesResponse(BaseModel):
     """
-    Response for deleting a :class:`arcgis.graph.data_model_types.FieldIndex` from a
-    :class:`arcgis.graph.data_model_types.GraphProperty`.
+    Response for deleting a :class:`~arcgis.graph.data_model_types.FieldIndex` from a
+    :class:`~arcgis.graph.data_model_types.GraphProperty`.
 
     .. code-block:: python
 
@@ -583,7 +585,7 @@ class ConstraintRuleAddResult(BaseModel):
 
 class ConstraintRuleAddsResponse(BaseModel):
     """
-    Response for adding a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule` constraint rule.
+    Response for adding a :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule` constraint rule.
 
     .. code-block:: python
 
@@ -658,7 +660,7 @@ class ConstraintRuleUpdateResult(BaseModel):
 
 class ConstraintRuleUpdatesResponse(BaseModel):
     """
-    Response for updating a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+    Response for updating a :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule`.
 
     .. code-block:: python
 
@@ -738,7 +740,7 @@ class ConstraintRuleDeleteResult(BaseModel):
 
 class ConstraintRuleDeletesResponse(BaseModel):
     """
-    Response for deleting a :class:`arcgis.graph.data_model_types.RelationshipExclusionRule`.
+    Response for deleting a :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule`.
 
     .. code-block:: python
 
@@ -866,8 +868,8 @@ class CascadingProvenanceDelete(BaseModel):
 
 class ApplyEditsResponse(BaseModel):
     """
-    Response for applying edits to :class:`arcgis.graph.graph_types.Entity`
-    or :class:`arcgis.graph.graph_types.Relationship` in the graph.
+    Response for applying edits to :class:`~arcgis.graph.graph_types.Entity`
+    or :class:`~arcgis.graph.graph_types.Relationship` in the graph.
 
     .. code-block:: python
 
