@@ -10,6 +10,7 @@ from setuptools import find_packages
 from setuptools.dist import Distribution
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 from setuptools.command.egg_info import egg_info as _egg_info
 
 # To use a consistent encoding
@@ -138,6 +139,12 @@ class install(_install):
         self.execute(_post_install, (), msg="Running post-install...")
         super().run()
 
+class bdist_wheel(_bdist_wheel):
+    """Configures bdist_wheel to be platform-agostic"""
+
+    def finalize_options(self):
+        _bdist_wheel.finalize_options(self)
+        self.root_is_pure = True
 
 class egg_info(_egg_info):
     """Post-installation logic to run for 'egg_info' mode"""
@@ -247,6 +254,7 @@ kwargs = {
         "develop": develop,
         "install": install,
         "egg_info": egg_info,
+        "bdist_wheel": bdist_wheel,
     },
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
