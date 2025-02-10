@@ -2956,9 +2956,9 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def edit_features(
         self,
-        adds: Optional[list[FeatureSet]] = None,
-        updates: Optional[list[FeatureSet]] = None,
-        deletes: Optional[list[FeatureSet]] = None,
+        adds: Optional[Union[FeatureSet, list[dict]]] = None,
+        updates: Optional[Union[FeatureSet, list[dict]]] = None,
+        deletes: Optional[Union[FeatureSet, list[dict]]] = None,
         gdb_version: Optional[str] = None,
         use_global_ids: bool = False,
         rollback_on_failure: bool = True,
@@ -4107,7 +4107,7 @@ class FeatureLayerCollection(_GISResource):
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_organization_profile")
 
-        >>> flyr_item = gis.content.search("storm damage", "Feature Layer)[0]
+        >>> flyr_item = gis.content.search("storm damage", "Feature Layer")[0]
         >>> flc = flyr_item.layers[0].container
         >>> flc
 

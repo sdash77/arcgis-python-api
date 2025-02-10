@@ -1034,31 +1034,36 @@ class ProfileManager(object):
             )
 
     # ----------------------------------------------------------------------
-    def _retrieve(self, profile):
-        """gets the login information"""
-        url, username, password, key_file, cert_file, client_id = (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+    def _retrieve_dict(self, profile):
+        """gets the login information as a dictionary"""
+        result = {}
         if profile.lower() in [p.lower() for p in self.list()]:
             cfg_file_path = self._cfg_file_path
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
             if config.has_option(profile, "url"):
-                url = config[profile]["url"]
+                result["url"] = config[profile]["url"]
             if config.has_option(profile, "username"):
-                username = config[profile]["username"]
+                result["username"] = config[profile]["username"]
             if config.has_option(profile, "key_file"):
-                key_file = config[profile]["key_file"]
+                result["key_file"] = config[profile]["key_file"]
             if config.has_option(profile, "cert_file"):
-                cert_file = config[profile]["cert_file"]
+                result["cert_file"] = config[profile]["cert_file"]
             if config.has_option(profile, "client_id"):
-                client_id = config[profile]["client_id"]
+                result["client_id"] = config[profile]["client_id"]
 
-            password = self._securely_get_password(profile)
-        return url, username, password, key_file, cert_file, client_id
+            result["password"] = self._securely_get_password(profile)
+        return result
+
+    def _retrieve(self, profile):
+        """gets the login information"""
+        result = self._retrieve_dict(profile)
+        return (
+            result.get("url"),
+            result.get("username"),
+            result.get("password"),
+            result.get("key_file"),
+            result.get("cert_file"),
+            result.get("client_id"),
+        )

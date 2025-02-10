@@ -318,30 +318,28 @@ def _parse_webmap(item):
 
 
 def _parse_dashboard(item):
-    # credit to Dan Yaw for this one
+    # shoutout Dan Yaw for first iteration of this function
     deps = []
+    structure = item.get_data()
+    widgets1 = structure.get("widgets", [])
+    widgets2 = structure.get("desktopView", {}).get("widgets", [])
+    widgets = widgets1 + widgets2
 
-    widgets = item.get_data().get("widgets")
-
-    if widgets is not None:
-        for widget in widgets:
-            if widget.get("type") == "mapWidget":
-                deps.append(widget.get("itemId"))
-
-            else:
-                try:
-                    for dataset in widget.get("datasets"):
-                        if dataset.get("type") == "serviceDataset":
-                            data_source = dataset.get("dataSource")
-
-                            if data_source.get("type") == "itemDataSource":
-                                deps.append(data_source.get("itemId"))
-
-                            elif data_source.get("type") == "arcadeDataSource":
-                                script = data_source.get("script")
-                                deps.extend(_find_regex(script, _REGEX_GUID, []))
-                except:
-                    pass
+    for widget in widgets:
+        if widget.get("type") == "mapWidget":
+            deps.append(widget.get("itemId"))
+            continue
+        try:
+            for dataset in widget.get("datasets", []):
+                if dataset.get("type") == "serviceDataset":
+                    data_source = dataset.get("dataSource", {})
+                    if data_source.get("type") == "itemDataSource":
+                        deps.append(data_source.get("itemId"))
+                    elif data_source.get("type") == "arcadeDataSource":
+                        script = data_source.get("script")
+                        deps.extend(_find_regex(script, _REGEX_GUID, []))
+        except:
+            pass
 
     return deps
 
