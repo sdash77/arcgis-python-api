@@ -30,6 +30,7 @@ from .utility import (
     _get_raster_url,
     _get_raster_ra,
     _pixel_type_string_to_long,
+    _get_geometry_from_feature_layer,
 )
 from arcgis.gis import GIS, Item
 import copy
@@ -51,6 +52,7 @@ from .utility import (
     _set_multidimensional_rules,
 )
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
+from arcgis.geometry import Envelope, Geometry
 from .._RasterInfo import RasterInfo
 import logging
 
@@ -1954,7 +1956,7 @@ def clip(
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
-    goemetry                                 Optional dictionary. Specifies the geometry for clipping.
+    geometry                                 Optional dictionary. Specifies the geometry for clipping.
     --------------------------------     --------------------------------------------------------------------
     clip_outside                             Optional boolean, If True, the imagery outside the extents will be removed, else the imagery within the clipping geometry will be removed.
     --------------------------------     --------------------------------------------------------------------
@@ -9104,6 +9106,9 @@ def raster_collection_function(
     interval_value: Optional[str] = None,
     interval_unit: Optional[str] = None,
     interval_ranges: Optional[list[dict]] = None,
+    where_clause: Optional[str] = None,
+    query_geometry: Optional[Union[Geometry, Envelope]] = None,
+    use_input_geometry: Optional[bool] = False,
 ):
     """
     Creates a new raster by applying item, aggregation and processing function
@@ -9224,6 +9229,18 @@ def raster_collection_function(
 
                                                 [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
                                                 {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
+    --------------------------------     --------------------------------------------------------------------
+    where_clause                           Optional String. An expression that filters the records returned.
+                                           The value is a string that follows SQL expression, such as
+                                           Cloud Cover < 0.2. See SQL reference for query expressions used in
+                                           ArcGIS for more information.
+    --------------------------------     --------------------------------------------------------------------
+    query_geometry                         Optional dictionary or Geometry object. Used to filter the images in an
+                                           area of interest. Only items that intersect with the extent of the
+                                           dataset will be returned.
+    --------------------------------     --------------------------------------------------------------------
+    use_input_geometry                     Optional boolean. If True, the function uses the clip geometry defined by the geometry parameter. This is the default.
+                                           If False, the function uses the extent of the clip geometry defined by the geometry parameter.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -9361,10 +9378,32 @@ def raster_collection_function(
             aggregation_definition
         )
 
-    # if where_clause is not None:
-    #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
+    if where_clause is not None:
+        template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if query_geometry is not None:
+        if isinstance(query_geometry, _FeatureLayer):
+            full_geometry_val = _get_geometry_from_feature_layer(query_geometry)
+            if isinstance(full_geometry_val, dict):
+                query_geometry = Geometry(full_geometry_val)
+            else:
+                raise RuntimeError(
+                    "Error setting the argument '{}'. Try passing a Geometry or dictionary object".format(
+                        query_geometry
+                    )
+                )
+        if not isinstance(query_geometry, Geometry):
+            query_geometry = Geometry(query_geometry)
+
+        if not use_input_geometry:
+            extent_envelope = _json.loads(query_geometry.envelope.JSON)
+            template_dict["rasterFunctionArguments"]["QueryGeometry"] = extent_envelope
+        else:
+            template_dict["rasterFunctionArguments"]["QueryGeometry"] = query_geometry
+
+    return _clone_layer(
+        layer, template_dict, raster_ra, variable_name="RasterCollection"
+    )
 
 
 def monitor_vegetation(
@@ -14147,10 +14186,16 @@ class RFT:
                                         value["value"] = v
                                         break
                                 else:
-                                    value["value"] = v
+                                    if key == "Rasters" and "value" not in value.keys():
+                                        raster = _raster_input_rft(v)
+                                        v = _input_rft(raster)
+                                        if isinstance(raster, list):
+                                            value["value"] = v
+                                            flag_rasters = 1
+                                            break
                                     if ((key == "RasterInfo")) and isinstance(v, dict):
                                         v.update({"type": "RasterInfo"})
-                                    if (
+                                    if ("value" in value.keys()) and (
                                         isinstance(value["value"], numbers.Number)
                                         and value["isDataset"] == True
                                     ):
@@ -14196,7 +14241,10 @@ class RFT:
                                     ):
                                         value["value"] = {"type": "Scalar", "value": v}
                                         break
-                    if (flag_rasters == -1) and "Rasters" in input_dict.keys():
+                    if (flag_rasters == -1) and (
+                        ("Rasters" in input_dict.keys())
+                        and "value" in input_dict["Rasters"].keys()
+                    ):
                         elements_structure = []
                         if (
                             isinstance(input_dict["Rasters"]["value"], dict)
@@ -14790,6 +14838,18 @@ class RFT:
                         break
             if lyr is not None:
                 break
+
+        for key, value in arg_dict.items():
+            if isinstance(value, _FeatureLayer):
+                geometry_val = _get_geometry_from_feature_layer(value)
+                if geometry_val is None:
+                    raise RuntimeError(
+                        "Error setting the argument '{}'. Try passing a Geometry or dictionary object".format(
+                            key
+                        )
+                    )
+                arg_dict[key] = geometry_val
+
         rft_dict = copy.deepcopy(self._rft_json)
         arg_dict_copy = copy.copy(arg_dict)
         if arg_dict_copy is not None:

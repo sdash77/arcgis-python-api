@@ -130,20 +130,22 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                     "refresh_token": self._refresh_token,
                     "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
                 }
-                token_info_request = self._session.post(tu, data=parameters)
+                token_info_request = self._session.post(
+                    tu, data=parameters, drop_auth=True
+                )
                 token_info = token_info_request.json()
                 if not token_info_request.ok or (
                     token_info
                     and "error" in token_info
                     and "access_token" not in token_info
                 ):
+                    # token is invalid, need to re-authenticate
                     self._refresh_token = None
                 else:
                     self._create_time = _dt.datetime.now()
                     self._expiration = token_info["expires_in"] / 60 - 2
                     self._token = token_info["access_token"]
                     return self._token
-                return self._token
             elif (
                 self._client_id
                 and self._client_secret
@@ -210,7 +212,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                             return res["token"]
                         if "access_token" in res:
                             return res["access_token"]
-            elif (
+            if (
                 self._client_id
                 and self._username is None
                 and self._password is None
@@ -268,7 +270,11 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                     "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
                     "allow_verification": "false",
                 }
-                content = str(self._session.get(auth_url, params=parameters).content)
+                content = str(
+                    self._session.get(
+                        auth_url, params=parameters, drop_auth=True
+                    ).content
+                )
 
                 pattern = re.compile("var oAuthInfo = ({.*?});", re.DOTALL)
                 if len(pattern.findall(content)) == 0:
@@ -317,16 +323,17 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                         verify=False,
                         proxies=self._proxies,
                         allow_redirects=False,
+                        drop_auth=True,
                     )
                 if resp.status_code == 302:
                     url = resp.headers["Location"]
                     if url.find("acceptTermsAndConditions") > -1:
                         r2 = self._session.post(
-                            url, data={"acceptTermsAndConditions": True}
+                            url, data={"acceptTermsAndConditions": True}, drop_auth=True
                         )
                         content = r2.text
                     elif url.find("oauth2/approval") > -1:
-                        r2 = self._session.get(url)
+                        r2 = self._session.get(url, drop_auth=True)
                         content = r2.text
 
                 soup = lxml.html.fromstring(content)
