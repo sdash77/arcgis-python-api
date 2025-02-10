@@ -92,34 +92,8 @@ else:
 
 
 def _post_install():
-    """This function will run after 'pip install' finishes.
-    If the O.S. is Mac OSX, run the OpenSSL workaround as described in
-    this issue: https://bugs.python.org/issue28150, equivalent of running
-    '/Applications/Python X.X/Install Certificates.command' cmd
-    """
-    if conda_install_mode:
-        # Don't run any post installation methods for conda installs
-        return
-
-    # If the OS is Mac OSX, run the OpenSSL workaround
-    platform_is_osx = sys.platform == "darwin"
-    if not platform_is_osx:
-        return
-    for potential_cert_script in glob("/Applications/Python*/*"):
-        if "Install Certificates.command" in potential_cert_script:
-            try:
-                cmd_output = check_output(potential_cert_script, stderr=STDOUT)
-                log.warning(
-                    "OpenSSL workaround for OSX completed successfully. "
-                    "See https://bugs.python.org/issue28150 for info. "
-                    "Output: {}".format(cmd_output.decode("utf-8"))
-                )
-            except Exception:
-                log.exception(
-                    "OpenSSL workaround for OSX did not complete "
-                    "successfully. This may or may not allow secure SSL "
-                    "to work. See https://bugs.python.org/issue28150. "
-                )
+    """stub for post-installation logic when installing source distribution"""
+    return
 
 
 # Each of these classes represent the different modes that pip install
