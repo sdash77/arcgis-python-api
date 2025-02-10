@@ -8445,6 +8445,9 @@ class ContentManager(object):
         The `import_table` function takes a Pandas' DataFrame and publishes it
         as a Hosted Table on a WebGIS.
 
+        .. note::
+            For larger datasets it is recommended to use the gdal library.
+
         ===================  ==========================================================================
         **Parameter**         **Description**
         -------------------  --------------------------------------------------------------------------
@@ -8567,6 +8570,12 @@ class ContentManager(object):
         .. note::
             By default, there is a limit of 1,000 rows/features for Pandas
             dataframes. This limit isn't there for spatial dataframes.
+
+        .. note::
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
 
         ================  ==========================================================================
         **Parameter**      **Description**

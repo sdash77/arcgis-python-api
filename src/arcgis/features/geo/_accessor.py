@@ -1149,9 +1149,55 @@ def is_geometry_type(obj):
 @register_dataframe_accessor("spatial")
 class GeoAccessor(object):
     """
-    The ``GeoAccessor`` class adds a spatial namespace that performs spatial operations on the given Pandas
-    `DataFrame. <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
-    The ``GeoAccessor`` class includes visualization, spatial indexing, IO and dataset level properties.
+    Adds a spatial namespace that performs spatial operations on the given `Pandas
+    DataFrame. <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
+    The :class:`~arcgis.features.GeoAccessor` class includes visualization, spatial
+    indexing, IO and dataset level properties. The *GeoAccessor* namespace is accessed
+    as the *spatial* property on a Pandas Dataframe that has a geometry column.
+
+    .. code-block:: python
+
+        # Usage Example: Accessing the spatially enabled dataframe
+
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS("your_organization_profile")
+
+        >>> flyr_item = gis.content.get("<feature layer id>")
+        >>> flyr = flyr_item.layers[0]
+
+        >>> df = flyr.query(as_df=True)
+        >>> df.spatial
+
+        <arcgis.features.geo._accessor.GeoAccessor object at <mem_addr>>
+
+    .. note::
+        **Setting the Geometry Engine:**
+        By default, the library used for spatial transformations (e.g., reading/writing
+        shapefiles, file geodatabases, or spatial DataFrames) is determined by the
+        available libraries in the environment. You can explicitly set the library used
+        for certain spatial operations through an environment variable called
+        `ARCGIS_GEOMETRY_ENGINE`. The variable **MUST** be set at the top of the script.
+        The options available are:
+
+        * *shapefile* - for the `Python Shapefile Library (PyShp) <https://github.com/GeospatialPython/pyshp>`_
+          A lightweight option that works well for simple shapefile operations but lacks advanced capabilities
+          of *gdal* or *arcpy*.
+        * *arcpy* - for the Esri `ArcPy <https://pro.arcgis.com/en/pro-app/latest/arcpy/get-started/what-is-arcpy-.htm>`_
+          library. **Requires** a license for use. Best for full compatibility with Esri's ArcGIS ecosystem,
+          including advanced geoprocessing tools.
+        * *gdal* - for the `Open Source Geospatial Foundation gdal <https://gdal.org/en/stable/>`_ translator
+          library. A good balance of performance and compatibility with multiple GIS formats. Ideal
+          for working with large datasets and open-source workflows.
+        * *fiona* - for the `fiona <https://github.com/Toblerity/Fiona>`_ simple feature data streaming
+          library. Can only be used to read in feature classes.
+
+        To set environment at the top of the script, add:
+
+        .. code-block:: python
+
+            import os
+            os.environ["ARCGIS_GEOMETRY_ENGINE"] = "<engine of choice>"
+
     """
 
     _viz = None
@@ -1673,7 +1719,7 @@ class GeoAccessor(object):
         op                        Required string. The operation to use to perform the join.
                                   The default is `intersects`.
 
-                                  supported perations: `intersects`, `within`, and `contains`
+                                  supported operations: `intersects`, `within`, and `contains`
         ----------------------    ---------------------------------------------------------
         left_tag                  Optional String. If the same column is in the left and
                                   right dataframe, this will append that string value to
@@ -1717,7 +1763,7 @@ class GeoAccessor(object):
                 "'{0}' and '{1}' cannot be names in the frames being"
                 " joined".format(index_left, index_right)
             )
-        # Setup the Indexes in temporary coumns
+        # Setup the Indexes in temporary columns
         #
         left_df = self._data.copy(deep=True)
         left_df.spatial.set_geometry(self.name)
@@ -1917,11 +1963,21 @@ class GeoAccessor(object):
         service_name: str = None,
     ):
         """
-        This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
+        Creates a feature layer from the spatially enabled dataframe and adds (inserts)
         it to an existing feature service.
 
         .. note::
-            Inserting table data in Enterprise is not currently supported.
+            Inserting table data is not supported for ArcGIS Enterprise deployments.
+
+        .. note::
+            The geometry engine used for this operation can be set with the
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+
+            * `"shapefile"`
+            * `"gdal"`
+            * `"arcpy"`
+
+            If not set, the first available library in the environment will be used.
 
         ============================    ====================================================================
         **Parameter**                   **Description**
@@ -2087,6 +2143,16 @@ class GeoAccessor(object):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
 
+        .. note::
+            The geometry engine used for this operation can be set with the
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+
+            * `"shapefile"`
+            * `"gdal"`
+            * `"arcpy"`
+
+            If not set, the first available library in the environment will be used.
+
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2143,6 +2209,15 @@ class GeoAccessor(object):
             Null integer values will be changed to 0 when using shapely instead
             of ArcPy due to shapely conventions.
             With ArcPy null integer values will remain null.
+
+        .. note::
+            The geometry engine used for this operation can be set with the
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+
+            * `"gdal"`
+            * `"arcpy"`
+
+            If not set, the first available library in the environment will be used.
 
         ===========================     ====================================================================
         **Parameter**                    **Description**
@@ -2285,6 +2360,17 @@ class GeoAccessor(object):
             of ArcPy due to shapely conventions.
             With ArcPy null integer values will remain null.
 
+        .. note::
+            The geometry engine used for this operation can be set with the
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+
+            * `"shapefile"`
+            * `"gdal"`
+            * `"arcpy"`
+
+            If not set, the first available library in the environment will be used.
+
+
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2293,10 +2379,10 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         gis                             Optional GIS. The GIS connection object
         ---------------------------     --------------------------------------------------------------------
-        tags                            Optional list of strings. A comma seperated list of descriptive
+        tags                            Optional list of strings. A comma separated list of descriptive
                                         words for the service.
         ---------------------------     --------------------------------------------------------------------
-        folder                          Optional string. Name of the folder where the featurelayer item
+        folder                          Optional string. Name of the folder where the feature layer item
                                         and imported data would be stored.
         ---------------------------     --------------------------------------------------------------------
         sanitize_columns                Optional Boolean. If True, column names will be converted to string,
@@ -2607,6 +2693,17 @@ class GeoAccessor(object):
             of ArcPy due to shapely conventions.
             With ArcPy null integer values will remain null.
 
+        .. note::
+            The geometry engine used for this operation can be set with the
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+
+            * `"shapefile"`
+            * `"gdal"`
+            * `"arcpy"`
+            * `"fiona"`
+
+            If not set, the first available library in the environment will be used.
+
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2652,7 +2749,14 @@ class GeoAccessor(object):
         The ``from_table`` method allows a :class:`~arcgis.gis.User` to read from a non-spatial table
 
         .. note::
-            The ``from_table`` method requires ArcPy
+            The geometry engine used for this operation can be set with the
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+
+            * `"shapefile"`
+            * `"gdal"`
+            * `"arcpy"`
+
+            If not set, the first available library in the environment will be used.
 
         ===============     ====================================================
         **Parameter**        **Description**

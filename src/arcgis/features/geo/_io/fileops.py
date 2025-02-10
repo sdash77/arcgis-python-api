@@ -400,8 +400,6 @@ def from_table(filename, **kwargs):
     """
     Allows a user to read from a non-spatial table
 
-    **Note: ArcPy is Required for this method**
-
     ===============     ====================================================
     **Parameter**        **Description**
     ---------------     ----------------------------------------------------
