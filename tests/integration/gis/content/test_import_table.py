@@ -1,4 +1,5 @@
 import unittest
+from unittest.case import SkipTest
 import os
 import uuid
 import tempfile
@@ -260,6 +261,7 @@ class TestImportTable(unittest.TestCase):
         source_items = pitem.related_items(
             rel_type="Service2Data", direction='forward'
         )
+        assert source_items[0].type == "CSV"
         assert len(source_items) > 0
         assert "Import Table created on" in pitem.title
         assert "test_import_table_service_name" in pitem.url
@@ -306,6 +308,22 @@ class TestImportTable(unittest.TestCase):
         assert pitem.delete(permanent=True)
         [item.delete(permanent=True) for item in source_items]
 
-
+    @SkipTest("Run manually in gdal env")
+    def test_import_table_gdal(self):
+        """If gdal is present in the environment, it will be used to publish a filegeodatabase rather than a csv"""
+        content = self.gis.content
+        pitem = content.import_table(
+            df=self.df, service_name=f"test_import_table_service_name_{uuid.uuid4().hex[:5]}"
+        )
+        source_items = pitem.related_items(
+            rel_type="Service2Data", direction='forward'
+        )
+        assert source_items[0].type == "File Geodatabase"
+        assert len(source_items) > 0
+        assert "Import Table created on" in pitem.title
+        assert "test_import_table_service_name" in pitem.url
+        assert len(pitem.tables) > 0
+        assert pitem.delete(permanent=True)
+        [item.delete(permanent=True) for item in source_items]
 if __name__ == "__main__":
     unittest.main()

@@ -753,6 +753,7 @@ class MapFeatureLayer(Layer):
                                             by skipping the specified number of records and starting from the
                                             next record (that is, `resultOffset + ith` value). This option is
                                             ignored if `return_all_records` is `True` (i.e. by default).
+                                            This parameter cannot be specified if the service does not support pagination.
         -------------------------------     --------------------------------------------------------------------
         result_record_count                 Optional integer. This option can be used for fetching query results
                                             up to the `result_record_count` specified. When `result_offset` is
@@ -760,6 +761,7 @@ class MapFeatureLayer(Layer):
                                             `max_record_count`. The maximum value for this parameter is the value
                                             of the layer's `maxRecordCount` property. This option is ignored if
                                             `return_all_records` is True (i.e. by default).
+                                            This parameter cannot be specified if the service does not support pagination.
         -------------------------------     --------------------------------------------------------------------
         quantization_parameters             Optional dict. Used to project the geometry onto a virtual grid,
                                             likely representing pixels on the screen.
@@ -1002,11 +1004,17 @@ class MapFeatureLayer(Layer):
             range_values=range_values,
             parameter_values=parameter_values,
         )
+        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
+            "supportsPagination", False
+        )
+        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             as_df=as_df,
             is_layer=True,
+            supports_pagination=supports_pagination,
+            max_record_count=max_record_count,
         ).execute()
 
     # ----------------------------------------------------------------------
@@ -1600,12 +1608,17 @@ class MapTable(MapFeatureLayer):
             range_values=range_values,
             parameter_values=parameter_values,
         )
-
+        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
+            "supportsPagination", False
+        )
+        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=False,
             as_df=as_df,
+            supports_pagination=supports_pagination,
+            max_record_count=max_record_count,
         ).execute()
 
 
