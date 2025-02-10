@@ -524,10 +524,6 @@ class SingleShotDetector(ArcGISModel):
                 self.unfreeze()
                 self._freeze()
 
-            # if backbone in SingleShotDetector.dofa_backbones():
-            #     self.unfreeze()
-            #     self._freeze()
-
     def _freeze(self):
         layers = flatten_model(self.learn.model[0][0].backbone)
         idx = len(layers)

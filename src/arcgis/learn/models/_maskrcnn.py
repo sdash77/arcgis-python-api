@@ -436,11 +436,6 @@ class MaskRCNN(ArcGISModel):
                 )
 
                 backbone_fpn = backbone_fpn[0]
-
-                # backbone_fpn.out_channels = (
-                #     backbone_fpn[0].blocks[-1].mlp.fc2.out_features
-                # )
-                # backbone_fpn._is_dofa = True
             else:
                 ## warning_fix 'pretrained' replaced with 'weights'
                 backbone_fpn = resnet_fpn_backbone(

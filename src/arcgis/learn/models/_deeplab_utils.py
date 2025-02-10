@@ -170,8 +170,6 @@ class Deeplab(nn.Module):
             self.backbone = self.backbone[0]
             num_channels_classifier = self.backbone.output_shape["channels"]
             num_channels_aux_classifier = self.backbone.output_shape["channels"]
-            # num_channels_classifier = self.backbone[0].output_shape["channels"]
-            # num_channels_aux_classifier = self.backbone[0].output_shape["channels"]
             self._is_dofa = True
 
         else:

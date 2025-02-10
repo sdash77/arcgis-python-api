@@ -160,10 +160,6 @@ class MyFasterRCNN:
                     backbone_small = backbone_small[0]
                 elif is_dofa:
                     backbone_small = backbone_small[0]
-                    # backbone_small.out_channels = backbone_small.blocks[
-                    #     -1
-                    # ].mlp.fc2.out_features
-
                 else:
                     backbone_small.out_channels = (
                         self.fastai.callbacks.hooks.num_features_model(
