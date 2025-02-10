@@ -6,7 +6,6 @@
 from functools import partial
 from typing import Any
 
-# import kornia.augmentation as K
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,8 +20,6 @@ from ._mmlab_utils import load_mmlab_checkpoint
 from collections import OrderedDict
 import pdb
 import math
-
-# from ._vitdet import ViTUpsample, BackboneFastai
 
 
 def get_abs_pos(abs_pos, has_cls_token, hw):
@@ -55,7 +52,6 @@ def get_abs_pos(abs_pos, has_cls_token, hw):
 
         return new_abs_pos.permute(0, 2, 3, 1).reshape(1, imgsize * imgsize, -1)
 
-        # return new_abs_pos.permute(0, 2, 3, 1)
     else:
         return abs_pos
 
@@ -399,18 +395,6 @@ class DOFA(nn.Module):
             load_mmlab_checkpoint(self, pretrained_path)
             logging.disable(0)
 
-    #     else:
-    #         self.apply(self._init_weights)
-
-    # def _init_weights(self, m):
-    #     if isinstance(m, nn.Linear):
-    #         nn.init.trunc_normal_(m.weight, std=0.02)
-    #         if isinstance(m, nn.Linear) and m.bias is not None:
-    #             nn.init.constant_(m.bias, 0)
-    #     elif isinstance(m, nn.LayerNorm):
-    #         nn.init.constant_(m.bias, 0)
-    #         nn.init.constant_(m.weight, 1.0)
-
     def forward(self, x: Tensor) -> Tensor:
         """Forward pass of the model.
 
@@ -434,8 +418,6 @@ class DOFA(nn.Module):
             cls_token = self.cls_token + self.pos_embed[:, :1, :]
             cls_tokens = cls_token.expand(x.shape[0], -1, -1)
             x = torch.cat((cls_tokens, x), dim=1)
-
-        # x = x + self.pos_embed[:, 1:, :]
 
         # apply Transformer blocks
         for block in self.blocks:
@@ -494,10 +476,6 @@ class DofaBackboneFastai(nn.Module):
         )
 
     def forward(self, x):
-        # return self.upsample(self.base_net(x))
-        # features = self.base_net(x)
-        # out = self.upsample(features)
-
         out = self.base_net(x)
         return out
 
@@ -528,8 +506,6 @@ def dofa_backbone(
             backbone_fpn = DofaBackboneFastai(backbone=backbone)
 
             backbone_fpn.__name__ = backbone_name
-            # backbone.__name__ = backbone_name
         logging.disable(0)
 
     return backbone_fpn
-    # return backbone

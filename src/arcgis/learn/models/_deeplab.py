@@ -161,8 +161,6 @@ def _create_deeplab(
     """
     Create default torchvision pretrained model with resnet101.
     """
-    # model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
-
     model = None
     if not _segm_model is None:
         model = _segm_model(
