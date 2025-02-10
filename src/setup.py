@@ -75,7 +75,6 @@ else:
         "ujson >=3",
         "truststore>=0.10.0",
         'pywin32 >=223;platform_system=="Windows"',
-        "pyshp >=2",
         "geomet",
         "requests >=2.32.3,<3",
         "requests-oauthlib",
@@ -255,6 +254,7 @@ kwargs = {
     # $ pip install -e .[dev,test]
     "extras_require": {
         "gp": ["dill"],
+        "gdal": ["gdal >=3.9.2, <4"],
         "kerberos": [
             "requests-kerberos",
             "requests-gssapi",
