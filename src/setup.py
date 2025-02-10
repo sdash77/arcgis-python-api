@@ -139,12 +139,14 @@ class install(_install):
         self.execute(_post_install, (), msg="Running post-install...")
         super().run()
 
+
 class bdist_wheel(_bdist_wheel):
     """Configures bdist_wheel to be platform-agostic"""
 
     def finalize_options(self):
         _bdist_wheel.finalize_options(self)
         self.root_is_pure = True
+
 
 class egg_info(_egg_info):
     """Post-installation logic to run for 'egg_info' mode"""
