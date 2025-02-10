@@ -12,16 +12,16 @@ from utils.decorators import integration_test
 
 # change these variables as needed
 # server_url should point to existent testing graph, if applicable
-domain = "dev0028833.esri.com"
+domain = "dev0025946.esri.com"
 # server_url = domain + "/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
-server_url = "https://dev0028833.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
-portal_url = "https://dev0028833.esri.com/portal"
+server_url = "https://dev0025946.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
+portal_url = "https://dev0025946.esri.com/portal"
 username = "publisher2"
 password = "esri.agp123"
 
 
 # shoutout Megan for putting this function together
-def create_new_kg(domain, username, password, kg_name):
+def create_new_kg(domain, username, password, kg_name, gis):
     token = ""
     token_url = f"https://{domain}/portal/sharing/rest/generateToken"
     creds = {
@@ -30,7 +30,7 @@ def create_new_kg(domain, username, password, kg_name):
         "referer": f"https://{domain}/portal",
         "f": "json",
     }
-    token_response = requests.post(token_url, data=creds)
+    token_response = gis._con._session.post(token_url, data=creds)
     try:
         token = token_response.json()["token"]
         url = f"https://{domain}/portal/sharing/rest/content/users/{username}/createService"  # replace domain and username with yours
@@ -40,7 +40,7 @@ def create_new_kg(domain, username, password, kg_name):
             "f": "json",
             "token": token,
         }
-        create_response = requests.post(url, data=create)
+        create_response = gis._con._session.post(url, data=create)
         success = create_response.json()["success"]
         if success == True:
             print("Creation was successful:", create_response.json()["serviceurl"])
@@ -71,7 +71,7 @@ try:
         print("Accessed existent testing graph")
         SKIP = False
     except:
-        new_kg = create_new_kg(domain, username, password, "python_unit_testing")
+        new_kg = create_new_kg(domain, username, password, "python_unit_testing", gis)
         kg = KnowledgeGraph(new_kg, gis=gis)
         print("Created new testing graph")
         SKIP = False
@@ -92,7 +92,7 @@ class TestImport(unittest.TestCase):
             assert isinstance(KnowledgeGraph.fromitem(items[0]), KnowledgeGraph)
     
     def test_service_init(self):
-        s = Service(kg._url, gis=gis)
+        s = Service(kg._url, gis)
         assert isinstance(s, KnowledgeGraph)
         
 

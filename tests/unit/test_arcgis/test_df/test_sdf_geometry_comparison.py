@@ -6,8 +6,8 @@ from arcgis.geometry import Geometry
 g1 = Geometry({"x": 1, "y": 2, "spatialReference": {"wkid": 4326}})
 g2 = Geometry({"x": 1, "y": 2, "spatialReference": {"wkid": 4326, "latestWKID": 4326}})
 g3 = Geometry({"x": 1, "y": 2, "spatialReference": {"wkid": 3857}})
-data1 = {"OID": [1], "SHAPE": [g1]}
-data2 = {"OID": [1], "SHAPE": [g2]}
+data1 = {"OID": [1], "global_var": "y", "test": "new_column", "SHAPE": [g1]}
+data2 = {"OID": [1], "global_var": "x",  "SHAPE": [g2]}
 
 
 class TestSRCompareOnSeDF(unittest.TestCase):
@@ -28,9 +28,12 @@ class TestSRCompareOnSeDF(unittest.TestCase):
         sdf3 = sdf1.spatial.join(sdf2)
         assert sdf3.columns.tolist() == [
             "OID_left",
+            "global_var_left",
+            "test",
             "SHAPE",
             "index_right",
             "OID_right",
+            "global_var_right",
         ]
 
     def test_sr_equals(self):
@@ -60,8 +63,9 @@ class TestSRCompareOnSeDF(unittest.TestCase):
         sdf1 = pd.DataFrame(data1)
         sdf2 = pd.DataFrame(data2)
 
-        assert sdf1.spatial.compare(sdf2.spatial) #dict
-
+        res = sdf1.spatial.compare(sdf2.spatial, match_field="global_var") #dict
+        assert isinstance(res, dict)
+        assert len(res["added_rows"]["global_var"]) == 1
 
 if __name__ == "__main__":
     unittest.main()

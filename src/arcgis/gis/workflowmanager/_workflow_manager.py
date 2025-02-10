@@ -1,13 +1,23 @@
-import datetime
-import json
-import sys
-from typing import Optional
-import urllib.parse
+from __future__ import annotations
 
-from arcgis.geometry import Geometry
+import datetime
+import functools
+import json
+import logging
+import sys
+import threading
+import urllib.parse
+from enum import Enum
+from typing import Optional, Callable
+
+logger = logging.getLogger(__name__)
+
 import arcgis.gis
-from arcgis.gis import Item
+from arcgis.auth.tools import parse_url
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
+from arcgis.gis._impl._con._websocket_connection import WebsocketConnection
+
+logger = logging.getLogger(__name__)
 
 
 def _underscore_to_camelcase(name):
@@ -38,14 +48,89 @@ def _check_license(gis):
             )
 
 
-def _initialize(instance, gis):
+def _initialize(instance, gis, is_admin=False):
     instance._gis = gis
-    if instance._gis.users.me is None:
+    if not instance._gis.users.me:
         raise ValueError("An authenticated `GIS` is required.")
 
-    instance._url = instance._wmx_server_url[0]
-    if instance._url is None:
-        raise ValueError("No WorkflowManager Registered with your Organization")
+    info_result = instance._gis.properties
+    instance.is_enterprise = info_result["isPortal"]
+
+    if instance.is_enterprise:
+        instance.org_id = "workflow"
+        for s in instance._gis.servers.get("servers", []):
+            server_functions = [
+                x.strip() for x in s.get("serverFunction", "").lower().split(",")
+            ]
+            if "workflowmanager" not in server_functions:
+                continue
+            public_url = s.get("url")
+            private_url = s.get("adminUrl")
+            instance._server_url = _get_server_url(public_url, private_url, gis)
+
+            if not instance._server_url:
+                raise RuntimeError("Cannot find a WorkflowManager Server")
+
+            instance._url = f"{instance._server_url}/{instance.org_id}"
+            if not is_admin:
+                instance._url = f"{instance._url}/{instance._item.id}"
+            break
+
+        if not instance._url:
+            raise RuntimeError(
+                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                "Administrator to ensure Workflow Manager Server is properly configured."
+            )
+    # is Arcgis Online
+    else:
+        instance.org_id = info_result["id"]
+        helper_services = info_result.get("helperServices", {})
+        instance._server_url = instance._url = helper_services.get(
+            "workflowManager", {}
+        ).get("url")
+        if not instance._url:
+            raise RuntimeError(f"Cannot get Workflow Manager url for {gis}")
+
+        instance._url = f"{instance._url}/{instance.org_id}"
+        if not is_admin:
+            instance._url = f"{instance._url}/{instance._item.id}"
+
+    if not instance._url:
+        raise ValueError(f"WorkflowManager Not Registered on {gis}")
+    logger.debug(f"Initializing Workflow Manager. Url = {instance._url}")
+
+
+@functools.lru_cache(maxsize=255)
+def _get_server_url(public_url: str, private_url: str, gis: arcgis.gis.GIS) -> str:
+    if not gis._use_private_url_only and not gis._validate_item_url:
+        return public_url
+
+    if not private_url:
+        return public_url
+
+    parsed_private = parse_url(private_url)
+    if parsed_private.port == 6443:
+        private_url = (
+            parsed_private
+            # Port isn't part of the named tuple so can't be replaced directly
+            ._replace(netloc=parsed_private.netloc.replace("6443", "13443"))
+            ._replace(path="")
+            .geturl()
+        )
+
+    if gis._use_private_url_only:
+        return private_url
+
+    for _url in [public_url, private_url]:
+        try:
+            if _url:
+                logger.debug(f"Testing workflow connection to {_url}")
+                gis._con.get(f"{_url}/workflow/checkStatus")
+                return _url
+        except:
+            continue  # if status check fails, try the next url
+
+    return public_url
 
 
 class WorkflowManagerAdmin:
@@ -60,54 +145,8 @@ class WorkflowManagerAdmin:
     """
 
     def __init__(self, gis):
-        _initialize(self, gis)
+        _initialize(self, gis, is_admin=True)
         _check_license(gis)
-
-    @property
-    def _wmx_server_url(self):
-        """locates the WMX server"""
-        baseurl = self._gis._portal.resturl
-
-        # Set org_id
-        info_result = self._gis.properties
-        self.is_enterprise = info_result["isPortal"]
-
-        if self.is_enterprise:
-            self.org_id = "workflow"
-            res = self._gis.servers
-            for s in res["servers"]:
-                server_functions = [
-                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
-                ]
-                if "workflowmanager" in server_functions:
-                    self._url = s.get("url", None)
-                    self._private_url = s.get("adminUrl", None)
-                    if self._url is None:
-                        raise RuntimeError("Cannot find a WorkflowManager Server")
-                    self._url += f"/{self.org_id}"
-                    self._private_url += f"/{self.org_id}"
-                    return self._url, self._private_url
-            raise RuntimeError(
-                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                "Administrator to ensure Workflow Manager Server is properly configured."
-            )
-        # is Arcgis Online
-        else:
-            self.org_id = info_result["id"]
-
-            helper_services = info_result["helperServices"]
-            if helper_services is None:
-                raise RuntimeError("Cannot find helper functions")
-
-            self._url = helper_services["workflowManager"]["url"]
-            if self._url is None:
-                raise RuntimeError("Cannot get Workflow Manager url")
-
-            self._url += f"/{self.org_id}"
-            self._private_url = f"/{self.org_id}"
-            return self._url, self._private_url
-
-        return None
 
     def create_item(self, name: str) -> tuple:
         """
@@ -144,7 +183,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def upgrade_item(self, item: Item):
+    def upgrade_item(self, item):  # TODO TypeHint removed in order to avoid import
         """
         Upgrades an outdated Workflow Manager schema. Requires the Workflow Manager
         Advanced Administrator privilege or the Portal Admin Update Content privilege.
@@ -170,7 +209,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def delete_item(self, item: Item):
+    def delete_item(self, item):  # TODO TypeHint removed in order to avoid import
         """
         Delete a Workflow Manager schema. Does not delete the Workflow Manager Admin group.
         Requires the administrator or publisher role. If the user has the publisher role,
@@ -241,7 +280,7 @@ class WorkflowManagerAdmin:
 
     def export_item(
         self,
-        item: Item,
+        item,  # TODO TypeHint removed in order to avoid import
         job_template_ids: Optional[str] = None,
         diagram_ids: Optional[str] = None,
         include_other_configs: bool = True,
@@ -295,7 +334,9 @@ class WorkflowManagerAdmin:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj
 
-    def import_item(self, item: Item, config_file, passphrase: Optional[str] = None):
+    def import_item(
+        self, item, config_file, passphrase: Optional[str] = None
+    ):  # TODO TypeHint removed in order to avoid import
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatibility. This will
@@ -354,69 +395,26 @@ class JobManager:
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                The Workflow Manager Item
+    ---------------     --------------------------------------------------------------------
+    workflow_manager    The :class:`~arcgis.gis.workflowmanager.WorkflowManager` object
     ===============     ====================================================================
 
     """
 
-    def __init__(self, item):
+    def __init__(self, item, workflow_manager):
         """initializer"""
         if item is None:
             raise ValueError("Item cannot be None")
+        self._workflow_manager = workflow_manager
         self._item = item
-        _initialize(self, item._gis)
+        self._gis = self._item._gis
+        _initialize(self, self._item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
         error_class = info[0]
         error_text = info[1]
         raise Exception(error_text)
-
-    @property
-    def _wmx_server_url(self):
-        """locates the WMX server"""
-        baseurl = self._gis._portal.resturl
-
-        # Set org_id
-        info_result = self._gis.properties
-        self.is_enterprise = info_result["isPortal"]
-
-        if self.is_enterprise:
-            self.org_id = "workflow"
-            res = self._gis.servers
-            for s in res["servers"]:
-                server_functions = [
-                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
-                ]
-                if "workflowmanager" in server_functions:
-                    self._url = s.get("url", None)
-                    self._private_url = s.get("adminUrl", None)
-                    if self._url is None:
-                        raise RuntimeError("Cannot find a WorkflowManager Server")
-                    self._url += f"/{self.org_id}/{self._item.id}"
-                    self._private_url += f"/{self.org_id}/{self._item.id}"
-                    return self._url, self._private_url
-            raise RuntimeError(
-                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                "Administrator to ensure Workflow Manager Server is properly configured."
-            )
-        # is Arcgis Online
-        else:
-            self.org_id = info_result["id"]
-
-            helper_services = info_result["helperServices"]
-            if helper_services is None:
-                raise RuntimeError("Cannot find helper services")
-
-            wm_service = helper_services["workflowManager"]
-            self._url = wm_service["url"]
-            if self._url is None:
-                raise RuntimeError("Cannot get Workflow Manager url")
-
-            self._url += f"/{self.org_id}/{self._item.id}"
-            self._private_url = f"/{self.org_id}/{self._item.id}"
-            return self._url, self._private_url
-
-        return None
 
     def close(self, job_ids: list):
         """
@@ -473,7 +471,7 @@ class JobManager:
         complete: Optional[str] = None,
         notes: Optional[str] = None,
         parent: Optional[str] = None,
-        location: Optional[Geometry] = None,
+        location: Optional = None,  # TODO TypeHint removed in order to avoid import
         extended_properties: Optional[dict] = None,
         related_properties: Optional[dict] = None,
         job_id: Optional[str] = None,
@@ -670,7 +668,7 @@ class JobManager:
             job_dict = self._gis._con.get(
                 url, {"extProps": get_ext_props, "holds": get_holds}
             )
-            return Job(job_dict, self._gis, self._url)
+            return Job(job_dict, self._gis, self._url, self._workflow_manager)
         except:
             self._handle_error(sys.exc_info())
 
@@ -1006,6 +1004,8 @@ class WorkflowManager:
         >> [{}...{}]  # returns a list of dictionaries representing each user
     """
 
+    _nm: NotificationManager = None
+
     def __init__(self, item):
         if item is None:
             raise ValueError("Item cannot be None")
@@ -1013,7 +1013,7 @@ class WorkflowManager:
         _initialize(self, item._gis)
         _check_license(item._gis)
 
-        self.job_manager = JobManager(item)
+        self.job_manager = JobManager(item, self)
         self.saved_searches_manager = SavedSearchesManager(item)
 
     def _handle_error(self, info):
@@ -1021,52 +1021,6 @@ class WorkflowManager:
         error_class = info[0]
         error_text = info[1]
         raise Exception(error_text)
-
-    @property
-    def _wmx_server_url(self):
-        """locates the WMX server"""
-        baseurl = self._gis._portal.resturl
-
-        # Set org_id
-        info_result = self._gis.properties
-        self.is_enterprise = info_result["isPortal"]
-
-        if self.is_enterprise:
-            self.org_id = "workflow"
-            res = self._gis.servers
-            for s in res["servers"]:
-                server_functions = [
-                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
-                ]
-                if "workflowmanager" in server_functions:
-                    self._url = s.get("url", None)
-                    self._private_url = s.get("adminUrl", None)
-                    if self._url is None:
-                        raise RuntimeError("Cannot find a WorkflowManager Server")
-                    self._url += f"/{self.org_id}/{self._item.id}"
-                    self._private_url += f"/{self.org_id}/{self._item.id}"
-                    return self._url, self._private_url
-            raise RuntimeError(
-                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                "Administrator to ensure Workflow Manager Server is properly configured."
-            )
-        # is Arcgis Online
-        else:
-            self.org_id = info_result["id"]
-
-            helper_services = info_result["helperServices"]
-            if helper_services is None:
-                raise RuntimeError("Cannot find helper functions")
-
-            self._url = helper_services["workflowManager"]["url"]
-            if self._url is None:
-                raise RuntimeError("Cannot get Workflow Manager url")
-
-            self._url += f"/{self.org_id}/{self._item.id}"
-            self._private_url = f"/{self.org_id}/{self._item.id}"
-            return self._url, self._private_url
-
-        return None
 
     @property
     def jobs(self):
@@ -1079,6 +1033,13 @@ class WorkflowManager:
         """
 
         return self.job_manager
+
+    @property
+    def _notification_manager(self):
+        if not self._nm:
+            self._nm = NotificationManager(self._item, self)
+
+        return self._nm
 
     def evaluate_arcade(
         self,
@@ -1573,6 +1534,96 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def diagram_upgraded_version(self, diagram_id: str, version_id: str):
+        """
+        Get an upgraded version of a workflow diagram that uses centralized data references. If the version number does
+        not exist, an error saying the specific diagram version does not exist is returned. The adminBasic or
+        adminAdvanced privilege is required to get an upgraded diagram.
+
+        Note: You can upgrade a diagram by placing the transformedDiagram dictionary in the diagram
+        parameter of update_diagram.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        diagram_id          Required string. Diagram ID
+        ---------------     --------------------------------------------------------------------
+        version_id          Required string. Diagram Version ID
+        ===============     ====================================================================
+
+        :return:
+             Success Object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Using the transformedDiagram from the result object to update a diagram.
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            upgrade_obj = wm.diagram_upgraded_version("gb1GBilqT4yk68Hfs5ghxw", diagram_version=1)
+
+            # update diagram draft
+            wm.update_diagram( body=upgrade_obj['transformedDiagram'] )
+
+        .. code-block:: python
+
+            # Success Object Example:
+            {
+                "transformedDiagram": {
+                    "diagramId": "gb1GBilqT4yk68Hfs5ghxw",
+                    "diagramVersion": 1,
+                    "diagramName": "Test New Diagram123 2024_12_13_11_59_54_764959",
+                    "description": "Test Description",
+                    "initialStepId": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                    "initialStepName": "Start/End",
+                    "steps": [
+                        {
+                            "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                            "name": "Start/End",
+                            "description": "Start and end of a workflow",
+                            "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                            "automatic": false,
+                            "proceedNext": true,
+                            "canSkip": false,
+                            "position": "0,0,100,50",
+                            "shape": 3,
+                            "color": "130, 202, 237",
+                            "outlineColor": "130, 202, 237",
+                            "labelColor": "black",
+                            "action": { "actionType": "Manual" },
+                            "paths": [
+                                {
+                                    "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                    "points": [ { "x": 0, "y": 26 }, { "x": 0,  "y": 74 } ],
+                                    "ports": [  "BOTTOM", "TOP" ],
+                                    "assignedType": "Unassigned",
+                                    "notifications": [],
+                                    "lineColor": "black"
+                                }
+                            ],
+                            "helpUrl": "Start/End help url",
+                            "helpText": "Start/End help text"
+                        }
+                    ],
+                    "centralizedDataReferences": [],
+                    "displayGrid": true,
+                    "useCentralizedDataReferences": true
+                },
+                "modifiedStepIds": [],
+                "failedStepIds": [],
+                "modifiedDataSourceNames": [],
+                "failedDataSourceNames": []
+            }
+
+        """
+        try:
+            return self._gis._con.get(
+                f"{self._url}/diagrams/{diagram_id}/{version_id}/upgraded"
+            )
+        except:
+            self._handle_error(sys.exc_info())
+
     def create_wm_role(self, name, description="", privileges=[]):
         """
         Adds a role to the Workflow Manager instance given a user-defined name
@@ -1747,51 +1798,171 @@ class WorkflowManager:
         annotations: list = [],
         data_sources: list = [],
         diagram_id: Optional[str] = None,
+        centralized_data_references: list = [],
+        use_centralized_data_references: bool = False,
     ):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        name                Required string. Diagram Name
-        ---------------     --------------------------------------------------------------------
-        steps               Required list. List of Step objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        display_grid        Required boolean. Boolean indicating whether the grid will be displayed in the Diagram
-        ---------------     --------------------------------------------------------------------
-        description         Optional string. Diagram description
-        ---------------     --------------------------------------------------------------------
-        active              Optional Boolean. Indicates whether the Diagram is active
-        ---------------     --------------------------------------------------------------------
-        annotations         Optinal list. List of Annotation objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        data_sources        Optional list. List of Data Source objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        diagram_id          Optional string. The unique ID of the diagram to be created.
-        ===============     ====================================================================
+        =============================== ====================================================================
+        **Parameter**                   **Description**
+        ------------------------------- --------------------------------------------------------------------
+        name                            Required string. Diagram Name
+        ------------------------------- --------------------------------------------------------------------
+        steps                           Required list. List of Step objects associated with the Diagram
+        ------------------------------- --------------------------------------------------------------------
+        display_grid                    Required boolean. Boolean indicating whether the grid will be displayed in the
+                                        Diagram
+        ------------------------------- --------------------------------------------------------------------
+        description                     Optional string. Diagram description
+        ------------------------------- --------------------------------------------------------------------
+        active                          Optional Boolean. Indicates whether the Diagram is active
+        ------------------------------- --------------------------------------------------------------------
+        annotations                     Optional list. List of Annotation objects associated with the Diagram
+        ------------------------------- --------------------------------------------------------------------
+        data_sources                    Optional list. Spatial data that will be used in the steps of the diagram.
+                                        Note: It is recommended to use centralizedDataReferences for new diagrams.
+                                        Data sources are not supported in ArcGIS Online.
+        ------------------------------- --------------------------------------------------------------------
+        diagram_id                      Optional string. The unique ID of the diagram to be created.
+        ------------------------------- --------------------------------------------------------------------
+        centralized_data_references     Optional list. The Centralized references to data and other content that will be
+                                        used in the steps of the diagram. See details for CentralizedDataReference below
+        ------------------------------- --------------------------------------------------------------------
+        use_centralized_data_references Optional boolean. Indicates that the diagram's step configurations make use of
+                                        CentralizedDataReferences. Defaults to false. Note: It is recommended that this
+                                        is set to True for new diagrams
+        =============================== ====================================================================
 
         :return:
             :class:`Workflow Manager Diagram <arcgis.gis.workflowmanager.JobDiagram>` ID
 
+        CentralizedDataReference Dictionary
+        ===============================
+
+        ===============              ====================================================================
+        **Parameter**                **Description**
+        ---------------              --------------------------------------------------------------------
+        id                           Required string. The unique identifier of the data reference to be stored in the diagram.
+        ---------------              --------------------------------------------------------------------
+        alias                        Required string. The unique name of the data reference to be stored in the diagram.
+        ---------------              --------------------------------------------------------------------
+        isValidated                  Required boolean. Indicates whether the data reference has been validated.
+                                     Note: Pro Items and Pro Commands are not validated.
+        ---------------              --------------------------------------------------------------------
+        referenceType                Required string. The type of data reference. Accepted values include FeatureService,
+                                     Survey, GeoprocessingService, WebMap, ProProject, ProMapItem, ProSceneItem,
+                                     ProTaskItem, ProLayoutItem, ProSystemToolboxItem, or ProCommand. Note: Geoprocessing
+                                     services must use either standaloneGPUrl or portalItem.
+        ---------------              --------------------------------------------------------------------
+        capabilities                 Optional list. The capabilities of a branch versioned feature service. Valid values
+                                     include SupportsBranchVersioning, SupportsCreateReplica, and SupportsDataQuality.
+        ---------------              --------------------------------------------------------------------
+        portalItem                   Optional portalItem dict. The item information for the reference. Required for
+                                     referencesTypes set to FeatureService, Survey, WebMap, or ProProject. For more
+                                     details, see PortalItem below.
+        ---------------              --------------------------------------------------------------------
+        proItemName                  Optional string. The name of the Pro item. Required when the referenceType is set
+                                     to ProMapItem, ProSceneItem, ProTaskItem, ProLayoutItem, or ProSystemToolboxItem
+        ---------------              --------------------------------------------------------------------
+        command                      Optional string. The Pro command DAML id. Required when the referenceType is ProCommand.
+        ---------------              --------------------------------------------------------------------
+        standaloneGPUrl              Optional string. The service URL for the Geoprocessing Service. Required when the
+                                     referenceType is GeoprocessingService and portalItem is not defined.
+        ===============              ====================================================================
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 1:
+            {
+              "id": "50c6a626-2e45-4cfa-b149-3add455f9d72",
+              "alias": "ParcelFabricDataQuality",
+              "portalItem": {
+                "itemId": "a64fdcf5e7b44a27bd98d098ca02ca57",
+                "portalType": "Current",
+                "portalUrl": null
+              },
+              "isValidated": true,
+              "referenceType": "FeatureService",
+              "capabilities": [
+                "SupportsBranchVersioning",
+                "SupportsDataQuality"
+              ]
+            }
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 2:
+            {
+                "id": "f9f002b0-ea3e-49a3-b40c-5e08687282f0",
+                "alias": "GeocodingTools",
+                "portalItem": {
+                    "itemId": "7eacbbfff9a24bc0a7fc0e9d7b805ccd",
+                    "portalType": "Current",
+                    "portalUrl": null
+                },
+                "isValidated": true,
+                "referenceType": "GeoprocessingService"
+            }
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 3:
+            {
+              "id": "b09ae444-3400-49ca-9a1b-1f3795332139",
+              "alias": "Echo Tool",
+              "isValidated": true,
+              "referenceType": "GeoprocessingService",
+              "standaloneGPUrl": "https://example.esri.com/arcgis/rest/services/ProcessingTool/GPServer/ProcessingTool"
+            }
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 4:
+            {
+              "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+              "proItemName": "MyProMap",
+              "referenceType": "ProMapItem"
+            }
+
+
+        PortalItem Object
+        ========================
+
+        ===============              ====================================================================
+        **Parameter**                **Description**
+        ---------------              --------------------------------------------------------------------
+        itemId                       Required string. The unique item identifier of the Portal item.
+        ---------------              --------------------------------------------------------------------
+        portalType                   Optional string. The hosting Portal location of the data reference relative to the
+                                     workflow item. Accepted values include Current, ArcGIS Online, and Other. This value
+                                     is set to Current by default.
+        ---------------              --------------------------------------------------------------------
+        portalUrl                    Optional string. Required when portalType is set to Other, the full URL including
+                                     Web Adaptor for the Portal hosting the item.
+        ===============              ====================================================================
+
         """
         try:
             url = "{base}/diagrams".format(base=self._url)
+            diagram_obj = {
+                "diagramId": diagram_id,
+                "diagramName": name,
+                "description": description,
+                "active": active,
+                "initialStepId": "",
+                "initialStepName": "",
+                "steps": steps,
+                "dataSources": data_sources,
+                "annotations": annotations,
+                "displayGrid": display_grid,
+            }
+            if centralized_data_references:
+                diagram_obj["centralizedDataReferences"] = centralized_data_references
+            if use_centralized_data_references:
+                diagram_obj["useCentralizedDataReferences"] = True
 
-            post_diagram = JobDiagram(
-                {
-                    "diagramId": diagram_id,
-                    "diagramName": name,
-                    "description": description,
-                    "active": active,
-                    "initialStepId": "",
-                    "initialStepName": "",
-                    "steps": steps,
-                    "dataSources": data_sources,
-                    "annotations": annotations,
-                    "displayGrid": display_grid,
-                }
-            )
+            post_diagram = JobDiagram(diagram_obj)
             return post_diagram.post(self._gis, url)["diagram_id"]
         except:
             self._handle_error(sys.exc_info())
@@ -1812,35 +1983,84 @@ class WorkflowManager:
         :return:
             success object
 
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a diagram with centralized data references
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # The update body contains only those fields we wish to update.
+            updated_diagram_body = {
+                                    "diagramName": "Updated Diagram Name",
+                                    "description": "Updated",
+                                    "centralizedDataReferences": [
+                                          {
+                                            "id": "f9f002b0-ea3e-49a3-b40c-5e08687282f0",
+                                            "alias": "GeocodingTools",
+                                            "isValidated": true,
+                                            "portalItem": {
+                                              "itemId": "7eacbbfff9a24bc0a7fc0e9d7b805ccd",
+                                              "portalType": "Current"
+                                            },
+                                            "acceptsToken": true,
+                                            "referenceType": "GeoprocessingService"
+                                          },
+                                          {
+                                            "id": "5a3aa2d1-06ed-49fc-9c38-e1576d9cc5d2",
+                                            "alias": "Example Feature Service",
+                                            "portalItem": {
+                                              "itemId": "a64fdcf5e7b44a27bd98d098ca02ca57",
+                                              "portalType": "Current",
+                                              "portalUrl": null
+                                            },
+                                            "isValidated": true,
+                                            "referenceType": "FeatureService",
+                                            "capabilities": [ "SupportsBranchVersioning", "SupportsDataQuality" ]
+                                          }
+                                        ]
+                                    "useCentralizedDataReferences": True
+                                    }
+
+            wm.update_diagram(update_diagram_body, delete_draft=True)
+
         """
         try:
+            body = {
+                _camelCase_to_underscore(k): v
+                for k, v in body.items()
+                if v is not None and not k.startswith("_")
+            }
             url = "{base}/diagrams/{diagramid}".format(
                 base=self._url, diagramid=body["diagram_id"]
             )
-            post_diagram = JobDiagram(
-                {
-                    "diagramId": body["diagram_id"],
-                    "diagramName": body["diagram_name"],
-                    "description": (
-                        body["description"] if "description" in body else ""
-                    ),
-                    "active": (body["active"] if "active" in body else False),
-                    "initialStepId": (
-                        body["initial_step_id"] if "initial_step_id" in body else ""
-                    ),
-                    "initialStepName": (
-                        body["initial_step_name"] if "initial_step_name" in body else ""
-                    ),
-                    "steps": body["steps"],
-                    "dataSources": (
-                        body["data_sources"] if "data_sources" in body else []
-                    ),
-                    "annotations": (
-                        body["annotations"] if "annotations" in body else ""
-                    ),
-                    "displayGrid": body["display_grid"],
-                }
-            )
+            diagram_obj = {
+                "diagramId": body["diagram_id"],
+                "diagramName": body["diagram_name"],
+                "description": (body["description"] if "description" in body else ""),
+                "active": (body["active"] if "active" in body else False),
+                "initialStepId": (
+                    body["initial_step_id"] if "initial_step_id" in body else ""
+                ),
+                "initialStepName": (
+                    body["initial_step_name"] if "initial_step_name" in body else ""
+                ),
+                "steps": body["steps"],
+                "dataSources": (body["data_sources"] if "data_sources" in body else []),
+                "annotations": (body["annotations"] if "annotations" in body else ""),
+                "displayGrid": body["display_grid"],
+                "useCentralizedDataReferences": (
+                    body["use_centralized_data_references"]
+                    if "use_centralized_data_references" in body
+                    else False
+                ),
+            }
+            if body.get("centralized_data_references"):
+                diagram_obj["centralizedDataReferences"] = body[
+                    "centralized_data_references"
+                ]
+
+            post_diagram = JobDiagram(diagram_obj)
             res = post_diagram.update(self._gis, url, delete_draft)
 
             return res
@@ -2426,52 +2646,6 @@ class SavedSearchesManager:
         error_text = info[1]
         raise Exception(error_text)
 
-    @property
-    def _wmx_server_url(self):
-        """locates the WMX server"""
-        baseurl = self._gis._portal.resturl
-
-        # Set org_id
-        info_result = self._gis.properties
-        self.is_enterprise = info_result["isPortal"]
-
-        if self.is_enterprise:
-            self.org_id = "workflow"
-            res = self._gis.servers
-            for s in res["servers"]:
-                server_functions = [
-                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
-                ]
-                if "workflowmanager" in server_functions:
-                    self._url = s.get("url", None)
-                    self._private_url = s.get("adminUrl", None)
-                    if self._url is None:
-                        raise RuntimeError("Cannot find a WorkflowManager Server")
-                    self._url += f"/{self.org_id}/{self._item.id}"
-                    self._private_url += f"/{self.org_id}/{self._item.id}"
-                    return self._url, self._private_url
-            raise RuntimeError(
-                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                "Administrator to ensure Workflow Manager Server is properly configured."
-            )
-        # is Arcgis Online
-        else:
-            self.org_id = info_result["id"]
-
-            helper_services = info_result["helperServices"]
-            if helper_services is None:
-                raise RuntimeError("Cannot find helper functions")
-
-            self._url = helper_services["workflowManager"]["url"]
-            if self._url is None:
-                raise RuntimeError("Cannot get Workflow Manager url")
-
-            self._url += f"/{self.org_id}/{self._item.id}"
-            self._private_url = f"/{self.org_id}/{self._item.id}"
-            return self._url, self._private_url
-
-        return None
-
     def create(
         self,
         name: str,
@@ -2711,7 +2885,7 @@ class Job(object):
     _camelCase_to_underscore = _camelCase_to_underscore
     _underscore_to_camelcase = _underscore_to_camelcase
 
-    def __init__(self, init_data, gis=None, url=None):
+    def __init__(self, init_data, gis=None, url=None, workflow_manager=None):
         self.job_status = None
         self.notes = None
         self.diagram_id = None
@@ -2743,6 +2917,7 @@ class Job(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
         self._url = url
+        self._workflow_manager = workflow_manager
 
     def post(self):
         post_dict = {
@@ -3279,25 +3454,32 @@ class Job(object):
         return return_obj["jobComments"]
 
     def set_job_version(
-        self, data_source_name, version_guid=None, version_name=None, administered=False
+        self,
+        data_source_name=None,
+        version_guid=None,
+        version_name=None,
+        administered=False,
+        data_reference_id=None,
     ):
         """
         Sets the version of the job.
 
-        ================    ===================================================================
-        **Argument**        **Description**
-        ----------------    -------------------------------------------------------------------
-        data_source_name    Required. The name of the data source for the job version to be set.
-        ----------------    -------------------------------------------------------------------
-        version_guid        Optional. The guid of the version to be set. If the value is null or not defined,
-                            the versionName must be defined. versionGuid is preferred to be defined for better
-                            performance.
-        ----------------    -------------------------------------------------------------------
-        version_name        Optional. The name of the version to be set. If the value is null or not defined,
-                            the versionGuid must be defined.
-        ----------------    -------------------------------------------------------------------
-        administered        Optional. If true, the version can be claimed. If not defined, the default value is false.
-        ================    ===================================================================
+        =================    ===================================================================
+        **Argument**         **Description**
+        -----------------    -------------------------------------------------------------------
+        data_source_name     The name of the data source for the job version to be set. Required if the job diagram is using the data sources format.
+        -----------------    -------------------------------------------------------------------
+        version_guid         Optional. The guid of the version to be set. If the value is null or not defined,
+                             the versionName must be defined. versionGuid is preferred to be defined for better
+                             performance.
+        -----------------    -------------------------------------------------------------------
+        version_name         Optional. The name of the version to be set. If the value is null or not defined,
+                             the versionGuid must be defined.
+        -----------------    -------------------------------------------------------------------
+        administered         Optional. If true, the version can be claimed. If not defined, the default value is false.
+        -----------------    -------------------------------------------------------------------
+        data_reference_id    The id of the data reference for the job version to be set. Required if the job diagram is using the data references format.
+        =================    ===================================================================
 
         :return:
             success object
@@ -3307,9 +3489,12 @@ class Job(object):
         url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=self.job_id)
 
         params = {
-            "dataSourceName": data_source_name,
             "workflowAdministered": administered,
         }
+        if data_source_name:
+            params["dataSourceName"] = data_source_name
+        if data_reference_id:
+            params["dataReferenceId"] = data_reference_id
         if version_guid is not None:
             params["versionGuid"] = version_guid
         if version_name is not None:
@@ -3336,6 +3521,338 @@ class Job(object):
             if v is not None and not k.startswith("_")
         }
         return return_obj
+
+    def _execute_step(self, step_ids: Optional[list], execution_type: ExecutionType):
+        # Create a JobExecution object
+        je = JobExecution(self, execution_type)
+        # Subscribe to this job
+        self._workflow_manager._notification_manager.subscribe(
+            [self.job_id], je._callback
+        )
+
+        # Call the action endpoint
+        url = f"{self._url}/jobs/{self.job_id}/action"
+        post_obj = {}
+        if execution_type is ExecutionType.RUN:
+            post_obj["type"] = "Run"
+        elif execution_type is ExecutionType.FINISH:
+            post_obj["type"] = "Finish"
+        elif execution_type is ExecutionType.STOP:
+            post_obj["type"] = "Stop"
+
+        if step_ids is not None:
+            post_obj["stepIds"] = step_ids
+
+        try:
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+            # If it fails, unsubscribe then throw
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception(return_obj["stepResponses"])
+        except:
+            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
+            raise
+
+        # If it succeeds, return the JobExecution
+        je._started()
+        return je
+
+    def run(self, step_ids: Optional[list] = None):
+        """
+        Starts running the current step(s). Running a step marks it as finished, if the step is set to proceed to next.
+
+        The step will not be started under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
+
+        ================    ===================================================================
+        **Argument**        **Description**
+        ----------------    -------------------------------------------------------------------
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
+        ================    ===================================================================
+
+        :return:
+            :class:`~arcgis.gis.workflowmanager.JobExecution`
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Run the current active steps
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will run the current active steps, if no param is given, i.e job.run()
+            run_execution = job.run(step_ids=['stepid'])
+
+            print(f'Result = { run_execution.result() }')
+            print(f'Status = { run_execution.status }')
+            print(f'Elapsed Time = { run_execution.elapse_time }')
+            print(f'Messages:')
+            for m in run_execution.messages:
+                print(m.message)
+
+        """
+        return self._execute_step(step_ids, execution_type=ExecutionType.RUN)
+
+    def stop(self, step_ids: Optional[list] = None):
+        """
+        Stops the current running step(s). The step(s) can be Run again or Finish can be used to complete it. In case of
+        GP step and question step, the processing of the step is cancelled. In case of manual and open app step,
+        the step is paused. The step can be forced to stop by a user not assigned to the step with the
+        jobForceStop privilege.
+
+        The step will not be stopped under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
+
+        ================    ===================================================================
+        **Argument**        **Description**
+        ----------------    -------------------------------------------------------------------
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
+        ================    ===================================================================
+
+        :return:
+            :class:`~arcgis.gis.workflowmanager.JobExecution`
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Stop the current active steps
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will stop the current active steps, if no param is given
+            stop_execution = job.stop()
+
+            print(f'Result = { stop_execution.result() }')
+            print(f'Status = { stop_execution.status }')
+            print(f'Elapsed Time = { stop_execution.elapse_time }')
+            print(f'Messages: ')
+            for m in stop_execution.messages:
+                print(m.message)
+
+        """
+        return self._execute_step(step_ids, execution_type=ExecutionType.STOP)
+
+    def finish(self, step_ids: Optional[list] = None):
+        """
+        Finishes the current step(s).
+
+        The step will not be finished under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
+
+        ================    ===================================================================
+        **Argument**        **Description**
+        ----------------    -------------------------------------------------------------------
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
+        ================    ===================================================================
+
+        :return:
+            :class:`~arcgis.gis.workflowmanager.JobExecution`
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Finish the current active steps
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will finish the current active steps, if no param is given
+            finish_execution = job.finish()
+
+            print(f'Result = { finish_execution.result() }')
+            print(f'Status = { finish_execution.status }')
+            print(f'Elapsed Time = { finish_execution.elapse_time }')
+            print(f'Messages: ')
+            for m in finish_execution.messages:
+                print(m.message)
+
+        """
+        return self._execute_step(step_ids, execution_type=ExecutionType.FINISH)
+
+
+class JobExecution:
+    """
+    Represents a single step executing in a workflow manager job.  The `JobExecution` class allows for the asynchronous
+    operation of an executing step. The status of the step execution can then be queried by the class properties,
+    status, result, elapse_time and messages. This class is not intended for users to call directly.
+
+    See :attr:`~arcgis.gis.workflowmanager.Job.run`, :attr:`~arcgis.gis.workflowmanager.Job.stop` or
+    :attr:`~arcgis.gis.workflowmanager.Job.finish` for examples.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    job                 Required :class:`~arcgis.gis.workflowmanager.Job` The job to execute
+    ---------------     --------------------------------------------------------------------
+    execution_type      Required :class:`~arcgis.gis.workflowmanager.ExecutionType`. The execution type
+    ===============     ====================================================================
+
+    """
+
+    _start_time = None
+    _end_time = None
+    _execution_type = None
+
+    def __init__(self, job: Job, execution_type: ExecutionType):
+        self._job = job
+        self._messages = []
+        self._event = threading.Event()
+        self._execution_type = execution_type
+
+    def _callback(self, msg: Notification, nm: NotificationManager):
+        if (
+            "jobId" in msg.message
+            and msg.message["jobId"] == self._job.job_id
+            and msg.msg_type not in [MessageType.JOB_STATE, MessageType.CREATED]
+        ):
+            logger.debug(f"Received {msg}")
+            self._messages.append(msg)
+            if self._execution_type is ExecutionType.RUN:
+                if msg.msg_type in [
+                    MessageType.STEP_FINISHED,
+                    MessageType.STEP_STOPPED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_INFO_REQUIRED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+            elif self._execution_type is ExecutionType.STOP:
+                if msg.msg_type in [
+                    MessageType.STEP_PAUSED,
+                    MessageType.STEP_STOPPED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_CANCELLED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+            elif self._execution_type is ExecutionType.FINISH:
+                if msg.msg_type in [
+                    MessageType.STEP_STARTED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_FINISHED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+
+    def _started(self):
+        self._start_time = datetime.datetime.now()
+
+    @property
+    def messages(self):
+        """
+        Gets the messages collected during execution
+
+        :return:
+            List of :class:`~arcgis.gis.workflowmanager.Notification`
+
+        """
+        return self._messages
+
+    @property
+    def status(self):
+        """
+        Returns the execution status
+
+        :return:
+            string
+
+        """
+        return (
+            ExecutionStatus.COMPLETE
+            if self._event.is_set()
+            else ExecutionStatus.RUNNING
+        )
+
+    def result(self, timeout: Optional[int] = 300):
+        """
+        Returns the last :class:`~arcgis.gis.workflowmanager.Notification` message received at the end of the execution
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        timeout             Optional integer. The timeout argument specifies a timeout for the operation in seconds.
+        ===============     ====================================================================
+
+        :return:
+            string
+
+        """
+        if self._event.wait(timeout):
+            return self._messages[-1]
+
+        raise TimeoutError("Timeout waiting for result")
+
+    @property
+    def elapse_time(self):
+        """
+        Get the amount of time that passed while the
+        :class:`~arcgis.gis.workflowmanager.JobExecution` ran.
+        """
+        if self._end_time:
+            return self._end_time - self._start_time
+
+        return datetime.datetime.now() - self._start_time
+
+    def running(self):
+        """
+        Returns a boolean indicating whether the execution is running.
+
+        :return:
+            boolean
+
+        """
+        return self._start_time and not self._event.is_set()
+
+    def done(self):
+        """
+        Returns a boolean indicating whether the execution is done.
+
+        :return:
+            boolean
+
+        """
+        return not self.running()
+
+    def __repr__(self):
+        return f'JobExecution({{"job": {self._job.job_id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
 
 
 class WMRole(object):
@@ -3838,3 +4355,302 @@ class JobLocation(object):
     def get(self, gis, url, params):
         job_location_dict = gis._con.get(url, params)
         return JobLocation(job_location_dict)
+
+
+class NotificationManager:
+    """
+    Represents a helper class for workflow manager websocket notifications. Accessible as the
+    :attr:`~arcgis.gis.workflowmanager.WorkflowManager.notifications` property of the
+    :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                The Workflow Manager Item
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager):
+        self._item = item
+        _initialize(self, item._gis)
+        self.workflow_item_id = item.id
+        self.websocket_connection = None
+        self.subscribed_jobs = {}
+        self._workflow_manager = workflow_manager
+        self._connected = False
+        self._manually_connected = False
+        self._server_url = self._workflow_manager._server_url
+        self._received_connected_msg = None
+        self._timeout = 30
+        self._subscription_lock = threading.RLock()
+
+        # need baseAddress/ server address, orgid, and workflow item id
+        base = self._server_url.replace("http://", "ws://").replace(
+            "https://", "wss://"
+        )
+        item_url = f"{self.org_id}/{self.workflow_item_id}"
+        self.websocket_url = f"{base}/{item_url}/notificationWs"
+        self.token_request_url = f"{self._server_url}/{item_url}"
+
+    def _disconnect_check(self, job_id):
+        with self._subscription_lock:
+            if job_id in self.subscribed_jobs:
+                self.unsubscribe([job_id])
+                # If this list is empty, all job executions have terminated, can disconnect.
+                logger.debug(
+                    f"Jobs: {self.subscribed_jobs}. Manually connected: {self._manually_connected}"
+                )
+                if not self.subscribed_jobs and not self._manually_connected:
+                    self.disconnect()
+
+    @property
+    def is_connected(self) -> bool:
+        return self._connected
+
+    def _subscriber(self, message):
+        try:
+            message_dict = json.loads(message)
+
+            # ensure we are connected via setting an event before subscribing
+            if message_dict.get("connected"):
+                self._received_connected_msg.set()
+
+            if "msgType" in message_dict:
+                msg = Notification(message_dict)
+
+                if "jobId" in msg.message:
+                    job_id = msg.message["jobId"]
+                    if job_id in self.subscribed_jobs.keys():
+                        callback = self.subscribed_jobs[job_id]
+                        callback(msg, self)
+        except:
+            logger.exception(f"Error with messages and callbacks")
+
+    def _connect(self) -> WebsocketConnection:
+        ws = WebsocketConnection(self._subscriber, self._gis, self._timeout)
+        self._received_connected_msg = threading.Event()
+        ws.connect(
+            self.websocket_url,
+            self.token_request_url,
+        )
+        self._received_connected_msg.wait(self._timeout)
+        self._connected = True
+        return ws
+
+    def connect(self):
+        """
+        Establishes a websocket connection to the workflow manager server.
+
+        .. code-block:: python
+            # USAGE EXAMPLE: Manage websocket connection manually
+
+            # create a WorkflowManager object from the workflow item
+            wf_item = gis.content.get('d6e25f2db0514520b32d6e65e7ad49a0')
+            wm = WorkflowManager(wf_item)
+
+            nm = NotificationManager(wf_item, wm)
+
+            with nm.connect() as connection:
+                # subscribe, unsubscribe, manage jobs etc
+                nm.subscribe([job_id])
+
+        """
+        if not self.websocket_connection:
+            logger.debug(f"Creating websocket connection to {self.websocket_url}")
+            self.websocket_connection = self._connect()
+            self._manually_connected = True
+
+    def disconnect(self):
+        """
+        Removes and disconnects the websocket connection to the workflow manager server.
+        """
+        if self.websocket_connection:
+            self.websocket_connection.disconnect()
+            self.websocket_connection = None
+            self._connected = False
+            self._manually_connected = False
+
+    def subscribe(self, job_ids: list, callback: Callable[[Notification], None]):
+        """
+        Subscribes to the notifications provided job ids. Register a callback for the specified jobId when subscribing to a job.
+        Whenever messages containing the specified jobId are received, the callback will be invoked with the contents
+        of the job notification message.
+
+        Refer to the WebSocket Message API for the list of subscribed job messages. (https://developers.arcgis.com/workflow-manager/api-reference/web-sockets/)
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_ids             Required list. The list of job ids to subscribe to.
+        ---------------     --------------------------------------------------------------------
+        callback            Required Callable. A Callable function that takes one parameter of type
+                            :class:`~arcgis.gis.workflowmanager.Notification`
+        ===============     ====================================================================
+
+        :return:
+            Workflow Manager :class:`Role <arcgis.gis.workflowmanager.WMRole>` Object
+
+        """
+        try:
+            with self._subscription_lock:
+                ids = job_ids
+                if self.websocket_connection is None:
+                    logger.debug(
+                        f"Creating temporary websocket connection to {self.websocket_url}"
+                    )
+                    self.websocket_connection = self._connect()
+                    subscribe_obj = {
+                        "msgType": "subscribe",
+                        "jobIds": ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
+
+                    self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
+                else:
+                    ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
+                    subscribe_obj = {
+                        "msgType": "subscribe",
+                        "jobIds": ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
+                    if len(ids) > 0:
+                        self.websocket_connection.send_and_wait(
+                            json.dumps(subscribe_obj)
+                        )
+                    else:
+                        # check if the new ids are already subscribed to, so we set the callback correctly.
+                        ids = [i for i in job_ids if i in self.subscribed_jobs.keys()]
+
+                for jid in ids:
+                    self.subscribed_jobs[jid] = callback
+        except:
+            logger.exception(f"Error when trying to subscribe")
+
+    def unsubscribe(self, job_ids: list):
+        """
+        Unsubscribes to the notifications for provided job ids. Removes the callback for the corresponding callbackId.
+        If no callbacks remain for a particular jobId, an unsubscribe message will be sent to Workflow Manager
+        Server for that particular jobId.
+
+        Refer to the WebSocket Message API for the list of subscribed job messages. (https://developers.arcgis.com/workflow-manager/api-reference/web-sockets/)
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_ids             Required list. The list of job ids to subscribe to
+        ===============     ====================================================================
+
+        :return:
+            Workflow Manager :class:`Role <arcgis.gis.workflowmanager.WMRole>` Object
+
+        """
+        try:
+            with self._subscription_lock:
+                if self.websocket_connection is not None:
+                    unsubscribe_obj = {
+                        "msgType": "unsubscribe",
+                        "jobIds": job_ids,
+                        "token": self.websocket_connection.get_token(
+                            self.token_request_url
+                        ),
+                    }
+                    self.websocket_connection.send(json.dumps(unsubscribe_obj))
+
+                    for jid in job_ids:
+                        self.subscribed_jobs.pop(jid)
+        except:
+            logger.exception(f"Error when trying to unsubscribe")
+
+
+class Notification:
+    """
+    Represents a Workflow Manager Notification object. The Notification contains the
+    :class:`~arcgis.gis.workflowmanager.MessageType`, the message object and the timestamp the notification was received
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    init_data           data object representing relevant properties of a notification
+    ===============     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: Print Notification Properties
+
+        # create a WorkflowManager object from the workflow item
+        wm = WorkflowManager(wf_item)
+
+        job = wm.jobs.get('job_id')
+        run_execution = job.run(step_ids=['stepid'])
+
+        print(f'Result = { run_execution.result() }')
+        print(f'Messages:')
+        for m in run_execution.messages:
+            print(m.msg_type)
+            print(m.message)
+            print(m.timestamp)
+    """
+
+    def __init__(self, init_data):
+        self.message = init_data["message"]
+        self.timestamp = init_data["timestamp"]
+        self.msg_type = MessageType(init_data["msgType"].upper())
+
+    def __repr__(self):
+        return f'Notification({{"timestamp": "{self.timestamp}", "msgType": "{self.msg_type}", "message": "{self.message}"}})'
+
+
+class MessageType(Enum):
+    """
+    The Workflow Manager Message Types
+
+    This enum class represents the list of all possible message types when sending or receiving messages.
+    """
+
+    CREATED = "CREATED"
+    ERROR = "ERROR"
+    JOB_STATE = "JOBSTATE"
+    JOB_UPDATED = "JOBUPDATED"
+    JOB_COMMENT_UPDATED = "JOBCOMMENTUPDATED"
+    JOB_ATTACHMENT_UPDATED = "JOBATTACHMENTUPDATED"
+    JOB_LOCATION_UPDATED = "JOBLOCATIONUPDATED"
+    STEP_STARTED = "STEPSTARTED"
+    STEP_PROGRESS = "STEPPROGRESS"
+    STEP_CANCELLED = "STEPCANCELLED"
+    STEP_PAUSED = "STEPPAUSED"
+    STEP_STOPPING = "STEPSTOPPING"
+    STEP_STOPPED = "STEPSTOPPED"
+    STEP_WARNING_STOPPED = "STEPWARNINGSTOPPED"
+    STEP_FINISHED = "STEPFINISHED"
+    STEP_REASSIGNED = "STEPREASSIGNED"
+    STEP_HELD = "STEPHELD"
+    STEP_HOLD_RELEASED = "STEPHOLDRELEASED"
+    STEP_ERROR = "STEPERROR"
+    STEP_INFO_REQUIRED = "STEPINFOREQUIRED"
+    STEP_INFORMATION = "STEPINFORMATION"
+
+
+class ExecutionType(Enum):
+    """
+    The Workflow Manager Execution Types
+
+    This enum class represents the possible step execution types to be run with websocket messaging.
+    """
+
+    RUN = "RUN"
+    STOP = "STOP"
+    FINISH = "FINISH"
+
+
+class ExecutionStatus(Enum):
+    """
+    The Workflow Manager Execution Statuses
+
+    This enum class represents the possible step execution statuses.
+    """
+
+    RUNNING = "RUNNING"
+    COMPLETE = "COMPLETE"

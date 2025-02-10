@@ -1,22 +1,32 @@
+import threading
 import unittest
 import datetime
 import re
+import time
 from pprint import pprint
 
 import arcgis.gis.workflowmanager._workflow_manager
 from arcgis.geometry import Geometry
 from . import workflowmanager_setup
-from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
+from arcgis.gis.workflowmanager import (
+    WorkflowManager,
+    WorkflowManagerAdmin,
+    MessageType,
+    ExecutionStatus,
+    NotificationManager,
+    Notification,
+    JobExecution,
+)
 from arcgis.gis import GIS
 from tests.integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from utils.decorators import integration_test
+import uuid
 
 
 ###########################################################################
 # @unittest.SkipTest
 @integration_test
-
 class TestWorkflowManager(unittest.TestCase):
     """Tests the workflow manager Functionality"""
 
@@ -96,14 +106,13 @@ class TestWorkflowManager(unittest.TestCase):
                     "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
                 }
             ],
+            centralized_data_references=[],
         )
 
-    def create_diagram_robust(self):
-        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
-        d_id = uniqueness[0:22]
+    def create_diagram_with_cdr(self):
+        uniqueness = uuid.uuid4().hex
         return self.connection.workflow_manager.create_diagram(
             name="Test New Diagram123 " + uniqueness,
-            diagram_id=d_id,
             display_grid=True,
             description="Test Description",
             active=True,
@@ -116,7 +125,7 @@ class TestWorkflowManager(unittest.TestCase):
                     "text": "test annotations",
                 }
             ],
-            data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
+            data_sources=[],
             steps=[
                 {
                     "action": {"actionType": "Manual"},
@@ -144,6 +153,71 @@ class TestWorkflowManager(unittest.TestCase):
                     "proceedNext": True,
                     "shape": 3,
                     "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                }
+            ],
+            centralized_data_references=[
+                {
+                    "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                    "proItemName": "MyProMap",
+                    "referenceType": "ProMapItem",
+                }
+            ],
+            use_centralized_data_references=True,
+        )
+
+    def create_diagram_robust(self):
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+        d_id = uniqueness[0:22]
+        return self.connection.workflow_manager.create_diagram(
+            name="Test New Diagram123 " + uniqueness,
+            diagram_id=d_id,
+            display_grid=True,
+            description="Test Description",
+            active=True,
+            annotations=[
+                {
+                    "position": "0,0,100,250",
+                    "color": "130, 202, 237",
+                    "outlineColor": "130, 202, 237",
+                    "labelColor": "black",
+                    "text": "test annotations",
+                }
+            ],
+            data_sources=[],
+            steps=[
+                {
+                    "action": {"actionType": "Manual"},
+                    "automatic": False,
+                    "canSkip": False,
+                    "color": "130, 202, 237",
+                    "description": "Start and end of a workflow",
+                    "helpText": "Start/End help text",
+                    "helpUrl": "Start/End help url",
+                    "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                    "labelColor": "black",
+                    "name": "Start/End",
+                    "outlineColor": "130, 202, 237",
+                    "paths": [
+                        {
+                            "assignedType": "Unassigned",
+                            "lineColor": "black",
+                            "nextStep": "21bff5ee-1586-a635-30ea" "-86769f01ac93",
+                            "notifications": [],
+                            "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                            "ports": ["BOTTOM", "TOP"],
+                        }
+                    ],
+                    "position": "0,0,100,50",
+                    "proceedNext": True,
+                    "shape": 3,
+                    "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                }
+            ],
+            centralized_data_references=[
+                {
+                    "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                    "proItemName": "MyProMap",
+                    "referenceType": "ProMapItem",
                 }
             ],
         )
@@ -2705,8 +2779,6 @@ class TestWorkflowManager(unittest.TestCase):
         version_one = self.connection.workflow_manager.diagram_version(old_id, 1)
         version_two = self.connection.workflow_manager.diagram_version(old_id, 2)
 
-        # Act
-
         # Assert
         self.assertEqual(
             version_one.description, "Test Description", "Incorrect Version description"
@@ -2800,6 +2872,37 @@ class TestWorkflowManager(unittest.TestCase):
             assert True, (
                 "Expected error returned during test: " + testException.__str__()
             )
+
+    # endregion
+
+    # region Get Upgraded Diagram Version
+
+    def test_get_upgraded_diagram_successfully_returns(self):
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.diagram_upgraded_version(old_id, 1)
+
+        self.assertTrue(
+            actual["transformedDiagram"],
+            "Did not have correct upgraded diagram version",
+        )
+        self.assertEqual(
+            actual["modifiedStepIds"],
+            [],
+            "Did not have correct upgraded diagram version",
+        )
+        self.assertEqual(
+            actual["failedStepIds"], [], "Did not have correct upgraded diagram version"
+        )
+        self.assertEqual(
+            actual["modifiedDataSourceNames"],
+            [],
+            "Did not have correct upgraded diagram version",
+        )
+        self.assertEqual(
+            actual["failedDataSourceNames"],
+            [],
+            "Did not have correct upgraded diagram version",
+        )
 
     # endregion
 
@@ -2995,6 +3098,16 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsInstance(actual, str, "Incorrect return type")
         self.assertEqual(len(actual), 22, "Incorrect size")
 
+    def test_create_diagram_with_cdr_successfully_returns(self):
+        # Arrange
+
+        # Act
+        actual = self.create_diagram_with_cdr()
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertEqual(len(actual), 22, "Incorrect size")
+
     def test_create_diagram_with_Custom_Id_successfully_returns(self):
         # Arrange
 
@@ -3028,9 +3141,7 @@ class TestWorkflowManager(unittest.TestCase):
             body={
                 "annotations": [],
                 "active": True,
-                "data_sources": [
-                    {"name": "dsource", "sourceType": "string", "url": "string"}
-                ],
+                "data_sources": [],
                 "description": "UPDATED ",
                 "diagram_id": old_id,
                 "diagram_name": "UPDATED " + str(datetime.datetime.now()),
@@ -3094,6 +3205,115 @@ class TestWorkflowManager(unittest.TestCase):
                         "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
                     },
                 ],
+            }
+        )
+
+        # Assert
+        self.assertTrue(actual, "Success was not true")
+
+        # ------------------------------------------------------------------------
+
+    def test_update_diagram_from_upgraded_version_returns_successfully(self):
+        # Arrange
+
+        # Act
+        old_id = self.create_diagram()
+        upgrade_obj = self.connection.workflow_manager.diagram_upgraded_version(
+            old_id, 1
+        )
+        upgrade_obj["transformedDiagram"]["diagramName"] += "UPDATED DIAGRAM"
+        upgrade_obj["transformedDiagram"]["active"] = True
+        actual = self.connection.workflow_manager.update_diagram(
+            body=upgrade_obj["transformedDiagram"], delete_draft=True
+        )
+
+        diagram = self.connection.workflow_manager.diagram(old_id)
+        # Assert
+        self.assertTrue(actual, "Success was not true")
+
+        # ------------------------------------------------------------------------
+
+    def test_update_diagram_with_cdr_returns_successfully(self):
+        # Arrange
+
+        # Act
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [],
+                "description": "UPDATED ",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+                "centralized_data_references": [
+                    {
+                        "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                        "proItemName": "MyProMapUPDATE",
+                        "referenceType": "ProMapItem",
+                    }
+                ],
+                "use_centralized_data_references": True,
             }
         )
 
@@ -3648,6 +3868,178 @@ class TestWorkflowManager(unittest.TestCase):
             raise ValueError(
                 "User could not use workflow manager api with system. Check UTE and Portal Version"
             )
+
+    # endregion
+
+    # region Step Execution
+
+    def test_run_step_returns_successfully(self):
+        # Arrange
+        # Create Intro WM Job
+        job_id = self.create_job()[0]
+
+        # Act
+        job = self.connection.workflow_manager.jobs.get(job_id)
+        job_exec = job.run()
+        counter = 0
+
+        while not job_exec.done():
+            print(f"Status = {job_exec.status}")
+            print(f"{job_exec.messages}")
+            time.sleep(5)
+            counter = counter + 1
+            if counter > 10:
+                raise TimeoutError('Step did not complete in time')
+
+        # Arrange
+        self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
+        self.assertEqual(
+            MessageType.STEP_INFO_REQUIRED,
+            job_exec.result().msg_type,
+            "last message should be stepinforequired.",
+        )
+        self.assertEqual(
+            ExecutionStatus.COMPLETE, job_exec.status, "Incorrect return type"
+        )
+        self.assertTrue(job_exec.messages, "Incorrect return type")
+
+    def test_stop_step_returns_successfully(self):
+        # Arrange
+        # Create Intro WM Job
+        job_id = self.create_job()[0]
+
+        # Act
+        job = self.connection.workflow_manager.jobs.get(job_id)
+        job.run().result()
+
+        job_exec = job.stop()
+        counter = 0
+
+        while not job_exec.done():
+            print(f"Status = {job_exec.status}")
+            print(f"{job_exec.messages}")
+            time.sleep(5)
+            counter = counter + 1
+            if counter > 10:
+                raise TimeoutError('Step did not complete in time')
+
+        # Arrange
+        self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
+        self.assertEqual(
+            MessageType.STEP_PAUSED,
+            job_exec.result().msg_type,
+            "last message should be stepinforequired.",
+        )
+        self.assertEqual(
+            ExecutionStatus.COMPLETE, job_exec.status, "Incorrect return type"
+        )
+        self.assertTrue(job_exec.messages, "Incorrect return type")
+
+    def test_finish_step_returns_successfully(self):
+        # Arrange
+        # Create Intro WM Job
+        job_id = self.create_job()[0]
+
+        # Act
+        job = self.connection.workflow_manager.jobs.get(job_id)
+        job.run().result()
+        job.stop().result()
+        job_exec = job.finish()
+        counter = 0
+
+        while not job_exec.done():
+            print(f"Status = {job_exec.status}")
+            print(f"{job_exec.messages}")
+            time.sleep(5)
+            counter = counter + 1
+            if counter > 10:
+                raise TimeoutError('Step did not complete in time')
+
+        # Arrange
+        self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
+        self.assertEqual(
+            MessageType.STEP_FINISHED,
+            job_exec.result().msg_type,
+            "last message should be stepinforequired.",
+        )
+        self.assertEqual(
+            ExecutionStatus.COMPLETE, job_exec.status, "Incorrect return type"
+        )
+        self.assertTrue(job_exec.messages, "Incorrect return type")
+
+    # endregion
+
+    # region Notification Manager
+    def test_connect_notification_manager_returns_successfully(self):
+        # Arrange
+        nm = self.connection.workflow_manager._notification_manager
+        nm.connect()
+
+        self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
+
+        nm.disconnect()
+        self.assertFalse(nm.is_connected, "Notification Manager did not connect.")
+
+    def test_subscribe_to_job_receives_messages_successfully(self):
+        # Arrange
+        msgs = []
+        nm = self.connection.workflow_manager._notification_manager
+        nm.connect()
+
+        self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
+
+        job_id = self.create_job()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+
+        def test_callback(notification: Notification, nm: NotificationManager):
+            msgs.append(notification)
+
+        nm.subscribe([job_id], test_callback)
+
+        # add a comment get some messages:
+        job.add_comment("Hello World")
+        self.assertTrue(len(msgs), "Messages were added when subscribed")
+        self.assertEqual(
+            msgs[0].msg_type,
+            MessageType.JOB_COMMENT_UPDATED,
+            "Messages were added when subscribed",
+        )
+
+        nm.disconnect()
+        self.assertFalse(nm.is_connected, "Notification Manager did not connect.")
+
+    def test_unsubscribe_to_job_receives_messages_successfully(self):
+        # Arrange
+        msgs = []
+        nm = self.connection.workflow_manager._notification_manager
+        nm.connect()
+
+        self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
+
+        job_id = self.create_job()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+
+        def test_callback(notification: Notification, nm: NotificationManager):
+            msgs.append(notification)
+
+        nm.subscribe([job_id], test_callback)
+
+        # add a comment get some messages:
+        job.add_comment("Hello World")
+        self.assertTrue(len(msgs) < 2, "Messages were added when subscribed")
+        self.assertEqual(
+            msgs[0].msg_type,
+            MessageType.JOB_COMMENT_UPDATED,
+            "Messages were added when subscribed",
+        )
+
+        nm.unsubscribe([job_id])
+
+        job.add_comment("Hello World")
+        self.assertTrue(len(msgs) < 2, "Messages were not added when unsubscribed")
+
+        nm.disconnect()
+        self.assertFalse(nm.is_connected, "Notification Manager did not connect.")
 
     # endregion
 
