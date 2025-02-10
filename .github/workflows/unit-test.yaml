@@ -142,14 +142,21 @@ jobs:
           key: conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
       - name: Install shared dependencies
         run: |
-          conda install -c main nose2 --yes
+          # testing dependencies
+          conda install -c main nose2 --yes --quiet
           pip install requests-mock
-          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
-          conda install -c esri "pyarrow>=16,<17" --yes
-          conda install "pydantic>=2.8.2,<3" --yes
-          conda install -c main "websocket-client>=1.2.3,<2"
-          conda install -c main "networkx>=3.3,<4"
-          conda install -c main protobuf --yes
+          conda install -c main protobuf --yes --quiet
+
+          # new dependencies
+          conda install -c main "websocket-client>=1.2.3,<2" --yes --quiet
+          conda install -c main "networkx>=3.3,<4" --yes --quiet
+
+          # core dependencies
+          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes --quiet
+          
+          # updated dependencies
+          conda install -c esri "pyarrow>=16,<17" --yes --quiet
+          conda install "pydantic>=2.8.2,<3" --yes --quiet
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
         id: save-cache

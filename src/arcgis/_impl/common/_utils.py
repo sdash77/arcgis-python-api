@@ -221,6 +221,24 @@ def _text_replace(text, replacements: dict[str, str]):
     return new_text
 
 
+def _get_unique_name(name):
+    """Create a new unique name for a service.
+    Keyword arguments:
+    target - The instance of arcgis.gis.GIS (the portal) to clone the feature service to.
+    name - The original name.
+    """
+
+    if name[0].isdigit():
+        name = "_" + name
+    name = name.replace(" ", "_")
+
+    guid = uuid.uuid4().hex[0:5]
+    ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
+    if len(ends_with_guid) > 0:
+        name = name[:-32]
+    return "{0}_{1}".format(name, guid)
+
+
 ###########################################################################
 class Error(Exception):
     pass
