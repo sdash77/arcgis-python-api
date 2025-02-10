@@ -698,7 +698,10 @@ class Query:
         features = result.get("features", [])
         if self._needs_more_features(result, features):
             # Pagination workflow
-            if (
+            if not self.supports_pagination:
+                # This paginates using object ids so we can fetch all features even if the service has a limit
+                features = self._fetch_all_features_by_chunk(url)
+            elif (
                 self.parameters.get("objectIds")
                 or self.parameters.get("orderByFields")
                 or self.parameters.get("geometryFilter")
@@ -706,12 +709,9 @@ class Query:
             ):
                 # For certain parameters, we do not expect all records to be returned or they have to be returned in a specific order
                 features = self._fetch_all_features_single_thread(url, features, result)
-            elif self.supports_pagination:
-                # Otherwise, we use a concurrent workflow to fetch all features using pagination
-                features = self._fetch_all_features_concurrent(url, features)
             else:
-                # Chunk as ids by default/last resort
-                features = self._fetch_all_features_by_chunk(url)
+                # Otherwise, we use a concurrent workflow to fetch all features
+                features = self._fetch_all_features_concurrent(url, features)
 
         result["features"] = features
         if self.as_df:
@@ -764,58 +764,58 @@ class Query:
 
         # Step 1: Get total records, but respect user-defined limit
         total_available = self._fetch_total_records_count(url)
-        requested_count = self.parameters.get(
-            "resultRecordCount", total_available
-        )  # Default if not set
-        page_size = min(
-            self.max_record_count, requested_count
-        )  # Ensure we don’t exceed service limits
-        total_count = min(
-            total_available, requested_count
-        )  # Limit to user-specified max
+        requested_count = self.parameters.get("resultRecordCount", total_available)
+        # Ensure we don’t request more than needed
+        requested_count = min(total_available, requested_count)
 
-        self.parameters["resultRecordCount"] = page_size  # Enforce per-request limit
+        self.parameters["resultRecordCount"] = (
+            self.max_record_count
+        )  # Enforce per-request limit
 
-        # Step 3: Define function to fetch a page of features
-        def fetch_page(offset, params):
+        # Step 2: Define function to fetch a page of features
+        def fetch_page(offset, limit, params):
             page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
             page_params["resultOffset"] = offset
+            page_params["resultRecordCount"] = limit
             page_params = _encode_params(page_params)
             response = self.layer._con._session.get(url, params=page_params).json()
+            # Return offset to maintain order
             return (
                 offset,
                 response.get("features", []),
-            )  # Return offset to maintain order
+            )
 
-        # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
+        # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
             futures = {}
-            # Ensure we don’t request more than needed
-            for offset in range(
-                original_offset + len(features),
-                min(total_count, original_offset + requested_count),
-                page_size,
-            ):
-                futures[executor.submit(fetch_page, offset, self.parameters)] = offset
+            fetched_count = len(features)
 
-            # Step 5: Process results and store them in an ordered dictionary
-            results_by_offset = {}
-            for future in concurrent.futures.as_completed(futures):
-                offset, result = future.result()
-                results_by_offset[offset] = result
+            while fetched_count < requested_count:
+                remaining = requested_count - fetched_count  # How many more we need
+                batch_size = min(self.max_record_count, remaining)  # Adjust batch size
+                offset = original_offset + fetched_count  # Adjust offset correctly
 
-            # Step 6: Merge results in the correct order
-            sorted_offsets = sorted(
-                results_by_offset.keys()
-            )  # Ensure ordered concatenation
-            for offset in sorted_offsets:
-                features.extend(results_by_offset[offset])
+                # Submit batch request
+                futures[
+                    executor.submit(fetch_page, offset, batch_size, self.parameters)
+                ] = offset
 
-                # Stop fetching if we reach requested_count
-                if len(features) >= requested_count:
-                    return features[:requested_count]  # Trim excess records safely
+                # Step 4: Process results in the correct order
+                results_by_offset = {}
+                for future in concurrent.futures.as_completed(futures):
+                    offset, result = future.result()
+                    results_by_offset[offset] = result
 
-        return features[:requested_count]  # Final trim to ensure correctness
+                # Step 5: Merge results in order
+                for offset in sorted(results_by_offset.keys()):
+                    features.extend(results_by_offset[offset])
+                    fetched_count += len(results_by_offset[offset])
+
+                    # Stop early if we reach requested_count
+                    if fetched_count >= requested_count:
+                        return features[:requested_count]
+
+        return features[:requested_count]  # Final trim
 
     def _fetch_total_records_count(self, url):
         count_params = copy.deepcopy(self.parameters)
@@ -862,8 +862,6 @@ class Query:
         self.parameters["resultRecordCount"] = (
             None  # we got the number of ids, so no need to limit the records
         )
-        if "resultOffset" in self.parameters:
-            del self.parameters["resultOffset"]
 
         # Step 2: Define function to fetch a page of features
         def fetch_page(ids_subset):
