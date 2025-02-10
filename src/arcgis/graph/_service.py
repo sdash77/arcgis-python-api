@@ -1240,7 +1240,7 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         property_name       Required string. The property to be updated.
         ----------------    ---------------------------------------------------------------
-        graph_property      Required :class:`arcgis.graph.data_model_types.GraphProperty`.
+        graph_property      Required :class:`~arcgis.graph.data_model_types.GraphProperty`.
                             The graph property to be updated.
         ----------------    ---------------------------------------------------------------
         mask                Required :class:`~arcgis.graph.data_model_types.GraphPropertyMask`.
