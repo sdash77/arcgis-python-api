@@ -444,7 +444,7 @@ class AutoDL:
                             ["DeepLab", "UnetClassifier", "PSPNetClassifier", "SamLoRA",
                             "ANN", "APCNet", "CCNet", "CGNet", "HRNet", 'DeepLabV3Plus', "Mask2Former",
                             'DMNet', 'DNLNet', 'FastSCNN', 'FCN', 'GCNet', 'MobileNetV2',
-                            'NonLocalNet','OCRNet', 'PSANet', 'SemFPN', 'UperNet']
+                            'NonLocalNet', 'PSANet', 'SemFPN', 'UperNet']
 
     ---------------------   -------------------------------------------
     verbose                 Optional Boolean.
@@ -513,7 +513,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",
@@ -584,7 +583,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",
@@ -1810,10 +1808,6 @@ class AutoDL:
                 "time": 4200,
                 "is_mm": True,
             },
-            "OCRNet": {
-                "time": 4200,
-                "is_mm": True,
-            },
             "PSANet": {
                 "time": 4200,
                 "is_mm": True,
@@ -2073,7 +2067,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",

@@ -94,9 +94,9 @@ class RecycleItem:
         if folder:
             try:
                 if isinstance(folder, str):
-                    folder_id = self._gis.content.folders.get(folder).properties["id"]
+                    folder_id = self._gis.content.folders.get(folder)._fid
                 elif isinstance(folder, Folder):
-                    folder_id = folder.properties["id"]
+                    folder_id = folder._fid
                 params.update({"folder": folder_id})
             except:
                 raise ValueError(

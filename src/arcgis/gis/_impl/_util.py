@@ -16,7 +16,11 @@ def _get_item_url(item: _arcgis.gis.Item) -> str:
         if hasattr(item, "privateUrl") and getattr(item, "privateUrl", None):
             return getattr(item, "privateUrl")
         elif getattr(item, "url", None) and getattr(item, "privateUrl", None) is None:
-            return gis._private_service_url(item.url)
+            url_check = gis._private_service_url(item.url)
+            if "privateServiceUrl" in url_check:
+                return url_check.get("privateServiceUrl")
+
+            return url_check.get("serviceUrl")
         elif getattr(item, "url", None):
             return item.url
         else:
