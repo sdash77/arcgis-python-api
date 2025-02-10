@@ -724,6 +724,10 @@ class GIS(object):
         except Exception:
             pass
 
+        if profile and self._portal.con._auth == "OAUTH":
+            # persist the oauth refresh token as the password in the profile
+            pm.update(profile, password=self._portal.con._session.auth._refresh_token)
+
         force_refresh = False
         if self._portal.con._auth in ["HOME", "USER_TOKEN"]:
             force_refresh = True

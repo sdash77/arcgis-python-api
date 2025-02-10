@@ -1,4 +1,5 @@
 from __future__ import annotations
+from contextlib import contextmanager
 import os
 import sys
 import logging
@@ -508,9 +509,10 @@ class EsriSession:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.get(
-            url, allow_redirects=redirects, proxies=proxies, **kwargs
-        )
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.get(
+                url, allow_redirects=redirects, proxies=proxies, **kwargs
+            )
 
     # ----------------------------------------------------------------------
     def options(self, url, **kwargs) -> "requests.Response":
@@ -525,7 +527,8 @@ class EsriSession:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.options(url, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.options(url, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def head(self, url, **kwargs) -> "requests.Response":
@@ -540,7 +543,8 @@ class EsriSession:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.head(url, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.head(url, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def post(self, url, data=None, json=None, **kwargs) -> "requests.Response":
@@ -562,14 +566,15 @@ class EsriSession:
             redirects = kwargs.pop("allow_redirects")
         else:
             redirects = self.allow_redirects
-        return self._session.post(
-            url,
-            data=data,
-            json=json,
-            allow_redirects=redirects,
-            proxies=proxies,
-            **kwargs,
-        )
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.post(
+                url,
+                data=data,
+                json=json,
+                allow_redirects=redirects,
+                proxies=proxies,
+                **kwargs,
+            )
 
     # ----------------------------------------------------------------------
     def put(self, url, data=None, **kwargs) -> "requests.Response":
@@ -586,7 +591,8 @@ class EsriSession:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.put(url, data=data, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.put(url, data=data, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def patch(self, url, data=None, **kwargs) -> "requests.Response":
@@ -603,7 +609,8 @@ class EsriSession:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.patch(url, data=data, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.patch(url, data=data, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def delete(self, url, **kwargs) -> "requests.Response":
@@ -618,4 +625,17 @@ class EsriSession:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.delete(url, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.delete(url, proxies=proxies, **kwargs)
+
+    @contextmanager
+    def _handle_drop_auth(self, drop_auth: bool):
+        """Context manager to handle dropping the auth for requests that must be made anonymously"""
+        try:
+            session_auth = self._session.auth
+            if drop_auth:
+                self._session.auth = None
+            yield
+        finally:
+            if drop_auth:
+                self._session.auth = session_auth
