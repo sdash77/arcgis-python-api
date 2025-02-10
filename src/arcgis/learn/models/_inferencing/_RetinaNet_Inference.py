@@ -386,9 +386,10 @@ class ChildObjectDetector:
         else:
             batch = norm(batch.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
-        batch_classes, batch_bboxes = self.retinanet.learn.model(
-            torch.tensor(batch).to(self.device).float()
-        )
+        with torch.no_grad():
+            batch_classes, batch_bboxes = self.retinanet.learn.model(
+                torch.tensor(batch).to(self.device).float()
+            )
 
         num_boxes = 0
         for chip_idx, (clas, bbox) in enumerate(zip(batch_classes, batch_bboxes)):

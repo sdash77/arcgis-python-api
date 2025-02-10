@@ -4,6 +4,7 @@ from arcgis.gis.server.catalog import ServicesDirectory
 from utils.decorators import integration_test
 
 
+@unittest.skip("Needs a permanent service")
 @integration_test
 class TestTopographicProductionManager(unittest.TestCase):
     """Tests the Topographic Production Service"""
