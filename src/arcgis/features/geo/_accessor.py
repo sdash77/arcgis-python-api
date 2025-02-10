@@ -2214,7 +2214,6 @@ class GeoAccessor(object):
             The geometry engine used for this operation can be set with the
             the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
 
-            * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
 
