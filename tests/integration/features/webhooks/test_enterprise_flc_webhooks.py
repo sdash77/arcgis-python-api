@@ -1,15 +1,11 @@
-import os
-import time
 import unittest
-from arcgis.gis import GIS, Item, User
+
 from arcgis.features import FeatureLayerCollection
-from arcgis.gis._impl import ItemTypeEnum
-from data_utils import publish_test_item, cleanup_published_items
-from integration.config import QALAB_ROOT_PATH
+from arcgis.gis import User
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
 
-# enable_verbose_logging()
+enable_verbose_logging()
 
 
 @profiles.admin_enterprise
