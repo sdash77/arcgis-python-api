@@ -19,7 +19,6 @@ class TestKubernetesCertificates(unittest.TestCase):
             username="PAPIadmin",
             password="PAPIletmein01",
             verify_cert=False,
-            proxy=PROXIES
         )
 
     def test_trust_certs(self):
