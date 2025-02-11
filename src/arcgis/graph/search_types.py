@@ -17,12 +17,40 @@ class SearchAnalyzer(BaseModel):
 
 
 class SearchIndexProperties(BaseModel):
+    """
+    List of properties for search index
+
+    ==============================     ========================================================================
+    **Parameter**                       **Description**
+    ------------------------------     ------------------------------------------------------------------------
+    property_names                      Required List of Strings. Names of properties.
+    ==============================     ========================================================================
+
+    .. code-block:: python
+
+        from arcgis.graph import SearchIndexProperties
+
+        SearchIndexProperties(property_names=["name","comment"])
+
+    """
+
     property_names: list[str] = Field(
         ..., description="The properties in the search index."
     )
 
 
 class SearchIndex(BaseModel):
+    """
+    Allows full-text search capability on the graph for a set of properties for each entity or relationship type.
+    Search indexes can be accessed in the :class:`~arcgis.graph.data_model_types.GraphDataModel`.
+
+    .. code-block:: python
+
+        data_model = graph.query_data_model()
+        data_model.search_indexes
+
+    """
+
     name: str = Field(..., description="The name of the search index.")
     supported_category: esriNamedTypeCategory = Field(
         ..., description="The supported category of the search index."
