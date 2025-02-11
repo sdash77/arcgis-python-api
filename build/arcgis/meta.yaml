@@ -18,7 +18,7 @@ requirements:
   - cachetools
   - certifi
   - cryptography
-  - dask >=2023.3.2
+  - dask >=2024.12.1,<2025.1.0
   - gdal >=3.9.2,<4 [win]
   - gdal >=3.6.2,<4 [not win]
   - geomet
