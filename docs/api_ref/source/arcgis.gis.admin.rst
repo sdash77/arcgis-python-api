@@ -17,7 +17,7 @@ PortalAdminManager
     :undoc-members:
     :show-inheritance:
 
-Kubernetes Admin
+Kubernetes
 ----------------
 KubernetesAdmin
 ^^^^^^^^^^^^^^^
