@@ -9713,7 +9713,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         task = "CreateMission"
         gis = self._gis
 
-        job = self._tbx.create_mission(
+        gpjob = self._tbx.create_mission(
             project_item,
             mission_definition,
             input_rasters,
@@ -9724,11 +9724,11 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             future=True,
         )
 
-        job = RMJob(job)
+        gpjob._is_reality = True
+        job = RMJob(gpjob)
         if future:
             return job
         return job.result()
-
 ###########################################################################
 class _RasterAnalysisTools(BaseAnalytics):
     """FA Tools"""

@@ -2504,7 +2504,6 @@ class RMProject:
         _ra = gis._tools.rasteranalysis
         input_rasters, image_collection, raster_type, context, _ = (
             _ra._sanitize_inputs(
-                gis=gis,
                 image_collection=image_collection,
                 input_rasters=image_list,
                 raster_type_name=raster_type_name,
