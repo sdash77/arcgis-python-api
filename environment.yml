@@ -5,7 +5,7 @@ channels:
 - esri/label/prerelease
 - esri-build
 dependencies:
-- python 3.11
+- python 3.11.*
 - pip
 - setuptools
 # ---- arcgis ----
