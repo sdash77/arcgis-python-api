@@ -1258,24 +1258,31 @@ def to_featureclass(
         return fc
 
     elif USE_GDAL:
+        is_gdb = False
         if fc_name.endswith(".gdb"):
             out_type = "OpenFileGDB"
+            save_location: str = os.path.join(out_location, fc_name)
             layer_name = fc_name[:-4]
+            is_gdb = True
+        elif out_location.lower().endswith(".gdb"):
+            out_type = "OpenFileGDB"
+            save_location: str = out_location
+            layer_name = fc_name
+            is_gdb = True
         elif fc_name.endswith(".shp"):
             out_type = "Esri Shapefile"
-            fc_name = fc_name[:-4]
+            save_location: str = out_location
             layer_name = fc_name
         elif fc_name.endswith(".dbf"):
             out_type = "DBF"
+            save_location = out_location
             layer_name = fc_name
-        else:
-            layer_name = fc_name
-            fc_name = "%s.gdb" % fc_name
-            out_type = "OpenFileGDB"
+
         return _gdal_to_fc(
-            df,
-            os.path.join(out_location, fc_name),
-            out_type,
+            df=df,
+            out_path=save_location,
+            out_type=out_type,
+            gdb_table=is_gdb,
             layer_name=layer_name,
             overwrite=overwrite,
         )
@@ -1327,19 +1334,25 @@ def _gdal_to_fc(
         raise ValueError("overwrite set to False, cannot overwrite existent location.")
 
     out_driver = ogr.GetDriverByName(out_type)
+    table_name: str = os.path.join(out_path, layer_name)
     if gdb_table:
         if os.path.basename(out_path).find(".gdb") > -1:
             gdb_dir = out_path
         else:
             gdb_dir = os.path.dirname(out_path)
-
+        # create or get the fgdb
         out_file = out_driver.Open(gdb_dir, 1)
         if out_file is None:
             out_file = out_driver.CreateDataSource(gdb_dir)
+            out_file.SyncToDisk()
+
     else:
-        if os.path.exists(out_path):
-            shutil.rmtree(out_path)
-        out_file = out_driver.CreateDataSource(out_path)
+        if os.path.exists(table_name):
+            out_driver.DeleteDataSource(out_path)  # Overwrite if exists
+        if os.path.isdir(out_path) == False:
+            os.makedirs(out_path, exist_ok=True)
+
+        out_file = out_driver.CreateDataSource(table_name)
 
     spatial_field = df.spatial.name if hasattr(df.spatial, "name") else None
     if spatial_field:
@@ -1392,8 +1405,8 @@ def _gdal_to_fc(
                     out_layer.CreateField(field_def)
                 elif isinstance(df[c].loc[idx], (float, np.float64)):
                     field_def = ogr.FieldDefn(c, ogr.OFTReal)
-                    field_def.SetPrecision(50)
-                    field_def.SetWidth(50)
+                    field_def.SetPrecision(150)
+                    field_def.SetWidth(150)
                     out_layer.CreateField(field_def)
                 elif (
                     isinstance(
@@ -1458,7 +1471,7 @@ def _gdal_to_fc(
     out_layer.SyncToDisk()  # Ensure the layer changes are written to disk
     out_file = None  # Closing the dataset, saving everything to disk
 
-    return out_path
+    return table_name
 
 
 # --------------------------------------------------------------------------
