@@ -1349,8 +1349,7 @@ def _gdal_to_fc(
     else:
         if os.path.exists(table_name):
             out_driver.DeleteDataSource(out_path)  # Overwrite if exists
-        if os.path.isdir(out_path) == False:
-            os.makedirs(out_path, exist_ok=True)
+        os.makedirs(out_path, exist_ok=True)
 
         out_file = out_driver.CreateDataSource(table_name)
 
