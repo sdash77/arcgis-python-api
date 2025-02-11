@@ -549,7 +549,7 @@ class _ImportPackage:
                         added_items.append(service_item)
                         break
 
-            if service_item != None:
+            if service_item:
                 # publish the service
                 pub_params = props
                 try:
