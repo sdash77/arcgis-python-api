@@ -14,7 +14,7 @@ as well as support the '.' (dot) notation providing attribute access.
 # Example Point
 
 .. code-block:: python
-    
+
     >>> pt = Point({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})
     >>> print (pt.is_valid)
     True
