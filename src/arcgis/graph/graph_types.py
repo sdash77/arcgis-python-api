@@ -88,7 +88,7 @@ class Entity(NamedObject):
     ==============================     =======================================================================
     **Parameter**                       **Description**
     ------------------------------     -----------------------------------------------------------------------
-    type_name                           Required String. Name of the :class:`arcgis.graph.data_model_types.EntityType`
+    type_name                           Required String. Name of the :class:`~arcgis.graph.data_model_types.EntityType`
     ------------------------------     -----------------------------------------------------------------------
     id                                  Optional UUID. The default value is None. If not provided, an id will
                                         be assigned to the entity when it is created.
@@ -151,14 +151,14 @@ class Relationship(NamedObject):
     ==============================     =======================================================================
     **Parameter**                       **Description**
     ------------------------------     -----------------------------------------------------------------------
-    type_name                           Required String. Name of the :class:`arcgis.graph.data_model_types.EntityType`
+    type_name                           Required String. Name of the :class:`~arcgis.graph.data_model_types.EntityType`
     ------------------------------     -----------------------------------------------------------------------
     id                                  Optional UUID or String. The default value is None. If not provided, an id will
                                         be assigned to the entity when it is created.
     ------------------------------     -----------------------------------------------------------------------
-    origin_entity_id                    Required UUID or String. The id of the origin :class:`arcgis.graph.graph_types.Entity` in the graph.
+    origin_entity_id                    Required UUID or String. The id of the origin :class:`~arcgis.graph.graph_types.Entity` in the graph.
     ------------------------------     -----------------------------------------------------------------------
-    destiation_entity_id                Required UUID or String. The id of the destination :class:`arcgis.graph.graph_types.Entity` in the graph.
+    destiation_entity_id                Required UUID or String. The id of the destination :class:`~arcgis.graph.graph_types.Entity` in the graph.
     ------------------------------     -----------------------------------------------------------------------
     properties                          Optional Dictionary of Strings and Any values. String is the property
                                         name and Any value is the value for that property.
@@ -229,8 +229,8 @@ class Relationship(NamedObject):
 
 class Path(BaseModel):
     """
-    A list of :class:`arcgis.graph.graph_types.Entity` and :class:`arcgis.graph.graph_types.Relationship`
-    required to traverse a graph from one entity to another.
+    A list of :class:`~arcgis.graph.graph_types.Entity` and :class:`~arcgis.graph.graph_types.Relationship`
+    objects required to traverse a graph from one entity to another.
 
     .. code-block:: python
 
@@ -297,12 +297,13 @@ class NamedObjectDelete(BaseModel):
 
 class EntityDelete(NamedObjectDelete):
     """
-    Allows a user to define which entities to delete from a :class:`arcgis.graph.data_model_types.EntityType`.
+    Allows a user to define which entities to delete from a
+    :class:`~arcgis.graph.data_model_types.EntityType`.
 
     ==============================     =======================================================================
     **Parameter**                       **Description**
     ------------------------------     -----------------------------------------------------------------------
-    type_name                           Required String. Name of the :class:`arcgis.graph.data_model_types.EntityType`
+    type_name                           Required String. Name of the :class:`~arcgis.graph.data_model_types.EntityType`
     ------------------------------     -----------------------------------------------------------------------
     ids                                 Required List of UUID or Strings. Ids of the entities to delete.
     ==============================     =======================================================================
@@ -342,12 +343,12 @@ class EntityDelete(NamedObjectDelete):
 
 class RelationshipDelete(NamedObjectDelete):
     """
-    Allows a user to define which relationships to delete from a :class:`arcgis.graph.data_model_types.RelationshipType`.
+    Allows a user to define which relationships to delete from a :class:`~arcgis.graph.data_model_types.RelationshipType`.
 
     ==============================     =======================================================================
     **Parameter**                       **Description**
     ------------------------------     -----------------------------------------------------------------------
-    type_name                           Required String. Name of the :class:`arcgis.graph.data_model_types.RelationshipType`
+    type_name                           Required String. Name of the :class:`~arcgis.graph.data_model_types.RelationshipType`
     ------------------------------     -----------------------------------------------------------------------
     ids                                 Required List of UUID or Strings. Ids of the relationships to delete.
     ==============================     =======================================================================
