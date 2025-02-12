@@ -143,7 +143,7 @@ def _export_content(
             _export_item_data(item, item_dir, service_format)
             return True
         except Exception as e:
-            shutil.rmtree(item_dir)
+            shutil.rmtree(item_dir, ignore_errors=True)
             warnings.warn(
                 f"Failed to export item {item.id} due to error: {str(e)}. Deleting folder and skipping...",
                 RuntimeWarning,
@@ -182,7 +182,7 @@ def _export_content(
         tar.add(main_dir, arcname=os.path.basename(main_dir))
 
     # Clean up the temporary main directory
-    shutil.rmtree(main_dir)
+    shutil.rmtree(main_dir, ignore_errors=True)
 
     return binary_file_path
 
