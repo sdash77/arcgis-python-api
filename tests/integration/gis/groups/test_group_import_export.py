@@ -1,11 +1,10 @@
+import os
 import unittest
 import uuid
 from arcgis.gis import Item, Group, ItemProperties, ItemTypeEnum
 from arcgis.gis._impl._jb import StatusJob
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles, from_to_profiles
 from integration.config import QALAB_ROOT_PATH
-import os
-from utils.decorators import profiles, from_to_profiles
 
 
 fp = os.path.join(QALAB_ROOT_PATH, "group_manager_data", "parkinglots.zip")
@@ -14,81 +13,29 @@ fp = os.path.join(QALAB_ROOT_PATH, "group_manager_data", "parkinglots.zip")
 @profiles.admin_enterprise_and_k8s
 @integration_test
 class TestGroupExport(unittest.TestCase):
-    """Tests the Group Export Method on a Group Object"""
+    """Tests the Group Export Method on a Group Object using GroupMigrationManager"""
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         """setup item and group, and share item to group"""
-
         # create item
-        self.folder = self.gis.content.folders._get_or_create(
-            "group_export_integration_testing"
-        )
-        item_properties = ItemProperties(
-            title=f"test_group_import_export_{uuid.uuid4().hex[:4]}",
-            item_type=ItemTypeEnum.SHAPEFILE.value,
-            tags=["integration_testing"],
-        )
-        self.pitem = self.folder.add(item_properties, file=fp).result()
-        isinstance(self.pitem, Item)
+        cls.item = add_item_to_portal(cls.gis, fp, "group_export_item", ItemTypeEnum.SHAPEFILE)
+        assert isinstance(cls.item, Item)
 
-        self.new_group = self.gis.groups.create(
-            title=f"export_test_group_{uuid.uuid4().hex[:4]}",
+        # create group
+        cls.export_group = cls.gis.groups.create(
+            title=f"export_group_{uuid.uuid4().hex[:4]}",
             tags="integration_testing",
         )
-        isinstance(self.new_group, Group)
+        assert isinstance(cls.export_group, Group)
 
-        self.pitem.sharing.groups.add(self.new_group)
-
-    def tearDown(self):
-        if self.pitem:
-            assert self.pitem.delete(permanent=True)
-        if self.new_group:
-            assert self.new_group.delete()
-        if self.epk_item:
-            assert self.epk_item.delete(permanent=True)
-
-    def test_invalid_item_id(self):
-        gis = self.gis
-        try:
-            gis.groups.search("testgrpinvalidid")[0].delete()
-        except:
-            pass
-        group = gis.groups.create(
-            title="testgrpinvalidid", tags=["test"], snippet="test"
-        )
-        epk_item = gis.content.search(
-            query="owner:esri_notebook",
-            item_type="Export Package",
-            outside_org=True,
-        )[0]
-
-        import_group_content = group.migration.load(
-            epk_item=epk_item,
-            item_ids=["72224efc9e044001934bb3be87120beb"],
-            overwrite=True,
-            keep_epk_item=True,
-        )
-        r = import_group_content.result()
-        assert r
-        group.delete()
+        # add item to group
+        cls.item.sharing.groups.add(cls.export_group)
 
     def test_group_export_async(self):
         """tests exporting the group items to an epk asynchronously"""
-        self.epk_job = self.new_group.migration.create(
-            items=[self.pitem], future=True
-        )
-        assert isinstance(self.epk_job, StatusJob)
-
-        self.epk_item = self.epk_job.result()
-        assert isinstance(self.epk_item, Item)
-        assert self.epk_item.type == "Export Package"
-
-    def test_group_export_async_folder(self):
-        """tests exporting the group items to an epk asynchronously"""
-        self.epk_job = self.new_group.migration.create(
-            items=[self.pitem],
-            future=True,
-            export_folder=self.gis.content.folders.get(),
+        self.epk_job = self.export_group.migration.create(
+            items=[self.item], future=True
         )
         assert isinstance(self.epk_job, StatusJob)
 
@@ -98,147 +45,223 @@ class TestGroupExport(unittest.TestCase):
 
     def test_group_export_sync(self):
         """tests exporting the group items to an epk synchronously"""
-        self.epk_item = self.new_group.migration.create(
-            items=[self.pitem], future=False
+        self.epk_item = self.export_group.migration.create(
+            items=[self.item], future=False
         )
         assert isinstance(self.epk_item, Item)
         assert self.epk_item.type == "Export Package"
+
+    def test_group_export_to_folder(self):
+        """tests exporting the group items to an epk asynchronously"""
+        if self.gis.version < [2024, 2]:
+            self.skipTest("Export to folder is only supported in ArcGIS Enterprise 11.4 and later")
+
+        self.epk_job = self.export_group.migration.create(
+            items=[self.item], export_folder=self.gis.content.folders.get(),
+        )
+        assert isinstance(self.epk_job, StatusJob)
+
+        self.epk_item = self.epk_job.result()
+        assert isinstance(self.epk_item, Item)
+        assert self.epk_item.type == "Export Package"
+        assert self.epk_item in list(self.gis.content.folders.get().list())
+
+    def test_group_export_output_filename(self):
+        """tests exporting the group items to an epk with specified output filename"""
+        if self.gis.version < [2024, 1]:
+            self.skipTest("output_filename is only supported in ArcGIS Enterprise 11.3 and later")
+
+        self.epk_job = self.export_group.migration.create(
+            items=[self.item], output_filename="test_group_import_export_epk"
+        )
+        assert isinstance(self.epk_job, StatusJob)
+
+        self.epk_item = self.epk_job.result()
+        assert isinstance(self.epk_item, Item)
+        assert self.epk_item.type == "Export Package"
+        assert self.epk_item.title == "test_group_import_export_epk.epk"
 
     def test_inspect_package(self):
         """tests the `inspect` package call on Portal"""
-        self.epk_item = self.new_group.migration.create(
-            items=[self.pitem], future=False
+        self.epk_item = self.export_group.migration.create(
+            items=[self.item], future=False
         )
         assert isinstance(self.epk_item, Item)
         assert self.epk_item.type == "Export Package"
 
-        res = self.new_group.migration.inspect(self.epk_item)
+        res = self.export_group.migration.inspect(self.epk_item)
         assert isinstance(res, dict)
-        assert res['results'][0]['id'] == self.pitem.id
+        assert res['results'][0]['id'] == self.item.id
+
+    @classmethod
+    def tearDownClass(cls):
+        """delete items and folders"""
+        delete_folder_and_item([cls.gis], ["group_export_import_", "exports"])
+        delete_group([cls.gis], ["export_group_"])
 
 
 @from_to_profiles.all_except_agol
 @integration_test
+# TODO: add tests for folder_owner, folder_name, and keep_epk_item for Enterprise 11.4 and later
 class TestGroupImport(unittest.TestCase):
-    """tests the import methods"""
+    """tests the group export import workflow using GroupMigrationManager"""
 
     def setUp(self):
         """setup item, group and export epk item"""
+        # create item in source gis
+        self.item = add_item_to_portal(self.from_gis, fp, "group_export_item",  ItemTypeEnum.SHAPEFILE)
+        assert isinstance(self.item, Item)
 
-        # create item
-        self.folder = self.from_gis.content.folders.get(
-            "group_export_integration_testing"
-        )
-        item_properties = ItemProperties(
-            title=f"test_group_import_export_{uuid.uuid4().hex[:4]}",
-            item_type=ItemTypeEnum.SHAPEFILE.value,
-            tags=["integration_testing"],
-        )
-        self.pitem = self.folder.add(item_properties, file=fp).result()
-        isinstance(self.pitem, Item)
-
-        # create group
-        self.new_group = self.from_gis.groups.create(
-            title=f"export_test_group_{uuid.uuid4().hex[:4]}",
+        # create group in source gis
+        self.export_group = self.from_gis.groups.create(
+            title=f"export_group_{uuid.uuid4().hex[:4]}",
             tags="integration_testing",
         )
-        isinstance(self.new_group, Group)
+        assert isinstance(self.export_group, Group)
 
-        # add item to group
-        self.pitem.sharing.groups.add(self.new_group)
+        # add item to group in source gis
+        self.item.sharing.groups.add(self.export_group)
 
-        # export item
-        self.epk_item = self.new_group.migration.create(
-            items=[self.pitem], future=False
+        # export item to epk in source gis
+        self.epk_item = self.export_group.migration.create(
+            items=[self.item], future=False
         )
         assert isinstance(self.epk_item, Item)
+
+        # get path of downloaded epk file
         self.export_package_file = self.epk_item.download()
 
-    def tearDown(self):
-        if self.pitem:
-            assert self.pitem.delete(permanent=True)
-        if self.new_group:
-            assert self.new_group.delete()
+        # create destination group in destination gis
+        self.import_group = self.to_gis.groups.create(
+            title=f"import_group_{uuid.uuid4().hex[:4]}",
+            tags="integration_testing",
+        )
 
     def test_group_import_to_different_gis(self):
         """tests importing the group items from an epk"""
-
         if self.from_gis.url == self.to_gis.url:
             self.skipTest("testing export and import to a different gis")
 
         if self.from_gis.version > self.to_gis.version:
-            self.skipTest(
-                "The receiving Enterprise version must be the same or later of the exporting Enterprise."
-            )
+            self.skipTest("The receiving Enterprise version must be the same or later of the exporting Enterprise.")
 
-        # delete old test group in to_gis
-        group_search_result = self.to_gis.groups.search("new_group1_dest")
-        [group.delete() for group in group_search_result]
-
-        # create group in to_gis
-        group_dest = self.to_gis.groups.create(
-            f"new_group1_dest_{uuid.uuid4().hex[:4]}",
-            tags="integration_testing",
+        # add epk item in destination gis group
+        epk_item = add_item_to_portal(
+            self.to_gis, self.export_package_file, "import_group_epk", ItemTypeEnum.EXPORT_PACKAGE
         )
+        assert isinstance(epk_item, Item)
 
-        # create item from exported epk file in to_gis
-        self.folder = self.to_gis.content.folders.get(
-            "group_export_integration_testing"
-        )
-        item_properties = ItemProperties(
-            title=f"test_group_import_export_add_epk_{uuid.uuid4().hex[:4]}",
-            item_type=ItemTypeEnum.EXPORT_PACKAGE.value,
-            tags=["integration_testing"],
-        )
-        new_item = self.folder.add(
-            item_properties, file=self.export_package_file
-        ).result()
-        assert isinstance(new_item, Item)
-
-        # add item to group
-        new_item.sharing.groups.add(group_dest)
+        # add item to destination group
+        epk_item.sharing.groups.add(self.import_group)
 
         # load item
-        m = group_dest.migration
-        res = m.load(new_item)
-
+        res = self.import_group.migration.load(epk_item)
         assert res
         assert isinstance(res, StatusJob)
         assert isinstance(res.result(), dict)
 
-        if group_dest:
-            group_dest.delete()
-
-    def test_group_import_to_same_gis(self):
+    def test_group_import_to_same_gis_overwrite(self):
         """tests importing the group items from an epk"""
-
         if not self.from_gis.url == self.to_gis.url:
             self.skipTest("testing export and import to same gis")
 
-        res = self.new_group.migration.load(self.epk_item, overwrite=True)
+        res = self.import_group.migration.load(self.epk_item, overwrite=True)
         assert isinstance(res, StatusJob)
         assert isinstance(res.result(), dict)
 
-    @classmethod
-    def tearDownClass(cls):
-        for gis in [cls.from_gis, cls.to_gis]:
-            folder_list = list(gis.content.folders.list())
-            for folder in folder_list:
-                if folder.name.startswith(
-                    "imports_"
-                ) or folder.name.startswith("exports"):
-                    if len(list(folder.list("*"))) == 0:
-                        folder.delete()
-                    else:
-                        for import_item in folder.list("*"):
-                            import_item.delete(permanent=True)
-                        folder.delete()
-                if folder.name == "exports":
-                    for exp_item in folder.list(
-                        item_type=ItemTypeEnum.EXPORT_PACKAGE.value
-                    ):
-                        exp_item.delete(permanent=True)
+    def test_group_import_with_item_id(self):
+        """tests importing group items with item id specified"""
+        if self.from_gis.version > self.to_gis.version:
+            self.skipTest("The receiving Enterprise version must be the same or later of the exporting Enterprise.")
+
+        try:
+            # TODO: add the below package to new k8s portal
+            self.epk_item = self.from_gis.content.search(
+                query="owner:esri_notebook",
+                item_type="Export Package",
+                outside_org=True,
+            )[0]
+
+            import_group_content = self.import_group.migration.load(
+                epk_item=self.epk_item,
+                item_ids=["72224efc9e044001934bb3be87120beb"],
+                overwrite=True,
+                keep_epk_item=True,
+            )
+            r = import_group_content.result()
+            assert "itemsSkipped" in r
+            assert "itemsFailedImport" in r
+        except Exception as e:
+            raise e
+
+    def test_group_import_with_folder_id(self):
+        """tests importing the group items from an epk"""
+        if self.from_gis.url == self.to_gis.url:
+            self.skipTest("testing export and import to a different gis")
+
+        if self.from_gis.version > self.to_gis.version:
+            self.skipTest("The receiving Enterprise version must be the same or later of the exporting Enterprise.")
+
+        # add epk item in destination gis group
+        epk_item = add_item_to_portal(
+            self.to_gis, self.export_package_file, "import_group_epk", ItemTypeEnum.EXPORT_PACKAGE
+        )
+        assert isinstance(epk_item, Item)
+
+        # add item to destination group
+        epk_item.sharing.groups.add(self.import_group)
+
+        # load item
+        res = self.import_group.migration.load(epk_item=epk_item, folder_id="/")
+        assert res
+        assert isinstance(res, StatusJob)
+        assert isinstance(res.result(), dict)
+        assert res.result()['itemsImported'][0].delete(permanent=True)
+
+    def tearDown(self):
+        """delete items and folders"""
+        delete_folder_and_item(
+            [self.from_gis, self.to_gis], ["group_export_import_", "imports_", "exports"]
+        )
+        delete_group(
+            [self.from_gis, self.to_gis], ["export_group_", "import_group_"]
+        )
+
+
+def add_item_to_portal(gis, path, title, item_type):
+    """helper function to add shapefile/epk item to portal"""
+    folder = gis.content.folders._get_or_create(
+        "group_export_import_integration_testing"
+    )
+    item_properties = ItemProperties(
+        title=f"{title}_{uuid.uuid4().hex[:4]}",
+        item_type=item_type.value,
+        tags=["integration_testing"],
+    )
+    item = folder.add(item_properties, file=path).result()
+    return item
+
+
+def delete_folder_and_item(gis_list, folder_name_list):
+    """helper function to delete items, folders"""
+    for gis in gis_list:
+        folder_list = list(gis.content.folders.list())
+        for folder in folder_list:
+            if any(name in folder.name for name in folder_name_list):
+                if len(list(folder.list("*"))) == 0:
                     folder.delete()
+                else:
+                    for import_item in folder.list("*"):
+                        import_item.delete(permanent=True)
+                    folder.delete()
+
+
+def delete_group(gis_list, group_name_list):
+    for gis in gis_list:
+        group_list = gis.groups.search("*")
+        for group in group_list:
+            if any(name in group.title for name in group_name_list):
+                group.delete()
 
 
 if __name__ == "__main__":
