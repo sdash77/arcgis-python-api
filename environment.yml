@@ -14,6 +14,7 @@ dependencies:
 - certifi
 - cryptography
 - dask >=2023.3.2
+- gdal >=3.9.2, <4
 - geomet
 - keyring>=23.3.0
 - lxml
@@ -27,7 +28,6 @@ dependencies:
 - puremagic >=1.15,<2
 - pyarrow >=16,<17
 - pylerc
-- pyshp >=2,<3
 - pyspnego >=0.8.0
 - pydantic >=2.8.2, <3
 # - pywin32-security
