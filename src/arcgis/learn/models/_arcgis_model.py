@@ -1302,7 +1302,7 @@ class ArcGISModel(object):
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
 
-        if "dofa_" in model_params["backbone"]:
+        if model_params["backbone"] is not None and "dofa_" in model_params["backbone"]:
             _emd_template["ModelParameters"]["dofa_wavelengths"] = self._model_kwargs[
                 "dofa_wavelengths"
             ]
