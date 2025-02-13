@@ -2480,7 +2480,7 @@ class RMProject:
             raise RuntimeError("Failed to add the mission to the project")
         
     def create_mission(
-        project,
+        self,
         image_list,
         mission_name=None,
         image_collection=None,
@@ -2494,6 +2494,7 @@ class RMProject:
         **kwargs,
     ):
         gis = arcgis.env.active_gis if gis is None else gis
+        project_item = {"itemId": self._project_item.itemid}
 
         if image_collection is None:
             image_collection = "image_collection" + "_" + _id_generator()
@@ -2517,7 +2518,7 @@ class RMProject:
         mission_def = {}
 
         return gis._tools.realitymapping.create_mission(
-            project_item=project,
+            project_item=self._project_item,
             mission_definition=mission_def,
             input_rasters=input_rasters,
             image_collection=image_collection,
