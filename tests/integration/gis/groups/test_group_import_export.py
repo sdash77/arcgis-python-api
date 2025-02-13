@@ -13,7 +13,7 @@ fp = os.path.join(QALAB_ROOT_PATH, "group_manager_data", "parkinglots.zip")
 @profiles.admin_enterprise_and_k8s
 @integration_test
 class TestGroupExport(unittest.TestCase):
-    """Tests the Group Export Method on a Group Object using GroupMigrationManager"""
+    """Tests Group Export using GroupMigrationManager"""
 
     @classmethod
     def setUpClass(cls):
@@ -33,7 +33,7 @@ class TestGroupExport(unittest.TestCase):
         cls.item.sharing.groups.add(cls.export_group)
 
     def test_group_export_async(self):
-        """tests exporting the group items to an epk asynchronously"""
+        """tests exporting group items asynchronously"""
         self.epk_job = self.export_group.migration.create(
             items=[self.item], future=True
         )
@@ -44,7 +44,7 @@ class TestGroupExport(unittest.TestCase):
         assert self.epk_item.type == "Export Package"
 
     def test_group_export_sync(self):
-        """tests exporting the group items to an epk synchronously"""
+        """tests exporting group items synchronously"""
         self.epk_item = self.export_group.migration.create(
             items=[self.item], future=False
         )
@@ -52,7 +52,7 @@ class TestGroupExport(unittest.TestCase):
         assert self.epk_item.type == "Export Package"
 
     def test_group_export_to_folder(self):
-        """tests exporting the group items to an epk asynchronously"""
+        """tests exporting group items to specified folder"""
         if self.gis.version < [2024, 2]:
             self.skipTest("Export to folder is only supported in ArcGIS Enterprise 11.4 and later")
 
@@ -67,7 +67,7 @@ class TestGroupExport(unittest.TestCase):
         assert self.epk_item in list(self.gis.content.folders.get().list())
 
     def test_group_export_output_filename(self):
-        """tests exporting the group items to an epk with specified output filename"""
+        """tests exporting group items with specified output filename"""
         if self.gis.version < [2024, 1]:
             self.skipTest("output_filename is only supported in ArcGIS Enterprise 11.3 and later")
 
@@ -95,7 +95,7 @@ class TestGroupExport(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """delete items and folders"""
+        """delete items, folders and groups"""
         delete_folder_and_item([cls.gis], ["group_export_import_", "exports"])
         delete_group([cls.gis], ["export_group_"])
 
@@ -107,7 +107,7 @@ class TestGroupImport(unittest.TestCase):
     """tests the group export import workflow using GroupMigrationManager"""
 
     def setUp(self):
-        """setup item, group and export epk item"""
+        """setup item, groups and export epk item"""
         # create item in source gis
         self.item = add_item_to_portal(self.from_gis, fp, "group_export_item",  ItemTypeEnum.SHAPEFILE)
         assert isinstance(self.item, Item)
@@ -138,7 +138,7 @@ class TestGroupImport(unittest.TestCase):
         )
 
     def test_group_import_to_different_gis(self):
-        """tests importing the group items from an epk"""
+        """tests importing group items"""
         if self.from_gis.url == self.to_gis.url:
             self.skipTest("testing export and import to a different gis")
 
@@ -161,7 +161,7 @@ class TestGroupImport(unittest.TestCase):
         assert isinstance(res.result(), dict)
 
     def test_group_import_to_same_gis_overwrite(self):
-        """tests importing the group items from an epk"""
+        """tests importing group items in same gis"""
         if not self.from_gis.url == self.to_gis.url:
             self.skipTest("testing export and import to same gis")
 
@@ -170,7 +170,7 @@ class TestGroupImport(unittest.TestCase):
         assert isinstance(res.result(), dict)
 
     def test_group_import_with_item_id(self):
-        """tests importing group items with item id specified"""
+        """tests importing multiple group items with item id specified"""
         if self.from_gis.version > self.to_gis.version:
             self.skipTest("The receiving Enterprise version must be the same or later of the exporting Enterprise.")
 
@@ -195,7 +195,7 @@ class TestGroupImport(unittest.TestCase):
             raise e
 
     def test_group_import_with_folder_id(self):
-        """tests importing the group items from an epk"""
+        """tests importing group items with specified folder id"""
         if self.from_gis.url == self.to_gis.url:
             self.skipTest("testing export and import to a different gis")
 
@@ -219,7 +219,7 @@ class TestGroupImport(unittest.TestCase):
         assert res.result()['itemsImported'][0].delete(permanent=True)
 
     def tearDown(self):
-        """delete items and folders"""
+        """delete items, folders and groups"""
         delete_folder_and_item(
             [self.from_gis, self.to_gis], ["group_export_import_", "imports_", "exports"]
         )
@@ -257,6 +257,7 @@ def delete_folder_and_item(gis_list, folder_name_list):
 
 
 def delete_group(gis_list, group_name_list):
+    """helper function to delete groups"""
     for gis in gis_list:
         group_list = gis.groups.search("*")
         for group in group_list:
