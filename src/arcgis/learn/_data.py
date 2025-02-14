@@ -1918,7 +1918,7 @@ def prepare_data(
     ):
         # check if traing band is coming from other that RGB band
         band_mapping = set(emd["InputRastersProps"]["BandNames"])
-        if band_mapping.issubset(["red", "green", "blue", "r", "g", "b", ""]):
+        if not band_mapping.issubset(["red", "green", "blue", "r", "g", "b", ""]):
             imagery_type = sensor_name
             _infered = True
 
