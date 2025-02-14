@@ -15889,6 +15889,7 @@ class Item(dict):
                     itemid=self.itemid,
                     thumbnail=thumbnail,
                     large_thumbnail=large_thumbnail,
+                    owner=owner,
                 )
             if ret:
                 self._hydrate()
@@ -18470,7 +18471,15 @@ class Item(dict):
 
                 if "layers" in orig_item and "layers" in new_item:
                     for i, layer in enumerate(orig_item.layers):
-                        expanded_dict[layer.url] = new_item.layers[i].url
+                        try:
+                            expanded_dict[layer.url] = new_item.layers[i].url
+                        except IndexError:
+                            if force:
+                                pass
+                            else:
+                                raise ValueError(
+                                    f"Original item {orig_item.title} has more layers than replacement item {new_item.title}."
+                                )
 
         if self.type in _TEXT_BASED_ITEM_TYPES:
             data = self.get_data()
