@@ -106,33 +106,34 @@ class TestGroupExport(unittest.TestCase):
 class TestGroupImport(unittest.TestCase):
     """tests the group export import workflow using GroupMigrationManager"""
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         """setup item, groups and export epk item"""
         # create item in source gis
-        self.item = add_item_to_portal(self.from_gis, fp, "group_export_item",  ItemTypeEnum.SHAPEFILE)
-        assert isinstance(self.item, Item)
+        cls.item = add_item_to_portal(cls.from_gis, fp, "group_export_item",  ItemTypeEnum.SHAPEFILE)
+        assert isinstance(cls.item, Item)
 
         # create group in source gis
-        self.export_group = self.from_gis.groups.create(
+        cls.export_group = cls.from_gis.groups.create(
             title=f"export_group_{uuid.uuid4().hex[:4]}",
             tags="integration_testing",
         )
-        assert isinstance(self.export_group, Group)
+        assert isinstance(cls.export_group, Group)
 
         # add item to group in source gis
-        self.item.sharing.groups.add(self.export_group)
+        cls.item.sharing.groups.add(cls.export_group)
 
         # export item to epk in source gis
-        self.epk_item = self.export_group.migration.create(
-            items=[self.item], future=False
+        cls.epk_item = cls.export_group.migration.create(
+            items=[cls.item], future=False
         )
-        assert isinstance(self.epk_item, Item)
+        assert isinstance(cls.epk_item, Item)
 
         # get path of downloaded epk file
-        self.export_package_file = self.epk_item.download()
+        cls.export_package_file = cls.epk_item.download()
 
         # create destination group in destination gis
-        self.import_group = self.to_gis.groups.create(
+        cls.import_group = cls.to_gis.groups.create(
             title=f"import_group_{uuid.uuid4().hex[:4]}",
             tags="integration_testing",
         )
@@ -218,13 +219,14 @@ class TestGroupImport(unittest.TestCase):
         assert isinstance(res.result(), dict)
         assert res.result()['itemsImported'][0].delete(permanent=True)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         """delete items, folders and groups"""
         delete_folder_and_item(
-            [self.from_gis, self.to_gis], ["group_export_import_", "imports_", "exports"]
+            [cls.from_gis, cls.to_gis], ["group_export_import_", "imports_", "exports"]
         )
         delete_group(
-            [self.from_gis, self.to_gis], ["export_group_", "import_group_"]
+            [cls.from_gis, cls.to_gis], ["export_group_", "import_group_"]
         )
 
 
