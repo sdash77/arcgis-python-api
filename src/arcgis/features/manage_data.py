@@ -806,7 +806,7 @@ def create_route_layers(
         folders = {fld.name: fld for fld in gis.users.me.folders}
         # if the folder already exists, just get its folder id
         if folder_name in folders:
-            folder_id = folders[folder_name].get("id", "")
+            folder_id = folders[folder_name].properties["id"]
         else:
             # Create a new folder and get its folder id
             new_folder = gis.content.folders.create(folder_name)
