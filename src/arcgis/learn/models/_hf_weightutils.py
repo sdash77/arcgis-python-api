@@ -2,9 +2,7 @@ import timm
 from timm.models.resnet import (
     BasicBlock,
     Bottleneck,
-    # build_model_with_cfg,
     ResNet,
-    # _create_resnet,
 )
 from timm.models.helpers import build_model_with_cfg
 from timm.models.vision_transformer import VisionTransformer
@@ -27,7 +25,6 @@ def _res_cfg(url="", **kwargs):
         "interpolation": "bilinear",
         "mean": timm.data.IMAGENET_DEFAULT_MEAN,
         "std": timm.data.IMAGENET_DEFAULT_STD,
-        # "first_conv": "conv1",
         "classifier": "fc",
         **kwargs,
     }
@@ -254,7 +251,6 @@ hf_resnet_cfgs = {
 }
 
 
-# resnet_updated_cfgs = resnet_default_cfgs.update(tg_resnet_cfgs)
 resnet_updated_cfgs = resnet_default_cfgs | hf_resnet_cfgs
 
 timm.models.resnet.default_cfgs = resnet_updated_cfgs
@@ -821,7 +817,6 @@ from torch.hub import load_state_dict_from_url
 
 from typing import Any
 
-# import kornia.augmentation as K
 import torch
 import torchvision
 from torchvision.models import (
@@ -830,7 +825,6 @@ from torchvision.models import (
     Swin_V2_B_Weights,
 )
 from torchvision.models.swin_transformer import (
-    # _swin_transformer,
     PatchMergingV2,
     SwinTransformerBlockV2,
 )
@@ -840,99 +834,17 @@ from torchvision.models._api import register_model as register_model_tv
 from typing import Any, Callable, List, Optional
 from torchvision.models._utils import _ovewrite_named_param, handle_legacy_interface
 
-# import torchgeo.transforms.transforms as T
-
-
-# class _Clamp(K.IntensityAugmentationBase2D):
-#     """Clamp images to a specific range."""
-
-#     def __init__(
-#         self,
-#         p: float = 0.5,
-#         p_batch: float = 1,
-#         min: float = 0,
-#         max: float = 1,
-#         same_on_batch: bool = False,
-#         keepdim: bool = False,
-#     ) -> None:
-#         """Initialize a new _Clamp instance.
-
-#         Args:
-#             p: Probability for applying an augmentation. This param controls the
-#                 augmentation probabilities element-wise for a batch.
-#             p_batch: Probability for applying an augmentation to a batch. This param
-#                 controls the augmentation probabilities batch-wise.
-#             min: Minimum value to clamp to.
-#             max: Maximum value to clamp to.
-#             same_on_batch: Apply the same transformation across the batch.
-#             keepdim: Whether to keep the output shape the same as input ``True``
-#                 or broadcast it to the batch form ``False``.
-#         """
-#         super().__init__(
-#             p=p, p_batch=p_batch, same_on_batch=same_on_batch, keepdim=keepdim
-#         )
-#         self.flags = {"min": min, "max": max}
-
-#     def apply_transform(
-#         self,
-#         input: Tensor,
-#         params: dict[str, Tensor],
-#         flags: dict[str, Any],
-#         transform: Tensor | None = None,
-#     ) -> Tensor:
-#         """Apply the transform.
-
-#         Args:
-#             input: the input tensor
-#             params: generated parameters
-#             flags: static parameters
-#             transform: the geometric transformation tensor
-
-#         Returns:
-#             the augmented input
-#         """
-#         return torch.clamp(input, self.flags["min"], self.flags["max"])
-
-
-# All Satlas transforms include:
-# https://github.com/allenai/satlas/blob/main/satlas/cmd/model/train.py#L49
-#
-# Information about sensor-specific normalization can be found at:
-# https://github.com/allenai/satlas/blob/main/Normalization.md
 
 _satlas_bands = ("B04", "B03", "B02")
-# _satlas_transforms = K.AugmentationSequential(
-#     K.CenterCrop(256),
-#     K.Normalize(mean=torch.tensor(0), std=torch.tensor(255)),
-#     data_keys=None,
-# )
+
 
 _satlas_sentinel2_bands = (*_satlas_bands, "B05", "B06", "B07", "B08", "B11", "B12")
-# _std = torch.tensor([255, 255, 255, 8160, 8160, 8160, 8160, 8160, 8160])
-# _satlas_sentinel2_transforms = K.AugmentationSequential(
-#     K.CenterCrop(256),
-#     K.Normalize(mean=torch.tensor(0), std=_std),
-#     _Clamp(p=1, min=0, max=1),
-#     data_keys=None,
-# )
+
 
 _satlas_landsat_bands = tuple(f"B{i:02}" for i in range(1, 12))
-# _satlas_landsat_transforms = K.AugmentationSequential(
-#     K.CenterCrop(256),
-#     K.Normalize(mean=torch.tensor(4000), std=torch.tensor(16320)),
-#     _Clamp(p=1, min=0, max=1),
-#     data_keys=None,
-# )
 
-# https://github.com/pytorch/vision/pull/6883
-# https://github.com/pytorch/vision/pull/7107
-# Can be removed once torchvision>=0.15 is required
+
 Weights.__deepcopy__ = lambda *args, **kwargs: args[0]
-
-
-# _COMMON_META = {
-#     "categories": _IMAGENET_CATEGORIES,
-# }
 
 
 class Swin_Weights(WeightsEnum):  # type: ignore[misc]
@@ -947,7 +859,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_t_sentinel2_mi_ms_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/sentinel2_swint_mi_ms-d8c659e3.pth",
-        # transforms=_satlas_sentinel2_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -961,7 +872,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_t_sentinel2_mi_rgb_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/sentinel2_swint_mi_rgb-424d91f4.pth",
-        # transforms=_satlas_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -975,7 +885,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_t_sentinel2_si_ms_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/sentinel2_swint_si_ms-bc68e396.pth",
-        # transforms=_satlas_sentinel2_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -989,7 +898,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_t_sentinel2_si_rgb_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/sentinel2_swint_si_rgb-0c1a96e0.pth",
-        # transforms=_satlas_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1003,7 +911,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_b_naip_rgb_mi_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/aerial_swinb_mi-326d69e1.pth",
-        # transforms=_satlas_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1017,7 +924,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_b_naip_rgb_si_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/aerial_swinb_si-e4169eb1.pth",
-        # transforms=_satlas_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1030,9 +936,7 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
     )
 
     swin_v2_b_landsat_mi_satlas = Weights(
-        # url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/landsat_swinb_mi-6b4a1cda.pth",
         url="https://huggingface.co/torchgeo/satlas/resolve/main/landsat_swinb_mi-6b4a1cda.pth",
-        # transforms=_satlas_landsat_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1046,7 +950,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_b_landsat_si_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/landsat_swinb_si-4af978f6.pth",
-        # transforms=_satlas_landsat_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1060,7 +963,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_b_sentinel2_mi_ms_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/sentinel2_swinb_mi_ms-39c86721.pth",
-        # transforms=_satlas_sentinel2_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1074,7 +976,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_b_sentinel2_mi_rgb_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/sentinel2_swinb_mi_rgb-4efa210c.pth",
-        # transforms=_satlas_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1088,7 +989,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_b_sentinel2_si_ms_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/sentinel2_swinb_si_ms-fe22a12c.pth",
-        # transforms=_satlas_sentinel2_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1102,7 +1002,6 @@ class Swin_Weights(WeightsEnum):  # type: ignore[misc]
 
     swin_v2_b_sentinel2_si_rgb_satlas = Weights(
         url="https://hf.co/torchgeo/satlas/resolve/081d6607431bf36bdb59c223777cbb267131b8f2/sentinel2_swinb_si_rgb-156a98d5.pth",
-        # transforms=_satlas_transforms,
         transforms=None,
         meta={
             "dataset": "SatlasPretrain",
@@ -1137,8 +1036,6 @@ swin_v2_b_params = {
     "downsample_layer": PatchMergingV2,
 }
 
-
-# def _torch_load_state_dict_from_url():
 
 from torch.serialization import MAP_LOCATION
 from typing import Dict, Optional, Any
@@ -1222,8 +1119,6 @@ def _torch_load_state_dict_from_url(
             r = HASH_REGEX.search(filename)  # r is Optional[Match[str]]
             hash_prefix = r.group(1) if r else None
 
-        # download_url_to_file(url, cached_file, hash_prefix, progress=progress)
-
         response = requests.get(url, stream=True)
         if response.status_code == 200:
             with open(cached_file, "wb") as f:
@@ -1243,9 +1138,6 @@ def modify_tail_and_load(weights, model):
     model.features[0][0] = torch.nn.Conv2d(
         num_channels, out_channels, kernel_size=(4, 4), stride=(4, 4)
     )
-    # missing_keys, unexpected_keys = model.load_state_dict(
-    #     weights.get_state_dict(progress=True), strict=False
-    # )
 
     missing_keys, unexpected_keys = model.load_state_dict(
         _torch_load_state_dict_from_url(url=weights.url, progress=True), strict=False
