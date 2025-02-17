@@ -170,7 +170,7 @@ class MLModel(object):
                             `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
 
                             For TabPFN:
-                            `Built with TabPFN - tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/blob/main/LICENSE.txt>`
+                            `Built with TabPFN - tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/blob/main/LICENSE>`
 
     ---------------------   -------------------------------------------
     Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
