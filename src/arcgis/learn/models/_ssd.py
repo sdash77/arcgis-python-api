@@ -71,7 +71,7 @@ try:
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
     from ._transformer_backbone import vit_config
-    from ._dofa_utils import dofa_config
+    from ._dofa_utils import dofa_config, dofa_backbones_downstream
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -297,10 +297,8 @@ class SingleShotDetector(ArcGISModel):
 
                             valid options are 'pytorch', 'tensorflow'
     ---------------------   -------------------------------------------
-    dofa_wavelengths        Required list, if backbone in ['dofa_base', 'dofa_large'],
-                            Optional otherwise.
-                            list of central wavelengths corresponding to
-                            each data band (in micrometers).
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return:
@@ -444,7 +442,7 @@ class SingleShotDetector(ArcGISModel):
 
                 self._create_anchors(grids, zooms, ratios)
 
-                if not "dofa_" in self._backbone.__name__:
+                if not self._backbone.__name__ in dofa_backbones_downstream:
 
                     feature_sizes = _get_feature_size(
                         (
@@ -710,6 +708,7 @@ class SingleShotDetector(ArcGISModel):
             data.c += 1
             data.emd_path = emd_path
             data.emd = emd
+            data._band_names = emd.get("Bands")
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
 
@@ -717,7 +716,7 @@ class SingleShotDetector(ArcGISModel):
 
         data.resize_to = resize_to
 
-        if not "dofa_" in backbone:
+        if not backbone in dofa_backbones_downstream:
             ssd = cls(
                 data,
                 emd["Grids"],

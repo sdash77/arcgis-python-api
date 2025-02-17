@@ -162,10 +162,8 @@ class FeatureClassifier(ArcGISModel):
 
                             valid options are "``pytorch``", "``tensorflow``"
     ---------------------   -------------------------------------------
-    dofa_wavelengths        Required list, if backbone in ['dofa_base', 'dofa_large'],
-                            Optional otherwise.
-                            list of central wavelengths corresponding to
-                            each data band (in micrometers).
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.FeatureClassifier` Object
@@ -765,6 +763,7 @@ class FeatureClassifier(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            data._band_names = emd.get("Bands")
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)

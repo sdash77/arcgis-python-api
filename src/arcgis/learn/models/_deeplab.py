@@ -276,10 +276,8 @@ class DeepLab(ArcGISModel):
                             keep_dilation=True can potentially improves accuracy
                             at the cost of memory consumption. Default: False
     ---------------------   -------------------------------------------
-    dofa_wavelengths        Required list, if backbone in ['dofa_base', 'dofa_large'],
-                            Optional otherwise.
-                            list of central wavelengths corresponding to
-                            each data band (in micrometers).
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.DeepLab` Object
@@ -552,6 +550,7 @@ class DeepLab(ArcGISModel):
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd
+            empty_data._band_names = emd.get("Bands")
             return cls(empty_data, **model_params, pretrained_path=str(model_file))
         else:
             return cls(data, **model_params, pretrained_path=str(model_file))

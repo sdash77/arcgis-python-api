@@ -59,7 +59,7 @@ try:
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
     from .._utils.env import is_arcgispronotebook
     from ._transformer_backbone import vit_config, custom_backbone
-    from ._dofa_utils import dofa_config, dofa_backbone
+    from ._dofa_utils import dofa_config, dofa_backbone, dofa_backbones_downstream
 
     HAS_FASTAI = True
 except Exception as e:
@@ -280,10 +280,8 @@ class MaskRCNN(ArcGISModel):
                                     mini-batch during training of the classification head.
                                     Default: 0.25
     -----------------------------   -------------------------------------------
-    dofa_wavelengths                Required list, if backbone in ['dofa_base', 'dofa_large'],
-                                    Optional otherwise.
-                                    list of central wavelengths corresponding to
-                                    each data band (in micrometers).
+    wavelengths                     Optional list. A list of central wavelengths
+                                    corresponding to each data band (in micrometers).
     =============================   ===========================================
 
     :return:
@@ -416,12 +414,20 @@ class MaskRCNN(ArcGISModel):
                 ).backbone_fpn
                 backbone_fpn._is_transformer = True
             elif backbone in MaskRCNN.dofa_backbones():
-                wavelengths = kwargs.get("dofa_wavelengths", None)
+                from arcgis.learn.models._arcgis_model import (
+                    get_backbone_func,
+                    get_wavelengths_from_bandnames,
+                )
+
+                wavelengths = kwargs.get("wavelengths", None)
                 if wavelengths is None:
-                    raise Exception(
-                        'DOFA models require a list of central wavelengths corresponding to each data band.\nPlease provide a value for the "dofa_wavelenghts" keyword argument.',
-                    )
-                from arcgis.learn.models._arcgis_model import get_backbone_func
+                    wavelengths = get_wavelengths_from_bandnames(data._band_names)
+                    assert len(wavelengths) == len(data._extract_bands)
+                else:
+                    if len(wavelengths) != len(data._extract_bands):
+                        raise Exception(
+                            'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
+                        )
 
                 backbone_fpn = get_backbone_func(
                     backbone,
@@ -474,7 +480,7 @@ class MaskRCNN(ArcGISModel):
                 )
             if (
                 "timm" in self._backbone.__module__
-                or "dofa_" in self._backbone.__name__
+                or self._backbone.__name__ in dofa_backbones_downstream
             ):
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
@@ -688,6 +694,7 @@ class MaskRCNN(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            data._band_names = emd.get("Bands")
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)

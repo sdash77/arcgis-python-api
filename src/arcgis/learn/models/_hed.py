@@ -126,10 +126,8 @@ class HEDEdgeDetector(ModelExtension):
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     ---------------------   -------------------------------------------
-    dofa_wavelengths        Required list, if backbone in ['dofa_base', 'dofa_large'],
-                            Optional otherwise.
-                            list of central wavelengths corresponding to
-                            each data band (in micrometers).
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.HEDEdgeDetector` Object
@@ -314,6 +312,7 @@ class HEDEdgeDetector(ModelExtension):
             data.emd_path = emd_path
             data.emd = emd
             data.classes = ["background"]
+            data._band_names = emd.get("Bands")
             for k, v in class_mapping.items():
                 data.classes.append(v)
             if backbone is not None and "hf:" in backbone:

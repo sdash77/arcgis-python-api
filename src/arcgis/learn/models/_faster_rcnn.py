@@ -601,10 +601,8 @@ class FasterRCNN(ModelExtension):
                                     mini-batch during training of the classification head.
                                     Default: 0.25
     -----------------------------   -------------------------------------------
-    dofa_wavelengths                Required list, if backbone in ['dofa_base', 'dofa_large'],
-                                    Optional otherwise.
-                                    list of central wavelengths corresponding to
-                                    each data band (in micrometers).
+    wavelengths                     Optional list. A list of central wavelengths
+                                    corresponding to each data band (in micrometers).
     =============================   ===========================================
 
     :return:
@@ -806,6 +804,7 @@ class FasterRCNN(ModelExtension):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
+            data._band_names = emd.get("Bands")
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
 
