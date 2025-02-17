@@ -13,6 +13,7 @@ import lxml.html
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url, assemble_url
+from ..api import EsriSession
 
 re = LazyLoader("re")
 json = LazyLoader("json")
@@ -54,8 +55,8 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         password: str | None = None,
         referer: str = "http",
         expiration: int = 1440,
-        proxies: dict = None,
-        session: "Session" = None,
+        proxies: dict | None = None,
+        session: "EsriSession" | None = None,
         **kwargs,
     ) -> None:
         """
@@ -73,16 +74,10 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             self._refresh_token = password
         else:
             self._password = password
-        if session is None:
-            self._session = requests.Session()
-            self._session.headers["referer"] = referer
-            self._session.verify = kwargs.pop("verify", True)
-        else:
-            self._session = session
-        if proxies:
-            self._proxies = proxies
-        else:
-            self._proxies = proxies
+        self._session = session or EsriSession(
+            referer=referer, verify_cert=kwargs.pop("verify", True), proxies=proxies
+        )
+        self._proxies = proxies
 
     # ----------------------------------------------------------------------
     def __str__(self):
