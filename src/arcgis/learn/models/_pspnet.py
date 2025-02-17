@@ -317,12 +317,6 @@ class PSPNetClassifier(ArcGISModel):
 
         resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
 
-        # swin_keys = [
-        #     attr
-        #     for attr in dir(Swin_Weights)
-        #     if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
-        # ]
-
         satlas_backbone = list(
             map(
                 lambda m: "hf:" + m,
