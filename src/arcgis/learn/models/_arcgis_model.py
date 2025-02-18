@@ -626,7 +626,17 @@ def get_backbone_func(backbone, data, **kwargs):
             backbone_name = backbone
             wavelengths = kwargs.get("wavelengths", None)
             if wavelengths is None:
-                wavelengths = get_wavelengths_from_bandnames(data._band_names)
+                if data._emd.get("InputRastersProps", None) is not None:
+                    band_names = data._emd.get("InputRastersProps").get("BandNames")
+                elif data._emd.get("AllTilesStats", None) is not None:
+                    band_names = [
+                        x.get("BandName") for x in data._emd.get("AllTilesStats")
+                    ]
+                else:
+                    raise Exception(
+                        '\nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
+                    )
+                wavelengths = get_wavelengths_from_bandnames(band_names)
                 assert len(wavelengths) == len(data._extract_bands)
             else:
                 if len(wavelengths) != len(data._extract_bands):
