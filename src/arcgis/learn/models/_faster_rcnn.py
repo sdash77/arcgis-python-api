@@ -759,6 +759,7 @@ class FasterRCNN(ModelExtension):
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
+        model_params = emd["ModelParameters"]
         backbone = emd["ModelParameters"]["backbone"]
         dataset_type = emd.get("DatasetType", "PASCAL_VOC_rectangles")
         chip_size = emd["ImageWidth"]
@@ -809,7 +810,7 @@ class FasterRCNN(ModelExtension):
                 data._extract_bands = emd.get("ExtractBands")
 
         data.resize_to = resize_to
-        frcnn = cls(data, backbone, pretrained_path=str(model_file), **kwargs)
+        frcnn = cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
 
         if not data_passed:
             frcnn.learn.data.single_ds.classes = frcnn._data.classes
