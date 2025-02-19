@@ -2095,7 +2095,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     @pinned_popup.setter
-    def pinned_popup_info(self, value: dict | None):
+    def pinned_popup(self, value: dict | None):
         # Check if the dictionary has the correct keys
         if value is None:
             self._story._properties["nodes"][self.node]["data"].pop(
@@ -6244,7 +6244,7 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        media               Optional string. The media of the cover slide. This can be an instance of
+        media               The media of the cover slide. This can be an instance of
                             Image or Video.
         ===============     ====================================================================
         """
@@ -6486,12 +6486,8 @@ class Navigation:
         self._story = kwargs.pop("story")
         self.node = kwargs.pop("node_id")
 
-        self._hidden = self._story._properties["nodes"][self.node]["config"][
-            "isHidden"
-        ]
-        self._links = (
-            self._story._properties["nodes"][self.node]["data"]["links"] or []
-        )
+        self._hidden = self._story._properties["nodes"][self.node]["config"]["isHidden"]
+        self._links = self._story._properties["nodes"][self.node]["data"]["links"] or []
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -6547,9 +6543,7 @@ class Navigation:
 
         # update the hidden property
         self._hidden = hidden
-        self._story._properties["nodes"][self.node]["config"][
-            "isHidden"
-        ] = self._hidden
+        self._story._properties["nodes"][self.node]["config"]["isHidden"] = self._hidden
 
 
 ###############################################################################################################
