@@ -13,7 +13,6 @@ import lxml.html
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url, assemble_url
-from ..api import EsriSession
 
 re = LazyLoader("re")
 json = LazyLoader("json")
@@ -74,9 +73,15 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             self._refresh_token = password
         else:
             self._password = password
-        self._session = session or EsriSession(
-            referer=referer, verify_cert=kwargs.pop("verify", True), proxies=proxies
-        )
+        if session:
+            if type(session).__name__ != 'EsriSession':
+                raise TypeError("session must be of type EsriSession; requests.Session is incompatible")
+            self._session = session
+        else:
+            from ..api import EsriSession
+            self._session = EsriSession(
+                referer=referer, verify_cert=kwargs.pop("verify", True), proxies=proxies
+            )
         self._proxies = proxies
 
     # ----------------------------------------------------------------------
