@@ -1,8 +1,12 @@
+from __future__ import annotations
 from requests.auth import AuthBase
 from urllib import parse
 from arcgis.auth.tools import parse_url
 
 from ._schain import SupportMultiAuth
+
+
+__all__ = ["EsriAPIKeyAuth"]
 
 
 class EsriAPIKeyAuth(AuthBase, SupportMultiAuth):

@@ -10,6 +10,7 @@ from setuptools import find_packages
 from setuptools.dist import Distribution
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 from setuptools.command.egg_info import egg_info as _egg_info
 
 # To use a consistent encoding
@@ -75,50 +76,24 @@ else:
         "ujson >=3",
         "truststore>=0.10.0",
         'pywin32 >=223;platform_system=="Windows"',
-        "pyshp >=2",
         "geomet",
-        "requests >=2.31.0,!=2.32.0.*,!= 2.32.1.*,!=2.32.2.*,<3",
+        "requests >=2.32.3,<3",
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",
-        "requests-kerberos",
-        "requests-gssapi",
-        "dask >=2023.3.2",
+        "dask[dataframe] >=2024.12.1,<2025.1.0",
         "matplotlib-inline",
-        "pyarrow >=11.0.0",
+        "pyarrow >=16,<17",
         "puremagic >=1.15,<2",
+        "pydantic >=2.8.2, <3",
+        "networkx >=3.3, <4",
+        "websocket-client >=1.2.3, <2.0.0",
     ]
 
 
 def _post_install():
-    """This function will run after 'pip install' finishes.
-    If the O.S. is Mac OSX, run the OpenSSL workaround as described in
-    this issue: https://bugs.python.org/issue28150, equivalent of running
-    '/Applications/Python X.X/Install Certificates.command' cmd
-    """
-    if conda_install_mode:
-        # Don't run any post installation methods for conda installs
-        return
-
-    # If the OS is Mac OSX, run the OpenSSL workaround
-    platform_is_osx = sys.platform == "darwin"
-    if not platform_is_osx:
-        return
-    for potential_cert_script in glob("/Applications/Python*/*"):
-        if "Install Certificates.command" in potential_cert_script:
-            try:
-                cmd_output = check_output(potential_cert_script, stderr=STDOUT)
-                log.warning(
-                    "OpenSSL workaround for OSX completed successfully. "
-                    "See https://bugs.python.org/issue28150 for info. "
-                    "Output: {}".format(cmd_output.decode("utf-8"))
-                )
-            except Exception:
-                log.exception(
-                    "OpenSSL workaround for OSX did not complete "
-                    "successfully. This may or may not allow secure SSL "
-                    "to work. See https://bugs.python.org/issue28150. "
-                )
+    """stub for post-installation logic when installing source distribution"""
+    return
 
 
 # Each of these classes represent the different modes that pip install
@@ -137,6 +112,14 @@ class install(_install):
     def run(self):
         self.execute(_post_install, (), msg="Running post-install...")
         super().run()
+
+
+class bdist_wheel(_bdist_wheel):
+    """Configures bdist_wheel to be platform-agostic"""
+
+    def finalize_options(self):
+        _bdist_wheel.finalize_options(self)
+        self.root_is_pure = True
 
 
 class egg_info(_egg_info):
@@ -247,6 +230,7 @@ kwargs = {
         "develop": develop,
         "install": install,
         "egg_info": egg_info,
+        "bdist_wheel": bdist_wheel,
     },
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -254,6 +238,11 @@ kwargs = {
     # $ pip install -e .[dev,test]
     "extras_require": {
         "gp": ["dill"],
+        "gdal": ["gdal >=3.9.2, <4"],
+        "kerberos": [
+            "requests-kerberos",
+            "requests-gssapi",
+        ],
     },
     "distclass": BinaryDistribution,
     # extras_require={

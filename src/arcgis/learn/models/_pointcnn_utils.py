@@ -534,10 +534,14 @@ class CrossEntropyPC(nn.Module):
             self.crit = FocalLoss(num_classes, device)
 
     def forward(self, inp, target):
-        inp = inp.contiguous()
-        target = target.contiguous()
-        inp = inp.view(-1, self.num_classes).contiguous()
-        target = target.view(-1).contiguous()
+        if isinstance(inp, dict):
+            target = inp["targets"]
+            inp = inp["seg_logits"]
+        else:
+            inp = inp.contiguous()
+            target = target.contiguous()
+            inp = inp.view(-1, self.num_classes).contiguous()
+            target = target.view(-1).contiguous()
         if self.focal_loss:
             return self.crit(inp, target)
         return F.cross_entropy(inp, target).contiguous()

@@ -11,6 +11,8 @@ from arcgis.auth.tools import parse_url, nbauth
 
 _log = logging.getLogger()
 
+__all__ = ["EsriNotebookAuth", "EsriNotebookFileAuth"]
+
 
 class EsriNotebookFileAuth(AuthBase, SupportMultiAuth):
     """

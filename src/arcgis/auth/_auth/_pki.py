@@ -1,13 +1,13 @@
+from __future__ import annotations
 from typing import Tuple
 from requests.auth import AuthBase
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url, assemble_url
 
-os = LazyLoader("os")
-tempfile = LazyLoader("tempfile")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
+__all__ = ["EsriPKIAuth"]
 
 
 ###########################################################################
@@ -20,26 +20,15 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
     _tokens = None
     _session = None
 
-    def __init__(
-        self,
-        cert: Tuple[str],
-        referer: str = None,
-        verify_cert: bool = True,
-        **kwargs,
-    ):
+    def __init__(self, session: "EsriSession" | requests.Session, **kwargs):
+        self.auth = kwargs.pop("auth", None)
         self._server_log = {}
         self._server_log_time = {}
         self._tokens = {}
         self._token_url = None
-        self.verify_cert = verify_cert
-        self.cert = cert
-        self.auth = kwargs.pop("auth", None)
-        if referer is None:
-            self.referer = "http"
-        else:
-            self.referer = referer
-        self._session = kwargs.pop("session", requests.Session())
-        self._proxies = kwargs.pop("proxies", None)
+        self.referer = None
+
+        self._session = session
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -84,10 +73,6 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
             else:
                 info = self._session.get(
                     server_url + "/rest/info?f=json",
-                    cert=(self.cert[0], self.cert[1]),
-                    verify=self.verify_cert,
-                    auth=self.auth,
-                    proxies=self._proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
                 self._server_log[server_url] = token_url
@@ -100,10 +85,6 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
                 token = self._session.post(
                     token_url,
                     data=postdata,
-                    cert=(self.cert[0], self.cert[1]),
-                    auth=self.auth,
-                    verify=self.verify_cert,
-                    proxies=self._proxies,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:

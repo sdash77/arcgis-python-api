@@ -1,17 +1,9 @@
-import os
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11678\src")
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11678\tests")
 import json
-import time
 import datetime
 import unittest
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-from arcgis.gis import GIS, Item
-
-PROFILES = ["your_online_profile", "your_enterprise_profile"]
+from arcgis.gis import Item
 
 
 def _stage_data(gis):
@@ -158,47 +150,35 @@ def _stage_data(gis):
     return web_app_item, wm_item
 
 
-###########################################################################
+@profiles.enterprise_and_agol
 @integration_test
 class TestItemCopy(unittest.TestCase):
     """Tests the Copy Method on Item"""
 
-    _app_data = None
-    _gis_objs = None
-
-    # ----------------------------------------------------------------------
-    @classmethod
-    def setUpClass(cls):
-        cls._gis_objs = [
-            GIS(profile=p, verify_cert=False, set_active=False)
-            for p in PROFILES
-        ]
-        cls._app_data = {}
-        for gis in cls._gis_objs:
-            cls._app_data[gis] = _stage_data(gis)
+    _app_data = {}
 
     # ----------------------------------------------------------------------
     def test_copy_item(self):
         """tests copying the story map/web map application"""
-        for k, v in self._app_data.items():
-            web_app_item, wm_item = v
-            assert isinstance(web_app_item, Item)
-            new_item = web_app_item.copy(title="thisisnewtitle1234")
-            assert new_item.title == "thisisnewtitle1234"
-            assert new_item.url
-            assert new_item.url != web_app_item.url
-            assert new_item.delete()
+        web_app_item, wm_item = _stage_data(self.gis)
+        assert isinstance(web_app_item, Item)
+        new_item = web_app_item.copy(title="thisisnewtitle1234", tags="ntgrtn-tst")
+        assert new_item.title == "thisisnewtitle1234"
+        assert new_item.url
+        assert new_item.url != web_app_item.url
+        assert new_item.delete(permanent=True)
 
     # ----------------------------------------------------------------------
     def test_copy_notebook_item(self):
         """tests copying the notebook"""
-        for gis in self._gis_objs:
-            items = gis.content.search("type: Notebook")
-            if len(items) > 0:
-                item = items[0]
-                item_new = item.copy()
-                assert item_new
-                assert item_new.delete()
+        items = self.gis.content.search("type: Notebook")
+        if not items:
+            self.skipTest(f"GIS(url={self.gis.url}) has no Notebook items")
+        item = items[0]
+        item_new = item.copy(tags="ntgrtn-tst")
+        assert item_new
+        assert item_new.type == item.type
+        assert item_new.delete(permanent=True)
 
     # ----------------------------------------------------------------------
     @classmethod

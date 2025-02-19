@@ -1,6 +1,8 @@
+from __future__ import annotations
 from urllib.parse import parse_qs
 from getpass import getpass
-
+import warnings
+import urllib3
 from requests_oauthlib import OAuth1, OAuth2
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
@@ -12,13 +14,14 @@ from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url, assemble_url
 
-warnings = LazyLoader("warnings")
 re = LazyLoader("re")
 json = LazyLoader("json")
 webbrowser = LazyLoader("webbrowser")
 getpass = LazyLoader("getpass")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
+
+__all__ = ["EsriOAuth2Auth"]
 
 
 ###########################################################################
@@ -35,6 +38,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
     _password = None
     _token_url = None
     _referer = None
+    _expiration_default = 1440
     _expiration = None
     _create_time = None
     _refresh_token = None
@@ -45,9 +49,9 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         self,
         base_url: str,
         client_id: str,
-        client_secret: str = None,
-        username: str = None,
-        password: str = None,
+        client_secret: str | None = None,
+        username: str | None = None,
+        password: str | None = None,
         referer: str = "http",
         expiration: int = 1440,
         proxies: dict = None,
@@ -65,11 +69,14 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         self._username = username
         if self._username and password is None:
             password = getpass.getpass(f"Enter user {username} password:")
-        self._password = password
+        if self._client_id and password and not self._username:
+            self._refresh_token = password
+        else:
+            self._password = password
         if session is None:
             self._session = requests.Session()
             self._session.headers["referer"] = referer
-            self._session.verify = kwargs.pop("veriy", True)
+            self._session.verify = kwargs.pop("verify", True)
         else:
             self._session = session
         if proxies:
@@ -95,7 +102,8 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             # handles the refreshing of the token
             if not (self._create_time is None) and (
                 _dt.datetime.now()
-                >= self._create_time + _dt.timedelta(minutes=self._expiration)
+                >= self._create_time
+                + _dt.timedelta(minutes=self._expiration or self._expiration_default)
             ):
                 self._token = None
             elif (
@@ -103,7 +111,10 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 and not (self._token is None)
                 and (
                     _dt.datetime.now()
-                    < self._create_time + _dt.timedelta(minutes=self._expiration)
+                    < self._create_time
+                    + _dt.timedelta(
+                        minutes=self._expiration or self._expiration_default
+                    )
                 )
             ):
                 return self._token
@@ -119,9 +130,22 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                     "refresh_token": self._refresh_token,
                     "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
                 }
-                token_info = self._session.post(tu, data=parameters)
-                self._token = token_info["access_token"]
-                return self._token
+                token_info_request = self._session.post(
+                    tu, data=parameters, drop_auth=True
+                )
+                token_info = token_info_request.json()
+                if not token_info_request.ok or (
+                    token_info
+                    and "error" in token_info
+                    and "access_token" not in token_info
+                ):
+                    # token is invalid, need to re-authenticate
+                    self._refresh_token = None
+                else:
+                    self._create_time = _dt.datetime.now()
+                    self._expiration = token_info["expires_in"] / 60 - 2
+                    self._token = token_info["access_token"]
+                    return self._token
             elif (
                 self._client_id
                 and self._client_secret
@@ -160,33 +184,40 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             elif (
                 self._client_id and self._client_secret
             ):  # case 2: has both client and secret keys
-                client = BackendApplicationClient(client_id=self._client_id)
-                oauth = OAuth2Session(
-                    client=client, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-                )
-                if self._proxies:
-                    oauth.proxies = self._proxies
-                oauth.verify = False
-                res = oauth.fetch_token(
-                    token_url=tu,
-                    client_id=self._client_id,
-                    client_secret=self._client_secret,
-                    include_client_id=True,
-                    verify=False,
-                    proxies=self._proxies,
-                )
-                if "expires_in" in res:
-                    self._create_time = _dt.datetime.fromtimestamp(
-                        res["expires_at"]
-                    ) - _dt.timedelta(seconds=7200)
-                    self._expiration = res["expires_in"] / 60
-                    if "token" in res:
-                        return res["token"]
-                    if "access_token" in res:
-                        return res["access_token"]
-            elif (
-                self._client_id and self._username is None and self._password is None
-            ):  # case 3: client id only
+                with warnings.catch_warnings():
+                    warnings.simplefilter(
+                        "ignore", urllib3.exceptions.InsecureRequestWarning
+                    )
+                    client = BackendApplicationClient(client_id=self._client_id)
+                    oauth = OAuth2Session(
+                        client=client, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+                    )
+                    if self._proxies:
+                        oauth.proxies = self._proxies
+                    oauth.verify = False
+                    res = oauth.fetch_token(
+                        token_url=tu,
+                        client_id=self._client_id,
+                        client_secret=self._client_secret,
+                        include_client_id=True,
+                        verify=False,
+                        proxies=self._proxies,
+                    )
+                    if "expires_in" in res:
+                        self._create_time = _dt.datetime.fromtimestamp(
+                            res["expires_at"]
+                        ) - _dt.timedelta(seconds=7200)
+                        self._expiration = res["expires_in"] / 60
+                        if "token" in res:
+                            return res["token"]
+                        if "access_token" in res:
+                            return res["access_token"]
+            if (
+                self._client_id
+                and self._username is None
+                and self._password is None
+                and self._token is None
+            ):  # case 3: client id only / refresh_token has expired
                 auth_url = "%s/oauth2/authorize" % self.baseurl
                 tu = "%s/oauth2/token" % self.baseurl
                 oauth = OAuth2Session(
@@ -195,35 +226,40 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 if self._proxies:
                     oauth.proxies = self._proxies
                 oauth.verify = False
-                authorization_url, state = oauth.authorization_url(
-                    auth_url, **{"allow_verification": "false"}
-                )
-                print(
-                    "Please sign in to your GIS and paste the code that is obtained below."
-                )
-                print(
-                    "If a web browser does not automatically open, please navigate to the URL below yourself instead."
-                )
-                print("Opening web browser to navigate to: " + authorization_url)
 
-                webbrowser.open_new(authorization_url)
-                authorization_response = getpass.getpass(
-                    "Enter code obtained on signing in using SAML: "
-                )
+                with warnings.catch_warnings():
+                    warnings.simplefilter(
+                        "ignore", urllib3.exceptions.InsecureRequestWarning
+                    )
+                    authorization_url, state = oauth.authorization_url(
+                        auth_url, **{"allow_verification": "false"}
+                    )
+                    print(
+                        "Please sign in to your GIS and paste the code that is obtained below."
+                    )
+                    print(
+                        "If a web browser does not automatically open, please navigate to the URL below yourself instead."
+                    )
+                    print("Opening web browser to navigate to: " + authorization_url)
 
-                self._create_time = _dt.datetime.now()
-                token_info = oauth.fetch_token(
-                    tu,
-                    code=authorization_response,
-                    verify=False,
-                    proxies=self._proxies,
-                    include_client_id=True,
-                    authorization_response="authorization_code",
-                )
-                self._expiration = token_info["expires_in"] / 60 - 2
-                self._refresh_token = token_info["refresh_token"]
-                self._token = token_info["access_token"]
-                return self._token
+                    webbrowser.open_new(authorization_url)
+                    authorization_response = getpass.getpass(
+                        "Enter code obtained on signing in using SAML: "
+                    )
+
+                    self._create_time = _dt.datetime.now()
+                    token_info = oauth.fetch_token(
+                        tu,
+                        code=authorization_response,
+                        verify=False,
+                        proxies=self._proxies,
+                        include_client_id=True,
+                        authorization_response="authorization_code",
+                    )
+                    self._expiration = token_info["expires_in"] / 60 - 2
+                    self._refresh_token = token_info["refresh_token"]
+                    self._token = token_info["access_token"]
+                    return self._token
             elif self._client_id and not (
                 self._username is None and self._password is None
             ):  # case 4: client id and username/password (SAML workflow)
@@ -234,7 +270,11 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                     "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
                     "allow_verification": "false",
                 }
-                content = str(self._session.get(auth_url, params=parameters).content)
+                content = str(
+                    self._session.get(
+                        auth_url, params=parameters, drop_auth=True
+                    ).content
+                )
 
                 pattern = re.compile("var oAuthInfo = ({.*?});", re.DOTALL)
                 if len(pattern.findall(content)) == 0:
@@ -272,22 +312,28 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                     "password": self._password,
                     "oauth_state": oauth_info["oauth_state"],
                 }
-                resp = self._session.post(
-                    "%s/oauth2/signin" % self.baseurl,
-                    data=parameters,
-                    verify=False,
-                    proxies=self._proxies,
-                    allow_redirects=False,
-                )
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter(
+                        "ignore", urllib3.exceptions.InsecureRequestWarning
+                    )
+                    resp = self._session.post(
+                        "%s/oauth2/signin" % self.baseurl,
+                        data=parameters,
+                        verify=False,
+                        proxies=self._proxies,
+                        allow_redirects=False,
+                        drop_auth=True,
+                    )
                 if resp.status_code == 302:
                     url = resp.headers["Location"]
                     if url.find("acceptTermsAndConditions") > -1:
                         r2 = self._session.post(
-                            url, data={"acceptTermsAndConditions": True}
+                            url, data={"acceptTermsAndConditions": True}, drop_auth=True
                         )
                         content = r2.text
                     elif url.find("oauth2/approval") > -1:
-                        r2 = self._session.get(url)
+                        r2 = self._session.get(url, drop_auth=True)
                         content = r2.text
 
                 soup = lxml.html.fromstring(content)
@@ -305,18 +351,22 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 if code is None:
                     raise Exception("Could not generate a token.")
                 self._create_time = _dt.datetime.now()
-                token_info = oauth.fetch_token(
-                    tu,
-                    code=code,
-                    verify=False,
-                    include_client_id=True,
-                    authorization_response="authorization_code",
-                )
-                self._refresh_token = token_info["refresh_token"]
-                self._token = token_info["access_token"]
-                self._expiration = token_info["expires_in"] / 60 - 2
+                with warnings.catch_warnings():
+                    warnings.simplefilter(
+                        "ignore", urllib3.exceptions.InsecureRequestWarning
+                    )
+                    token_info = oauth.fetch_token(
+                        tu,
+                        code=code,
+                        verify=False,
+                        include_client_id=True,
+                        authorization_response="authorization_code",
+                    )
+                    self._refresh_token = token_info["refresh_token"]
+                    self._token = token_info["access_token"]
+                    self._expiration = token_info["expires_in"] / 60 - 2
 
-                return self._token
+                    return self._token
         return None
 
     # ----------------------------------------------------------------------

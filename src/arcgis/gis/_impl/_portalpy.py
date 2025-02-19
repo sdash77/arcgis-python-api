@@ -22,7 +22,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.3.1"
+__version__ = "2.4.1"
 
 _log = logging.getLogger(__name__)
 
@@ -107,6 +107,7 @@ class Portal(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._security_kwargs = kwargs.pop("security_kwargs", None)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         url = url.strip()  # be permissive in accepting home app urls
@@ -203,6 +204,7 @@ class Portal(object):
                     is_hosted_nb_home=is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                     security_kwargs=self._security_kwargs,
+                    ca_bundles=self._ca_bundles,
                 )
             else:
                 if token == api_key:
@@ -232,6 +234,7 @@ class Portal(object):
                     is_hosted_nb_home=is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                     security_kwargs=self._security_kwargs,
+                    ca_bundles=self._ca_bundles,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -1289,28 +1292,17 @@ class Portal(object):
         if not self._properties or force:
             path = "accounts/self" if self._is_pre_162 else "portals/self"
             resp = None
-            try:
-                resp = self.con.post(path, self._postdata(), ssl=True)
-            except Exception as e:
-                if (
-                    not self.con._verify_cert
-                    and (len(e.args) == 2)
-                    and (
-                        e.args[1]
-                        == "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:720)"
-                    )
-                ):
-                    import ssl
+            if self.con.baseurl.endswith("/"):
 
-                    ssl._create_default_https_context = ssl._create_unverified_context
+                url: str = f"{self.con.baseurl}{path}"
+            else:
+                self.con.baseurl += "/"
+                url: str = f"{self.con.baseurl}{path}"
+            import warnings
 
-                    resp = self.con.post(path, self._postdata(), ssl=True)
-                if self.con._auth == "PKI":
-                    resp = self.con.get(
-                        path, ssl=True
-                    )  # issue seen with key, cert auth
-                if not resp:
-                    raise e
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                resp = self.con.get(url, {"f": "json"})
 
             if resp:
                 self._properties = resp
@@ -2624,7 +2616,9 @@ class Portal(object):
                 metadata = request.urlretrieve(metadata)[0]
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
-            if _is_http_url(thumbnail):
+            if isinstance(thumbnail, io.BytesIO):
+                files.append(("thumbnail", thumbnail, "thumbnail.png"))
+            elif _is_http_url(thumbnail):
                 # find file ext from url
                 file_ext = find_puremagic_ext(thumbnail)
                 # download file
@@ -2634,7 +2628,9 @@ class Portal(object):
                     new_thumbnail = thumbnail + "." + file_ext
                     os.rename(thumbnail, new_thumbnail)
                     thumbnail = new_thumbnail
-            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+                files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+            else:
+                files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
                 # find file ext from url

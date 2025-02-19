@@ -91,6 +91,12 @@ ContentManager
     :members:
     :undoc-members:
     
+OfflineContentManager
+---------------------
+.. autoclass:: arcgis.gis.OfflineContentManager
+    :members:
+    :undoc-members:
+    
 Folders
 -------
 .. autoclass:: arcgis.gis._impl._content_manager.Folders

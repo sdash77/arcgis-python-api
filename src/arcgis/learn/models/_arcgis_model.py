@@ -1028,6 +1028,18 @@ class ArcGISModel(object):
             self._check_requisites()
 
             if lr is None:
+
+                if len(self.learn.data.train_dl) == 0:
+                    print(
+                        f"Warning: Your training dataloader is empty. Cannot find the optimal learning rate."
+                    )
+                    print(
+                        f"Try using a smaller batch size (provided: batch size={self.learn.data.train_dl.batch_size} for {len(self.learn.data.train_dl.dataset)} elements)."
+                    )
+                    raise ValueError(
+                        "Training dataloader is empty. Adjust batch size or check that you have sufficient number of training samples."
+                    )
+
                 print("Finding optimum learning rate.")
 
                 lr = self.lr_find(allow_plot=False)
@@ -2053,6 +2065,7 @@ class ArcGISModel(object):
             "<RandLANet>",
             "<SQNSeg>",
             "<MMDetection3D>",
+            "<PTv3Seg>",
         ]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
