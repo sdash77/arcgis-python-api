@@ -842,7 +842,6 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             exp = r"<title>SUCCESS code=(.*?)</title>"
             pattern = self._re_expressions["step-2"]
             code = pattern.findall(resp_text)[0]
-            # TODO verify that the _oauth client can properly handle TrustStore certificates
             self._auth_token = self._oauth.fetch_token(
                 token_url=self._token_url,
                 code=code,
