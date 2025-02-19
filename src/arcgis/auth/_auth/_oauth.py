@@ -74,11 +74,14 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         else:
             self._password = password
         if session:
-            if type(session).__name__ != 'EsriSession':
-                raise TypeError("session must be of type EsriSession; requests.Session is incompatible")
+            if type(session).__name__ != "EsriSession":
+                raise TypeError(
+                    "session must be of type EsriSession; requests.Session is incompatible"
+                )
             self._session = session
         else:
             from ..api import EsriSession
+
             self._session = EsriSession(
                 referer=referer, verify_cert=kwargs.pop("verify", True), proxies=proxies
             )
