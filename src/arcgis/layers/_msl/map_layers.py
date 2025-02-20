@@ -16,6 +16,7 @@ from arcgis.gis import Item, Layer
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis._impl._util import _get_item_url
 from arcgis._impl.common._utils import _validate_url
+from arcgis._impl.common._deprecate import deprecated
 
 _dt = LazyLoader("_dt.datetime")
 os = LazyLoader("os")
@@ -113,10 +114,18 @@ class MapFeatureLayer(Layer):
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
+    @deprecated(
+        deprecated_in="2.4.1",
+        details="Use the attachments property instead.",
+    )
+    @property
+    def attachements(self):
+        return self.attachments
+
     # ----------------------------------------------------------------------
     @property
     @lru_cache(maxsize=10)
-    def attachements(self) -> _features.managers.AttachmentManager:
+    def attachments(self) -> _features.managers.AttachmentManager:
         """
         The ``attachments`` property provides a manager to work with attachments if the ``MapFeatureLayer``
         supports this functionality.
@@ -688,7 +697,7 @@ class MapFeatureLayer(Layer):
                                             and the extent.
         -------------------------------     --------------------------------------------------------------------
         return_extent_only                  Optional boolean. If `True`, the response only includes the extent
-                                            of the features satisying the query. If `returnCountOnly=true`, the
+                                            of the features satisfying the query. If `returnCountOnly=true`, the
                                             response will return both the count and the extent. The default is
                                             `False`. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is `true`.
@@ -744,6 +753,7 @@ class MapFeatureLayer(Layer):
                                             by skipping the specified number of records and starting from the
                                             next record (that is, `resultOffset + ith` value). This option is
                                             ignored if `return_all_records` is `True` (i.e. by default).
+                                            This parameter cannot be specified if the service does not support pagination.
         -------------------------------     --------------------------------------------------------------------
         result_record_count                 Optional integer. This option can be used for fetching query results
                                             up to the `result_record_count` specified. When `result_offset` is
@@ -751,6 +761,7 @@ class MapFeatureLayer(Layer):
                                             `max_record_count`. The maximum value for this parameter is the value
                                             of the layer's `maxRecordCount` property. This option is ignored if
                                             `return_all_records` is True (i.e. by default).
+                                            This parameter cannot be specified if the service does not support pagination.
         -------------------------------     --------------------------------------------------------------------
         quantization_parameters             Optional dict. Used to project the geometry onto a virtual grid,
                                             likely representing pixels on the screen.
@@ -993,11 +1004,17 @@ class MapFeatureLayer(Layer):
             range_values=range_values,
             parameter_values=parameter_values,
         )
+        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
+            "supportsPagination", False
+        )
+        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             as_df=as_df,
             is_layer=True,
+            supports_pagination=supports_pagination,
+            max_record_count=max_record_count,
         ).execute()
 
     # ----------------------------------------------------------------------
@@ -1591,12 +1608,17 @@ class MapTable(MapFeatureLayer):
             range_values=range_values,
             parameter_values=parameter_values,
         )
-
+        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
+            "supportsPagination", False
+        )
+        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=False,
             as_df=as_df,
+            supports_pagination=supports_pagination,
+            max_record_count=max_record_count,
         ).execute()
 
 

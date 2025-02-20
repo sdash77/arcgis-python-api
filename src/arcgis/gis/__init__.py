@@ -21,6 +21,7 @@ import tempfile
 import warnings
 import zipfile
 import configparser
+import urllib.parse
 from contextlib import contextmanager
 import functools
 import logging
@@ -38,28 +39,19 @@ from arcgis.gis._impl._dataclasses._contentds import (
 )
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
-from arcgis.gis._impl._dataclasses._sfilters import SpatialFilter, SpatialRelationship
+from arcgis.gis._impl._dataclasses._sfilters import (
+    SpatialFilter,
+    SpatialRelationship,
+)
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
+from arcgis.gis._impl._content_manager.folder import Folder
 
 try:
     import pandas as pd
 except ImportError:
     pass
-try:
-    import arcpy
 
-    has_arcpy = True
-except ImportError:
-    has_arcpy = False
-except RuntimeError:
-    has_arcpy = False
-try:
-    import shapefile
-
-    has_pyshp = True
-except ImportError:
-    has_pyshp = False
 import concurrent.futures
 
 from cachetools import cached, TTLCache
@@ -70,6 +62,7 @@ from arcgis.auth import EsriSession
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
 features = LazyLoader("arcgis.features")
+fileops = LazyLoader("arcgis.features.geo._io.fileops")
 _geo = LazyLoader("arcgis.features.geo")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
@@ -203,9 +196,6 @@ class GIS(object):
                         certificate or is being accessed via the IP or hostname instead
                         of the name on the certificate, set this value to ``False``.
                         This will ensure that all SSL certificate issues are ignored.
-                        Users can pass verify_cert a path to a CA_BUNDLE file or directory
-                        with certificates of trusted CAs as well. This will use these
-                        certificates over the system's certificates.
                         The default is ``True``.
 
                         .. warning::
@@ -228,6 +218,11 @@ class GIS(object):
 
     ======================    ===============================================================
     **kwargs**                **Description**
+    ----------------------    ---------------------------------------------------------------
+    ca_bundles                list[str], str, or None. Users can pass verify_cert a path to
+                              a CA_BUNDLE file or directory with certificates of trusted CAs
+                              as well. This will use these certificates over the system's certificates.
+                              The default is `None`.
     ----------------------    ---------------------------------------------------------------
     proxy_host                (Deprecated, use proxy)
                               Optional string. The host name of the proxy server used to allow HTTP/S
@@ -259,7 +254,7 @@ class GIS(object):
     ----------------------    ---------------------------------------------------------------
     proxy                     Optional Dictionary.  If you need to use a proxy, you can
                               configure individual requests with the proxy argument to any
-                              request method.  See ```Usage Exmaple 9: Using a Proxy``` for
+                              request method.  See ```Usage Example 9: Using a Proxy``` for
                               example usage.
 
                               :Usage Example:
@@ -361,21 +356,21 @@ class GIS(object):
 
     .. code-block:: python
 
-        # Usage Exmaple 7: Login with token (actual token abbreviated for this illustration)
+        # Usage Example 7: Login with token (actual token abbreviated for this illustration)
 
         gis = GIS(token="3G_e-FSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrthrEq7vKYBn39HGSc.",
                   referer="https://www.arcgis.com")
 
     .. code-block:: python
 
-        # Usage Exmaple 8: Login with API Key (actual token abbreviated for this illustration)
+        # Usage Example 8: Login with API Key (actual token abbreviated for this illustration)
 
         gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
                   referer="https")
 
     .. code-block:: python
 
-        # Usage Exmaple 9: Using a Proxy
+        # Usage Example 9: Using a Proxy
         proxy = {
             'http': 'http://10.10.1.10:3128',
             'https': 'http://10.10.1.10:1080',
@@ -384,9 +379,15 @@ class GIS(object):
 
     .. code-block:: python
 
-        # Usage Exmaple 10: Using a CA_BUNDLE specifying SSL certificates
+        # Usage Example 10: Using a CA_BUNDLE specifying SSL certificates
         certs = r"./CA_CERTS/cacert.pem"
-        gis = GIS(profile="your_enterprise_admin_profile", verify_cert=certs)
+        gis = GIS(profile="your_enterprise_admin_profile", ca_bundles=certs)
+
+    .. code-block:: python
+
+        # Usage Example 11: Using a CA_BUNDLE specifying multiple SSL certificates
+        certs = [r"./CA_CERTS/cacert.pem", r"./CA_CERTS/cacert2.pem", ..., r"./CA_CERTS/cacertN.pem"]
+        gis = GIS(profile="your_enterprise_admin_profile", ca_bundles=certs)
 
     """
 
@@ -438,6 +439,9 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        self._adminPrivateServiceUrl: str | None = None
+        ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
+        self._is_home = (url or "").lower() == "home"
         self._validate_item_url = kwargs.pop("validate_url", False)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._proxy_host = kwargs.pop("proxy_host", None)
@@ -548,7 +552,7 @@ class GIS(object):
                     from getpass import getpass
 
                     password = getpass("Enter PFX password: ")
-                from arcgis.auth.tools.certificate import pfx_to_pem
+                from arcgis.auth.tools import pfx_to_pem
 
                 cert_file, key_file = pfx_to_pem(cert_file, password)
             else:
@@ -618,6 +622,7 @@ class GIS(object):
                 is_hosted_nb_home=self._is_hosted_nb_home,
                 use_gen_token=self._use_gen_token,
                 security_kwargs=security_kwargs,
+                ca_bundles=ca_bundles,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -644,6 +649,7 @@ class GIS(object):
                     is_hosted_nb_home=self._is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                     security_kwargs=security_kwargs,
+                    ca_bundles=ca_bundles,
                 )
             if self._is_hosted_nb_home:
                 self._portal.con._referer = ""
@@ -713,10 +719,18 @@ class GIS(object):
                         is_hosted_nb_home=self._is_hosted_nb_home,
                         use_gen_token=self._use_gen_token,
                         security_kwargs=security_kwargs,
+                        ca_bundles=ca_bundles,
                     )
                     self._portal = pp
         except Exception:
             pass
+
+        if profile and self._portal.con._auth == "OAUTH":
+            # persist the oauth refresh token as the password in the profile
+            pm.update(
+                profile,
+                password=self._portal.con._session.auth._refresh_token,
+            )
 
         force_refresh = False
         if self._portal.con._auth in ["HOME", "USER_TOKEN"]:
@@ -734,11 +748,14 @@ class GIS(object):
 
         if self._url.lower() == "pro":
             self._url = self._portal.url
+            self.resturl = self._portal.resturl
             if self._con._auth != "ANON":
                 self._con._auth = "PRO"
 
         if self._con._auth != "anon":
-            me = self.users.me
+            # ensure `me` at least has a backing dict
+            # for cases such as API key when there is no user
+            me = self.users.me or {}
 
         if (
             self._con._auth.lower() != "anon"
@@ -761,15 +778,22 @@ class GIS(object):
                     )
                     warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
-                    url = self._portal.url + "/admin"
+                    if self._adminPrivateServiceUrl:
+                        url: str = self._adminPrivateServiceUrl
+                    else:
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
                     and self._portal.is_kubernetes is False
                 ):
-                    from arcgis.gis.admin.portaladmin import PortalAdminManager
+                    from arcgis.gis.admin.portaladmin import (
+                        PortalAdminManager,
+                    )
 
                     self.admin = PortalAdminManager(
                         url="%s/portaladmin" % self._portal.url, gis=self
@@ -788,9 +812,14 @@ class GIS(object):
         ):
             try:
                 if self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
-                    url = self._portal.url + "/admin"
+                    if self._adminPrivateServiceUrl:
+                        url: str = self._adminPrivateServiceUrl
+                    else:
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -824,9 +853,11 @@ class GIS(object):
             if can_publish:
                 try:
                     if self.properties.isPortal and self._portal.is_kubernetes:
-                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                        from arcgis.gis.kubernetes._admin.kadmin import (
+                            KubernetesAdmin,
+                        )
 
-                        url = self._portal.url + "/admin"
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                         self.admin = KubernetesAdmin(url=url, gis=self)
                     else:
                         from .admin.portaladmin import PortalAdminManager
@@ -846,7 +877,9 @@ class GIS(object):
         ):
             try:
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -916,8 +949,10 @@ class GIS(object):
         """determines if the GIS should only use private URLs.  This only applies to NBAUTH"""
         try:
 
-            return os.getenv("NB_AUTH_FILE", None) is not None and os.path.isfile(
-                os.getenv("NB_AUTH_FILE")
+            return (
+                os.getenv("NB_AUTH_FILE", None) is not None
+                and os.path.isfile(os.getenv("NB_AUTH_FILE"))
+                and self._is_home == True
             )
         except:
             return False
@@ -1064,14 +1099,20 @@ class GIS(object):
                 json_data = json.load(nb_auth_file)
                 assert required_json_keys.issubset(json_data)
                 self._url = json_data["privatePortalUrl"]
+                self.resturl = _create_base_url(self._url)
                 self._public_portal_url = json_data["publicPortalUrl"]
+                self._adminPrivateServiceUrl = json_data.get(
+                    "adminPrivateServiceUrl", None
+                )
                 self._referer = json_data.get("referer", "")
                 if "token" in json_data:
                     self._utoken = json_data["token"]
                 self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
                     try:
-                        from arcgis.gis._impl._decrypt_nbauth import get_token
+                        from arcgis.gis._impl._decrypt_nbauth import (
+                            get_token,
+                        )
                     except ImportError:
                         from arcgis.gis._impl.nbauth import get_token
 
@@ -1164,7 +1205,7 @@ class GIS(object):
                 )
                 return velocity
             else:
-                raise Exception("Velocity is not available on this organizaiton.")
+                raise Exception("Velocity is not available on this organization.")
         else:
             raise Exception("ArcGIS Enterprise does not support Velocity")
 
@@ -1457,7 +1498,7 @@ class GIS(object):
     @property
     def servers(self) -> dict:
         """
-        Returns the servers registered with ArcGIS Entperise.  For ArcGIS
+        Returns the servers registered with ArcGIS Enterprise.  For ArcGIS
         Online, the return value is `None`.
 
         :return: dict
@@ -1555,9 +1596,8 @@ class GIS(object):
         The ``map`` method creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
         using the GIS's configured geocoders. Provided a match is found, the geographic
-        extent of the matched address is used as the extent of the map. If a zoomlevel is also
-        provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel. See :class:`~arcgis.map.Map` for more information.
+        extent of the matched address is used as the extent of the map.
+        See :class:`~arcgis.map.Map` for more information.
 
         .. note::
             The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
@@ -1841,6 +1881,231 @@ class Datastore(dict):
 
 
 ###########################################################################
+class OfflineContentManager(object):
+    """
+    The ``OfflineContentManager`` class provides methods to export a subset of
+    items and all of their dependencies from your GIS org into a compressed
+    binary format that can then be viewed by and uploaded into any other org.
+
+    .. code-block:: python
+
+        # Usage Example: Initializing an ``OfflineContentManager`` object:
+
+        >>> gis = GIS(profile="your_online_profile")
+
+        >>> offline_mgr = gis.content.offline
+
+    """
+
+    def __init__(self, gis):
+        self._gis = gis
+
+    def export_items(
+        self,
+        items: list,
+        output_folder: str = None,
+        package_name: str = None,
+        service_format: str = "File Geodatabase",
+    ) -> str:
+        """
+
+        Exports a subset of items and all of their dependencies from the
+        :class:`~arcgis.gis.GIS` to a compressed binary format with the
+        extension *.contentexport*. When decompressed, it contains metadata
+        about all of the items and creates subfolders for each item that was
+        exported. The contents of this file can be examined using the
+        :meth:`~arcgis.gis.OfflineContentManager.list_items` method.
+
+        ===============     ====================================================================
+        **Parameter**       **Description**
+        ---------------     --------------------------------------------------------------------
+        items               Required list. The items to export. All of the deep dependencies of
+                            these items will also be included in the export package.
+        ---------------     --------------------------------------------------------------------
+        output_folder       Optional string. The location where the export package will be
+                            saved. If no argument provided, the package will be saved to a
+                            temporary directory created during the operation.
+        ---------------     --------------------------------------------------------------------
+        package_name        Optional string. The name of the offline package. If no argument
+                            provided, the package will be named randomly prefaced with the
+                            text *exported_content*.
+        ---------------     --------------------------------------------------------------------
+        service_format      Optional string. The format for the source service of any hosted
+                            feature layer items in the dependency tree. Default format is
+                            *File Geodatabase*.
+        ===============     ====================================================================
+
+        :return:
+            The path to the *.exportcontent* file.
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> wma_list = gis.content.search(
+            >>>                "Analyzing Hurricane Landfall Damage",
+            >>>                "Web Mapping Application"
+            >>>            )
+            >>> wma_item = wma_list[0]
+
+            >>> source_offline_mgr = gis.content.offline
+            >>> export_output = source_offline_mgr.export_items(
+            >>>                   items=[wma_item],
+            >>>                   output_folder=r"/path/to/output",
+            >>>                   package_name="webapp_exp_pkg",
+            >>>                   service_format="File Geodatabase"
+            >>>                 )
+            >>> export_output
+
+            /path/to/output/webapp_exp_pkg.contentexport
+
+        """
+
+        from arcgis.apps.itemgraph import create_dependency_graph
+        from arcgis.apps.itemgraph._migration import _export_content
+
+        graph = create_dependency_graph(self._gis, items, outside_org=False)
+        return _export_content(graph, output_folder, package_name, service_format)
+
+    # ----------------------------------------------------------------------
+    def import_content(
+        self,
+        package_path: str,
+        item_ids: list[str] = [],
+        preserve_ids: bool = False,
+        folder: Folder | str = None,
+        failure_rollback: bool = False,
+    ) -> list:
+        """
+        Reads a `.contentexport` file (see
+        :meth:`~arcgis.gis.OfflineContentManager.export_items` method) and
+        uploads its contents to the :class:`~arcgis.gis.GIS`. These packages
+        contain the deep dependencies of an :class:`~arcgis.gis.Item`, assuming
+        they were available during export, and will recreate them in the
+        destination GIS
+
+        .. note::
+            This function is still in beta and may not have full capabilities. Known item
+            limitations are:
+
+            * Survey123 Forms
+            * Geoprocessing Services
+
+        ================     ======================================================================
+        **Parameter**         **Description**
+        ----------------     ----------------------------------------------------------------------
+        package_path         Required string. The path to the `.contentexport` file to import.
+        ----------------     ----------------------------------------------------------------------
+        item_ids             Optional list of strings. The item ids to import from the package.
+                             If none provided, all items in the package will be imported.
+        ----------------     ----------------------------------------------------------------------
+        preserve_ids         Optional boolean. If True, the original item ids will be preserved,
+                             if available. Default is *False*.
+
+                             .. note::
+                                 Only available for ArcGIS Enterprise.
+        ----------------     ----------------------------------------------------------------------
+        folder               Optional :class:`~arcgis.gis._impl._content_manager.Folder` or string.
+                             The folder to import the content into. If no argument provided, content
+                             placed in the logged-in user's root folder.
+        ----------------     ----------------------------------------------------------------------
+        failure_rollback     Optional boolean.
+
+                             * If *True*, the import will be rolled back and the created items will
+                               be deleted if any error occurs during the process.
+                             * If *False*, any item that fails to import will be skipped and the
+                               process will continue. Default is *False*.
+        ================     ======================================================================
+
+        :return:
+            A List of the created :class:`~argis.gis.Item` objects.
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organization_profile")
+            >>> dest_gis = GIS(profile="another_organization_profile")
+
+            >>> exp_pkg = "path/to/exportpackage.contentexport"
+
+            >>> imported_content = dest_gis.content.offline.import_content(
+                                    package_path=exp_pkg,
+                                    folder="imported_items",
+                                    failure_rollback=True
+                                )
+        """
+
+        from arcgis.apps.itemgraph._migration import _ImportPackage
+
+        ip = _ImportPackage(package_path, self._gis)
+        return ip.import_items(
+            items=item_ids,
+            preserve_ids=preserve_ids,
+            folder=folder,
+            failure_rollback=failure_rollback,
+        )
+
+    # ----------------------------------------------------------------------
+    def list_items(self, package_path: str) -> dict:
+        """
+        The ``list_items()`` method takes a `.contentexport` file made from offline cloning
+        (see `export_items()`) and returns a dictionary of the contained items and some
+        metadata about them.
+
+        ================     ======================================================================
+        **Parameter**         **Description**
+        ----------------     ----------------------------------------------------------------------
+        package_path         Required string. The path to the `.contentexport` file to list.
+        ================     ======================================================================
+
+        :return:
+            A dictionary with each item_id for the exported item as the key, and a dictionary
+            of metadata for each item as the value.
+
+        .. code-block:: python
+
+            # Usage Example: Listing the contents of an exportcontent package:
+
+            >>> from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_organization_profile")
+            >>> offline_mgr = gis.content.offline
+
+            >>> exp_contents = offline_mgr.export_items(
+                                    items=[your_item],
+                                    output_folder="/path/to/migration",
+                                    package_name="exported_item",
+                                    service_format="File Geodatabase"
+                               )
+            >>> exp_contents
+
+            /path/to/migration/exported_item.contentexport
+
+            >>> offline_mgr.list_items(exp_contents)
+
+            {'95c25c24109a4ccebf6d4cab92fe2d67': {'title': 'Example City Web Map',
+                                                  'type': 'Web Map',
+                                                  'created': 1711458724000,
+                                                  'org_source': 'https://example.org.com'},
+             '4552478e7d06492f9fea617704fd1323': {'title': 'City Administration',
+                                                 'type': 'Feature Service',
+                                                 'created': 1703457912000,
+                                                 'org_source': 'https://example.org.com'},
+             '3ab9c944e329416d872b0be7825b23a8': {'title': 'City Administration',
+                                                 'type': 'Service Definition',
+                                                 'created': 1690453814000,
+                                                 'org_source': 'https://example.org.com'}}
+        """
+        from arcgis.apps.itemgraph._migration import _ImportPackage
+
+        ip = _ImportPackage(package_path, self._gis)
+        return ip.items
+
+
+###########################################################################
 class GroupMigrationManager(object):
     """
     The ``GroupMigrationManager`` class provides methods to export all or a
@@ -1894,44 +2159,47 @@ class GroupMigrationManager(object):
         Imports an EPK Item to a Group.  This will import items associated with this group.
         :return: Boolean
         """
-        if self._gis.users.me.role == "org_admin":
-            try_json = True
-            if preview_only:
-                try_json = False
-            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
-            if isinstance(item, Item):
-                item = item.itemid
-            params = {
-                "f": "json",
-                "itemId": item,
-                "itemIdList": "",
-                "folderId": "",
-                "folderOwnerUsername": "",
-                "token": self._con.token,
-            }
-            if import_content_folder:
-                params["importContentFolder"] = import_content_folder
-            if keep_package_item_after_import in [True, False]:
-                params["keepPackageItemAfterImport"] = json.dumps(
-                    keep_package_item_after_import
-                )
-            if item_id_list:
-                params["itemIdList"] = item_id_list
-            if overwrite is not None:
-                params["overwriteExistingItems"] = overwrite
-            if preview_only:
-                params["previewOnly"] = preview_only
-            if run_async:
-                params["async"] = run_async
-            if folder_id and self._gis.version >= [8, 4]:
-                params["folderId"] = folder_id
-            if folder_owner and self._gis.version >= [8, 4]:
-                params["folderOwnerUsername"] = folder_owner
-            return self._con.post(url, params, try_json=try_json)
+        # admin or group owner has the ability to import content
+        owner = self._group.owner == self._gis.users.me.username
 
-        else:
-            raise Exception("Must be an administror to perform this action")
-        pass
+        if not owner and not self._gis.users.me.role == "org_admin":
+            raise Exception(
+                "Must be an administrator or group owner to perform this action"
+            )
+
+        try_json = not preview_only
+        url = (
+            f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
+        )
+        if isinstance(item, Item):
+            item = item.itemid
+        params = {
+            "f": "json",
+            "itemId": item,
+            "itemIdList": "",
+            "folderId": "",
+            "folderOwnerUsername": "",
+            "token": self._con.token,
+        }
+        if import_content_folder:
+            params["importContentFolder"] = import_content_folder
+        if keep_package_item_after_import in [True, False]:
+            params["keepPackageItemAfterImport"] = json.dumps(
+                keep_package_item_after_import
+            )
+        if item_id_list:
+            params["itemIdList"] = item_id_list
+        if overwrite is not None:
+            params["overwriteExistingItems"] = overwrite
+        if preview_only:
+            params["previewOnly"] = preview_only
+        if run_async:
+            params["async"] = run_async
+        if folder_id and self._gis.version >= [8, 4]:
+            params["folderId"] = folder_id
+        if folder_owner and self._gis.version >= [8, 4]:
+            params["folderOwnerUsername"] = folder_owner
+        return self._con.post(url, params, try_json=try_json)
 
     # ----------------------------------------------------------------------
     def _status(self, job_id, key=None):
@@ -1973,7 +2241,7 @@ class GroupMigrationManager(object):
         it into a :class:`~arcgis.gis.Group` in that Enterprise deployment. The method will
         handle updating service URLs and item IDs used in any web maps,
         web-mapping applications, and/or associated web layers in those items during
-        the *load* operation. See full datails in the
+        the *load* operation. See full details in the
         `Export Group Content <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm>`_ documentation.
 
         .. note::
@@ -2109,7 +2377,7 @@ class GroupMigrationManager(object):
         :class:`~arcgis.gis.Item` into a :class:`~arcgis.gis.Group`.
 
         See the `Import Group Content <https://developers.arcgis.com/rest/users-groups-and-items/import-group.htm>`_
-        documenation for full system details.
+        documentation for full system details.
 
         .. note::
             Administrative privileges are required to run this operation.
@@ -3705,7 +3973,6 @@ class UserManager(object):
                 if k in allowed_keys:
                     params[k] = v
             return self._createPre64(**params)
-        return None
 
     # ----------------------------------------------------------------------
     def _createPre64(
@@ -4649,7 +4916,7 @@ class UserManager(object):
         The ``advanced_search`` method allows for the full control of the query operations
         by any given user.  The searches are performed against a high performance
         index that indexes the most popular fields of an user. See the
-        `Search reference page <https://developers.arcgis.com/web-scene-specification/objects/search/>`_ for information
+        `Search reference page <https://developers.arcgis.com/rest/users-groups-and-items/search-reference/>`_ for information
         on the fields and the syntax of the query. The ``advanced_search`` method is
         quite similar to the :attr:`~arcgis.gis.UserManager.search` method, which is less refined.
 
@@ -5282,16 +5549,18 @@ class RoleManager(object):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_id                Required string. The role ID of the custom role to get.
+        role_id                Required string. The role ID or name of the custom role to get.
         ==================     ====================================================================
 
         :return:
            The :class:`Role <arcgis.gis.Role>` object associated with the specified role ID
         """
-        role = self._portal.con.post(
-            "portals/self/roles/" + role_id, self._portal._postdata()
-        )
-        return Role(self._gis, role["id"], role)
+        # First try to get role
+        all_roles = self._portal.get_org_roles()
+        for role in all_roles:
+            if role["name"] == role_id or role["id"] == role_id:
+                return Role(self._gis, role["id"], role)
+        return None
 
 
 class Role(object):
@@ -5994,8 +6263,6 @@ class GroupManager(object):
             elif self._gis._is_agol and membership_access is None:
                 membership_access = "none"
             params["membershipAccess"] = membership_access
-        if autojoin in [True, False]:
-            params["autoJoin"] = autojoin
 
         if (
             isinstance(display_settings, str)
@@ -6207,6 +6474,30 @@ class ContentManager(object):
         curl = f"{self._gis._portal.resturl}portals/checkUrl"
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
+    @property
+    def offline(self):
+        """
+        The `offline` property is a manager object to import, export, and
+        view offline content using the `OfflineContentManager` class.
+
+        :return:
+            A :class:`~arcgis.gis.OfflineContentManager` object.
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> offline_obj = gis.content.offline
+            >>> type(offline_obj)
+
+            <arcgis.gis.OfflineContentManager object at `maddr`>
+
+        """
+        return OfflineContentManager(self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -6733,6 +7024,10 @@ class ContentManager(object):
         access                      Optional string. Valid values are private, org, or public. Defaults to private.
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
+
+                                    .. note::
+                                        Configuring items for ovewrite is no longer supported when adding
+                                        an :class:`~arcgis.gis.Item`
         ==========================  =====================================================================
 
 
@@ -7046,30 +7341,58 @@ class ContentManager(object):
             >>> gis.content.analyze(item = "9311d21a9a2047d19c0faaebd6f2cca6", file_type = "csv")
 
         """
-        surl = "%s/sharing/rest/content/features/analyze" % self._gis._url
-        params = {"f": "json", "analyzeParameters": {}}
-        files = None
+        surl = f"{self._gis._url}/sharing/rest/content/features/analyze"
+        files = {"file": file_path} if file_path and os.path.isfile(file_path) else None
+        params = self._get_analyze_params(
+            is_arcgis_online=self._gis._portal.is_arcgisonline,
+            url=url,
+            item=item,
+            file_path=file_path,
+            text=text,
+            file_type=file_type,
+            source_locale=source_locale,
+            geocoding_service=geocoding_service,
+            location_type=location_type,
+            source_country=source_country,
+            country_hint=country_hint,
+            enable_global_geocoding=enable_global_geocoding,
+        )
+        return self._gis._con.post(path=surl, postdata=params, files=files)
+
+    @staticmethod
+    def _get_analyze_params(
+        is_arcgis_online: bool,
+        url: Optional[str] = None,
+        item: Optional[Union[str, Item]] = None,
+        file_path: Optional[str] = None,
+        text: Optional[str] = None,
+        file_type: Optional[str] = None,
+        source_locale: str = "en",
+        geocoding_service: Optional[str] = None,
+        location_type: Optional[str] = None,
+        source_country: str = "world",
+        country_hint: Optional[str] = None,
+        enable_global_geocoding: Optional[bool] = None,
+    ):
         if not (text or file_path or item or url):
-            return Exception(
+            raise Exception(
                 "Must provide an itemid, file_path or text to analyze data."
             )
+
+        params = {
+            "f": "json",
+            "analyzeParameters": {},
+            "sourcelocale": source_locale,
+        }
         if item:
-            if isinstance(item, str):
-                params["itemid"] = item
-            elif isinstance(item, Item):
-                params["itemid"] = item.itemid
-        elif file_path and os.path.isfile(file_path):
-            files = {"file": file_path}
+            params["itemid"] = item.itemid if isinstance(item, Item) else item
         elif text:
             params["text"] = text
         elif url:
             params["sourceUrl"] = url
 
-        params["analyzeParameters"]["sourcelocale"] = source_locale
         if geocoding_service:
-            from arcgis.geocoding._functions import Geocoder
-
-            if isinstance(geocoding_service, Geocoder):
+            if type(geocoding_service).__name__ == "Geocoder":
                 params["analyzeParameters"]["geocodeServiceUrl"] = geocoding_service.url
             else:
                 params["analyzeParameters"]["geocodeServiceUrl"] = geocoding_service
@@ -7090,11 +7413,12 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ["excel", "csv"]:
             params["fileType"] = file_type
-        elif str(file_type).lower() in ["filegeodatabase", "shapefile", "geojson"]:
-            if (
-                str(file_type).lower() == "geojson"
-                and not self._gis._portal.is_arcgisonline
-            ):
+        elif str(file_type).lower() in [
+            "filegeodatabase",
+            "shapefile",
+            "geojson",
+        ]:
+            if str(file_type).lower() == "geojson" and not is_arcgis_online:
                 raise ValueError("GeoJSON is not supported in ArcGIS Enterprise")
             params["fileType"] = file_type
             params["analyzeParameters"]["enableGlobalGeocoding"] = False
@@ -7106,10 +7430,8 @@ class ContentManager(object):
             params["analyzeParameters"][
                 "enableGlobalGeocoding"
             ] = enable_global_geocoding
-        gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
-
-        return gis._con.post(path=surl, postdata=params, files=files)
+        return params
 
     # ----------------------------------------------------------------------
     def create_empty_service(
@@ -7998,8 +8320,8 @@ class ContentManager(object):
         # Get folder
         folders = self._gis.users.get(username).folders
         for folder in folders:
-            if folder["id"] == folder_id:
-                return folder["title"]
+            if folder._fid == folder_id:
+                return folder.name
         return None
 
     @_common_deprecated.deprecated(
@@ -8390,6 +8712,9 @@ class ContentManager(object):
         The `import_table` function takes a Pandas' DataFrame and publishes it
         as a Hosted Table on a WebGIS.
 
+        .. note::
+            For larger datasets it is recommended to use the gdal library.
+
         ===================  ==========================================================================
         **Parameter**         **Description**
         -------------------  --------------------------------------------------------------------------
@@ -8410,44 +8735,86 @@ class ContentManager(object):
         returns: Published Hosted Table Item
 
         """
+        from arcgis._impl._geometry_engine import HAS_GDAL
+
+        # Do some error handling
         assert isinstance(
             df, pd.DataFrame
         ), f"The df parameter must be a Pandas' DataFrame, not {type(df).__name__}"
-        fname: str = tempfile.mkstemp(suffix=".csv")[1]
 
-        df.to_csv(fname)
-        if title is None:
-            now: _dt.datetime = _dt.datetime.now()
-            title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
+        # Set up the parameters
         if service_name is None:
-            service_name = f"import_table_{uuid.uuid4().hex[:3]}"
-        pp: dict[str, Any] = {
-            "type": "CSV",
+            service_name = "a" + uuid.uuid4().hex[0:5]
+        if title is None:
+            title = service_name
+        pp = {
             "title": title,
         }
+
+        # Find folder to add and publish
         if folder:
             folder = self.folders.get(folder=folder, owner=self._gis._username)
         if not folder:
             folder = self.folders.get()
+        # If gdal is present, prioritize it
+        if HAS_GDAL:
+            if not service_name.endswith(".gdb"):
+                service_name += ".gdb"
+            # create a temporary file
+            temp = tempfile.mkdtemp()
+            location = os.path.join(temp, service_name)
+            temp_zip = os.path.join(location, "%s.zip" % (service_name))
+            out_location = os.path.dirname(location)
+
+            fileops._gdal_to_fc(
+                df,
+                os.path.join(out_location, service_name),
+                "OpenFileGDB",
+                layer_name=title,
+                overwrite=True,
+            )
+            pp["type"] = "File Geodatabase"
+            file = _common_utils.zipws(path=location, outfile=temp_zip, keep=True)
+        else:
+            # Create an empty CSV file using the service name
+            file = os.path.join(tempfile.gettempdir(), f"{service_name}.csv")
+            # Create empty df with same columns as input
+            df.to_csv(file, index=False)
+            pp["type"] = "CSV"
 
         job = folder.add(
             **{
                 "item_properties": pp,
-                "file": fname,
+                "file": file,
             }
         )
-        csv_item: Item = job.result()
+        file_item: Item = job.result()
+        if publish_parameters is None:
+            if pp["type"] == "CSV":
+                publish_parameters: dict[str, Any] = self.analyze(
+                    item=file_item, file_type="CSV"
+                )["publishParameters"]
+                publish_parameters["name"] = service_name
+                publish_parameters["locationType"] = "none"
+            else:
+                publish_parameters = {
+                    "name": service_name,
+                    "maxRecordCount": 2000,
+                    "hasStaticData": True,
+                    "layerInfo": {"capabilities": "Query"},
+                    "locationType": "none",
+                }
+
+        # publish file item
+        new_item = file_item.publish(publish_parameters)
+
+        # Clean up
         try:
-            os.remove(fname)
+            os.remove(file)
         except Exception:
             pass
-        if publish_parameters is None:
-            publish_parameters: dict[str, Any] = self.analyze(
-                item=csv_item, file_type="csv"
-            )["publishParameters"]
-            publish_parameters["name"] = service_name
-            publish_parameters["locationType"] = "none"
-        return csv_item.publish(publish_parameters)
+
+        return new_item
 
     # ----------------------------------------------------------------------
     def import_data(
@@ -8470,6 +8837,12 @@ class ContentManager(object):
         .. note::
             By default, there is a limit of 1,000 rows/features for Pandas
             dataframes. This limit isn't there for spatial dataframes.
+
+        .. note::
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
 
         ================  ==========================================================================
         **Parameter**      **Description**
@@ -8617,7 +8990,7 @@ class ContentManager(object):
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
             # Feature Collection Workflow
-            return _cm_helper.import_as_fc(self._gis, df, **kwargs)
+            return df.spatial.to_feature_collection(**kwargs)
 
     # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
@@ -9665,7 +10038,7 @@ class ResourceManager(object):
             ]
         """
         query_url = "content/items/" + self._item.itemid + "/resources"
-        params = {"f": "json", "num": 1000}
+        params = {"f": "json", "num": 500}
         resp = self._portal.con.get(query_url, params)
         resp_resources = resp.get("resources")
         count = int(resp.get("num"))
@@ -9675,7 +10048,7 @@ class ResourceManager(object):
 
         # loop through pages
         while next_start > 0:
-            params2 = {"f": "json", "num": 1000, "start": next_start + 1}
+            params2 = {"f": "json", "num": 500, "start": next_start}
 
             resp2 = self._portal.con.get(query_url, params2)
             resp_resources.extend(resp2.get("resources"))
@@ -10840,7 +11213,7 @@ class Group(dict):
             leaving_disallowed=leaving_disallowed,
             hidden_members=hidden_members,
             membership_access=membership_access,
-            autojoin=autojoin,
+            auto_join=autojoin,
         )
         if resp:
             self._hydrate()
@@ -11192,22 +11565,13 @@ class User(dict):
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         self._invitemgr = None
-        # userdict = self._portal.get_user(self.username)
         self._hydrated = False
         if userdict:
             if (
                 "groups" in userdict and len(userdict["groups"]) == 0
             ):  # groups aren't set unless hydrated
                 del userdict["groups"]
-            if "role" in userdict and "roleId" not in userdict:
-                userdict["roleId"] = userdict["role"]
-            elif "roleId" in userdict and "role" not in userdict:
-                # try getting role name - only needed for custom roles
-                try:
-                    role_obj = self._gis.users.roles.get_role(userdict["roleId"])
-                    userdict["role"] = role_obj.name
-                except Exception:
-                    userdict["role"] = userdict["roleId"]
+            userdict = self._get_role(userdict)
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
         if hasattr(self, "id") and self.id != "null":
@@ -11216,12 +11580,9 @@ class User(dict):
         else:
             self._user_id = self.username
 
-    # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
-
     def _hydrate(self):
         userdict = self._portal.get_user(self._user_id)
-        if "roleId" not in userdict and "role" in userdict:
-            userdict["roleId"] = userdict["role"]
+        userdict = self._get_role(userdict)
         self._hydrated = True
         super(User, self).update(userdict)
         self.__dict__.update(userdict)
@@ -11253,6 +11614,19 @@ class User(dict):
 
     def __repr__(self):
         return "<%s username:%s>" % (type(self).__name__, self.username)
+
+    def _get_role(self, userdict):
+        """Get user role from the roleid as default"""
+        if "role" in userdict and "roleId" not in userdict:
+            userdict["roleId"] = userdict["role"]
+        elif "roleId" in userdict:
+            # try getting role name - only needed for custom roles
+            try:
+                role_obj = self._gis.users.roles.get_role(userdict["roleId"])
+                userdict["role"] = role_obj.name
+            except Exception:
+                userdict["role"] = userdict["roleId"]
+        return userdict
 
     # ----------------------------------------------------------------------
     @property
@@ -11580,21 +11954,20 @@ class User(dict):
         else:
             raise ValueError("target_user must be a string or User object")
         target_user: User = target_user
-        target_user.folders
         if folder is None:
             folder_dest: str = username
         else:
             folder_dest: str = None
             for f in target_user.folders:
-                if folder.lower() == f["id"].lower():
-                    folder_dest = f["title"]
+                if folder.lower() == f._fid:
+                    folder_dest = f.name
                     break
-                elif folder.lower() == f["title"].lower():
-                    folder_dest = f["title"]
+                elif folder.lower() == f.name.lower():
+                    folder_dest = f.name
                     break
             if folder_dest is None:
                 cm: ContentManager = self._gis.content
-                cm.create_folder(folder=folder, owner=target_user)
+                cm.folders.create(folder=folder, owner=target_user)
                 folder_dest = folder
         params: dict[str, Any] = {
             "f": "json",
@@ -12928,7 +13301,7 @@ class User(dict):
             A boolean indicating success (True) or failure (False).
 
         """
-        url: str = f"{self._gis.resturl}content/users/{self.username}"
+        url: str = f"{self._gis._portal.resturl}content/users/{self.username}"
         params: dict = {
             "f": "json",
             "types": "",
@@ -12977,6 +13350,8 @@ class User(dict):
             ]
         if self._gis._portal.is_arcgisonline:
             self.esri_access = "arcgisonly"
+            # recycle bin must be empty to delete user
+            [i.delete() for i in self.recyclebin.content]
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username: str):
@@ -13170,7 +13545,7 @@ class User(dict):
             user = User(gis, username)
             folders = user.folders
             for folder in folders:
-                items = user.items(folder=folder["title"])
+                items = user.items(folder=folder.name)
                 for item in items:
                     print(item, folder)
 
@@ -13947,7 +14322,9 @@ class Item(dict):
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
         if not save_path:
-            save_path: str = self._workdir
+            save_path: str = tempfile.gettempdir()
+        if os.path.isdir(save_path) == False:
+            os.makedirs(save_path)
         fp: str = os.path.join(save_path, file_name)
 
         url = self._gis._portal.resturl + data_path
@@ -15384,6 +15761,7 @@ class Item(dict):
                                                 "tags":"local government, administration, Warren County"
                                                })
         """
+        # Get item properties from dataclass
         if isinstance(item_properties, ItemProperties):
             if (
                 thumbnail is None
@@ -15401,54 +15779,71 @@ class Item(dict):
             ):
                 metadata = item_properties.metadata
 
-            if "access" in item_properties:
-                access = item_properties.pop("access")
-                if access == "private":
-                    self.sharing.sharing_level = "PRIVATE"
-                if access == "org":
-                    self.sharing.sharing_level = "ORGANIZATION"
-                if access == "public":
-                    self.sharing.sharing_level = "EVERYONE"
-                if access == "shared":
-                    groups = self.shared_with["groups"]
-                    grp_share = self.sharing.groups
-                    for grp in groups:
-                        grp_share.add(grp)
-
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
             item_properties.pop("thumbnail", None)
+
+        # set up parameters and item properties
+        owner = self._user_id
+        try:
+            folder = self.ownerFolder
+        except Exception:
+            folder = None
+        if item_properties:
+            large_thumbnail = item_properties.pop("largeThumbnail", None)
+        else:
+            large_thumbnail = None
+
+        if item_properties is not None:
+            if "tags" in item_properties:
+                if isinstance(item_properties["tags"], list):
+                    item_properties["tags"] = ",".join(item_properties["tags"])
+            if "access" in item_properties:
+                access = item_properties.pop("access")
+
+                # Define a mapping of access levels to sharing levels
+                access_mapping = {
+                    "private": "PRIVATE",
+                    "org": "ORGANIZATION",
+                    "public": "EVERYONE",
+                }
+
+                if access in access_mapping:
+                    self.sharing.sharing_level = access_mapping[access]
+                elif access == "shared":
+                    # Add all groups in `shared_with["groups"]` to `sharing.groups`
+                    self.sharing.groups.update(self.shared_with.get("groups", []))
+                else:
+                    raise ValueError(f"Unexpected access level: {access}")
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is None:
+                item_properties = {}
+            if "type" not in item_properties:
+                item_properties["type"] = self.type
+            if "fileName" not in item_properties:
+                if self.name is None or self.name == "":
+                    msg: str = (
+                        "The `update` method requires a user to "
+                        "pass a `fileName` value in the `item_properties` "
+                        "if the file name is not defined on the Item"
+                    )
+                    raise ValueError(msg)
+                fileName = self.name
+                item_properties["fileName"] = fileName
+
+        # Make sure thumbnail doesn't get reset in the update if new data passed in
+        if data and thumbnail is None and self.thumbnail:
+            thumbnail = io.BytesIO()
+            thumbnail.write(self.get_thumbnail())
+            thumbnail.seek(0)
+
+        # Update depending on data type and size
         if (
             data
             and isinstance(data, str)
             and os.path.isfile(data)
             and os.stat(data).st_size > int(2.5e7)
         ):
-            owner = self._user_id
-
-            try:
-                folder = self.ownerFolder
-            except Exception:
-                folder = None
-
-            if item_properties:
-                large_thumbnail = item_properties.pop("largeThumbnail", None)
-            else:
-                large_thumbnail = None
-
-            if item_properties is not None:
-                if "tags" in item_properties:
-                    if isinstance(item_properties["tags"], list):
-                        item_properties["tags"] = ",".join(item_properties["tags"])
-
-            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
-                if item_properties is None:
-                    item_properties = {}
-                if "type" not in item_properties:
-                    item_properties["type"] = self.type
-                if "fileName" not in item_properties:
-                    fileName = self.name
-                    item_properties["fileName"] = fileName
             # update everything but the data
             ret = self._portal.update_item(
                 self.itemid,
@@ -15460,6 +15855,7 @@ class Item(dict):
                 folder,
                 large_thumbnail,
             )
+
             # update the data by part:
             params = {
                 "f": "json",
@@ -15484,68 +15880,30 @@ class Item(dict):
                 owner=self.owner,
                 folder=folder,
             )
-            if status == "completed":
-                self._hydrate()
-            elif ret:
+            if status == "completed" or ret:
                 self._hydrate()
             return ret
         else:
-            owner = self._user_id
-
-            try:
-                folder = self.ownerFolder
-            except Exception:
-                folder = None
-
-            if item_properties:
-                large_thumbnail = item_properties.pop("largeThumbnail", None)
-            else:
-                large_thumbnail = None
-
-            if item_properties is not None:
-                if "tags" in item_properties:
-                    if isinstance(item_properties["tags"], list):
-                        item_properties["tags"] = ",".join(item_properties["tags"])
-                if "access" in item_properties:
-                    access = item_properties.pop("access")
-                    if access == "private":
-                        self.sharing.sharing_level = "PRIVATE"
-                    if access == "org":
-                        self.sharing.sharing_level = "ORGANIZATION"
-                    if access == "public":
-                        self.sharing.sharing_level = "EVERYONE"
-                    if access == "shared":
-                        groups = self.shared_with["groups"]
-                        grp_share = self.sharing.groups
-                        for grp in groups:
-                            grp_share.add(grp)
-
-            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
-                if item_properties is None:
-                    item_properties = {}
-                if "type" not in item_properties:
-                    item_properties["type"] = self.type
-                if "fileName" not in item_properties:
-                    if self.name is None or self.name == "":
-                        msg: str = (
-                            "The `update` method requires a user to "
-                            "pass a `fileName` value in the `item_properties` "
-                            "if the file name is not defined on the Item"
-                        )
-                        raise ValueError(msg)
-                    fileName = self.name
-                    item_properties["fileName"] = fileName
-
+            # call update the first time to update everything but the thumbnail
             ret = self._portal.update_item(
-                self.itemid,
-                item_properties,
-                data,
-                thumbnail,
-                metadata,
-                owner,
-                folder,
-                large_thumbnail,
+                itemid=self.itemid,
+                item_properties=item_properties,
+                data=data,
+                thumbnail=None,
+                metadata=metadata,
+                owner=owner,
+                folder=folder,
+                large_thumbnail=None,
             )
+
+            if thumbnail or large_thumbnail:
+                # Update the thumbnail last otherwise it gets overwritten
+                ret = self._portal.update_item(
+                    itemid=self.itemid,
+                    thumbnail=thumbnail,
+                    large_thumbnail=large_thumbnail,
+                    owner=owner,
+                )
             if ret:
                 self._hydrate()
             return ret
@@ -16731,11 +17089,18 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
+        elif "success" in ret[0] and ret[0]["success"] == False and overwrite:
+            raise Exception(
+                ret[0].get(
+                    "error",
+                    "Overwrite unsuccessful. Check that editing capabilities are enabled on your service.",
+                )
+            )
         elif "success" in ret[0] and ret[0]["success"] == False:
             raise Exception(
                 ret[0].get(
                     "error",
-                    "Overwrite unsuccessful. Check that editing capabilties are enabled on your service.",
+                    "Unknown error, please check the data or the title of the item.",
                 )
             )
         elif not buildInitialCache and ret[0]["type"].lower() == "image service":
@@ -18085,6 +18450,8 @@ class Item(dict):
             "Data Pipeline",
             "Hub Site Application",
             "Hub Page",
+            "QuickCapture Project",
+            "Geoprocessing Service",
         ]
 
         def _replace_related_items(item, item_mapping):
@@ -18092,11 +18459,19 @@ class Item(dict):
 
         if not force:
             for k, v in item_mapping.items():
-                if self._gis.content.get(v) is None:
-                    raise ValueError(f"Item with id {v} does not exist in the GIS")
-                if self._gis.content.get(k).type != self._gis.content.get(v).type:
+                orig_item = self._gis.content.get(k)
+                new_item = self._gis.content.get(v)
+                if new_item is None:
                     raise ValueError(
-                        f"Items with ids {k} and {v} are not of the same type"
+                        f"Replacement item with id {v} does not exist in the GIS. Please use the force parameter to bypass this check."
+                    )
+                if orig_item is None:
+                    raise ValueError(
+                        f"String {k} is not a valid item ID in the GIS. Please use the force parameter to bypass this check and replace the string."
+                    )
+                if orig_item.type != new_item.type:
+                    raise ValueError(
+                        f"Items with ids {k} and {v} are not of the same type."
                     )
 
         # _replace_related_items(self, item_mapping)
@@ -18109,7 +18484,15 @@ class Item(dict):
 
                 if "layers" in orig_item and "layers" in new_item:
                     for i, layer in enumerate(orig_item.layers):
-                        expanded_dict[layer.url] = new_item.layers[i].url
+                        try:
+                            expanded_dict[layer.url] = new_item.layers[i].url
+                        except IndexError:
+                            if force:
+                                pass
+                            else:
+                                raise ValueError(
+                                    f"Original item {orig_item.title} has more layers than replacement item {new_item.title}."
+                                )
 
         if self.type in _TEXT_BASED_ITEM_TYPES:
             data = self.get_data()
@@ -18150,12 +18533,11 @@ class Item(dict):
                     return structure
                 for k, v in expanded_dict.items():
                     r_name = "r-" + k
-                    if r_name in structure["resources"]:
+                    rep_item = self._gis.content.get(v)
+                    if r_name in structure["resources"] and rep_item:
                         if structure["resources"][r_name]["type"] == "webmap":
                             new_layers = []
-                            for layer in self._gis.content.get(v).get_data()[
-                                "operationalLayers"
-                            ]:
+                            for layer in rep_item.get_data()["operationalLayers"]:
                                 lay = {
                                     "id": layer["id"],
                                     "title": layer["title"],
@@ -18234,7 +18616,10 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def get_dependencies(
-        self, deep: bool = False, outside_org: bool = False, out_format: str = "item"
+        self,
+        deep: bool = False,
+        outside_org: bool = False,
+        out_format: str = "item",
     ):
         """
         Returns the dependencies of an item. Can be used to return either the immediate dependencies
@@ -18261,9 +18646,9 @@ class Item(dict):
                 A list containing the dependencies of the item, in either Item or Item ID form.
         """
 
-        from arcgis.apps.itemgraph import create_item_graph
+        from arcgis.apps.itemgraph import create_dependency_graph
 
-        graph = create_item_graph(self._gis, [self], outside_org=outside_org)
+        graph = create_dependency_graph(self._gis, [self], outside_org=outside_org)
         if out_format.lower() == "graph":
             return graph
         node = graph.get_item(self.id)

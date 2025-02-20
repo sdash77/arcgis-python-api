@@ -27,7 +27,7 @@ class Container:
     _properties = None
 
     def __init__(self, url: str, gis: GIS):
-        """initalizer"""
+        """initializer"""
         self._url = url
         self._gis = gis
 

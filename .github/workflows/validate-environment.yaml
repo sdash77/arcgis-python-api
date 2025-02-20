@@ -1,0 +1,32 @@
+name: Validate environment.yml
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - environment.yml
+      - .github/workflows/validation-environment.yml
+
+jobs:
+  validate:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      matrix:
+        os: [
+                # macos-13, # macOS Ventura (13) - Intel
+                macos-14, # macOS Sonoma (14) - Apple Silicon
+                ubuntu-24.04,
+                windows-2022,
+            ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          environment-file: environment.yml
+          auto-activate-base: false
+          activate-environment: geosaurus_dev_env

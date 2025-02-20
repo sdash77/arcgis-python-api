@@ -94,9 +94,9 @@ class RecycleItem:
         if folder:
             try:
                 if isinstance(folder, str):
-                    folder_id = self._gis.content.folders.get(folder).properties["id"]
+                    folder_id = self._gis.content.folders.get(folder)._fid
                 elif isinstance(folder, Folder):
-                    folder_id = folder.properties["id"]
+                    folder_id = folder._fid
                 params.update({"folder": folder_id})
             except:
                 raise ValueError(
@@ -287,7 +287,7 @@ class RecycleBin:
         elif isinstance(user, _arcgis_gis.User):
             self._user = user
         else:
-            raise ValueError("The `user` parametre must be a str, User or None.")
+            raise ValueError("The `user` parameter must be a str, User or None.")
 
     # ----------------------------------------------------------------------
     def __str__(self):

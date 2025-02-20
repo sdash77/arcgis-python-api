@@ -32,12 +32,10 @@ from arcgis.geometry import (
 )
 from arcgis.gis import Layer
 
-try:
-    arcpy = LazyLoader("arcpy", strict=True)
+from arcgis._impl._geometry_engine import HAS_ARCPY
 
-    HASARCPY = True
-except:
-    HASARCPY = False
+if HAS_ARCPY:
+    arcpy = LazyLoader("arcpy", strict=True)
 
 
 class Feature(object):
@@ -890,7 +888,7 @@ class FeatureSet(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        fs                  Required arcpy.FeatureSet. The featureset objec to consume.
+        fs                  Required arcpy.FeatureSet. The featureset object to consume.
         ===============     ====================================================================
 
         :return:
@@ -942,7 +940,7 @@ class FeatureSet(object):
 
             Input:
              dataframe - spatialdataframe object
-            Ouput:
+            Output:
               field type name
             """
             import numpy as np
@@ -1110,7 +1108,7 @@ class FeatureSet(object):
             # based on the geojson geometry type
 
             geom = feature["geometry"]
-            if HASARCPY:
+            if HAS_ARCPY:
                 geom = arcpy.AsShape(geom)
                 geometry = Geometry(geom)
             else:
@@ -1405,7 +1403,7 @@ class FeatureSet(object):
 
         """
         _, file_extension = os.path.splitext(out_name)
-        if file_extension.lower() not in [".csv", ".json"] and HASARCPY == False:
+        if file_extension.lower() not in [".csv", ".json"] and HAS_ARCPY == False:
             raise ImportError("ArcPy is required to export a feature class.")
         import sys
 
