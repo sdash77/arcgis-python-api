@@ -4,5 +4,8 @@
     "features": {
       "ghcr.io/devcontainers/features/conda:1": {}
     },
+    "remoteEnv": {
+      "PYTHONPATH": "/workspaces/geosaurus/src:/workspaces/geosaurus/tests"
+    },
     "postCreateCommand": "chmod +x ./.devcontainer/init_conda_env.sh && ./.devcontainer/init_conda_env.sh"
 }
