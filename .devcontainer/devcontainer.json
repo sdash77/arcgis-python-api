@@ -1,0 +1,8 @@
+{
+    "name": "ArcGIS Conda",
+    "image": "mcr.microsoft.com/devcontainers/universal:2",
+    "features": {
+      "ghcr.io/devcontainers/features/conda:1": {}
+    },
+    "postCreateCommand": "conda env create -f environment.yml && conda activate geosaurus_dev_env && python -m pip install ./src --no-deps"
+}
