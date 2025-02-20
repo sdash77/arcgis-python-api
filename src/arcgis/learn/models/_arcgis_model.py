@@ -58,6 +58,8 @@ try:
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
     from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
+    from ._dofa_utils import dofa_backbone, dofa_backbones_downstream
+    from ._wavelengths import wavelength_dict
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -453,7 +455,13 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-    if hasattr(model, "backbone") and getattr(model.backbone, "_is_prithvi", False):
+
+    if hasattr(model, "_is_dofa"):
+        return model
+    if hasattr(model, "backbone") and (
+        getattr(model.backbone, "_is_prithvi", False)
+        or getattr(model.backbone, "_is_dofa", False)
+    ):
         return model
 
     tail_name, tail = _get_tail(model)
@@ -556,6 +564,31 @@ def _device_check():
     return move_to_cpu
 
 
+def get_wavelengths_from_bandnames(band_names):
+    """
+    This function returns the wavelengths (in micrometers) corresponding to the given band names.
+    """
+    wavelengths = []
+    cleaned_bandnames = [
+        band_name.lower().replace("_", "").replace(" ", "") for band_name in band_names
+    ]
+    cleaned2original_bandname_map = {
+        k.lower().replace("_", "").replace(" ", ""): k for k in band_names
+    }
+    cleaned_wavelength_dict = {
+        k.lower().replace("_", "").replace(" ", ""): v
+        for k, v in wavelength_dict.items()
+    }
+    for bandname in cleaned_bandnames:
+        try:
+            wavelengths.append(float(cleaned_wavelength_dict[bandname]))
+        except KeyError:
+            raise Exception(
+                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. \nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.'
+            )
+    return wavelengths
+
+
 def get_backbone_func(backbone, data, **kwargs):
     if backbone is None:
         backbone = models.resnet34
@@ -593,6 +626,42 @@ def get_backbone_func(backbone, data, **kwargs):
                 is_fpn=kwargs.get("is_fpn", False),
             )
             backbone.__name__ = backbone_name
+        elif backbone in dofa_backbones_downstream:
+            backbone_name = backbone
+            wavelengths = kwargs.get("wavelengths", None)
+            band_names = None
+            if wavelengths is None:
+                if data._emd.get("InputRastersProps", None) is not None:
+                    band_names = data._emd.get("InputRastersProps").get("BandNames")
+                elif data._emd.get("AllTilesStats", None) is not None:
+                    band_names = [
+                        x.get("BandName") for x in data._emd.get("AllTilesStats")
+                    ]
+                else:
+                    raise Exception(
+                        '\nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
+                    )
+                wavelengths = get_wavelengths_from_bandnames(band_names)
+                assert len(wavelengths) == len(data._extract_bands)
+                band_names = band_names
+            else:
+                if len(wavelengths) != len(data._extract_bands):
+                    raise Exception(
+                        'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
+                    )
+
+            backbone = partial(
+                dofa_backbone,
+                backbone_name=backbone,
+                img_size=int(kwargs.get("chip_size", data.chip_size)),
+                pretrained=True,
+                wavelengths=wavelengths,
+                is_clf=kwargs.get("is_clf", False),
+                num_classes=kwargs.get("num_classes", data.c),
+                band_names=band_names,
+            )
+            backbone.__name__ = backbone_name
+
     else:
         backbone = backbone
     return backbone
@@ -612,7 +681,7 @@ class ArcGISModel(object):
 
         self._device = _get_device()
 
-        self._backbone = get_backbone_func(backbone, data)
+        self._backbone = get_backbone_func(backbone, data, **kwargs)
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -1286,6 +1355,19 @@ class ArcGISModel(object):
         else:
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
+
+        if (
+            model_params.get("backbone", None) is not None
+            and model_params["backbone"] in dofa_backbones_downstream
+        ):
+            if self._model_kwargs.get("wavelengths", None) is not None:
+                _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[
+                    "wavelengths"
+                ]
+            else:
+                _emd_template["ModelParameters"]["wavelengths"] = (
+                    get_wavelengths_from_bandnames(self._data._band_names)
+                )
 
         if compute_metrics:
             if self._model_metrics_cache == None:

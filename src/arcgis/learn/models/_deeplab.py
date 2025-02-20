@@ -161,8 +161,6 @@ def _create_deeplab(
     """
     Create default torchvision pretrained model with resnet101.
     """
-    # model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
-
     model = None
     if not _segm_model is None:
         model = _segm_model(
@@ -277,6 +275,9 @@ class DeepLab(ArcGISModel):
     keep_dilation           Optional boolean. When PointRend architecture is used,
                             keep_dilation=True can potentially improves accuracy
                             at the cost of memory consumption. Default: False
+    ---------------------   -------------------------------------------
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.DeepLab` Object
@@ -445,6 +446,13 @@ class DeepLab(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
+    def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
+        from ._dofa_utils import dofa_backbones_downstream
+
+        return dofa_backbones_downstream
+
+    @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
@@ -491,6 +499,7 @@ class DeepLab(ArcGISModel):
         transformer_backbone = DeepLab.transformer_backbones()
         torchgeo_backbone = DeepLab.torchgeo_backbones()
         satlas_backbone = DeepLab.satlas_backbones()
+        dofa_backbone = DeepLab.dofa_backbones()
 
         return (
             [*_resnet_family, *_densenet_family, *_vgg_family]
@@ -498,6 +507,7 @@ class DeepLab(ArcGISModel):
             + transformer_backbone
             + torchgeo_backbone
             + satlas_backbone
+            + dofa_backbone
         )
 
     @property
@@ -563,6 +573,7 @@ class DeepLab(ArcGISModel):
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd
+            empty_data._band_names = emd.get("Bands")
             return cls(empty_data, **model_params, pretrained_path=str(model_file))
         else:
             return cls(data, **model_params, pretrained_path=str(model_file))
