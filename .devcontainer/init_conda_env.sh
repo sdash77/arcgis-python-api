@@ -5,8 +5,8 @@ conda init --all
 conda env create --file environment.yml --yes
 
 # set default environment on terminal load
-echo "conda activate geosaurus_dev_env" >> .bashrc
-echo "conda activate geosaurus_dev_env" >> .zshrc
+echo "conda activate geosaurus_dev_env" >> ~/.bashrc
+echo "conda activate geosaurus_dev_env" >> ~/.zshrc
 
 # reload terminal config
 . ~/.bashrc
