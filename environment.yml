@@ -39,6 +39,7 @@ dependencies:
 - truststore >=0.10.0
 - ujson >=3
 - urllib3 >=2.1.0,<3
+- websocket-client >=1.2.3,<2
 # ---- arcgis-mapping ----
 - anywidget 0.9.13
 - ipywidgets >=8.0.0
@@ -60,6 +61,7 @@ dependencies:
 - black
 - keyrings.alt
 - selenium
+- protobuf
 - pip:
   # ---- sphinx/docs build ----
   - sphinx_rtd_theme>=2,<3
@@ -68,4 +70,5 @@ dependencies:
   - coverage
   - nose2
   - parameterized
+  - requests-mock
   - unittest-xml-reporting
