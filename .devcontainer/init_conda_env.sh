@@ -2,7 +2,7 @@
 conda init --all
 
 # create geosaurus_dev_env with all dependencies for ./src
-conda env create --file environment.yml --yes
+conda env create --file environment.yml --yes --quiet
 
 # set default environment on terminal load
 echo "conda activate geosaurus_dev_env" >> ~/.bashrc
