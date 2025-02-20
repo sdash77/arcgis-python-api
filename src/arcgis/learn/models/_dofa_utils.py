@@ -308,6 +308,7 @@ class DOFA(nn.Module):
         is_clf: bool = False,
         pretrained: bool = True,
         pretrained_path: str | None = None,
+        **kwargs,
     ) -> None:
         """Initialize a new DOFA instance.
 
@@ -341,6 +342,21 @@ class DOFA(nn.Module):
         self.is_clf = is_clf
         self.num_classes = num_classes
 
+        self._band_names = kwargs.get("band_names", None)
+
+        self.qa_idx = None
+
+        if self._band_names is not None:
+            cleaned_bandnames = [
+                band_name.lower().replace("_", "").replace(" ", "")
+                for band_name in self._band_names
+            ]
+            if "qa" in cleaned_bandnames:
+                self.qa_idx = cleaned_bandnames.index("qa")
+                self.wavelengths = (
+                    wavelengths[: self.qa_idx] + wavelengths[self.qa_idx + 1 :]
+                )
+
         self.output_shape = dict(channels=embed_dim, stride=patch_size)
         ####################################################
 
@@ -354,7 +370,7 @@ class DOFA(nn.Module):
             dynamic_embed_dim=128,
             kernel_size=16,
             embed_dim=embed_dim,
-            wavelengths=wavelengths,
+            wavelengths=self.wavelengths,
         )
         self.num_patches = (img_size // patch_size) ** 2
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
@@ -405,6 +421,10 @@ class DOFA(nn.Module):
         Returns:
             Output mini-batch.
         """
+
+        if self.qa_idx is not None:
+            x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
+
         # embed patches
         wavelist = torch.tensor(self.wavelengths, device=x.device).float()
 
@@ -483,11 +503,11 @@ class DofaBackboneFastai(nn.Module):
 def dofa_backbone(
     backbone_name,
     pretrained=True,
-    upsample_method="upsample",
     img_size=224,
     wavelengths=[0.48, 0.56, 0.64],
     is_clf=False,
     num_classes=None,
+    **kwargs,
 ):
 
     with warnings.catch_warnings():
@@ -502,6 +522,7 @@ def dofa_backbone(
                 is_clf=is_clf,
                 num_classes=num_classes,
                 **backbone_cfg,
+                **kwargs,
             )
             backbone_fpn = DofaBackboneFastai(backbone=backbone)
 

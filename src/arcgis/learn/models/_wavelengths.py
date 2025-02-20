@@ -43,4 +43,5 @@ wavelength_dict = dict(
     TIR_2=12.005,
     Panchromatic=0.592,
     WaterVapor=0.945,
+    QA=0.0,
 )

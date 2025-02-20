@@ -625,6 +625,7 @@ def get_backbone_func(backbone, data, **kwargs):
         elif backbone in dofa_backbones_downstream:
             backbone_name = backbone
             wavelengths = kwargs.get("wavelengths", None)
+            band_names = None
             if wavelengths is None:
                 if data._emd.get("InputRastersProps", None) is not None:
                     band_names = data._emd.get("InputRastersProps").get("BandNames")
@@ -638,6 +639,7 @@ def get_backbone_func(backbone, data, **kwargs):
                     )
                 wavelengths = get_wavelengths_from_bandnames(band_names)
                 assert len(wavelengths) == len(data._extract_bands)
+                band_names = band_names
             else:
                 if len(wavelengths) != len(data._extract_bands):
                     raise Exception(
@@ -652,6 +654,7 @@ def get_backbone_func(backbone, data, **kwargs):
                 wavelengths=wavelengths,
                 is_clf=kwargs.get("is_clf", False),
                 num_classes=kwargs.get("num_classes", data.c),
+                band_names=band_names,
             )
             backbone.__name__ = backbone_name
 
