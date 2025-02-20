@@ -14,3 +14,6 @@ eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 
 # install src package
 conda activate geosaurus_dev_env && python -m pip install ./src --no-deps
+
+# configure test profiles
+conda activate geosaurus_dev_env && python ./tests/integration/config_profiles.py
