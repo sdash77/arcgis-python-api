@@ -13551,19 +13551,25 @@ class User(dict):
 
         """
         count: int = 1
+
+        # folder name given
         if isinstance(folder, str):
             folder: _folder.Folder = self._gis.content.folders.get(folder, self)
-
+        # folder instance given
         if isinstance(folder, _folder.Folder):
             folder: list[_folder.Folder] = [folder]
         elif folder is None:
+            # get generator of all user folders
             folder: Iterator[_folder.Folder] = self._gis.content.folders.list(self)
 
         for fld in folder:
-            for item in fld.list():
+            # get all items of folder to iterate through
+            fldr_items = fld.list()
+            for item in fldr_items:
+                # create generator of items
                 yield item
                 if count == max_items:
-                    break
+                    return
                 count += 1
 
     # ----------------------------------------------------------------------
