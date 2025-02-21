@@ -1,10 +1,11 @@
+import os
+import unittest
 from typing import Any, Optional, Union
 from requests import Response
 from datetime import datetime, date, time, timedelta
 from zoneinfo import ZoneInfo
 from uuid import UUID
 
-import unittest
 import gzip
 
 from google.protobuf.internal.decoder import _DecodeVarint32  # type: ignore
@@ -88,6 +89,7 @@ from arcgis.graph import (
 )
 
 
+@unittest.skipIf(os.sys.platform == "darwin", "arcgis.graph not supported on macOS")
 class TestGraph(unittest.TestCase):
     def test_fromitem_success(self):
         item: Item = Item(
