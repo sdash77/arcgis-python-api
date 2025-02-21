@@ -72,6 +72,7 @@ try:
         complete_transformer_backbone_name,
     )
     from fastai.vision import learner
+    from ._dofa_utils import dofa_config
 
     learner._test_cnn = test_cnn_trnsfrmr
     ClassificationInterpretation.GradCAM = gradcam_trnsfrmr
@@ -160,6 +161,9 @@ class FeatureClassifier(ArcGISModel):
                             for this model, which is 'pytorch' by default.
 
                             valid options are "``pytorch``", "``tensorflow``"
+    ---------------------   -------------------------------------------
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.FeatureClassifier` Object
@@ -258,6 +262,10 @@ class FeatureClassifier(ArcGISModel):
                 and backbone in FeatureClassifier._transformer_backbone_original_names()
             )
 
+            self._dofa = (
+                type(backbone) is str and backbone in FeatureClassifier.dofa_backbones()
+            )
+
             if self._transformer:
                 from ._timm_utils import create_transformer_FeatureClassifier
 
@@ -280,6 +288,35 @@ class FeatureClassifier(ArcGISModel):
                     idx = 8
                 self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
                 self.learn.create_opt(lr=3e-3)
+            elif self._dofa:
+                from arcgis.learn.models._arcgis_model import get_backbone_func
+
+                backbone_func = get_backbone_func(
+                    backbone,
+                    data,
+                    is_clf=True,
+                    num_classes=data.c,
+                    **kwargs,
+                )
+
+                backbone_dofa_clf = fastai.vision.learner.create_body(
+                    backbone_func, True, None
+                )
+
+                backbone_dofa_clf._is_dofa = True
+
+                if self._is_multispectral:
+                    backbone_dofa_clf = _change_tail(backbone_dofa_clf, data)
+
+                self.learn = Learner(
+                    data,
+                    model=backbone_dofa_clf,
+                    metrics=metrics,
+                )
+
+                idx = self._freeze()
+                self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                self.learn.create_opt(lr=3e-3)
             else:
                 self.learn = cnn_learner(
                     data,
@@ -291,7 +328,9 @@ class FeatureClassifier(ArcGISModel):
                 )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
-            self._arcgis_init_callback()  # make first conv weights learnable
+
+            if not self._dofa:
+                self._arcgis_init_callback()  # make first conv weights learnable
 
             # Add Mixup data augmentation
             if mixup:
@@ -402,11 +441,39 @@ class FeatureClassifier(ArcGISModel):
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
+    def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
+        dofa_backbone = list(dofa_config.keys())
+        return dofa_backbone
+
+    @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+
         return torchgeo_backbone
+
+    @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        swin_keys = [
+            attr
+            for attr in dir(Swin_Weights)
+            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
+        ]
+
+        satlas_backbone = list(
+            map(
+                lambda m: "hf:" + m,
+                resnet_keys + swin_keys,
+            )
+        )
+        return satlas_backbone
 
     @staticmethod
     def _supported_backbones():
@@ -414,9 +481,15 @@ class FeatureClassifier(ArcGISModel):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbones = FeatureClassifier.transformer_backbones()
         torchgeo_backbone = FeatureClassifier.torchgeo_backbones()
+        satlas_backbone = FeatureClassifier.satlas_backbones()
+        dofa_backbone = FeatureClassifier.dofa_backbones()
 
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
-            timm_backbones + transformer_backbones + torchgeo_backbone
+            timm_backbones
+            + transformer_backbones
+            + torchgeo_backbone
+            + satlas_backbone
+            + dofa_backbone
         )
 
     @property
@@ -717,6 +790,7 @@ class FeatureClassifier(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            data._band_names = emd.get("Bands")
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)

@@ -10,12 +10,10 @@ from arcgis.geometry import Geometry, SpatialReference
 import pyarrow
 import pyarrow.feather as feather
 import pyarrow.parquet as parquet
-from arcgis.geometry._types import _check_geometry_engine
 from arcgis.features.geo._array import GeoArray
 
 _logging = logging.getLogger()
-
-_HASARCPY, _HASSHAPELY = _check_geometry_engine()
+from arcgis._impl._geometry_engine import HAS_ARCPY
 
 _METADATA_VERSION = "0.4.0"
 # reference: https://github.com/geopandas/geo-arrow-spec
@@ -65,7 +63,7 @@ def _create_metadata(df):
     for col in df.columns[df.dtypes == "geometry"]:
         # series = df[col]
 
-        if _HASARCPY:
+        if HAS_ARCPY:
             sr = SpatialReference(df.spatial.sr).as_arcpy.exportToString()
         else:
             sr = f"EPSG:{df.spatial.sr.get('wkid', 4326)}"
@@ -330,7 +328,7 @@ def _arrow_to_sedf(table) -> "pandas.DataFrame":
 
     # Convert the WKB columns that are present back to geometry.
 
-    if _HASARCPY:
+    if HAS_ARCPY:
         for col in geometry_columns:
             array = np.empty(len(table.column(geometry)), "O")
             array[:] = [Geometry(i.as_py()) for i in table.column(geometry)]

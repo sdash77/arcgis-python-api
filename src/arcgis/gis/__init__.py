@@ -51,20 +51,7 @@ try:
     import pandas as pd
 except ImportError:
     pass
-try:
-    import arcpy
 
-    has_arcpy = True
-except ImportError:
-    has_arcpy = False
-except RuntimeError:
-    has_arcpy = False
-try:
-    import shapefile
-
-    has_pyshp = True
-except ImportError:
-    has_pyshp = False
 import concurrent.futures
 
 from cachetools import cached, TTLCache
@@ -75,6 +62,7 @@ from arcgis.auth import EsriSession
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
 features = LazyLoader("arcgis.features")
+fileops = LazyLoader("arcgis.features.geo._io.fileops")
 _geo = LazyLoader("arcgis.features.geo")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
@@ -451,6 +439,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        self._adminPrivateServiceUrl: str | None = None
         ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._is_home = (url or "").lower() == "home"
         self._validate_item_url = kwargs.pop("validate_url", False)
@@ -736,6 +725,13 @@ class GIS(object):
         except Exception:
             pass
 
+        if profile and self._portal.con._auth == "OAUTH":
+            # persist the oauth refresh token as the password in the profile
+            pm.update(
+                profile,
+                password=self._portal.con._session.auth._refresh_token,
+            )
+
         force_refresh = False
         if self._portal.con._auth in ["HOME", "USER_TOKEN"]:
             force_refresh = True
@@ -786,7 +782,10 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                    if self._adminPrivateServiceUrl:
+                        url: str = self._adminPrivateServiceUrl
+                    else:
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -817,7 +816,10 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                    if self._adminPrivateServiceUrl:
+                        url: str = self._adminPrivateServiceUrl
+                    else:
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -1099,6 +1101,9 @@ class GIS(object):
                 self._url = json_data["privatePortalUrl"]
                 self.resturl = _create_base_url(self._url)
                 self._public_portal_url = json_data["publicPortalUrl"]
+                self._adminPrivateServiceUrl = json_data.get(
+                    "adminPrivateServiceUrl", None
+                )
                 self._referer = json_data.get("referer", "")
                 if "token" in json_data:
                     self._utoken = json_data["token"]
@@ -8707,6 +8712,9 @@ class ContentManager(object):
         The `import_table` function takes a Pandas' DataFrame and publishes it
         as a Hosted Table on a WebGIS.
 
+        .. note::
+            For larger datasets it is recommended to use the gdal library.
+
         ===================  ==========================================================================
         **Parameter**         **Description**
         -------------------  --------------------------------------------------------------------------
@@ -8727,44 +8735,86 @@ class ContentManager(object):
         returns: Published Hosted Table Item
 
         """
+        from arcgis._impl._geometry_engine import HAS_GDAL
+
+        # Do some error handling
         assert isinstance(
             df, pd.DataFrame
         ), f"The df parameter must be a Pandas' DataFrame, not {type(df).__name__}"
-        fname: str = tempfile.mkstemp(suffix=".csv")[1]
 
-        df.to_csv(fname)
-        if title is None:
-            now: _dt.datetime = _dt.datetime.now()
-            title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
+        # Set up the parameters
         if service_name is None:
-            service_name = f"import_table_{uuid.uuid4().hex[:3]}"
-        pp: dict[str, Any] = {
-            "type": "CSV",
+            service_name = "a" + uuid.uuid4().hex[0:5]
+        if title is None:
+            title = service_name
+        pp = {
             "title": title,
         }
+
+        # Find folder to add and publish
         if folder:
             folder = self.folders.get(folder=folder, owner=self._gis._username)
         if not folder:
             folder = self.folders.get()
+        # If gdal is present, prioritize it
+        if HAS_GDAL:
+            if not service_name.endswith(".gdb"):
+                service_name += ".gdb"
+            # create a temporary file
+            temp = tempfile.mkdtemp()
+            location = os.path.join(temp, service_name)
+            temp_zip = os.path.join(location, "%s.zip" % (service_name))
+            out_location = os.path.dirname(location)
+
+            fileops._gdal_to_fc(
+                df,
+                os.path.join(out_location, service_name),
+                "OpenFileGDB",
+                layer_name=title,
+                overwrite=True,
+            )
+            pp["type"] = "File Geodatabase"
+            file = _common_utils.zipws(path=location, outfile=temp_zip, keep=True)
+        else:
+            # Create an empty CSV file using the service name
+            file = os.path.join(tempfile.gettempdir(), f"{service_name}.csv")
+            # Create empty df with same columns as input
+            df.to_csv(file, index=False)
+            pp["type"] = "CSV"
 
         job = folder.add(
             **{
                 "item_properties": pp,
-                "file": fname,
+                "file": file,
             }
         )
-        csv_item: Item = job.result()
+        file_item: Item = job.result()
+        if publish_parameters is None:
+            if pp["type"] == "CSV":
+                publish_parameters: dict[str, Any] = self.analyze(
+                    item=file_item, file_type="CSV"
+                )["publishParameters"]
+                publish_parameters["name"] = service_name
+                publish_parameters["locationType"] = "none"
+            else:
+                publish_parameters = {
+                    "name": service_name,
+                    "maxRecordCount": 2000,
+                    "hasStaticData": True,
+                    "layerInfo": {"capabilities": "Query"},
+                    "locationType": "none",
+                }
+
+        # publish file item
+        new_item = file_item.publish(publish_parameters)
+
+        # Clean up
         try:
-            os.remove(fname)
+            os.remove(file)
         except Exception:
             pass
-        if publish_parameters is None:
-            publish_parameters: dict[str, Any] = self.analyze(
-                item=csv_item, file_type="csv"
-            )["publishParameters"]
-            publish_parameters["name"] = service_name
-            publish_parameters["locationType"] = "none"
-        return csv_item.publish(publish_parameters)
+
+        return new_item
 
     # ----------------------------------------------------------------------
     def import_data(
@@ -8787,6 +8837,12 @@ class ContentManager(object):
         .. note::
             By default, there is a limit of 1,000 rows/features for Pandas
             dataframes. This limit isn't there for spatial dataframes.
+
+        .. note::
+            The geometry engine used for spatial transformations can be specified by setting
+            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
+            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
+            the environment will be used.
 
         ================  ==========================================================================
         **Parameter**      **Description**
@@ -8934,7 +8990,7 @@ class ContentManager(object):
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
             # Feature Collection Workflow
-            return _cm_helper.import_as_fc(self._gis, df, **kwargs)
+            return df.spatial.to_feature_collection(**kwargs)
 
     # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
@@ -15846,6 +15902,7 @@ class Item(dict):
                     itemid=self.itemid,
                     thumbnail=thumbnail,
                     large_thumbnail=large_thumbnail,
+                    owner=owner,
                 )
             if ret:
                 self._hydrate()
@@ -18427,7 +18484,15 @@ class Item(dict):
 
                 if "layers" in orig_item and "layers" in new_item:
                     for i, layer in enumerate(orig_item.layers):
-                        expanded_dict[layer.url] = new_item.layers[i].url
+                        try:
+                            expanded_dict[layer.url] = new_item.layers[i].url
+                        except IndexError:
+                            if force:
+                                pass
+                            else:
+                                raise ValueError(
+                                    f"Original item {orig_item.title} has more layers than replacement item {new_item.title}."
+                                )
 
         if self.type in _TEXT_BASED_ITEM_TYPES:
             data = self.get_data()

@@ -16,37 +16,44 @@ import warnings
 import time
 
 JSON_BASED_TYPES = [
-    "Application",
     "Dashboard",
+    "Data Pipeline",
     "Feature Collection",
     "Map Service",
-    "Scene Service",
     "Site Application",
     "Site Page",
     "StoryMap",
+    "Style",
     "Vector Tile Service",
     "Web Experience",
     "Web Map",
     "Web Mapping Application",
     "Web Scene",
     "WMS",
+    "WMTS",
 ]
 
 JSON_BASED_WITH_DATA_TYPES = [
     "Feature Service",
     "Image Service",
     "Map Service",
+    "Scene Service",
 ]
 
 
 DISALLOWED_TYPES = [
-    "Geoprocessing Service",
+    "Application",
+    "Data Store",
     "Form",
+    "Geocoding Service",
+    "Geoprocessing Service",
+    "Hub Page",
+    "Hub Site Application",
 ]
 
 
 FILE_BASED_TYPES = [
-    "Administrative report",
+    "Administrative Report",
     "AppBuilder Extension",
     "AppBuilder Widget Package",
     "ArcGIS Pro Add In",
@@ -68,6 +75,7 @@ FILE_BASED_TYPES = [
     "Form",
     "GeoJSON",
     "GeoPackage",
+    "Geoprocessing Sample",
     "Geoprocessing Package",
     "Globe Document",
     "Image",
@@ -94,6 +102,8 @@ FILE_BASED_TYPES = [
     "PDF",
     "Pro Report",
     "Project Package",
+    "Raster function template",
+    "Rule Package",
     "Report Template",
     "Scene Package",
     "Service Definition",
@@ -133,7 +143,7 @@ def _export_content(
             _export_item_data(item, item_dir, service_format)
             return True
         except Exception as e:
-            shutil.rmtree(item_dir)
+            shutil.rmtree(item_dir, ignore_errors=True)
             warnings.warn(
                 f"Failed to export item {item.id} due to error: {str(e)}. Deleting folder and skipping...",
                 RuntimeWarning,
@@ -172,7 +182,7 @@ def _export_content(
         tar.add(main_dir, arcname=os.path.basename(main_dir))
 
     # Clean up the temporary main directory
-    shutil.rmtree(main_dir)
+    shutil.rmtree(main_dir, ignore_errors=True)
 
     return binary_file_path
 
@@ -539,7 +549,7 @@ class _ImportPackage:
                         added_items.append(service_item)
                         break
 
-            elif service_item:
+            if service_item:
                 # publish the service
                 pub_params = props
                 try:
@@ -642,7 +652,8 @@ class _ImportPackage:
 
         # import the resources
         for res_name in resources.keys():
-            res_split = res_name.split("/")
+            res_no_space = res_name.replace(" ", "%20")
+            res_split = res_no_space.split("/")
             if len(res_split) > 1:
                 res_folder = res_split[-2]
                 res_basename = res_split[-1]
