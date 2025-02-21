@@ -151,76 +151,91 @@ def plot_multi_top_losses_modified(
     self, samples=3, figsize=(8, 8), save_misclassified=False
 ):
     "Show images in `top_losses` along with their prediction, actual, loss, and probability of predicted class in a multilabeled dataset."
-    if samples > 20:
-        print("Max 20 samples")
+
+    # Get predicted probabilities as a 2D tensor with shape (num_valid_img, num_classes), ground truth labels 2-D, and corresponding losses from the model 1D num_class*num_valid_img
+    probability_per_class, truthlabels, losses = self.learn.get_preds(with_loss=True)
+
+    predclass_label = (probability_per_class > 0.5).float()
+    num_classes = len(self.data.classes)
+    num_valid_img = len(self.data.valid_ds)
+
+    # Create an index list that repeats each image index for the number of classes
+    idx_img = [x for x in range(num_valid_img) for _ in range(num_classes)]
+    converted_predclass_labels = []
+    converted_truthclass_labels = []
+
+    # Convert predicted class labels: store class indices where the prediction is 1, otherwise store None
+    for row in predclass_label:
+        converted_predclass_labels.append(
+            [
+                (
+                    i if value == 1 else None
+                )  # Store class index if predicted, otherwise None
+                for i, value in enumerate(row)
+            ]
+        )
+
+    for row in truthlabels:
+        converted_truthclass_labels.append(
+            [i if value == 1 else None for i, value in enumerate(row)]
+        )
+
+    # Create flattened nested lists
+    from itertools import chain
+
+    flattened_predclass_labels = list(chain.from_iterable(converted_predclass_labels))
+    flattened_truthclass_labels = list(chain.from_iterable(converted_truthclass_labels))
+
+    combined_list = []
+
+    for i, (truth_labels, pred_labels) in enumerate(
+        zip(flattened_truthclass_labels, flattened_predclass_labels)
+    ):
+        # The below if statement eliminates cases where both truth and prediction are None
+        if not ((truth_labels == None) and (pred_labels == None)):
+
+            # Append relevant data to combined_list: [Image ID , Ground truth labels, Predicted labels , Loss value , Predicted probability]
+            combined_list.append(
+                (
+                    idx_img[i],
+                    truth_labels,
+                    pred_labels,
+                    losses[i],
+                    probability_per_class.view(-1)[i],
+                )
+            )
+
+    # This can occur when all predictions and actual labels are None, resulting in an empty combined_list.
+    if len(combined_list) == 0:
+        print("There are no mismatches in the prediction.")
         return
-    losses, idxs = self.top_losses(self.data.c)
-    l_dim = len(losses.size())
-    if l_dim == 1:
-        losses, idxs = self.top_losses()
-    (
-        infolist,
-        ordlosses_idxs,
-        mismatches_idxs,
-        mismatches,
-        losses_mismatches,
-        mismatchescontainer,
-    ) = ([], [], [], [], [], [])
-    truthlabels = np.asarray(self.y_true, dtype=int)
-    classes_ids = [k for k in enumerate(self.data.classes)]
-    predclass = np.asarray(self.pred_class)
-    for i, pred in enumerate(predclass):
-        where_truth = np.nonzero((truthlabels[i] > 0))[0]
-        mismatch = np.all(pred != where_truth)
-        if mismatch:
-            mismatches_idxs.append(i)
-            if l_dim > 1:
-                losses_mismatches.append((losses[i][pred], i))
-            else:
-                losses_mismatches.append((losses[i], i))
-        if l_dim > 1:
-            infotup = (
-                i,
-                pred,
-                where_truth,
-                losses[i][pred],
-                np.round(self.preds[i], decimals=3)[pred],
-                mismatch,
-            )
-        else:
-            infotup = (
-                i,
-                pred,
-                where_truth,
-                losses[i],
-                np.round(self.preds[i], decimals=3)[pred],
-                mismatch,
-            )
-        infolist.append(infotup)
-    ds = self.data.dl(self.ds_type).dataset
-    mismatches = ds[mismatches_idxs]
-    ordlosses = sorted(losses_mismatches, key=lambda x: x[0], reverse=True)
-    for w in ordlosses:
-        ordlosses_idxs.append(w[1])
-    mismatches_ordered_byloss = ds[ordlosses_idxs]
-    print(
-        f"{str(len(mismatches))} misclassified samples over {str(len(self.data.valid_ds))} samples in the validation set."
-    )
+
+    # Sort mismatches based on the loss value in descending order
+    mismatches = sorted(combined_list, key=lambda x: x[3].item(), reverse=True)
+
     samples = min(samples, len(mismatches))
     from arcgis.learn._utils.common import ArcGISMSImage
+    from itertools import compress
 
-    for ima in range(len(mismatches_ordered_byloss)):
-        mismatchescontainer.append(mismatches_ordered_byloss[ima][0])
     for sampleN in range(samples):
-        actualclasses = ""
-        for clas in infolist[ordlosses_idxs[sampleN]][2]:
-            actualclasses = f"{actualclasses} -- {str(classes_ids[clas][1])}"
-        imag = mismatches_ordered_byloss[sampleN][0]
+        imag = (self.data.valid_ds[mismatches[sampleN][0]])[0]
         imag = ArcGISMSImage.show(imag, return_ax=True)
+        predicted_idx = mismatches[sampleN][2]
+        actual_idx = mismatches[sampleN][1]
+        predicted_classes = (
+            str(self.data.classes[predicted_idx])
+            if predicted_idx is not None
+            else f"not predicted as { str(self.data.classes[actual_idx])}"
+        )
+        actual_classes = (
+            str(self.data.classes[actual_idx])
+            if actual_idx is not None
+            else f"not labelled as {str(self.data.classes[predicted_idx])}"
+        )
         imag.set_title(
-            f"""Predicted: {classes_ids[infolist[ordlosses_idxs[sampleN]][1]][1]} \nActual: {actualclasses}\nLoss: {infolist[ordlosses_idxs[sampleN]][3]}\nProbability: {infolist[ordlosses_idxs[sampleN]][4]}""",
+            f"""Actual: {actual_classes} \nPrediction: {predicted_classes} \nLoss: {mismatches[sampleN][3].numpy()}\nProbability: {mismatches[sampleN][4]}""",
             loc="left",
         )
         plt.show()
         if save_misclassified:
-            return mismatchescontainer
+            return mismatches
