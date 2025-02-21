@@ -258,7 +258,7 @@ class Logs(BasePortalAdmin):
         if query_filter and not "source" in query_filter:
             query_filter.update({"source": "*"})
         params["filter"] = query_filter
-        
+
         try:
             return self._con.post(path=url, params=params)
         except:
