@@ -2,7 +2,6 @@
 Mapping Holds the Plot function for creating a FeatureCollection JSON plus the render options
 """
 
-import json
 from typing import Optional, Union
 import pandas as pd
 
@@ -10,6 +9,8 @@ import arcgis
 from arcgis.auth.tools import LazyLoader
 
 _imports = LazyLoader("arcgis._impl.imports")
+renderers = LazyLoader("arcgis.map.renderers")
+rm = LazyLoader("arcgis.map.definitions._renderer_metaclass")
 
 
 def plot(
@@ -18,11 +19,11 @@ def plot(
     name: Optional[str] = None,
     renderer: Optional[
         Union[
-            "arcgis.map.HeatmapRenderer",
-            "arcgis.map.SimpleRenderer",
-            "arcgis.map.UniqueValueRenderer",
-            "arcgis.map.ClassBreaksRenderer",
-            "arcgis.map.DotDensityRenderer",
+            renderers.HeatmapRenderer,
+            renderers.SimpleRenderer,
+            renderers.UniqueValueRenderer,
+            renderers.ClassBreaksRenderer,
+            renderers.DotDensityRenderer,
         ]
     ] = None,
     **kwargs,
@@ -83,6 +84,12 @@ def plot(
     drawing_info = {}
     if renderer is not None:
         drawing_info["renderer"] = renderer
+    elif hasattr(df.spatial, "renderer") and df.spatial.renderer is not None:
+        # Create the correct renderer
+        drawing_info["renderer"] = rm.FactoryWorker(
+            renderer_type=df.spatial.renderer["type"],
+            renderer=df.spatial.renderer,
+        )
     map.content.add(df, drawing_info=drawing_info)
     df.columns = col_old
 
