@@ -293,7 +293,7 @@ class Logs(BasePortalAdmin):
                                     end_time="2025-02-22T00:00:00",
                                     query_filter={
                                         "codes": [200011, 200014, "202020-202050"],
-                                        "users": ["arcgis_python", "arcgispyapibot"]
+                                        "users": ["gis_admin", "gis_user"]
                                     }
                             )
             >>> log_report
