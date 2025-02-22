@@ -247,7 +247,8 @@ class Logs(BasePortalAdmin):
                                        "source": ["PORTAL ADMIN"]}
 
                            .. note::
-                               When filtering for a range, values must be entered as strings
+                               When filtering for a range of *code* values, the range must
+                               be entered as a string.
 
                            The *source* of logged events are generated from the sharing,
                            administrative, and portal components of the software. Valid values
