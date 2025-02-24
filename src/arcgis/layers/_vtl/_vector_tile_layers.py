@@ -1,6 +1,9 @@
 from __future__ import absolute_import, annotations
 
-
+import re
+import os
+import tempfile
+import urllib.parse
 from contextlib import contextmanager
 from typing import Any
 from arcgis.gis import Item
@@ -689,7 +692,10 @@ class SymbolService:
         }
         url: str = f"{self._url}/generateImage"
         resp: requests.Response = self._session.get(
-            url=url, params=params, file_name=save_file_name, out_folder=save_folder
+            url=url,
+            params=params,
+            file_name=save_file_name,
+            out_folder=save_folder,
         )
         resp.raise_for_status()
         return resp.json()
@@ -966,9 +972,28 @@ class VectorTileLayer(arcgis.gis.Layer):
             "optimizeTilesForSize": False,
         }
         params["levels"] = levels if levels else None
-        params["exportExtent"] = export_extent if export_extent else "DEFAULT"
+
+        if isinstance(export_extent, dict):
+            compare_sr = lambda sr1, sr2: any(
+                val in sr2.values() for val in sr1.values()
+            ) or any(val in sr1.values() for val in sr2.values())
+
+            if compare_sr(
+                export_extent["spatialReference"],
+                self.properties["fullExtent"]["spatialReference"],
+            ):
+                export_extent: str = json.dumps(export_extent)
+            else:
+                raise ValueError(
+                    "The export_extent must be in the same spatial reference as the source."
+                )
+        elif export_extent is None:
+            export_extent = json.dumps(dict(self.properties["fullExtent"]))
+        params["exportExtent"] = export_extent
         # parameter introduced at 10.7
         if polygon and self.gis.version >= [7, 1]:
+            if isinstance(polygon, dict):
+                polygon: str = json.dumps(polygon)
             params["polygon"] = polygon
         if create_item is True:
             params["createItem"] = "on"
@@ -1029,14 +1054,48 @@ class VectorTileLayer(arcgis.gis.Layer):
             if allResults["itemId"]:
                 return _gis.Item(gis=self._gis, itemid=allResults["itemId"])
             else:
+                files: list[str] = []
+                extract_filename_lambda = lambda content_disposition: (
+                    re.search(r"filename=([^;]+)", content_disposition).group(1)
+                    if re.search(r"filename=([^;]+)", content_disposition)
+                    else "download.vtpk"
+                )
                 if self._gis._portal.is_arcgisonline:
-                    return [
-                        self._session.get(url).json() for url in allResults["outputUrl"]
-                    ]
+
+                    for url in allResults["outputUrl"]:
+                        for k, v in urllib.parse.parse_qs(
+                            urllib.parse.urlparse(url).query
+                        ).items():
+                            fn = extract_filename_lambda(v[0])
+                            fp = os.path.join(tempfile.gettempdir(), fn)
+                            with open(fp, "wb") as writer:
+                                resp: requests.Response = requests.get(url, stream=True)
+                                for chunk in resp.iter_content(
+                                    chunk_size=5 * 1024 * 1024
+                                ):
+                                    if chunk:  # filter out keep-alive new chunks
+                                        writer.write(chunk)
+                            files.append(fp)
+                    return files
                 else:
-                    return [
-                        self._session.get(url).json() for url in allResults["outputUrl"]
-                    ]
+                    for url in allResults["outputUrl"]:
+                        for k, v in urllib.parse.parse_qs(
+                            urllib.parse.urlparse(url).query
+                        ).items():
+                            fn = extract_filename_lambda(v[0])
+                            fp = os.path.join(tempfile.gettempdir(), fn)
+                            with open(fp, "wb") as writer:
+                                # Session with streaming needs to be used here.
+                                resp: requests.Response = self._session.get(
+                                    url, stream=True
+                                )
+                                for chunk in resp.iter_content(
+                                    chunk_size=5 * 1024 * 1024
+                                ):
+                                    if chunk:  # filter out keep-alive new chunks
+                                        writer.write(chunk)
+                            files.append(fp)
+                    return files
         else:
             raise Exception(job_response)
 
