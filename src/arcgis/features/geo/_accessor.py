@@ -36,7 +36,7 @@ _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
 _pa = LazyLoader("pyarrow")
-_tools_utils = LazyLoader("arcgis._impl.common._tools._utils")
+_tools_utils = LazyLoader("arcgis.features.geo._tools._utils")
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
