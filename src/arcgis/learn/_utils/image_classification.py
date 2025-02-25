@@ -221,10 +221,6 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
         else:
             ax_i = axs[r]
         if gradcam_show_result:
-            if self._data._is_multispectral:
-                raise Exception(
-                    "This method is not supported for multispectral dataset."
-                )
             im = open_image(dataloader_image_path[r])
             pred = self.learn.predict(im)
             # multi_all_cam setting it to True will return gradcam zero for the class not predicted
