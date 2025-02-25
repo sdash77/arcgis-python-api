@@ -19,6 +19,13 @@ from ._io.fileops import (
     _gdal_to_fc,
 )
 
+try:
+    from pandas.io.json import ujson_dumps as json_dumps
+    from pandas.io.json import ujson_loads as json_loads
+except Exception as ex:
+    from pandas.io.json import dumps as json_dumps
+    from pandas.io.json import loads as json_loads
+
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
@@ -2896,11 +2903,11 @@ class GeoAccessor(object):
             geom = row[self.name]
             del row[self.name]
             gj = copy.copy(geom.__geo_interface__)
-            gj["attributes"] = pd.io.json.loads(
-                pd.io.json.dumps(row)
+            gj["attributes"] = json_loads(
+                json_dumps(row)
             )  # ensures the values are converted correctly
             template["features"].append(gj)
-        return pd.io.json.dumps(template)
+        return json_dumps(template)
 
     # ----------------------------------------------------------------------
     @property

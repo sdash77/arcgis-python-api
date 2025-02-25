@@ -50,6 +50,14 @@ elif SELECTED_ENGINE == GeometryEngine.ARCPY:
 
     USE_ARCPY = True
 
+try:
+    from pandas.io.json import ujson_dumps as json_dumps
+    from pandas.io.json import ujson_loads as json_loads
+except Exception as ex:
+    from pandas.io.json import dumps as json_dumps
+    from pandas.io.json import loads as json_loads
+
+
 _logging = logging.getLogger(__name__)
 
 
@@ -1064,12 +1072,10 @@ def to_featureclass(
                 gt = df[df.spatial.name][idx].geometry_type.upper()
 
             null_geom = {
-                "point": pd.io.json.dumps(
-                    {"x": None, "y": None, "spatialReference": sr}
-                ),
-                "polyline": pd.io.json.dumps({"paths": [], "spatialReference": sr}),
-                "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
-                "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
+                "point": json_dumps({"x": None, "y": None, "spatialReference": sr}),
+                "polyline": json_dumps({"paths": [], "spatialReference": sr}),
+                "polygon": json_dumps({"rings": [], "spatialReference": sr}),
+                "multipoint": json_dumps({"points": [], "spatialReference": sr}),
             }
 
             null_geom = null_geom[gt.lower()]
@@ -1213,7 +1219,7 @@ def to_featureclass(
                     df = df.replace({pd.NaT: None})
 
                 def _insert_row(row):
-                    row[-1] = pd.io.json.dumps(row[-1])
+                    row[-1] = json_dumps(row[-1])
                     for idx in bool_fld_idx:
                         if isinstance(row[idx], (int, bool)):
                             row[idx] = int(row[idx])
