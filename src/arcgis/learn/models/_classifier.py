@@ -451,10 +451,19 @@ class FeatureClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
+        ---------------------   -------------------------------------------
+        gradcam                 Optional boolean. Set this parameter to True to
+                                get gradcam visualization to help with
+                                explanability of the prediction.Default is set to False
+                                Works with RGB images only.
+
         =====================   ===========================================
 
         """
         from .._utils.image_classification import IC_show_results
+
+        if self._is_multispectral and gradcam:
+            raise Exception("This method is not supported for multispectral dataset.")
 
         return_fig = kwargs.get("return_fig", False)
         fig = IC_show_results(self, nrows=rows, gradcam_show_result=gradcam, **kwargs)
@@ -533,10 +542,10 @@ class FeatureClassifier(ArcGISModel):
                                 If False, the model will not work with ArcGIS Pro 2.6
                                 or earlier. Default is set to True.
         ---------------------   -------------------------------------------
-        gradcam                 Optional boolean.It presents the Grad-CAM heatmap for
-                                the predicted classes,improving the clarity and
-                                interpretability of the model's predictions.
-                                Default is set to False.
+        gradcam                 Optional boolean. Used to save the results with the
+                                Grad-CAM heatmap for the predicted classes, enhancing the
+                                clarity and interpretability of the model's predictions.
+                                Default is set to False. This feature works only with RGB images.
         ---------------------   -------------------------------------------
         kwargs                  Optional Parameters.
         =====================   ===========================================
@@ -1912,7 +1921,10 @@ class FeatureClassifier(ArcGISModel):
         grad_cam_outputs = []
         pred_class_label = []
         for class_label, pred_cat1 in enumerate(cat_pred.cpu().numpy()):
-            if self._data.dataset_type == "Labeled_Tiles":
+            if (
+                self._data.dataset_type == "Labeled_Tiles"
+                or self._data.dataset_type == "Imagenet"
+            ):
                 class_label = pred_cat1
                 pred_cat1 = True
             if pred_cat1:
@@ -1930,7 +1942,7 @@ class FeatureClassifier(ArcGISModel):
                     acts = reshape_tensor(acts)
                     grad = reshape_tensor(grad)
 
-                # Ensure sufficient resolution for Grad-CAM
+                # for Grad-CAM
                 if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
                     grad_chan = grad.mean(1).mean(1)
                     mult = F.relu((acts * grad_chan[..., None, None]).sum(0))

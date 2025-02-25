@@ -190,7 +190,10 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
     if (self._data.dataset_type == "MultiLabeled_Tiles") and gradcam_show_result:
         ncols = len(self._data.classes) + 2
         title_font_size = 16
-    if (self._data.dataset_type == "Labeled_Tiles") and gradcam_show_result:
+    if (
+        self._data.dataset_type == "Labeled_Tiles"
+        or self._data.dataset_type == "Imagenet"
+    ) and gradcam_show_result:
         ncols = 3
         title_font_size = 16
 
@@ -217,12 +220,17 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
             ax_i = axs
         else:
             ax_i = axs[r]
-        im = open_image(dataloader_image_path[r])
-        pred = self.learn.predict(im)
-        # multi_all_cam setting it to True will return gradcam zero for the class not predicted
-        grad_cam_outputs, _, xb, _ = self._generate_grad_cam(
-            im, pred, multi_all_cam=True
-        )
+        if gradcam_show_result:
+            if self._data._is_multispectral:
+                raise Exception(
+                    "This method is not supported for multispectral dataset."
+                )
+            im = open_image(dataloader_image_path[r])
+            pred = self.learn.predict(im)
+            # multi_all_cam setting it to True will return gradcam zero for the class not predicted
+            grad_cam_outputs, _, xb, _ = self._generate_grad_cam(
+                im, pred, multi_all_cam=True
+            )
 
         # Get ground truth and prediction class names
         if self._data.dataset_type == "MultiLabeled_Tiles":
@@ -250,7 +258,10 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
             pred_class_expmap = len(self._data.classes)
             xb_im = Image(symbology_x_batch[idx].cpu().numpy())
             sz = list(xb_im.shape[:-1])
-            if self._data.dataset_type == "Labeled_Tiles":
+            if (
+                self._data.dataset_type == "Labeled_Tiles"
+                or self._data.dataset_type == "Imagenet"
+            ):
                 # there will be only one predicted class gradcam for single label
                 pred_class_expmap = 1
             for i in range(pred_class_expmap):
@@ -266,7 +277,10 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
                 )
                 if self._data.dataset_type == "MultiLabeled_Tiles":
                     ax_gradCAM.set_title(f"{self._data.classes[i]}")
-                if self._data.dataset_type == "Labeled_Tiles":
+                if (
+                    self._data.dataset_type == "Labeled_Tiles"
+                    or self._data.dataset_type == "Imagenet"
+                ):
                     ax_gradCAM.set_title(prediction)
 
         idx += 1
