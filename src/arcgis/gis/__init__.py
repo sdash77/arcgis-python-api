@@ -439,6 +439,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        self._adminPrivateServiceUrl: str | None = None
         ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._is_home = (url or "").lower() == "home"
         self._validate_item_url = kwargs.pop("validate_url", False)
@@ -726,7 +727,10 @@ class GIS(object):
 
         if profile and self._portal.con._auth == "OAUTH":
             # persist the oauth refresh token as the password in the profile
-            pm.update(profile, password=self._portal.con._session.auth._refresh_token)
+            pm.update(
+                profile,
+                password=self._portal.con._session.auth._refresh_token,
+            )
 
         force_refresh = False
         if self._portal.con._auth in ["HOME", "USER_TOKEN"]:
@@ -778,7 +782,10 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                    if self._adminPrivateServiceUrl:
+                        url: str = self._adminPrivateServiceUrl
+                    else:
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -809,7 +816,10 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                    if self._adminPrivateServiceUrl:
+                        url: str = self._adminPrivateServiceUrl
+                    else:
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -1091,6 +1101,9 @@ class GIS(object):
                 self._url = json_data["privatePortalUrl"]
                 self.resturl = _create_base_url(self._url)
                 self._public_portal_url = json_data["publicPortalUrl"]
+                self._adminPrivateServiceUrl = json_data.get(
+                    "adminPrivateServiceUrl", None
+                )
                 self._referer = json_data.get("referer", "")
                 if "token" in json_data:
                     self._utoken = json_data["token"]
@@ -13538,19 +13551,25 @@ class User(dict):
 
         """
         count: int = 1
+
+        # folder name given
         if isinstance(folder, str):
             folder: _folder.Folder = self._gis.content.folders.get(folder, self)
-
+        # folder instance given
         if isinstance(folder, _folder.Folder):
             folder: list[_folder.Folder] = [folder]
         elif folder is None:
+            # get generator of all user folders
             folder: Iterator[_folder.Folder] = self._gis.content.folders.list(self)
 
         for fld in folder:
-            for item in fld.list():
+            # get all items of folder to iterate through
+            fldr_items = fld.list()
+            for item in fldr_items:
+                # create generator of items
                 yield item
                 if count == max_items:
-                    break
+                    return
                 count += 1
 
     # ----------------------------------------------------------------------

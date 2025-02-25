@@ -1598,7 +1598,12 @@ def _gdal_to_sedf(file_path):
         geom = feature.geometry()
         if geom is not None:
             # Export geometry to JSON and parse with ujson
-            geom_json = _ujson.loads(geom.ExportToJson())
+            gj = geom.ExportToJson()
+            if not gj:
+                raise RuntimeError(
+                    f"Unable to read geometry of type {geom.GetGeometryName()} with gdal."
+                )
+            geom_json = _ujson.loads(gj)
             esri_geom = Geometry(geom_json)
             esri_geom.spatialReference = Geometry({"wkid": sr_code})
             row.append(esri_geom)
