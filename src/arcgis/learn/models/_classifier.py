@@ -5,6 +5,7 @@ from .._data import _check_esri_files, _raise_fastai_import_error
 import random
 import math
 import traceback
+import urllib
 
 try:
     import pandas
@@ -265,67 +266,71 @@ class FeatureClassifier(ArcGISModel):
             self._dofa = (
                 type(backbone) is str and backbone in FeatureClassifier.dofa_backbones()
             )
+            try:
+                if self._transformer:
+                    from ._timm_utils import create_transformer_FeatureClassifier
 
-            if self._transformer:
-                from ._timm_utils import create_transformer_FeatureClassifier
+                    trnsfrmr_model = create_transformer_FeatureClassifier(
+                        self._backbone.__name__,
+                        num_classes=data.c,
+                        img_size=self._data.chip_size,
+                        pretrained=True,
+                    )
+                    if self._is_multispectral:
+                        trnsfrmr_model = _change_tail(trnsfrmr_model, data)
 
-                trnsfrmr_model = create_transformer_FeatureClassifier(
-                    self._backbone.__name__,
-                    num_classes=data.c,
-                    img_size=self._data.chip_size,
-                    pretrained=True,
+                    self.learn = Learner(
+                        data,
+                        model=trnsfrmr_model,
+                        metrics=metrics,
+                    )
+                    idx = self._freeze()
+                    if trnsfrmr_model[0].__class__.__name__ == "CoaT":
+                        idx = 8
+                    self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                    self.learn.create_opt(lr=3e-3)
+                elif self._dofa:
+                    from arcgis.learn.models._arcgis_model import get_backbone_func
+
+                    backbone_func = get_backbone_func(
+                        backbone,
+                        data,
+                        is_clf=True,
+                        num_classes=data.c,
+                        **kwargs,
+                    )
+                    backbone_dofa_clf = fastai.vision.learner.create_body(
+                        backbone_func, True, None
+                    )
+
+                    backbone_dofa_clf._is_dofa = True
+
+                    if self._is_multispectral:
+                        backbone_dofa_clf = _change_tail(backbone_dofa_clf, data)
+
+                    self.learn = Learner(
+                        data,
+                        model=backbone_dofa_clf,
+                        metrics=metrics,
+                    )
+
+                    idx = self._freeze()
+                    self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                    self.learn.create_opt(lr=3e-3)
+                else:
+                    self.learn = cnn_learner(
+                        data,
+                        self._backbone,
+                        metrics=metrics,
+                        cut=backbone_cut,
+                        split_on=backbone_split,
+                        custom_head=head,
+                    )
+            except urllib.error.URLError as e:
+                raise ConnectionError(
+                    f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
                 )
-                if self._is_multispectral:
-                    trnsfrmr_model = _change_tail(trnsfrmr_model, data)
 
-                self.learn = Learner(
-                    data,
-                    model=trnsfrmr_model,
-                    metrics=metrics,
-                )
-                idx = self._freeze()
-                if trnsfrmr_model[0].__class__.__name__ == "CoaT":
-                    idx = 8
-                self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
-                self.learn.create_opt(lr=3e-3)
-            elif self._dofa:
-                from arcgis.learn.models._arcgis_model import get_backbone_func
-
-                backbone_func = get_backbone_func(
-                    backbone,
-                    data,
-                    is_clf=True,
-                    num_classes=data.c,
-                    **kwargs,
-                )
-
-                backbone_dofa_clf = fastai.vision.learner.create_body(
-                    backbone_func, True, None
-                )
-
-                backbone_dofa_clf._is_dofa = True
-
-                if self._is_multispectral:
-                    backbone_dofa_clf = _change_tail(backbone_dofa_clf, data)
-
-                self.learn = Learner(
-                    data,
-                    model=backbone_dofa_clf,
-                    metrics=metrics,
-                )
-
-                idx = self._freeze()
-                self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
-                self.learn.create_opt(lr=3e-3)
-            else:
-                self.learn = cnn_learner(
-                    data,
-                    self._backbone,
-                    metrics=metrics,
-                    cut=backbone_cut,
-                    split_on=backbone_split,
-                    custom_head=head,
-                )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
 

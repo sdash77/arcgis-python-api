@@ -4,6 +4,7 @@ from ._codetemplate import image_classifier_prf
 from functools import partial
 from ._arcgis_model import ArcGISModel
 import logging
+import urllib
 
 logger = logging.getLogger()
 
@@ -341,27 +342,33 @@ class DeepLab(ArcGISModel):
         self.dice_loss_average = kwargs.get("dice_loss_average", "micro")
 
         self._code = image_classifier_prf
-        if (
-            self._backbone.__name__ == "resnet101"
-            and "timm" not in self._backbone.__module__
-        ):
-            model = _create_deeplab(
-                data.chip_size,
-                data.c,
-                pretrained=pretrained_backbone,
-                pointrend=self._pointrend,
-                keep_dilation=self.keep_dilation,
-            )
-            if self._is_multispectral:
-                model = _change_tail(model, data)
-        else:
-            model = Deeplab(
-                data.c,
-                self._backbone,
-                data.chip_size,
-                self._pointrend,
-                keep_dilation=self.keep_dilation,
-                pretrained=pretrained_backbone,
+
+        try:
+            if (
+                self._backbone.__name__ == "resnet101"
+                and "timm" not in self._backbone.__module__
+            ):
+                model = _create_deeplab(
+                    data.chip_size,
+                    data.c,
+                    pretrained=pretrained_backbone,
+                    pointrend=self._pointrend,
+                    keep_dilation=self.keep_dilation,
+                )
+                if self._is_multispectral:
+                    model = _change_tail(model, data)
+            else:
+                model = Deeplab(
+                    data.c,
+                    self._backbone,
+                    data.chip_size,
+                    self._pointrend,
+                    keep_dilation=self.keep_dilation,
+                    pretrained=pretrained_backbone,
+                )
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
             )
 
         if not _isnotebook():
