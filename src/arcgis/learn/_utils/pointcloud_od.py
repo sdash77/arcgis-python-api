@@ -468,6 +468,13 @@ def proc_batch(self, batch):
     x_batch = dict(points=batch["points"])
     batch = dict(inputs=x_batch, data_samples=batch["data_samples"])
     if hasattr(self, "data_preprocessor_3d"):
+        if getattr(self, "_add_velocity", False):
+            for b in batch["data_samples"]:
+                bboxs = b.gt_instances_3d.bboxes_3d.tensor
+                bboxs = torch.cat((bboxs, torch.zeros((bboxs.shape[0], 2))), dim=1)
+                b.gt_instances_3d.bboxes_3d = LiDARInstance3DBoxes(
+                    bboxs, box_dim=9, with_yaw=True
+                )
         batch = self.data_preprocessor_3d(batch)
     y_batch = np.array(batch["data_samples"])
     return batch, y_batch
