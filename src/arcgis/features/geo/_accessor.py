@@ -19,8 +19,12 @@ from ._io.fileops import (
     _gdal_to_fc,
 )
 
-json_dumps = pd.io.json.ujson_dumps if hasattr(pd.io.json, "ujson_dumps") else pd.io.json.dumps
-json_loads = pd.io.json.ujson_loads if hasattr(pd.io.json, "ujson_loads") else pd.io.json.loads
+json_dumps = (
+    pd.io.json.ujson_dumps if hasattr(pd.io.json, "ujson_dumps") else pd.io.json.dumps
+)
+json_loads = (
+    pd.io.json.ujson_loads if hasattr(pd.io.json, "ujson_loads") else pd.io.json.loads
+)
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
