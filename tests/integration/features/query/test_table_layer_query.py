@@ -2,7 +2,7 @@ import os
 import time
 import unittest
 
-from data_utils import publish_test_item, cleanup_published_items
+from utils.data_utils import publish_test_item, cleanup_published_items
 from integration.config import QALAB_ROOT_PATH, get_resource_path
 from utils.decorators import integration_test, profiles
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum

@@ -333,16 +333,66 @@ class Block(PointModule):
         return point
 
 
+class DetectionPooling(PointModule):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        stride=2,
+        **kwargs,
+    ):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.order = kwargs.get("order", None)
+        if stride == 1:
+            sparse_layer = spconv.SubMConv3d
+        else:
+            sparse_layer = spconv.SparseConv3d
+        self.proj = PointSequential(
+            sparse_layer(
+                in_channels,
+                out_channels,
+                kernel_size=3,
+                stride=stride,
+                padding=1,
+                bias=False,
+                indice_key=kwargs.get("indice_key", None),
+            ),
+            nn.BatchNorm1d(out_channels, eps=1e-3, momentum=0.01),
+            nn.GELU(),
+        )
+
+    def forward(self, point: Point):
+        point = self.proj(point)
+        # features will be at random location for each batch
+        batch = point.sparse_conv_feat.indices[:, 0]
+        # sort batch and get thier idx for sorting the features
+        batch, batch_idx = torch.sort(batch)
+        features = point.sparse_conv_feat.features[batch_idx]
+        grid_coord = point.sparse_conv_feat.indices[:, [1, 2, 3]][batch_idx]
+        sparse_shape = point.sparse_conv_feat.spatial_shape
+        point_dict = Dict(
+            feat=features, grid_coord=grid_coord, batch=batch, sparse_shape=sparse_shape
+        )
+        point = Point(point_dict)
+        point.serialization(order=self.order)
+        point.sparsify()
+        return point
+
+
 class SerializedPooling(PointModule):
     def __init__(
         self,
         in_channels,
         out_channels,
         stride=2,
+        **kwargs,
     ):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.is_detection = kwargs.get("is_detection", False)
 
         assert stride == 2 ** (math.ceil(stride) - 1).bit_length()  # 2, 4, 8
         self.stride = stride
@@ -409,7 +459,10 @@ class SerializedPooling(PointModule):
         point = Point(point_dict)
         point = self.norm(point)
         point = self.act(point)
-        point.sparsify()
+        if self.is_detection:
+            point.sparsify(pad=0)
+        else:
+            point.sparsify()
         return point
 
 
@@ -478,14 +531,12 @@ class PTV3Backbone(PointModule):
         dec_num_head=(4, 4, 8, 16),
         sub_sampling_ratio=2,
         seq_len=1024,
-        enable_rpe=False,
-        cls_mode=False,
-        enable_flash=True,
+        **kwargs,
     ):
         super().__init__()
         self.num_stages = len(enc_depths)
         self.order = ["z", "z-trans", "hilbert", "hilbert-trans"]
-        self.cls_mode = cls_mode
+        self.cls_mode = kwargs.get("cls_mode", False)
         self.out_channels = dec_channels[0]
 
         self.embedding = Embedding(
@@ -495,6 +546,10 @@ class PTV3Backbone(PointModule):
 
         # encoder
         enc_drop_path = [x.item() for x in torch.linspace(0, 0.3, sum(enc_depths))]
+        if kwargs.get("detection_pooling", False):
+            pooling_layer = DetectionPooling
+        else:
+            pooling_layer = SerializedPooling
         self.enc = PointSequential()
         for s in range(self.num_stages):
             enc_drop_path_ = enc_drop_path[
@@ -503,10 +558,13 @@ class PTV3Backbone(PointModule):
             enc = PointSequential()
             if s > 0:
                 enc.add(
-                    SerializedPooling(
+                    pooling_layer(
                         in_channels=enc_channels[s - 1],
                         out_channels=enc_channels[s],
                         stride=sub_sampling_ratio,
+                        indice_key=f"downsample{s}",
+                        order=self.order,
+                        is_detection=kwargs.get("is_detection", False),
                     ),
                     name="down",
                 )
@@ -519,8 +577,8 @@ class PTV3Backbone(PointModule):
                         drop_path=enc_drop_path_[i],
                         order_index=i % len(self.order),
                         cpe_indice_key=f"stage{s}",
-                        enable_rpe=enable_rpe,
-                        enable_flash=enable_flash,
+                        enable_rpe=kwargs.get("enable_rpe", False),
+                        enable_flash=kwargs.get("enable_flash", True),
                     ),
                     name=f"block{i}",
                 )
@@ -555,8 +613,8 @@ class PTV3Backbone(PointModule):
                             drop_path=dec_drop_path_[i],
                             order_index=i % len(self.order),
                             cpe_indice_key=f"stage{s}",
-                            enable_rpe=enable_rpe,
-                            enable_flash=enable_flash,
+                            enable_rpe=kwargs.get("enable_rpe", False),
+                            enable_flash=kwargs.get("enable_flash", True),
                         ),
                         name=f"block{i}",
                     )

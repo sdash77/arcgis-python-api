@@ -292,6 +292,13 @@ MMDetection3D
     :inherited-members:
     :undoc-members:
 
+PTv3Det
+^^^^^^^^
+.. autoclass:: arcgis.learn.PTv3Det
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Tracking Models
 ------------------------
 SiamMask
