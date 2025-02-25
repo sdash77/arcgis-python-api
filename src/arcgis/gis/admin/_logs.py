@@ -137,79 +137,176 @@ class Logs(BasePortalAdmin):
     ):
         """
         The query operation allows you to aggregate, filter, and page
-        through logs written by the portal.
+        through logs written by the portal. Please see
+        `Query Logs <https://developers.arcgis.com/rest/enterprise-administration/portal/query-logs/>`_
+        for full details on parameters.
 
         =================  ===============================================================
         **Parameter**      **Description**
         -----------------  ---------------------------------------------------------------
-        start_time         required datetime/float. The most recent time to query.
+        start_time         Required datetime, integer, or string. The most recent time to
+                           query.
 
                            Local date corresponding to the POSIX timestamp, such as is
-                           returned by time.time(). This may raise OverflowError, if the
-                           timestamp is out of the range of values supported by the
-                           platform. It's common for this to be restricted to years from
-                           1970 through 2038.
-                           Time can be specified as a portal timestamp (format in
-                           "%Y-%m-%dT%H:%M:%S") or in seconds since UNIX epoch. For
-                           :Examples:
-                           Datetime Object: datetime.datetime.now()
-                           Timestamp: "2015-08-01T15:17:20,123"
-                           Seconds: 1312237040.123/time.time()
-                           Default: datetime.datetime.now()
+                           returned by time.time().
+
+                           .. note::
+                               This may raise OverflowError, if the
+                               timestamp is out of the range of values supported by the
+                               platform. It's common for this to be restricted to years from
+                               1970 through 2038.
+
+                           Time can be specified as:
+
+                           * a portal timestamp string formatted as: "%Y-%m-%dT%H:%M:%S":
+
+                           .. code-block:: python
+
+                               >>> start_time = "2025-02-01T15:18:22"
+
+                           * integer milliseconds since UNIX epoch. For example:
+
+                           .. code-block:: python
+
+                               >>> start_time = 1738396800000
+
+                           * Datetime Object:
+
+                           .. code-block:: python
+
+                               >>> start_time = datetime.datetime.now()
         -----------------  ---------------------------------------------------------------
-        end_time           optional datetime/float, The oldest time to include in the
-                           result set. You can use this to limit the query to the last
+        end_time           Optional datetime, integer, string. The latest time to include
+                           in the result. You can use this to limit the query to the last
                            number of minutes, hours, days, months, and years as needed.
 
                            Local date corresponding to the POSIX timestamp, such as is
-                           returned by time.time(). This may raise OverflowError, if the
-                           timestamp is out of the range of values supported by the
-                           platform. It's common for this to be restricted to years from
-                           1970 through 2038.
+                           returned by time.time().
 
-                           Datetime Object: datetime.datetime.now()
-                           Timestamp: "2015-08-01T15:17:20,123"
-                           Seconds: 1312237040.123/time.time()
-                           Default: datetime.datetime.now()
+                           .. note::
+                               This may raise OverflowError, if the
+                               timestamp is out of the range of values supported by the
+                               platform. It's common for this to be restricted to years from
+                               1970 through 2038.
+
+                           Time can be specified as:
+
+                           * a portal timestamp string formatted as: "%Y-%m-%dT%H:%M:%S":
+
+                           .. code-block:: python
+
+                               >>> end_time = "2025-02-18T11:00:14"
+
+                           * integer milliseconds since UNIX epoch. For example:
+
+                           .. code-block:: python
+
+                               >>> end_time = 1738396800000
+
+                           * Datetime Object:
+
+                           .. code-block:: python
+
+                               >>> end_time = datetime.datetime.now()
         -----------------  ---------------------------------------------------------------
-        level              optional string, Can be one of [OFF, SEVERE, WARNING, INFO,
-                           FINE, VERBOSE, DEBUG]. Returns only records with a log level at
-                           or more severe than the level specified.
-                           Default: WARNING
+        level              Optional string, Can be one of:
+
+                           * *OFF*
+                           * *SEVERE*
+                           * *WARNING*
+                           * *INFO*
+                           * *FINE*
+                           * *VERBOSE*
+                           * *DEBUG*
+
+                           Returns only records with a log level at or more severe than
+                           the level specified. Default: *WARNING*.
         -----------------  ---------------------------------------------------------------
-        query_filter       optional dict, Filtering is allowed by any combination of
-                           codes, users, and source components. The filter accepts a comma
-                           delimited list of filter definitions. If any definition is
-                           omitted, it defaults to all ("*").
-                           :Example:
+        query_filter       Optional dict. Filtering is allowed by any combination of
+                           *codes*, *users* and *source* components. The filter accepts a
+                           dictionary whose keys can be a comma delimited list of filter
+                           definitions. If any definition is omitted, it defaults to all
+                           ("*").
 
-                           {"codes":[204000-205999,212015,219114], "users":["admin","jcho"],
-                           "source": ["PORTAL ADMIN"]}
-
-                           The source of logged events are generated from the sharing,
-                           administrative, and portal components of the software.
                            For example:
-                           - Events related to publishing and users are categorized under
-                             SHARING.
-                           - Events related to security and indexing are categorized under
-                             PORTAL ADMIN.
-                           - Events related to installing the software are categorized
-                             under PORTAL.
+
+                           .. code-block:: python
+
+                               # Usage example: Filter for a specific user
+
+                               >>> query_filter = {
+                                        "users": ["gis_admin", "jcho_python"]
+                                        }
+
+                              # Usage example: Filter for specific codes, code range, user
+                              #                and source:
+
+                              >>> query_filter = {
+                                       "codes": ["204000-205999",212015,219114],
+                                       "users":["gis_admin"],
+                                       "source": ["PORTAL ADMIN"]}
+
+                           .. note::
+                               When filtering for a range of *code* values, the range must
+                               be entered as a string.
+
+                           The *source* of logged events are generated from the sharing,
+                           administrative, and portal components of the software. Valid values
+                           are:
+
+                           * *SHARING* - Events related to publishing and users
+                           * *PORTAL_ADMIN* - Events related to security and indexing
+                           * *PORTAL* - Events related to installing the software
         -----------------  ---------------------------------------------------------------
-        page_size          optional integer, the number of log records to return. The
-                           default is 1000
+        page_size          Optional integer. The number of log records to return. The
+                           default is 1000.
         -----------------  ---------------------------------------------------------------
-        federated_servers  Optional str. Introduced at ArcGIS Enterprise 11.4. Specifies
-                           whether logs from federated servers should be included in the
-                           query. To include logs from every federated server, set the
-                           value to `all`. To include logs from a specific federated
-                           server, set the value as the server's URL. To exclude
-                           federated server logs from the query, leave the value set to
-                           `None`.  `None` is the default.
+        federated_servers  Optional string.  Specifies whether logs from federated servers
+                           should be included in the result.  To include logs from every
+                           federated server, set the value to *all*. To include logs from
+                           a specific federated, set the values as the server's URL. To
+                           exclude federated server logs from the query, leave the value
+                           to the default, *None*.
+
+                           .. note::
+                               Introduced at ArcGIS Enterprise 11.4.
+
+                           .. code-block:: python
+
+                               >>> federated_servers = "https://example.server.com/wa_name"
         =================  ===============================================================
 
         :return:
-           dictionary of messages
+           Dictionary of metadata and messages.
+
+        .. code-block:: python
+
+            # Usage Example: Querying for specific codes and users:
+
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> portal_log_mgr = gis.admin.logs
+
+            >>> log_report = portal_log_mgr.query(
+                                    level="WARNING",
+                                    start_time="2025-02-01T00:00:00",
+                                    end_time="2025-02-22T00:00:00",
+                                    query_filter={
+                                        "codes": [200011, 200014, "202020-202050"],
+                                        "users": ["gis_admin", "gis_user"]
+                                    }
+                            )
+            >>> log_report
+
+            {'hasMore': False,
+             'startTime': 1740163821807,
+             'endTime': 1738217912458,
+             'logMessages': [{'type': 'WARNING',
+                             'message': ' Publish error for item '
+                             ...
+            }
+
         """
         from datetime import datetime
 
@@ -256,7 +353,9 @@ class Logs(BasePortalAdmin):
             params["federatedServers"] = federated_servers
 
         if query_filter:
+            query_filter.setdefault("source", "*")
             params["filter"] = query_filter
+
         try:
             return self._con.post(path=url, params=params)
         except:
