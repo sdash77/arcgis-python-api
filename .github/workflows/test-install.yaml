@@ -1,0 +1,132 @@
+name: Test installation
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: Version of arcgis to install (e.g., 2.4.1)
+        required: true
+      channels:
+        type: string
+        description: Comma-separated list of conda channels to use (e.g., esri or esri,esri/label/prerelease)
+        required: false
+        default: esri
+      conda:
+        type: boolean
+        description: Install using conda?
+        required: false
+        default: true
+      pip:
+        type: boolean
+        description: Install using pip?
+        required: false
+        default: true
+      pip-url:
+        type: string
+        description: URL to install from (e.g., https://esri-forge.python.geocloud.com/_/arcgis-2.4.1-py3-none-any.whl)
+        required: false
+        default: ""
+      linux:
+        type: boolean
+        description: Install on Linux?
+        required: false
+        default: false
+      macos:
+        type: boolean
+        description: Install on macOS?
+        required: false
+        default: false
+      windows:
+        type: boolean
+        description: Install on Windows?
+        required: false
+        default: true
+
+
+jobs:
+  preflight:
+      name: Run preflight configuration
+      runs-on: ubuntu-latest
+      outputs:
+        matrix: ${{ steps.set-matrix.outputs.matrix }}
+        channels: ${{ steps.get-channels.outputs.channels }}
+      steps:
+        - name: Construct matrix
+          id: set-matrix
+          run: |
+            matrix=$(echo {} | jq '. |= {"os": [], "python_version": ["3.10", "3.11", "3.12"]}' | jq -r tostring)
+            if [ "${{ github.event.inputs.linux }}" = 'true' ]; then
+              echo "Running on Linux"
+              matrix=$(echo $matrix | jq '.os += ["ubuntu-latest"]' | jq -r tostring)
+            fi
+            if [ "${{ github.event.inputs.macos }}" = 'true' ]; then
+              echo "Running on macOS (M-Series)"
+              matrix=$(echo $matrix | jq '.os += ["macos-13", "macos-latest"]' | jq -r tostring)
+            fi
+            if [ "${{ github.event.inputs.windows }}" = 'true' ]; then
+              echo "Running on Windows"
+              matrix=$(echo $matrix | jq '.os += ["windows-latest"]' | jq -r tostring)
+            fi
+            echo "matrix=$matrix" >> $GITHUB_OUTPUT
+        - name: Get channels command
+          id: get-channels
+          run: |
+            # github.event.inputs.channels is a comma-separated list of channels
+            # conver to -c channel1 -c channel2
+            # to use with conda install
+            channels="-c $(echo ${{ github.event.inputs.channels }} | sed 's/,/ -c /g')"
+            echo "channels=$channels" >> $GITHUB_OUTPUT
+
+  install:
+    name: Install arcgis
+    needs: preflight
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.preflight.outputs.matrix)}}
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - name: Configure conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Install arcgis (conda)
+        if: github.event.inputs.conda == 'true'
+        run: |
+          conda install arcgis=${{ github.event.inputs.version }} ${{ needs.preflight.outputs.channels }} --yes
+      - name: Export environment
+        if: github.event.inputs.conda == 'true'
+        run: |
+          conda env export --no-builds -f ${{ matrix.os }}_${{ matrix.python_version }}_environment.yml
+      - name: Upload conda environment file
+        if: github.event.inputs.conda == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: arcgis-environment-${{ matrix.os }}-${{ matrix.python_version }}-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            *_environment.yml
+          retention-days: 90
+      - name: Install arcgis (pip from pypi)
+        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url == ''
+        run: |
+          conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
+          conda activate arcgis_pip && python -m pip install "arcgis==${{ github.event.inputs.version }}.*"
+      - name: Install arcgis (pip from url)
+        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url != ''
+        run: |
+          conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
+          conda activate arcgis_pip && python -m pip install ${{ github.event.inputs.pip-url }}
+      - name: Export pip environment
+        if: github.event.inputs.pip == 'true'
+        run: |
+          conda activate arcgis_pip && python -m pip freeze > ${{ matrix.os }}_${{ matrix.python_version }}_requirements.txt
+      - name: Upload pip environment file
+        if: github.event.inputs.pip == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: arcgis-requirements-${{ matrix.os }}-${{ matrix.python_version }}-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            *_requirements.txt
+          retention-days: 90
