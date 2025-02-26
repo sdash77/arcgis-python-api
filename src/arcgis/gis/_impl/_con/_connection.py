@@ -615,6 +615,7 @@ class Connection(object):
                         legacy=False,
                         verify_cert=self._verify_cert,
                         referer=self._referer,
+                        session=self._session,
                         proxies=proxies,
                     )
         elif self._auth.lower() == "user_token":

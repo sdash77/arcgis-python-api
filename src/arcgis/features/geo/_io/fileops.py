@@ -50,6 +50,13 @@ elif SELECTED_ENGINE == GeometryEngine.ARCPY:
 
     USE_ARCPY = True
 
+json_dumps = (
+    pd.io.json.ujson_dumps if hasattr(pd.io.json, "ujson_dumps") else pd.io.json.dumps
+)
+json_loads = (
+    pd.io.json.ujson_loads if hasattr(pd.io.json, "ujson_loads") else pd.io.json.loads
+)
+
 _logging = logging.getLogger(__name__)
 
 
@@ -1064,12 +1071,10 @@ def to_featureclass(
                 gt = df[df.spatial.name][idx].geometry_type.upper()
 
             null_geom = {
-                "point": pd.io.json.dumps(
-                    {"x": None, "y": None, "spatialReference": sr}
-                ),
-                "polyline": pd.io.json.dumps({"paths": [], "spatialReference": sr}),
-                "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
-                "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
+                "point": json_dumps({"x": None, "y": None, "spatialReference": sr}),
+                "polyline": json_dumps({"paths": [], "spatialReference": sr}),
+                "polygon": json_dumps({"rings": [], "spatialReference": sr}),
+                "multipoint": json_dumps({"points": [], "spatialReference": sr}),
             }
 
             null_geom = null_geom[gt.lower()]
@@ -1213,7 +1218,7 @@ def to_featureclass(
                     df = df.replace({pd.NaT: None})
 
                 def _insert_row(row):
-                    row[-1] = pd.io.json.dumps(row[-1])
+                    row[-1] = json_dumps(row[-1])
                     for idx in bool_fld_idx:
                         if isinstance(row[idx], (int, bool)):
                             row[idx] = int(row[idx])
@@ -1598,7 +1603,12 @@ def _gdal_to_sedf(file_path):
         geom = feature.geometry()
         if geom is not None:
             # Export geometry to JSON and parse with ujson
-            geom_json = _ujson.loads(geom.ExportToJson())
+            gj = geom.ExportToJson()
+            if not gj:
+                raise RuntimeError(
+                    f"Unable to read geometry of type {geom.GetGeometryName()} with gdal."
+                )
+            geom_json = _ujson.loads(gj)
             esri_geom = Geometry(geom_json)
             esri_geom.spatialReference = Geometry({"wkid": sr_code})
             row.append(esri_geom)

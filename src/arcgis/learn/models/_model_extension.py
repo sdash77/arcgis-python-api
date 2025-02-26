@@ -6,6 +6,7 @@ import warnings
 import sys, importlib
 from functools import partial
 import logging
+import urllib
 
 logger = logging.getLogger()
 
@@ -121,7 +122,13 @@ class ModelExtension(ArcGISModel):
         self._model_conf_class = model_conf
         self._backend = "pytorch"
         self._kwargs = kwargs
-        model = self._model_conf.get_model(data, backbone, **kwargs)
+        try:
+            model = self._model_conf.get_model(data, backbone, **kwargs)
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+            )
+
         if backbone is not None:
             backbone_name = backbone if type(backbone) is str else backbone.__name__
             if model_conf.__name__ == "MyFasterRCNN" and backbone_name not in [

@@ -8,6 +8,7 @@ import statistics
 import warnings
 from .._data import _raise_fastai_import_error
 import traceback
+import urllib
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -166,7 +167,14 @@ class RetinaNet(ArcGISModel):
             backbone_cut = None
 
         # Cut-off the backbone before the penultimate layer
-        self._encoder = create_body(self._backbone, backbone_pretrained, backbone_cut)
+        try:
+            self._encoder = create_body(
+                self._backbone, backbone_pretrained, backbone_cut
+            )
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+            )
 
         # Initialize the model, loss function and the Learner object
         self._model = RetinaNetModel(
