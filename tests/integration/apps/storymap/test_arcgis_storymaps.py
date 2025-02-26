@@ -1,7 +1,7 @@
 import unittest
 from arcgis.apps.storymap import StoryMap, Themes, Cover, Navigation, Image
 from utils.decorators import integration_test, profiles
-from config import INTEGRATION_TEST_ITEM_TAG, get_resource_path
+from integration.config import INTEGRATION_TEST_ITEM_TAG, get_resource_path
 
 
 @integration_test
