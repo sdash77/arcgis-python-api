@@ -691,7 +691,6 @@ class ArcGISModel(object):
         if self._is_multispectral or (
             not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
         ):
-
             self._orig_backbone = self._backbone
 
             @wraps(self._orig_backbone)
@@ -1991,7 +1990,8 @@ class ArcGISModel(object):
                 arcgis.learn._utils.env._IS_ARCGISPRONOTEBOOK = False
                 #
                 self._save_model_characteristics(
-                    saved_path.parent.absolute() / model_characteristics_folder
+                    saved_path.parent.absolute() / model_characteristics_folder,
+                    **kwargs,
                 )
                 ArcGISModel._create_html(saved_path)
             except:
@@ -2098,7 +2098,7 @@ class ArcGISModel(object):
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
-    def _save_model_characteristics(self, model_characteristics_dir):
+    def _save_model_characteristics(self, model_characteristics_dir, **kwargs):
         import shutil
         import matplotlib.pyplot as plt
 
@@ -2159,7 +2159,10 @@ class ArcGISModel(object):
         ]:
             pass
         elif hasattr(self, "show_results"):
-            self.show_results()
+            if hasattr(self, "_gradCAM"):
+                self.show_results(gradcam=kwargs.get("gradcam", False))
+            else:
+                self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, "show_results.png"))
             plt.close()
 
