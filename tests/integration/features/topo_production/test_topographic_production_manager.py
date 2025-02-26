@@ -1,6 +1,7 @@
 import unittest
 from arcgis.features._topographic import TopographicProductionManager
 from utils.decorators import integration_test, profiles
+from utils.data_utils import get_feature_layer_url, ServerTypeEnum
 
 
 @profiles.enterprise
@@ -18,9 +19,13 @@ class TestTopographicProductionManager(unittest.TestCase):
 
         # If data missing in server: \\qalab_server\pydata\v109\geosaurus\topographic_data
         # Go to folder and use server manager to publish the SD file
+
         # Create Topographic Service
+        topo_url = get_feature_layer_url(
+            cls.gis, "TMServer_Fortlewis", ServerTypeEnum.TOPOGRAPHIC
+        )
         topo = TopographicProductionManager(
-            "https://pythonapitestnb.dev.geocloud.com/server/rest/services/TMS_ntgrtn_tst/TopographicProductionServer",
+            topo_url,
             cls.gis,
         )
         if len(topo.products()["products"]) == 0:
@@ -165,14 +170,20 @@ class TestTopographicProductionManager(unittest.TestCase):
     def test_generate_product(self):
         """Test generate product"""
         # Get all the products
+        map_server_url = get_feature_layer_url(
+            self.gis, "TMServer_Fortlewis", ServerTypeEnum.MAP_SERVER, layer_id=39
+        )
         products = self.topo.products(include_def=True)
         product = products["products"][0]
         generated = self.topo.generate_product(
-            product["name"],
-            "TRD_4_5",
-            "https://pythonapitestnb.dev.geocloud.com/server/rest/services/TMS_ntgrtn_tst/MapServer/0",
-            "1",
-            {"outputType": "APRX", "outputFiles": ["Geodatabase", "Project"]},
+            name=product["name"],
+            version="TRD_4_5",
+            area_interest_layer=map_server_url,
+            area_interest_feature_id="72",
+            output_type={
+                "outputType": "APRX",
+                "outputFiles": ["Geodatabase", "Project"],
+            },
         )
 
         assert generated["jobId"]
