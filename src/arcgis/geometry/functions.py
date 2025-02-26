@@ -9,7 +9,6 @@ well-known ID of each reference.
 .. code-block:: python
 
     >>> from arcgis.geometry input SpatialReference
-    
     >>> sr = SpatialReference(iterable={"wkid": 3857})
     >>> function_res = function_name(...
                                      spatial_ref = sr,
@@ -202,7 +201,7 @@ def areas_and_lengths(
                           * *preserveShape* - This type calculates the area or length of the geometry on the surface of
                             the Earth ellipsoid. The shape of the geometry in its coordinate system is preserved.
     ----------------  -------------------------------------------------------------------------------
-    spatial_ref       Optional integer. The desiried spatial reference of the output. Integer value
+    spatial_ref       Optional integer. The desired spatial reference of the output. Integer value
                       is the *wkid* value of the spatial reference. Default `4326 <https://developers.arcgis.com/documentation/spatial-references/#4326---gps>`_.
 
                       .. note::
@@ -228,7 +227,7 @@ def areas_and_lengths(
             >>> fl_item = gis.content.get("<item_id>") #Feature Layer item with polygon later
             >>> poly_lyr = fl_item.layers[0]
             >>> polygon1 = poly_lyr.query(where="objectid=14, as_df=True).SHAPE.loc[0]
-            >>> polygon2 = poly_lyr.query(where="objectd=38, as_df=True).SHAPE.loc[0]
+            >>> polygon2 = poly_lyr.query(where="objectid=38, as_df=True).SHAPE.loc[0]
 
             # Usage Example 1
             >>> output_1 = areas_and_lengths(polygons =[polygon1, polygon2],
@@ -592,7 +591,7 @@ def cut(
     """
     The geometry service ``cut`` function splits a target :class:`~arcgis.geometry.Polyline`
     or :class:`~arcgis.geometry.Polygon` geometry where it is crossed by the cutter
-    :class:`~arcgis.goemetry.Polyline` geometry.
+    :class:`~arcgis.geometry.Polyline` geometry.
 
     .. note::
         At 10.1 and later, this function calls simplify on the input
@@ -808,7 +807,7 @@ def distance(
     ================  ===============================================================================
 
     :returns:
-        If *future = False*, the distance value beteween the :class:`~arcgis.geometry.Geometry` objects.
+        If *future = False*, the distance value between the :class:`~arcgis.geometry.Geometry` objects.
         If *future = True*, a :class:`~arcgis.geometry.GeometryJob` object.
     """
     if gis is None:
@@ -1232,7 +1231,7 @@ def offset(
     future: bool = False,
 ):
     """
-    The ``offset`` function constructs :class:`geometries <arcgis.geometry.Geoemtry>`
+    The ``offset`` function constructs :class:`geometries <arcgis.geometry.Geometry>`
     that are offset from the input *geometries*. If the offset parameter is positive, the
     constructed offset will be on the right side of the geometry; if negative on the left.
 

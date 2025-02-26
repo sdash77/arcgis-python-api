@@ -10,34 +10,6 @@ AGOLAdminManager
     :undoc-members:
     :show-inheritance:
 
-DataStoreMetricsManager
------------------------
-.. autoclass:: arcgis.gis.admin.DataStoreMetricsManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
- 
-DataStoreAggregation
------------------------
-.. autoclass:: arcgis.gis.admin.DataStoreAggregation
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-DataStoreTimeUnit
------------------------
-.. autoclass:: arcgis.gis.admin.DataStoreTimeUnit
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-DataStoreMetric
------------------------
-.. autoclass:: arcgis.gis.admin.DataStoreMetric
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 PortalAdminManager
 ------------------
 .. autoclass:: arcgis.gis.admin.PortalAdminManager
@@ -45,37 +17,319 @@ PortalAdminManager
     :undoc-members:
     :show-inheritance:
 
+Kubernetes
+----------------
 KubernetesAdmin
----------------
+^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.KubernetesAdmin
     :members:
     :undoc-members:
     :show-inheritance:
    
 KbertnetesPy
-------------
+^^^^^^^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.KbertnetesPy
     :members:
     :undoc-members:
     :show-inheritance:
 
 KubeServiceDirectory
---------------------
+^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.gis.kubernetes._server.KubeServiceDirectory
     :members:
     :undoc-members:
     :show-inheritance:
         
 WebAdaptorManager
-------------------
+^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.WebAdaptorManager
     :members:
     :undoc-members:
     :show-inheritance:
     
 ArchitectureManager
--------------------
+^^^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.ArchitectureManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ExternalContentManager
+^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.ExternalContentManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+LanguageManager
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.LanguageManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DataStores
+^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.DataStores
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DataStore
+^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.DataStore
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Deployment
+^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Deployment
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Job
+^^^
+.. autoclass:: arcgis.gis.kubernetes.Job
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+JobManager
+^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.JobManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+Backup
+^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Backup
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+BackupStoresManager
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.BackupStoresManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+BackupStore
+^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.BackupStore
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+RecoveryManager
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.RecoveryManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+LicenseManager
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.LicenseManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+LogManager
+^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.LogManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Mode
+^^^^
+.. autoclass:: arcgis.gis.kubernetes.Mode
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Overview
+^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Overview
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeEnterpriseGroups
+^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeEnterpriseGroups
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeEnterpriseUser
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeEnterpriseUser
+    :members:
+    :undoc-members:
+    :show-inheritance:
+        
+KubeOrganization
+^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeOrganization
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeOrganizations
+^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeOrganizations
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeOrgFederations
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeOrgFederations
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeOrgLicense
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeOrgLicense
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeOrgSecurity
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeOrgSecurity
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeSecurity
+^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeSecurity
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeSecurityCert
+^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeSecurityCert
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeSecurityConfig
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeSecurityConfig
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeSecurityIngress
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeSecurityIngress
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeSecuritySAML
+^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeSecuritySAML
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeService
+^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.KubeService
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+GPJobManager
+^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.GPJobManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+ServicesManager
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.ServicesManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Container
+^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Container
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+Indexer
+^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Indexer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Server
+^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Server
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+ServerDefaults
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.ServerDefaults
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+ServerManager
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.ServerManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+SystemManager
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.SystemManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+TaskManager
+^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.TaskManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+UpgradeManager
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.UpgradeManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+Uploads
+^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Uploads
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+UsageStatistics
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.UsageStatistics
     :members:
     :undoc-members:
     :show-inheritance:
@@ -125,6 +379,34 @@ Collaboration
 CreditManager
 ---------------
 .. autoclass:: arcgis.gis.admin.CreditManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DataStoreMetricsManager
+-----------------------
+.. autoclass:: arcgis.gis.admin.DataStoreMetricsManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+ 
+DataStoreAggregation
+-----------------------
+.. autoclass:: arcgis.gis.admin.DataStoreAggregation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DataStoreTimeUnit
+-----------------------
+.. autoclass:: arcgis.gis.admin.DataStoreTimeUnit
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DataStoreMetric
+-----------------------
+.. autoclass:: arcgis.gis.admin.DataStoreMetric
     :members:
     :undoc-members:
     :show-inheritance:
@@ -373,283 +655,4 @@ MetadataManager
 .. autoclass:: arcgis.gis.admin.MetadataManager
    :members:
    :undoc-members:
-    
-ExternalContentManager
-----------------------
-.. autoclass:: arcgis.gis.kubernetes.ExternalContentManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-LanguageManager
----------------
-.. autoclass:: arcgis.gis.kubernetes.LanguageManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-DataStores
-----------
-.. autoclass:: arcgis.gis.kubernetes.DataStores
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-DataStore
----------
-.. autoclass:: arcgis.gis.kubernetes.DataStore
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Deployment
-----------
-.. autoclass:: arcgis.gis.kubernetes.Deployment
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Job
----
-.. autoclass:: arcgis.gis.kubernetes.Job
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-JobManager
-----------
-.. autoclass:: arcgis.gis.kubernetes.JobManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-Backup
--------------
-.. autoclass:: arcgis.gis.kubernetes.Backup
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-BackupStoresManager
--------------------
-.. autoclass:: arcgis.gis.kubernetes.BackupStoresManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-BackupStore
-------------
-.. autoclass:: arcgis.gis.kubernetes.BackupStore
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-RecoveryManager
----------------
-.. autoclass:: arcgis.gis.kubernetes.RecoveryManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-LicenseManager
---------------
-.. autoclass:: arcgis.gis.kubernetes.LicenseManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-LogManager
-----------
-.. autoclass:: arcgis.gis.kubernetes.LogManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Mode
-----
-.. autoclass:: arcgis.gis.kubernetes.Mode
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Overview
---------
-.. autoclass:: arcgis.gis.kubernetes.Overview
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-KubeEnterpriseGroups
---------------------
-.. autoclass:: arcgis.gis.kubernetes.KubeEnterpriseGroups
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-KubeEnterpriseUser
-------------------
-.. autoclass:: arcgis.gis.kubernetes.KubeEnterpriseUser
-    :members:
-    :undoc-members:
-    :show-inheritance:
-        
-KubeOrganization
-----------------
-.. autoclass:: arcgis.gis.kubernetes.KubeOrganization
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-KubeOrganizations
------------------
-.. autoclass:: arcgis.gis.kubernetes.KubeOrganizations
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-KubeOrgFederations
-------------------
-.. autoclass:: arcgis.gis.kubernetes.KubeOrgFederations
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-KubeOrgLicense
---------------
-.. autoclass:: arcgis.gis.kubernetes.KubeOrgLicense
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-KubeOrgSecurity
----------------
-.. autoclass:: arcgis.gis.kubernetes.KubeOrgSecurity
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-KubeSecurity
-------------
-.. autoclass:: arcgis.gis.kubernetes.KubeSecurity
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-KubeSecurityCert
-----------------
-.. autoclass:: arcgis.gis.kubernetes.KubeSecurityCert
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-KubeSecurityConfig
-------------------
-.. autoclass:: arcgis.gis.kubernetes.KubeSecurityConfig
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-KubeSecurityIngress
--------------------
-.. autoclass:: arcgis.gis.kubernetes.KubeSecurityIngress
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-KubeSecuritySAML
-----------------
-.. autoclass:: arcgis.gis.kubernetes.KubeSecuritySAML
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-KubeService
------------
-.. autoclass:: arcgis.gis.kubernetes.KubeService
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-GPJobManager
-------------
-.. autoclass:: arcgis.gis.kubernetes.GPJobManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-ServicesManager
----------------
-.. autoclass:: arcgis.gis.kubernetes.ServicesManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Container
----------
-.. autoclass:: arcgis.gis.kubernetes.Container
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-Indexer
--------
-.. autoclass:: arcgis.gis.kubernetes.Indexer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Server
-------
-.. autoclass:: arcgis.gis.kubernetes.Server
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-ServerDefaults
---------------
-.. autoclass:: arcgis.gis.kubernetes.ServerDefaults
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-ServerManager
--------------
-.. autoclass:: arcgis.gis.kubernetes.ServerManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-SystemManager
--------------
-.. autoclass:: arcgis.gis.kubernetes.SystemManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-TaskManager
------------
-.. autoclass:: arcgis.gis.kubernetes.TaskManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-UpgradeManager
---------------
-.. autoclass:: arcgis.gis.kubernetes.UpgradeManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-Uploads
--------
-.. autoclass:: arcgis.gis.kubernetes.Uploads
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    
-UsageStatistics
----------------
-.. autoclass:: arcgis.gis.kubernetes.UsageStatistics
-    :members:
-    :undoc-members:
-    :show-inheritance:

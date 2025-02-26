@@ -2068,12 +2068,13 @@ class TestFeatureLayerCollectionManagerInsert(unittest.TestCase):
 
     def test_insert_layer(self):
         """tests creating a feature layer and inserting it into an existing feature service"""
-        print("User: ", self.gis.users.me.username)
         point_item = None
         try:
             # add point layer to portal
             sdf = pd.DataFrame(point_data)
-            point_item = self.gis.content.import_data(sdf)
+            point_item = self.gis.content.import_data(
+                sdf, title="insert_layer", tags="ntgrtn-tst"
+            )
 
             # create a new temp file and write point data
             df = pd.DataFrame(point_data)
@@ -2084,18 +2085,14 @@ class TestFeatureLayerCollectionManagerInsert(unittest.TestCase):
             location = os.path.join(temp_dir, "test_insert_layer.shp")
             zip_loc = temp_dir
             # writes the df to file as features
-            df.spatial.to_featureclass(
-                location=location
-            )
+            df.spatial.to_featureclass(location=location)
 
             # zip it
             zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
 
             # Basis Assertions
             assert point_item.layers[0]
-            assert (
-                point_item.layers[0].properties.geometryType == "esriGeometryPoint"
-            )
+            assert point_item.layers[0].properties.geometryType == "esriGeometryPoint"
             num_layers = len(point_item.layers)
 
             # Insert
@@ -2114,22 +2111,21 @@ class TestFeatureLayerCollectionManagerInsert(unittest.TestCase):
                 point_item.delete()
 
     def test_insert_table(self):
-        if self.gis._is_agol is False:
-            return
-        print("User: ", self.gis.users.me.username)
         # add point tbl to portal
         df = pd.DataFrame(tbl_data)
         xlsx_file_path = tempfile.mkstemp(suffix=".xlsx")[1]
         df.to_excel(xlsx_file_path, index=False)
         try:
             # add the excel to the org
-            excel_item = self.gis.content.add({}, data=xlsx_file_path)
+            excel_item = self.gis.content.add(
+                {"tags": "integration-test"}, data=xlsx_file_path
+            )
             assert excel_item
             # publish as a table
-            table_item = excel_item.publish()
-            assert table_item 
+            table_item = excel_item.publish({"tags": "integration-test"})
+            assert table_item
 
-            flc_manager = FeatureLayerCollection.fromitem(table_item).manager                
+            flc_manager = FeatureLayerCollection.fromitem(table_item).manager
             # insert the same table again for sake of testing
             updated_item = flc_manager.insert_layer(xlsx_file_path, "Test Table")
             assert updated_item.tables

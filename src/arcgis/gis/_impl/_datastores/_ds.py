@@ -23,7 +23,7 @@ class PortalDataStore(object):
 
     .. code-block:: python
 
-        >>> gis = GIS("organzation url", "username", "<password>")
+        >>> gis = GIS("organization url", "username", "<password>")
         >>>
         >>> portal_dstore = gis.datastore
         >>> type(portal_dstore)
@@ -331,7 +331,7 @@ class PortalDataStore(object):
             >>> ds_item = folder.add(item_properties=item_properties,
             >>>                      text=text_param).result()
             >>>
-            >>> # Get the Enteprises PortalDataStore and register with the server
+            >>> # Get the Enterprises PortalDataStore and register with the server
             >>> portal_ds = gis.datastore
             >>>
             >>> portal_ds.register(item=ds_item,
@@ -532,7 +532,7 @@ class PortalDataStore(object):
                                :meth:`~PortalDataStore.describe` method.
 
                                .. note::
-                                   The ``cacheStoreId`` value for this dictionary correpsonds to the
+                                   The ``cacheStoreId`` value for this dictionary corresponds to the
                                    datastore id value.
 
                                .. code-block:: python
@@ -691,7 +691,7 @@ class PortalDataStore(object):
             When this operation is called for the first time, an **argument for
             every parameter must be provided**. On subsequent calls, this method
             will synchronize the datasets in the data store with the layers
-            creted in the Enterprise, which includes both publishing layers
+            created in the Enterprise, which includes both publishing layers
             from newly added datasets and removing layers for datasets no
             longer found in the data store.
 
@@ -718,7 +718,7 @@ class PortalDataStore(object):
         folder                 Required String. The folder to which the datasets will be published.
 
                                .. note::
-                                   This folder must exist in the Enteprise portal.
+                                   This folder must exist in the Enterprise portal.
         ------------------     --------------------------------------------------------------------
         server_folder          Required String. The name of the server folder.
 
@@ -747,7 +747,7 @@ class PortalDataStore(object):
             >>>
             >>> portal_folderid = [f["id"]
             >>>                    for f in gis.users.me.folders
-            >>>                    if f["title"] == "My_Bulk_Layers_Folder"]
+            >>>                    if f.name == "My_Bulk_Layers_Folder"]
             >>>
             >>> service_template = {"serviceName": None,
             >>>                     "type": "MapServer",
@@ -775,13 +775,11 @@ class PortalDataStore(object):
                 base = item.title.lower().replace(" ", "")
             server_folder = f"{base}{uuid.uuid4().hex[:3]}"
         if folder is None:
-            from arcgis.gis import UserManager, User, ContentManager
-
             isinstance(self._gis, GIS)
             cm = self._gis.content
-            folder = cm.create_folder(folder=f"srvc_folder_{uuid.uuid4().hex[:5]}")[
-                "id"
-            ]
+            folder = cm.folders.create(
+                folder=f"srvc_folder_{uuid.uuid4().hex[:5]}"
+            ).properties["id"]
         if isinstance(item, Item):
             item_id = item.id
         else:

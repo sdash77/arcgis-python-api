@@ -26,5 +26,6 @@ jobs:
         uses: psf/black@stable
         if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
         with:
+          version: '24.*'
           options: --check --verbose
           src: ./src

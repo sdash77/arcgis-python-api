@@ -846,16 +846,12 @@ def prepare_textdata(
                             For `csv` dataset type. If an entity has multiple values. It should be
                             separated by `,`.
     ---------------------   -------------------------------------------
-    class_mapping           Optional dictionary. Mapping from id to
-                            its string label.
-                            For dataset_type=IOB, BILUO or ner_json:
-                            Provide address field as class mapping
-                            in below format:
-                            class_mapping={'address_tag':'address_field'}.
-                            Field defined as 'address_tag' will be treated
-                            as a location. In cases where trained model extracts
-                            multiple locations from a single document, that
-                            document will be replicated for each location.
+    class_mapping           Optional dictionary. This parameter is optional and can only be used when the
+                            task is entity recognition. The dictionary specifies the location entity. Use the format:
+                            class_mapping={'address_tag': 'location'}.
+                            The value linked to the 'address_tag' key will be identified as a location entity.
+                            If the model extracts multiple location entities from a single document,
+                            each location will be listed separately in the results.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -1920,19 +1916,11 @@ def prepare_data(
         and "InputRastersProps" in emd
         and kwargs.get("imagery_type", None) is None
     ):
-        # Check by band names
-        band_mapping = {
-            i: b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])
-        }
-        for b in emd[
-            "WellKnownBandNames (FYI, these band names can be used in ExtractBands)"
-        ]:
-            if b.lower() in ["red", "green", "blue"]:
-                continue
-            if b.lower() in band_mapping:
-                imagery_type = sensor_name
-                _infered = True
-                break
+        # check if traing band is coming from other that RGB band
+        band_mapping = set(emd["InputRastersProps"]["BandNames"])
+        if not band_mapping.issubset(["red", "green", "blue", "r", "g", "b", ""]):
+            imagery_type = sensor_name
+            _infered = True
 
         if not _infered:
             # Check by values

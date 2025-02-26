@@ -700,11 +700,8 @@ class ServicesManager(object):
         params = {"f": "json"}
         if folder in self.folders:
             u_url = self._url + "/%s/deleteFolder" % folder
-            res = self._con.post(path=u_url, postdata=params, try_json=False)
+            self._con.post(path=u_url, postdata=params, try_json=False)
             return not folder in self.folders
-            # if 'status' in res:
-            #    return res['status'] == 'success'
-            # return res
         else:
             return False
 

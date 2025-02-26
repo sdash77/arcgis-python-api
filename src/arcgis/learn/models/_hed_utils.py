@@ -36,6 +36,7 @@ from ._timm_utils import get_backbone
 from fastai.basic_train import LearnerCallback
 from torch.nn.parallel import DistributedDataParallel
 from ._transformer_backbone import swin_config
+from ._dofa_utils import dofa_config
 
 
 def modify_layers(backbone, backbone_fn):
@@ -113,6 +114,7 @@ def get_hooks(backbone, chip_size):
 class _HEDModel(nn.Module):
     def __init__(self, backbone_fn, chip_size=224, pretrained=True):
         super().__init__()
+        self._dofa = False
         if backbone_fn.__name__ in swin_config.keys():
             self.backbone = backbone_fn(pretrained=pretrained)
             backbone_out = self.backbone(
@@ -128,6 +130,26 @@ class _HEDModel(nn.Module):
             layer_num_channels = [layer_shape.shape[1] for layer_shape in backbone_out]
             layer_num_channels.insert(0, self.backbone.patch_embed.proj.in_channels)
             self._transformer = True
+            self._stride = 2
+        elif backbone_fn.__name__ in dofa_config.keys():
+            self.backbone = backbone_fn(pretrained=pretrained)
+            backbone_out = self.backbone(
+                torch.randn(
+                    (
+                        1,
+                        len(self.backbone.base_net.patch_embed.wavelengths),
+                        chip_size,
+                        chip_size,
+                    )
+                )
+            )
+            backbone_out_channel = backbone_out.shape[1]
+            layer_num_channels = [backbone_out_channel for _ in range(4)]
+            layer_num_channels.insert(
+                0, len(self.backbone.base_net.patch_embed.wavelengths)
+            )
+            self._dofa = True
+            self._transformer = False
             self._stride = 2
         else:
             self.backbone = get_backbone(backbone_fn, pretrained)
@@ -152,7 +174,10 @@ class _HEDModel(nn.Module):
         img_H, img_W = x.shape[2], x.shape[3]
         device = x.device
         features = self.backbone(x)
-        if self._transformer:
+        if self._dofa:
+            features = [features for _ in range(4)]
+            features.insert(0, x)
+        elif self._transformer:
             features.insert(0, x)
         else:
             features = self.hook.stored

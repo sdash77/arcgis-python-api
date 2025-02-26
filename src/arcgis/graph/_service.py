@@ -1,10 +1,10 @@
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
-from typing import Generator
 from arcgis.geometry import Geometry
-import copy
-import datetime
 from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._deprecate import deprecated
+
+import warnings
 
 try:
     import arcgis.graph._arcgisknowledge as _kgparser
@@ -13,7 +13,52 @@ try:
 except ImportError as e:
     HAS_KG = False
 _isd = LazyLoader("arcgis._impl.common._isd")
-from typing import List, Any
+from typing import List, Any, Sequence, Generator, Union, Optional
+from arcgis.graph.data_model_types import (
+    FieldIndex,
+    EntityType,
+    RelationshipType,
+    NamedObjectTypeMask,
+    GraphProperty,
+    GraphPropertyMask,
+    ConstraintRule,
+    ConstraintRuleUpdate,
+    GraphDataModel,
+)
+from arcgis.graph.graph_types import (
+    Entity,
+    Relationship,
+    EntityDelete,
+    RelationshipDelete,
+    Transform,
+    _client_core_to_python_value,
+    _python_to_client_core_value,
+)
+from arcgis.graph.search_types import (
+    SearchIndexProperties,
+    esriNamedTypeCategory,
+)
+from arcgis.graph.response_types import (
+    UpdateSearchIndexResponse,
+    SyncDataModelResponse,
+    NamedObjectTypeAddsResponse,
+    NamedObjectTypeUpdateResponse,
+    NamedObjectTypeDeleteResponse,
+    PropertyAddsResponse,
+    PropertyUpdateResponse,
+    PropertyDeleteResponse,
+    IndexAddsResponse,
+    IndexDeletesResponse,
+    ConstraintRuleAddsResponse,
+    ConstraintRuleUpdatesResponse,
+    ConstraintRuleDeletesResponse,
+    ApplyEditsResponse,
+)
+
+
+AS_DICT_DEPRECATION_WARNING: str = (
+    "In the future, the as_dict parameter will be removed, and the behavior will be as though as_dict is False. Setting as_dict to False is recommended."
+)
 
 
 class KnowledgeGraph:
@@ -26,7 +71,7 @@ class KnowledgeGraph:
     ------------------     --------------------------------------------------------------------
     url                    Knowledge Graph service URL
     ------------------     --------------------------------------------------------------------
-    gis                    an authenticated :class:`arcgis.gis.GIS` object.
+    gis                    an authenticated :class:`~arcgis.gis.GIS` object.
     ==================     ====================================================================
 
     .. code-block:: python
@@ -51,7 +96,7 @@ class KnowledgeGraph:
     def _validate_import(self):
         if HAS_KG == False:
             raise ImportError(
-                "An error occured with importing the Knowledge Graph libraries. Please ensure you "
+                "An error occurred with importing the Knowledge Graph libraries. Please ensure you "
                 "are using Python 3.9, 3.10 or 3.11 on Windows or Linux platforms."
             )
 
@@ -101,7 +146,9 @@ class KnowledgeGraph:
             )
             raise Exception(err_message)
 
-    def search(self, search: str, category: str = "both") -> List[dict]:
+    def search(
+        self, search: str, category: str = "both", as_dict: bool = True
+    ) -> List[Sequence[Any]]:
         """
         Allows for the searching of the properties of entities,
         relationships, or both in the graph using a full-text index.
@@ -120,6 +167,9 @@ class KnowledgeGraph:
                             The allowed values are: both, entities, relationships,
                             both_entity_relationship, and meta_entity_provenance. Both and
                             both_entity_relationship are functionally the same.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. note::
@@ -129,14 +179,27 @@ class KnowledgeGraph:
         .. code-block:: python
 
             #Perform a search on the knowledge graph
-            search_result = knowledge_graph.search("cat")
+            for search_result in knowledge_graph.search("cat", as_dict=False):
+                print(search_result)
 
             # Perform a search on only entities in the knowledge graph
-            searchentities_result = knowledge_graph.search("cat", "entities")
+            for searchentities_result in knowledge_graph.search("cat", "entities", as_dict=False):
+            print(searchentities_result)
 
-        :return: List[list]
+        :return: `Generator[Sequence[Any], None, None]`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        return list(self._search(search=search, category=category, as_dict=as_dict))
+
+    def _search(
+        self, search: str, category: str, as_dict: bool
+    ) -> Generator[Sequence[Any], None, None]:
         url = self._url + "/graph/search"
         cat_lu = {
             "both": _kgparser.esriNamedTypeCategory.both,
@@ -167,22 +230,31 @@ class KnowledgeGraph:
         )
 
         self._validate_response(response)
-        rows = []
         query_dec = _kgparser.GraphQueryDecoder()
         query_dec.data_model = self._datamodel
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
-                rows.append(query_dec.get_current_row())
+                row = query_dec.get_current_row()
+                yield (
+                    row
+                    if as_dict
+                    else _client_core_to_python_value(client_core_value=row)
+                )
         if query_dec.has_error():
             raise Exception(query_dec.error.error_message)
-        return rows
 
-    def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
+    def update_search_index(
+        self,
+        adds: dict[str, Union[dict, SearchIndexProperties]] = {},
+        deletes: dict[str, Union[dict, SearchIndexProperties]] = {},
+        as_dict: bool = True,
+    ) -> Union[dict, UpdateSearchIndexResponse]:
         """
-        Allows users to add or delete search index properties for different entities and
-        relationships from the graph's data model. Can only be existent properties for a given
-        entity/relationship. Note that an empty dictionary result indicates success.
+        Allows users to add or delete :class:`~arcgis.graph.search_types.SearchIndexProperties` for different
+        :class:`~arcgis.graph.data_model_types.EntityType` and :class:`~arcgis.graph.data_model_types.RelationshipType`
+        from the :class:`~arcgis.graph.data_model_types.GraphDataModel`. Can only be existent properties for a given
+        entity/relationship type.
 
         =========================   ===============================================================
         **Parameter**                **Description**
@@ -192,21 +264,54 @@ class KnowledgeGraph:
         -------------------------   ---------------------------------------------------------------
         deletes                     Optional dict. See below for structure. The properties to
                                     delete from the search index, specified by entity/relationship.
+        -------------------------    ---------------------------------------------------------------
+        as_dict                     Optional Boolean. Determines whether the result is returned as
+                                    a dictionary or an object. The default is True. False is recommended.
         =========================   ===============================================================
 
         .. code-block:: python
 
-            # example of an adds or deletes dictionary
-            {
-                "Entity1" : { "property_names": ["prop1", "prop2"]},
-                "Entity2" : {"property_names": ["prop1"]},
-                "RelationshipType1" : { "property_names": ["prop1", "prop2"]},
-                "RelationshipType2" : {"property_names": ["prop1"]},
-            }
+            from arcgis.graph import SearchIndexProperties
 
-        :return: A `dict`. Empty dict indicates success, errors will be returned in the dict.
+            graph.update_search_index(
+                adds={"Person": SearchIndexProperties(property_names=["name"])},
+                as_dict=False
+            )
+
+        :return: :class:`~arcgis.graph.response_types.UpdateSearchIndexResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        raw_adds: dict[str, Any] = {}
+        for type_name, search_index_properties in adds.items():
+            if isinstance(search_index_properties, SearchIndexProperties):
+                raw_adds[type_name] = search_index_properties.model_dump(by_alias=True)
+            else:
+                warnings.warn(
+                    message="Dictionary values of type dict for adds is deprecated. Please migrate to SearchIndexProperties.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_adds[type_name] = search_index_properties
+        raw_deletes: dict[str, Any] = {}
+        for type_name, search_index_properties in deletes.items():
+            if isinstance(search_index_properties, SearchIndexProperties):
+                raw_deletes[type_name] = search_index_properties.model_dump(
+                    by_alias=True
+                )
+            else:
+                warnings.warn(
+                    message="Dictionary values of type dict for deletes is deprecated. Please migrate to SearchIndexProperties.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_deletes[type_name] = search_index_properties
 
         self._validate_import()
         url = self._url + "/dataModel/searchIndex/update"
@@ -217,10 +322,10 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphUpdateSearchIndexRequestEncoder()
-        if adds:
-            enc.insert_add_search_property(adds)
-        if deletes:
-            enc.insert_delete_search_property(deletes)
+        if raw_adds:
+            enc.insert_add_search_property(raw_adds)
+        if raw_deletes:
+            enc.insert_delete_search_property(raw_deletes)
 
         enc.encode()
         enc_result = enc.get_encoding_result()
@@ -243,8 +348,13 @@ class KnowledgeGraph:
         dec.decode(content)
 
         results = dec.get_results()
-        return results
+        return results if as_dict else UpdateSearchIndexResponse.model_validate(results)
 
+    @deprecated(
+        deprecated_in="2.4.1",
+        removed_in="3.0.0",
+        details="Use query_streaming instead.",
+    )
     def query(self, query: str) -> List[dict]:
         """
         Queries the Knowledge Graph using openCypher
@@ -265,7 +375,7 @@ class KnowledgeGraph:
             query_result = knowledge_graph.query("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
 
 
-        :return: List[list]
+        :return: `List[list]`
 
         """
         self._validate_import()
@@ -293,18 +403,42 @@ class KnowledgeGraph:
                 raise RuntimeError(gqd.error.error_message)
         return rows
 
+    @staticmethod
+    def _convert_to_proper_representation(python_value: Any) -> Any:
+        if isinstance(python_value, Geometry):
+            copy_dict: dict[str, Any] = python_value.copy()
+            copy_dict["_objectType"] = "geometry"
+            return copy_dict
+        if isinstance(python_value, dict):
+            if "_objectType" in python_value:
+                return python_value
+            return {
+                "_objectType": "object",
+                "_properties": {
+                    key: KnowledgeGraph._convert_to_proper_representation(value)
+                    for key, value in python_value.items()
+                },
+            }
+        if isinstance(python_value, list):
+            return [
+                KnowledgeGraph._convert_to_proper_representation(val)
+                for val in python_value
+            ]
+        return python_value
+
     def query_streaming(
         self,
         query: str,
-        input_transform: dict[str, Any] = None,
-        bind_param: dict[str, Any] = None,
+        input_transform: Optional[Union[dict[str, Any], Transform]] = None,
+        bind_param: dict[str, Any] = {},
         include_provenance: bool = False,
-    ):
+        as_dict: bool = True,
+    ) -> Generator[Sequence[Any], None, None]:
         """
         Query the graph using an openCypher query. Allows for more customization than the base
-        `query()` function. Creates a generator of the query results, from which users can
-        access each row or add them to a list. See below for example usage.
-
+        :class:`~arcgis.graph.KnowledgeGraph.query()` function. Creates a generator of the query
+        results, from which users can access each row or add them to a list.
+        See below for example usage.
 
         ===================    ===============================================================
         **Parameter**           **Description**
@@ -313,7 +447,7 @@ class KnowledgeGraph:
                                relationships in a graph, as well as the properties of those
                                entities and relationships, by providing an openCypher query.
         -------------------    ---------------------------------------------------------------
-        input_transform        Optional dict. Allows a user to specify custom quantization
+        input_transform        Optional dict or Transform. Allows a user to specify custom quantization
                                parameters for input geometry, which dictate how geometries are
                                compressed and transferred to the server. Defaults to lossless
                                WGS84 quantization.
@@ -350,8 +484,29 @@ class KnowledgeGraph:
             first_result = next(query_gen)
             second_result = next(query_gen)
 
-
+        :return: `Generator[Sequence[Any], None, None]`
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        raw_input_transform: Optional[dict[str, Any]] = None
+        if isinstance(input_transform, Transform):
+            raw_input_transform = input_transform.model_dump(by_alias=True)
+        elif input_transform:
+            warnings.warn(
+                message="Input transform of type dict is deprecated. Please migrate to Transform.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            raw_input_transform = input_transform
+        raw_bind_param: dict[str, Any] = {
+            key: _python_to_client_core_value(value)
+            for key, value in bind_param.items()
+        }
 
         self._validate_import()
         url = f"{self._url}/graph/query"
@@ -366,76 +521,20 @@ class KnowledgeGraph:
         r_enc.open_cypher_query = query
 
         # set quant params
-        if input_transform:
-            quant_params = self._getInputQuantParams(input_transform)
+        if raw_input_transform:
+            quant_params = self._getInputQuantParams(raw_input_transform)
         else:
             quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
         r_enc.input_quantization_parameters = quant_params
 
         # set bind parameters
-        if bind_param:
-
-            def convert_to_properties(dictionary, last_key):
-                if not isinstance(dictionary, dict):
-                    return dictionary
-
-                properties_dict = {}
-                for key, value in dictionary.items():
-                    if isinstance(value, dict):
-                        if key != "_properties" and last_key == False:
-                            properties_dict[key] = {
-                                "_objectType": "object",
-                                "_properties": convert_to_properties(value, False),
-                            }
-                        elif key != "properties" and last_key == True:
-                            properties_dict[key] = convert_to_properties(value, False)
-                        else:
-                            properties_dict[key] = convert_to_properties(value, True)
-                    else:
-                        properties_dict[key] = value
-
-                return properties_dict
-
-            for k, v in bind_param.items():
-                if isinstance(v, Geometry):
-                    if "_objectType" not in v.keys():
-                        copy_dict = copy.deepcopy(v)
-                        copy_dict["_objectType"] = "geometry"
-                        converted = _kgparser.from_value_object(copy_dict)
-                    else:
-                        converted = _kgparser.from_value_object(v)
-                    r_enc.set_param_key_value(k, converted)
-
-                elif isinstance(v, dict):
-                    copy_dict = copy.deepcopy(v)
-                    if "_properties" not in copy_dict.keys():
-                        changed = {
-                            "_objectType": "object",
-                            "_properties": convert_to_properties(copy_dict, False),
-                        }
-                        converted = _kgparser.from_value_object(changed)
-                    else:
-                        if "_objectType" not in copy_dict.keys():
-                            copy_dict["_objectType"] = "object"
-                        copy_dict["_properties"] = convert_to_properties(
-                            copy_dict["_properties"], True
-                        )
-                        converted = _kgparser.from_value_object(copy_dict)
-                    r_enc.set_param_key_value(k, converted)
-
-                elif isinstance(
-                    v,
-                    (
-                        datetime.date,
-                        datetime.time,
-                        datetime.datetime,
-                        datetime.timedelta,
-                    ),
-                ):
-                    r_enc.set_param_key_value(k, v)
+        if raw_bind_param:
+            for k, v in raw_bind_param.items():
+                converted: Any = KnowledgeGraph._convert_to_proper_representation(v)
+                if isinstance(converted, (dict, list)):
+                    r_enc.set_param_key_value(k, _kgparser.from_value_object(converted))
                 else:
-                    converted = _kgparser.from_value_object(v)
-                    r_enc.set_param_key_value(k, converted)
+                    r_enc.set_param_key_value(k, v)
 
         # set provenance behavior
         if include_provenance == True:
@@ -463,7 +562,12 @@ class KnowledgeGraph:
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
-                yield query_dec.get_current_row()
+                row = query_dec.get_current_row()
+                yield (
+                    row
+                    if as_dict
+                    else _client_core_to_python_value(client_core_value=row)
+                )
             if query_dec.has_error():
                 if query_dec.error.error_code == 111098:
                     raise ValueError(query_dec.error.error_message)
@@ -492,6 +596,8 @@ class KnowledgeGraph:
     def datamodel(self) -> dict:
         """
         Returns the datamodel for the Knowledge Graph service
+
+        :return: dict
         """
         self._validate_import()
         url = f"{self._url}/dataModel/queryDataModel"
@@ -506,18 +612,62 @@ class KnowledgeGraph:
         dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
         return dm.to_value_object()
 
-    def sync_data_model(self):
+    def query_data_model(self, as_dict: bool = True) -> Union[dict, GraphDataModel]:
+        """
+        Returns the datamodel for the Knowledge Graph service
+
+        ===================    ===============================================================
+        **Parameter**           **Description**
+        -------------------    ---------------------------------------------------------------
+        as_dict                Optional Boolean. Determines whether the result is returned as
+                               a dictionary or an object. The default is True. False is recommended.
+        ===================    ===============================================================
+
+        .. code-block:: python
+
+            # Query knowledge graph data model
+            knowledge_graph.query_data_model(as_dict=False)
+
+        :return: :class:`~arcgis.graph.data_model_types.GraphDataModel`
+        """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        return (
+            self.datamodel if as_dict else GraphDataModel.model_validate(self.datamodel)
+        )
+
+    def sync_data_model(
+        self, as_dict: bool = True
+    ) -> Union[dict, SyncDataModelResponse]:
         """
         Synchronizes the Knowledge Graph Service's data model with any changes made
         in the database. Will return any errors or warnings from the sync.
 
+        ===================    ===============================================================
+        **Parameter**           **Description**
+        -------------------    ---------------------------------------------------------------
+        as_dict                Optional Boolean. Determines whether the result is returned as
+                               a dictionary or an object. The default is True. False is recommended.
+        ===================    ===============================================================
+
         .. code-block:: python
 
             # Synchronize the data model
-            sync_result = knowledge_graph.sync_data_model()
+            sync_result = knowledge_graph.sync_data_model(as_dict=False)
 
+        :return: :class:`~arcgis.graph.response_types.SyncDataModelResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         url = self._url + "/dataModel/syncDataModel"
         session = self._gis._con._session
         params = {
@@ -531,22 +681,21 @@ class KnowledgeGraph:
         dec = _kgparser.SyncDataModelResponseDecoder()
         dec.decode(sync_response)
         results = dec.get_results()
-        return results
+        return results if as_dict else SyncDataModelResponse.model_validate(results)
 
     def apply_edits(
         self,
-        adds: list[dict[str, Any]] = [],
-        updates: list[dict[str, Any]] = [],
-        deletes: list[dict[str, Any]] = [],
-        input_transform: dict[str, Any] = None,
+        adds: Sequence[Union[dict[str, Any], Entity, Relationship]] = [],
+        updates: Sequence[Union[dict[str, Any], Entity, Relationship]] = [],
+        deletes: Sequence[Union[dict[str, Any], EntityDelete, RelationshipDelete]] = [],
+        input_transform: Optional[Union[dict[str, Any], Transform]] = None,
         cascade_delete: bool = False,
         cascade_delete_provenance: bool = False,
-    ) -> dict:
+        as_dict: bool = True,
+    ) -> Union[dict, ApplyEditsResponse]:
         """
-        Allows users to add new graph entities/relationships, update existing
-        entities/relationships, or delete existing entities/relationships. For details on how the
-        dictionaries for each of these operations should be structured, please refer to the samples
-        further below.
+        Allows users to add, update, and delete :class:`~arcgis.graph.graph_types.Entity` and
+        :class:`~arcgis.graph.graph_types.Relationship`.
 
         .. note::
             objectid values are not supported in dictionaries for apply_edits
@@ -554,19 +703,24 @@ class KnowledgeGraph:
         =========================   ===============================================================
         **Parameter**                **Description**
         -------------------------   ---------------------------------------------------------------
-        adds                        Optional list of dicts. The list of objects to add to the
-                                    graph, represented in dictionary format.
+        adds                        Optional list of :class:`~arcgis.graph.graph_types.Entity` or
+                                    :class:`~arcgis.graph.graph_types.Relationship`. The list of
+                                    objects to add to the graph, represented in dictionary format.
         -------------------------   ---------------------------------------------------------------
-        updates                     Optional list of dicts. The list of existent graph objects that
-                                    are to be updated, represented in dictionary format.
+        updates                     Optional list of :class:`~arcgis.graph.graph_types.Entity` or
+                                    :class:`~arcgis.graph.graph_types.Relationship`. The list of
+                                    existent graph objects that are to be updated, represented
+                                    in dictionary format.
         -------------------------   ---------------------------------------------------------------
-        deletes                     Optional list of dicts. The list of existent objects to remove
-                                    from the graph, represented in dictionary format.
+        deletes                     Optional list of :class:`~arcgis.graph.graph_types.EntityDelete` or
+                                    :class:`~arcgis.graph.graph_types.RelationshipDelete`. The list
+                                    of existent objects to remove from the graph, represented in
+                                    dictionary format.
         -------------------------   ---------------------------------------------------------------
-        input_transform             Optional dict. Allows a user to specify custom quantization
-                                    parameters for input geometry, which dictate how geometries are
-                                    compressed and transferred to the server. Defaults to lossless
-                                    WGS84 quantization.
+        input_transform             Optional :class:`~arcgis.graph.graph_types.Transform`.
+                                    Allows a user to specify custom quantization parameters for input
+                                    geometry, which dictate how geometries are compressed and
+                                    transferred to the server. Defaults to lossless WGS84 quantization.
         -------------------------   ---------------------------------------------------------------
         cascade_delete              Optional boolean. When `True`, relationships connected to
                                     entities that are being deleted will automatically be deleted
@@ -579,46 +733,78 @@ class KnowledgeGraph:
                                     `False`, `apply_edits()` will fail if there are provenance
                                     records connected to entities/relationships intended for
                                     deletion or having their properties set to null.
+        -------------------------   ---------------------------------------------------------------
+        as_dict                     Optional Boolean. Determines whether the result is returned as
+                                    a dictionary or an object. The default is True. False is recommended.
         =========================   ===============================================================
 
         .. code-block:: python
 
-            # example of an add dictionary- include all properties
-            {
-                "_objectType": "entity",
-                "_typeName": "Person",
-                "_id": "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"
-                "_properties": {
-                    "name": "PythonAPILover",
-                    "hometown": "Redlands",
-                }
-            }
+            from arcgis.graph import Entity, Relationship
 
-            # update dictionary- include only properties being changed
-            {
-                "_objectType": "entity",
-                "_typeName": "Person",
-                "_id": "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"
-                "_properties": {
-                    "hometown": "Lisbon",
-                }
-            }
+            add_entity = Entity(type_name="Company", properties={"name": "Esri"})
+            delete_relationship = DeleteRelationship(type_name="WorksAt", ids=[UUID("783bd422-3hfp-45c7-87aa-8adbbdac0a3d")])
 
-            # delete dictionary- pass a list of id's to be deleted
-            {
-                "_objectType": "entity",
-                "_typeName": "Person",
-                "_ids": ["{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"]
-            }
+            graph.apply_edits(adds=[add_entity], deletes=[delete_relationship], as_dict=False)
 
-        :return: A `dict` showing the results of the edits.
+        :return: :class:`~arcgis.graph.response_types.ApplyEditsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        raw_adds: list[dict[str, Any]] = []
+        for named_object in adds:
+            if isinstance(named_object, (Entity, Relationship)):
+                raw_adds.append(named_object.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for adds is deprecated. Please migrate to Entity or Relationship.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_adds.append(named_object)
+        raw_updates: list[dict[str, Any]] = []
+        for named_object in updates:
+            if isinstance(named_object, (Entity, Relationship)):
+                raw_updates.append(named_object.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for updates is deprecated. Please migrate to Entity or Relationship.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_updates.append(named_object)
+        raw_deletes: list[dict[str, Any]] = []
+        for named_object_delete in deletes:
+            if isinstance(named_object_delete, (EntityDelete, RelationshipDelete)):
+                raw_deletes.append(named_object_delete.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for deletes is deprecated. Please migrate to EntityDelete or RelationshipDelete.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_deletes.append(named_object_delete)
+        raw_input_transform: Optional[dict[str, Any]] = None
+        if isinstance(input_transform, Transform):
+            raw_input_transform = input_transform.model_dump(by_alias=True)
+        elif input_transform:
+            warnings.warn(
+                message="Input transform of type dict is deprecated. Please migrate to Transform.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            raw_input_transform = input_transform
 
         url = self._url + "/graph/applyEdits"
 
-        if input_transform:
-            quant_params = self._getInputQuantParams(input_transform)
+        if raw_input_transform:
+            quant_params = self._getInputQuantParams(raw_input_transform)
         else:
             quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
 
@@ -628,11 +814,11 @@ class KnowledgeGraph:
             quant_params,
         )
 
-        for edit in adds:
+        for edit in raw_adds:
             enc.add(edit)
-        for edit in updates:
+        for edit in raw_updates:
             enc.update(edit)
-        for edit in deletes:
+        for edit in raw_deletes:
             enc.delete_from_ids(edit)
         enc.cascade_delete = cascade_delete
         enc.cascade_delete_provenance = cascade_delete_provenance
@@ -667,71 +853,87 @@ class KnowledgeGraph:
         dec.decode(apply_edits_response)
         results_dict = dec.get_results()
 
-        return results_dict
+        return (
+            results_dict if as_dict else ApplyEditsResponse.model_validate(results_dict)
+        )
 
     def named_object_type_adds(
         self,
-        entity_types: list[dict[str, Any]] = [],
-        relationship_types: list[dict[str, Any]] = [],
-    ) -> dict:
+        entity_types: Sequence[Union[dict[str, Any], EntityType]] = [],
+        relationship_types: Sequence[Union[dict[str, Any], RelationshipType]] = [],
+        as_dict: bool = True,
+    ) -> Union[dict, NamedObjectTypeAddsResponse]:
         """
-        Adds entity and relationship types to the data model
+        Adds :class:`~arcgis.graph.data_model_types.EntityType` and :class:`~arcgis.graph.data_model_types.RelationshipType`
+        to the data model
 
         `Learn more about adding named types to a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-add.htm>`_
 
         ==================  ===============================================================
         **Parameter**        **Description**
         ------------------  ---------------------------------------------------------------
-        entity_types        Optional list of dicts. The list of entity types to add to the
-                            data model, represented in dictionary format.
+        entity_types        Optional list of EntityTypes. The list of entity types
+                            to add to the data model, represented in dictionary format.
         ------------------  ---------------------------------------------------------------
-        relationship_types  Optional list of dicts. The list of relationship types to add
-                            to the data model, represented in dictionary format.
+        relationship_types  Optional list of RelationshipTypes. The list of
+                            relationship types to add to the data model, represented in
+                            dictionary format.
+        ------------------  ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ==================  ===============================================================
 
         .. code-block:: python
 
-            # example of a named type to be added to the data model
-            {
-                "name": "Person",
-                "alias": "Person",
-                "role": "esriGraphNamedObjectRegular",
-                "strict": False,
-                "properties": {
-                    "Name": {
-                        "name": "Name",
-                        "alias": "Name",
-                        "fieldType": "esriFieldTypeString",
-                        "editable": True,
-                        "visible": True,
-                        "required": False,
-                        "isSystemMaintained": False,
-                        "role": "esriGraphPropertyRegular"
-                    },
-                    "Nickname": {
-                        "name": "Nickname",
-                        "alias": "Nickname",
-                        "fieldType": "esriFieldTypeString",
-                        "editable": True,
-                        "visible": True,
-                        "required": False,
-                        "isSystemMaintained": False,
-                        "role": "esriGraphPropertyRegular"
-                    }
-                }
-            }
+            from arcgis.graph import EntityType, RelationshipType, GraphProperty
 
+            entity_type_add = EntityType(name="Vehicle", properties={"make": GraphProperty(name="make")})
+            relationship_type_add = RelationshipType(name="Drives")
 
-        :return: A `dict` showing the results of the named type adds.
+            graph.named_object_type_adds(entity_types=[entity_type_add], relationship_types=[relationship_type_add], as_dict=False)
+
+        :return: :class:`~arcgis.graph.response_types.NamedObjectTypeAddsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        raw_entity_types: list[dict[str, Any]] = []
+        for entity_type in entity_types:
+            if isinstance(entity_type, EntityType):
+                raw_entity_types.append(entity_type.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for entity_types is deprecated. Please migrate to EntityType.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_entity_types.append(entity_type)
+        raw_relationship_types: list[dict[str, Any]] = []
+        for relationship_type in relationship_types:
+            if isinstance(relationship_type, RelationshipType):
+                raw_relationship_types.append(
+                    relationship_type.model_dump(by_alias=True)
+                )
+            else:
+                warnings.warn(
+                    message="List value of type dict for relationship_types is deprecated. Please migrate to RelationshipType.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_relationship_types.append(relationship_type)
+
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/add"
 
         r_enc = _kgparser.GraphNamedObjectTypeAddsRequestEncoder()
-        for entity_type in entity_types:
+        for entity_type in raw_entity_types:
             r_enc.add_entity_type(entity_type)
-        for relationship_type in relationship_types:
+        for relationship_type in raw_relationship_types:
             r_enc.add_relationship_type(relationship_type)
 
         r_enc.encode()
@@ -755,13 +957,21 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else NamedObjectTypeAddsResponse.model_validate(results_dict)
+        )
 
     def named_object_type_update(
-        self, type_name: str, named_type_update: dict[str, Any], mask: dict[str, Any]
-    ) -> dict:
+        self,
+        type_name: str,
+        named_type_update: Union[dict[str, Any], EntityType, RelationshipType],
+        mask: Union[dict[str, Any], NamedObjectTypeMask],
+        as_dict: bool = True,
+    ) -> Union[dict, NamedObjectTypeUpdateResponse]:
         """
-        Updates an entity or relationship type in the data model
+        Updates an :class:`~arcgis.graph.data_model_types.EntityType` or :class:`~arcgis.graph.data_model_types.RelationshipType` in the data model
 
         `Learn more about updating named types in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-update.htm>`_
 
@@ -770,39 +980,63 @@ class KnowledgeGraph:
         -----------------   ---------------------------------------------------------------
         type_name           Required string. The named type to be updated.
         -----------------   ---------------------------------------------------------------
-        named_type_update   Required dict. The entity or relationship type to be updated,
-                            represented in dictionary format.
+        named_type_update   Required Union[:class:`~arcgis.graph.data_model_types.EntityType`,
+                            :class:`~arcgis.graph.data_model_types.RelationshipType`]. The entity or
+                            relationship type to be updated.
         -----------------   ---------------------------------------------------------------
-        mask                Required dict. A dictionary representing the properties of the
-                            named type to be updated.
+        mask                Required :class:`~arcgis.graph.data_model_types.NamedObjectTypeMask`.
+                            The properties of the named type to be updated.
+        -----------------   ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         =================   ===============================================================
 
         .. code-block:: python
 
-            # example of a named type to be updated
-            {
-                "name": "Person",
-                "alias": "Person",
-                "role": "esriGraphNamedObjectRegular",
-                "strict": False
-            }
+            from arcgis.graph import EntityType, NamedObjectTypeMask
 
-            # update the named type's alias:
-            {
-                "update_alias": True
-            }
-            # OR
-            {
-                "update_name": False,
-                "update_alias": True,
-                "update_role": False,
-                "update_strict": False
-            }
+            type_update = EntityType(name="Vehicle", alias="Car")
 
+            graph.named_object_type_update(
+                type_name="Vehicle",
+                named_type_update=type_update,
+                mask=NamedObjectTypeMask(update_alias=True),
+                as_dict=False
+            )
 
-        :return: A `dict` showing the results of the named type update.
+        :return: :class:`~arcgis.graph.response_types.NamedObjectTypeUpdateResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if not isinstance(named_type_update, (EntityType, RelationshipType)):
+            warnings.warn(
+                message="Type dict is deprecated for named_type_update. Please migrate to EntityType or RelationshipType.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        raw_named_type_update: dict[str, Any] = (
+            named_type_update.model_dump(by_alias=True)
+            if isinstance(named_type_update, (EntityType, RelationshipType))
+            else named_type_update
+        )
+        if not isinstance(mask, NamedObjectTypeMask):
+            warnings.warn(
+                message="Type dict is deprecated for mask. Please migrate to NamedObjectTypeMask.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        raw_mask: dict[str, Any] = (
+            mask.model_dump(by_alias=True)
+            if isinstance(mask, NamedObjectTypeMask)
+            else mask
+        )
+
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/update"
 
@@ -812,9 +1046,9 @@ class KnowledgeGraph:
 
         r_enc = _kgparser.GraphNamedObjectTypeUpdateRequestEncoder()
         if entity_type is not None:
-            r_enc.update_entity_type(named_type_update, mask)
+            r_enc.update_entity_type(raw_named_type_update, raw_mask)
         elif relationship_type is not None:
-            r_enc.update_relationship_type(named_type_update, mask)
+            r_enc.update_relationship_type(raw_named_type_update, raw_mask)
 
         r_enc.encode()
         error = r_enc.get_encoding_result().error
@@ -837,11 +1071,17 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else NamedObjectTypeUpdateResponse.model_validate(results_dict)
+        )
 
-    def named_object_type_delete(self, type_name: str) -> dict:
+    def named_object_type_delete(
+        self, type_name: str, as_dict: bool = True
+    ) -> Union[dict, NamedObjectTypeDeleteResponse]:
         """
-        Deletes an entity or relationship type in the data model
+        Deletes an :class:`~arcgis.graph.data_model_types.EntityType` or :class:`~arcgis.graph.data_model_types.RelationshipType` in the data model
 
         `Learn more about deleting named types in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-delete.htm>`_
 
@@ -849,17 +1089,25 @@ class KnowledgeGraph:
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         type_name           Required string. The named type to be deleted.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
             # Delete a named type in the data model
-            delete_result = knowledge_graph.named_object_type_delete("Person")
+            delete_result = graph.named_object_type_delete("Person")
 
-
-        :return: A `dict` showing the results of the named type delete.
+        :return: :class:`~arcgis.graph.response_types.NamedObjectTypeDeleteResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/delete"
 
@@ -879,13 +1127,20 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else NamedObjectTypeDeleteResponse.model_validate(results_dict)
+        )
 
     def graph_property_adds(
-        self, type_name: str, graph_properties: list[dict[str, Any]]
-    ) -> dict:
+        self,
+        type_name: str,
+        graph_properties: Sequence[Union[dict[str, Any], GraphProperty]],
+        as_dict: bool = True,
+    ) -> Union[dict, PropertyAddsResponse]:
         """
-        Adds properties to a named type in the data model
+        Adds set of :class:`~arcgis.graph.data_model_types.GraphProperty` to a named type in the data model
 
         `Learn more about adding properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-add.htm>`_
 
@@ -895,52 +1150,46 @@ class KnowledgeGraph:
         type_name           Required string. The entity or relationship type to which the
                             properties will be added.
         ----------------    ---------------------------------------------------------------
-        graph_properties    Required list of dicts. The list of properties to add
-                            to the named type, represented in dictionary format.
+        graph_properties    Required Sequence of :class:`~arcgis.graph.data_model_types.GraphProperty`.
+                            The Sequence of properties to add to the named type.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # example of a shape property to be added to a named type
-            {
-                "name": "MyPointGeometry",
-                "alias": "MyPointGeometry",
-                "fieldType": "esriFieldTypeGeometry",
-                "geometryType": "esriGeometryPoint",
-                "hasZ": False,
-                "hasM": False,
-                "nullable": True,
-                "editable": True,
-                "visible": True,
-                "required": False,
-                "isSystemMaintained": False,
-                "role": "esriGraphPropertyRegular"
-            }
+            from arcgis.graph import GraphProperty
 
-            # example of an integer property to be added to a named type
-            {
-                "name": "MyInt",
-                "alias": "MyInt",
-                "fieldType": "esriFieldTypeInteger",
-                "nullable": True,
-                "editable": True,
-                "defaultValue": 123,
-                "visible": True,
-                "required": False,
-                "isSystemMaintained": False,
-                "role": "esriGraphPropertyRegular",
-                "domain": "MyIntegerDomain"
-            }
+            graph.graph_property_adds(type_name="Vehicle", graph_properties=[GraphProperty(name="year")])
 
-
-        :return: A `dict` showing the results of the property adds.
+        :return: :class:`~arcgis.graph.response_types.PropertyAddsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        raw_graph_properties: list[dict[str, Any]] = []
+        for graph_property in graph_properties:
+            if isinstance(graph_property, GraphProperty):
+                raw_graph_properties.append(graph_property.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List values of type dict for graph_properties is deprecated. Please migrate to GraphProperty.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_graph_properties.append(graph_property)
+
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/add"
 
         r_enc = _kgparser.GraphPropertyAddsRequestEncoder()
-        for prop in graph_properties:
+        for prop in raw_graph_properties:
             r_enc.add_property(prop)
 
         r_enc.encode()
@@ -964,17 +1213,22 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else PropertyAddsResponse.model_validate(results_dict)
+        )
 
     def graph_property_update(
         self,
         type_name: str,
         property_name: str,
-        graph_property: dict[str, Any],
-        mask: dict[str, Any],
-    ) -> dict:
+        graph_property: Union[dict[str, Any], GraphProperty],
+        mask: Union[dict[str, Any], GraphPropertyMask],
+        as_dict: bool = True,
+    ) -> Union[dict, PropertyUpdateResponse]:
         """
-        Updates a property for a named type in the data model
+        Updates a :class:`~arcgis.graph.data_model_types.GraphProperty` for a named type in the data model
 
         `Learn more about updating properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-update.htm>`_
 
@@ -986,60 +1240,66 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         property_name       Required string. The property to be updated.
         ----------------    ---------------------------------------------------------------
-        graph_property      Required dict. The graph property to be updated,
-                            represented in dictionary format.
+        graph_property      Required :class:`~arcgis.graph.data_model_types.GraphProperty`.
+                            The graph property to be updated.
         ----------------    ---------------------------------------------------------------
-        mask                Required dict. A dictionary representing the properties of the
-                            field to be updated.
+        mask                Required :class:`~arcgis.graph.data_model_types.GraphPropertyMask`.
+                            The properties of the field to be updated.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # example of a shape property to be updated
-            {
-                "name": "MyPointGeometry",
-                "alias": "MyPointGeometry",
-                "fieldType": "esriFieldTypeGeometry",
-                "geometryType": "esriGeometryPoint",
-                "hasZ": False,
-                "hasM": False,
-                "nullable": True,
-                "editable": True,
-                "visible": True,
-                "required": False,
-                "isSystemMaintained": False,
-                "role": "esriGraphPropertyRegular"
-            }
+            from arcgis.graph import GraphProperty, GraphPropertyMask
 
-            # example: update the property's alias
-            {
-                "update_alias": True
-            }
-            # OR
-            {
-                "update_name": False,
-                "update_alias": True,
-                "update_field_type": False,
-                "update_geometry_type": False,
-                "update_default_value": False,
-                "update_nullable": False,
-                "update_editable": False,
-                "update_visible": False,
-                "update_required": False,
-                "update_has_z": False,
-                "update_has_m": False,
-                "update_domain:" False
-            }
+            graph.graph_property_update(
+                type_name="Vehicle",
+                property_name="year",
+                graph_property=GraphProperty(name="year", alias="year_made"),
+                mask=GraphPropertyMask(update_alias=True),
+                as_dict=False
+            )
 
-
-        :return: A `dict` showing the results of the property update.
+        :return: :class:`~arcgis.graph.response_types.PropertyUpdateResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if not isinstance(graph_property, GraphProperty):
+            warnings.warn(
+                message="Type dict for graph_property is deprecated. Please migrate to GraphProperty.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        raw_graph_property: dict[str, Any] = (
+            graph_property.model_dump(by_alias=True)
+            if isinstance(graph_property, GraphProperty)
+            else graph_property
+        )
+        if not isinstance(mask, GraphPropertyMask):
+            warnings.warn(
+                message="Type dict for mask is deprecated. Please migrate to GraphPropertyMask.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        raw_mask: dict[str, Any] = (
+            mask.model_dump(by_alias=True)
+            if isinstance(mask, GraphPropertyMask)
+            else mask
+        )
+
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/update"
 
         r_enc = _kgparser.GraphPropertyUpdateRequestEncoder()
-        r_enc.update_property(graph_property, mask)
+        r_enc.update_property(raw_graph_property, raw_mask)
         r_enc.name = property_name
 
         r_enc.encode()
@@ -1063,11 +1323,17 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else PropertyUpdateResponse.model_validate(results_dict)
+        )
 
-    def graph_property_delete(self, type_name: str, property_name: str) -> dict:
+    def graph_property_delete(
+        self, type_name: str, property_name: str, as_dict: bool = True
+    ) -> Union[dict, PropertyDeleteResponse]:
         """
-        Delete a property for a named type in the data model
+        Delete a :class:`~arcgis.graph.data_model_types.GraphProperty` for a named type in the data model
 
         `Learn more about deleting properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-delete.htm>`_
 
@@ -1078,17 +1344,26 @@ class KnowledgeGraph:
                             the property to be deleted.
         ----------------    ---------------------------------------------------------------
         property_name       Required string. The property to be deleted.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
             # Delete a named type's property in the data model
-            delete_result = knowledge_graph.graph_property_delete("Person", "Address")
+            delete_result = knowledge_graph.graph_property_delete("Person", "Address", as_dict=False)
 
 
-        :return: A `dict` showing the results of the property delete.
+        :return: :class:`~arcgis.graph.response_types.PropertyDeleteResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._validate_import()
         url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/delete"
 
@@ -1116,13 +1391,21 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else PropertyDeleteResponse.model_validate(results_dict)
+        )
 
     def graph_property_index_adds(
-        self, type_name: str, field_indexes: list[dict[str, Any]]
-    ) -> dict:
+        self,
+        type_name: str,
+        field_indexes: Sequence[Union[dict[str, Any], FieldIndex]],
+        as_dict: bool = True,
+    ) -> Union[dict, IndexAddsResponse]:
         """
-        Adds indexes to a field or multiple fields associated with a named type in the data model.
+        Adds one or more :class:`~arcgis.graph.data_model_types.FieldIndex` to a field or multiple fields
+        associated with a named type in the data model.
 
         `Learn more about adding graph property indexes in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-add.htm>`_
 
@@ -1134,26 +1417,43 @@ class KnowledgeGraph:
         ----------------    ---------------------------------------------------------------
         field_indexes       Required list of dicts. The indexes to add for the type.
                             See below for an example of the structure.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # Add a list of index dicts to fields for a Knowledge Graph type
-            add_result = knowledge_graph.graph_property_index_adds(
-                "Project", [
-                    {
-                        "name" : "title",
-                        "isAscending": True,
-                        "isUnique": True,
-                        "fields": ["title"]
-                    }
-                ]
+            from arcgis.graph import FieldIndex
+
+            graph.graph_property_index_adds(
+                type_name="Person",
+                field_indexes=[FieldIndex(name="name_index", is_ascending=True, is_unique=False, fields=["name"])],
+                as_dict=False
             )
 
-
-        :return: A `dict` showing the results of adding the indexes.
+        :return: :class:`~arcgis.graph.response_types.IndexAddsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        raw_field_indexes: list[dict[str, Any]] = []
+        for field_index in field_indexes:
+            if isinstance(field_index, FieldIndex):
+                raw_field_indexes.append(field_index.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for field_indexes is deprecated. Please migrate to FieldIndex.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_field_indexes.append(field_index)
+
         self._validate_import()
         url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/add"
         params = {
@@ -1163,7 +1463,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphIndexAddsRequestEncoder()
-        enc.add_field_indexes(field_indexes)
+        enc.add_field_indexes(raw_field_indexes)
         enc.encode()
         enc_result = enc.get_encoding_result()
         error = enc_result.error
@@ -1185,13 +1485,16 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict if as_dict else IndexAddsResponse.model_validate(results_dict)
+        )
 
     def graph_property_index_deletes(
-        self, type_name: str, field_indexes: list[str]
-    ) -> dict:
+        self, type_name: str, field_indexes: Sequence[str], as_dict: bool = True
+    ) -> Union[dict, IndexDeletesResponse]:
         """
-        Deletes indexes from fields associated with a named type in the data model.
+        Deletes one or more :class:`~arcgis.graph.data_model_types.FieldIndex` from fields
+        associated with a named type in the data model.
 
         `Learn more about deleting graph property indexes from a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-delete.htm>`_
 
@@ -1201,19 +1504,31 @@ class KnowledgeGraph:
         type_name           Required string. The entity or relationship type to delete the
                             field indexes from.
         ----------------    ---------------------------------------------------------------
-        field_indexes       Required list of strings. The field indexes to delete from the
-                            type. See below for an example of the structure.
+        field_indexes       Required Sequence of strings. The field indexes to delete from the
+                            type.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # Delete a list of field index dicts from a Knowledge Graph type
-            delete_result = knowledge_graph.graph_property_index_deletes("Project", ["title"])
+            # Delete field indexes from a Knowledge Graph type
+            delete_result = graph.graph_property_index_deletes("Project", ["title"], as_dict=False)
 
 
-        :return: A `dict` showing the results of deleting the indexes.
+        :return: :class:`~arcgis.graph.response_types.IndexDeletesResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        indexes: list[str] = [index for index in field_indexes]
+
         self._validate_import()
         url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/delete"
         params = {
@@ -1223,7 +1538,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphIndexDeleteRequestEncoder()
-        enc.add_field_index_names(field_indexes)
+        enc.add_field_index_names(indexes)
         enc.encode()
         enc_result = enc.get_encoding_result()
         error = enc_result.error
@@ -1245,48 +1560,68 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else IndexDeletesResponse.model_validate(results_dict)
+        )
 
-    def constraint_rule_adds(self, rules: list[dict[str, Any]]) -> dict:
+    def constraint_rule_adds(
+        self,
+        rules: Sequence[Union[dict[str, Any], ConstraintRule]],
+        as_dict: bool = True,
+    ) -> Union[dict, ConstraintRuleAddsResponse]:
         """
         Adds constraint rules for entities & relationships to the data model.
+        :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule` is a constraint rule.
 
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        rules               Required list of dicts. The dictionaries defining the
-                            constraint rules to be added. See below for an example of the
-                            structure.
+        rules               Required Sequence of :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule`.
+                            Defines the constraint rules to be added.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # Create a constraint rule and add it to the Knowledge Graph's data model.
-            person = {"set": ["Person"]}
+            from arcgis.graph import RelationshipExclusionRule
 
-            works_at = {"set": ["WorksAt"]}
+            graph.constraint_rule_adds(
+                rules=[
+                    RelationshipExclusionRule(
+                        name="OnlyPersonCanWorkAtCompany",
+                        origin_entity_types=SetOfNamedTypes(set_complement=["Person"]),
+                        relationship_types=SetOfNamedTypes(set=["WorksAt"]),
+                        destination_entity_types=SetOfNamedTypes(set=["Company"])
+                    )
+                ],
+                as_dict=False
+            )
 
-            company = {"set_complement": ["Company"]}
-
-            relationship_exclusion_rule = {
-                "origin_entity_types": person,
-                "relationship_types": works_at,
-                "destination_entity_types": company
-            }
-
-            constraint_rule = {
-                "name": "PersonCS",
-                "alias": "officespace",
-                "disabled": False,
-                "relationship_exclusion_rule": relationship_exclusion_rule
-            }
-
-            knowledge_graph.constraint_rule_adds([constraint_rule])
-
-
-        :return: A `dict` showing the results of adding the rule(s).
+        :return: :class:`~arcgis.graph.response_types.ConstraintRuleAddsResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        raw_rules: list[dict[str, Any]] = []
+        for rule in rules:
+            if isinstance(rule, ConstraintRule):
+                raw_rules.append(rule.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for rules is deprecated. Please migrate to ConstraintRule.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_rules.append(rule)
 
         self._validate_import()
         split_url = self._url.split("/rest/")
@@ -1303,7 +1638,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphAddConstraintRulesEncoder()
-        for rule in rules:
+        for rule in raw_rules:
             enc.add_constraint_rule(rule)
         enc.encode()
         enc_result = enc.get_encoding_result()
@@ -1326,64 +1661,70 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else ConstraintRuleAddsResponse.model_validate(results_dict)
+        )
 
-    def constraint_rule_updates(self, rules: list[dict[str, Any]]) -> dict:
+    def constraint_rule_updates(
+        self,
+        rules: Sequence[Union[dict[str, Any], ConstraintRuleUpdate]],
+        as_dict: bool = True,
+    ) -> Union[dict, ConstraintRuleUpdatesResponse]:
         """
-        Update constraint rules for entities & relationships in the data model.
+        Update :class:`~arcgis.graph.data_model_types.ConstraintRule` for entities & relationships in the data model.
+        :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule` is a type of constraint rule.
 
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        rules               Required list of dicts. The dictionaries defining the
-                            constraint rules to be updated. See below for an example of the
-                            structure.
+        rules               Required Sequence of :class:`~arcgis.graph.data_model_types.RelationshipExclusionRuleUpdate`.
+                            Defines the constraint rules to be updated.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # Update a constraint rule in the Knowledge Graph's data model.
+            from arcgis.graph import RelationshipExclusionRuleUpdate, ConstraintRule, ConstraintRuleMask, UpdateSetOfNamedTypes
 
-            constraint_rule = {
-                "name": "PersonCS",
-                "alias": "officespace",
-                "disabled": False,
-            }
+            graph.constraint_rule_updates(
+                rules=[
+                    RelationshipExclusionRuleUpdate(
+                        rule_name="OnlyPersonCanWorkForCompany",
+                        mask=ConstraintRuleMask(update_name=True, update_alias=True),
+                        constraint_rule=ConstraintRule(
+                            name="PersonCanWorkForCompanyOrPark",
+                            alias="Person Can Work For Company or Park"
+                        )
+                    )
+                ],
+                as_dict=False
+            )
 
-            mask = {
-                "update_name": False,
-                "update_alias": True,
-                "update_disabled": True
-            }
-
-            relationship_exclusion_rule_update =  {
-                "update_origin_entity_types": {
-                    "add_named_types": ["animal"],
-                    "remove_named_types": ["person"]
-                },
-                "update_relationship_types": {
-                    "add_named_types": ["lives_in"],
-                    "remove_named_types": ["works_at"]
-                },
-                "update_destination_entity_types": {
-                    "add_named_types": ["habitat"],
-                    "remove_named_types": ["company"]
-                }
-            }
-
-            constraint_rule_update = {
-                "rule_name": "PersonCS",
-                "mask": mask,
-                "constraint_rule": constraint_rule,
-                "relationship_exclusion_rule_update": relationship_exclusion_rule_update
-            }
-
-            knowledge_graph.constraint_rule_updates([constraint_rule_update])
-
-
-        :return: A `dict` showing the results of updating the rule(s).
+        :return: :class:`~arcgis.graph.response_types.ConstraintRuleUpdatesResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        raw_rules: list[dict[str, Any]] = []
+        for rule in rules:
+            if isinstance(rule, ConstraintRuleUpdate):
+                raw_rules.append(rule.model_dump(by_alias=True))
+            else:
+                warnings.warn(
+                    message="List value of type dict for rules is deprecated. Please migrate to ConstraintRuleUpdate.",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                raw_rules.append(rule)
 
         self._validate_import()
         split_url = self._url.split("/rest/")
@@ -1400,7 +1741,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphUpdateConstraintRulesEncoder()
-        for rule in rules:
+        for rule in raw_rules:
             enc.add_constraint_rule_update(rule)
         enc.encode()
         enc_result = enc.get_encoding_result()
@@ -1423,28 +1764,47 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else ConstraintRuleUpdatesResponse.model_validate(results_dict)
+        )
 
-    def constraint_rule_deletes(self, rule_names: list[str]) -> dict:
+    def constraint_rule_deletes(
+        self, rule_names: Sequence[str], as_dict: bool = True
+    ) -> Union[dict, ConstraintRuleDeletesResponse]:
         """
         Deletes existing constraint rules for entities & relationships from the data model.
+        :class:`~arcgis.graph.data_model_types.RelationshipExclusionRule` is a constraint rule.
 
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        rule_names          Required list of strings. The names of the constraint rules to
+        rule_names          Required Sequence of strings. The names of the constraint rules to
                             be deleted, as defined in a rule's 'name' attribute.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Optional Boolean. Determines whether the result is returned as
+                            a dictionary or an object. The default is True. False is recommended.
         ================    ===============================================================
 
         .. code-block:: python
 
             # Delete a constraint rule from the Knowledge Graph's data model.
-            knowledge_graph.constraint_rule_deletes(["constraint_rule_1"])
+            graph.constraint_rule_deletes(["constraint_rule_1"], as_dict=False)
 
 
-        :return: A `dict` showing the results of deleting the rule(s).
+        :return: :class:`~arcgis.graph.response_types.ConstraintRuleDeletesResponse`
 
         """
+        if as_dict:
+            warnings.warn(
+                message=AS_DICT_DEPRECATION_WARNING,
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        rules: list[str] = [rule_name for rule_name in rule_names]
+
         self._validate_import()
         split_url = self._url.split("/rest/")
         url = (
@@ -1460,7 +1820,7 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphDeleteConstraintRulesEncoder()
-        enc.add_constraint_rule_names(rule_names)
+        enc.add_constraint_rule_names(rules)
         enc.encode()
         enc_result = enc.get_encoding_result()
         error = enc_result.error
@@ -1482,4 +1842,8 @@ class KnowledgeGraph:
         dec.decode(response_content)
 
         results_dict = dec.get_results()
-        return results_dict
+        return (
+            results_dict
+            if as_dict
+            else ConstraintRuleDeletesResponse.model_validate(results_dict)
+        )

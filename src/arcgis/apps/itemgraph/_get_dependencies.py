@@ -10,7 +10,6 @@ _COMPLEX_ITEMS = frozenset(
         "Web Map",
         "Web Scene",
         "Web Mapping Application",
-        "Operation View",
         "Dashboard",
         "Feature Service",
         "StoryMap",
@@ -18,12 +17,12 @@ _COMPLEX_ITEMS = frozenset(
         "Form",
         "QuickCapture Project",
         "Notebook",
-        "Pro Map",
-        "Project Package",
         "Feature Collection",
         "Web Experience",
         "Hub Site Application",
         "Hub Page",
+        "Solution",
+        "Geoprocessing Service",
     ]
 )
 
@@ -176,6 +175,12 @@ def _get_item_dependencies(itemid, gis, include_related=True, include_reverse=Fa
         dependencies = _parse_wma(item)
     elif item_type == "StoryMap":
         dependencies = _parse_storymap(item)
+    elif item_type in ["Hub Site Application", "Hub Page"]:
+        dependencies = _parse_hub(item)
+    elif item_type == "Geoprocessing Service":
+        dependencies = _parse_gp_service(item)
+    elif item_type == "QuickCapture Project":
+        dependencies = _parse_qc(item)
     else:
         dependencies = []
 
@@ -208,6 +213,7 @@ def _get_related_items(item, forward=True, reverse=True):
         "Item2Report",
         "Listed2Provisioned",
         "Listed2ImplicitlyListed",
+        "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
@@ -220,6 +226,8 @@ def _get_related_items(item, forward=True, reverse=True):
     if item.type in _RELATIONSHIPS:
         f_rel_types.extend(_RELATIONSHIPS[item.type]["forward"])
         r_rel_types.extend(_RELATIONSHIPS[item.type]["reverse"])
+        if item.type == "Feature Service" and "View Service" not in item.typeKeywords:
+            f_rel_types.remove("Service2Service")
 
     if forward:
         for rel_type in f_rel_types:
@@ -232,6 +240,51 @@ def _get_related_items(item, forward=True, reverse=True):
             reverse_deps.extend(r for r in rel_items if r not in reverse_deps)
 
     return forward_deps, reverse_deps
+
+
+def _get_related_item_dict(item, forward=True, reverse=True):
+    if not forward and not reverse:
+        raise ValueError("At least one direction must be specified.")
+
+    rel_item_dict = {}
+    f_rel_types = [
+        "Item2Attachment",
+        "Item2Report",
+        "Listed2Provisioned",
+        "Listed2ImplicitlyListed",
+        "Solution2Item",
+    ]
+    r_rel_types = [
+        "Listed2Provisioned",
+        "Listed2ImplicitlyListed",
+        "SurveyAddIn2Data",
+        "Solution2Item",
+        "APIKey2Item",
+        "Mission2Item",
+    ]
+    if item.type in _RELATIONSHIPS:
+        f_rel_types.extend(_RELATIONSHIPS[item.type]["forward"])
+        r_rel_types.extend(_RELATIONSHIPS[item.type]["reverse"])
+        if item.type == "Feature Service" and "View Service" not in item.typeKeywords:
+            f_rel_types.remove("Service2Service")
+
+    if forward:
+        f_rel_dict = {}
+        for rel_type in f_rel_types:
+            rel_items = item.related_items(rel_type, direction="forward")
+            if rel_items:
+                f_rel_dict[rel_type] = [rel_item.id for rel_item in rel_items]
+        rel_item_dict["forward"] = f_rel_dict
+
+    if reverse:
+        r_rel_dict = {}
+        for rel_type in r_rel_types:
+            rel_items = item.related_items(rel_type, direction="reverse")
+            if rel_items:
+                r_rel_dict[rel_type] = [rel_item.id for rel_item in rel_items]
+        rel_item_dict["reverse"] = r_rel_dict
+
+    return rel_item_dict
 
 
 def _parse_webmap(item):
@@ -265,30 +318,28 @@ def _parse_webmap(item):
 
 
 def _parse_dashboard(item):
-    # credit to Dan Yaw for this one
+    # shoutout Dan Yaw for first iteration of this function
     deps = []
+    structure = item.get_data()
+    widgets1 = structure.get("widgets", [])
+    widgets2 = structure.get("desktopView", {}).get("widgets", [])
+    widgets = widgets1 + widgets2
 
-    widgets = item.get_data().get("widgets")
-
-    if widgets is not None:
-        for widget in widgets:
-            if widget.get("type") == "mapWidget":
-                deps.append(widget.get("itemId"))
-
-            else:
-                try:
-                    for dataset in widget.get("datasets"):
-                        if dataset.get("type") == "serviceDataset":
-                            data_source = dataset.get("dataSource")
-
-                            if data_source.get("type") == "itemDataSource":
-                                deps.append(data_source.get("itemId"))
-
-                            elif data_source.get("type") == "arcadeDataSource":
-                                script = data_source.get("script")
-                                deps.extend(_find_regex(script, _REGEX_GUID, []))
-                except:
-                    pass
+    for widget in widgets:
+        if widget.get("type") == "mapWidget":
+            deps.append(widget.get("itemId"))
+            continue
+        try:
+            for dataset in widget.get("datasets", []):
+                if dataset.get("type") == "serviceDataset":
+                    data_source = dataset.get("dataSource", {})
+                    if data_source.get("type") == "itemDataSource":
+                        deps.append(data_source.get("itemId"))
+                    elif data_source.get("type") == "arcadeDataSource":
+                        script = data_source.get("script")
+                        deps.extend(_find_regex(script, _REGEX_GUID, []))
+        except:
+            pass
 
     return deps
 
@@ -310,11 +361,11 @@ def _parse_exb(item):
 
 def _parse_wma(item):
     data = item.get_data()
-    itemids = []
+    itemids = set()
 
     if "map" in data:
         try:
-            itemids.append(data["map"]["itemId"])
+            itemids.add(data["map"]["itemId"])
         except:
             pass
 
@@ -323,11 +374,16 @@ def _parse_wma(item):
 
         for ds in data_sources.values():
             try:
-                itemids.append(ds["itemId"])
+                itemids.add(ds["itemId"])
             except:
                 pass
 
-    return itemids
+    try:
+        itemids.add(data["values"]["webmap"])
+    except:
+        pass
+
+    return list(itemids)
 
 
 def _parse_storymap(item):
@@ -368,6 +424,62 @@ def _parse_storymap(item):
                     itemids.append(i)
 
     return itemids
+
+
+def _parse_hub(item):
+    itemids = set()
+    pub_data = item.get_data()
+    draft_name = None
+    for r in item.resources.list():
+        if "draft" in r["resource"]:
+            draft_name = r["resource"]
+            break
+    if draft_name:
+        draft_data = item.resources.get(draft_name)["data"]
+    else:
+        draft_data = None
+
+    def _parse_hub_sections(data):
+        dep_ids = set()
+        for section in data["values"]["layout"]["sections"]:
+            for row in section["rows"]:
+                for card in row["cards"]:
+                    c = card["component"]
+                    if c["name"] == "webmap-card":
+                        for w in ["webmap", "webscene"]:
+                            if c["settings"].get(w, None):
+                                dep_ids.add(c["settings"][w])
+                    elif c["name"] in ["app-card", "chart-card"]:
+                        dep_ids.add(c["settings"]["itemId"])
+                    elif c["name"] == "survey-card":
+                        dep_ids.add(c["settings"]["surveyId"])
+        return dep_ids
+
+    for data in [pub_data, draft_data]:
+        if data:
+            itemids.update(_parse_hub_sections(data))
+
+    return list(itemids)
+
+
+def _parse_gp_service(item):
+    try:
+        structure = item.resources.get("webtoolDefinition.json")
+        return [structure["jsonProperties"]["notebookId"]]
+    except:
+        return []
+
+
+def _parse_qc(item):
+    try:
+        structure = item.resources.get("qc.project.json")
+        deps = set()
+        deps.add(structure["basemap"]["itemId"])
+        for ds in structure["dataSources"]:
+            deps.add(ds["featureServiceItemId"])
+        return list(deps)
+    except:
+        return []
 
 
 def _find_regex(i, regex, res=[]):

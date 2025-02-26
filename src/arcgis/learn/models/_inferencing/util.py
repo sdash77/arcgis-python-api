@@ -143,9 +143,10 @@ def load_weights(m, p):
 
 
 def predict_(model, images, device):
-    model = model.to(device)
-    images = tensor(images).to(device).float()
-    clas, bbox = model(images)
+    with torch.no_grad():
+        model = model.to(device)
+        images = tensor(images).to(device).float()
+        clas, bbox = model(images)
     return clas, bbox
 
 
@@ -385,9 +386,10 @@ def detect_objects_image_space(
 
 
 def segment_image(model, images, device, predict_bg, model_info):
-    model = model.to(device)
-    normed_batch_tensor = tensor(images).to(device).float()
-    output = model(normed_batch_tensor)
+    with torch.no_grad():
+        model = model.to(device)
+        normed_batch_tensor = tensor(images).to(device).float()
+        output = model(normed_batch_tensor)
     ignore_mapped_class = model_info.get("ignore_mapped_class", [])
     for k in ignore_mapped_class:
         output[:, k] = output.min() - 1
@@ -406,12 +408,13 @@ def superres_image(model, images, device):
 
 
 def cyclegan_image(model, images, device, direction):
-    model = model.to(device)
-    normed_batch_tensor = tensor(images).to(device).float()
-    if direction == "BtoA":
-        output = model.G_A(normed_batch_tensor)
-    else:
-        output = model.G_B(normed_batch_tensor)
+    with torch.no_grad():
+        model = model.to(device)
+        normed_batch_tensor = tensor(images).to(device).float()
+        if direction == "BtoA":
+            output = model.G_A(normed_batch_tensor)
+        else:
+            output = model.G_B(normed_batch_tensor)
     return output
 
 
@@ -422,7 +425,8 @@ def pix2pix_image(model, images, device, label_nc=0):
     normed_batch_tensor = tensor(images).to(device).float()
     if label_nc:
         normed_batch_tensor, _, _, _ = encode_input(normed_batch_tensor, label_nc)
-    output = model.G(normed_batch_tensor)
+    with torch.no_grad():
+        output = model.G(normed_batch_tensor)
     return output
 
 
