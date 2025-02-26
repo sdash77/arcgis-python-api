@@ -721,7 +721,7 @@ def from_featureclass(filename, **kwargs):
     :return: pandas.core.frame.DataFrame
 
     """
-    if "http://" in filename or "https://" in filename:
+    if isinstance(filename, str) and ("http://" in filename or "https://" in filename):
         return _http_workflow(filename)
 
     filename = _ensure_path_string(filename)
