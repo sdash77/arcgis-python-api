@@ -5,7 +5,7 @@ channels:
 - esri/label/prerelease
 - esri-build
 dependencies:
-- python 3.11
+- python 3.11.*
 - pip
 - setuptools
 # ---- arcgis ----
@@ -13,7 +13,8 @@ dependencies:
 - cachetools
 - certifi
 - cryptography
-- dask >=2023.3.2
+- dask >=2024.12.1,<2025.1.0
+- gdal >=3.6.2, <4
 - geomet
 - keyring>=23.3.0
 - lxml
@@ -25,20 +26,20 @@ dependencies:
 - pandas >=2.0.0,<2.2.0
 - pillow
 - puremagic >=1.15,<2
-- pyarrow >=11.0.0
+- pyarrow >=16,<17
 - pylerc
-- pyshp >=2,<3
 - pyspnego >=0.8.0
 - pydantic >=2.8.2, <3
 # - pywin32-security
-- requests >=2.30.0,<2.32.0
+- requests >=2.32.3,<3
 - requests-gssapi
 - requests-kerberos
 - requests-oauthlib
 - requests-toolbelt
-- truststore
+- truststore >=0.10.0
 - ujson >=3
-- urllib3 >=1.26.1,<3
+- urllib3 >=2.1.0,<3
+- websocket-client >=1.2.3,<2
 # ---- arcgis-mapping ----
 - anywidget 0.9.13
 - ipywidgets >=8.0.0
@@ -60,6 +61,7 @@ dependencies:
 - black
 - keyrings.alt
 - selenium
+- protobuf
 - pip:
   # ---- sphinx/docs build ----
   - sphinx_rtd_theme>=2,<3
@@ -68,4 +70,5 @@ dependencies:
   - coverage
   - nose2
   - parameterized
+  - requests-mock
   - unittest-xml-reporting

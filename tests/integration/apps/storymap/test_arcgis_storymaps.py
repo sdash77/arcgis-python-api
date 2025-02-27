@@ -1,54 +1,52 @@
 import unittest
-from arcgis.gis import GIS, Item
-from arcgis.apps.storymap import StoryMap, Themes
-from arcgis.apps.storymap import (
-    Image,
-)
+from arcgis.apps.storymap import StoryMap, Themes, Cover, Navigation, Image
 from utils.decorators import integration_test, profiles
+from integration.config import INTEGRATION_TEST_ITEM_TAG, get_resource_path
 
 
 @integration_test
 @profiles.enterprise_and_agol
 class TestStoryMap(unittest.TestCase):
     """Test Basic Story Map Methods"""
-
-    def test_creating_and_saving(self):
-        """Change the storycover for the story"""
-        gis = self.gis
-        story = StoryMap()
-
-        # assert some properties
-        assert story.nodes
-        assert story.properties
-        assert story.cover_date
-        assert story.story_locale
-        assert isinstance(story.navigation_list, list)
-        assert story.get("n-aTn8ak")
-
-        assert isinstance(story.navigation(hidden=True), list)
+    @classmethod
+    def setUpClass(cls):
+        # initiate storymap
+        cls.story = StoryMap(gis=cls.gis)
 
         # image for story cover
-        river = Image(
-            "https://www.nps.gov/npgallery/GetAsset/0022D3FF-1DD8-B71B-0BE3AD4C48F96FF9/proxy/hires"
-        )
+        resource_path = get_resource_path("storymap")
+        cls.river = Image(f'{resource_path}/storymap_image_river.jpg')
 
+    def test_properties(self):
+        """Assert properties"""
+        assert self.story.content_list
+        assert self.story.properties
+        assert 'en' in self.story.story_locale
+        assert isinstance(self.story.navigation_list, list)
+        assert isinstance(self.story.get("n-aTn8ak"), Cover)
+        assert isinstance(self.story.navigation(hidden=True), list)
+
+    def test_creating_and_saving(self):
+        """Change cover/theme for the story"""
         # Edit story cover
-        cover = story.content[0]
+        cover = self.story.content_list[0]
         cover.title = "My First Story"
         cover.summary = "Testing the Python API"
         cover.by_line = "Python Tester"
-        cover.media = river
-        assert story.cover_date
-        assert story.nodes
+        cover.media = self.river
 
-        """Change the story theme"""
-        story.theme(Themes.SLATE)
-        assert story.get_theme() == Themes.SLATE.value
-        assert story.properties
+        # Change the story theme
+        self.story.theme(Themes.SLATE)
 
-        assert story.save()
+        # Save the storymap changes
+        assert self.story.save(tags=INTEGRATION_TEST_ITEM_TAG)
 
-        story.delete_story()
+        assert self.story.content_list[0].title == "My First Story"
+        assert self.story.get_theme() == Themes.SLATE.value
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.story.delete_story()
 
 
 if __name__ == "__main__":

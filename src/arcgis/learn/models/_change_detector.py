@@ -5,6 +5,7 @@ from ._arcgis_model import ArcGISModel, _EmptyData
 import traceback
 from .._utils.env import raise_fastai_import_error
 from ._codetemplate import image_classifier_prf
+import urllib
 
 try:
     from ._change_detector_utils import get_learner
@@ -68,7 +69,12 @@ class ChangeDetector(ArcGISModel):
         super().__init__(data, backbone, pretrained_path=pretrained_path)
         backbone = self._backbone.__name__.lower()
         self.SA_type = attention_type
-        self.learn = get_learner(self._data, backbone, self.SA_type)
+        try:
+            self.learn = get_learner(self._data, backbone, self.SA_type)
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+            )
         self._code = image_classifier_prf
         self._arcgis_init_callback()  # make first conv weights learnable
         if pretrained_path is not None:

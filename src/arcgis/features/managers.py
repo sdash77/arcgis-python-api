@@ -275,8 +275,16 @@ class AttachmentManager(object):
         res = self._layer._con._session.get(url=url, params=params)
         res.raise_for_status()
         data: dict[str, Any] = res.json()
-        if "attachmentGroups" in data:
-            return sum([grp["count"] for grp in res.json()["attachmentGroups"]])
+        if data.get("attachmentGroups"):
+            count_values = [
+                d.get("count") for d in data.get("attachmentGroups") if d.get("count")
+            ]
+            if not count_values:
+                attachment_groups = [
+                    d.get("attachmentInfos") for d in data.get("attachmentGroups")
+                ]
+                return sum([len(grp) for grp in attachment_groups])
+            return sum([grp["count"] for grp in data["attachmentGroups"]])
         elif "error" in data:
             raise Exception(data["error"])
         else:
@@ -2846,22 +2854,22 @@ class FeatureLayerCollectionManager(_GISResource):
             # else it stays the spatial reference given or None
             spatial_reference = fs.properties["spatialReference"]
 
+        create_params = {
+            "name": name,
+            "isView": True,
+            "sourceSchemaChangesAllowed": allow_schema_changes,
+            "isUpdatableView": updateable,
+            "spatialReference": spatial_reference,
+            "initialExtent": extent or fs.properties["initialExtent"],
+            "capabilities": capabilities or fs.properties["capabilities"],
+            "preserveLayerIds": preserve_layer_ids,
+            "options": {"dataSourceType": "relational"},
+        }
+
         params = {
             "f": "json",
             "isView": True,
-            "createParameters": json.dumps(
-                {
-                    "name": name,
-                    "isView": True,
-                    "sourceSchemaChangesAllowed": allow_schema_changes,
-                    "isUpdatableView": updateable,
-                    "spatialReference": spatial_reference,
-                    "initialExtent": extent or fs.properties["initialExtent"],
-                    "capabilities": capabilities or fs.properties["capabilities"],
-                    "preserveLayerIds": preserve_layer_ids,
-                    "options": {"dataSourceType": "relational"},
-                }
-            ),
+            "createParameters": json.dumps(create_params),
             "tags": tags if tags else ",".join(item.tags),
             "snippet": snippet if snippet else item.snippet,
             "description": description if description else item.description,
@@ -2875,7 +2883,14 @@ class FeatureLayerCollectionManager(_GISResource):
             )
 
         res = gis._session.post(url=url, data=params).json()
-
+        if res["success"] == False:
+            if "error" in res and "already exists" in res["error"]["message"]:
+                new_name = _common_utils._get_unique_name(name)
+                create_params["name"] = new_name
+                params["createParameters"] = json.dumps(create_params)
+                res = gis._session.post(url=url, data=params).json()
+            else:
+                raise Exception(res["error"]["message"])
         # Get the view feature layer collection
         view_item = content.get(res["itemId"])
         fs_view = features.FeatureLayerCollection(url=view_item.url, gis=gis)

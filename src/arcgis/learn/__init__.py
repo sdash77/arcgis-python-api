@@ -70,6 +70,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
             RTDetrV2,
             ClimaX,
             PTv3Seg,
+            PTv3Det,
         )
 
         from ._object_tracker import ObjectTracker
