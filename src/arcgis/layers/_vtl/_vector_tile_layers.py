@@ -2,6 +2,7 @@ from __future__ import absolute_import, annotations
 
 import re
 import os
+import uuid
 import tempfile
 import urllib.parse
 from contextlib import contextmanager
@@ -1055,13 +1056,13 @@ class VectorTileLayer(arcgis.gis.Layer):
                 return _gis.Item(gis=self._gis, itemid=allResults["itemId"])
             else:
                 files: list[str] = []
+
                 extract_filename_lambda = lambda content_disposition: (
                     re.search(r"filename=([^;]+)", content_disposition).group(1)
                     if re.search(r"filename=([^;]+)", content_disposition)
-                    else "download.vtpk"
+                    else f"{uuid.uuid4().hex}.vtpk"
                 )
                 if self._gis._portal.is_arcgisonline:
-
                     for url in allResults["outputUrl"]:
                         for k, v in urllib.parse.parse_qs(
                             urllib.parse.urlparse(url).query
