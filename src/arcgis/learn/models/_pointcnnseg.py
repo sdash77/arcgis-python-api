@@ -233,6 +233,7 @@ class PointCNN(ArcGISModel):
         early_stopping=False,
         checkpoint=True,
         tensorboard=False,
+        mixed_precision=False,
         **kwargs,
     ):
         """
@@ -286,6 +287,11 @@ class PointCNN(ArcGISModel):
                                 should be one of the metric that is displayed in
                                 the training table. Use `{model_name}.available_metrics`
                                 to list the available metrics to set here.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
+                                training. If set to `True`, model training will be done in
+                                mixed precision mode. Only `Pytorch` based models are supported.
+                                The default value is 'False'.
         =====================   ===========================================
 
         **kwargs**
@@ -311,13 +317,20 @@ class PointCNN(ArcGISModel):
 
         if lr is None:
             print("Finding optimum learning rate.")
-            lr = self.lr_find(allow_plot=False)
+            lr = self.lr_find(allow_plot=False, mixed_precision=mixed_precision)
 
         if isinstance(lr, slice):
             lr = lr.stop
 
         super().fit(
-            epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            mixed_precision=mixed_precision,
+            **kwargs,
         )
 
     @property

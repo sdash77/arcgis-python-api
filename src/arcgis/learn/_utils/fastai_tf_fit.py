@@ -359,6 +359,7 @@ class TfLearner:
         lr: Union[Floats, slice] = defaults.lr,
         wd: Floats = None,
         callbacks: Collection[Callback] = None,
+        mixed_precision: bool = False,
     ) -> None:
         "Fit the model on this learner with `lr` learning rate, `wd` weight decay for `epochs` with `callbacks`."
         lr = self.lr_range(lr)
