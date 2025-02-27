@@ -5397,14 +5397,14 @@ class RoleManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def clone(self, roles: list[Role]) -> list[_cloner.CloningJob]:
+    def clone(self, roles: Union[list[Role], list[str]]) -> list[_cloner.CloningJob]:
         """
         Clones a list of Roles from one organization to another
 
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        roles                  Required list[Role]. An array of roles from the source GIS.
+        roles                  Required list. An array of role objects or id's from the source GIS.
         ==================     ====================================================================
 
         :returns: list[Future]
