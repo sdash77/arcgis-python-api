@@ -118,6 +118,8 @@ class RetinaNet(ArcGISModel):
         :class:`~arcgis.learn.RetinaNet` Object
     """
 
+    MIN_BATCH_VAL_AMP = 8
+
     def __init__(
         self,
         data,
@@ -998,3 +1000,31 @@ class RetinaNet(ArcGISModel):
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        # unstable pytorch AMP scaler if batch size less than the given value
+        if self.learn.data.batch_size <= self.MIN_BATCH_VAL_AMP:
+            mixed_precision = False
+
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=mixed_precision,
+            **kwargs,
+        )

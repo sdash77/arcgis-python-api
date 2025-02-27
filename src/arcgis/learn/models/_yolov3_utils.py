@@ -583,13 +583,18 @@ class YOLOLayer(nn.Module):
             target[..., np.r_[0:4, 5:n_ch]] *= tgt_mask
             target[..., 2:4] *= tgt_scale
 
-            bceloss = nn.BCELoss(
-                weight=tgt_scale * tgt_scale, reduction="sum"
-            )  # weighted BCEloss
-            loss_xy = bceloss(output[..., :2], target[..., :2])
+            with torch.autocast(device_type="cuda", enabled=False):
+                bceloss = nn.BCELoss(
+                    weight=(tgt_scale * tgt_scale).float(), reduction="sum"
+                )  # weighted BCEloss
+
+                loss_xy = bceloss(output[..., :2].float(), target[..., :2].float())
+                loss_obj = self.bce_loss(output[..., 4].float(), target[..., 4].float())
+                loss_cls = self.bce_loss(
+                    output[..., 5:].float(), target[..., 5:].float()
+                )
+
             loss_wh = self.l2_loss(output[..., 2:4], target[..., 2:4]) / 2
-            loss_obj = self.bce_loss(output[..., 4], target[..., 4])
-            loss_cls = self.bce_loss(output[..., 5:], target[..., 5:])
             loss_l2 = self.l2_loss(output, target)
 
             loss = (loss_xy + loss_wh + loss_obj + loss_cls).to(torch.float)
