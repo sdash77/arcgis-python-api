@@ -2515,10 +2515,10 @@ class RMProject:
             )
         )
 
-        mission_def = {}
+        mission_def = {"name": mission_name}
 
         return gis._tools.realitymapping.create_mission(
-            project_item=self._project_item,
+            project_item=project_item,
             mission_definition=mission_def,
             input_rasters=input_rasters,
             image_collection=image_collection,
