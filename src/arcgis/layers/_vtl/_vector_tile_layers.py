@@ -1038,16 +1038,38 @@ class VectorTileLayer(arcgis.gis.Layer):
         if "results" in job_response:
             value = job_response["results"]["out_service_url"]["paramUrl"]
             result_path = path + "/" + value
-            resp: requests.Response = self._session.get(url=result_path)
+            resp: requests.Response = self._session.get(
+                url=result_path,
+                params={
+                    "f": "json",
+                },
+            )
             resp.raise_for_status()
             allResults = resp.json()
 
             if "value" in allResults:
                 value = allResults["value"]
-                resp: requests.Response = self._session.get(url=value)
+                files: list[str] = []
+                resp: requests.Response = self._session.get(
+                    url=value,
+                    params={
+                        "f": "json",
+                    },
+                )
                 resp.raise_for_status()
                 gpRes = resp.json()
-                return gpRes["files"]
+                for file in gpRes["files"]:
+                    fn: str = file.get("name", f"{uuid.uuid4()}.vtpk")
+                    fp: str = os.path.join(tempfile.gettempdir(), fn)
+                    url: str | None = file.get("url", None)
+                    if url:
+                        resp: requests.Response = self._session.get(url, stream=True)
+                        with open(fp, "wb") as writer:
+                            for chunk in resp.iter_content(chunk_size=5 * 1024 * 1024):
+                                if chunk:
+                                    writer.write(chunk)
+                        files.append(fp)
+                return files
             else:
                 return None
         elif "output" in job_response:
@@ -1067,35 +1089,39 @@ class VectorTileLayer(arcgis.gis.Layer):
                         for k, v in urllib.parse.parse_qs(
                             urllib.parse.urlparse(url).query
                         ).items():
-                            fn = extract_filename_lambda(v[0])
-                            fp = os.path.join(tempfile.gettempdir(), fn)
-                            with open(fp, "wb") as writer:
-                                resp: requests.Response = requests.get(url, stream=True)
-                                for chunk in resp.iter_content(
-                                    chunk_size=5 * 1024 * 1024
-                                ):
-                                    if chunk:  # filter out keep-alive new chunks
-                                        writer.write(chunk)
-                            files.append(fp)
+                            if k == "response-content-disposition":
+                                fn = extract_filename_lambda(v[0])
+                                fp = os.path.join(tempfile.gettempdir(), fn)
+                                with open(fp, "wb") as writer:
+                                    resp: requests.Response = requests.get(
+                                        url, stream=True
+                                    )
+                                    for chunk in resp.iter_content(
+                                        chunk_size=5 * 1024 * 1024
+                                    ):
+                                        if chunk:  # filter out keep-alive new chunks
+                                            writer.write(chunk)
+                                files.append(fp)
                     return files
                 else:
                     for url in allResults["outputUrl"]:
                         for k, v in urllib.parse.parse_qs(
                             urllib.parse.urlparse(url).query
                         ).items():
-                            fn = extract_filename_lambda(v[0])
-                            fp = os.path.join(tempfile.gettempdir(), fn)
-                            with open(fp, "wb") as writer:
-                                # Session with streaming needs to be used here.
-                                resp: requests.Response = self._session.get(
-                                    url, stream=True
-                                )
-                                for chunk in resp.iter_content(
-                                    chunk_size=5 * 1024 * 1024
-                                ):
-                                    if chunk:  # filter out keep-alive new chunks
-                                        writer.write(chunk)
-                            files.append(fp)
+                            if k == "response-content-disposition":
+                                fn = extract_filename_lambda(v[0])
+                                fp = os.path.join(tempfile.gettempdir(), fn)
+                                with open(fp, "wb") as writer:
+                                    # Session with streaming needs to be used here.
+                                    resp: requests.Response = self._session.get(
+                                        url, stream=True
+                                    )
+                                    for chunk in resp.iter_content(
+                                        chunk_size=5 * 1024 * 1024
+                                    ):
+                                        if chunk:  # filter out keep-alive new chunks
+                                            writer.write(chunk)
+                                files.append(fp)
                     return files
         else:
             raise Exception(job_response)
