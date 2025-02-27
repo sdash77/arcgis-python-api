@@ -5412,6 +5412,10 @@ class RoleManager(object):
         jobs = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as tp:
             for role in roles:
+                if isinstance(role, str):
+                    role = self.get_role(role)
+                    if role is None:
+                        raise ValueError(f"Role {role} not found.")
                 role: Role
                 future: concurrent.futures.Future = tp.submit(
                     self.create,
