@@ -15,7 +15,7 @@ from arcgis.gis.server.admin._services import (
     ServiceWebHookManager,
     ServiceWebHook,
 )
-from data_utils import publish_test_item, cleanup_published_items
+from utils.data_utils import publish_test_item, cleanup_published_items
 from utils.decorators import integration_test, profiles
 from integration.config import QALAB_ROOT_PATH
 
