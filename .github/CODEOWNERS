@@ -1,19 +1,19 @@
 *       @achapkowski @jyaistmap
-/src/arcgis    @nanaeaubry @nparavicini7 @jtroe
-/src/arcgis/apps/storymap @PraetorianRP
-/src/arcgis/apps/survey123 @Zachary-Sutherby
-/src/arcgis/geoenrichment  @dmitrykozlov @paverman @msattarov
-/src/arcgis/gis/agonb @xlt208
-/src/arcgis/gis/nb @xlt208
-/src/arcgis/gis/workflowmanager @AngelVDelgadillo @kbedel
-/src/arcgis/graph @CamBDignan @mbana641
+/src/arcgis    @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/apps/storymap @PraetorianRP @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/apps/survey123 @Zachary-Sutherby @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/geoenrichment  @dmitrykozlov @paverman @msattarov @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/gis/agonb @xlt208 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/gis/nb @xlt208 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/gis/workflowmanager @AngelVDelgadillo @kbedel @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/graph @CamBDignan @mbana641 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /src/arcgis/learn @karthikdutt @priyankatuteja @rohitgeo @vikashranjan26
-/src/arcgis/network @deelesh @max-zeng
-/src/arcgis/notebook @xlt208
-/src/arcgis/raster       @rhea-j @kreetichandran @ppoply
+/src/arcgis/network @deelesh @max-zeng @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/notebook @xlt208 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/raster       @rhea-j @kreetichandran @ppoply @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /build      @jtroe @cariashuang0417
 /tests      @jtroe @cariashuang0417
-/tests/integration/gis/notebook_server @xlt208
-/tests/integration/notebook @xlt208
+/tests/integration/gis/notebook_server @xlt208 @jtroe @cariashuang0417
+/tests/integration/notebook @xlt208 @jtroe @cariashuang0417
 /.github    @jtroe @cariashuang0417
 /.jenkins   @jtroe @cariashuang0417
