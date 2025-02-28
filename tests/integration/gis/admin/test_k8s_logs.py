@@ -3,6 +3,7 @@ import datetime
 from utils.decorators import integration_test, profiles
 
 
+@unittest.skip("Skip until get back to our own k8s environment")
 @profiles.admin_k8s
 @integration_test
 class TestLogsAdminTemplate(unittest.TestCase):

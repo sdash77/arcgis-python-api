@@ -5,6 +5,7 @@ from arcgis.gis import GIS
 from integration.config import get_resource_path
 
 
+@unittest.skip("Skip until get back to our own k8s environment")
 @profiles.admin_k8s
 @integration_test
 class TestLicense(unittest.TestCase):
