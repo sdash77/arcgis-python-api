@@ -848,7 +848,11 @@ class WebExperience(object):
                 "url" : uri,
                 "text" : data,
             }
-            return folder.add(widg_props).result()
+            if folder and isinstance(folder, str):
+                folder_object = gis.content.folders.get(folder)
+            else:
+                folder_object = gis.content.folders.get()
+            return folder_object.add(widg_props).result()
 
         # if custom widgets exist, map them accordingly
         widget_folder = os.path.join(self._source_path, "widgets")
