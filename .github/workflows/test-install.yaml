@@ -60,7 +60,7 @@ jobs:
               matrix=$(echo $matrix | jq '.os += ["ubuntu-latest"]' | jq -r tostring)
             fi
             if [ "${{ github.event.inputs.macos }}" = 'true' ]; then
-              echo "Running on macOS (M-Series)"
+              echo "Running on macOS"
               matrix=$(echo $matrix | jq '.os += ["macos-13", "macos-latest"]' | jq -r tostring)
             fi
             if [ "${{ github.event.inputs.windows }}" = 'true' ]; then
