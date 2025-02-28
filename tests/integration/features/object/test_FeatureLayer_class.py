@@ -34,8 +34,13 @@ class TestFeatureLayerClass(unittest.TestCase):
         # Publish feature layer
         layer_name = f"dino_FeatureLayer_basic_{uid}"
         csv_path = os.path.join(cls.qalab_cls_path, "edit_features_points.csv")
+        capabilities = {"capabilities": "Query,Uploads,Editing,Create,Update,Delete"}
         cls.feature_layer_item = publish_test_item(
-            cls.gis, layer_name, csv_path, ItemTypeEnum.CSV
+            cls.gis,
+            layer_name,
+            csv_path,
+            ItemTypeEnum.CSV,
+            override_capabilities=capabilities,
         )
         assert cls.feature_layer_item, "Feature layer item not found"
         assert (
