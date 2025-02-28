@@ -315,6 +315,7 @@ class WebExperience(object):
         name=None,
         gis=None,
         item_properties={},
+        folder=None,
     ):
         """
         If no experience is specified when creating a WebExperience, this helper function
@@ -364,8 +365,12 @@ class WebExperience(object):
                     {"f": "json"},
                 )["exbVersion"]
             else:
-                url = self._gis.url + "/apps/experiencebuilder/version.json"
-                exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
+                try:
+                    url = self._gis.url + "/apps/experiencebuilder/version.json"
+                    exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
+                except:
+                    url = self._gis.url.split("/home")[0] + "/apps/experiencebuilder/version.json"
+                    exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
 
             temp_dict["exbVersion"] = exb_version
             temp_dict["originExbVersion"] = exb_version
@@ -423,11 +428,14 @@ class WebExperience(object):
             "typeKeywords": keywords,
         }"""
 
+        if folder and isinstance(folder, str):
+            folder = self._gis.content.folders.get(folder)
         # add to active gis and set properties
-        if gis is None:
-            folder = self._gis.content.folders.get()
-        else:
+        if not folder:
+            if not gis:
+                gis = self._gis
             folder = gis.content.folders.get()
+
         item = folder.add(item_properties=props).result()
 
         # assign to experience properties
@@ -724,6 +732,8 @@ class WebExperience(object):
         item_mapping: Optional[dict] = None,
         auto_remap: Optional[bool] = False,
         item_properties: Optional[dict] = {},
+        folder: Optional[str] = None,
+        custom_widget_mapping: Optional[dict] = None,
     ):
         """
         Adds a WebExperience created locally through the Developer Edition to a specified
@@ -830,6 +840,47 @@ class WebExperience(object):
                 for attr, new_value in v.items():
                     new_config["dataSources"][source][attr] = new_value
 
+        def _create_custom_widget(uri: str, title: str, data: str):
+            widg_props = {
+                "title" : title + " widget",
+                "type" : "Experience Builder Widget",
+                "typeKeywords": ['Experience Builder', 'Experience Builder Widget', 'Widget'],
+                "url" : uri,
+                "text" : data,
+            }
+            return folder.add(widg_props).result()
+
+        # if custom widgets exist, map them accordingly
+        widget_folder = os.path.join(self._source_path, "widgets")
+        if custom_widget_mapping is not None:
+            for widget_name, v in custom_widget_mapping.items():
+                for w_id, w_dict in new_config['widgets'].items():
+                    if widget_name in w_dict['uri']:
+                        w_portal_id = None
+                        w_portal_url = None
+                        # check to see if existent widget item
+                        if not _arcgis_gis._impl._con._is_http_url(v):
+                            existent_widget = gis.content.get(v)
+                            if existent_widget:
+                                w_portal_id = existent_widget.id
+                                w_portal_url = existent_widget.url
+
+                        # if not existent, create it
+                        else:
+                            w_path_name = os.path.join(widget_folder, widget_name, "manifest.json")
+                            if os.path.exists(w_path_name):
+                                with open(w_path_name) as json_file:
+                                    w_data = json_file.read()
+                            
+                            new_widget = _create_custom_widget(v, widget_name, w_data)
+                            w_portal_id = new_widget.id
+                            w_portal_url = new_widget.url
+                        
+                        # update with id and url of new custom widget item
+                        new_config['widgets'][w_id]['uri'] = w_portal_url
+                        new_config['widgets'][w_id]['itemId'] = w_portal_id
+                        break
+
         # create a new portal experience using the config
         self._create_new_experience(
             config=new_config,
@@ -842,16 +893,18 @@ class WebExperience(object):
             images_path = os.path.join(self._source_path, "resources", "images")
             image_list = os.path.join(images_path, "image-resources-list.json")
             icon_list = os.path.join(images_path, "icon-resources-list.json")
-            self._item.resources.add(
-                file=image_list,
-                folder_name="images",
-                file_name="image-resources-list.json",
-            )
-            self._item.resources.add(
-                file=icon_list,
-                folder_name="images",
-                file_name="icon-resources-list.json",
-            )
+            if os.path.exists(image_list):
+                self._item.resources.add(
+                    file=image_list,
+                    folder_name="images",
+                    file_name="image-resources-list.json",
+                )
+            if os.path.exists(icon_list):
+                self._item.resources.add(
+                    file=icon_list,
+                    folder_name="images",
+                    file_name="icon-resources-list.json",
+                )
 
             widgets = [f for f in os.listdir(images_path) if "widget" in f]
             for widget in widgets:
