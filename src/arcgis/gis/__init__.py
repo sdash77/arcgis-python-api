@@ -5404,7 +5404,7 @@ class RoleManager(object):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        roles                  Required list. An array of role objects or id's from the source GIS.
+        roles                  Required list. An array of role objects or role ids or role names from the source GIS.
         ==================     ====================================================================
 
         :returns: list[Future]
