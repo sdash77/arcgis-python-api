@@ -183,9 +183,8 @@ class credentials:
     _enterprise_standalone_server_credential_parameters = (
         "enterprise_standalone_server",
         environ.get("ENTERPRISE_STANDALONE_SERVER_URL", "https://dev0016118.esri.com/server/rest"),
-        # TODO @jyaistMap replace TODO_JOHN_USERNAME and TODO_JOHN_PASSWORD with actual credentials
-        environ.get("ENTERPRISE_STANDALONE_SERVER_USERNAME", "TODO_JOHN_USERNAME"),
-        environ.get("ENTERPRISE_STANDALONE_SERVER_PASSWORD", "TODO_JOHN_PASSWORD"),
+        environ.get("ENTERPRISE_STANDALONE_SERVER_USERNAME", "siteadmin"),
+        environ.get("ENTERPRISE_STANDALONE_SERVER_PASSWORD", "IL0veGI$"),
     )
     _agol_credential_parameters = (
         "agol",
