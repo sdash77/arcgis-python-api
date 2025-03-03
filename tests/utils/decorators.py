@@ -180,6 +180,13 @@ class credentials:
         environ.get("ENTERPRISE_LDAP_USERNAME", _avworld_username),
         environ.get("ENTERPRISE_LDAP_PASSWORD", _avworld_password),
     )
+    _enterprise_standalone_server_credential_parameters = (
+        "enterprise_standalone_server",
+        environ.get("ENTERPRISE_STANDALONE_SERVER_URL", "https://dev0016118.esri.com/server/rest"),
+        # TODO @jyaistMap replace TODO_JOHN_USERNAME and TODO_JOHN_PASSWORD with actual credentials
+        environ.get("ENTERPRISE_STANDALONE_SERVER_USERNAME", "TODO_JOHN_USERNAME"),
+        environ.get("ENTERPRISE_STANDALONE_SERVER_PASSWORD", "TODO_JOHN_PASSWORD"),
+    )
     _agol_credential_parameters = (
         "agol",
         environ.get("STANDARD_AGOL_URL", "https://www.arcgis.com"),
@@ -279,6 +286,13 @@ class credentials:
             cls._enterprise_pki_credential_parameters,
             cls._enterprise_java_pki_credential_parameters,
             cls._enterprise_linux_pki_credential_parameters,
+        )
+    
+    @classproperty
+    def enterprise_standalone_server(cls):
+        """Run tests for standalone server enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_standalone_server_credential_parameters
         )
 
     @classproperty
