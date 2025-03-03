@@ -999,7 +999,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         """
         if HAS_SHAPELY:
-            gj = shapely_geometry.__geo_interface__
+            from shapely.geometry import mapping
+            gj = mapping(shapely_geometry)
             geom_cls = _geojson_type_to_esri_type(gj["type"])
 
             if spatial_reference:
@@ -1071,10 +1072,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         if HAS_ARCPY:
             return getattr(self.as_arcpy, "WKT", None)
         elif HAS_SHAPELY:
-            try:
-                return self.as_shapely.wkt
-            except:
-                return self._wkt(fmt="%.16f")
+            return self._wkt(fmt="%.16f")
         else:
             from geomet import wkt
 
@@ -3461,10 +3459,9 @@ class Polygon(Geometry):
         if sr is None:
             sr = {"wkid": 4326}
 
-        coordinates = data["coordinates"]
-        if data["type"].lower() == "polygon":
-            coordinates = [coordinates]
-
+        # Need to nest otherwise gets flattened in the list comprehension
+        coordinates = [data["coordinates"]]
+        
         part_list = []
         for part in coordinates:
             for ring in part:
