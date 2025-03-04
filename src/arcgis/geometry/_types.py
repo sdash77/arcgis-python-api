@@ -931,16 +931,23 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
                 from shapely.geometry import shape
                 from shapely.validation import explain_validity
+                from shapely import make_valid
 
                 if "curvePaths" in self or "curveRings" in self:
                     return {}
+
+                # Convert to shapely geometry and make valid
                 geom_shply = shape(self.__geo_interface__)
+
+                # Ensure the geometry is valid
+                geom_shply = make_valid(geom_shply)
 
                 if not geom_shply.is_valid:
                     print(
                         f"Geometry failed validation: {explain_validity(geom_shply)}. Repairing with `buffer(0)`."
                     )
                     geom_shply = geom_shply.buffer(0)
+
                 return geom_shply
         return None
 
@@ -998,20 +1005,53 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             )
 
         """
-        if HAS_SHAPELY:
-            from shapely.geometry import mapping
-
-            gj = mapping(shapely_geometry)
-            geom_cls = _geojson_type_to_esri_type(gj["type"])
-
-            if spatial_reference:
-                geometry = geom_cls._from_geojson(gj, sr=spatial_reference)
-            else:
-                geometry = geom_cls._from_geojson(gj)
-
-            return geometry
-        else:
+        if not HAS_SHAPELY:
             raise ValueError("Shapely is required to execute from_shapely.")
+
+        from shapely.geometry import mapping, Polygon, MultiPolygon
+        from shapely.geometry.polygon import orient
+
+        # Validate spatial reference
+        if spatial_reference is not None:
+            if not isinstance(spatial_reference, dict):
+                raise TypeError(
+                    "spatial_reference must be a dictionary with 'wkid' or 'wkt'."
+                )
+            if "wkid" not in spatial_reference and "wkt" not in spatial_reference:
+                raise ValueError("spatial_reference must contain 'wkid' or 'wkt'.")
+
+        # Ensure correct polygon orientation
+        if shapely_geometry.geom_type == "Polygon":
+            shapely_geometry = orient(shapely_geometry, sign=1.0)  # Fix orientation
+
+        elif shapely_geometry.geom_type == "MultiPolygon":
+            shapely_geometry = MultiPolygon(
+                [
+                    orient(poly, sign=1.0) for poly in shapely_geometry.geoms
+                ]  # Fix each polygon
+            )
+
+        geojson_geom = mapping(shapely_geometry)
+
+        # Convert coordinates to tuples (ensure consistency)
+        if geojson_geom["type"] == "MultiPolygon":
+            geojson_geom["coordinates"] = [
+                [list(map(tuple, ring)) for ring in polygon]
+                for polygon in geojson_geom["coordinates"]
+            ]
+        elif geojson_geom["type"] == "Polygon":
+            geojson_geom["coordinates"] = [
+                list(map(tuple, ring)) for ring in geojson_geom["coordinates"]
+            ]
+
+        geom_cls = _geojson_type_to_esri_type(geojson_geom["type"])
+
+        # Convert using `_from_geojson`
+        geometry = geom_cls._from_geojson(
+            geojson_geom, sr=spatial_reference or {"wkid": 4326}
+        )
+
+        return geometry
 
     # ----------------------------------------------------------------------
     @property
@@ -1073,7 +1113,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         if HAS_ARCPY:
             return getattr(self.as_arcpy, "WKT", None)
         elif HAS_SHAPELY:
-            return self._wkt(fmt="%.16f")
+            try:
+                return self.as_shapely.wkt
+            except:
+                return self._wkt(fmt="%.16f")
         else:
             from geomet import wkt
 
@@ -3457,28 +3500,41 @@ class Polygon(Geometry):
 
     @classmethod
     def _from_geojson(cls, data, sr=None):
-        if sr is None:
-            sr = {"wkid": 4326}
+        sr = sr or {"wkid": 4326}
 
-        # Need to nest otherwise gets flattened in the list comprehension
-        coordinates = [data["coordinates"]]
-
+        coordinates = data["coordinates"]
         part_list = []
-        for part in coordinates:
-            for ring in part:
-                part_item = []
-                for coord in reversed(ring):
-                    part_item.append(coord)
-                part_list.append(part_item)
+
+        if data["type"].lower() == "multipolygon":
+            for polygon in coordinates:  # Iterate over individual polygons
+                polygon_rings = []
+                for ring in polygon:  # Outer + inner rings
+                    polygon_rings.append(
+                        [tuple(coord) for coord in ring]
+                    )  # Convert to tuple
+                part_list.append(
+                    polygon_rings
+                )  # Append entire polygon as a separate entry
+        elif data["type"].lower() == "polygon":
+            polygon_rings = [
+                [tuple(coord) for coord in coordinates[0]]
+            ]  # Ensure consistent list structure
+            part_list.append(polygon_rings)  # Keep same nesting level as MultiPolygon
+
         return cls({"rings": part_list, "spatialReference": sr})
 
     @property
     def __geo_interface__(self) -> dict:
-        """returns the Polygon as a MultiPolygon GeoJSON"""
-        col = []
+        """Returns the Polygon as a MultiPolygon GeoJSON."""
+
+        # Convert rings into properly formatted tuples
+        polygons = []
         for part in self["rings"]:
-            col.append([tuple(pt) for pt in part])
-        return {"coordinates": [col], "type": "MultiPolygon"}
+            outer_ring = [tuple(pt) for pt in part[0]]  # Outer boundary
+            inner_rings = [[tuple(pt) for pt in hole] for hole in part[1:]]  # Holes
+            polygons.append([outer_ring] + inner_rings)
+
+        return {"type": "MultiPolygon", "coordinates": polygons}
 
 
 ########################################################################
