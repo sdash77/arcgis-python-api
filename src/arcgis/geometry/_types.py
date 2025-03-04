@@ -3527,35 +3527,40 @@ class Polygon(Geometry):
     def __geo_interface__(self) -> dict:
         """Returns the Polygon as a MultiPolygon GeoJSON."""
 
-        # Convert rings into properly formatted tuples
         polygons = []
-        for part in self["rings"]:
-            try:
-                if isinstance(part, list):
-                    # Check if the part is a valid list of coordinate pairs
-                    if all(isinstance(pt, list) and len(pt) == 2 for pt in part):
-                        outer_ring = [
-                            tuple(pt) for pt in part
-                        ]  # Convert coordinate pair to tuple
 
-                        # Check if there are any holes (i.e., additional rings in the part)
-                        inner_rings = []
-                        if len(part) > 1:
-                            for hole in part[1:]:
-                                if isinstance(hole, list) and all(
-                                    isinstance(pt, list) and len(pt) == 2 for pt in hole
-                                ):
-                                    inner_rings.append([tuple(pt) for pt in hole])
+        # Check if self is essentially a MultiPolygon (even if it's the same class)
+        # A MultiPolygon will have more than one "part" in the "rings"
+        if isinstance(self["rings"], list) and len(self["rings"]) > 1:
+            # Treat it as a MultiPolygon
+            for part in self["rings"]:
+                if isinstance(part, list):  # Ensure part is a valid list
+                    # Outer boundary
+                    outer_ring = [
+                        tuple(pt) for pt in part[0]
+                    ]  # First element is outer ring
+                    inner_rings = []
 
-                        polygons.append([outer_ring] + inner_rings)
-                    else:
-                        continue  # Skip this part if it's not valid
-                else:
-                    continue  # Skip if it's not a list
+                    # Holes
+                    if len(part) > 1:
+                        for hole in part[1:]:
+                            if isinstance(hole, list):
+                                inner_rings.append([tuple(pt) for pt in hole])
 
-            except Exception as e:
-                print(f"Error processing part {part}: {e}")
-                continue  # Continue processing the other parts if there's an error
+                    polygons.append([outer_ring] + inner_rings)
+        else:
+            # Single polygon (we assume self["rings"] is a list of rings)
+            part = self["rings"]
+            outer_ring = [tuple(pt) for pt in part[0]]
+            inner_rings = []
+
+            # Holes (inner rings)
+            if len(part) > 1:
+                for hole in part[1:]:
+                    if isinstance(hole, list):
+                        inner_rings.append([tuple(pt) for pt in hole])
+
+            polygons.append([outer_ring] + inner_rings)
 
         return {"type": "MultiPolygon", "coordinates": polygons}
 
