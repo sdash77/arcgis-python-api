@@ -356,7 +356,7 @@ class server_credentials:
     _enterprise_standalone_credential_parameters = (
         "standalone_enterprise",
         environ.get("ENTERPRISE_STANDALONE_SERVER_URL", "https://dev0016118.esri.com/server"),
-        None
+        None,
         environ.get("ENTERPRISE_STANDALONE_SERVER_USERNAME", "siteadmin"),
         environ.get("ENTERPRISE_STANDALONE_SERVER_PASSWORD", "IL0veGI$"),
     )
