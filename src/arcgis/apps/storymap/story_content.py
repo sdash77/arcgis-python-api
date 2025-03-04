@@ -5987,7 +5987,9 @@ class Table:
                     # Check if the cell value is a dictionary and has the key "value"
                     if isinstance(cell_value, dict) and "value" in cell_value:
                         # Update the value key to be an instance of the text class
-                        df.at[str(index), column]["value"] = Text(cell_value["value"])._text
+                        df.at[str(index), column]["value"] = Text(
+                            cell_value["value"]
+                        )._text
             return df
 
     # ----------------------------------------------------------------------
