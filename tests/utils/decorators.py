@@ -366,7 +366,7 @@ class server_credentials:
     def standalone_enterprise(cls):
         """Run tests for standalone server enterprise credentials"""
         return cls._get_credentials_parameterized_class(
-            cls._enterprise_standalone_server_credential_parameters
+            cls._enterprise_standalone_credential_parameters
         )
     # endregion
 
