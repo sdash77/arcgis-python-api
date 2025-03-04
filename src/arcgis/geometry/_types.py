@@ -3530,9 +3530,32 @@ class Polygon(Geometry):
         # Convert rings into properly formatted tuples
         polygons = []
         for part in self["rings"]:
-            outer_ring = [tuple(pt) for pt in part[0]]  # Outer boundary
-            inner_rings = [[tuple(pt) for pt in hole] for hole in part[1:]]  # Holes
-            polygons.append([outer_ring] + inner_rings)
+            try:
+                if isinstance(part, list):
+                    # Check if the part is a valid list of coordinate pairs
+                    if all(isinstance(pt, list) and len(pt) == 2 for pt in part):
+                        outer_ring = [
+                            tuple(pt) for pt in part
+                        ]  # Convert coordinate pair to tuple
+
+                        # Check if there are any holes (i.e., additional rings in the part)
+                        inner_rings = []
+                        if len(part) > 1:
+                            for hole in part[1:]:
+                                if isinstance(hole, list) and all(
+                                    isinstance(pt, list) and len(pt) == 2 for pt in hole
+                                ):
+                                    inner_rings.append([tuple(pt) for pt in hole])
+
+                        polygons.append([outer_ring] + inner_rings)
+                    else:
+                        continue  # Skip this part if it's not valid
+                else:
+                    continue  # Skip if it's not a list
+
+            except Exception as e:
+                print(f"Error processing part {part}: {e}")
+                continue  # Continue processing the other parts if there's an error
 
         return {"type": "MultiPolygon", "coordinates": polygons}
 
