@@ -849,7 +849,7 @@ def _arcpy_workflow(filename, **kwargs):
     df.SHAPE = df.SHAPE[q].apply(_ujson.loads).apply(arcpy_geom_type)
     df.loc[none_q, "SHAPE"] = None
     df.spatial.set_geometry("SHAPE")
-    df.spatial._meta.source = filename
+    df.spatial._meta.source = getattr(filename, "dataSource", str(filename))
 
     for key, data_type in pandas_dtypes.items():
         try:
