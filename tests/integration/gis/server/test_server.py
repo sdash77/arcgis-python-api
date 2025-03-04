@@ -419,7 +419,7 @@ class TestServerUser(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.server_manager = ServicesDirectory(
-            url=cls.portal_url,
+            url=cls.url,
             username=cls.username,
             password=cls.password,
         ).admin
