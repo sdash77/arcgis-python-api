@@ -23,9 +23,9 @@ class TestTableContent(unittest.TestCase):
 
         cells = table.content
         cells.loc["0"] = [
-            {"value": Text("Hello")},
+            {"value": "Hello"},
             {"value": Text("World")},
-            {"value": Text("!")},
+            {"value": "!"},
         ]
         cells.loc["1"] = [
             {"value": Text("Hello")},
@@ -40,7 +40,9 @@ class TestTableContent(unittest.TestCase):
 
         table.content = cells
 
+        story.save()
         item = gis.content.get(story._itemid)
+        assert item
         assert story.delete_story()
 
 
