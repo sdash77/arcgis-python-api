@@ -1000,6 +1000,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         """
         if HAS_SHAPELY:
             from shapely.geometry import mapping
+
             gj = mapping(shapely_geometry)
             geom_cls = _geojson_type_to_esri_type(gj["type"])
 
@@ -3461,7 +3462,7 @@ class Polygon(Geometry):
 
         # Need to nest otherwise gets flattened in the list comprehension
         coordinates = [data["coordinates"]]
-        
+
         part_list = []
         for part in coordinates:
             for ring in part:

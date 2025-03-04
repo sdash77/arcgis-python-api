@@ -39,6 +39,7 @@ if HAS_ARCPY:
 if HAS_SHAPELY:
     shapely = LazyLoader("shapely", strict=True)
 
+
 class Feature(object):
     """Entities located in space with a set of properties can be represented as features.
 
@@ -1114,12 +1115,14 @@ class FeatureSet(object):
                 return Geometry(geom)
             if HAS_SHAPELY:
                 from shapely.geometry import shape
+
                 return Geometry.from_shapely(shape(geom))
 
             # if polygon or multipolygon and has coordinates defined, need to add extra brackets
             # geomet will flatten polygon by one level, thus removing multipolygons
-            if (
-                geom.get("type").lower() in ["polygon", "multipolygon"] and geom.get("coordinates")):
+            if geom.get("type").lower() in ["polygon", "multipolygon"] and geom.get(
+                "coordinates"
+            ):
                 geom["coordinates"] = [geom["coordinates"]]
             return Geometry(geomet.esri.dumps(geom))
 
