@@ -197,7 +197,7 @@ class RTDetrV2(ModelExtension):
                 p.requires_grad = False
         return idx
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, mixed_precision=False):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -209,9 +209,16 @@ class RTDetrV2(ModelExtension):
                                 against the learning rates and mark the optimal
                                 value of the learning rate on the plot.
                                 The default value is 'True'.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision.
+                                If set to `True`, optimum learning rate will be derived in mixed precision mode.
+                                Only `Pytorch` based models are supported.
+                                The default value is 'False'.
         =====================   ===========================================
         """
-        lr = super().lr_find(start_lr=1e-5, end_lr=3e-4)
+        lr = super().lr_find(
+            allow_plot, start_lr=1e-5, end_lr=3e-4, mixed_precision=mixed_precision
+        )
         return lr
 
     @staticmethod

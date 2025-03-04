@@ -275,8 +275,16 @@ class AttachmentManager(object):
         res = self._layer._con._session.get(url=url, params=params)
         res.raise_for_status()
         data: dict[str, Any] = res.json()
-        if "attachmentGroups" in data:
-            return sum([grp["count"] for grp in res.json()["attachmentGroups"]])
+        if data.get("attachmentGroups"):
+            count_values = [
+                d.get("count") for d in data.get("attachmentGroups") if d.get("count")
+            ]
+            if not count_values:
+                attachment_groups = [
+                    d.get("attachmentInfos") for d in data.get("attachmentGroups")
+                ]
+                return sum([len(grp) for grp in attachment_groups])
+            return sum([grp["count"] for grp in data["attachmentGroups"]])
         elif "error" in data:
             raise Exception(data["error"])
         else:
