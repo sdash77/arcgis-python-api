@@ -21,7 +21,7 @@ from arcgis.gis.server.admin._uploads import Uploads
 from arcgis.gis.server.admin._usagereports import Report, ReportManager
 from arcgis.features import FeatureLayerCollection
 from arcgis._impl.common._isd import InsensitiveDict
-from utils.decorators import credentials, integration_test, profiles
+from utils.decorators import server_credentials, integration_test, profiles
 
 
 @profiles.agol
@@ -409,7 +409,7 @@ class TestServerReport(unittest.TestCase):
         self.assertIsInstance(res, dict)
 
 
-@credentials.enterprise_standalone_server
+@server_credentials.standalone_enterprise
 @integration_test
 class TestServerUser(unittest.TestCase):
     """

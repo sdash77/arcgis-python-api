@@ -180,12 +180,6 @@ class credentials:
         environ.get("ENTERPRISE_LDAP_USERNAME", _avworld_username),
         environ.get("ENTERPRISE_LDAP_PASSWORD", _avworld_password),
     )
-    _enterprise_standalone_server_credential_parameters = (
-        "enterprise_standalone_server",
-        environ.get("ENTERPRISE_STANDALONE_SERVER_URL", "https://dev0016118.esri.com/server/rest"),
-        environ.get("ENTERPRISE_STANDALONE_SERVER_USERNAME", "siteadmin"),
-        environ.get("ENTERPRISE_STANDALONE_SERVER_PASSWORD", "IL0veGI$"),
-    )
     _agol_credential_parameters = (
         "agol",
         environ.get("STANDARD_AGOL_URL", "https://www.arcgis.com"),
@@ -233,7 +227,6 @@ class credentials:
             "client_id",
             "client_secret",
         )
-        """Returns a parameterized class for the credentials parameters from provided args"""
         return parameterized_class(
             _credentials_properties,
             [*args],
@@ -285,13 +278,6 @@ class credentials:
             cls._enterprise_pki_credential_parameters,
             cls._enterprise_java_pki_credential_parameters,
             cls._enterprise_linux_pki_credential_parameters,
-        )
-    
-    @classproperty
-    def enterprise_standalone_server(cls):
-        """Run tests for standalone server enterprise credentials"""
-        return cls._get_credentials_parameterized_class(
-            cls._enterprise_standalone_server_credential_parameters
         )
 
     @classproperty
@@ -354,6 +340,51 @@ class credentials:
 
     # endregion
 
+
+class server_credentials:
+    """
+    A set of decorators that inject server credentials into tests.
+
+    Sets the following properties on the test class:
+    self.connection_name: the unique connection name, appended to the test name (e.g. agol, enterprise)
+    self.url: the server url root (e.g. https://arcgis.enterprise.com/server) | Note: does not include `/rest` or `/rest/services`
+    self.portal_url: the portal url, if the server is federated or ArcGIS Online
+    self.username: the username
+    self.password: the password
+    """
+
+    _enterprise_standalone_credential_parameters = (
+        "standalone_enterprise",
+        environ.get("ENTERPRISE_STANDALONE_SERVER_URL", "https://dev0016118.esri.com/server"),
+        None
+        environ.get("ENTERPRISE_STANDALONE_SERVER_USERNAME", "siteadmin"),
+        environ.get("ENTERPRISE_STANDALONE_SERVER_PASSWORD", "IL0veGI$"),
+    )
+
+    # region decorators
+    @classproperty
+    def standalone_enterprise(cls):
+        """Run tests for standalone server enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_standalone_server_credential_parameters
+        )
+    # endregion
+
+    def _get_credentials_parameterized_class(*args):
+        """Returns a parameterized class for the credentials parameters from provided args"""
+        _credentials_properties = (
+            "connection_name",
+            "url",
+            "portal_url",
+            "username",
+            "password",
+        )
+        return parameterized_class(
+            _credentials_properties,
+            [*args],
+            # default test name is {class_name}_{index}_{connection_name}; override to remove index:
+            class_name_func=lambda cls, _, param: f"{cls.__name__}_{parameterized.to_safe_name(param['connection_name'])}",
+        )
 
 class profiles:
     """
