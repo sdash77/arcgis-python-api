@@ -937,7 +937,17 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                     return {}
 
                 # Convert to shapely geometry and make valid
-                geom_shply = shape(self.__geo_interface__)
+                try:
+                    geom_shply = shape(self.__geo_interface__)
+                except Exception as e:
+                    if "'float' object is not iterable" in str(e):
+                        geom = self.__geo_interface__
+                        # Ensure the coordinates are in a list,
+                        # since we treat all polygons as multi-polygons in the geojson we need to nest more if not actual multipolygon
+                        geom["coordinates"] = [geom["coordinates"]]
+                        geom_shply = shape(geom)
+                    else:
+                        raise e
 
                 # Ensure the geometry is valid
                 geom_shply = make_valid(geom_shply)
@@ -3525,44 +3535,11 @@ class Polygon(Geometry):
 
     @property
     def __geo_interface__(self) -> dict:
-        """Returns the Polygon as a MultiPolygon GeoJSON."""
-
-        polygons = []
-
-        # Check if self is essentially a MultiPolygon (even if it's the same class)
-        # A MultiPolygon will have more than one "part" in the "rings"
-        if isinstance(self["rings"], list) and len(self["rings"]) > 1:
-            # Treat it as a MultiPolygon
-            for part in self["rings"]:
-                if isinstance(part, list):  # Ensure part is a valid list
-                    # Outer boundary
-                    outer_ring = [
-                        tuple(pt) for pt in part[0]
-                    ]  # First element is outer ring
-                    inner_rings = []
-
-                    # Holes
-                    if len(part) > 1:
-                        for hole in part[1:]:
-                            if isinstance(hole, list):
-                                inner_rings.append([tuple(pt) for pt in hole])
-
-                    polygons.append([outer_ring] + inner_rings)
-        else:
-            # Single polygon (we assume self["rings"] is a list of rings)
-            part = self["rings"]
-            outer_ring = [tuple(pt) for pt in part[0]]
-            inner_rings = []
-
-            # Holes (inner rings)
-            if len(part) > 1:
-                for hole in part[1:]:
-                    if isinstance(hole, list):
-                        inner_rings.append([tuple(pt) for pt in hole])
-
-            polygons.append([outer_ring] + inner_rings)
-
-        return {"type": "MultiPolygon", "coordinates": polygons}
+        """returns the Polygon as a MultiPolygon GeoJSON"""
+        col = []
+        for part in self["rings"]:
+            col.append([tuple(pt) for pt in part])
+        return {"coordinates": col, "type": "MultiPolygon"}
 
 
 ########################################################################
