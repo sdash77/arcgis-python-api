@@ -89,7 +89,7 @@ def compare_checksum(filepath, file_checksum):
         else:
             return False
 
-class AIConnFile:
+class AIServiceConnection:
     """
     Provides helper methods to read and access AI Service Connection Files.
 
@@ -101,19 +101,19 @@ class AIConnFile:
     =====================   ===========================================
 
     :return:
-        :class:`~arcgis.learn.AIConnFile` Object
+        :class:`~arcgis.learn.AIServiceConnection` Object
     """
     def __init__(self, connection_file_path):
         with open(connection_file_path, 'r') as file:
             data = json.load(file)
-            self.__connectionInfo = data
+            self.__connection_info = data
 
     def get_dict(self):
         """
         Returns a dictionary representation of the object with all the connection properties.
         """
 
-        out_dict = self.__connectionInfo
+        out_dict = self.__connection_info
 
         if ("authenticationProperties" in out_dict and "authenticationSecrets" in out_dict):
             auth_prop = out_dict["authenticationProperties"]
