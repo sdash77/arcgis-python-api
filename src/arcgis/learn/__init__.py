@@ -7,8 +7,6 @@ from arcgis.geoprocessing._support import (
     _analysis_job_status,
     _layer_input,
 )
-
-
 from ._utils.utils import AIConnFile
 
 import json as _json
