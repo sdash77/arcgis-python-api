@@ -454,10 +454,17 @@ class DeepLab(ArcGISModel):
 
     @staticmethod
     def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
+        """Supported list of Dynamic One-For-All (DOFA) backbones for this model."""
         from ._dofa_utils import dofa_backbones_downstream
 
         return dofa_backbones_downstream
+
+    @staticmethod
+    def clay_backbones():
+        """Supported list of Clay Foundation Model backbones for this model."""
+        from ._dofa_utils import clay_backbones_downstream
+
+        return clay_backbones_downstream
 
     @staticmethod
     def torchgeo_backbones():
@@ -507,6 +514,7 @@ class DeepLab(ArcGISModel):
         torchgeo_backbone = DeepLab.torchgeo_backbones()
         satlas_backbone = DeepLab.satlas_backbones()
         dofa_backbone = DeepLab.dofa_backbones()
+        clay_backbone = DeepLab.clay_backbones()
 
         return (
             [*_resnet_family, *_densenet_family, *_vgg_family]
@@ -515,6 +523,7 @@ class DeepLab(ArcGISModel):
             + torchgeo_backbone
             + satlas_backbone
             + dofa_backbone
+            + clay_backbone
         )
 
     @property
@@ -581,6 +590,7 @@ class DeepLab(ArcGISModel):
             empty_data.emd_path = emd_path
             empty_data.emd = emd
             empty_data._band_names = emd.get("Bands")
+            empty_data._emd = emd
             return cls(empty_data, **model_params, pretrained_path=str(model_file))
         else:
             return cls(data, **model_params, pretrained_path=str(model_file))

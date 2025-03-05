@@ -75,7 +75,7 @@ try:
         complete_transformer_backbone_name,
     )
     from fastai.vision import learner
-    from ._dofa_utils import dofa_config
+    from ._dofa_utils import dofa_config, clay_config
 
     learner._test_cnn = test_cnn_trnsfrmr
     ClassificationInterpretation.GradCAM = gradcam_trnsfrmr
@@ -265,8 +265,9 @@ class FeatureClassifier(ArcGISModel):
                 and backbone in FeatureClassifier._transformer_backbone_original_names()
             )
 
-            self._dofa = (
-                type(backbone) is str and backbone in FeatureClassifier.dofa_backbones()
+            self._dofa = type(backbone) is str and (
+                backbone in FeatureClassifier.dofa_backbones()
+                or backbone in FeatureClassifier.clay_backbones()
             )
             try:
                 if self._transformer:
@@ -449,9 +450,15 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
+        """Supported list of Dynamic One-For-All (DOFA) backbones for this model."""
         dofa_backbone = list(dofa_config.keys())
         return dofa_backbone
+
+    @staticmethod
+    def clay_backbones():
+        """Supported list of Clay Foundation Model backbones for this model."""
+        clay_backbone = list(clay_config.keys())
+        return clay_backbone
 
     @staticmethod
     def torchgeo_backbones():
@@ -489,7 +496,9 @@ class FeatureClassifier(ArcGISModel):
         transformer_backbones = FeatureClassifier.transformer_backbones()
         torchgeo_backbone = FeatureClassifier.torchgeo_backbones()
         satlas_backbone = FeatureClassifier.satlas_backbones()
+        satlas_backbone = FeatureClassifier.satlas_backbones()
         dofa_backbone = FeatureClassifier.dofa_backbones()
+        clay_backbone = FeatureClassifier.clay_backbones()
 
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
             timm_backbones
@@ -497,6 +506,7 @@ class FeatureClassifier(ArcGISModel):
             + torchgeo_backbone
             + satlas_backbone
             + dofa_backbone
+            + clay_backbone
         )
 
     @property

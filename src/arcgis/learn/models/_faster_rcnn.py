@@ -24,7 +24,12 @@ try:
     from torchvision.models.detection.roi_heads import fastrcnn_loss
     from torchvision.models.detection.transform import resize_boxes
     from ._transformer_backbone import vit_config
-    from ._dofa_utils import dofa_config, dofa_backbones_downstream
+    from ._dofa_utils import (
+        dofa_config,
+        dofa_backbones_downstream,
+        clay_config,
+        clay_backbones_downstream,
+    )
 
     HAS_FASTAI = True
 
@@ -87,7 +92,10 @@ class MyFasterRCNN:
             is_dofa = False
             if backbone.__name__ in transformer_backbone_downstream:
                 is_transformer = True
-            elif backbone.__name__ in dofa_backbones_downstream:
+            elif (
+                backbone.__name__ in dofa_backbones_downstream
+                or backbone.__name__ in clay_backbones_downstream
+            ):
                 is_dofa = True
             if (
                 backbone is not None
@@ -688,9 +696,15 @@ class FasterRCNN(ModelExtension):
 
     @staticmethod
     def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
+        """Supported list of Dynamic One-For-All (DOFA) backbones for this model."""
         dofa_backbone = list(dofa_config.keys())
         return dofa_backbone
+
+    @staticmethod
+    def clay_backbones():
+        """Supported list of Clay Foundation Model backbones for this model."""
+        clay_backbone = list(clay_config.keys())
+        return clay_backbone
 
     @staticmethod
     def torchgeo_backbones():
@@ -734,6 +748,7 @@ class FasterRCNN(ModelExtension):
         torchgeo_backbone = FasterRCNN.torchgeo_backbones()
         satlas_backbone = FasterRCNN.satlas_backbones()
         dofa_backbone = FasterRCNN.dofa_backbones()
+        clay_backbone = FasterRCNN.clay_backbones()
 
         return (
             [*_resnet_family]
@@ -742,6 +757,7 @@ class FasterRCNN(ModelExtension):
             + torchgeo_backbone
             + satlas_backbone
             + dofa_backbone
+            + clay_backbone
         )
 
     @property
@@ -830,6 +846,7 @@ class FasterRCNN(ModelExtension):
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
             data._band_names = emd.get("Bands")
+            data._emd = emd
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
 
