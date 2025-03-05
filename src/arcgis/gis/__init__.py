@@ -1930,9 +1930,22 @@ class OfflineContentManager(object):
                             provided, the package will be named randomly prefaced with the
                             text *exported_content*.
         ---------------     --------------------------------------------------------------------
-        service_format      Optional string. The format for the source service of any hosted
-                            feature layer items in the dependency tree. Default format is
+        service_format      Optional string. The format of the data from any source hosted
+                            *feature layer* items in the dependency tree. Default format is
                             *File Geodatabase*.
+                            
+                            Options:
+                            
+                            * *Shapefile*
+                            * *CSV*
+                            * *File Geodatabase*
+                            * *Feature Collection*(
+                            * *GeoJson*
+                            * *Scene Package*
+                            * *KML*
+                            * *Excel*
+                            * *geoPackage*
+                            * *Vector Tile Package*
         ===============     ====================================================================
 
         :return:
@@ -2020,7 +2033,7 @@ class OfflineContentManager(object):
         ================     ======================================================================
 
         :return:
-            A List of the created :class:`~argis.gis.Item` objects.
+            A List of the created :class:`~arcgis.gis.Item` objects.
 
         .. code-block:: python
 
@@ -18628,28 +18641,45 @@ class Item(dict):
         out_format: str = "item",
     ):
         """
-        Returns the dependencies of an item. Can be used to return either the immediate dependencies
-        of an item (other items that an item directly contains in its structure) or the full deep
-        dependency list (all of the items that must exist for the item to function properly- including
-        dependencies of dependencies). Note that not all items/item types may have dependencies.
+        Gets the dependencies of the :class:`~arcgis.gis.Item`. The method can return the immediate
+        dependencies, meaning other :class:`items <arcgis.gis.Item>` the item contains in its
+        structure, or the full deep dependency list, which contains all *items* that must exist
+        for the *item* to function, including dependencies of dependencies.
+        
+        .. note::
+            Not all items/item types have dependencies.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        deep                Optional boolean. When set to True, the function will return every
-                            other item needed for an item to exist. When set to False, the
-                            function will only return the immediate dependencies of an item, or
-                            ones referenced directly by the item. Default is False.
+        deep                Optional boolean.
+                            
+                            * When *True*, every :class:`item <arcgis.gis.Item>` needed for the
+                              *item* to exist is contained in the result.
+                            * When *False*, only immediate dependendencies of the *item* or those
+                              referenced directy within the item's structure are in the results.
+                              Default is *False*.
         ---------------     --------------------------------------------------------------------
-        outside_org         Optional boolean. When set to True, the output list will not include
-                            items that come from an outside GIS organization. Default is True.
+        outside_org         Optional boolean.
+                            
+                            * When *True*, the output list will include *items* from outside
+                              the :class:`~arcgis.gis.GIS`. Default is *True*.
+                            * When *False*, only *items* in the same organization as the *item*
+                              are returned.
         ---------------     --------------------------------------------------------------------
-        out_format          Optional string. Determines the format of the output list. Options
-                            are "item", "id", or "graph". Default is "item".
+        out_format          Optional string. Determines the format of the output list. Options:
+                            
+                            * *item* - results are :class:`~arcgis.gis.Item` objects
+                            * *id*, - results are *item id* strings
+                            * *graph* - result is an `~arcgis.apps.itemgraph.ItemGraph` object.
+                            
+                            Default is *item*.
         ===============     ====================================================================
 
         :return:
-                A list containing the dependencies of the item, in either Item or Item ID form.
+            A list containing the dependencies of the item either as
+            :class:`items <arcgis.gis.Item>`, item id values, or an
+            :class:`~arcgis.apps.itemgraph.ItemGraph`.
         """
 
         from arcgis.apps.itemgraph import create_dependency_graph
