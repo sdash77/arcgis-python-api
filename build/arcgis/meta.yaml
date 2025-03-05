@@ -30,7 +30,7 @@ requirements:
   - pandas >=2.0.0,<2.3.0
   - pillow
   - puremagic >=1.15,<2
-  - pyarrow >=16,<17
+  - pyarrow >=14,<17
   - pylerc
   - pyspnego >=0.8.0
   - pywin32-security [win]

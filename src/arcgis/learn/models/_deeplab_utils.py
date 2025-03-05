@@ -37,7 +37,7 @@ from fastprogress.fastprogress import progress_bar
 from ._PointRend import PointRendSemSegHead
 from fastai.vision import flatten_model
 from ._transformer_backbone import vit_config
-from ._dofa_utils import dofa_config
+from ._dofa_utils import dofa_config, clay_config
 
 
 def get_dilation_index(backbone_name, pointrend=False, keep_dilation=False):
@@ -143,6 +143,7 @@ class Deeplab(nn.Module):
         if (
             not backbone_name in vit_config.keys()
             and not backbone_name in dofa_config.keys()
+            and not backbone_name in clay_config.keys()
         ):
             modify_dilation_index, self.vgg = get_dilation_index(
                 backbone_name, pointrend, keep_dilation
@@ -166,7 +167,7 @@ class Deeplab(nn.Module):
                 num_channels_aux_classifier = self.hook[-2].stored.shape[1]
                 num_channels_classifier = self.hook[-1].stored.shape[1]
 
-        elif backbone_name in dofa_config.keys():
+        elif backbone_name in dofa_config.keys() or backbone_name in clay_config.keys():
             self.backbone = self.backbone[0]
             num_channels_classifier = self.backbone.output_shape["channels"]
             num_channels_aux_classifier = self.backbone.output_shape["channels"]
