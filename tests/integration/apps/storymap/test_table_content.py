@@ -14,7 +14,7 @@ class TestTableContent(unittest.TestCase):
         """Test adding Table and seeing properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         table = Table(3, 3)
         story.add(table)
 
