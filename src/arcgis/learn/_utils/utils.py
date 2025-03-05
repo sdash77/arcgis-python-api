@@ -3,6 +3,7 @@ import warnings
 import json
 import keyring
 
+
 def extract_zipfile(filepath, filename, remove=False):
     """Function to extract the contents of a zip file
     Args:
@@ -89,6 +90,7 @@ def compare_checksum(filepath, file_checksum):
         else:
             return False
 
+
 class AIServiceConnection:
     """
     Provides helper methods to read and access AI Service Connection Files.
@@ -103,8 +105,9 @@ class AIServiceConnection:
     :return:
         :class:`~arcgis.learn.AIServiceConnection` Object
     """
+
     def __init__(self, connection_file_path):
-        with open(connection_file_path, 'r') as file:
+        with open(connection_file_path, "r") as file:
             data = json.load(file)
             self.__connection_info = data
 
@@ -115,14 +118,17 @@ class AIServiceConnection:
 
         out_dict = self.__connection_info
 
-        if ("authenticationProperties" in out_dict and "authenticationSecrets" in out_dict):
+        if (
+            "authenticationProperties" in out_dict
+            and "authenticationSecrets" in out_dict
+        ):
             auth_prop = out_dict["authenticationProperties"]
             auth_secret = out_dict["authenticationSecrets"]
-            if ("parameterName" in auth_prop and "token" in auth_secret):
+            if "parameterName" in auth_prop and "token" in auth_secret:
                 param_name = auth_prop["parameterName"]
                 uuid = auth_secret["token"]
                 credential = keyring.get_password(uuid, param_name)
-                if (credential != None):
+                if credential != None:
                     out_dict["authenticationSecrets"]["token"] = credential
 
         return out_dict
