@@ -1118,12 +1118,12 @@ class FeatureSet(object):
 
                 return Geometry.from_shapely(shape(geom))
 
-            # if polygon or multipolygon and has coordinates defined, need to add extra brackets
-            # geomet will flatten polygon by one level, thus removing multipolygons
-            if geom.get("type").lower() in ["polygon", "multipolygon"] and geom.get(
-                "coordinates"
-            ):
-                geom["coordinates"] = [geom["coordinates"]]
+            # # if polygon or multipolygon and has coordinates defined, need to add extra brackets
+            # # geomet will flatten polygon by one level, thus removing multipolygons
+            # if geom.get("type").lower() in ["polygon", "multipolygon"] and geom.get(
+            #     "coordinates"
+            # ):
+            #     geom["coordinates"] = [geom["coordinates"]]
             return Geometry(geomet.esri.dumps(geom))
 
         return FeatureSet.from_dict(geo_to_esri(geojson))

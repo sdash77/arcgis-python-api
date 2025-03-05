@@ -65,12 +65,21 @@ def _is_valid(value):
 
 
 def _is_polygon(coords):
+    if not isinstance(coords, list) or len(coords) == 0:
+        return False
+
+    # Handle MultiPolygon (list of lists of rings)
+    if isinstance(coords[0], list) and isinstance(coords[0][0], list):
+        # MultiPolygon detected: check each polygon separately
+        return all(_is_polygon(poly) for poly in coords)
+
+    # Single Polygon case
     for coord in coords:
-        if len(coord) < 4:
+        if len(coord) < 4:  # Each ring must have at least 4 points
             return False
-        if not _is_line(coord):
+        if not _is_line(coord):  # Each ring must be a valid closed line
             return False
-        if coord[0] != coord[-1]:
+        if coord[0] != coord[-1]:  # First and last points must be the same
             return False
 
     return True
