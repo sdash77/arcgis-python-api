@@ -18150,6 +18150,7 @@ class Item(dict):
         redirect_uris: Optional[list[str]] = None,
         http_referers: Optional[list[str]] = None,
         privileges: Optional[list[str]] = None,
+        personal_token: bool | None = None,
     ):
         """
 
@@ -18202,6 +18203,11 @@ class Item(dict):
                                 based on the current item sharing model. With app tokens, all items
                                 of app owner can be accessed if the privileges list is not
                                 configured.
+        ---------------     --------------------------------------------------------------------
+        personal_token      Optional Boolean.  When providing privileges that relate to anything
+                            regarding operations on a user or administrative privileges, this
+                            must be set to true, or else the token will not be generated
+                            properly.
         ===============     ====================================================================
 
         :return: A dictionary indicating 'success' or 'error'
@@ -18239,6 +18245,8 @@ class Item(dict):
             "appType": app_type,
             "redirect_uris": redirect_uris,
         }
+        if isinstance(personal_token, bool):
+            params["isPersonalAPIToken"] = personal_token
         if http_referers:
             params["httpReferrers"] = http_referers
         if privileges:
@@ -18280,6 +18288,85 @@ class Item(dict):
             self._hydrate()
             return True
         return res["success"]
+
+    # ----------------------------------------------------------------------
+    def generate_api_token(
+        self,
+        slot: int = 1,
+        regenerate: bool = False,
+        expiration: _dt.datetime | None = None,
+    ) -> dict:
+        """
+        Generates a Developer Token from an Developer Token Item.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        slot              Optional int. API keys support 2 API tokens.  The `slot` allows
+                          users to specifiy which API Key to create or regenerate.
+        ----------------  ---------------------------------------------------------------
+        regenerate        Optional bool. When True, this will re-create the API token.
+                          The default is False.
+        ----------------  ---------------------------------------------------------------
+        expiration        Optional datetime.datetime. The time when the expiration expires.
+                          The maximum value is 1 year from the time you create the API Key.
+        ================  ===============================================================
+
+        :returns: dict
+        """
+        if not self._gis.version >= [2025, 1]:
+            raise Exception(
+                "The `GIS` does not support Developer Credentials, please use Enterprise 11.5+ or ArcGIS Online."
+            )
+
+        app_info: dict = self.app_info
+        import datetime as _dt
+
+        if expiration and expiration > _dt.datetime.now() + _dt.timedelta(weeks=52):
+            raise ValueError(
+                "The expiration value cannot be longer than one year from today."
+            )
+        if self.type != "Application":
+            raise ValueError(
+                "This item is not allowed to create developer tokens, please select the proper item type."
+            )
+        if app_info is None:
+            raise Exception(
+                "Please register your application before generating developer api keys."
+            )
+        if not slot in [1, 2]:
+            raise ValueError("The `slot` value must be 1 or 2.")
+        url: str = "%soauth2/token" % self._portal.resturl
+        client_id, client_secret = app_info.get("client_id"), app_info.get(
+            "client_secret"
+        )
+
+        slot_key: str = f"apiToken{slot}ExpirationDate"
+
+        if regenerate and expiration is None:
+            import datetime as _dt
+
+            expiration: _dt.datetime = _dt.datetime.now() + _dt.timedelta(weeks=26)
+            warnings.warn(
+                f"The `expiration` was not set, setting the new expiration to be {expiration.strftime('%B %d, %Y %I:%M %p')}"
+            )
+            self.update({slot_key: int(expiration.timestamp() * 1000)})
+        if getattr(self, slot_key, -1) < 0:
+            self.update({slot_key: int(expiration.timestamp() * 1000)})
+
+        params: dict = {
+            "f": "json",
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "apiToken": slot,
+            "regenerateApiToken": json.dumps(regenerate),
+        }
+
+        resp = self._gis.session.post(url, data=params)
+        resp.raise_for_status()
+        data = resp.json()
+        return data
 
     # ----------------------------------------------------------------------
     def package_info(self, folder: Optional[str] = None) -> str:
