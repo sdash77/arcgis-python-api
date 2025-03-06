@@ -18334,12 +18334,13 @@ class Item(dict):
             raise Exception(
                 "Please register your application before generating developer api keys."
             )
+        if not slot in [1, 2]:
+            raise ValueError("The `slot` value must be 1 or 2.")
         url: str = "%soauth2/token" % self._portal.resturl
         client_id, client_secret = app_info.get("client_id"), app_info.get(
             "client_secret"
         )
-        if not slot in [1, 2]:
-            raise ValueError("The `slot` value must be 1 or 2.")
+
         slot_key: str = f"apiToken{slot}ExpirationDate"
 
         if regenerate and expiration is None:
