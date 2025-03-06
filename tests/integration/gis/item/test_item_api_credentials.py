@@ -22,6 +22,7 @@ class TestDeveloperCredentials(unittest.TestCase):
             "title": "My First Developer Token",
             "subscriptionType": "app",
             "isPersonalAPIToken": True,
+            "tags": "ntgrtn-tst",
         }
         item = folder.add(item_properties=item_properties).result()
 
@@ -128,6 +129,7 @@ class TestDeveloperCredentials(unittest.TestCase):
             "title": "My First Developer Token",
             "subscriptionType": "app",
             "isPersonalAPIToken": True,
+            "tags": "ntgrtn-tst",
         }
         item = folder.add(item_properties=item_properties).result()
 
