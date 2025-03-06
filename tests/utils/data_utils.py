@@ -4,6 +4,7 @@ from typing import Optional
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 from arcgis import GIS, features
 from arcgis.gis import ItemProperties, Item
+from integration.config import INTEGRATION_TEST_ITEM_TAG
 
 
 def publish_test_item(
@@ -13,6 +14,7 @@ def publish_test_item(
     item_type: ItemTypeEnum,
     prep_for_editing: bool = True,
     override_capabilities: Optional[dict] = None,
+    source_item: Optional[Item] = None,
 ) -> Item:
     """
 
@@ -23,28 +25,16 @@ def publish_test_item(
         e.g. SERVICE_DEFINITION, SHAPEFILE, etc.
     :param prep_for_editing: bool: Should the published service be given editing capabilities:
     :param override_capabilities: dict(str): Provide custom feature service capabilities
+    :param source_item: Item: (Optional) The source file item to publish
     :return:
     """
-    source_item = None
     try:
-        ip = ItemProperties(
-            title=layer_name,
-            item_type=item_type.value,
-            tags=["ntgrtn-tst"],
-            snippet="Item for Feature Layer integration testing",
-        )
-        root_folder = gis.content.folders.get()
-        source_item = root_folder.add(
-            item_properties=ip,
-            file=source_data_path,
-        ).result()
-        # publish the item
-        if not source_item:
-            raise Exception(f"Could not update publish {layer_name}")
+        # Add the item to the portal
+        source_item = add_source_item(gis, layer_name, item_type, source_data_path)
 
         # Source item is good, try publishing
         feature_layer_item = source_item.publish(
-            {"name": layer_name, "tags": "ntgrtn-tst"}
+            {"name": layer_name, "tags": INTEGRATION_TEST_ITEM_TAG}
         )
         if not feature_layer_item:
             raise Exception(f"Could not update publish {layer_name}")
@@ -61,6 +51,25 @@ def publish_test_item(
         if source_item:
             source_item.delete(permanent=True)
         raise Exception("Failed to add necessary item file to portal.", ex)
+
+
+def add_source_item(gis: GIS, layer_name: str, item_type: ItemTypeEnum, source_data_path: str):
+    source_item = None
+    try:
+        ip = ItemProperties(
+            title=layer_name,
+            item_type=item_type.value,
+            tags=["ntgrtn-tst"],
+            snippet="Item for Feature Layer integration testing",
+        )
+        root_folder = gis.content.folders.get()
+        source_item = root_folder.add(
+            item_properties=ip,
+            file=source_data_path,
+        ).result()
+        return source_item
+    except Exception as ex:
+        raise Exception("Failed to add necessary item file to portal.")
 
 
 def prep_test_item(feature_layer, capabilities):
@@ -167,3 +176,36 @@ def get_feature_layer_url(
                     result_url = f"{result_url}/{layer_id}"
                 return result_url
     return None
+
+
+def create_group(gis: GIS, group_name: str):
+    """
+    Create a test group in GIS
+
+    :param gis: GIS: The GIS instance
+    :param group_name: str: The name of the group
+    :return: The created group
+    """
+    try:
+        group = gis.groups.create(
+            title=group_name,
+            tags=INTEGRATION_TEST_ITEM_TAG,
+            access="org",
+        )
+        return group
+    except Exception as ex:
+        raise Exception("Failed to create necessary group in portal.", ex)
+
+
+def cleanup_groups(groups: list):
+    """
+    Delete groups
+
+    :param groups: list: The groups to delete
+    :return: void
+    """
+    for group in groups:
+        try:
+            group.delete()
+        except Exception as ex:
+            print("Failed to delete group.", group, ex)
