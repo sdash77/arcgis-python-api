@@ -10,7 +10,7 @@ import datetime as _dt
 
 
 @integration_test
-@profiles.agol_admin
+@profiles.admin_agol
 class TestDeveloperCredentials(unittest.TestCase):
     def test_create_developer_credentials(self):
         folder = self.gis.content.folders.get()
