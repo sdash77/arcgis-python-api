@@ -1,3 +1,7 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_11421\src")
+sys.path.insert(1, r"C:\SVN\geosaurus_issue_11421\tests")
 import unittest
 import uuid
 from utils.decorators import integration_test, profiles
@@ -6,7 +10,7 @@ import datetime as _dt
 
 
 @integration_test
-@profiles.agol
+@profiles.agol_admin
 class TestDeveloperCredentials(unittest.TestCase):
     def test_create_developer_credentials(self):
         folder = self.gis.content.folders.get()
