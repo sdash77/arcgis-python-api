@@ -13,6 +13,7 @@ def publish_test_item(
     item_type: ItemTypeEnum,
     prep_for_editing: bool = True,
     override_capabilities: Optional[dict] = None,
+    target_url: Optional[str] = None,
 ) -> Item:
     """
 
@@ -23,6 +24,7 @@ def publish_test_item(
         e.g. SERVICE_DEFINITION, SHAPEFILE, etc.
     :param prep_for_editing: bool: Should the published service be given editing capabilities:
     :param override_capabilities: dict(str): Provide custom feature service capabilities
+    :param target_url: str: Url of a target server used for cloning items.
     :return:
     """
     source_item = None
@@ -33,6 +35,8 @@ def publish_test_item(
             tags=["ntgrtn-tst"],
             snippet="Item for Feature Layer integration testing",
         )
+        if target_url:
+            ip.url = target_url
         root_folder = gis.content.folders.get()
         source_item = root_folder.add(
             item_properties=ip,
