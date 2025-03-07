@@ -180,10 +180,7 @@ def from_layer(layer, query="1=1"):
     """
     if not layer.filter is None:
         query = layer.filter
-    from arcgis.geometry import Geometry, SpatialReference
 
-    fields = []
-    records = []
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
     sdf = layer.query(where=query, as_df=True)

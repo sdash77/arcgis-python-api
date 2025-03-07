@@ -586,16 +586,12 @@ class Query:
         is_layer: bool = True,
         query_3d: bool = False,
         as_df: bool = False,
-        supports_pagination: bool = False,
-        max_record_count: int = 2000,
     ):
         self.layer = layer
         self.is_layer = is_layer
         self.query_3d = query_3d
         self.as_df = as_df
         self.parameters = self.create_parameters(parameters)
-        self.supports_pagination = supports_pagination
-        self.max_record_count = max_record_count
 
     def create_parameters(
         self,
@@ -698,10 +694,7 @@ class Query:
         features = result.get("features", [])
         if self._needs_more_features(result, features):
             # Pagination workflow
-            if not self.supports_pagination:
-                # This paginates using object ids so we can fetch all features even if the service has a limit
-                features = self._fetch_all_features_by_chunk(url)
-            elif (
+            if (
                 self.parameters.get("objectIds")
                 or self.parameters.get("orderByFields")
                 or self.parameters.get("geometryFilter")
@@ -710,8 +703,9 @@ class Query:
                 # For certain parameters, we do not expect all records to be returned or they have to be returned in a specific order
                 features = self._fetch_all_features_single_thread(url, features, result)
             else:
-                # Otherwise, we use a concurrent workflow to fetch all features
-                features = self._fetch_all_features_concurrent(url, features)
+                # Otherwise, we use a concurrent workflow with ids to fetch all features
+                # This workflow also works if pagination is not supported
+                features = self._fetch_all_features_by_chunk(url)
 
         result["features"] = features
         if self.as_df:
@@ -758,65 +752,6 @@ class Query:
 
         return features
 
-    def _fetch_all_features_concurrent(self, url, features):
-        """Fetches all features by handling pagination and using concurrent requests."""
-        original_offset = self.parameters.get("resultOffset", 0)
-
-        # Step 1: Get total records, but respect user-defined limit
-        total_available = self._fetch_total_records_count(url)
-        requested_count = self.parameters.get("resultRecordCount", total_available)
-        # Ensure we don’t request more than needed
-        requested_count = min(total_available, requested_count)
-
-        self.parameters["resultRecordCount"] = (
-            self.max_record_count
-        )  # Enforce per-request limit
-
-        # Step 2: Define function to fetch a page of features
-        def fetch_page(offset, limit, params):
-            page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
-            page_params["resultOffset"] = offset
-            page_params["resultRecordCount"] = limit
-            page_params = _encode_params(page_params)
-            response = self.layer._con._session.get(url, params=page_params).json()
-            # Return offset to maintain order
-            return (
-                offset,
-                response.get("features", []),
-            )
-
-        # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
-        with concurrent.futures.ThreadPoolExecutor(5) as executor:
-            futures = {}
-            fetched_count = len(features)
-
-            while fetched_count < requested_count:
-                remaining = requested_count - fetched_count  # How many more we need
-                batch_size = min(self.max_record_count, remaining)  # Adjust batch size
-                offset = original_offset + fetched_count  # Adjust offset correctly
-
-                # Submit batch request
-                futures[
-                    executor.submit(fetch_page, offset, batch_size, self.parameters)
-                ] = offset
-
-                # Step 4: Process results in the correct order
-                results_by_offset = {}
-                for future in concurrent.futures.as_completed(futures):
-                    offset, result = future.result()
-                    results_by_offset[offset] = result
-
-                # Step 5: Merge results in order
-                for offset in sorted(results_by_offset.keys()):
-                    features.extend(results_by_offset[offset])
-                    fetched_count += len(results_by_offset[offset])
-
-                    # Stop early if we reach requested_count
-                    if fetched_count >= requested_count:
-                        return features[:requested_count]
-
-        return features[:requested_count]  # Final trim
-
     def _fetch_total_records_count(self, url):
         count_params = copy.deepcopy(self.parameters)
         count_params["returnCountOnly"] = True
@@ -862,6 +797,9 @@ class Query:
         self.parameters["resultRecordCount"] = (
             None  # we got the number of ids, so no need to limit the records
         )
+        self.parameters["resultOffset"] = (
+            0  # reset the offset since we got corresponding ids
+        )
 
         # Step 2: Define function to fetch a page of features
         def fetch_page(ids_subset):
@@ -874,7 +812,7 @@ class Query:
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
             futures = []
             # Calculate the number of requests needed, using page_size for offset increment
-            page_size = self.max_record_count
+            page_size = 200  # anything larger causes the server to crash
             for i in range(0, len(ids), page_size):
                 ids_subset = ",".join(str(i) for i in ids[i : i + page_size])
                 futures.append(executor.submit(fetch_page, ids_subset))
