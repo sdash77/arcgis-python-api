@@ -126,7 +126,7 @@ def _get_model_type(model_type):
             import tabpfn
         except Exception as e:
             raise Exception(
-                "TabPFN is not installed. Please install TabPFN from `conda install -c esri tabpfn`"
+                "TabPFN is not installed. Please install TabPFN using the command `conda install -c esri tabpfn`"
             )
 
         if not hasattr(tabpfn, model):
