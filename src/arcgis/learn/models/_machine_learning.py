@@ -43,7 +43,6 @@ try:
         import xgboost
     import lightgbm
     import catboost
-    import tabpfn
 
     HAS_ML_DEPS = True
 except:
@@ -123,6 +122,13 @@ def _get_model_type(model_type):
             model = model_type.split(".")[0]
         else:
             raise Exception("Invalid model_type.")
+        try:
+            import tabpfn
+        except Exception as e:
+            raise Exception(
+                "TabPFN is not installed. Please install TabPFN from `conda install -c esri tabpfn`"
+            )
+
         if not hasattr(tabpfn, model):
             raise Exception("Invalid model_type.")
 
