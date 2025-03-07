@@ -851,9 +851,9 @@ class Folder:
             ):
                 #  text workflow
                 params["async"] = False
-                if not isinstance(text, str):
+                if text and not isinstance(text, str):
                     text: str = json.dumps(text)
-                params["text"] = text
+                    params["text"] = text
                 params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
