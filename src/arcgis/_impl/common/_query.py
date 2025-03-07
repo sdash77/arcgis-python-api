@@ -826,11 +826,8 @@ class Query:
 
             # Step 4: Process the results
             for future in concurrent.futures.as_completed(futures):
-                try:
-                    result = future.result().json()
-                    features += result.get("features", [])
-                except Exception as e:
-                    self._handle_query_exception(e)
+                result = future.result().json()
+                features += result.get("features", [])
         return features
 
     def _handle_query_exception(self, query_exception):
