@@ -18,19 +18,19 @@ class LogManager(BaseServer):
     not meant to be initialized directly, but instead is accessed as the
     :attr:`~arcgis.gis.server.Server.logs` property on a
     :class:`~arcgis.gis.server.Server` object:
-    
+
     .. code-block:: python
-    
+
         #Usage Example: Initializing a Server LogManager of federated server
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_enterprise_admin_profile")
-        
+
         >>> server_mgr = gis.admin.servers
         >>> host_server = server_mgr.get(role="HOSTING_SERVER")[0]
         >>> log_mgr = host_server.logs
-        
+
         <LogManager at https://example_server.com/<web_adaptor>/admin/logs>
-        
+
     See the `Server logs <https://enterprise.arcgis.com/en/server/latest/administer/windows/about-server-logs.htm>`_
     documentation for more details.
     """
@@ -208,38 +208,38 @@ class LogManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         start_time             Optional integer, string or datetime. The most recent time to query.
                                Default is current time. Time can be specified in:
-                               
+
                                * milliseconds since UNIX epoch - integer
                                * ArcGIS Server timestamp - string
                                * Python datetime object - datetime
 
                                .. code-block:: python
-                               
+
                                    # Example for Unix Epoch:
                                    >>> log_resp = log_mgr.query(
                                    >>>               start_time = 1312237040123,
                                    >>>               ...)
-                                   
+
                                    # Example for Timestamp:
                                    >>> log_resp = log_mgr.query(
                                    >>>               start_time="2024-10-18T13:00:00",
                                    >>>               ...)
-                                   
+
                                    # Example for Datetime object:
                                    >>> import datetime as dt
                                    >>> starting_time = dt.datetime(2024, 10, 18, 13, 0, 0)
-                                   
+
                                    >>> log_resp = log_mgr.query(
                                    >>>               start_time=starting_time,
                                    >>>               ...)
         ------------------     --------------------------------------------------------------------
         end_time               Optional integer, string or datetime. The previous time to query from.
                                Time can be specified in:
-                               
+
                                * milliseconds since UNIX epoch - integer
                                * ArcGIS Server timestamp - string
                                * Python datetime object - datetime
-                              
+
                                .. note::
                                    If *since_server_start=True*, the default is all logs since the
                                    server was started.
@@ -250,26 +250,26 @@ class LogManager(BaseServer):
         level                  Optional String. Gets only the records with a log level at or more
                                severe than the level declared here. Can be one of (in severity
                                order):
-                               
+
                                * *DEBUG*
                                * *VERBOSE*
                                * *FINE*
                                * *INFO*
                                * *WARNING*
                                * *SEVERE*
-                               
+
                                The default is *WARNING*.
         ------------------     --------------------------------------------------------------------
         services               Optional List of comma separated strings denoting service names.
                                Query records related to a specific service(s). The default is "*",
                                which queries all services.
-                               
+
                                .. note::
                                    The string format is *Folder_name/<service_name>.<service_type>*.
                                    For example:
-                                   
+
                                    .. code-block:: python
-                                   
+
                                        >>> log_mgr.query(
                                        >>>      ...
                                        >>>      services="Hosted/streets.FeatureServer,System/PublishingTools.GPServer",
@@ -285,16 +285,16 @@ class LogManager(BaseServer):
         codes                  Optional List of integers and/or strings. Gets only the records with the
                                specified codes, or between the range of codes. If no argument is
                                provided, all codes are included.
-                               
+
                                See `Log codes overview <https://server.arcgis.com/en/server/latest/administer/windows/log-codes-overview.htm>`_
                                for full details.
-                               
+
                                .. note::
                                    Individual codes should be entered as integers. A range of codes
                                    *must* be entered as a string:
-                                   
+
                                    .. code-block:: python
-                                   
+
                                        >>> res = log_manager.query(
                                        >>>             ...
                                        >>>             codes = ["6500-7000", 12018]
@@ -307,10 +307,10 @@ class LogManager(BaseServer):
                                results.  The default is *False*, which will not export).
         ------------------     --------------------------------------------------------------------
         export_type            Optional String. The export file type. Choices are:
-                               
+
                                * *CSV*
                                * *TAB*
-                               
+
                                The default is *CSV*.
         ------------------     --------------------------------------------------------------------
         out_path               Optional String. The path to download the log file to.
@@ -323,21 +323,21 @@ class LogManager(BaseServer):
            output log file path is returned.
 
         .. code-block:: python
-        
+
             # Usage Example: Query all services for specific codes:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_enterprise_admin_profile")
-            
+
             >>> server_mgr = gis.admin.servers
             >>> log_mgr = server_mgr.logs
-            
+
             >>> query_resp = log_mgr.query(
             >>>                start_time="2025-03-07T06:00:00,
             >>>                end_time="2025-02-07T06:00:00,
             >>>                codes=["7000-8000"],
             >>>                services="Hosted/water_mains.FeatureServer",
             >>>                level="WARNING"
-            >>>              )       
+            >>>              )
         """
 
         if codes is None:
