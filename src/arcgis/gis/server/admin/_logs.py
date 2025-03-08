@@ -332,8 +332,8 @@ class LogManager(BaseServer):
             >>> log_mgr = server_mgr.logs
 
             >>> query_resp = log_mgr.query(
-            >>>                start_time="2025-03-07T06:00:00,
-            >>>                end_time="2025-02-07T06:00:00,
+            >>>                start_time="2025-03-07T06:00:00",
+            >>>                end_time="2025-02-07T06:00:00",
             >>>                codes=["7000-8000"],
             >>>                services="Hosted/water_mains.FeatureServer",
             >>>                level="WARNING"
