@@ -7,10 +7,32 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import Geometry
 import concurrent.futures
 import copy
+import json
+from arcgis._impl.common._isd import InsensitiveDict
+from arcgis._impl.common._mixins import PropertyMap
 from arcgis.auth.tools import LazyLoader
 
 arcgis_features = LazyLoader("arcgis.features")
 pd = LazyLoader("pandas")
+
+
+# ----------------------------------------------------------------------
+def _encode_params(params: dict[str, Any]) -> dict[str, Any]:
+    """
+    Encodes the parameters for the request.
+
+    :param params: dict
+    :return: dict
+    """
+    if isinstance(params, dict):
+        for k, v in copy.copy(params).items():
+            if isinstance(v, (tuple, dict, list, bool)):
+                params[k] = json.dumps(v, default=_date_handler)
+            elif isinstance(v, PropertyMap):
+                params[k] = json.dumps(dict(v), default=_date_handler)
+            elif isinstance(v, InsensitiveDict):
+                params[k] = v.json
+    return params
 
 
 class QueryParameters(BaseModel):
@@ -564,12 +586,16 @@ class Query:
         is_layer: bool = True,
         query_3d: bool = False,
         as_df: bool = False,
+        supports_pagination: bool = False,
+        max_record_count: int = 2000,
     ):
         self.layer = layer
         self.is_layer = is_layer
         self.query_3d = query_3d
         self.as_df = as_df
         self.parameters = self.create_parameters(parameters)
+        self.supports_pagination = supports_pagination
+        self.max_record_count = max_record_count
 
     def create_parameters(
         self,
@@ -602,17 +628,18 @@ class Query:
         # layer specific workflows
         if parameters.out_fields != "*" and parameters.return_distinct_values is False:
             try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
+                # Check if object id field is in out_fields. If it isn't, add it.
+                # First find the object id field
                 object_id_field = [
                     x.name
                     for x in self.layer.properties.fields
                     if x.type == "esriFieldTypeOID"
                 ][0]
+                # check if in outfields
                 if object_id_field not in params["outFields"].split(","):
                     out_fields = object_id_field + "," + params["outFields"]
-                # update out_fields parameter
-                params["outFields"] = out_fields
+                    # update out_fields parameter
+                    params["outFields"] = out_fields
             except (IndexError, AttributeError):
                 pass
 
@@ -645,8 +672,9 @@ class Query:
     def _query(self, url, raw=False):
         """Returns results of the query for the provided layer and URL."""
         try:
+            encoded_parameters = _encode_params(self.parameters)
             # Perform the initial query
-            result = self.layer._con._session.get(url, params=self.parameters).json()
+            result = self.layer._con._session.get(url, params=encoded_parameters).json()
             return self._process_query_result(result, raw, url)
         except Exception as query_exception:
             return self._handle_query_exception(query_exception, url)
@@ -670,7 +698,10 @@ class Query:
         features = result.get("features", [])
         if self._needs_more_features(result, features):
             # Pagination workflow
-            if (
+            if not self.supports_pagination:
+                # This paginates using object ids so we can fetch all features even if the service has a limit
+                features = self._fetch_all_features_by_chunk(url)
+            elif (
                 self.parameters.get("objectIds")
                 or self.parameters.get("orderByFields")
                 or self.parameters.get("geometryFilter")
@@ -678,9 +709,6 @@ class Query:
             ):
                 # For certain parameters, we do not expect all records to be returned or they have to be returned in a specific order
                 features = self._fetch_all_features_single_thread(url, features, result)
-            elif self.parameters.get("resultRecordCount"):
-                # When a user specifies either of these we can make pre-defined chunks
-                features = self._fetch_all_features_by_chunk(url)
             else:
                 # Otherwise, we use a concurrent workflow to fetch all features
                 features = self._fetch_all_features_concurrent(url, features)
@@ -722,8 +750,10 @@ class Query:
                     break
                 self.parameters["resultRecordCount"] = remaining_record_count
 
+            # len of features is the new offset each time
             self.parameters["resultOffset"] = len(features) + original_offset
-            result = self.layer._con._session.get(url, params=self.parameters).json()
+            encoded_parameters = _encode_params(self.parameters)
+            result = self.layer._con._session.get(url, params=encoded_parameters).json()
             features += result.get("features", [])
 
         return features
@@ -732,42 +762,66 @@ class Query:
         """Fetches all features by handling pagination and using concurrent requests."""
         original_offset = self.parameters.get("resultOffset", 0)
 
-        page_size = 1000
-        # Step 1: Preliminary query to determine total count
-        if self.parameters.get("resultRecordCount") is None:
-            total_count = self._fetch_total_records_count(url)
-            self.parameters["resultRecordCount"] = (
-                page_size  # Adjust page size as necessary
-            )
-        else:
-            total_count = self.parameters.get("resultRecordCount")
+        # Step 1: Get total records, but respect user-defined limit
+        total_available = self._fetch_total_records_count(url)
+        requested_count = self.parameters.get("resultRecordCount", total_available)
+        # Ensure we don’t request more than needed
+        requested_count = min(total_available, requested_count)
 
-        # Step 3: Define function to fetch a page of features
-        def fetch_page(offset, params):
+        self.parameters["resultRecordCount"] = (
+            self.max_record_count
+        )  # Enforce per-request limit
+
+        # Step 2: Define function to fetch a page of features
+        def fetch_page(offset, limit, params):
             page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
             page_params["resultOffset"] = offset
-            return self.layer._con._session.get(url, params=page_params).json()
+            page_params["resultRecordCount"] = limit
+            page_params = _encode_params(page_params)
+            response = self.layer._con._session.get(url, params=page_params).json()
+            # Return offset to maintain order
+            return (
+                offset,
+                response.get("features", []),
+            )
 
-        # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
+        # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
-            futures = []
-            # Calculate the number of requests needed, using page_size for offset increment
-            for offset in range(
-                original_offset + len(features), total_count, page_size
-            ):
-                futures.append(executor.submit(fetch_page, offset, self.parameters))
+            futures = {}
+            fetched_count = len(features)
 
-            # Step 5: Process the results
-            for future in concurrent.futures.as_completed(futures):
-                result = future.result()
-                features += result.get("features", [])
+            while fetched_count < requested_count:
+                remaining = requested_count - fetched_count  # How many more we need
+                batch_size = min(self.max_record_count, remaining)  # Adjust batch size
+                offset = original_offset + fetched_count  # Adjust offset correctly
 
-        return features
+                # Submit batch request
+                futures[
+                    executor.submit(fetch_page, offset, batch_size, self.parameters)
+                ] = offset
+
+                # Step 4: Process results in the correct order
+                results_by_offset = {}
+                for future in concurrent.futures.as_completed(futures):
+                    offset, result = future.result()
+                    results_by_offset[offset] = result
+
+                # Step 5: Merge results in order
+                for offset in sorted(results_by_offset.keys()):
+                    features.extend(results_by_offset[offset])
+                    fetched_count += len(results_by_offset[offset])
+
+                    # Stop early if we reach requested_count
+                    if fetched_count >= requested_count:
+                        return features[:requested_count]
+
+        return features[:requested_count]  # Final trim
 
     def _fetch_total_records_count(self, url):
         count_params = copy.deepcopy(self.parameters)
         count_params["returnCountOnly"] = True
         count_params["returnAllRecords"] = False  # must be false when above True
+        count_params = _encode_params(count_params)
         count_result = self.layer._con._session.get(url, params=count_params).json()
         return count_result.get("count")
 
@@ -787,7 +841,8 @@ class Query:
 
         # Perform query until all ids are fetched
         while True:
-            result = self.layer._con._session.get(url, params=id_params).json()
+            encoded_params = _encode_params(id_params)
+            result = self.layer._con._session.get(url, params=encoded_params).json()
             ids.extend(result.get("objectIds", []))
 
             if len(ids) >= total_count:
@@ -799,7 +854,7 @@ class Query:
 
     def _fetch_all_features_by_chunk(self, url):
         """
-        This workflow is used when users specify either resultOffset or resultRecordCount.
+        This workflow is used when users specify resultRecordCount.
         """
         features = []  # start from an empty list
         # Step 1: Query for all the ids using the parameters set
@@ -807,19 +862,19 @@ class Query:
         self.parameters["resultRecordCount"] = (
             None  # we got the number of ids, so no need to limit the records
         )
-        self.parameters["resultOffset"] = 0  # reset the offset to 0
 
         # Step 2: Define function to fetch a page of features
         def fetch_page(ids_subset):
             page_params = copy.deepcopy(self.parameters)
             page_params["objectIds"] = ids_subset
+            page_params = _encode_params(page_params)
             return self.layer._con._session.get(url, params=page_params)
 
         # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
             futures = []
             # Calculate the number of requests needed, using page_size for offset increment
-            page_size = 100
+            page_size = self.max_record_count
             for i in range(0, len(ids), page_size):
                 ids_subset = ",".join(str(i) for i in ids[i : i + page_size])
                 futures.append(executor.submit(fetch_page, ids_subset))

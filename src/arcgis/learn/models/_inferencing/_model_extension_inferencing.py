@@ -30,6 +30,15 @@ except:
     pass
 
 
+def _parse_float(f):
+    try:
+        from locale import atof as _atof
+
+        return _atof(f)  # localized string
+    except AttributeError:
+        return float(f)  # number
+
+
 def normalize_batch_imagenetstats(batch):
     imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
     mean = 255 * np.array(imagenet_stats[0], dtype=np.float32)
@@ -299,10 +308,12 @@ class ChildObjectDetector:
         self.padding = int(
             scalars.get("padding", self.json_info["ImageHeight"] // 4)
         )  ## Default padding Imageheight//4.
-        self.nms_overlap = float(
+        self.nms_overlap = _parse_float(
             scalars.get("nms_overlap", 0.1)
         )  ## Default 0.1 NMS Overlap.
-        self.thres = float(scalars.get("threshold", 0.5))  ## Default 0.5 threshold.
+        self.thres = _parse_float(
+            scalars.get("threshold", 0.5)
+        )  ## Default 0.5 threshold.
         self.batch_size = (
             int(math.sqrt(int(scalars.get("batch_size", 64)))) ** 2
         )  ## Default 64 batch_size
@@ -402,7 +413,8 @@ def detect_object(
             torch.tensor(images).to(device).float(), **transform_kwargs
         )
 
-    pred_batch = model(batch_input)
+    with torch.no_grad():
+        pred_batch = model(batch_input)
 
     preds = model_configuration.post_process(
         pred_batch, nms_overlap, thres, tile_height, device
@@ -585,7 +597,9 @@ class ChildImageClassifier:
                 "y",
                 "yes",
             ]
-            self.thres = float(scalars.get("threshold", 0.5))  ## Default 0.5 threshold.
+            self.thres = _parse_float(
+                scalars.get("threshold", 0.5)
+            )  ## Default 0.5 threshold.
             self.probability_raster = scalars.get(
                 "return_probability_raster", "false"
             ).lower() in ["true", "1", "t", "y", "yes"]

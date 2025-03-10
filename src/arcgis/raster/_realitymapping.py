@@ -377,8 +377,8 @@ def _add_mission(
     oid = project.mission_count
 
     for f in gis.users.me.folders:
-        if f["id"] == project_item.ownerFolder:
-            folder = f
+        if f._fid == project_item.ownerFolder:
+            folder = f.properties
             break
 
     from datetime import datetime
@@ -1504,8 +1504,8 @@ def generate_orthomosaic(
                 folder = kwargs["folder"]
             else:
                 for f in gis.users.me.folders:
-                    if f["id"] == image_collection.ownerFolder:
-                        folder = f
+                    if f._fid == image_collection.ownerFolder:
+                        folder = f.properties
                         break
             kwargs.update({"folder": folder})
 
@@ -2123,8 +2123,8 @@ def reconstruct_surface(
                 folder = kwargs["folder"]
             else:
                 for f in gis.users.me.folders:
-                    if f["id"] == image_collection.ownerFolder:
-                        folder = f
+                    if f._fid == image_collection.ownerFolder:
+                        folder = f.properties
                         break
             kwargs.update({"folder": folder})
 

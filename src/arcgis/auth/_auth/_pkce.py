@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 import base64
 import socket
@@ -11,6 +12,8 @@ import base64
 import requests
 from arcgis.auth.tools import parse_url
 from urllib.parse import parse_qs
+
+__all__ = ["EsriPKCEAuth"]
 
 
 ###########################################################################

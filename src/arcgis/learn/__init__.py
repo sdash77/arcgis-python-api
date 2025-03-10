@@ -7,6 +7,8 @@ from arcgis.geoprocessing._support import (
     _analysis_job_status,
     _layer_input,
 )
+from ._utils.utils import AIServiceConnection
+
 import json as _json
 import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
@@ -69,6 +71,8 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
             SamLoRA,
             RTDetrV2,
             ClimaX,
+            PTv3Seg,
+            PTv3Det,
         )
 
         from ._object_tracker import ObjectTracker
@@ -218,7 +222,7 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
         if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
+            folder_dict = gis.content.folders.create(folder, owner).properties
             folder = folder_dict["title"]
             folderId = folder_dict["id"]
 

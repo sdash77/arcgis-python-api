@@ -278,9 +278,23 @@ SQNSeg
     :inherited-members:
     :undoc-members:
 
+PTv3Seg
+^^^^^^^^
+.. autoclass:: arcgis.learn.PTv3Seg
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 MMDetection3D
 ^^^^^^^^
 .. autoclass:: arcgis.learn.MMDetection3D
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+PTv3Det
+^^^^^^^^
+.. autoclass:: arcgis.learn.PTv3Det
     :members:
     :inherited-members:
     :undoc-members:
@@ -420,6 +434,9 @@ train_model
 ^^^^^^^^^^^
 .. autofunction:: arcgis.learn.train_model
 
-
-
-
+AIServiceConnection
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AIServiceConnection
+    :members:
+    :inherited-members:
+    :undoc-members:

@@ -13,6 +13,7 @@ try:
     from ._timm_utils import filter_timm_models
     from ._hed_utils import DDPCallback
     from ._transformer_backbone import swin_config
+    from ._dofa_utils import dofa_config
 
     HAS_FASTAI = True
 
@@ -46,7 +47,7 @@ class CustomHED:
         else:
             from arcgis.learn.models._arcgis_model import get_backbone_func
 
-            self._backbone = get_backbone_func(backbone, data, is_fpn=True)
+            self._backbone = get_backbone_func(backbone, data, is_fpn=True, **kwargs)
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -124,6 +125,9 @@ class HEDEdgeDetector(ModelExtension):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.HEDEdgeDetector` Object
@@ -204,11 +208,28 @@ class HEDEdgeDetector(ModelExtension):
         return transformer_backbone
 
     @staticmethod
+    def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
+        dofa_backbone = list(dofa_config.keys())
+        return dofa_backbone
+
+    @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+
         return torchgeo_backbone
+
+    @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        satlas_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+        return satlas_backbone
 
     @staticmethod
     def _supported_backbones():
@@ -230,12 +251,16 @@ class HEDEdgeDetector(ModelExtension):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = HEDEdgeDetector.transformer_backbones()
         torchgeo_backbone = HEDEdgeDetector.torchgeo_backbones()
+        satlas_backbone = HEDEdgeDetector.satlas_backbones()
+        dofa_backbone = HEDEdgeDetector.dofa_backbones()
 
         return (
             [*_resnet_family, *_vgg_family]
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
+            + satlas_backbone
+            + dofa_backbone
         )
 
     @property
@@ -278,6 +303,8 @@ class HEDEdgeDetector(ModelExtension):
 
         backbone = emd["ModelParameters"]["backbone"]
 
+        model_params = emd["ModelParameters"]
+
         try:
             class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
             color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
@@ -298,6 +325,7 @@ class HEDEdgeDetector(ModelExtension):
             data.emd_path = emd_path
             data.emd = emd
             data.classes = ["background"]
+            data._band_names = emd.get("Bands")
             for k, v in class_mapping.items():
                 data.classes.append(v)
             if backbone is not None and "hf:" in backbone:
@@ -305,7 +333,7 @@ class HEDEdgeDetector(ModelExtension):
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = emd["DatasetType"]
 
-        return cls(data, backbone, pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
         """
@@ -328,3 +356,27 @@ class HEDEdgeDetector(ModelExtension):
         """
         Displays the results of a trained model on a part of the validation set.
         """
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=False,
+            **kwargs,
+        )

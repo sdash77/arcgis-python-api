@@ -710,6 +710,8 @@ class EfficientDetLearner(TfLearner):
         end_lr: float = 10,
         num_it: int = 100,
         one_cycle: bool = False,
+        mixed_precision: bool = False,
+        mixed_dtype=None,
     ) -> None:
         lr = self.lr_range(lr)
         for i in range(0, len(callbacks)):
@@ -1100,6 +1102,7 @@ def tf_fit_one_cycle(
     callbacks: Optional[CallbackList] = None,
     tot_epochs: int = None,
     start_epoch: int = None,
+    mixed_precision: bool = False,
 ) -> None:
     "Fit a model following the 1cycle policy."
     max_lr = learn.lr_range(max_lr)

@@ -58,6 +58,8 @@ try:
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
     from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
+    from ._dofa_utils import dofa_backbone, dofa_backbones_downstream
+    from ._wavelengths import wavelength_dict
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -453,7 +455,13 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-    if hasattr(model, "backbone") and getattr(model.backbone, "_is_prithvi", False):
+
+    if hasattr(model, "_is_dofa"):
+        return model
+    if hasattr(model, "backbone") and (
+        getattr(model.backbone, "_is_prithvi", False)
+        or getattr(model.backbone, "_is_dofa", False)
+    ):
         return model
 
     tail_name, tail = _get_tail(model)
@@ -556,6 +564,31 @@ def _device_check():
     return move_to_cpu
 
 
+def get_wavelengths_from_bandnames(band_names):
+    """
+    This function returns the wavelengths (in micrometers) corresponding to the given band names.
+    """
+    wavelengths = []
+    cleaned_bandnames = [
+        band_name.lower().replace("_", "").replace(" ", "") for band_name in band_names
+    ]
+    cleaned2original_bandname_map = {
+        k.lower().replace("_", "").replace(" ", ""): k for k in band_names
+    }
+    cleaned_wavelength_dict = {
+        k.lower().replace("_", "").replace(" ", ""): v
+        for k, v in wavelength_dict.items()
+    }
+    for bandname in cleaned_bandnames:
+        try:
+            wavelengths.append(float(cleaned_wavelength_dict[bandname]))
+        except KeyError:
+            raise Exception(
+                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. \nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.'
+            )
+    return wavelengths
+
+
 def get_backbone_func(backbone, data, **kwargs):
     if backbone is None:
         backbone = models.resnet34
@@ -576,6 +609,10 @@ def get_backbone_func(backbone, data, **kwargs):
 
             if "resnet" in bckbn:
                 backbone = getattr(hfwu, bckbn)
+            elif "swin" in bckbn:
+                backbone = getattr(hfwu, bckbn)
+            elif "vit_small" in bckbn:
+                backbone = getattr(hfwu, bckbn)
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
@@ -589,6 +626,42 @@ def get_backbone_func(backbone, data, **kwargs):
                 is_fpn=kwargs.get("is_fpn", False),
             )
             backbone.__name__ = backbone_name
+        elif backbone in dofa_backbones_downstream:
+            backbone_name = backbone
+            wavelengths = kwargs.get("wavelengths", None)
+            band_names = None
+            if wavelengths is None:
+                if data._emd.get("InputRastersProps", None) is not None:
+                    band_names = data._emd.get("InputRastersProps").get("BandNames")
+                elif data._emd.get("AllTilesStats", None) is not None:
+                    band_names = [
+                        x.get("BandName") for x in data._emd.get("AllTilesStats")
+                    ]
+                else:
+                    raise Exception(
+                        '\nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
+                    )
+                wavelengths = get_wavelengths_from_bandnames(band_names)
+                assert len(wavelengths) == len(data._extract_bands)
+                band_names = band_names
+            else:
+                if len(wavelengths) != len(data._extract_bands):
+                    raise Exception(
+                        'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
+                    )
+
+            backbone = partial(
+                dofa_backbone,
+                backbone_name=backbone,
+                img_size=int(kwargs.get("chip_size", data.chip_size)),
+                pretrained=True,
+                wavelengths=wavelengths,
+                is_clf=kwargs.get("is_clf", False),
+                num_classes=kwargs.get("num_classes", data.c),
+                band_names=band_names,
+            )
+            backbone.__name__ = backbone_name
+
     else:
         backbone = backbone
     return backbone
@@ -608,7 +681,7 @@ class ArcGISModel(object):
 
         self._device = _get_device()
 
-        self._backbone = get_backbone_func(backbone, data)
+        self._backbone = get_backbone_func(backbone, data, **kwargs)
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -618,7 +691,6 @@ class ArcGISModel(object):
         if self._is_multispectral or (
             not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
         ):
-
             self._orig_backbone = self._backbone
 
             @wraps(self._orig_backbone)
@@ -793,7 +865,7 @@ class ArcGISModel(object):
         self._device = torch.device("cpu")
         self._data = data
 
-    def lr_find(self, allow_plot=True, **kwargs):
+    def lr_find(self, allow_plot=True, mixed_precision=False, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -805,6 +877,11 @@ class ArcGISModel(object):
                                 against the learning rates and mark the optimal
                                 value of the learning rate on the plot.
                                 The default value is 'True'.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision.
+                                If set to `True`, optimum learning rate will be derived in mixed precision mode.
+                                Only `Pytorch` based models are supported.
+                                The default value is 'False'.
         =====================   ===========================================
         """
 
@@ -820,7 +897,11 @@ class ArcGISModel(object):
                 self.learn.metrics = []
                 # ddp training
                 if getattr(self, "_multigpu_training", False):
-                    self.learn.lr_find(start_lr=start_lr, end_lr=end_lr)
+                    self.learn.lr_find(
+                        start_lr=start_lr,
+                        end_lr=end_lr,
+                        mixed_precision=mixed_precision,
+                    )
                     distrib_barrier()
                     # remove tmp.pth created during lr_find in parent process
                     if not int(os.environ.get("RANK", 0)):
@@ -832,7 +913,11 @@ class ArcGISModel(object):
                         prefix="arcgisTemp_"
                     ) as _tempfolder:
                         self.learn.path = Path(_tempfolder)
-                        self.learn.lr_find(start_lr=start_lr, end_lr=end_lr)
+                        self.learn.lr_find(
+                            start_lr=start_lr,
+                            end_lr=end_lr,
+                            mixed_precision=mixed_precision,
+                        )
             except Exception as e:
                 # if some error comes in lr_find
                 raise e
@@ -958,6 +1043,7 @@ class ArcGISModel(object):
         checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
         tensorboard=False,
         monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
         **kwargs,
     ):
         """
@@ -1010,6 +1096,11 @@ class ArcGISModel(object):
                                 should be one of the metric that is displayed in
                                 the training table. Use `{model_name}.available_metrics`
                                 to list the available metrics to set here.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
+                                training. If set to `True`, model training will be done in
+                                mixed precision mode. Only `Pytorch` based models are supported.
+                                The default value is 'False'.
         =====================   ===========================================
         """
 
@@ -1024,9 +1115,21 @@ class ArcGISModel(object):
             self._check_requisites()
 
             if lr is None:
+
+                if len(self.learn.data.train_dl) == 0:
+                    print(
+                        f"Warning: Your training dataloader is empty. Cannot find the optimal learning rate."
+                    )
+                    print(
+                        f"Try using a smaller batch size (provided: batch size={self.learn.data.train_dl.batch_size} for {len(self.learn.data.train_dl.dataset)} elements)."
+                    )
+                    raise ValueError(
+                        "Training dataloader is empty. Adjust batch size or check that you have sufficient number of training samples."
+                    )
+
                 print("Finding optimum learning rate.")
 
-                lr = self.lr_find(allow_plot=False)
+                lr = self.lr_find(allow_plot=False, mixed_precision=mixed_precision)
                 if self._slice_lr is True and len(self.learn.layer_groups) > 1:
                     lr = slice(lr / 10, lr)
 
@@ -1133,9 +1236,21 @@ class ArcGISModel(object):
 
             self._fit_callbacks = callbacks
             if one_cycle:
-                self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
+                self.learn.fit_one_cycle(
+                    epochs,
+                    lr,
+                    callbacks=callbacks,
+                    mixed_precision=mixed_precision,
+                    **kwargs,
+                )
             else:
-                self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
+                self.learn.fit(
+                    epochs,
+                    lr,
+                    callbacks=callbacks,
+                    mixed_precision=mixed_precision,
+                    **kwargs,
+                )
 
     def unfreeze(self):
         """
@@ -1270,6 +1385,19 @@ class ArcGISModel(object):
         else:
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
+
+        if (
+            model_params.get("backbone", None) is not None
+            and model_params["backbone"] in dofa_backbones_downstream
+        ):
+            if self._model_kwargs.get("wavelengths", None) is not None:
+                _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[
+                    "wavelengths"
+                ]
+            else:
+                _emd_template["ModelParameters"]["wavelengths"] = (
+                    get_wavelengths_from_bandnames(self._data._band_names)
+                )
 
         if compute_metrics:
             if self._model_metrics_cache == None:
@@ -1893,7 +2021,8 @@ class ArcGISModel(object):
                 arcgis.learn._utils.env._IS_ARCGISPRONOTEBOOK = False
                 #
                 self._save_model_characteristics(
-                    saved_path.parent.absolute() / model_characteristics_folder
+                    saved_path.parent.absolute() / model_characteristics_folder,
+                    **kwargs,
                 )
                 ArcGISModel._create_html(saved_path)
             except:
@@ -2000,7 +2129,7 @@ class ArcGISModel(object):
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
-    def _save_model_characteristics(self, model_characteristics_dir):
+    def _save_model_characteristics(self, model_characteristics_dir, **kwargs):
         import shutil
         import matplotlib.pyplot as plt
 
@@ -2049,6 +2178,8 @@ class ArcGISModel(object):
             "<RandLANet>",
             "<SQNSeg>",
             "<MMDetection3D>",
+            "<PTv3Seg>",
+            "<PTv3Det>",
         ]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
@@ -2059,7 +2190,10 @@ class ArcGISModel(object):
         ]:
             pass
         elif hasattr(self, "show_results"):
-            self.show_results()
+            if hasattr(self, "_gradCAM"):
+                self.show_results(gradcam=kwargs.get("gradcam", False))
+            else:
+                self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, "show_results.png"))
             plt.close()
 

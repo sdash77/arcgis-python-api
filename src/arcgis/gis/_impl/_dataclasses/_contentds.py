@@ -5,6 +5,7 @@ from arcgis.auth.tools._lazy import LazyLoader
 from typing import Any
 from dataclasses import dataclass, field
 from enum import Enum
+import datetime as _dt
 
 arcgis = LazyLoader("arcgis")
 
@@ -67,6 +68,8 @@ class ItemTypeEnum(Enum):
     EXPERIENCE_BUILDER_WIDGET = "Experience Builder Widget"
     EXPERIENCE_BUILDER_WIDGET_PACKAGE = "Experience Builder Widget Package"
     FORM = "Form"
+    APPLICATION = "Application"
+    API_KEY_CREDENTIALS = "Application"
     GEOBIM_APPLICATION = "GeoBIM Application"
     GEOBIM_PROJECT = "GeoBIM Project"
     HUB_EVENT = "Hub Event"
@@ -221,8 +224,13 @@ class ItemProperties:
     text: dict | str | None = None
     extension: str | None = None
     overwrite: bool | None = None
+    """Support for this parameter will be removed in 2.4.3+."""
     file_name: str | None = None
     classification: dict | None = None
+    api_token1_expiration: _dt.datetime | None = None
+    api_token2_expiration: _dt.datetime | None = None
+    is_personal_api_token: bool | None = None
+    subscription_type: str | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -271,6 +279,18 @@ class ItemProperties:
             self._dict_data["properties"] = self.properties
         else:
             self._dict_data["properties"] = None
+        if isinstance(self.api_token1_expiration, _dt.datetime):
+            self._dict_data["apiToken1ExpirationDate"] = int(
+                self.api_token1_expiration.timestamp() * 1000
+            )
+        if isinstance(self.api_token2_expiration, _dt.datetime):
+            self._dict_data["apiToken2ExpirationDate"] = int(
+                self.api_token2_expiration.timestamp() * 1000
+            )
+        if isinstance(self.is_personal_api_token, bool):
+            self._dict_data["isPersonalAPIToken"] = self.is_personal_api_token
+        if isinstance(self.subscription_type, str):
+            self._dict_data["subscriptionType"] = self.subscription_type
 
     def to_dict(self):
         data: dict[str, Any] = {
@@ -307,6 +327,19 @@ class ItemProperties:
             data["properties"] = json.dumps(self.properties)
         elif isinstance(self.properties, str):
             data["properties"] = self.properties
+        if isinstance(self.api_token1_expiration, _dt.datetime):
+            data["apiToken1ExpirationDate"] = int(
+                self.api_token1_expiration.timestamp() * 1000
+            )
+        if isinstance(self.api_token2_expiration, _dt.datetime):
+            data["apiToken2ExpirationDate"] = int(
+                self.api_token2_expiration.timestamp() * 1000
+            )
+        if isinstance(self.is_personal_api_token, bool):
+            data["isPersonalAPIToken"] = self.is_personal_api_token
+        if isinstance(self.subscription_type, str):
+            data["subscriptionType"] = self.subscription_type
+
         return data
 
     @classmethod

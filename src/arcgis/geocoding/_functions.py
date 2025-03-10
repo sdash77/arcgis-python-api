@@ -12,6 +12,7 @@ import logging
 from ..features import FeatureSet
 from ..geometry import Geometry, Point, SpatialReference
 from arcgis._impl.common._utils import _validate_url, chunks
+from arcgis.gis._impl._util import _get_item_url
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,7 +83,10 @@ class Geocoder(_GISResource):
             raise TypeError(
                 "item must be a type of Geocoding Service, not " + item.type
             )
-        url = _validate_url(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
         return cls(url, item._gis)
 
     def geocode(
@@ -158,7 +162,7 @@ class Geocoder(_GISResource):
                                  passed in a request with or without the text
                                  parameter.
         --------------------     ----------------------------------------------------
-        out_fields               Optional string. Name of all the fields to inlcude.
+        out_fields               Optional string. Name of all the fields to include.
                                  The default is "*" which means all fields.
         --------------------     ----------------------------------------------------
         max_locations            Optional integer. The number of locations to be
@@ -210,7 +214,7 @@ class Geocoder(_GISResource):
         --------------------     ----------------------------------------------------
         source_country           Optional str. Limits the returned candidates to the
                                  specified country or countries for either single-field
-                                 or multifield requests. Acceptable values include
+                                 or multifields requests. Acceptable values include
                                  the 3-character country code.
         ====================     ====================================================
 
@@ -309,7 +313,7 @@ class Geocoder(_GISResource):
                                  passed in a request with or without the text
                                  parameter.
         --------------------     ----------------------------------------------------
-        out_fields               Optional string. Name of all the fields to inlcude.
+        out_fields               Optional string. Name of all the fields to include.
                                  The default is "*" which means all fields.
         --------------------     ----------------------------------------------------
         max_locations            Optional integer. The number of locations to be
@@ -363,7 +367,7 @@ class Geocoder(_GISResource):
         --------------------     ----------------------------------------------------
         source_country           Optional str. Limits the returned candidates to the
                                  specified country or countries for either single-field
-                                 or multifield requests. Acceptable values include
+                                 or multifields requests. Acceptable values include
                                  the 3-character country code.
         ====================     ====================================================
 
@@ -715,7 +719,7 @@ class Geocoder(_GISResource):
                                       a single value or a comma-delimited collection of values as input.
                                       e.g. ='matchedCity,primaryStreet'
         -------------------------     ----------------------------------------------------------------
-        out_fields                    Optional String. A string of comma seperated fields names used to
+        out_fields                    Optional String. A string of comma separated fields names used to
                                       limit the return attributes of a geocoded location.
         =========================     ================================================================
 
@@ -1906,20 +1910,23 @@ def geocode(
     .. code-block:: python
 
         # Usage Example
-        >>> geocoded = geocode(addresses = {
-                                                    Street: "1234 W Main St",
-                                                    City: "Small Town",
-                                                    State: "WA",
-                                                    Zone: "99027"
-                                                    },
-                                            distance = 1000,
-                                            max_locations = 50,
-                                            as_featureset = True,
-                                            match_out_of_range = True,
-                                            location_type = "Street"
-                                            )
+        >>> geocoded = geocode(
+                        addresses = {
+                            Street: "1234 W Main St",
+                            City: "Small Town",
+                            State: "WA",
+                            Zone: "99027"
+                        },
+                        distance = 1000,
+                        max_locations = 50,
+                        as_featureset = True,
+                        match_out_of_range = True,
+                        location_type = "Street"
+                       )
+
         >>> type(geocoded)
-        <:class:`~arcgis.features.FeatureSet>
+
+        <class arcgis.features.FeatureSet>
 
     :return:
        A dictionary or :class:`~arcgis.features.FeatureSet` object.
@@ -2174,7 +2181,7 @@ def batch_geocode(
                                   a single value or a comma-delimited collection of values as input.
                                   e.g. ='matchedCity,primaryStreet'
     -------------------------     ----------------------------------------------------------------
-    out_fields                    Optional String. A string of comma seperated fields names used to
+    out_fields                    Optional String. A string of comma separated fields names used to
                                   limit the return attributes of a geocoded location.
     =========================     ================================================================
 
@@ -2264,7 +2271,7 @@ def suggest(
     ------------------------------      -----------------------------------------------------------------
     location                            Optional tuple[float, float] | Point. Defines an origin point
                                         location that is used with the distance parameter to sort
-                                        sugggested candidates based on their proximity to the location.
+                                        suggested candidates based on their proximity to the location.
                                         The *search_extent* parameter specifies the radial distance from
                                         the location in meters. The priority of candidates within this
                                         radius is boosted relative to those outside the radius.

@@ -508,6 +508,9 @@ def commonTestCases(
     elif model_test == "mmsegmentation_test" or model_test == "mmdetection_test":
         all_models = model_type.supported_models
         model_object = model_type(data, model=all_models[0])
+    elif model_test == "mmdetection_dino_test":
+        all_models = model_type.supported_models
+        model_object = model_type(data, model="dino")  
     elif model_test == "psetae_test":
         model_object = model_type(data, gamma=2, dropout=0.2)
     else:
@@ -577,6 +580,8 @@ def commonTestCases(
                     result = float(model_object.compute_metrics()["mean_IOU"])
                 elif model_test == "cyclegan_test":
                     result = float(model_object.compute_metrics()["FID_A"])
+                elif model_test == "climax_test":
+                    result = float(model_object.compute_metrics()["SSIM_msl"])
                 else:
                     result = float(model_object.compute_metrics()["SSIM"])
             elif regression_parameter == "bleu_score":

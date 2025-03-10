@@ -35,7 +35,9 @@ from arcgis.learn import (
     RandLANet,
     SQNSeg,
     MMDetection3D,
-    SamLoRA
+    SamLoRA,
+    RTDetrV2,
+    ClimaX
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
@@ -1446,6 +1448,69 @@ data = {
         },
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
+    "rtdetrv2": {
+        "model_name": "rtdetrv2",
+        "datapath": "fasterrcnn_data",
+        "model": RTDetrV2,
+        "model_test": "rtdetrv2_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "fasterrcnn_data"),
+            "batch_size": None,
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.40,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "climax": {
+        "model_name": "climax",
+        "datapath": "climax_data",
+        "model": ClimaX,
+        "model_test": "climax_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "climax_data"),
+            "batch_size": None,
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "compute_metrics",
+        "regression_test_score": 0.40,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "mmdetection_dino": {
+        "model_name": "mmdetection",
+        "datapath": "mmdetection_data",
+        "datapath_ms": "mmdetection_data_ms",
+        "model": MMDetection,
+        "model_test": "mmdetection_dino_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "mmdetection_data"),
+            "batch_size": None,
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    }
 }
 
 

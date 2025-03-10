@@ -12,7 +12,26 @@ from arcgis.auth.tools._util import detect_proxy
 from integration.config import get_resource_path
 from threading import TIMEOUT_MAX
 
-configured_profiles = ProfileManager().list()
+profile_manager = ProfileManager()
+configured_profiles = {
+    profile: profile_manager._retrieve_dict(profile)
+    for profile in profile_manager.list()
+}
+
+STANDARD_ENTERPRISE_PROFILE = "your_enterprise_profile"
+STANDARD_ENTERPRISE_PROFILE_CONFIG = configured_profiles.get(STANDARD_ENTERPRISE_PROFILE, {})
+STANDARD_ENTERPRISE_URL = environ.get(
+    "STANDARD_ENTERPRISE_URL",
+    STANDARD_ENTERPRISE_PROFILE_CONFIG.get("url") or "https://pythonapitestnb.dev.geocloud.com/portal",
+)
+STANDARD_ENTERPRISE_USERNAME = environ.get(
+    "STANDARD_ENTERPRISE_USERNAME",
+    STANDARD_ENTERPRISE_PROFILE_CONFIG.get("username") or "arcgis_python",
+)
+STANDARD_ENTERPRISE_PASSWORD = environ.get(
+    "STANDARD_ENTERPRISE_PASSWORD",
+    STANDARD_ENTERPRISE_PROFILE_CONFIG.get("password") or "amazing_arcgis_123",
+)
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
@@ -66,7 +85,9 @@ _gis_by_profile = {}
 def _get_gis(profile):
     """Returns a gis for a profile"""
     if profile not in configured_profiles:
-        print(f"Profile '{profile}' not configured in arcgis.gis.ProfileManager, run `config_profiles.py`!")
+        print(
+            f"Profile '{profile}' not configured in arcgis.gis.ProfileManager, run `config_profiles.py`!"
+        )
         return None
     if profile not in _gis_by_profile:
         _gis_by_profile[profile] = GIS(
@@ -92,22 +113,12 @@ class credentials:
     _avworld_username = "creator2"
     _avworld_username_with_domain = rf"avworld\{_avworld_username}"
     _avworld_password = "portalaccount1"
-    _standard_enterprise_url = environ.get(
-        "STANDARD_ENTERPRISE_URL",
-        "https://pythonapitest.dev.geocloud.com/portal",
-    )
-    _standard_enterprise_username = environ.get(
-        "STANDARD_ENTERPRISE_USERNAME", "arcgis_python"
-    )
-    _standard_enterprise_password = environ.get(
-        "STANDARD_ENTERPRISE_PASSWORD", "amazing_arcgis_123"
-    )
 
     _enterprise_credential_parameters = (
         "enterprise",
-        _standard_enterprise_url,
-        _standard_enterprise_username,
-        _standard_enterprise_password,
+        STANDARD_ENTERPRISE_URL,
+        STANDARD_ENTERPRISE_USERNAME,
+        STANDARD_ENTERPRISE_PASSWORD,
     )
     _enterprise_pki_credential_parameters = (
         "enterprise_pki",
@@ -195,13 +206,13 @@ class credentials:
     )
     _enterprise_oauth_credential_parameters = (
         "enterprise_oauth",
-        _standard_enterprise_url,
-        _standard_enterprise_username,
-        _standard_enterprise_password,
+        STANDARD_ENTERPRISE_URL,
+        STANDARD_ENTERPRISE_USERNAME,
+        STANDARD_ENTERPRISE_PASSWORD,
         None,
-        environ.get("ENTERPRISE_OAUTH_CLIENT_ID", "SUNKY9CZtx6bSGvH"),
+        environ.get("ENTERPRISE_OAUTH_CLIENT_ID", "8L1tmD9aVTGeUKH0"),
         environ.get(
-            "ENTERPRISE_OAUTH_CLIENT_SECRET", "e600165a5aa5476c8c879fc6bb3b17a7"
+            "ENTERPRISE_OAUTH_CLIENT_SECRET", "d916012205374179abefba3636993c18"
         ),
     )
 
@@ -216,7 +227,6 @@ class credentials:
             "client_id",
             "client_secret",
         )
-        """Returns a parameterized class for the credentials parameters from provided args"""
         return parameterized_class(
             _credentials_properties,
             [*args],
@@ -239,7 +249,7 @@ class credentials:
             cls._enterprise_iwa_credential_parameters,
             cls._enterprise_multi_iwa_credential_parameters,
         )
-    
+
     @classproperty
     def enterprise_iwa(cls):
         """Run tests for iwa and multi-iwa enterprise credentials"""
@@ -305,14 +315,14 @@ class credentials:
         return cls._get_credentials_parameterized_class(
             cls._enterprise_oauth_credential_parameters
         )
-    
+
     @classproperty
     def agol_oauth(cls):
         """Run tests for agol oauth credentials"""
         return cls._get_credentials_parameterized_class(
             cls._agol_oauth_credential_parameters
         )
-    
+
     @classproperty
     def all_oauth(cls):
         """Run tests for all oauth credentials"""
@@ -331,6 +341,51 @@ class credentials:
     # endregion
 
 
+class server_credentials:
+    """
+    A set of decorators that inject server credentials into tests.
+
+    Sets the following properties on the test class:
+    self.connection_name: the unique connection name, appended to the test name (e.g. agol, enterprise)
+    self.url: the server url root (e.g. https://arcgis.enterprise.com/server) | Note: does not include `/rest` or `/rest/services`
+    self.portal_url: the portal url, if the server is federated or ArcGIS Online
+    self.username: the username
+    self.password: the password
+    """
+
+    _enterprise_standalone_credential_parameters = (
+        "standalone_enterprise",
+        environ.get("ENTERPRISE_STANDALONE_SERVER_URL", "https://dev0016118.esri.com/server"),
+        None,
+        environ.get("ENTERPRISE_STANDALONE_SERVER_USERNAME", "siteadmin"),
+        environ.get("ENTERPRISE_STANDALONE_SERVER_PASSWORD", "IL0veGI$"),
+    )
+
+    # region decorators
+    @classproperty
+    def standalone_enterprise(cls):
+        """Run tests for standalone server enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_standalone_credential_parameters
+        )
+    # endregion
+
+    def _get_credentials_parameterized_class(*args):
+        """Returns a parameterized class for the credentials parameters from provided args"""
+        _credentials_properties = (
+            "connection_name",
+            "url",
+            "portal_url",
+            "username",
+            "password",
+        )
+        return parameterized_class(
+            _credentials_properties,
+            [*args],
+            # default test name is {class_name}_{index}_{connection_name}; override to remove index:
+            class_name_func=lambda cls, _, param: f"{cls.__name__}_{parameterized.to_safe_name(param['connection_name'])}",
+        )
+
 class profiles:
     """
     A set of decorators that inject profiles into tests.
@@ -344,7 +399,10 @@ class profiles:
     If multiple profiles are injected, the test will be run once for each profile.
     """
 
-    _agol_anonymous_profile_parameters = ("agol_anonymous", "your_anonymous_online_profile")
+    _agol_anonymous_profile_parameters = (
+        "agol_anonymous",
+        "your_anonymous_online_profile",
+    )
     _agol_profile_parameters = ("agol", "your_online_profile")
     _agol_devext_profile_parameters = ("devext", "your_dev_online_profile")
     _agol_admin_profile_parameters = (
@@ -353,7 +411,7 @@ class profiles:
     )
     _enterprise_profile_parameters = (
         "enterprise",
-        "your_enterprise_profile",
+        STANDARD_ENTERPRISE_PROFILE,
     )
     _enterprise_admin_profile_parameters = (
         "enterprise_admin",
@@ -367,6 +425,10 @@ class profiles:
     _utility_network_profile_parameters = (
         "utility_network",
         "your_utility_network_profile",
+    )
+    _workflow_manager_profile_parameters = (
+        "workflow_manager",
+        "your_workflow_manager_profile",
     )
 
     def _get_profile_parameterized_class(*args):
@@ -452,7 +514,16 @@ class profiles:
     def admin_enterprise_and_non_admin_agol(cls):
         """Run tests for admin enterprise and non-admin agol profiles"""
         return cls._get_profile_parameterized_class(
-            cls._agol_profile_parameters, cls._enterprise_admin_profile_parameters
+            cls._agol_profile_parameters, cls._enterprise_profile_parameters
+        )
+
+    @classproperty
+    def enterprise_and_agol_and_agol_dev(cls):
+        """Run tests for admin enterprise, prod agol and dev agol profiles"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_profile_parameters,
+            cls._enterprise_admin_profile_parameters,
+            cls._agol_devext_profile_parameters,
         )
 
     @classproperty
@@ -497,6 +568,13 @@ class profiles:
         """Run tests for utility network profile"""
         return cls._get_profile_parameterized_class(
             cls._utility_network_profile_parameters
+        )
+
+    @classproperty
+    def workflow_manager(cls):
+        """Run tests for utility network profile"""
+        return cls._get_profile_parameterized_class(
+            cls._workflow_manager_profile_parameters
         )
     # endregion
 

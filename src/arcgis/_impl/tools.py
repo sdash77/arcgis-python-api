@@ -21,6 +21,8 @@ import arcgis.gis
 from arcgis.gis import Item, Layer
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 from arcgis.geocoding import Geocoder
 from arcgis.geometry import (
     Point,
@@ -44,6 +46,7 @@ from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing._job import RAJob, OMJob, RMJob
 from functools import lru_cache
 from arcgis.raster import Raster, ImageryLayer, _ImageServerRaster
+from arcgis.gis._impl._content_manager.folder import Folder
 
 _log = logging.getLogger(__name__)
 
@@ -7963,6 +7966,13 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 if "id" in folder and "title" in folder:
                     folderId = folder["id"]
                     folder = folder["title"]
+            elif hasattr(folder, "properties") and hasattr(
+                folder, "_add_async_streaming"
+            ):
+                folder, folderId = (
+                    folder.properties["title"],
+                    folder.properties["id"],
+                )
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
@@ -9538,11 +9548,19 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 if "id" in folder:
                     folderId = folder["id"]
                     folder = folder["title"]
+            elif hasattr(folder, "properties") and hasattr(
+                folder, "_add_async_streaming"
+            ):
+                folder, folderId = (
+                    folder.properties["title"],
+                    folder.properties["id"],
+                )
             else:
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -10396,6 +10414,172 @@ class _RasterAnalysisTools(BaseAnalytics):
             return input_rasters_dict, raster_type_dict, md_data_info
         return input_rasters_dict, raster_type_dict
 
+    def _sanitize_inputs(
+        self,
+        image_collection,
+        input_rasters,
+        raster_type_name,
+        raster_type_params=None,
+        out_sr=None,
+        context=None,
+        md_to_upload=None,
+        **kwargs,
+    ):
+        task = "CreateImageCollection"
+        output_service = None
+        image_collection_properties = None
+        use_input_rasters_by_ref = None
+        upload_properties = None
+        gis = self._gis
+
+        from arcgis.raster import RasterCollection
+        from arcgis.raster._layer import _LocalRasterCollection
+
+        if isinstance(input_rasters, RasterCollection):
+            if input_rasters._ras_coll_engine == _LocalRasterCollection:
+                raster_list = [ras["Raster"].catalog_path for ras in input_rasters]
+                input_rasters = raster_list
+                if context is None or not isinstance(context, dict):
+                    context = {"byref": True}
+                else:
+                    context["byref"] = True
+
+            else:
+                raise RuntimeError(
+                    "This type of RasterCollection input is not supported for create_image_collection()"
+                )
+
+        if context is not None:
+            if "image_collection_properties" in context:
+                image_collection_properties = context["image_collection_properties"]
+                del context["image_collection_properties"]
+            if "byref" in context:
+                use_input_rasters_by_ref = context["byref"]
+                del context["byref"]
+            if "upload_properties" in context:
+                upload_properties = context["upload_properties"]
+                del context["upload_properties"]
+
+        if isinstance(image_collection, Item):
+            image_collection = json.dumps({"itemId": image_collection.itemid})
+        elif isinstance(image_collection, str):
+            if ("/") in image_collection or ("\\") in image_collection:
+                if "http:" in image_collection or "https:" in image_collection:
+                    image_collection = json.dumps({"url": image_collection})
+                else:
+                    image_collection = json.dumps({"uri": image_collection})
+            else:
+                result = gis.content.search(
+                    "title:" + str(image_collection),
+                    item_type="Imagery Layer",
+                )
+                image_collection_result = None
+                for element in result:
+                    if str(image_collection) == element.title:
+                        image_collection_result = element
+                if image_collection_result is not None:
+                    image_collection = json.dumps(
+                        {"itemId": image_collection_result.itemid}
+                    )
+                else:
+                    (
+                        image_collection,
+                        output_service,
+                    ) = self._set_output_raster(
+                        output_name=image_collection,
+                        task=task,
+                        output_properties=kwargs,
+                    )
+
+        if out_sr is not None:
+            if isinstance(out_sr, int):
+                if context is not None:
+                    context.update({"outSR": {"wkid": out_sr}})
+                else:
+                    context = {}
+                    context["outSR"] = {"wkid": out_sr}
+            else:
+                if context is not None:
+                    context.update({"outSR": out_sr})
+                else:
+                    context = {}
+                    context["outSR"] = out_sr
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        md_data_path = []
+        if md_to_upload is not None:
+            if isinstance(input_rasters, str):
+                md_data_path.append(os.path.dirname(input_rasters))
+            elif isinstance(input_rasters, list):
+                for ele in input_rasters:
+                    md_data_path.append(os.path.dirname(ele))
+
+            raster_type_name = "mosaic_dataset"
+
+        md_data_info = []
+        if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
+            (
+                input_rasters,
+                raster_type,
+                md_data_info,
+            ) = self._build_param_dictionary(
+                input_rasters=input_rasters,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                image_collection_properties=None,
+                use_input_rasters_by_ref=use_input_rasters_by_ref,
+                upload_properties=upload_properties,
+                task=task,
+            )
+        else:
+            input_rasters, raster_type = self._build_param_dictionary(
+                input_rasters=input_rasters,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                image_collection_properties=image_collection_properties,
+                use_input_rasters_by_ref=use_input_rasters_by_ref,
+                upload_properties=upload_properties,
+                task=task,
+            )
+
+        mosaic_dataset_uploaded = md_to_upload
+        if md_to_upload is not None:
+            if gis._con._product == "AGOL":
+                from arcgis.raster._util import _upload_imagery_agol
+
+                if ".gdb" in md_to_upload:
+                    gdb_path = os.path.dirname(md_to_upload)
+                uploaded_list = _upload_imagery_agol(
+                    [gdb_path], gis, upload_properties=upload_properties
+                )
+                if len(uploaded_list) == 1:
+                    azure_upload_url = uploaded_list[0]
+                    mosaic_dataset_uploaded = (
+                        azure_upload_url
+                        + "/"
+                        + os.path.basename(gdb_path)
+                        + "/"
+                        + os.path.basename(md_to_upload)
+                    )
+
+            if len(md_data_path) == 1:
+                md_data_path = md_data_path[0]
+            input_rasters.update(
+                {
+                    "mosaic_dataset": mosaic_dataset_uploaded,
+                    "data_path": md_data_info,
+                }
+            )
+
+        if raster_type_name == "mosaic_dataset":
+            raster_type = None
+
+        return input_rasters, image_collection, raster_type, context, output_service
+
     def _set_param(self, input_param):
         gis = self._gis
         param_value = None
@@ -10501,7 +10685,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_dict = gis.content.folders.create(folder, user).properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -11689,156 +11873,18 @@ class _RasterAnalysisTools(BaseAnalytics):
         kwargs.update({"tiles_only": False})
         task = "CreateImageCollection"
         gis = self._gis
-        output_service = None
-        image_collection_properties = None
-        use_input_rasters_by_ref = None
-        upload_properties = None
-
-        from arcgis.raster import RasterCollection
-        from arcgis.raster._layer import _LocalRasterCollection
-
-        if isinstance(input_rasters, RasterCollection):
-            if input_rasters._ras_coll_engine == _LocalRasterCollection:
-                raster_list = [ras["Raster"].catalog_path for ras in input_rasters]
-                input_rasters = raster_list
-                if context is None or not isinstance(context, dict):
-                    context = {"byref": True}
-                else:
-                    context["byref"] = True
-
-            else:
-                raise RuntimeError(
-                    "This type of RasterCollection input is not supported for create_image_collection()"
-                )
-
-        if context is not None:
-            if "image_collection_properties" in context:
-                image_collection_properties = context["image_collection_properties"]
-                del context["image_collection_properties"]
-            if "byref" in context:
-                use_input_rasters_by_ref = context["byref"]
-                del context["byref"]
-            if "upload_properties" in context:
-                upload_properties = context["upload_properties"]
-                del context["upload_properties"]
-
-        if isinstance(image_collection, Item):
-            image_collection = json.dumps({"itemId": image_collection.itemid})
-        elif isinstance(image_collection, str):
-            if ("/") in image_collection or ("\\") in image_collection:
-                if "http:" in image_collection or "https:" in image_collection:
-                    image_collection = json.dumps({"url": image_collection})
-                else:
-                    image_collection = json.dumps({"uri": image_collection})
-            else:
-                result = gis.content.search(
-                    "title:" + str(image_collection),
-                    item_type="Imagery Layer",
-                )
-                image_collection_result = None
-                for element in result:
-                    if str(image_collection) == element.title:
-                        image_collection_result = element
-                if image_collection_result is not None:
-                    image_collection = json.dumps(
-                        {"itemId": image_collection_result.itemid}
-                    )
-                else:
-                    (
-                        image_collection,
-                        output_service,
-                    ) = self._set_output_raster(
-                        output_name=image_collection,
-                        task=task,
-                        output_properties=kwargs,
-                    )
-
-        if out_sr is not None:
-            if isinstance(out_sr, int):
-                if context is not None:
-                    context.update({"outSR": {"wkid": out_sr}})
-                else:
-                    context = {}
-                    context["outSR"] = {"wkid": out_sr}
-            else:
-                if context is not None:
-                    context.update({"outSR": out_sr})
-                else:
-                    context = {}
-                    context["outSR"] = out_sr
-
-        context_param = {}
-        _set_raster_context(context_param, context)
-        if "context" in context_param.keys():
-            context = context_param["context"]
-
-        md_data_path = []
-        if md_to_upload is not None:
-            if isinstance(input_rasters, str):
-                md_data_path.append(os.path.dirname(input_rasters))
-            elif isinstance(input_rasters, list):
-                for ele in input_rasters:
-                    md_data_path.append(os.path.dirname(ele))
-
-            raster_type_name = "mosaic_dataset"
-
-        md_data_info = []
-        if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
-            (
-                input_rasters,
-                raster_type,
-                md_data_info,
-            ) = self._build_param_dictionary(
+        input_rasters, image_collection, raster_type, context, output_service = (
+            self._sanitize_inputs(
+                image_collection=image_collection,
                 input_rasters=input_rasters,
                 raster_type_name=raster_type_name,
                 raster_type_params=raster_type_params,
-                image_collection_properties=None,
-                use_input_rasters_by_ref=use_input_rasters_by_ref,
-                upload_properties=upload_properties,
-                task=task,
+                out_sr=out_sr,
+                context=context,
+                md_to_upload=md_to_upload,
+                **kwargs,
             )
-        else:
-            input_rasters, raster_type = self._build_param_dictionary(
-                input_rasters=input_rasters,
-                raster_type_name=raster_type_name,
-                raster_type_params=raster_type_params,
-                image_collection_properties=image_collection_properties,
-                use_input_rasters_by_ref=use_input_rasters_by_ref,
-                upload_properties=upload_properties,
-                task=task,
-            )
-
-        mosaic_dataset_uploaded = md_to_upload
-        if md_to_upload is not None:
-            if gis._con._product == "AGOL":
-                from arcgis.raster._util import _upload_imagery_agol
-
-                if ".gdb" in md_to_upload:
-                    gdb_path = os.path.dirname(md_to_upload)
-                uploaded_list = _upload_imagery_agol(
-                    [gdb_path], gis, upload_properties=upload_properties
-                )
-                if len(uploaded_list) == 1:
-                    azure_upload_url = uploaded_list[0]
-                    mosaic_dataset_uploaded = (
-                        azure_upload_url
-                        + "/"
-                        + os.path.basename(gdb_path)
-                        + "/"
-                        + os.path.basename(md_to_upload)
-                    )
-
-            if len(md_data_path) == 1:
-                md_data_path = md_data_path[0]
-            input_rasters.update(
-                {
-                    "mosaic_dataset": mosaic_dataset_uploaded,
-                    "data_path": md_data_info,
-                }
-            )
-
-        if raster_type_name == "mosaic_dataset":
-            raster_type = None
+        )
 
         gpjob = self._tbx.create_image_collection(
             input_rasters=input_rasters,
@@ -12373,7 +12419,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                         owner = gis.properties.user.username
                         folderId = gis._portal.get_folder_id(owner, folder)
                     if folderId is None:
-                        folder_dict = gis.content.create_folder(folder, owner)
+                        folder_dict = gis.content.folders.create(
+                            folder, owner
+                        ).properties
                         folder = folder_dict["title"]
                         folderId = folder_dict["id"]
 
@@ -12662,7 +12710,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                         owner = gis.properties.user.username
                         folderId = gis._portal.get_folder_id(owner, folder)
                     if folderId is None:
-                        folder_dict = gis.content.create_folder(folder, owner)
+                        folder_dict = gis.content.folders.create(
+                            folder, owner
+                        ).properties
                         folder = folder_dict["title"]
                         folderId = folder_dict["id"]
 
@@ -15838,7 +15888,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                         owner = gis.properties.user.username
                         folderId = gis._portal.get_folder_id(owner, folder)
                     if folderId is None:
-                        folder_dict = gis.content.create_folder(folder, owner)
+                        folder_dict = gis.content.folders.create(
+                            folder, owner
+                        ).properties
                         folder = folder_dict["title"]
                         folderId = folder_dict["id"]
 
@@ -17958,9 +18010,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously.
         ------------------------------------     --------------------------------------------------------------------
-        folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+        folder                                   Keyword only parameter. Optional str, dict, or Folder. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties returned by the gis.content.folders.create() can also be passed in as input.
 
                                                  Example:
                                                     {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -18033,6 +18085,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             if "folder" in kwargs:
                 folder = kwargs["folder"]
         if folder is not None:
+            if isinstance(folder, Folder):
+                folder = folder.properties
             if isinstance(folder, dict):
                 if "id" in folder:
                     folderId = folder["id"]
@@ -18565,9 +18619,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously.
         ------------------------------------     --------------------------------------------------------------------
-        folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+        folder                                   Keyword only parameter. Optional str, dict, or Folder instance. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties returned by the gis.content.fodlers.create() can also be passed in as input.
 
                                                  Example:
                                                     {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -18602,6 +18656,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             if "folder" in kwargs:
                 folder = kwargs["folder"]
         if folder is not None:
+            if isinstance(folder, Folder):
+                folder = folder.properties
             if isinstance(folder, dict):
                 if "id" in folder:
                     folderId = folder["id"]
@@ -18761,13 +18817,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         ------------------------------------     --------------------------------------------------------------------
         future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously.
-        ------------------------------------     --------------------------------------------------------------------
-        folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
-                                                 not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
-
-                                                 Example:
-                                                    {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
         ====================================     ====================================================================
 
         :return: Dictionary
@@ -21562,7 +21611,11 @@ class _GeometryService(_GISService):
     def fromitem(cls, item):
         if not item.type == "Geometry Service":
             raise TypeError("item must be a type of Geometry Service, not " + item.type)
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     # ----------------------------------------------------------------------
     def areas_and_lengths(
