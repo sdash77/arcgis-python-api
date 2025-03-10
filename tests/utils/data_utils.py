@@ -214,3 +214,16 @@ def cleanup_groups(groups: list):
             group.delete()
         except Exception as ex:
             print("Failed to delete group.", group, ex)
+
+
+def cleanup_folders(gis: GIS, folder_names: list):
+    """
+    Delete folders
+
+    :param folder_names: list: The names of folders to delete.
+    :return:void
+    """
+    for folder_name in folder_names:
+        for folder in list(gis.content.folders.list()):
+            if folder.name.startswith(folder_name):
+                folder.delete()

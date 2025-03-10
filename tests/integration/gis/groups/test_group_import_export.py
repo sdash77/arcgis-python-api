@@ -5,7 +5,7 @@ from arcgis.gis import Item, Group, ItemTypeEnum
 from arcgis.gis._impl._jb import StatusJob
 from utils.decorators import integration_test, profiles, from_to_profiles
 from integration.config import QALAB_ROOT_PATH
-from utils.data_utils import add_source_item, create_group, cleanup_published_items, cleanup_groups
+from utils.data_utils import add_source_item, create_group, cleanup_published_items, cleanup_groups, cleanup_folders
 
 fp = os.path.join(QALAB_ROOT_PATH, 'group_manager_data', 'parkinglots.zip')
 
@@ -90,7 +90,9 @@ class TestGroupExport(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cleanup_published_items([cls.item])
         cleanup_groups([cls.export_group])
+        cleanup_folders(cls.gis, ["imports_", "exports"])
 
 
 @from_to_profiles.all_except_agol
@@ -215,6 +217,7 @@ class TestGroupImport(unittest.TestCase):
         if cls.epk_item:
             cleanup_published_items([cls.epk_item])
         cleanup_groups([cls.export_group, cls.import_group])
+        cleanup_folders(cls.from_gis, ["imports_", "exports"])
 
 
 if __name__ == "__main__":
