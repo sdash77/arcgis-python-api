@@ -15,7 +15,7 @@ class TestStoryMap(unittest.TestCase):
 
     def test_editing(self):
         """Change the storycover for the story"""
-        story = StoryMap()
+        story = StoryMap(gis=gis)
 
         # image for story cover
         river = Image(
