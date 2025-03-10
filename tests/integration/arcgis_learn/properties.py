@@ -1460,7 +1460,7 @@ data = {
         "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
-        "regression_parameter": "accuracy",
+        "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
         "regression_epochs": 10,
         "inferencing_parameter": {
@@ -1481,7 +1481,7 @@ data = {
         "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
-        "regression_parameter": "accuracy",
+        "regression_parameter": "compute_metrics",
         "regression_test_score": 0.40,
         "regression_epochs": 10,
         "inferencing_parameter": {
@@ -1505,7 +1505,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.4,
-        "regression_epochs": 20,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
         },
