@@ -695,13 +695,12 @@ def copy_content(
     # Check that nodes exist in original story (children of source story contain all of node_list)
     if isinstance(target_story, briefing.Briefing):
         # children are in the children of the the root node. In the ui node
-        ui = story._properties["nodes"][target_story._properties["root"]]["children"][0]
+        ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_children = story._properties["nodes"][ui]["children"]
     else:
         story_children = story._properties["nodes"][story._properties["root"]][
             "children"
         ]
-
     check = all(node in story_children for node in node_list)
     # Return an error if not all nodes are in the source story.
     if check is False:
@@ -710,9 +709,9 @@ def copy_content(
             if node not in story_children:
                 not_in_story.append(node)
         raise ValueError(
-            "These nodes are not in the story: "
+            "The content needs to be part of the story or slides in a briefing: "
             + str(not_in_story)
-            + ". Please check that the correct node ids are provided."
+            + ". Please check that the correct contents are provided."
         )
 
     # Step 2: Create dictionaries for copying
@@ -808,7 +807,9 @@ def copy_content(
                 # in the list passed in, if present
                 original_nodes = [s.replace(node, new_node) for s in original_nodes]
                 # in the dictionary of all nodes to copy
-                for key, value in complete_node_dict.items():
+                # make a copy since we will edit the dict as we iterate through
+                iterate_dict = complete_node_dict.copy()
+                for key, value in iterate_dict.items():
                     if key == node:
                         # replace old node id with new node id in keys
                         complete_node_dict[new_node] = complete_node_dict.pop(key)
@@ -835,6 +836,9 @@ def copy_content(
     # Step 5: Add the node list to the story children
     for main_node in original_nodes:
         _add_child(target_story, main_node)
+
+    # Step 6: Save
+    target_story.save()
     return True
 
 
@@ -850,11 +854,16 @@ def _has_children(story, node):
         or isinstance(node_class, Content.Timeline)
     ):
         return story._properties["nodes"][node]["children"]
-    elif isinstance(node_class, Content.Swipe):
+    elif isinstance(node_class, Content.Swipe) or isinstance(
+        node_class, Content.BriefingSlide
+    ):
         return list(story._properties["nodes"][node]["data"]["contents"].values())
     elif isinstance(node_class, Content.MapTour):
         mt = get(story, node)
         return mt._children
+    elif isinstance(node_class, Content.ExpressMap):
+        if node_class._media_dependents:
+            return story._properties["nodes"][node]["dependents"]["media"]
     elif isinstance(node_class, str):
         if (
             "immersive" in node_class.lower()
