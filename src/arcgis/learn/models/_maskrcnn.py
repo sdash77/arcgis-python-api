@@ -60,13 +60,7 @@ try:
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
     from .._utils.env import is_arcgispronotebook
     from ._transformer_backbone import vit_config, custom_backbone
-    from ._dofa_utils import (
-        dofa_config,
-        dofa_backbone,
-        dofa_backbones_downstream,
-        clay_config,
-        clay_backbones_downstream,
-    )
+    from ._dofa_utils import dofa_config, dofa_backbone, dofa_backbones_downstream
 
     HAS_FASTAI = True
 except Exception as e:
@@ -421,10 +415,7 @@ class MaskRCNN(ArcGISModel):
                         in_chans=len(data._extract_bands),
                     ).backbone_fpn
                     backbone_fpn._is_transformer = True
-                elif (
-                    backbone in MaskRCNN.dofa_backbones()
-                    or backbone in MaskRCNN.clay_backbones()
-                ):
+                elif backbone in MaskRCNN.dofa_backbones():
                     from arcgis.learn.models._arcgis_model import (
                         get_backbone_func,
                         get_wavelengths_from_bandnames,
@@ -506,8 +497,7 @@ class MaskRCNN(ArcGISModel):
                     )
                 if (
                     "timm" in self._backbone.__module__
-                    or self._backbone.__name__
-                    in dofa_backbones_downstream + clay_backbones_downstream
+                    or self._backbone.__name__ in dofa_backbones_downstream
                 ):
                     model.rpn.anchor_generator.grid_anchors = types.MethodType(
                         grid_anchors, model.rpn.anchor_generator
@@ -631,15 +621,9 @@ class MaskRCNN(ArcGISModel):
 
     @staticmethod
     def dofa_backbones():
-        """Supported list of Dynamic One-For-All (DOFA) backbones for this model."""
+        """Supported list of dofa backbones for this model."""
         dofa_backbone = list(dofa_config.keys())
         return dofa_backbone
-
-    @staticmethod
-    def clay_backbones():
-        """Supported list of Clay Foundation Model backbones for this model."""
-        clay_backbone = list(clay_config.keys())
-        return clay_backbone
 
     @staticmethod
     def torchgeo_backbones():
@@ -672,7 +656,6 @@ class MaskRCNN(ArcGISModel):
         torchgeo_backbone = MaskRCNN.torchgeo_backbones()
         satlas_backbone = MaskRCNN.satlas_backbones()
         dofa_backbone = MaskRCNN.dofa_backbones()
-        clay_backbone = MaskRCNN.clay_backbones()
 
         return (
             [*_resnet_family]
@@ -681,7 +664,6 @@ class MaskRCNN(ArcGISModel):
             + torchgeo_backbone
             + satlas_backbone
             + dofa_backbone
-            + clay_backbone
         )
 
     @property
@@ -747,7 +729,6 @@ class MaskRCNN(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data._band_names = emd.get("Bands")
-            data._emd = emd
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)

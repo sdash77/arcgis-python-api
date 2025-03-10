@@ -580,6 +580,8 @@ def commonTestCases(
                     result = float(model_object.compute_metrics()["mean_IOU"])
                 elif model_test == "cyclegan_test":
                     result = float(model_object.compute_metrics()["FID_A"])
+                elif model_test == "climax_test":
+                    result = float(model_object.compute_metrics()["SSIM_msl"])
                 else:
                     result = float(model_object.compute_metrics()["SSIM"])
             elif regression_parameter == "bleu_score":
