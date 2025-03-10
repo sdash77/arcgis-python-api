@@ -99,7 +99,6 @@ class AIServiceConnection:
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
     connection_file_path    Required String. Path to the AI Service Connection File.
-    ---------------------   -------------------------------------------
     =====================   ===========================================
 
     :return:
@@ -108,8 +107,7 @@ class AIServiceConnection:
 
     def __init__(self, connection_file_path):
         with open(connection_file_path, "r") as file:
-            data = json.load(file)
-            self.__connection_info = data
+            self.__connection_info = json.load(file)
 
     def get_dict(self):
         """
