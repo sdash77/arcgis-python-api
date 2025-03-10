@@ -20,7 +20,7 @@ class TestStoryMap(unittest.TestCase):
         """Change the storycover for the story"""
         # establish gis connection
         gis = self.gis
-        briefing = Briefing()
+        briefing = Briefing(gis=gis)
 
         # assert some properties
         assert briefing.slides
@@ -50,7 +50,7 @@ class TestStoryMap(unittest.TestCase):
     def test_create_slide(self):
         # establish gis connection
         gis = self.gis
-        briefing = Briefing()
+        briefing = Briefing(gis=gis)
 
         # assert some properties
         assert briefing.slides
@@ -80,13 +80,13 @@ class TestStoryMap(unittest.TestCase):
     def test_text_attachments(self):
         # establish gis connection
         gis = self.gis
-        briefing = Briefing()
+        briefing = Briefing(gis=gis)
         briefing.delete_briefing()
 
     def test_slide_layouts(self):
         # establish gis connection
         gis = self.gis
-        briefing = Briefing()
+        briefing = Briefing(gis=gis)
 
         # assert some properties
         assert briefing.slides
