@@ -434,6 +434,9 @@ train_model
 ^^^^^^^^^^^
 .. autofunction:: arcgis.learn.train_model
 
-
-
-
+AIServiceConnection
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AIServiceConnection
+    :members:
+    :inherited-members:
+    :undoc-members:

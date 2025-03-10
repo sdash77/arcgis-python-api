@@ -13,7 +13,7 @@ class TestStoryMap(unittest.TestCase):
         """Change the storycover for the story"""
         # establish gis connection
         gis = self.gis
-        collection = Collection()
+        collection = Collection(gis=gis)
 
         # assert some properties
         assert len(collection.content) == 0
@@ -36,7 +36,7 @@ class TestStoryMap(unittest.TestCase):
     def test_add_item(self):
         # establish gis connection
         gis = self.gis
-        collection = Collection()
+        collection = Collection(gis=gis)
 
         # assert some properties
         assert len(collection.content) == 0

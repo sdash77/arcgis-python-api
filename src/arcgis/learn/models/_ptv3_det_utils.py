@@ -27,7 +27,7 @@ class PointTransformerV3Det(nn.Module):
         super().__init__()
         self.data_preprocessor = data_preprocessor
         self.sparse_shape = data.voxel_sparse_shape
-        self.voxel_encoder = HardSimpleVFE(num_features=3)
+        self.voxel_encoder = HardSimpleVFE(num_features=data.num_features)
         self.middle_encoder = MiddleEncoder(
             data, sparse_shape=self.sparse_shape, **kwargs
         ).to(data.device)
