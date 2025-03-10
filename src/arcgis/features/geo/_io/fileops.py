@@ -1460,11 +1460,11 @@ def _gdal_to_fc(
             for field_name, value in row.items():
                 if spatial_field is None or field_name != spatial_field:
                     # always run for table, but only run for feature class if not geom field
-                    if field_name in dfields:
-                        value = value.strftime("%Y-%m-%d %H:%M:%S")
-                    if isinstance(value, type(pd.NA)):
+                    if isinstance(value, (type(pd.NA), type(pd.NaT))):
                         # gdal is not a fan of pandas NA
                         value = None
+                    elif field_name in dfields:
+                        value = value.strftime("%Y-%m-%d %H:%M:%S")
                     feature.SetField(field_mapping[field_name], value)
 
             out_layer.CreateFeature(feature)
