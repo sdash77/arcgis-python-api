@@ -776,6 +776,10 @@ def _arcpy_workflow(filename, **kwargs):
     area_field = desc.get("areaFieldName", None)
     length_field = desc.get("lengthFieldName", None)
     pandas_dtypes = _fc2pandas_dtypes(desc)
+    if fields:
+        pandas_dtypes = {
+            key: value for key, value in pandas_dtypes.items() if key in fields
+        }
 
     if spatial_filter:
         spatial_relation = {
