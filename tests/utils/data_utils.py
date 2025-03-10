@@ -15,6 +15,7 @@ def publish_test_item(
     prep_for_editing: bool = True,
     override_capabilities: Optional[dict] = None,
     source_item: Optional[Item] = None,
+    target_url: Optional[str] = None,
 ) -> Item:
     """
 
@@ -26,11 +27,12 @@ def publish_test_item(
     :param prep_for_editing: bool: Should the published service be given editing capabilities:
     :param override_capabilities: dict(str): Provide custom feature service capabilities
     :param source_item: Item: (Optional) The source file item to publish
+    :param target_url: str: Url of a target server used for cloning items.
     :return:
     """
     try:
         # Add the item to the portal
-        source_item = add_source_item(gis, layer_name, item_type, source_data_path)
+        source_item = add_source_item(gis, layer_name, item_type, source_data_path, target_url)
 
         # Source item is good, try publishing
         feature_layer_item = source_item.publish(
@@ -53,7 +55,7 @@ def publish_test_item(
         raise Exception("Failed to add necessary item file to portal.", ex)
 
 
-def add_source_item(gis: GIS, layer_name: str, item_type: ItemTypeEnum, source_data_path: str):
+def add_source_item(gis: GIS, layer_name: str, item_type: ItemTypeEnum, source_data_path: str, target_url: Optional[str] = None):
     source_item = None
     try:
         ip = ItemProperties(
@@ -62,6 +64,9 @@ def add_source_item(gis: GIS, layer_name: str, item_type: ItemTypeEnum, source_d
             tags=["ntgrtn-tst"],
             snippet="Item for Feature Layer integration testing",
         )
+
+        if target_url:
+            ip.url = target_url
         root_folder = gis.content.folders.get()
         source_item = root_folder.add(
             item_properties=ip,

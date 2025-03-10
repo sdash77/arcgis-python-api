@@ -13488,28 +13488,49 @@ class User(dict):
     @property
     def folders(self) -> Iterator[_folder.Folder]:
         """
-        The ``folders`` property, when called, retrieves the list of the user's folders.
+        Creates a generator to iterate over
+        :class:`~arcgis.gis._impl._content_manager.folder.core.Folder` objects
+        for the user.
 
         :return:
-            List of folders represented as dictionaries.
-            Dictionary keys include: username, folder id (id), title, and date created (created)
+            Python generator to iterate over the user's
+            :class:`folders <arcgis.gis._impl._content_manager.folder.core.Folder>`.
 
          .. code-block:: python
 
-            # Example to get name of all folders
+            # Example to get a generator
+            >>> gis = GIS(profile="your_web_gis_profile")
+            >>> gis_user = gis.users.me
 
-            user = gis.users.search("*")[5]
-            folders = user.folders
-            for folder in folders:
-                print(folder.name)
+            >>> folder_gen = gis_user.folders
+            >>> type(folder_gen)
 
-            # Example to get id of all folders
+            <class 'generator'>
 
-            user = gis.users.me
-            folders = user.folders
-            for folder in folders:
-                print(folder.properties['id'])
+            >>> for fldr in folder_gen:
+            >>>     print(fldr.name)
 
+            Root Folder
+            Water_Data
+            ...
+            Streets_folder
+
+            # Example to get a list of dictionary representations for each folder
+            >>> folders_dict_list = [f.properties for f in list(folder_gen)]
+            >>> folders_dict_list
+
+            [
+             {'id': 'Root Folder', 'name': 'Root Folder'},
+             {'username': 'gis_user',
+              'id': '2e89 ... c26a34018a62',
+              'title': 'Water_Data',
+              'created': 1676505498100},
+              ...
+             {'username': 'gis_user',
+             'id': 'd2e ... 7edc',
+             'title': 'air_quality_data',
+             'created': 1719858924000}
+             ]
         """
         for folder in self._gis.content.folders.list(self):
             yield folder
@@ -13518,50 +13539,69 @@ class User(dict):
         self, folder: _folder.Folder | str = None, max_items: int = 100
     ) -> Iterator[Item]:
         """
-        The ``item`` method provides a list of :class:`~arcgis.gis.Item` objects in the specified folder.
-        For content in the root folder, use the default value of None for the folder argument.
-        For other folders, pass in the folder name as a string, or as a dictionary containing
-        the folder ID, such as the dictionary obtained from the folders property.
+        Creates a Python generator for iterating over the :class:`~arcgis.gis.Item`
+        objects in the specified folder.
 
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        folder                 Optional string. The specifc folder (as a string or dictionary)
-                               to get a list of items in.
+        folder                 Optional string or
+                               :class:`~arcgis.gis._impl._content_manager.folder.core.Folder`. The
+                               specific folder to create the generator for.
+
+                               .. note::
+                                   Use the default value of *None* for Root Folder content. For other
+                                   folders, either pass in the folder name as a string or as a
+                                   :class:`~arcgis.gis._impl._content_manager.folder.core.Folder`
+                                   object
         ------------------     --------------------------------------------------------------------
-        max_items              Optional integer. The maximum number of items to be returned. The default is 100. A value of -1 will return all items.
+        max_items              Optional integer. The maximum number of items to be returned. The
+                               default is 100. A value of -1 will return all items.
         ==================     ====================================================================
 
 
         :return:
-           The list of :class:`~arcgis.gis.Item` objects in the specified folder.
+           A Python generator for iterating over the :class:`~arcgis.gis.Item` objects in the
+           specified folder.
 
         .. code-block:: python
 
-            # Example to **estimate** storage for a user's items
+            # Usage Example: Iterate over the generator for the Root Folder
 
-            storage = 0
-            for item in user.items():
-                storage += item.size
-            try:
-                for f in user.folders:
-                    for f_item in user.folders(folder=f):
-                        storage += f_item.size
-                print(f"{user.username} using {storage} bytes")
-            except Exception as e:
-                print(f"{user.username} using {storage} bytes")
+            >>> gis = GIS(profile="your_web_gis_profile")
+            >>> root_gen = gis.users.me.items()
+            >>> for root_item in root_gen:
+            >>>     print(f"{root_item.title:35} {root_item.type}")
 
-        .. code-block:: python
+            Local Terrain                 Vector Tile Service
+            water_features                CSV
+            ...
+            subdivision_proposed          Feature Service
 
-            # Example get items in each folder that is not root
+            # Usage Example #2: Iterate over items in a specific folder
 
-            user = User(gis, username)
-            folders = user.folders
-            for folder in folders:
-                items = user.items(folder=folder.name)
-                for item in items:
-                    print(item, folder)
+            >>> folder_mgr = gis.content.folders
+            >>> water_folder = folder_mgr.get(folder="water_folder")
+            >>> water_items = gis.users.me.items(folder=water_folder)
+            >>> for item in water_items:
+            >>>     print(f"{item.title}")
 
+            swamp_locations
+            drainage_basin
+            ...
+            hydrology_map
+
+            # Usage Example #3: **Estimate** storage for a user's items
+
+            >>> org_user = gis.users.get("gis_planner")
+            >>> storage = 0
+            >>> for fldr in org_user.folders:
+            >>>     for fldr_item in org_user.items(folder=fldr):
+            >>>        storage += fldr_item.size
+
+            >>> print(f"User item strage: {storage/1024:10.2f} MB")
+
+            User item storage:  234758.52 MB
         """
         count: int = 1
 
@@ -18150,6 +18190,7 @@ class Item(dict):
         redirect_uris: Optional[list[str]] = None,
         http_referers: Optional[list[str]] = None,
         privileges: Optional[list[str]] = None,
+        personal_token: bool | None = None,
     ):
         """
 
@@ -18202,6 +18243,11 @@ class Item(dict):
                                 based on the current item sharing model. With app tokens, all items
                                 of app owner can be accessed if the privileges list is not
                                 configured.
+        ---------------     --------------------------------------------------------------------
+        personal_token      Optional Boolean.  When providing privileges that relate to anything
+                            regarding operations on a user or administrative privileges, this
+                            must be set to true, or else the token will not be generated
+                            properly.
         ===============     ====================================================================
 
         :return: A dictionary indicating 'success' or 'error'
@@ -18239,6 +18285,8 @@ class Item(dict):
             "appType": app_type,
             "redirect_uris": redirect_uris,
         }
+        if isinstance(personal_token, bool):
+            params["isPersonalAPIToken"] = personal_token
         if http_referers:
             params["httpReferrers"] = http_referers
         if privileges:
@@ -18280,6 +18328,85 @@ class Item(dict):
             self._hydrate()
             return True
         return res["success"]
+
+    # ----------------------------------------------------------------------
+    def generate_api_token(
+        self,
+        slot: int = 1,
+        regenerate: bool = False,
+        expiration: _dt.datetime | None = None,
+    ) -> dict:
+        """
+        Generates a Developer Token from an Developer Token Item.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        slot              Optional int. API keys support 2 API tokens.  The `slot` allows
+                          users to specifiy which API Key to create or regenerate.
+        ----------------  ---------------------------------------------------------------
+        regenerate        Optional bool. When True, this will re-create the API token.
+                          The default is False.
+        ----------------  ---------------------------------------------------------------
+        expiration        Optional datetime.datetime. The time when the expiration expires.
+                          The maximum value is 1 year from the time you create the API Key.
+        ================  ===============================================================
+
+        :returns: dict
+        """
+        if not self._gis.version >= [2025, 1]:
+            raise Exception(
+                "The `GIS` does not support Developer Credentials, please use Enterprise 11.5+ or ArcGIS Online."
+            )
+
+        app_info: dict = self.app_info
+        import datetime as _dt
+
+        if expiration and expiration > _dt.datetime.now() + _dt.timedelta(weeks=52):
+            raise ValueError(
+                "The expiration value cannot be longer than one year from today."
+            )
+        if self.type != "Application":
+            raise ValueError(
+                "This item is not allowed to create developer tokens, please select the proper item type."
+            )
+        if app_info is None:
+            raise Exception(
+                "Please register your application before generating developer api keys."
+            )
+        if not slot in [1, 2]:
+            raise ValueError("The `slot` value must be 1 or 2.")
+        url: str = "%soauth2/token" % self._portal.resturl
+        client_id, client_secret = app_info.get("client_id"), app_info.get(
+            "client_secret"
+        )
+
+        slot_key: str = f"apiToken{slot}ExpirationDate"
+
+        if regenerate and expiration is None:
+            import datetime as _dt
+
+            expiration: _dt.datetime = _dt.datetime.now() + _dt.timedelta(weeks=26)
+            warnings.warn(
+                f"The `expiration` was not set, setting the new expiration to be {expiration.strftime('%B %d, %Y %I:%M %p')}"
+            )
+            self.update({slot_key: int(expiration.timestamp() * 1000)})
+        if getattr(self, slot_key, -1) < 0:
+            self.update({slot_key: int(expiration.timestamp() * 1000)})
+
+        params: dict = {
+            "f": "json",
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "apiToken": slot,
+            "regenerateApiToken": json.dumps(regenerate),
+        }
+
+        resp = self._gis.session.post(url, data=params)
+        resp.raise_for_status()
+        data = resp.json()
+        return data
 
     # ----------------------------------------------------------------------
     def package_info(self, folder: Optional[str] = None) -> str:
