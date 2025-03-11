@@ -14,7 +14,7 @@ class TestTextContent(unittest.TestCase):
         """Test adding a Button and seeing the properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         btn = Button(
             link="https://www.nps.gov/subjects/forests/leaf-peeping.htm",
             text="Autumn Colors",
@@ -31,7 +31,7 @@ class TestTextContent(unittest.TestCase):
         """Test adding Text of different styles and seeing properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         welcome = Text(
             text="Welcome to a New Story About Some National Park Information",
             style=TextStyles.HEADING,
@@ -62,7 +62,7 @@ class TestTextContent(unittest.TestCase):
         """Test the get method for getting nodes by type and from an id"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         welcome = Text(
             text="Welcome to a New Story About Some National Park Information",
             style=TextStyles.HEADING,
