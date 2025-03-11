@@ -15,11 +15,28 @@
 import torch
 import torch.nn as nn
 from functools import partial
-from ._mmlab_utils import load_mmlab_checkpoint
 from timm.models.layers import to_2tuple
 from timm.models.vision_transformer import VisionTransformer
+from collections import OrderedDict
+from mmengine.runner.checkpoint import load_state_dict
+import logging
 
 pretrained_path = "https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt"
+
+
+def init_prithvi(model, pretrained_path):
+    raw_stdict = torch.hub.load_state_dict_from_url(
+        pretrained_path, map_location=torch.device("cpu")
+    )
+    if "state_dict" in raw_stdict.keys():
+        raw_stdict = raw_stdict["state_dict"]
+    new_stdict = OrderedDict()
+    for k, v in raw_stdict.items():
+        if "encoder" in k:
+            k = k.replace("encoder.", "")
+            new_stdict[k] = v
+
+    load_state_dict(model, new_stdict, False, logging.getLogger())
 
 
 class PatchEmbed(nn.Module):
@@ -100,7 +117,7 @@ class PrithviBackbone(VisionTransformer):
         self._is_prithvi = True
         self.__delattr__("head")
         if pretrained:
-            load_mmlab_checkpoint(self, pretrained_path)
+            init_prithvi(self, pretrained_path)
 
     def forward(self, x):
         x = self.patch_embed(x)
