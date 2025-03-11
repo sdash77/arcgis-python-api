@@ -1004,17 +1004,11 @@ class MapFeatureLayer(Layer):
             range_values=range_values,
             parameter_values=parameter_values,
         )
-        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
-            "supportsPagination", False
-        )
-        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             as_df=as_df,
             is_layer=True,
-            supports_pagination=supports_pagination,
-            max_record_count=max_record_count,
         ).execute()
 
     # ----------------------------------------------------------------------
@@ -1608,17 +1602,11 @@ class MapTable(MapFeatureLayer):
             range_values=range_values,
             parameter_values=parameter_values,
         )
-        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
-            "supportsPagination", False
-        )
-        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=False,
             as_df=as_df,
-            supports_pagination=supports_pagination,
-            max_record_count=max_record_count,
         ).execute()
 
 
