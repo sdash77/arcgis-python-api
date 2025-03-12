@@ -1,5 +1,7 @@
 import numpy as np
 import warnings
+import json
+import keyring
 
 
 def extract_zipfile(filepath, filename, remove=False):
@@ -87,3 +89,44 @@ def compare_checksum(filepath, file_checksum):
             return True
         else:
             return False
+
+
+class AIServiceConnection:
+    """
+    Provides helper methods to read and access AI Service Connection Files.
+
+    =====================   ===========================================
+    **Parameter**            **Description**
+    ---------------------   -------------------------------------------
+    connection_file_path    Required String. Path to the AI Service Connection File.
+    =====================   ===========================================
+
+    :return:
+        :class:`~arcgis.learn.AIServiceConnection` Object
+    """
+
+    def __init__(self, connection_file_path):
+        with open(connection_file_path, "r") as file:
+            self.__connection_info = json.load(file)
+
+    def get_dict(self):
+        """
+        Returns a dictionary representation of the object with all the connection properties.
+        """
+
+        out_dict = self.__connection_info
+
+        if (
+            "authenticationProperties" in out_dict
+            and "authenticationSecrets" in out_dict
+        ):
+            auth_prop = out_dict["authenticationProperties"]
+            auth_secret = out_dict["authenticationSecrets"]
+            if "parameterName" in auth_prop and "token" in auth_secret:
+                param_name = auth_prop["parameterName"]
+                uuid = auth_secret["token"]
+                credential = keyring.get_password(uuid, param_name)
+                if credential != None:
+                    out_dict["authenticationSecrets"]["token"] = credential
+
+        return out_dict

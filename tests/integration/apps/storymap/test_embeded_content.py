@@ -14,7 +14,7 @@ class TestEmbedContent(unittest.TestCase):
         """Test adding Embed and seeing properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         emb = Embed(
             "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
         )
@@ -31,7 +31,7 @@ class TestEmbedContent(unittest.TestCase):
         # Audio through URL
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
 
         emb = Embed(
             "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
@@ -48,7 +48,7 @@ def test_replace_media_item(self):
     """Test replacing the webpage link. This can be done through a property for each content"""
     # establish gis connection
     gis = self.gis
-    story = StoryMap()
+    story = StoryMap(gis=gis)
     emd = Embed(
         "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
     )
