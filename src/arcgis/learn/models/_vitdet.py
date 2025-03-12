@@ -15,6 +15,7 @@ from collections import OrderedDict
 import mmengine
 from mmengine.runner.checkpoint import CheckpointLoader
 from ._mmlab_utils import load_mmlab_checkpoint
+from ._prithvi_utils import init_prithvi
 
 
 def get_rel_pos(q_size, k_size, rel_pos):
@@ -356,6 +357,7 @@ class ViT(nn.Module):
         pretrain_use_cls_token=True,
         pretrained_path=None,
         pretrained=True,
+        backbone_name=None,
         **kwargs,
     ):
         """
@@ -431,7 +433,10 @@ class ViT(nn.Module):
 
         if pretrained:
             logging.disable(logging.WARNING)
-            load_mmlab_checkpoint(self, pretrained_path)
+            if backbone_name == "prithvi":
+                init_prithvi(self, pretrained_path)
+            else:
+                load_mmlab_checkpoint(self, pretrained_path)
             logging.disable(0)
         else:
             self.apply(self._init_weights)
