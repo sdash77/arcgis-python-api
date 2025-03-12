@@ -47,8 +47,8 @@ class Run(BaseTask):
     """
     Represents a run of a scheduled :class:`task <arcgis.gis.tasks.Task>`. The
     objects are not meant to be initialized directly, but instead a list of
-    *runs* are returned by the :attr:`~arcgis.gis.tasks.Tasks.runs` property
-    of :class:`tasks <arcgis.gis.tasks.Task>` objects.
+    *runs* are returned by the :attr:`~arcgis.gis.tasks.Task.runs` property
+    of :class:`task <arcgis.gis.tasks.Task>` objects.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -152,8 +152,8 @@ class Task(BaseTask):
     """
     Represents a scheduled :class:`task <arcgis.gis.tasks.Task>`. These objects
     are not meant to be intialized directly, but instead are returned
-    by the :meth:`~arcgis.gis.tasks.TaskManager.all` or
-    :meth:`~arcgis.gis.tasks.TaskManager.search` methods on the
+    by the :attr:`~arcgis.gis.tasks.TaskManager.all` property or
+    :meth:`~arcgis.gis.tasks.TaskManager.search` method on the
     :class:`~arcgis.gis.tasks.TaskManager` object.
 
     .. code-block:: python
@@ -459,7 +459,7 @@ class TaskManager(object):
     """
 
     Provides the functions to create, update, delete and view
-    :class:`tasks <arcgis.gis.tasks.Task>` objects.
+    :class:`task <arcgis.gis.tasks.Task>` objects.
 
      .. note::
         Available starting with ArcGIS Enterprise release 10.8.1, and ArcGIS Online.
