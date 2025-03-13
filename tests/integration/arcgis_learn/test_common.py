@@ -111,6 +111,11 @@ accuracy_values = {
         "sqnseg":0,
         "randlanet":0,
         "psetae":0,
+        "wnet_cgan":0,
+        "pix2pixhd":0,
+        "ptv3seg":0,
+        "ptv3det":0,
+        "mmdetection_dino":0,
     }
 }
 
@@ -1047,7 +1052,7 @@ class TestTraining(unittest.TestCase):
             elif test_name in [
                 "ner",
                 "sequencetosequence",
-                "textclassifer",
+                "textclassifier",
                 "zeroshotclassifier",
                 "questionanswering",
                 "textsummarizer",
