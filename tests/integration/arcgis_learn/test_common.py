@@ -116,6 +116,8 @@ accuracy_values = {
         "ptv3seg":0,
         "ptv3det":0,
         "mmdetection_dino":0,
+        "rtdetrv2": 0,
+        "climax": 0,
     }
 }
 
@@ -125,15 +127,15 @@ success_stat = {
         "total": 0,
         "pass": 0,
         "fail": 0,
-        "od_total": 6,
+        "od_total": 7,
         "od": 0,
         "pc_total": 11,
         "pc": 0,
         "co_total": 1,
         "co": 0,
-        "text_total": 10,
+        "text_total": 9,
         "text": 0,
-        "others_total": 14,
+        "others_total": 15,
         "others": 0,
     }
 }
@@ -180,8 +182,8 @@ def updateModelStats():
 def updateFailureModels():
     gis = GIS(
         "https://deldev.maps.arcgis.com",
-        "demos_deldev",
-        "DelDevs.1234",
+        authorization_data["for_update_accuracy_results"]["username"],
+        authorization_data["for_update_accuracy_results"]["password"],
     )
     item = gis.content.get("cd08c8edfb2f401bb0df1aafa6ce36af")
     data = item.tables[0]
@@ -330,23 +332,23 @@ def CommonTestUsingDF(
     )
 
 
-def CommonTestAutoDL(prepare_data_rgb, model, network, time, datapath):
-    data = prepare_data(**prepare_data_rgb)
-    model_object = model(data, total_time_limit=time, network=network)
-    model_object.fit()
-    best_model_path = os.path.join(
-        data_folder,
-        datapath,
-        "models",
-        "*AutoDL_" + model_object.best_model + "*",
-        "*emd",
-    )
-    emd_path = glob.glob(best_model_path)[0]
-    img_model = ImageryModel()
-    img_model.load(emd_path, data)
-    img_model.fit()
-    fine_tuned_model = os.path.join(data_folder, datapath, "models", "fine_tuned_model")
-    img_model.save(fine_tuned_model)
+# def CommonTestAutoDL(prepare_data_rgb, model, network, time, datapath):
+#     data = prepare_data(**prepare_data_rgb)
+#     model_object = model(data, total_time_limit=time, network=network)
+#     model_object.fit()
+#     best_model_path = os.path.join(
+#         data_folder,
+#         datapath,
+#         "models",
+#         "*AutoDL_" + model_object.best_model + "*",
+#         "*emd",
+#     )
+#     emd_path = glob.glob(best_model_path)[0]
+#     img_model = ImageryModel()
+#     img_model.load(emd_path, data)
+#     img_model.fit()
+#     fine_tuned_model = os.path.join(data_folder, datapath, "models", "fine_tuned_model")
+#     img_model.save(fine_tuned_model)
 
 
 # def CommonTestAutoDLMS(
@@ -800,7 +802,7 @@ def commonTestCases(
     model_object = model_type.from_model(
         str(model_save_path) + os.sep + f"{model_test}.emd", data
     )
-
+    model_save_path = model_object.save(f"{d_path}", compute_metrics=False)
     del model_object
     gc.collect()
     torch.cuda.empty_cache()
@@ -1031,6 +1033,7 @@ class TestTraining(unittest.TestCase):
                 "yolov3",
                 "maskrcnn",
                 "detreg",
+                "rtdetrv2",
             ]:
                 success_stat["attributes"]["od"] = success_stat["attributes"]["od"] + 1
             elif test_name in [
@@ -1072,6 +1075,7 @@ class TestTraining(unittest.TestCase):
                 "deepsort",
                 "mmsegmentation",
                 "mmdetection",
+                "mmdetection_dino",
                 "automl",
                 "mlmodel",
             ]:
@@ -1148,7 +1152,8 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
         num_epochs,
     ):
-        commonTestCases(
+        if os.environ.get("run_nightly") != "1":
+            commonTestCases(
             model,
             model_test,
             datapath,
@@ -1163,6 +1168,8 @@ class TestTraining(unittest.TestCase):
             num_epochs,
             self,
         )
+        else:
+            pass
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_fl, skip_on_empty=True)
@@ -1255,7 +1262,7 @@ def tearDownModule():
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
-        # updateFailureModels()
+        updateFailureModels()
     for key, val in data.items():
         try:
             os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')

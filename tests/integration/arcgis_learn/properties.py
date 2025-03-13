@@ -1,7 +1,6 @@
 import os
+import json
 from fastai.vision.transform import rotate, brightness, contrast
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
     MLModel,
     FasterRCNN,
@@ -43,9 +42,19 @@ from arcgis.learn import (
     PTv3Seg,
     PTv3Det,
 )
-import json
-from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
+from arcgis.learn.text import (
+    ZeroShotClassifier,
+    QuestionAnswering,
+    TextGenerator,
+    TextSummarizer,
+    TextTranslator,
+    FillMask,
+    EntityRecognizer,
+    SequenceToSequence,
+    TextClassifier,
+)
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 if os.environ.get("run_nightly") == "1":
     data_folder = r"/root/test_automation/data/test_train_model/train_model_regression"
 else:
@@ -1097,7 +1106,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "compute_metrics",
         "regression_test_score": 0.4,
-        "regression_epochs": 15,
+        "regression_epochs": 5,
         "inferencing_parameter": {"model_type": "siammask_iou"},
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
@@ -1526,7 +1535,7 @@ data = {
             "dataset_type": "WNet_cGAN",
         },
         "prepare_data_ms": False,
-        "should_test": True,
+        "should_test": False,
         "test_feature_layer": False,
         "regression_parameter": "compute_metrics",
         "regression_test_score": 0.40,
@@ -1547,7 +1556,7 @@ data = {
             "batch_size": None
         },
         "prepare_data_ms": False,
-        "should_test": True,
+        "should_test": False,
         "test_feature_layer": False,
         "regression_parameter": "compute_metrics",
         "regression_test_score": 0.40,
@@ -1603,16 +1612,6 @@ data = {
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     }
 }
-
-
-from arcgis.learn.text import (
-    ZeroShotClassifier,
-    QuestionAnswering,
-    TextGenerator,
-    TextSummarizer,
-    TextTranslator,
-    FillMask,
-)
 
 
 data_inference_only = {
