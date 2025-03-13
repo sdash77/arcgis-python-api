@@ -1,4 +1,6 @@
 import os
+import warnings
+warnings.filterwarnings('ignore')
 import json
 from fastai.vision.transform import rotate, brightness, contrast
 from arcgis.learn import (

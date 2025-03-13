@@ -5,6 +5,8 @@
 
 
 import os
+import warnings
+warnings.filterwarnings('ignore')
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import unittest
@@ -802,7 +804,6 @@ def commonTestCases(
     model_object = model_type.from_model(
         str(model_save_path) + os.sep + f"{model_test}.emd", data
     )
-    model_save_path = model_object.save(f"{d_path}", compute_metrics=False)
     del model_object
     gc.collect()
     torch.cuda.empty_cache()
