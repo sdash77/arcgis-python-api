@@ -1219,21 +1219,27 @@ class TestTraining(unittest.TestCase):
         model_test,
         data_folder_path,
     ):
-        CommonTestUsingDF(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-            self,
-        )
+        if os.environ.get("run_nightly") != "1": 
+            CommonTestUsingDF(
+                query,
+                model_type,
+                prepare_tabular_data,
+                regression_parameter,
+                regression_test_score,
+                model_name,
+                data_path,
+                model_test,
+                data_folder_path,
+                self,
+            )
+        else:
+            pass
 
     def test_autodl(self):
-        autodl_main()
+        if os.environ.get("run_nightly") != "1":
+            autodl_main()
+        else:
+            pass
 
     @classmethod
     def tearDownClass(cls):
