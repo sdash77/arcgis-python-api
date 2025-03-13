@@ -247,9 +247,8 @@ class ChildObjectDetector:
             confidences = confidences.tolist()
             labels = [class_map[c] for c in class_idxs]
 
+        grad_values = []
         if self.exp_map:
-            grad_values = []
-
             for index, image in enumerate(
                 pixelBlocks["rasters_pixels"]
             ):  # batch_images:
