@@ -515,7 +515,7 @@ class FeatureClassifier(ArcGISModel):
         from .._utils.image_classification import IC_show_results
 
         if self._is_multispectral and gradcam:
-            raise Exception("This method is not supported for multispectral dataset.")
+            raise Exception("This feature is not supported for multispectral datasets.")
 
         return_fig = kwargs.get("return_fig", False)
         fig = IC_show_results(self, nrows=rows, gradcam_show_result=gradcam, **kwargs)
@@ -747,9 +747,9 @@ class FeatureClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
         else:
-            _emd_template["InferenceFunction"] = (
-                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
-            )
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["CropSizeFixed"] = int(
@@ -1946,7 +1946,9 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
-    def _generate_grad_cam(self, im, cl, heatmap_thresh: int = 16, **kwargs):
+    def _generate_grad_cam(
+        self, im, cl, classifier_dataset_type, heatmap_thresh: int = 16, **kwargs
+    ):
         """
         Generate Grad-CAM heatmaps for the given image and model predictions.
 
@@ -1958,7 +1960,7 @@ class FeatureClassifier(ArcGISModel):
             grad_cam_outputs: List of Grad-CAM heatmaps for the predicted classes.
             pred_class_label: List of predicted class labels corresponding to the heatmaps.
         """
-        if self._data.dataset_type == "MultiLabeled_Tiles":
+        if classifier_dataset_type == "MultiLabeled_Tiles":
             # Handles MuliCategory types
             cat_pred = cl[1]
         else:
@@ -1975,8 +1977,8 @@ class FeatureClassifier(ArcGISModel):
         pred_class_label = []
         for class_label, pred_cat1 in enumerate(cat_pred.cpu().numpy()):
             if (
-                self._data.dataset_type == "Labeled_Tiles"
-                or self._data.dataset_type == "Imagenet"
+                classifier_dataset_type == "Labeled_Tiles"
+                or classifier_dataset_type == "Imagenet"
             ):
                 class_label = pred_cat1
                 pred_cat1 = True
@@ -2025,7 +2027,7 @@ class FeatureClassifier(ArcGISModel):
             return
         else:
             grad_cam_outputs, pred_class_label, xb, xb_norm = self._generate_grad_cam(
-                im, cl
+                im, cl, self._data.dataset_type
             )
             if image:
                 xb_im = Image(xb[0])
