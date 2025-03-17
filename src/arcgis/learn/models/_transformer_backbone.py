@@ -13,6 +13,7 @@ from torchvision.ops.feature_pyramid_network import (
 
 vit_config = dict(
     vit_tiny=dict(
+        backbone_name="vit_tiny",
         patch_size=16,
         embed_dim=192,
         depth=12,
@@ -20,6 +21,7 @@ vit_config = dict(
         pretrained_path="https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth",
     ),
     vit_small=dict(
+        backbone_name="vit_small",
         patch_size=16,
         embed_dim=384,
         depth=12,
@@ -27,6 +29,7 @@ vit_config = dict(
         pretrained_path="https://dl.fbaipublicfiles.com/deit/deit_small_patch16_224-cd65a155.pth",
     ),
     vit_base=dict(
+        backbone_name="vit_base",
         patch_size=16,
         embed_dim=768,
         depth=12,
@@ -35,6 +38,7 @@ vit_config = dict(
         pretrained_path="https://dl.fbaipublicfiles.com/deit/deit_base_patch16_384-8de9b5d1.pth",
     ),
     vit_large=dict(
+        backbone_name="vit_large",
         patch_size=32,
         embed_dim=1024,
         depth=24,
@@ -43,6 +47,7 @@ vit_config = dict(
         pretrained_path="https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_large_p32_384-9b920ba8.pth",
     ),
     prithvi=dict(
+        backbone_name="prithvi",
         patch_size=16,
         embed_dim=768,
         depth=12,
