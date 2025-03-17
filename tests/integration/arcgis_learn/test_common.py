@@ -1201,21 +1201,18 @@ class TestTraining(unittest.TestCase):
         model_test,
         data_folder_path,
     ):
-        if os.environ.get("run_nightly") != "1": 
-            CommonTestUsingDF(
-                query,
-                model_type,
-                prepare_tabular_data,
-                regression_parameter,
-                regression_test_score,
-                model_name,
-                data_path,
-                model_test,
-                data_folder_path,
-                self,
-            )
-        else:
-            pass
+        CommonTestUsingDF(
+            query,
+            model_type,
+            prepare_tabular_data,
+            regression_parameter,
+            regression_test_score,
+            model_name,
+            data_path,
+            model_test,
+            data_folder_path,
+            self,
+        )
 
     def test_autodl(self):
         if os.environ.get("run_nightly") != "1":
