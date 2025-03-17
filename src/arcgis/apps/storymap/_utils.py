@@ -433,12 +433,10 @@ def _prepare_story_for_save(
     _add_resource(story, resource_name=draft, text="{}", access="private")
 
     # Create a temporary file to write the story._properties
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp:
-        try:
-            json.dump(story._properties, temp, ensure_ascii=False)
-        except Exception as e:
-            # When users have special text we have to encode it.
-            json.dump(story._properties, temp, ensure_ascii=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w+", suffix=".json", delete=False, encoding="utf-8"
+    ) as temp:
+        json.dump(story._properties, temp, ensure_ascii=False)
         temp.seek(0)
 
         # update the draft with the story._properties
