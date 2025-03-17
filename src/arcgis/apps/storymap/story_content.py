@@ -5987,7 +5987,9 @@ class Table:
                     # Check if the cell value is a dictionary and has the key "value"
                     if isinstance(cell_value, dict) and "value" in cell_value:
                         # Update the value key to be an instance of the text class
-                        df.at[str(index), column]["value"] = Text(cell_value["value"])
+                        df.at[str(index), column]["value"] = Text(
+                            cell_value["value"]
+                        )._text
             return df
 
     # ----------------------------------------------------------------------
@@ -6025,6 +6027,12 @@ class Table:
                         content.at[str(index), column]["value"] = cell_value[
                             "value"
                         ]._text
+                    elif isinstance(cell_value["value"], str):
+                        content.at[str(index), column]["value"] = cell_value["value"]
+                    else:
+                        raise ValueError(
+                            "The value of the cell must be a string or a Text instance."
+                        )
             # convert the dataframe to a dictionary
             self._cells = content.to_dict(orient="index")
             self._story._properties["nodes"][self.node]["data"]["cells"] = self._cells

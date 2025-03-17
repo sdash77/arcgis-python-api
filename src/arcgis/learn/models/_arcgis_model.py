@@ -609,10 +609,6 @@ def get_backbone_func(backbone, data, **kwargs):
 
             if "resnet" in bckbn:
                 backbone = getattr(hfwu, bckbn)
-            elif "swin" in bckbn:
-                backbone = getattr(hfwu, bckbn)
-            elif "vit_small" in bckbn:
-                backbone = getattr(hfwu, bckbn)
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
@@ -691,7 +687,6 @@ class ArcGISModel(object):
         if self._is_multispectral or (
             not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
         ):
-
             self._orig_backbone = self._backbone
 
             @wraps(self._orig_backbone)
@@ -866,7 +861,7 @@ class ArcGISModel(object):
         self._device = torch.device("cpu")
         self._data = data
 
-    def lr_find(self, allow_plot=True, **kwargs):
+    def lr_find(self, allow_plot=True, mixed_precision=False, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -878,6 +873,11 @@ class ArcGISModel(object):
                                 against the learning rates and mark the optimal
                                 value of the learning rate on the plot.
                                 The default value is 'True'.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision.
+                                If set to `True`, optimum learning rate will be derived in mixed precision mode.
+                                Only `Pytorch` based models are supported.
+                                The default value is 'False'.
         =====================   ===========================================
         """
 
@@ -893,7 +893,11 @@ class ArcGISModel(object):
                 self.learn.metrics = []
                 # ddp training
                 if getattr(self, "_multigpu_training", False):
-                    self.learn.lr_find(start_lr=start_lr, end_lr=end_lr)
+                    self.learn.lr_find(
+                        start_lr=start_lr,
+                        end_lr=end_lr,
+                        mixed_precision=mixed_precision,
+                    )
                     distrib_barrier()
                     # remove tmp.pth created during lr_find in parent process
                     if not int(os.environ.get("RANK", 0)):
@@ -905,7 +909,11 @@ class ArcGISModel(object):
                         prefix="arcgisTemp_"
                     ) as _tempfolder:
                         self.learn.path = Path(_tempfolder)
-                        self.learn.lr_find(start_lr=start_lr, end_lr=end_lr)
+                        self.learn.lr_find(
+                            start_lr=start_lr,
+                            end_lr=end_lr,
+                            mixed_precision=mixed_precision,
+                        )
             except Exception as e:
                 # if some error comes in lr_find
                 raise e
@@ -1031,6 +1039,7 @@ class ArcGISModel(object):
         checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
         tensorboard=False,
         monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
         **kwargs,
     ):
         """
@@ -1083,6 +1092,11 @@ class ArcGISModel(object):
                                 should be one of the metric that is displayed in
                                 the training table. Use `{model_name}.available_metrics`
                                 to list the available metrics to set here.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
+                                training. If set to `True`, model training will be done in
+                                mixed precision mode. Only `Pytorch` based models are supported.
+                                The default value is 'False'.
         =====================   ===========================================
         """
 
@@ -1111,7 +1125,7 @@ class ArcGISModel(object):
 
                 print("Finding optimum learning rate.")
 
-                lr = self.lr_find(allow_plot=False)
+                lr = self.lr_find(allow_plot=False, mixed_precision=mixed_precision)
                 if self._slice_lr is True and len(self.learn.layer_groups) > 1:
                     lr = slice(lr / 10, lr)
 
@@ -1218,9 +1232,21 @@ class ArcGISModel(object):
 
             self._fit_callbacks = callbacks
             if one_cycle:
-                self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
+                self.learn.fit_one_cycle(
+                    epochs,
+                    lr,
+                    callbacks=callbacks,
+                    mixed_precision=mixed_precision,
+                    **kwargs,
+                )
             else:
-                self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
+                self.learn.fit(
+                    epochs,
+                    lr,
+                    callbacks=callbacks,
+                    mixed_precision=mixed_precision,
+                    **kwargs,
+                )
 
     def unfreeze(self):
         """
@@ -1991,7 +2017,8 @@ class ArcGISModel(object):
                 arcgis.learn._utils.env._IS_ARCGISPRONOTEBOOK = False
                 #
                 self._save_model_characteristics(
-                    saved_path.parent.absolute() / model_characteristics_folder
+                    saved_path.parent.absolute() / model_characteristics_folder,
+                    **kwargs,
                 )
                 ArcGISModel._create_html(saved_path)
             except:
@@ -2098,7 +2125,7 @@ class ArcGISModel(object):
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
-    def _save_model_characteristics(self, model_characteristics_dir):
+    def _save_model_characteristics(self, model_characteristics_dir, **kwargs):
         import shutil
         import matplotlib.pyplot as plt
 
@@ -2159,7 +2186,10 @@ class ArcGISModel(object):
         ]:
             pass
         elif hasattr(self, "show_results"):
-            self.show_results()
+            if hasattr(self, "_gradCAM"):
+                self.show_results(gradcam=kwargs.get("gradcam", False))
+            else:
+                self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, "show_results.png"))
             plt.close()
 

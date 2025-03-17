@@ -116,18 +116,18 @@ def setup_profiles(
     if not kube_name in updated_list:
         pm.create(
             kube_name,
-            url="https://k8s.python.geocloud.com/arcgis/home",
-            username="PAPIpublisher",
-            password="PAPIletmein01%",
+            url="https://1140pubbi-1140pubbi.apps.openshift412release.esri.com/web/home",
+            username="SHSpublisher",
+            password="ShSPublisher43",
         )
         print(f"Created profile {kube_name}")
 
     if not kube_admin_name in updated_list:
         pm.create(
             kube_admin_name,
-            url="https://k8s.python.geocloud.com/arcgis/home",
-            username="PAPIadmin",
-            password="PAPIletmein01%",
+            url="https://1140pubbi-1140pubbi.apps.openshift412release.esri.com/web/home",
+            username="ShSAdmin",
+            password="ShSAdmin43",
         )
         print(f"Created profile {kube_admin_name}")
     if not devext_admin_name in updated_list:

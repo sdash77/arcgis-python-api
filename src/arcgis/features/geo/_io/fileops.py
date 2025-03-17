@@ -50,6 +50,13 @@ elif SELECTED_ENGINE == GeometryEngine.ARCPY:
 
     USE_ARCPY = True
 
+json_dumps = (
+    pd.io.json.ujson_dumps if hasattr(pd.io.json, "ujson_dumps") else pd.io.json.dumps
+)
+json_loads = (
+    pd.io.json.ujson_loads if hasattr(pd.io.json, "ujson_loads") else pd.io.json.loads
+)
+
 _logging = logging.getLogger(__name__)
 
 
@@ -714,7 +721,7 @@ def from_featureclass(filename, **kwargs):
     :return: pandas.core.frame.DataFrame
 
     """
-    if "http://" in filename or "https://" in filename:
+    if isinstance(filename, str) and ("http://" in filename or "https://" in filename):
         return _http_workflow(filename)
 
     filename = _ensure_path_string(filename)
@@ -769,6 +776,10 @@ def _arcpy_workflow(filename, **kwargs):
     area_field = desc.get("areaFieldName", None)
     length_field = desc.get("lengthFieldName", None)
     pandas_dtypes = _fc2pandas_dtypes(desc)
+    if fields:
+        pandas_dtypes = {
+            key: value for key, value in pandas_dtypes.items() if key in fields
+        }
 
     if spatial_filter:
         spatial_relation = {
@@ -842,7 +853,7 @@ def _arcpy_workflow(filename, **kwargs):
     df.SHAPE = df.SHAPE[q].apply(_ujson.loads).apply(arcpy_geom_type)
     df.loc[none_q, "SHAPE"] = None
     df.spatial.set_geometry("SHAPE")
-    df.spatial._meta.source = filename
+    df.spatial._meta.source = getattr(filename, "dataSource", str(filename))
 
     for key, data_type in pandas_dtypes.items():
         try:
@@ -1064,12 +1075,10 @@ def to_featureclass(
                 gt = df[df.spatial.name][idx].geometry_type.upper()
 
             null_geom = {
-                "point": pd.io.json.dumps(
-                    {"x": None, "y": None, "spatialReference": sr}
-                ),
-                "polyline": pd.io.json.dumps({"paths": [], "spatialReference": sr}),
-                "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
-                "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
+                "point": json_dumps({"x": None, "y": None, "spatialReference": sr}),
+                "polyline": json_dumps({"paths": [], "spatialReference": sr}),
+                "polygon": json_dumps({"rings": [], "spatialReference": sr}),
+                "multipoint": json_dumps({"points": [], "spatialReference": sr}),
             }
 
             null_geom = null_geom[gt.lower()]
@@ -1213,7 +1222,7 @@ def to_featureclass(
                     df = df.replace({pd.NaT: None})
 
                 def _insert_row(row):
-                    row[-1] = pd.io.json.dumps(row[-1])
+                    row[-1] = json_dumps(row[-1])
                     for idx in bool_fld_idx:
                         if isinstance(row[idx], (int, bool)):
                             row[idx] = int(row[idx])
@@ -1451,11 +1460,11 @@ def _gdal_to_fc(
             for field_name, value in row.items():
                 if spatial_field is None or field_name != spatial_field:
                     # always run for table, but only run for feature class if not geom field
-                    if field_name in dfields:
-                        value = value.strftime("%Y-%m-%d %H:%M:%S")
-                    if isinstance(value, type(pd.NA)):
+                    if isinstance(value, (type(pd.NA), type(pd.NaT))):
                         # gdal is not a fan of pandas NA
                         value = None
+                    elif field_name in dfields:
+                        value = value.strftime("%Y-%m-%d %H:%M:%S")
                     feature.SetField(field_mapping[field_name], value)
 
             out_layer.CreateFeature(feature)

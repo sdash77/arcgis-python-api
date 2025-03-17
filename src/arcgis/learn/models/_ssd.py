@@ -305,6 +305,8 @@ class SingleShotDetector(ArcGISModel):
         :class:`~arcgis.learn.SingleShotDetector` Object
     """
 
+    MIN_BATCH_VAL_AMP = 8
+
     def __init__(
         self,
         data,
@@ -567,29 +569,8 @@ class SingleShotDetector(ArcGISModel):
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
-        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         return torchgeo_backbone
-
-    @staticmethod
-    def satlas_backbones():
-        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
-
-        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
-
-        swin_keys = [
-            attr
-            for attr in dir(Swin_Weights)
-            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
-        ]
-
-        satlas_backbone = list(
-            map(
-                lambda m: "hf:" + m,
-                resnet_keys + swin_keys,
-            )
-        )
-        return satlas_backbone
 
     @staticmethod
     def backbones():
@@ -603,7 +584,6 @@ class SingleShotDetector(ArcGISModel):
 
         transformer_backbone = SingleShotDetector.transformer_backbones()
         torchgeo_backbone = SingleShotDetector.torchgeo_backbones()
-        satlas_backbone = SingleShotDetector.satlas_backbones()
         dofa_backbone = SingleShotDetector.dofa_backbones()
 
         return (
@@ -616,7 +596,6 @@ class SingleShotDetector(ArcGISModel):
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
-            + satlas_backbone
             + dofa_backbone
         )
 
@@ -1770,3 +1749,31 @@ class SingleShotDetector(ArcGISModel):
             )
 
     ## Tensorflow specific functions end ##
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        # unstable pytorch AMP scaler if batch size less than the given value
+        if self.learn.data.batch_size <= self.MIN_BATCH_VAL_AMP:
+            mixed_precision = False
+
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=mixed_precision,
+            **kwargs,
+        )

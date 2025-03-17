@@ -2536,7 +2536,7 @@ class Project:
     ):
         if not isinstance(project, Item):
             try:
-                project = _create_project(name=project, definition=definition)
+                project = _create_project(name=project, definition=definition, gis=gis)
             except:
                 raise RuntimeError("Creation of orthomapping project failed.")
 
