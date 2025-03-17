@@ -434,7 +434,11 @@ def _prepare_story_for_save(
 
     # Create a temporary file to write the story._properties
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp:
-        json.dump(story._properties, temp, ensure_ascii=False)
+        try:
+            json.dump(story._properties, temp, ensure_ascii=False)
+        except Exception as e:
+            # When users have special text we have to encode it.
+            json.dump(story._properties, temp, ensure_ascii=True)
         temp.seek(0)
 
         # update the draft with the story._properties
@@ -666,10 +670,131 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
                     spec_type.append(node)
             else:
                 # Find all story content instances (i.e. Text)
-                # Map types are upercase and have spaces so handle
+                # Map types are uppercase and have spaces so handle
                 if type.lower() in keyword._type.lower().replace(" ", ""):
                     spec_type.append(node)
         return spec_type
+
+
+# ----------------------------------------------------------------------
+def populate_resource_dict(story, resource, complete_resource_dict, resource_files):
+    if isinstance(resource, str):
+        # check if value is a resource
+        if "r-" in resource:
+            # get the resource dict
+            resource_dict = story._properties["resources"][resource]
+            complete_resource_dict[resource] = resource_dict
+            if "resourceId" in resource_dict["data"]:
+                # some nodes keep the resource under resourceId key
+                name = resource_dict["data"]["resourceId"]
+                # get the resource file to add to new story
+                resource_file = story._item.resources.get(name)
+                resource_files[name] = resource_file
+            elif "itemId" in resource_dict["data"]:
+                name = resource_dict["data"]["itemId"]
+                # express map keeps resource under itemId key
+                if name.endswith(".json"):
+                    # need to add draft_ in front to be one-to-one with builder
+                    name = "draft_" + resource_dict["data"]["itemId"]
+                    # get the json file draft
+                    resource_file = story._item.resources.get(name)
+                    resource_files[name] = resource_file
+    return complete_resource_dict, resource_files
+
+
+# ----------------------------------------------------------------------
+def populate_dicts(
+    story,
+    content: str,
+    complete_node_dict: dict,
+    complete_resource_dict: dict,
+    resource_files: dict,
+):
+    content_dict = story._properties["nodes"][content]
+    complete_node_dict[content] = content_dict
+    # find the resource node to add associated with node. Text nodes have data but no resources
+    if "data" in content_dict and content_dict["type"] != "text":
+        for _, value in content_dict["data"].items():
+            if not isinstance(value, list):
+                value = [value]
+            for val in value:
+                # express maps keep their images in a list
+                complete_resource_dict, resource_files = populate_resource_dict(
+                    story, val, complete_resource_dict, resource_files
+                )
+    return complete_node_dict, complete_resource_dict, resource_files
+
+
+# ----------------------------------------------------------------------
+def copy_slides(story, target_story, slides):
+    """
+    Copy slides from one briefing to another.
+    """
+    # First check if slides is a list of strings or a list of objects
+    if isinstance(slides, list) and not isinstance(slides[0], str):
+        # get the node ids of the slides
+        slides = [slide.node for slide in slides]
+
+    # Check that slides exist in original story
+    # Check that slides are in the children of the Briefing UI node
+    ui = story._properties["nodes"][story._properties["root"]]["children"][0]
+    story_children = story._properties["nodes"][ui]["children"]
+    check = all(slide in story_children for slide in slides)
+
+    # Return an error if not all slides are in the source story.
+    if check is False:
+        raise ValueError(
+            "One or more of the slides provided is not part of your original Briefing."
+        )
+
+    # Step 2: Start setting up the dictionaries to copy
+    complete_node_dict = {}  # all the node dictionaries to copy
+    complete_resource_dict = {}  # all the resource dictionaries to copy
+    resource_files = {}  # all the resource files to copy
+    original_nodes = slides  # the original nodes to copy as the Briefing UI children
+
+    # Step 3: Create dictionaries for copying
+    # We can use the _has_children method to find all children of the slides and subsequent content on the slides
+    has_children = True
+    while has_children is True:
+        # new list of nodes to check at next iteration
+        new_nodes = []
+        for slide in slides:
+            complete_node_dict, complete_resource_dict, resource_files = populate_dicts(
+                story, slide, complete_node_dict, complete_resource_dict, resource_files
+            )
+            # check type of node to see if need to find children
+            node_children = _has_children(story, slide)
+            # populate new list with next nodes to add
+            if node_children:
+                for child in node_children:
+                    new_nodes.append(child)
+        # check if new nodes are empty
+        if len(new_nodes) == 0:
+            has_children = False
+        else:
+            slides = new_nodes
+
+    # Step 4: Copy nodes to target story
+    for key, value in complete_node_dict.items():
+        target_story._properties["nodes"][key] = value
+    for key, value in complete_resource_dict.items():
+        target_story._properties["resources"][key] = value
+    for key, value in resource_files.items():
+        try:
+            _add_resource(target_story, file=value, resource_name=key)
+        except Exception:
+            # express map, image editor, other created files will be here
+            text = json.dumps(value)
+            _add_resource(target_story, resource_name=key, text=text)
+
+    # Step 5: Add the node list to the story children
+    for main_node in original_nodes:
+        _add_child(target_story, main_node)
+
+    # Step 6: Save
+    target_story.save()
+    return True
 
 
 # ----------------------------------------------------------------------
@@ -679,15 +804,15 @@ def copy_content(
     content: list,
 ):
     """
-    Copy the content from one briefing/story to another. This will copy the content
-    indicated to the target briefing/story in the order they are provided.
+    Copy content from one story to another. This will copy the nodes and resources
+    from the source story to the target story. The content can be a list of node ids
+    or a list of content objects. The content must be part of the source story.
 
+    Copy slides from one briefing to another.
     """
     if isinstance(content, list) and not isinstance(content[0], str):
         # get the node ids of the content
-        node_list = []
-        for item in content:
-            node_list.append(item.node)
+        node_list = [item.node for item in content]
     elif isinstance(content, list) and isinstance(content[0], str):
         node_list = content
 
@@ -843,7 +968,7 @@ def copy_content(
 
 
 # ----------------------------------------------------------------------
-def _has_children(story, node):
+def _has_children(story, node) -> list | str | bool | None:
     """
     Check if node has children and return list of children else None.
     """
@@ -857,9 +982,15 @@ def _has_children(story, node):
     elif isinstance(node_class, Content.Swipe):
         return list(story._properties["nodes"][node]["data"]["contents"].values())
     elif isinstance(node_class, Content.BriefingSlide):
-        contents = list(story._properties["nodes"][node]["data"]["contents"].values())
-        if "title" in story._properties["nodes"][node]["data"]:
-            contents.append(story._properties["nodes"][node]["data"]["title"])
+        contents = []
+        for block in node_class.blocks:
+            block_content = (
+                block._content if isinstance(block._content, list) else [block._content]
+            )
+            for node in block_content:
+                contents.append(node)
+        if node_class._title:
+            contents.append(node_class._title.node)
         return contents
     elif isinstance(node_class, Content.MapTour):
         mt = get(story, node)
