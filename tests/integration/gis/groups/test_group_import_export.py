@@ -7,7 +7,9 @@ from utils.decorators import integration_test, profiles, from_to_profiles
 from integration.config import QALAB_ROOT_PATH
 from utils.data_utils import add_source_item, create_group, cleanup_published_items, cleanup_groups, cleanup_folders
 
-fp = os.path.join(QALAB_ROOT_PATH, 'group_manager_data', 'parkinglots.zip')
+from integration.config import get_resource_path
+
+fp = get_resource_path("staging_data/parkinglots.zip", unique_copy=True)
 
 
 @profiles.admin_enterprise_and_k8s
