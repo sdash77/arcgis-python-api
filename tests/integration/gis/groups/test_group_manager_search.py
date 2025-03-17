@@ -3,7 +3,7 @@ from utils.decorators import integration_test, profiles
 from integration.config import INTEGRATION_TEST_ITEM_TAG
 
 
-@profiles.admin_enterprise
+@profiles.admin_all
 @integration_test
 class TestGroupManagerSearch(unittest.TestCase):
     """ GroupManager class, search() tests """
