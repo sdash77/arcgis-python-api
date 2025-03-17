@@ -733,8 +733,8 @@ def copy_content(
         node_dict = story._properties["nodes"][node_add]
         comp_node_dict[node_add] = node_dict
 
-        # find the resource node to add associated with node
-        if "data" in node_dict:
+        # find the resource node to add associated with node. Text nodes have data but no resources
+        if "data" in node_dict and not node_dict["type"] == "text":
             # iterate through values of dict to find any resources
             for _, value in node_dict["data"].items():
                 if isinstance(value, list):
@@ -854,10 +854,13 @@ def _has_children(story, node):
         or isinstance(node_class, Content.Timeline)
     ):
         return story._properties["nodes"][node]["children"]
-    elif isinstance(node_class, Content.Swipe) or isinstance(
-        node_class, Content.BriefingSlide
-    ):
+    elif isinstance(node_class, Content.Swipe):
         return list(story._properties["nodes"][node]["data"]["contents"].values())
+    elif isinstance(node_class, Content.BriefingSlide):
+        contents = list(story._properties["nodes"][node]["data"]["contents"].values())
+        if "title" in story._properties["nodes"][node]["data"]:
+            contents.append(story._properties["nodes"][node]["data"]["title"])
+        return contents
     elif isinstance(node_class, Content.MapTour):
         mt = get(story, node)
         return mt._children
