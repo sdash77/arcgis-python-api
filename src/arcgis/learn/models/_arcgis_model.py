@@ -58,11 +58,7 @@ try:
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
     from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
-    from ._dofa_utils import (
-        dofa_backbone,
-        dofa_backbones_downstream,
-        clay_backbones_downstream,
-    )
+    from ._dofa_utils import dofa_backbone, dofa_backbones_downstream
     from ._wavelengths import wavelength_dict
 
     # EarlyStoppingCallback should run as one
@@ -613,10 +609,6 @@ def get_backbone_func(backbone, data, **kwargs):
 
             if "resnet" in bckbn:
                 backbone = getattr(hfwu, bckbn)
-            elif "swin" in bckbn:
-                backbone = getattr(hfwu, bckbn)
-            elif "vit_small" in bckbn:
-                backbone = getattr(hfwu, bckbn)
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
@@ -630,10 +622,7 @@ def get_backbone_func(backbone, data, **kwargs):
                 is_fpn=kwargs.get("is_fpn", False),
             )
             backbone.__name__ = backbone_name
-        elif (
-            backbone in dofa_backbones_downstream
-            or backbone in clay_backbones_downstream
-        ):
+        elif backbone in dofa_backbones_downstream:
             backbone_name = backbone
             wavelengths = kwargs.get("wavelengths", None)
             band_names = None
@@ -1393,9 +1382,9 @@ class ArcGISModel(object):
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
 
-        if model_params.get("backbone", None) is not None and (
-            model_params["backbone"] in dofa_backbones_downstream
-            or model_params["backbone"] in clay_backbones_downstream
+        if (
+            model_params.get("backbone", None) is not None
+            and model_params["backbone"] in dofa_backbones_downstream
         ):
             if self._model_kwargs.get("wavelengths", None) is not None:
                 _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[

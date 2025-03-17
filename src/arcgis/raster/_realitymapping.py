@@ -2235,6 +2235,7 @@ class RMProject:
                     definition=definition,
                     sensor_type=sensor_type,
                     scenario_type=scenario_type,
+                    gis=gis,
                 )
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
