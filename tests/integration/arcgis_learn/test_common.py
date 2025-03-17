@@ -334,25 +334,6 @@ def CommonTestUsingDF(
     )
 
 
-# def CommonTestAutoDL(prepare_data_rgb, model, network, time, datapath):
-#     data = prepare_data(**prepare_data_rgb)
-#     model_object = model(data, total_time_limit=time, network=network)
-#     model_object.fit()
-#     best_model_path = os.path.join(
-#         data_folder,
-#         datapath,
-#         "models",
-#         "*AutoDL_" + model_object.best_model + "*",
-#         "*emd",
-#     )
-#     emd_path = glob.glob(best_model_path)[0]
-#     img_model = ImageryModel()
-#     img_model.load(emd_path, data)
-#     img_model.fit()
-#     fine_tuned_model = os.path.join(data_folder, datapath, "models", "fine_tuned_model")
-#     img_model.save(fine_tuned_model)
-
-
 # def CommonTestAutoDLMS(
 #     model_name,
 #     datapath,

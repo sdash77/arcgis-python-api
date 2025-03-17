@@ -1108,7 +1108,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "compute_metrics",
         "regression_test_score": 0.4,
-        "regression_epochs": 5,
+        "regression_epochs": 10,
         "inferencing_parameter": {"model_type": "siammask_iou"},
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
