@@ -11,6 +11,8 @@ from torchvision.ops.feature_pyramid_network import (
 )
 
 
+# vit_foundation_model_config = dict()
+
 vit_config = dict(
     vit_tiny=dict(
         backbone_name="vit_tiny",
@@ -53,6 +55,22 @@ vit_config = dict(
         depth=12,
         num_heads=12,
         pretrained_path="https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt",
+    ),
+    dofa_base1=dict(
+        backbone_name="dofa_base1",
+        patch_size=16,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_base_patch16_224-a0275954.pth",
+    ),
+    dofa_large=dict(
+        backbone_name="dofa_large",
+        patch_size=16,
+        embed_dim=1024,
+        depth=24,
+        num_heads=16,
+        pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_large_patch16_224-0ff904d3.pth",
     ),
 )
 
@@ -117,7 +135,8 @@ def custom_backbone(
         logging.disable(logging.WARNING)
         if backbone_name in vit_config.keys():
             backbone_cfg = vit_config[backbone_name]
-            backbone = ViT(img_size, in_chans, pretrained=pretrained, **backbone_cfg)
+            merged_cfg = dict(backbone_cfg, **kwargs)
+            backbone = ViT(img_size, in_chans, pretrained=pretrained, **merged_cfg)
             backbone_fpn = BackboneFastai(backbone=backbone, is_fpn=is_fpn)
             backbone_fpn.__name__ = backbone_name
 

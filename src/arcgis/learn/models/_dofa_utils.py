@@ -213,7 +213,7 @@ class DOFAEmbedding(nn.Module):
         self._num_kernel = self.kernel_size * self.kernel_size * self.embed_dim
         self.patch_size = (kernel_size, kernel_size)
         self.num_patches = -1
-        self.wavelengths = wavelengths
+        self.wavelengths = torch.tensor(wavelengths).float().cuda()
 
         self.weight_generator = TransformerWeightGenerator(
             dynamic_embed_dim, self._num_kernel, embed_dim
@@ -239,7 +239,7 @@ class DOFAEmbedding(nn.Module):
         self.weight_generator.apply(self._init_weight)
         self.fclayer.apply(self._init_weight)
 
-    def forward(self, x: Tensor, wavelengths: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, x: Tensor, wavelengths=None) -> tuple[Tensor, Tensor]:
         """Forward pass of the model.
 
         Args:
@@ -249,6 +249,7 @@ class DOFAEmbedding(nn.Module):
         Return:
             Output mini-batch and wavelengths.
         """
+        wavelengths = self.wavelengths
         inplanes = wavelengths.size(0)
 
         # wv_feats: 9,128 -> 9, 3x3x3
@@ -272,9 +273,9 @@ class DOFAEmbedding(nn.Module):
 
         x = dynamic_out
 
-        x = x.flatten(2).transpose(1, 2)
-
-        return x, waves
+        # x = x.flatten(2).transpose(1, 2)
+        x = x.permute(0, 2, 3, 1)
+        return x  # , waves
 
 
 class DOFA(nn.Module):
@@ -402,8 +403,8 @@ class DOFA(nn.Module):
             self.upsample = nn.Sequential(
                 nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
                 nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
-                nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
-                nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
+                # nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
+                # nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             )
 
         if pretrained:

@@ -387,12 +387,38 @@ class ViT(nn.Module):
             # 2, 5, 8 11 for global attention
             window_block_indexes = [0, 1, 3, 4, 6, 7, 9, 10]
 
-        self.patch_embed = PatchEmbed(
-            kernel_size=(patch_size, patch_size),
-            stride=(patch_size, patch_size),
-            in_chans=in_chans,
-            embed_dim=embed_dim,
-        )
+        self.qa_idx = None
+        self._band_names = kwargs.get("band_names", None)
+        self.wavelengths = kwargs.get("wavelengths", None)
+
+        if self._band_names is not None:
+            cleaned_bandnames = [
+                band_name.lower().replace("_", "").replace(" ", "")
+                for band_name in self._band_names
+            ]
+            if "qa" in cleaned_bandnames:
+                self.qa_idx = cleaned_bandnames.index("qa")
+                self.wavelengths = (
+                    self.wavelengths[: self.qa_idx]
+                    + self.wavelengths[self.qa_idx + 1 :]
+                )
+
+        if "dofa" in backbone_name:
+            from ._dofa_utils import DOFAEmbedding
+
+            self.patch_embed = DOFAEmbedding(
+                dynamic_embed_dim=128,
+                kernel_size=16,
+                embed_dim=embed_dim,
+                wavelengths=self.wavelengths,
+            )
+        else:
+            self.patch_embed = PatchEmbed(
+                kernel_size=(patch_size, patch_size),
+                stride=(patch_size, patch_size),
+                in_chans=in_chans,
+                embed_dim=embed_dim,
+            )
 
         if use_abs_pos:
             # Initialize absolute positional embedding with pretrain image size.
@@ -451,6 +477,8 @@ class ViT(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def forward(self, x):
+        if self.qa_idx is not None:
+            x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
         x = self.patch_embed(x)
         if self.pos_embed is not None:
             x = x + get_abs_pos(

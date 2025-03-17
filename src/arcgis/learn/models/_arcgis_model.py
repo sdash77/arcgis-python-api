@@ -614,12 +614,39 @@ def get_backbone_func(backbone, data, **kwargs):
             in_channels = (
                 len(data._extract_bands) if hasattr(data, "_extract_bands") else 3
             )
+
+            wavelengths = kwargs.get("wavelengths", None)
+            band_names = None
+            if wavelengths is None:
+                if data._emd.get("InputRastersProps", None) is not None:
+                    band_names = data._emd.get("InputRastersProps").get("BandNames")
+                elif data._emd.get("AllTilesStats", None) is not None:
+                    band_names = [
+                        x.get("BandName") for x in data._emd.get("AllTilesStats")
+                    ]
+                else:
+                    raise Exception(
+                        '\nThis backbone require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
+                    )
+                wavelengths = get_wavelengths_from_bandnames(band_names)
+                assert len(wavelengths) == len(data._extract_bands)
+                band_names = band_names
+            else:
+                if len(wavelengths) != len(data._extract_bands):
+                    raise Exception(
+                        'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
+                    )
+
             backbone = partial(
                 custom_backbone,
                 backbone_name=backbone,
                 img_size=int(kwargs.get("chip_size", data.chip_size)),
                 in_chans=in_channels,
                 is_fpn=kwargs.get("is_fpn", False),
+                wavelengths=wavelengths,
+                band_names=band_names,
+                is_clf=kwargs.get("is_clf", False),
+                is_plain_vit=kwargs.get("is_plain_vit", False),
             )
             backbone.__name__ = backbone_name
         elif backbone in dofa_backbones_downstream:
@@ -912,7 +939,7 @@ class ArcGISModel(object):
                         self.learn.lr_find(
                             start_lr=start_lr,
                             end_lr=end_lr,
-                            mixed_precision=mixed_precision,
+                            # mixed_precision=mixed_precision,
                         )
             except Exception as e:
                 # if some error comes in lr_find
@@ -1236,7 +1263,7 @@ class ArcGISModel(object):
                     epochs,
                     lr,
                     callbacks=callbacks,
-                    mixed_precision=mixed_precision,
+                    # mixed_precision=mixed_precision,
                     **kwargs,
                 )
             else:
@@ -1244,7 +1271,7 @@ class ArcGISModel(object):
                     epochs,
                     lr,
                     callbacks=callbacks,
-                    mixed_precision=mixed_precision,
+                    # mixed_precision=mixed_precision,
                     **kwargs,
                 )
 
