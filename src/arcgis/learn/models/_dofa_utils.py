@@ -194,11 +194,12 @@ class DOFAEmbedding(nn.Module):
 
     def __init__(
         self,
-        dynamic_embed_dim: int,
-        kernel_size: int = 3,
-        embed_dim: int = 1024,
-        wavelengths: list[float] | None = 3,
-    ) -> None:
+        dynamic_embed_dim,
+        kernel_size=3,
+        embed_dim=1024,
+        wavelengths=3,
+        flatten=True,
+    ):
         """Initialize a new DOFAEmbedding instance.
 
         Args:
@@ -213,7 +214,8 @@ class DOFAEmbedding(nn.Module):
         self._num_kernel = self.kernel_size * self.kernel_size * self.embed_dim
         self.patch_size = (kernel_size, kernel_size)
         self.num_patches = -1
-        self.wavelengths = torch.tensor(wavelengths).float().cuda()
+        self.wavelengths = torch.tensor(wavelengths).float()
+        self.flatten = flatten
 
         self.weight_generator = TransformerWeightGenerator(
             dynamic_embed_dim, self._num_kernel, embed_dim
@@ -234,30 +236,28 @@ class DOFAEmbedding(nn.Module):
             init.xavier_uniform_(m.weight)
             m.bias.data.fill_(0.01)
 
-    def _init_weights(self) -> None:
+    def _init_weights(self):
         """Initialize weights of all layers."""
         self.weight_generator.apply(self._init_weight)
         self.fclayer.apply(self._init_weight)
 
-    def forward(self, x: Tensor, wavelengths=None) -> tuple[Tensor, Tensor]:
+    def forward(self, x):
         """Forward pass of the model.
 
         Args:
             x: Input mini-batch.
-            wavelengths: Wavelengths of each spectral band (μm).
 
         Return:
             Output mini-batch and wavelengths.
         """
-        wavelengths = self.wavelengths
-        inplanes = wavelengths.size(0)
+        self.wavelengths = self.wavelengths.to(x.device)
 
         # wv_feats: 9,128 -> 9, 3x3x3
-        waves = position_embedding(self.dynamic_embed_dim, wavelengths * 1000)
+        waves = position_embedding(self.dynamic_embed_dim, self.wavelengths * 1000)
         waves = self.fclayer(waves)
         weight, bias = self.weight_generator(waves)  # 3x3x3
         dynamic_weight = weight.view(
-            inplanes, self.kernel_size, self.kernel_size, self.embed_dim
+            self.wavelengths.size(0), self.kernel_size, self.kernel_size, self.embed_dim
         )
 
         dynamic_weight = dynamic_weight.permute([3, 0, 1, 2])
@@ -267,15 +267,15 @@ class DOFAEmbedding(nn.Module):
 
         weights = dynamic_weight * self.scaler
 
-        dynamic_out = F.conv2d(
+        x = F.conv2d(
             x, weights, bias=bias, stride=self.kernel_size, padding=1, dilation=1
         )
 
-        x = dynamic_out
-
-        # x = x.flatten(2).transpose(1, 2)
-        x = x.permute(0, 2, 3, 1)
-        return x  # , waves
+        if self.flatten:
+            x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
+        else:
+            x = x.permute(0, 2, 3, 1)  # BCHW -> BHWC
+        return x
 
 
 class DOFA(nn.Module):
@@ -429,7 +429,7 @@ class DOFA(nn.Module):
         # embed patches
         wavelist = torch.tensor(self.wavelengths, device=x.device).float()
 
-        x, _ = self.patch_embed(x, wavelist)
+        x = self.patch_embed(x)  # , wavelist)
 
         abs_pos_embed = get_abs_pos(self.pos_embed, True, x.shape[1])
 

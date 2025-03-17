@@ -647,6 +647,7 @@ def get_backbone_func(backbone, data, **kwargs):
                 band_names=band_names,
                 is_clf=kwargs.get("is_clf", False),
                 is_plain_vit=kwargs.get("is_plain_vit", False),
+                num_classes=kwargs.get("num_classes", data.c),
             )
             backbone.__name__ = backbone_name
         elif backbone in dofa_backbones_downstream:

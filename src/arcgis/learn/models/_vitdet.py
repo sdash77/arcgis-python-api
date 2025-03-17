@@ -16,6 +16,7 @@ import mmengine
 from mmengine.runner.checkpoint import CheckpointLoader
 from ._mmlab_utils import load_mmlab_checkpoint
 from ._prithvi_utils import init_prithvi
+from einops import rearrange
 
 
 def get_rel_pos(q_size, k_size, rel_pos):
@@ -220,6 +221,22 @@ class Attention(nn.Module):
                 nn.init.trunc_normal_(self.rel_pos_w, std=0.02)
 
     def forward(self, x):
+        if self.use_rel_pos:
+            return self.forward_2D(x)
+        else:
+            B, N, C = x.shape
+            qkv = (
+                self.qkv(x)
+                .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+                .permute(2, 0, 3, 1, 4)
+            )
+            q, k, v = qkv[0], qkv[1], qkv[2]
+            x = F.scaled_dot_product_attention(q, k, v, dropout_p=0.0)
+            x = rearrange(x, "b h n d -> b n (h d)")
+            x = self.proj(x)
+            return x
+
+    def forward_2D(self, x):
         B, H, W, _ = x.shape
         # qkv with shape (3, B, nHead, H * W, C)
         qkv = (
@@ -314,17 +331,21 @@ class PatchEmbed(nn.Module):
         padding=(0, 0),
         in_chans=3,
         embed_dim=768,
+        flatten=False,
     ):
         super().__init__()
-
+        self.flatten = flatten
         self.proj = nn.Conv2d(
             in_chans, embed_dim, kernel_size=kernel_size, stride=stride, padding=padding
         )
 
     def forward(self, x):
         x = self.proj(x)
-        # B C H W -> B H W C
-        x = x.permute(0, 2, 3, 1)
+        if self.flatten:
+            x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
+        else:
+            x = x.permute(0, 2, 3, 1)  # BCHW -> BHWC
+
         return x
 
 
@@ -383,6 +404,8 @@ class ViT(nn.Module):
         """
         super().__init__()
         self.pretrain_use_cls_token = pretrain_use_cls_token
+        self.is_plain_vit = kwargs.get("is_plain_vit", None)
+        self.is_clf = kwargs.get("is_clf", None)
         if window_block_indexes is None:
             # 2, 5, 8 11 for global attention
             window_block_indexes = [0, 1, 3, 4, 6, 7, 9, 10]
@@ -411,6 +434,7 @@ class ViT(nn.Module):
                 kernel_size=16,
                 embed_dim=embed_dim,
                 wavelengths=self.wavelengths,
+                flatten=True if self.is_plain_vit else False,
             )
         else:
             self.patch_embed = PatchEmbed(
@@ -418,9 +442,17 @@ class ViT(nn.Module):
                 stride=(patch_size, patch_size),
                 in_chans=in_chans,
                 embed_dim=embed_dim,
+                flatten=True if self.is_plain_vit else False,
             )
 
-        if use_abs_pos:
+        if self.is_plain_vit:
+            # to keep plain vit
+            window_block_indexes = []
+            use_rel_pos = False
+            num_patches = (img_size // patch_size) ** 2
+            num_patches = num_patches + 1 if self.is_clf else num_patches
+            self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
+        elif use_abs_pos:
             # Initialize absolute positional embedding with pretrain image size.
             num_patches = (pretrain_img_size // patch_size) * (
                 pretrain_img_size // patch_size
@@ -452,6 +484,9 @@ class ViT(nn.Module):
             ]
         )
 
+        if self.is_clf:
+            self.head = nn.Linear(embed_dim, kwargs.get("num_classes"))
+
         # last layer output shape
         self.output_shape = dict(channels=embed_dim, stride=patch_size)
         if self.pos_embed is not None:
@@ -480,7 +515,9 @@ class ViT(nn.Module):
         if self.qa_idx is not None:
             x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
         x = self.patch_embed(x)
-        if self.pos_embed is not None:
+        if self.is_plain_vit:
+            x = x + self.pos_embed
+        elif self.pos_embed is not None:
             x = x + get_abs_pos(
                 self.pos_embed, self.pretrain_use_cls_token, (x.shape[1], x.shape[2])
             )
@@ -488,7 +525,14 @@ class ViT(nn.Module):
         for blk in self.blocks:
             x = blk(x)
 
-        x = x.permute(0, 3, 1, 2)
+        if self.is_plain_vit:
+            batch_size, num_patches, hidden_dim = x.shape
+            patch_size = int(num_patches**0.5)
+            x = x.permute(0, 2, 1).reshape(
+                batch_size, hidden_dim, patch_size, patch_size
+            )
+        else:
+            x = x.permute(0, 3, 1, 2)
         return x
 
 
