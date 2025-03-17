@@ -645,4 +645,4 @@ class Briefing(object):
             True if all content has been successfully copied over.
 
         """
-        return utils.copy_slides(self, target_briefing, content)
+        return utils.copy_content(self, target_briefing, content)

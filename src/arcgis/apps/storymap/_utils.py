@@ -726,82 +726,10 @@ def populate_dicts(
 
 
 # ----------------------------------------------------------------------
-def copy_slides(story, target_story, slides):
-    """
-    Copy slides from one briefing to another.
-    """
-    # First check if slides is a list of strings or a list of objects
-    if isinstance(slides, list) and not isinstance(slides[0], str):
-        # get the node ids of the slides
-        slides = [slide.node for slide in slides]
-
-    # Check that slides exist in original story
-    # Check that slides are in the children of the Briefing UI node
-    ui = story._properties["nodes"][story._properties["root"]]["children"][0]
-    story_children = story._properties["nodes"][ui]["children"]
-    check = all(slide in story_children for slide in slides)
-
-    # Return an error if not all slides are in the source story.
-    if check is False:
-        raise ValueError(
-            "One or more of the slides provided is not part of your original Briefing."
-        )
-
-    # Step 2: Start setting up the dictionaries to copy
-    complete_node_dict = {}  # all the node dictionaries to copy
-    complete_resource_dict = {}  # all the resource dictionaries to copy
-    resource_files = {}  # all the resource files to copy
-    original_nodes = slides  # the original nodes to copy as the Briefing UI children
-
-    # Step 3: Create dictionaries for copying
-    # We can use the _has_children method to find all children of the slides and subsequent content on the slides
-    has_children = True
-    while has_children is True:
-        # new list of nodes to check at next iteration
-        new_nodes = []
-        for slide in slides:
-            complete_node_dict, complete_resource_dict, resource_files = populate_dicts(
-                story, slide, complete_node_dict, complete_resource_dict, resource_files
-            )
-            # check type of node to see if need to find children
-            node_children = _has_children(story, slide)
-            # populate new list with next nodes to add
-            if node_children:
-                for child in node_children:
-                    new_nodes.append(child)
-        # check if new nodes are empty
-        if len(new_nodes) == 0:
-            has_children = False
-        else:
-            slides = new_nodes
-
-    # Step 4: Copy nodes to target story
-    for key, value in complete_node_dict.items():
-        target_story._properties["nodes"][key] = value
-    for key, value in complete_resource_dict.items():
-        target_story._properties["resources"][key] = value
-    for key, value in resource_files.items():
-        try:
-            _add_resource(target_story, file=value, resource_name=key)
-        except Exception:
-            # express map, image editor, other created files will be here
-            text = json.dumps(value)
-            _add_resource(target_story, resource_name=key, text=text)
-
-    # Step 5: Add the node list to the story children
-    for main_node in original_nodes:
-        _add_child(target_story, main_node)
-
-    # Step 6: Save
-    target_story.save()
-    return True
-
-
-# ----------------------------------------------------------------------
 def copy_content(
     story,
     target_story: Union[briefing.Briefing, storymap.StoryMap],
-    content: list,
+    contents: list,
 ):
     """
     Copy content from one story to another. This will copy the nodes and resources
@@ -810,14 +738,12 @@ def copy_content(
 
     Copy slides from one briefing to another.
     """
-    if isinstance(content, list) and not isinstance(content[0], str):
+    if isinstance(contents, list) and not isinstance(contents[0], str):
         # get the node ids of the content
-        node_list = [item.node for item in content]
-    elif isinstance(content, list) and isinstance(content[0], str):
-        node_list = content
+        contents = [item.node for item in contents]
 
     # Step 1: Do Checks
-    # Check that nodes exist in original story (children of source story contain all of node_list)
+    # Check that nodes exist in original story (children of source story contain all of content)
     if isinstance(target_story, briefing.Briefing):
         # children are in the children of the the root node. In the ui node
         ui = story._properties["nodes"][story._properties["root"]]["children"][0]
@@ -826,84 +752,31 @@ def copy_content(
         story_children = story._properties["nodes"][story._properties["root"]][
             "children"
         ]
-    check = all(node in story_children for node in node_list)
+    check = all(node in story_children for node in contents)
     # Return an error if not all nodes are in the source story.
     if check is False:
-        not_in_story = []
-        for node in node_list:
-            if node not in story_children:
-                not_in_story.append(node)
         raise ValueError(
-            "The content needs to be part of the story or slides in a briefing: "
-            + str(not_in_story)
-            + ". Please check that the correct contents are provided."
+            "The content needs to be part of the story. Please check that the correct contents are provided."
         )
 
     # Step 2: Create dictionaries for copying
 
     # Create node dict of all nodes to add, resource dict, and complete node list
     # Depending on node type, need to take different route to find all children
-    original_nodes = node_list
+    original_nodes = contents
     complete_node_list = []
     complete_node_dict = {}
     complete_resource_dict = {}
     resource_files = {}
     has_children = True
 
-    # internal method to add to correct places
-    def _add_to_dicts(node_add, comp_list, comp_node_dict, comp_res_dict):
-        # add to complete list of nodes
-        comp_list.append(node_add)
-        # get the dictionary
-        node_dict = story._properties["nodes"][node_add]
-        comp_node_dict[node_add] = node_dict
-
-        # find the resource node to add associated with node. Text nodes have data but no resources
-        if "data" in node_dict and not node_dict["type"] == "text":
-            # iterate through values of dict to find any resources
-            for _, value in node_dict["data"].items():
-                if isinstance(value, list):
-                    for im in value:
-                        # express maps keep their images in a list
-                        _add_to_resources(im, comp_res_dict)
-                else:
-                    _add_to_resources(value, comp_res_dict)
-
-    def _add_to_resources(value, comp_res_dict):
-        if isinstance(value, str):
-            # check if value is a resource
-            if "r-" in value:
-                resource_node = value
-                # get the resource dict
-                resource_dict = story._properties["resources"][resource_node]
-                comp_res_dict[resource_node] = resource_dict
-                if "resourceId" in resource_dict["data"]:
-                    # some nodes keep the resource under resourceId key
-                    name = resource_dict["data"]["resourceId"]
-                    # get the resource file to add to new story
-                    resource_file = story._item.resources.get(name)
-                    resource_files[name] = resource_file
-                elif "itemId" in resource_dict["data"]:
-                    name = resource_dict["data"]["itemId"]
-                    # express map keeps resource under itemId key
-                    if name.endswith(".json"):
-                        # need to add draft_ in front to be one-to-one with builder
-                        name = "draft_" + resource_dict["data"]["itemId"]
-                        # get the json file draft
-                        resource_file = story._item.resources.get(name)
-                        resource_files[name] = resource_file
-
     # Begin populating dicts and list, assume there are children to begin with.
     while has_children is True:
         # new list of nodes to check at next iteration
         new_nodes = []
-        for node in node_list:
-            # add node info for copying
-            _add_to_dicts(
-                node,
-                complete_node_list,
-                complete_node_dict,
-                complete_resource_dict,
+        for node in contents:
+            complete_node_dict, complete_resource_dict, resource_files = populate_dicts(
+                story, node, complete_node_dict, complete_resource_dict, resource_files
             )
             # check type of node to see if need to find children
             node_children = _has_children(story, node)
@@ -914,7 +787,7 @@ def copy_content(
         # if list is not empty, keep going
         if new_nodes:
             has_children = True
-            node_list = new_nodes
+            contents = new_nodes
         # once list is empty, all children have been accounted for
         else:
             has_children = False
