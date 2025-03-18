@@ -614,7 +614,6 @@ def create_dataloaders(datasets, batch_size, dataloader_kwargs):
             dataloader_kwargs["shuffle"] = True
         else:
             dataloader_kwargs["shuffle"] = True
-        dataloader_kwargs["drop_last"] = False
         dl = DataLoader(d, batch_size, **dataloader_kwargs)
         dl_list.append(dl)
     return dl_list
