@@ -5999,11 +5999,20 @@ class Role(object):
 class GroupManager(object):
     """
     The ``GroupManager`` class is a helper class for managing GIS groups.
-    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available
-    as a property of the :class:`~arcgis.gis.GIS` object.
+    This class is not meant to be initialized directly, but rather an instance
+    is accessible as the :attr:`~arcgis.gis.GIS.groups` property of the
+    :class:`~arcgis.gis.GIS` object.
 
-    .. note::
-       This class is not created by users directly.
+    .. code-block:: python
+    
+        # Usage Example: Initialize a GroupManager
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_organization_admin_profile")
+        
+        >>> group_mgr = gis.groups
+        >>> group_mgr
+        
+        <arcgis.gis.GroupManager object at 0x<mem_addr>>        
     """
 
     def __init__(self, gis):
@@ -11094,6 +11103,7 @@ class Group(dict):
         hidden_members: bool = False,
         membership_access: Optional[str] = None,
         autojoin: bool = False,
+        **kwargs
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -11169,7 +11179,11 @@ class Group(dict):
                             will have access. `None` is the default.
 
                             Values: `org`, `collaboration`, or `None`
-        ------------------  ---------------------------------------------------------
+        ==================  =========================================================
+        
+        Keyword Arguments:
+        
+        ==================  =========================================================
         autojoin            Optional Boolean. The default is `False`. Only applies to
                             org accounts. If `True`, this group will allow joined
                             without requesting membership approval.
@@ -11230,7 +11244,8 @@ class Group(dict):
             leaving_disallowed=leaving_disallowed,
             hidden_members=hidden_members,
             membership_access=membership_access,
-            auto_join=autojoin,
+            autojoin=autojoin,
+            **kwargs
         )
         if resp:
             self._hydrate()
