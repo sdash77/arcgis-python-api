@@ -57,7 +57,11 @@ try:
     from .._utils.evaluate_batchsize import estimate_batch_size
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
-    from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
+    from ._transformer_backbone import (
+        custom_backbone,
+        transformer_backbone_downstream,
+        wavelengths_required_models,
+    )
     from ._dofa_utils import dofa_backbone, dofa_backbones_downstream
     from ._wavelengths import wavelength_dict
 
@@ -589,6 +593,30 @@ def get_wavelengths_from_bandnames(band_names):
     return wavelengths
 
 
+def get_wavelenths_bandnames(data, **kwargs):
+    wavelengths = kwargs.get("wavelengths", None)
+    band_names = None
+    if wavelengths is None:
+        if data._emd.get("InputRastersProps", None) is not None:
+            band_names = data._emd.get("InputRastersProps").get("BandNames")
+        elif data._emd.get("AllTilesStats", None) is not None:
+            band_names = [x.get("BandName") for x in data._emd.get("AllTilesStats")]
+        else:
+            raise Exception(
+                '\nThis backbone require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
+            )
+        wavelengths = get_wavelengths_from_bandnames(band_names)
+        assert len(wavelengths) == len(data._extract_bands)
+        band_names = band_names
+    else:
+        if len(wavelengths) != len(data._extract_bands):
+            raise Exception(
+                'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
+            )
+
+    return wavelengths, band_names
+
+
 def get_backbone_func(backbone, data, **kwargs):
     if backbone is None:
         backbone = models.resnet34
@@ -615,27 +643,10 @@ def get_backbone_func(backbone, data, **kwargs):
                 len(data._extract_bands) if hasattr(data, "_extract_bands") else 3
             )
 
-            wavelengths = kwargs.get("wavelengths", None)
+            wavelengths = None
             band_names = None
-            if wavelengths is None:
-                if data._emd.get("InputRastersProps", None) is not None:
-                    band_names = data._emd.get("InputRastersProps").get("BandNames")
-                elif data._emd.get("AllTilesStats", None) is not None:
-                    band_names = [
-                        x.get("BandName") for x in data._emd.get("AllTilesStats")
-                    ]
-                else:
-                    raise Exception(
-                        '\nThis backbone require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
-                    )
-                wavelengths = get_wavelengths_from_bandnames(band_names)
-                assert len(wavelengths) == len(data._extract_bands)
-                band_names = band_names
-            else:
-                if len(wavelengths) != len(data._extract_bands):
-                    raise Exception(
-                        'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
-                    )
+            if backbone in wavelengths_required_models:
+                wavelengths, band_names = get_wavelenths_bandnames(data, **kwargs)
 
             backbone = partial(
                 custom_backbone,

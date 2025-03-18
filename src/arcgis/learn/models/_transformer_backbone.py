@@ -10,16 +10,7 @@ from torchvision.ops.feature_pyramid_network import (
     LastLevelMaxPool,
 )
 
-
-vit_foundation_model_config = dict(
-    prithvi=dict(
-        backbone_name="prithvi",
-        patch_size=16,
-        embed_dim=768,
-        depth=12,
-        num_heads=12,
-        pretrained_path="https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt",
-    ),
+wavelengths_required_cfg = dict(
     dofa_base1=dict(
         backbone_name="dofa_base1",
         patch_size=16,
@@ -38,6 +29,18 @@ vit_foundation_model_config = dict(
         drop_path_rate=0.0,
         pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_large_patch16_224-0ff904d3.pth",
     ),
+)
+
+vit_foundation_model_config = dict(
+    prithvi=dict(
+        backbone_name="prithvi",
+        patch_size=16,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        pretrained_path="https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt",
+    ),
+    **wavelengths_required_cfg
 )
 
 vit_config = dict(
@@ -86,6 +89,7 @@ swin_config = dict(
 )
 
 transformer_backbone_downstream = list(swin_config.keys()) + list(vit_config.keys())
+wavelengths_required_models = list(wavelengths_required_cfg.keys())
 
 
 def forward_SwinTransformer(self, x):
