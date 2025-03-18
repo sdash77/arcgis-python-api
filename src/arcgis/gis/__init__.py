@@ -1458,7 +1458,7 @@ class GIS(object):
     def hosting_servers(self) -> list:
         """
         Provides access to representation of all the services running on the hosting server
-        for an organizationl deployment. See
+        for an organizational deployment. See
         `ArcGIS Server Services Directory REST API <https://developers.arcgis.com/rest/services-reference/enterprise/get-started-with-the-services-directory/>`_
         for full explanation.
 
@@ -1479,7 +1479,7 @@ class GIS(object):
             < AGOLServicesDirectory @ https://servicesX.arcgis.com/<org_id>/arcgis/rest/services >
             < AGOLServicesDirectory @ https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/services >
 
-            # Usage Exanple #2: ArcGIS Enterprise:
+            # Usage Example #2: ArcGIS Enterprise:
             >>> gis = GIS(profile="your_enterprise_admin_profile")
 
             >>> for svc_dir in gis.hosting_servers:
