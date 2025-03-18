@@ -2407,7 +2407,7 @@ def show_local_interpretation(
         )
         return
     if method == "Tree":
-        explainer = shap.TreeExplainer(model._model, algorithm="Tree")
+        explainer = shap.TreeExplainer(model._model)
     elif method == "KernelRegressor":
         if hasattr(model._data, "_training_indexes"):
             explainer = shap.KernelExplainer(
