@@ -126,7 +126,7 @@ def setup_profiles(
         pm.create(
             kube_admin_name,
             url="https://1140pubbi-1140pubbi.apps.openshift412release.esri.com/web/home",
-            username="SHSadmin",
+            username="ShSAdmin",
             password="ShSAdmin43",
         )
         print(f"Created profile {kube_admin_name}")
