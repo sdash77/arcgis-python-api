@@ -62,6 +62,7 @@ vit_config = dict(
         embed_dim=768,
         depth=12,
         num_heads=12,
+        drop_path_rate=0.0,
         pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_base_patch16_224-a0275954.pth",
     ),
     dofa_large=dict(
@@ -70,6 +71,7 @@ vit_config = dict(
         embed_dim=1024,
         depth=24,
         num_heads=16,
+        drop_path_rate=0.0,
         pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_large_patch16_224-0ff904d3.pth",
     ),
 )

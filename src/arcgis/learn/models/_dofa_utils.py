@@ -4,21 +4,15 @@
 """Dynamic One-For-All (DOFA) models."""
 
 from functools import partial
-from typing import Any
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
 from timm.models.vision_transformer import Block
 from torch import Tensor
-from torchvision.models._api import Weights, WeightsEnum
-from timm.models.registry import register_model
 import logging
 import warnings
 from ._mmlab_utils import load_mmlab_checkpoint
-from collections import OrderedDict
-import pdb
 import math
 
 

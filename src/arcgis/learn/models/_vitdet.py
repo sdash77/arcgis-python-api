@@ -13,10 +13,11 @@ import math
 from functools import partial
 from collections import OrderedDict
 import mmengine
-from mmengine.runner.checkpoint import CheckpointLoader
+from mmengine.runner.checkpoint import CheckpointLoader, load_state_dict
 from ._mmlab_utils import load_mmlab_checkpoint
 from ._prithvi_utils import init_prithvi
 from einops import rearrange
+import numpy as np
 
 
 def get_rel_pos(q_size, k_size, rel_pos):
@@ -449,8 +450,10 @@ class ViT(nn.Module):
             # to keep plain vit
             window_block_indexes = []
             use_rel_pos = False
-            num_patches = (img_size // patch_size) ** 2
-            num_patches = num_patches + 1 if self.is_clf else num_patches
+            self._grid_size = img_size // patch_size
+            self._num_tokens = 1 if self.is_clf else 0
+            num_patches = (self._grid_size) ** 2
+            num_patches = num_patches + self._num_tokens
             self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
         elif use_abs_pos:
             # Initialize absolute positional embedding with pretrain image size.
@@ -496,11 +499,41 @@ class ViT(nn.Module):
             logging.disable(logging.WARNING)
             if backbone_name == "prithvi":
                 init_prithvi(self, pretrained_path)
+            elif self.is_plain_vit:
+                self._init_plain_pretrained(pretrained_path)
             else:
                 load_mmlab_checkpoint(self, pretrained_path)
             logging.disable(0)
         else:
             self.apply(self._init_weights)
+
+    def _init_plain_pretrained(self, pretrained_path):
+        state_dict = load_checkpoint_custom(
+            pretrained_path, map_location=torch.device("cpu")
+        )
+        for k, v in state_dict.items():
+            if k == "pos_embed" and v.shape != self.pos_embed.shape:
+                # get feature size(height, width)
+                pretrained_grid_size = int(np.sqrt(v.shape[1]))
+                # get number of tokens
+                num_tokens = v.shape[1] - pretrained_grid_size**2
+                posemb_tok, posemb_grid = v[:, :num_tokens], v[0, num_tokens:]
+                posemb_grid = posemb_grid.reshape(
+                    1, pretrained_grid_size, pretrained_grid_size, -1
+                ).permute(0, 3, 1, 2)
+                posemb_grid = F.interpolate(
+                    posemb_grid,
+                    size=(self._grid_size, self._grid_size),
+                    mode="bilinear",
+                )
+                posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(
+                    1, self._grid_size**2, -1
+                )
+                posemb_tok = posemb_tok[:, : self._num_tokens, :]
+                posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
+                state_dict[k] = posemb
+
+        load_state_dict(self, state_dict, False)  # , logging.getLogger())
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -517,7 +550,20 @@ class ViT(nn.Module):
         x = self.patch_embed(x)
         if self.is_plain_vit:
             x = x + self.pos_embed
-        elif self.pos_embed is not None:
+            for blk in self.blocks:
+                x = blk(x)
+            batch_size, num_patches, hidden_dim = x.shape
+            patch_size = int(num_patches**0.5)
+            x = x.permute(0, 2, 1).reshape(
+                batch_size, hidden_dim, patch_size, patch_size
+            )
+            return x
+        else:
+            return self.forward_vitdet(x)
+
+    def forward_vitdet(self, x):
+
+        if self.pos_embed is not None:
             x = x + get_abs_pos(
                 self.pos_embed, self.pretrain_use_cls_token, (x.shape[1], x.shape[2])
             )
@@ -525,14 +571,7 @@ class ViT(nn.Module):
         for blk in self.blocks:
             x = blk(x)
 
-        if self.is_plain_vit:
-            batch_size, num_patches, hidden_dim = x.shape
-            patch_size = int(num_patches**0.5)
-            x = x.permute(0, 2, 1).reshape(
-                batch_size, hidden_dim, patch_size, patch_size
-            )
-        else:
-            x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2)
         return x
 
 
