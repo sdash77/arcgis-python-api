@@ -11,7 +11,34 @@ from torchvision.ops.feature_pyramid_network import (
 )
 
 
-# vit_foundation_model_config = dict()
+vit_foundation_model_config = dict(
+    prithvi=dict(
+        backbone_name="prithvi",
+        patch_size=16,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        pretrained_path="https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt",
+    ),
+    dofa_base1=dict(
+        backbone_name="dofa_base1",
+        patch_size=16,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        drop_path_rate=0.0,
+        pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_base_patch16_224-a0275954.pth",
+    ),
+    dofa_large=dict(
+        backbone_name="dofa_large",
+        patch_size=16,
+        embed_dim=1024,
+        depth=24,
+        num_heads=16,
+        drop_path_rate=0.0,
+        pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_large_patch16_224-0ff904d3.pth",
+    ),
+)
 
 vit_config = dict(
     vit_tiny=dict(
@@ -48,32 +75,7 @@ vit_config = dict(
         pretrain_img_size=384,
         pretrained_path="https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_large_p32_384-9b920ba8.pth",
     ),
-    prithvi=dict(
-        backbone_name="prithvi",
-        patch_size=16,
-        embed_dim=768,
-        depth=12,
-        num_heads=12,
-        pretrained_path="https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt",
-    ),
-    dofa_base1=dict(
-        backbone_name="dofa_base1",
-        patch_size=16,
-        embed_dim=768,
-        depth=12,
-        num_heads=12,
-        drop_path_rate=0.0,
-        pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_base_patch16_224-a0275954.pth",
-    ),
-    dofa_large=dict(
-        backbone_name="dofa_large",
-        patch_size=16,
-        embed_dim=1024,
-        depth=24,
-        num_heads=16,
-        drop_path_rate=0.0,
-        pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_large_patch16_224-0ff904d3.pth",
-    ),
+    **vit_foundation_model_config
 )
 
 swin_config = dict(
@@ -139,6 +141,10 @@ def custom_backbone(
             backbone_cfg = vit_config[backbone_name]
             merged_cfg = dict(backbone_cfg, **kwargs)
             backbone = ViT(img_size, in_chans, pretrained=pretrained, **merged_cfg)
+            if kwargs.get("is_clf", False):
+                from ._timm_utils import TransformerClassifierHead
+
+                return nn.Sequential(backbone, TransformerClassifierHead(backbone.head))
             backbone_fpn = BackboneFastai(backbone=backbone, is_fpn=is_fpn)
             backbone_fpn.__name__ = backbone_name
 

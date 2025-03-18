@@ -492,6 +492,8 @@ class ViT(nn.Module):
         )
 
         if self.is_clf:
+            self.norm = norm_layer(embed_dim)
+            self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
             self.head = nn.Linear(embed_dim, kwargs.get("num_classes"))
 
         # last layer output shape
@@ -565,8 +567,20 @@ class ViT(nn.Module):
                 self.is_plain_vit,
             )
 
-        for blk in self.blocks:
+        if self.is_clf:
+            cls_token = self.cls_token + self.pos_embed[:, :1, :]
+            cls_tokens = cls_token.expand(x.shape[0], -1, -1)
+            x = torch.cat((cls_tokens, x), dim=1)
+
+        no_of_block = len(self.blocks)
+        for idx, blk in enumerate(self.blocks):
             x = blk(x)
+            if self.is_clf and (idx == no_of_block - 2):
+                x_grad_cam = x
+
+        if self.is_clf:
+            x = self.norm(x)
+            return x_grad_cam, x[:, 0]
 
         if self.is_plain_vit:
             batch_size, num_patches, hidden_dim = x.shape
