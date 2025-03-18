@@ -522,12 +522,12 @@ def prepare_climax_data(
 def show_results(self, rows, variable, **kwargs):
     variable = self._data._out_variables[0] if variable == "" else variable
     if len(self._data._out_variables) != 1:
-        variable_no_x = {i: n for n, i in enumerate(self._data._out_variables)}[
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._data._out_variables)}[
             variable.lower()
         ]
         variable_no_y = variable_no_x
     else:
-        variable_no_x = {i: n for n, i in enumerate(self._data._variables)}[
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._data._variables)}[
             variable.lower()
         ]
         variable_no_y = 0
