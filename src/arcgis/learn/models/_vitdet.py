@@ -137,7 +137,7 @@ def window_unpartition(windows, window_size, pad_hw, hw):
     return x
 
 
-def get_abs_pos(abs_pos, has_cls_token, hw):
+def get_abs_pos(abs_pos, has_cls_token, hw, is_plain_vit=True):
     """
     Calculate absolute positional embeddings. If needed, resize embeddings and remove cls_token
         dimension for the original embeddings.
@@ -157,16 +157,19 @@ def get_abs_pos(abs_pos, has_cls_token, hw):
     assert size * size == xy_num
 
     if size != h or size != w:
-        new_abs_pos = F.interpolate(
+        abs_pos = F.interpolate(
             abs_pos.reshape(1, size, size, -1).permute(0, 3, 1, 2),
             size=(h, w),
             mode="bicubic",
             align_corners=False,
-        )
-
-        return new_abs_pos.permute(0, 2, 3, 1)
+        ).permute(0, 2, 3, 1)
     else:
-        return abs_pos.reshape(1, h, w, -1)
+        abs_pos = abs_pos.reshape(1, h, w, -1)
+
+    if is_plain_vit:
+        return abs_pos.reshape(1, h * w, -1)
+    else:
+        return abs_pos
 
 
 def load_checkpoint_custom(filename, map_location=None, logger=None):
@@ -452,6 +455,7 @@ class ViT(nn.Module):
             use_rel_pos = False
             self._grid_size = img_size // patch_size
             self._num_tokens = 1 if self.is_clf else 0
+            self.pretrain_use_cls_token = True if self.is_clf else False
             num_patches = (self._grid_size) ** 2
             num_patches = num_patches + self._num_tokens
             self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
@@ -548,30 +552,31 @@ class ViT(nn.Module):
         if self.qa_idx is not None:
             x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
         x = self.patch_embed(x)
-        if self.is_plain_vit:
-            x = x + self.pos_embed
-            for blk in self.blocks:
-                x = blk(x)
-            batch_size, num_patches, hidden_dim = x.shape
-            patch_size = int(num_patches**0.5)
-            x = x.permute(0, 2, 1).reshape(
-                batch_size, hidden_dim, patch_size, patch_size
-            )
-            return x
+        if x.ndim == 4:
+            h, w = x.shape[1], x.shape[2]
         else:
-            return self.forward_vitdet(x)
-
-    def forward_vitdet(self, x):
+            h = w = int(math.sqrt(x.shape[1]))
 
         if self.pos_embed is not None:
             x = x + get_abs_pos(
-                self.pos_embed, self.pretrain_use_cls_token, (x.shape[1], x.shape[2])
+                self.pos_embed,
+                self.pretrain_use_cls_token,
+                (h, w),
+                self.is_plain_vit,
             )
 
         for blk in self.blocks:
             x = blk(x)
 
-        x = x.permute(0, 3, 1, 2)
+        if self.is_plain_vit:
+            batch_size, num_patches, hidden_dim = x.shape
+            patch_size = int(num_patches**0.5)
+            x = x.permute(0, 2, 1).reshape(
+                batch_size, hidden_dim, patch_size, patch_size
+            )
+        else:
+            x = x.permute(0, 3, 1, 2)
+
         return x
 
 
