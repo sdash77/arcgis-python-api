@@ -7857,7 +7857,7 @@ class ContentManager(object):
                             - title
                             - typeKeywords
                             - owner
-                            Example: filter=owner:"jsmith"
+                            Example: filter="owner:'jsmith'"
         ================    ===============================================================
 
         :return:

@@ -3074,6 +3074,9 @@ class FeatureLayerCollectionManager(_GISResource):
                             can be derived from the `properties` property.
                             For layer level modifications, run updates on each individual feature
                             service layer object.
+
+                            Find more information on what this dictionary can contain at:
+                            https://developers.arcgis.com/rest/services-reference/enterprise/feature-service/#json-response-syntax
         ---------------     --------------------------------------------------------------------
         future              Optional, If True, a future object will be returns and the process
                             will not wait for the task to complete.
@@ -3669,6 +3672,9 @@ class FeatureLayerManager(_GISResource):
                             can be derived from the `properties` property. For layer level
                             modifications, run updates on each individual feature layer of the
                             service.
+
+                            Get more information on what this dictionary can contain at:
+                            https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/#json-response-syntax
         ---------------     --------------------------------------------------------------------
         future              Optional boolean. The default is *False*, which means to run the
                             method synchronously and wait for results. If *True*, the method runs
