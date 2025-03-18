@@ -3673,7 +3673,7 @@ class FeatureLayerManager(_GISResource):
                             modifications, run updates on each individual feature layer of the
                             service.
 
-                            Get more information on what this dictionary can contain at:
+                            Find more information on what this dictionary can contain at:
                             https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/#json-response-syntax
         ---------------     --------------------------------------------------------------------
         future              Optional boolean. The default is *False*, which means to run the
