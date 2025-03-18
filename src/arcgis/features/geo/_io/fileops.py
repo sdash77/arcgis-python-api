@@ -750,8 +750,15 @@ def _http_workflow(filename):
             f.write(r.content)
 
         shutil.unpack_archive(archive_path, temp_dir)
-
-        df = _gdal_to_sedf(file_path=temp_dir)
+        shp_path = None
+        for root, dirs, files in os.walk(temp_dir):
+            for file in files:
+                if file.endswith(".shp"):
+                    shp_path = os.path.join(root, file)
+                    break
+            if shp_path:
+                break
+        df = _gdal_to_sedf(file_path=shp_path)
     df.spatial._meta.source = filename
     return df
 
