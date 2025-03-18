@@ -71,12 +71,7 @@ try:
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
     from ._transformer_backbone import vit_config
-    from ._dofa_utils import (
-        dofa_config,
-        dofa_backbones_downstream,
-        clay_config,
-        clay_backbones_downstream,
-    )
+    from ._dofa_utils import dofa_config, dofa_backbones_downstream
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -449,23 +444,7 @@ class SingleShotDetector(ArcGISModel):
 
                 self._create_anchors(grids, zooms, ratios)
 
-                if (
-                    self._backbone.__name__
-                    in dofa_backbones_downstream + clay_backbones_downstream
-                ):
-
-                    m = nn.Sequential(
-                        *create_body(self._backbone, False, None).children()
-                    )
-                    num_features = data.chip_size
-                    if self._backbone.__name__ in dofa_backbones_downstream:
-                        num_channels = m[0].blocks[-1].mlp.fc2.out_features
-                    else:
-                        num_channels = (
-                            m[0].decoder.transformer.layers[-1][1].net[-1].out_features
-                        )
-
-                else:
+                if not self._backbone.__name__ in dofa_backbones_downstream:
 
                     feature_sizes = _get_feature_size(
                         (
@@ -479,6 +458,13 @@ class SingleShotDetector(ArcGISModel):
 
                     num_features = feature_sizes[-1][-1]
                     num_channels = feature_sizes[-1][1]
+
+                else:
+                    m = nn.Sequential(
+                        *create_body(self._backbone, False, None).children()
+                    )
+                    num_features = data.chip_size
+                    num_channels = m[0].blocks[-1].mlp.fc2.out_features
 
                 if (
                     grids[0] > 8
@@ -575,43 +561,16 @@ class SingleShotDetector(ArcGISModel):
 
     @staticmethod
     def dofa_backbones():
-        """Supported list of Dynamic One-For-All (DOFA) backbones for this model."""
+        """Supported list of dofa backbones for this model."""
         dofa_backbone = list(dofa_config.keys())
         return dofa_backbone
-
-    @staticmethod
-    def clay_backbones():
-        """Supported list of Clay Foundation Model backbones for this model."""
-        clay_backbone = list(clay_config.keys())
-        return clay_backbone
 
     @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
-        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         return torchgeo_backbone
-
-    @staticmethod
-    def satlas_backbones():
-        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
-
-        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
-
-        swin_keys = [
-            attr
-            for attr in dir(Swin_Weights)
-            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
-        ]
-
-        satlas_backbone = list(
-            map(
-                lambda m: "hf:" + m,
-                resnet_keys + swin_keys,
-            )
-        )
-        return satlas_backbone
 
     @staticmethod
     def backbones():
@@ -625,9 +584,7 @@ class SingleShotDetector(ArcGISModel):
 
         transformer_backbone = SingleShotDetector.transformer_backbones()
         torchgeo_backbone = SingleShotDetector.torchgeo_backbones()
-        satlas_backbone = SingleShotDetector.satlas_backbones()
         dofa_backbone = SingleShotDetector.dofa_backbones()
-        clay_backbone = SingleShotDetector.clay_backbones()
 
         return (
             [
@@ -639,9 +596,7 @@ class SingleShotDetector(ArcGISModel):
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
-            + satlas_backbone
             + dofa_backbone
-            + clay_backbone
         )
 
     @property
@@ -756,7 +711,6 @@ class SingleShotDetector(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data._band_names = emd.get("Bands")
-            data._emd = emd
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
 
@@ -764,7 +718,7 @@ class SingleShotDetector(ArcGISModel):
 
         data.resize_to = resize_to
 
-        if not backbone in dofa_backbones_downstream + clay_backbones_downstream:
+        if not backbone in dofa_backbones_downstream:
             ssd = cls(
                 data,
                 emd["Grids"],

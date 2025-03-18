@@ -20,7 +20,6 @@ from ._mmlab_utils import load_mmlab_checkpoint
 from collections import OrderedDict
 import pdb
 import math
-from ._clay_utils import ClayMAE
 
 
 def get_abs_pos(abs_pos, has_cls_token, hw):
@@ -479,24 +478,7 @@ dofa_config = dict(
 )
 
 
-clay_config = dict(
-    clay_mae_large=dict(
-        mask_ratio=0.0,
-        patch_size=8,
-        shuffle=False,
-        # ENCODER
-        dim=1024,
-        depth=24,
-        heads=16,
-        dim_head=64,
-        mlp_ratio=4,
-        # WEIGHTS
-        pretrained_path="https://huggingface.co/made-with-clay/Clay/resolve/main/v1.5/clay-v1.5.ckpt",
-    )
-)
-
 dofa_backbones_downstream = list(dofa_config.keys())
-clay_backbones_downstream = list(clay_config.keys())
 
 
 class DofaBackboneFastai(nn.Module):
@@ -542,21 +524,9 @@ def dofa_backbone(
                 **backbone_cfg,
                 **kwargs,
             )
-        elif backbone_name in clay_config.keys():
-            backbone_cfg = clay_config[backbone_name]
-            backbone = ClayMAE(
-                img_size=img_size,
-                wavelengths=wavelengths,
-                pretrained=pretrained,
-                is_clf=is_clf,
-                num_classes=num_classes,
-                **backbone_cfg,
-                **kwargs,
-            )
+            backbone_fpn = DofaBackboneFastai(backbone=backbone)
 
-        backbone_fpn = DofaBackboneFastai(backbone=backbone)
-
-        backbone_fpn.__name__ = backbone_name
+            backbone_fpn.__name__ = backbone_name
         logging.disable(0)
 
     return backbone_fpn

@@ -13,7 +13,7 @@ try:
     from ._timm_utils import filter_timm_models
     from ._hed_utils import DDPCallback
     from ._transformer_backbone import swin_config
-    from ._dofa_utils import dofa_config, clay_config
+    from ._dofa_utils import dofa_config
 
     HAS_FASTAI = True
 
@@ -209,33 +209,16 @@ class HEDEdgeDetector(ModelExtension):
 
     @staticmethod
     def dofa_backbones():
-        """Supported list of Dynamic One-For-All (DOFA) backbones for this model."""
+        """Supported list of dofa backbones for this model."""
         dofa_backbone = list(dofa_config.keys())
         return dofa_backbone
-
-    @staticmethod
-    def clay_backbones():
-        """Supported list of Clay Foundation Model backbones for this model."""
-        clay_backbone = list(clay_config.keys())
-        return clay_backbone
 
     @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
-        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
-
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         return torchgeo_backbone
-
-    @staticmethod
-    def satlas_backbones():
-        from ._hf_weightutils import hf_resnet_cfgs
-
-        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
-
-        satlas_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
-        return satlas_backbone
 
     @staticmethod
     def _supported_backbones():
@@ -257,18 +240,14 @@ class HEDEdgeDetector(ModelExtension):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = HEDEdgeDetector.transformer_backbones()
         torchgeo_backbone = HEDEdgeDetector.torchgeo_backbones()
-        satlas_backbone = HEDEdgeDetector.satlas_backbones()
         dofa_backbone = HEDEdgeDetector.dofa_backbones()
-        clay_backbone = HEDEdgeDetector.clay_backbones()
 
         return (
             [*_resnet_family, *_vgg_family]
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
-            + satlas_backbone
             + dofa_backbone
-            + clay_backbone
         )
 
     @property
@@ -334,7 +313,6 @@ class HEDEdgeDetector(ModelExtension):
             data.emd = emd
             data.classes = ["background"]
             data._band_names = emd.get("Bands")
-            data._emd = emd
             for k, v in class_mapping.items():
                 data.classes.append(v)
             if backbone is not None and "hf:" in backbone:
