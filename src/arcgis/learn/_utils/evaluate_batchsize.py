@@ -57,6 +57,7 @@ unsupported_models = [
     "_TransformerEntityRecognizer",
     "TextClassifier",
     "MMDetection3D",
+    "PTv3Det",
 ]
 
 
