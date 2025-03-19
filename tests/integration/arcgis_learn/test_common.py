@@ -80,7 +80,7 @@ accuracy_values = {
         "fasterrcnn": 0,
         "superres": 0,
         "ner": 0,
-        "maxdeeplab": 0,
+        "deeplab": 0,
         "pointcnn": 0,
         "yolov3": 0,
         "fullyconnected": 0,
