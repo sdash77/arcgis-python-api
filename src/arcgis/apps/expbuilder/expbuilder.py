@@ -191,6 +191,9 @@ class WebExperience(object):
     name                Optional string. If a new experience is being created, the name of the
                         item. Otherwise, will default to "Experience via Python" followed by a
                         random number.
+    ---------------     --------------------------------------------------------------------
+    folder              Optional string. The folder in the portal to add the experience to.
+                        If none is specified, the user's root folder will be used.
     ===============     ====================================================================
     """
 
@@ -210,6 +213,7 @@ class WebExperience(object):
         gis: Optional[_arcgis_gis.GIS] = None,
         template: Optional[Union[Templates, str]] = None,
         name: Optional[str] = None,
+        folder: Optional[str] = None,
     ):
         if gis is None:
             if item and isinstance(item, _arcgis_gis.Item):
@@ -274,7 +278,7 @@ class WebExperience(object):
             # Throw error if item is not of type Experience
             raise ValueError("Item is not a Web Experience or is inaccesible")
         else:
-            self._create_new_experience(template=template, name=name)
+            self._create_new_experience(template=template, name=name, folder=folder)
 
     # -----------------------------------------------------------------------------------
     @property
@@ -736,7 +740,7 @@ class WebExperience(object):
         auto_remap: Optional[bool] = False,
         item_properties: Optional[dict] = {},
         folder: Optional[str] = None,
-        custom_widget_mapping: Optional[dict] = None,
+        widget_mapping: Optional[dict] = None,
     ):
         """
         Adds a WebExperience created locally through the Developer Edition to a specified
@@ -757,8 +761,8 @@ class WebExperience(object):
                             experience in the portal.
         ---------------     --------------------------------------------------------------------
         item_mapping        Optional dictionary. Allows users to manually remap the datasources
-                            of their experience to datasources present in the portal. See
-                            example dictionary below.
+                            of their experience to datasources present in the portal. The keys
+                            and values of the dictionary should be item id's.
         ---------------     --------------------------------------------------------------------
         auto_remap          Optional boolean. Searches the portal for matching datasources and
                             automatically remaps the experience to use those accordingly.
@@ -767,6 +771,15 @@ class WebExperience(object):
         item_properties     Optional dictionary. Contains a variety of properties that can be
                             set when creating a new item, much like `ContentManager.add()`. See
                             below for a table containing possible properties.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. The folder in the portal to add the experience to.
+                            If none is specified, the user's root folder will be used.
+        ---------------     --------------------------------------------------------------------
+        widget_mapping      Optional dictionary. Allows users to manually remap custom widgets
+                            in their local experience to custom widgets present in the portal
+                            or to a hosted online manifest file. The dictionary keys should
+                            be the name of the widget in the local experience, and the values
+                            should be the new widget's id or the URI of the hosted manifest.
         ===============     ====================================================================
 
 
@@ -863,8 +876,8 @@ class WebExperience(object):
 
         # if custom widgets exist, map them accordingly
         widget_folder = os.path.join(self._source_path, "widgets")
-        if custom_widget_mapping is not None:
-            for widget_name, v in custom_widget_mapping.items():
+        if widget_mapping is not None:
+            for widget_name, v in widget_mapping.items():
                 for w_id, w_dict in new_config["widgets"].items():
                     if widget_name in w_dict["uri"]:
                         w_portal_id = None
@@ -900,6 +913,7 @@ class WebExperience(object):
             name=title,
             gis=gis,
             item_properties=item_properties,
+            folder=folder,
         )
         self._local = False
         if "resources" in os.listdir(self._source_path):
