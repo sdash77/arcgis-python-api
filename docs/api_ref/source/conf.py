@@ -97,7 +97,6 @@ extensions = [
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_settings_show_json = False
 autodoc_pydantic_field_list_validators = False # Hides validators for fields
-autodoc_pydantic_settings_hide_paramlist = False # shows list of parameters in class signature
 autodoc_pydantic_model_show_config_summary = False  # Hides model_config
 autodoc_pydantic_model_show_validator_summary = False # Hide list of validators in class signature
 autodoc_pydantic_model_show_validator_members = False
