@@ -96,12 +96,14 @@ extensions = [
 
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_settings_show_json = False
+autodoc_pydantic_field_list_validators = False # Hides validators for fields
+autodoc_pydantic_settings_hide_paramlist = False # shows list of parameters in class signature
 autodoc_pydantic_model_show_config_summary = False  # Hides model_config
-autodoc_pydantic_model_show_validator_summary = False
+autodoc_pydantic_model_show_validator_summary = False # Hide list of validators in class signature
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_model_show_field_summary = False   # Hides fields, potentially computed fields
 autodoc_pydantic_model_show_field_members = False   # Hides detailed field information
-autodoc_pydantic_show_field_alias = False # Hides field aliases that are used for internal methods
+autodoc_pydantic_field_show_alias = False # Hides field aliases that are used for internal methods
 autodoc_typehints = "description"  # Ensures type hints are in the descriptions
 autodoc_typehints_description_target = "documented"  # For clear documentation of type hints
 
