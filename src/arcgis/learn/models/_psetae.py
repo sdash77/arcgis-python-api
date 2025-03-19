@@ -105,6 +105,7 @@ class PSETAE(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
         self._code = imagets_classifier_prf
+        self._backbone = None
 
         def __str__(self):
             return self.__repr__()
