@@ -5410,14 +5410,14 @@ class RoleManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def clone(self, roles: list[Role]) -> list[_cloner.CloningJob]:
+    def clone(self, roles: Union[list[Role], list[str]]) -> list[_cloner.CloningJob]:
         """
         Clones a list of Roles from one organization to another
 
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        roles                  Required list[Role]. An array of roles from the source GIS.
+        roles                  Required list. An array of role objects or role ids or role names from the source GIS.
         ==================     ====================================================================
 
         :returns: list[Future]
@@ -5425,6 +5425,10 @@ class RoleManager(object):
         jobs = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as tp:
             for role in roles:
+                if isinstance(role, str):
+                    role = self.get_role(role)
+                    if role is None:
+                        raise ValueError(f"Role {role} not found.")
                 role: Role
                 future: concurrent.futures.Future = tp.submit(
                     self.create,
