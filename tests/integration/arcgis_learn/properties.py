@@ -1,7 +1,8 @@
 import os
+import warnings
+warnings.filterwarnings('ignore')
+import json
 from fastai.vision.transform import rotate, brightness, contrast
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
     MLModel,
     FasterRCNN,
@@ -37,11 +38,25 @@ from arcgis.learn import (
     MMDetection3D,
     SamLoRA,
     RTDetrV2,
-    ClimaX
+    ClimaX,
+    WNet_cGAN,
+    Pix2PixHD,
+    PTv3Seg,
+    PTv3Det,
 )
-import json
-from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
+from arcgis.learn.text import (
+    ZeroShotClassifier,
+    QuestionAnswering,
+    TextGenerator,
+    TextSummarizer,
+    TextTranslator,
+    FillMask,
+    EntityRecognizer,
+    SequenceToSequence,
+    TextClassifier,
+)
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 if os.environ.get("run_nightly") == "1":
     data_folder = r"/root/test_automation/data/test_train_model/train_model_regression"
 else:
@@ -124,7 +139,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
-        "regression_epochs": 10,
+        "regression_epochs": 20,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -186,7 +201,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
-        "regression_epochs": 10,
+        "regression_epochs": 20,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -1093,7 +1108,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "compute_metrics",
         "regression_test_score": 0.4,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {"model_type": "siammask_iou"},
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
@@ -1491,7 +1506,7 @@ data = {
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
     "mmdetection_dino": {
-        "model_name": "mmdetection",
+        "model_name": "mmdetection_dino",
         "datapath": "mmdetection_data",
         "datapath_ms": "mmdetection_data_ms",
         "model": MMDetection,
@@ -1510,18 +1525,95 @@ data = {
             "model_type": "pass",
         },
         "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "wnet_cgan": {
+        "model_name": "wnet_cgan",
+        "datapath": "wnet_data",
+        "model": WNet_cGAN,
+        "model_test": "wnet_cgan_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "wnet_data"),
+            "batch_size": None,
+            "dataset_type": "WNet_cGAN",
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "compute_metrics",
+        "regression_test_score": 0.40,
+        "regression_epochs": 4,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "pix2pixhd": {
+        "model_name": "pix2pixhd",
+        "datapath": "pix2pix_data",
+        "model": Pix2PixHD,
+        "model_test": "pix2pixhd_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "pix2pix_data"),
+            "batch_size": None
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "compute_metrics",
+        "regression_test_score": 0.40,
+        "regression_epochs": 20,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "ptv3seg": {
+        "model_name": "ptv3seg",
+        "datapath": "randlanet_data",
+        "model": PTv3Seg,
+        "model_test": "ptv3seg_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "randlanet_data", "GCS_plain.pctd"),
+            "batch_size": None,
+            "dataset_type": "PointCloud",
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "compute_precision_recall",
+        "regression_test_score": 0.40,
+        "regression_epochs": 4,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "ptv3det": {
+        "model_name": "ptv3det",
+        "datapath": "mm3d_data",
+        "model": PTv3Det,
+        "model_test": "ptv3det_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "mm3d_data", "Chairs001.pctd"),
+            "batch_size": None,
+            "dataset_type": "PointCloudOD",
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.40,
+        "regression_epochs": 20,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     }
 }
-
-
-from arcgis.learn.text import (
-    ZeroShotClassifier,
-    QuestionAnswering,
-    TextGenerator,
-    TextSummarizer,
-    TextTranslator,
-    FillMask,
-)
 
 
 data_inference_only = {
