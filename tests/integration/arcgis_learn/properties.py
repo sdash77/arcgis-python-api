@@ -1533,7 +1533,7 @@ data = {
         "model_test": "wnet_cgan_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "wnet_data"),
-            "batch_size": 8,
+            "batch_size": None,
             "dataset_type": "WNet_cGAN",
         },
         "prepare_data_ms": False,
@@ -1576,7 +1576,7 @@ data = {
         "model_test": "ptv3seg_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "randlanet_data", "GCS_plain.pctd"),
-            "batch_size": 8,
+            "batch_size": None,
             "dataset_type": "PointCloud",
         },
         "prepare_data_ms": False,
