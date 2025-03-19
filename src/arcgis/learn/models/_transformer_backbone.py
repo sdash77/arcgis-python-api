@@ -20,13 +20,19 @@ wavelengths_required_cfg = dict(
         drop_path_rate=0.0,
         pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_base_patch16_224-a0275954.pth",
     ),
-    dofa_large=dict(
+    dofa_large1=dict(
         backbone_name="dofa_large",
         patch_size=16,
         embed_dim=1024,
         depth=24,
         num_heads=16,
         drop_path_rate=0.0,
+        window_block_indexes=(
+            list(range(0, 7))
+            + list(range(8, 15))
+            + list(range(16, 23))
+            + list(range(24, 31))
+        ),
         pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_large_patch16_224-0ff904d3.pth",
     ),
 )
@@ -76,6 +82,12 @@ vit_config = dict(
         depth=24,
         num_heads=16,
         pretrain_img_size=384,
+        window_block_indexes=(
+            list(range(0, 7))
+            + list(range(8, 15))
+            + list(range(16, 23))
+            + list(range(24, 31))
+        ),
         pretrained_path="https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_large_p32_384-9b920ba8.pth",
     ),
     **vit_foundation_model_config
@@ -148,8 +160,13 @@ def custom_backbone(
             if kwargs.get("is_clf", False):
                 from ._timm_utils import TransformerClassifierHead
 
-                return nn.Sequential(backbone, TransformerClassifierHead(backbone.head))
+                classifier = nn.Sequential(
+                    backbone, TransformerClassifierHead(backbone.head)
+                )
+                classifier._is_vitdet = True
+                return classifier
             backbone_fpn = BackboneFastai(backbone=backbone, is_fpn=is_fpn)
+            backbone_fpn._is_vitdet = True
             backbone_fpn.__name__ = backbone_name
 
         elif backbone_name in swin_config.keys():

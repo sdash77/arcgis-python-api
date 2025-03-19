@@ -407,6 +407,7 @@ class ViT(nn.Module):
             pretrain_use_cls_token (bool): If True, pretrainig models use class token.
         """
         super().__init__()
+        self._is_vitdet = True
         self.pretrain_use_cls_token = pretrain_use_cls_token
         self.is_plain_vit = kwargs.get("is_plain_vit", None)
         self.is_clf = kwargs.get("is_clf", None)
@@ -575,7 +576,7 @@ class ViT(nn.Module):
         no_of_block = len(self.blocks)
         for idx, blk in enumerate(self.blocks):
             x = blk(x)
-            if self.is_clf and (idx == no_of_block - 2):
+            if self.is_clf and (idx == no_of_block - 3):
                 x_grad_cam = x
 
         if self.is_clf:

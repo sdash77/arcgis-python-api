@@ -459,13 +459,18 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-
+    # print(model)
     if hasattr(model, "_is_dofa"):
         return model
-    if hasattr(model, "backbone") and (
-        getattr(model.backbone, "_is_prithvi", False)
-        or getattr(model.backbone, "_is_dofa", False)
-    ):
+    if (
+        hasattr(model, "backbone")
+        and (
+            getattr(model.backbone, "_is_prithvi", False)
+            or getattr(model.backbone, "_is_dofa", False)
+            or getattr(model.backbone, "_is_vitdet", False)
+        )
+    ) or getattr(model, "_is_vitdet", False):
+        print("in=====================================")
         return model
 
     tail_name, tail = _get_tail(model)
@@ -588,7 +593,7 @@ def get_wavelengths_from_bandnames(band_names):
             wavelengths.append(float(cleaned_wavelength_dict[bandname]))
         except KeyError:
             raise Exception(
-                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. \nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.'
+                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. This models require a list of central wavelengths corresponding to each data band (in micrometers).Please provide a value (list of floats) for the "wavelengths" keyword argument.'
             )
     return wavelengths
 
