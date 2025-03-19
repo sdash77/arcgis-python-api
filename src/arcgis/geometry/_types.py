@@ -71,15 +71,19 @@ def _is_polygon(coords):
     # Handle MultiPolygon (list of lists of rings)
     if isinstance(coords[0], list) and isinstance(coords[0][0], list):
         # MultiPolygon detected: check each polygon separately
-        return all(_is_polygon(poly) for poly in coords)
+        return all([_is_polygon(poly) for poly in coords])
 
-    # Single Polygon case
-    for coord in coords:
-        if len(coord) < 4:  # Each ring must have at least 4 points
+    # Handle Single Polygon case (wrap single ring in a list)
+    if len(coords) > 0 and isinstance(coords[0], (list, tuple)) and len(coords[0]) == 2:
+        coords = [coords]  # Wrap single ring in a list
+
+    # Validate each ring in the polygon
+    for ring in coords:
+        if len(ring) < 4:
             return False
-        if not _is_line(coord):  # Each ring must be a valid closed line
+        if not _is_line(ring):  # Check if it's a valid line
             return False
-        if coord[0] != coord[-1]:  # First and last points must be the same
+        if ring[0] != ring[-1]:  # Ensure the ring is closed
             return False
 
     return True
