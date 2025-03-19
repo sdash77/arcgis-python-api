@@ -465,6 +465,32 @@ class WorkflowManagerAdmin:
         ie._started()
         return ie
 
+    def get_exported_configuration(self, item, export_id: str):
+        """
+        TODO
+        Retrieves a Workflow Manager configuration (.wmc) file using the export ID provided by the export_item_async
+
+        =====================  =========================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------
+        item                   Required Item. The Workflow Manager Item to be exported
+        ---------------------  ---------------------------------------------------------
+        export_id              Required.  TODO
+        =====================  =========================================================
+
+        :return:
+            success object
+
+        """
+        url = "{base}/admin/{id}/exportAsync/{exportId}".format(base=self._url, id=item.id, exportId=export_id)
+        return_obj = self._gis._con.get(
+            url, try_json=False, json_encode=False, post_json=True
+        )
+
+        if "error" in return_obj:
+            return_obj = json.loads(return_obj)
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        return return_obj
 
     def import_item_async(
         self, item, config_file, passphrase: Optional[str] = None
@@ -4065,7 +4091,7 @@ class ItemExecution(WorkflowManagerExecution):
 
     @property
     def export_id(self):
-        if not self.running and self._execution_type is ExecutionType.EXPORT:
+        if not self.running() and self._execution_type is ExecutionType.EXPORT:
             return self._export_id
         return None
 
