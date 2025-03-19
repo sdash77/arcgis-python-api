@@ -16,6 +16,7 @@ from .._utils.tabular_data import (
     explain_prediction,
     add_h3,
 )
+from .._utils.common import _get_emd_path
 
 try:
     import sklearn
@@ -901,21 +902,7 @@ class MLModel(object):
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
 
-        emd_path = str(emd_path)
-
-        if emd_path.endswith(".dlpk"):
-            with ZipFile(emd_path, "r") as zip_obj:
-                temp_dir = tempfile.TemporaryDirectory().name
-                zip_obj.extractall(temp_dir)
-                MLModel.from_model(temp_dir, data)
-
-        if not emd_path.endswith(".emd"):
-            emd_path = os.path.join(
-                emd_path, (str(os.path.basename(emd_path)) + ".emd")
-            )
-
-        if not os.path.exists(emd_path):
-            raise Exception("Invalid data path.")
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path, "r") as f:
             emd = json.loads(f.read())
