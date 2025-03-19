@@ -283,7 +283,7 @@ class EntityRecognizer:
         else:
             return _TransformerEntityRecognizer.available_backbone_models(architecture)
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -304,7 +304,7 @@ class EntityRecognizer:
                 f"This method is not supported when using the model extensibility feature, as model extensibility "
                 f"only supports inference."
             )
-        return self._model.lr_find(allow_plot=allow_plot)
+        return self._model.lr_find(allow_plot=allow_plot, **kwargs)
 
     def unfreeze(self):
         """

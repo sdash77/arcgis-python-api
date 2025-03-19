@@ -2388,6 +2388,7 @@ class Portal(object):
         hidden_members: bool = False,
         membership_access: Optional[str] = None,
         autojoin: bool = False,
+        **kwargs
     ):
         """Updates a group.
 

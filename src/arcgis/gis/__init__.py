@@ -6004,15 +6004,15 @@ class GroupManager(object):
     :class:`~arcgis.gis.GIS` object.
 
     .. code-block:: python
-    
+
         # Usage Example: Initialize a GroupManager
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_organization_admin_profile")
-        
+
         >>> group_mgr = gis.groups
         >>> group_mgr
-        
-        <arcgis.gis.GroupManager object at 0x<mem_addr>>        
+
+        <arcgis.gis.GroupManager object at 0x<mem_addr>>
     """
 
     def __init__(self, gis):
@@ -11103,7 +11103,7 @@ class Group(dict):
         hidden_members: bool = False,
         membership_access: Optional[str] = None,
         autojoin: bool = False,
-        **kwargs
+        **kwargs,
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -11180,9 +11180,9 @@ class Group(dict):
 
                             Values: `org`, `collaboration`, or `None`
         ==================  =========================================================
-        
+
         Keyword Arguments:
-        
+
         ==================  =========================================================
         autojoin            Optional Boolean. The default is `False`. Only applies to
                             org accounts. If `True`, this group will allow joined
@@ -11224,6 +11224,8 @@ class Group(dict):
             display_settings = display_settings_lu[display_settings]
         else:
             raise ValueError("Display settings must be set to a valid value.")
+        if not autojoin:
+            autojoin = kwargs.pop("auto_join", False)       
         resp = self._portal.update_group(
             self.groupid,
             title,
@@ -11244,8 +11246,7 @@ class Group(dict):
             leaving_disallowed=leaving_disallowed,
             hidden_members=hidden_members,
             membership_access=membership_access,
-            autojoin=autojoin,
-            **kwargs
+            autojoin=autojoin
         )
         if resp:
             self._hydrate()
