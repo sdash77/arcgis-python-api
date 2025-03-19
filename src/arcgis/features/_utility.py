@@ -232,8 +232,13 @@ class UtilityNetworkManager(object):
         }
         if trace_config_global_id:
             params["traceConfigurationGlobalId"] = trace_config_global_id
-        if result_type or result_types:
+
+        # Both result_type and result_types will be mapped to resultTypes,
+        # however prioritize result_types if both are provided
+        if result_types:
             params["resultTypes"] = result_types
+        elif result_type:
+            params["resultTypes"] = result_type
         if out_sr:
             params["outSR"] = out_sr
         if pbf is True:
@@ -539,8 +544,12 @@ class UtilityNetworkManager(object):
             "traceConfiguration": trace_configuration,
             "async": run_async,
         }
-        if result_type or result_types:
+        # Both result_type and result_types will be mapped to resultTypes,
+        # however prioritize result_types if both are provided
+        if result_types:
             params["resultTypes"] = result_types
+        elif result_type:
+            params["resultTypes"] = result_type
         if out_sr:
             params["outSR"] = out_sr
         if pbf:
