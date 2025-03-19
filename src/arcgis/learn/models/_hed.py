@@ -204,6 +204,7 @@ class HEDEdgeDetector(ModelExtension):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         transformer_backbone = list(swin_config.keys())
         return transformer_backbone
 
@@ -215,6 +216,7 @@ class HEDEdgeDetector(ModelExtension):
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
