@@ -766,7 +766,7 @@ class ArcGISObjectClassifier:
                 return None
             else:
                 # arcpy.AddError('Runtime Error:" + str(e) + "Inferencing was not successful.')
-                raise RuntimeError("Inferencing was not successful.")
+                raise RuntimeError("Runtime Error: " + str(e) + " Inferencing was not successful.")
                 return None
 
         features['features'] = []
