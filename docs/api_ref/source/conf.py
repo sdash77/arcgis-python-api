@@ -94,13 +94,16 @@ extensions = [
     'sphinxcontrib.autodoc_pydantic'
 ]
 
-autodoc_pydantic_model_show_json = True
+autodoc_pydantic_model_show_json = False
 autodoc_pydantic_settings_show_json = False
 autodoc_pydantic_model_show_config_summary = False  # Hides model_config
 autodoc_pydantic_model_show_validator_summary = False
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_model_show_field_summary = False   # Hides fields, potentially computed fields
 autodoc_pydantic_model_show_field_members = False   # Hides detailed field information
+autodoc_pydantic_show_field_alias = False # Hides field aliases that are used for internal methods
+autodoc_typehints = "description"  # Ensures type hints are in the descriptions
+autodoc_typehints_description_target = "documented"  # For clear documentation of type hints
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
