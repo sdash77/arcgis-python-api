@@ -596,7 +596,10 @@ class FeatureClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         gradcam                 Optional boolean. Used to save the results with the
                                 Grad-CAM heatmap for the predicted classes, enhancing the
-                                clarity and interpretability of the model's predictions.
+                                clarity and interpretability of the model's predictions.Setting
+                                this to True for Labeled Tiles will enable the model_argument
+                                parameter as 'explainability_map'.While using the Classify Object tool,
+                                it will display a Grad-CAM visualization in a popup for the predicted class.
                                 Default is set to False. This feature works only with RGB images.
         ---------------------   -------------------------------------------
         kwargs                  Optional Parameters.
@@ -747,9 +750,9 @@ class FeatureClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
+            )
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["CropSizeFixed"] = int(
@@ -1960,6 +1963,7 @@ class FeatureClassifier(ArcGISModel):
             grad_cam_outputs: List of Grad-CAM heatmaps for the predicted classes.
             pred_class_label: List of predicted class labels corresponding to the heatmaps.
         """
+
         if classifier_dataset_type == "MultiLabeled_Tiles":
             # Handles MuliCategory types
             cat_pred = cl[1]
@@ -1987,6 +1991,12 @@ class FeatureClassifier(ArcGISModel):
                     warnings.simplefilter("ignore")
                     with hook_output(m[0]) as hook_a:
                         with hook_output(m[0], grad=True) as hook_g:
+
+                            # to support GPU and CPU for pro inferencing
+                            if kwargs.get("device_") != None:
+                                xb = xb.to(kwargs.get("device_"))
+                                m = m.to(kwargs.get("device_"))
+
                             preds = m(xb)
                             preds[0, class_label].backward()
 

@@ -77,7 +77,7 @@ class ChildObjectDetector:
                     "description": "Confidence score threshold value [0.0, 1.0]",
                 }
             )
-        if "ExpMap" in self.emd:
+        if "ExpMap" in self.emd and self.emd["ExpMap"] == True:
             required_parameters.append(
                 {
                     "name": "explainability_map",
@@ -247,6 +247,12 @@ class ChildObjectDetector:
             confidences = confidences.tolist()
             labels = [class_map[c] for c in class_idxs]
 
+        # Appending this ring for all the features in the batch
+        rings = [
+            [[0, 0], [0, width - 1], [height - 1, width - 1], [height - 1, 0]]
+            for i in range(batch)
+        ]
+
         grad_values = []
         if self.exp_map:
             for index, image in enumerate(
@@ -272,81 +278,56 @@ class ChildObjectDetector:
                     pil2tensor(original_image_pil, dtype=np.float32).div_(255)
                 )
 
-                if self.emd["MetaDataMode"] == "MultiLabeled_Tiles":
-                    # Utilizing the previous predictions "cl" , required for _generate_grad_cam method
-                    cl = (
-                        None,
-                        torch.where(
-                            predictions[index] > self.thresh,
-                            torch.tensor(1.0),
-                            torch.tensor(0.0),
-                        ),
-                        predictions[index],
+                cl = (None, torch.tensor(class_idxs[index]), predictions[index])
+
+                grad_cam_outputs, pred_class_label, xb, xb_norm = (
+                    self.cf._generate_grad_cam(
+                        fastai_image,
+                        cl,
+                        self.emd["MetaDataMode"],
+                        heatmap_thresh=16,
+                        device_=self.device,
                     )
-                else:
-                    cl = (None, torch.tensor(class_idxs[index]), predictions[index])
-                (
-                    grad_cam_outputs,
-                    pred_class_label,
-                    xb,
-                    xb_norm,
-                ) = self.cf._generate_grad_cam(
-                    fastai_image, cl, self.emd["MetaDataMode"], heatmap_thresh=16
                 )
 
-                if self.emd["MetaDataMode"] == "MultiLabeled_Tiles":
-                    # mapped list = Batch * [[Predicted_Label_Name1, Grad-CAM_Output1], [Predicted_Label_Name2, Grad-CAM_Output2], ...]
-                    mapped_list = [
-                        [k, v]
-                        for k, v in zip(labels[index].split(";"), grad_cam_outputs)
-                    ]
-                else:
-                    mapped_list = [[labels[index], grad_cam_outputs[0]]]
+                # overlaying the gradcam on the image encoding it in base64
 
-                for i in mapped_list:
-                    grad_cam_outputs = i[1]
-                    heatmap_rescaled1 = grad_cam_outputs / grad_cam_outputs.max()
-                    heatmap = heatmap_rescaled1.cpu().numpy()
+                heatmap_rescaled1 = grad_cam_outputs[0] / grad_cam_outputs[0].max()
+                heatmap = heatmap_rescaled1.cpu().numpy()
+                from PIL import Image
 
-                    from PIL import Image
-
-                    heatmap_rescaled = np.array(
-                        Image.fromarray(heatmap).resize(
-                            (self.emd["ImageWidth"], self.emd["ImageHeight"]),
-                            resample=Image.BILINEAR,
-                        )
+                heatmap_rescaled = np.array(
+                    Image.fromarray(heatmap).resize(
+                        (self.emd["ImageWidth"], self.emd["ImageHeight"]),
+                        resample=Image.BILINEAR,
                     )
+                )
+                from matplotlib import cm
 
-                    from matplotlib import cm
+                colormap = cm.get_cmap("hot")
+                heatmap_colored = colormap(heatmap_rescaled)[
+                    :, :, :3
+                ]  # Apply colormap and discard alpha channel
+                heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
+                heatmap_pil = Image.fromarray(heatmap_colored)
+                alpha = 0.4
+                overlayed_image = Image.blend(
+                    original_image_pil.convert("RGBA"),
+                    heatmap_pil.convert("RGBA"),
+                    alpha=alpha,
+                )
+                byte_io = io.BytesIO()
+                rgb_image = overlayed_image.convert("RGB")
+                rgb_image.save(byte_io, format="JPEG")
+                array_bytes = byte_io.getvalue()
 
-                    colormap = cm.get_cmap("hot")
-                    heatmap_colored = colormap(heatmap_rescaled)[
-                        :, :, :3
-                    ]  # Apply colormap and discard alpha channel
-                    heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
-                    heatmap_pil = Image.fromarray(heatmap_colored)
-                    alpha = 0.4
-                    overlayed_image = Image.blend(
-                        original_image_pil.convert("RGBA"),
-                        heatmap_pil.convert("RGBA"),
-                        alpha=alpha,
-                    )
-                    byte_io = io.BytesIO()
-                    rgb_image = overlayed_image.convert("RGB")
-                    rgb_image.save(byte_io, format="JPEG")
-                    array_bytes = byte_io.getvalue()
-                    i[1] = array_bytes
+                import base64
 
-                # Serialize the list (convert to binary format)
-                binary_data_grad = pickle.dumps(mapped_list)
-                # Encode as Base64
-                encoded_data_grad = base64.b64encode(binary_data_grad).decode("utf-8")
-                grad_values.append(encoded_data_grad)
+                encoded_data = base64.b64encode(array_bytes).decode("utf-8")
+                grad_values.append(encoded_data)
 
-        # Appending this ring for all the features in the batch
-        rings = [
-            [[0, 0], [0, width - 1], [height - 1, width - 1], [height - 1, 0]]
-            for i in range(batch)
-        ]
+            return rings, confidences, labels, grad_values
 
-        return rings, confidences, labels, grad_values
+        else:
+
+            return rings, confidences, labels

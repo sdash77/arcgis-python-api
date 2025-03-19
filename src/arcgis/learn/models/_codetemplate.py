@@ -720,8 +720,10 @@ class ArcGISObjectClassifier:
 
         if 'DataRange' in self.json_info:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
-        
-        self.exp_map = configuration['explainability_map']
+
+        self.exp_map = False
+        if 'explainability_map' in configuration:
+            self.exp_map = configuration['explainability_map']
 
         configuration['inheritProperties'] = 2|4|8
         configuration['inputMask'] = True
@@ -753,7 +755,10 @@ class ArcGISObjectClassifier:
         pixelBlocks['rasters_pixels'] = rasters_pixels
 
         try:
-            polygon_list, scores, labels,exp_map_blob = self.child_object_detector.vectorize(**pixelBlocks)
+            if self.exp_map:
+                polygon_list, scores, labels, exp_map_blob = self.child_object_detector.vectorize(**pixelBlocks)
+            else:
+                polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
         except RuntimeError as e:
             if 'out of memory' in str(e):
                 # arcpy.AddError('Runtime Error: ran out of GPU memory, please try a smaller batch size')
@@ -761,7 +766,7 @@ class ArcGISObjectClassifier:
                 return None
             else:
                 # arcpy.AddError('Runtime Error:" + str(e) + "Inferencing was not successful.')
-                raise RuntimeError("Runtime Error: " + str(e) + " Inferencing was not successful.")
+                raise RuntimeError("Inferencing was not successful.")
                 return None
 
         features['features'] = []
@@ -786,12 +791,14 @@ class ArcGISObjectClassifier:
                     item['type'] = 'esriFieldTypeString'
         
         if self.exp_map:
-                ExpMapfield = {
+            expMapField = {
                     'name': 'ExpMap',
                     'type': 'esriFieldTypeBlob',
                     'alias': 'ExpMap'
                 }
-                features['fields'].append(ExpMapfield)
+            if not expMapField in features['fields']:
+               features['fields'].append(expMapField)
+               features['fieldAliases'].update({'ExpMap':'ExpMap'})
 
         for i in range(len(polygon_list)):
 
@@ -804,19 +811,22 @@ class ArcGISObjectClassifier:
                     ]
                 )
 
+            attributes = {
+               'OID': i + 1,
+               'Confidence': str(scores[i]),
+               'Label': labels[i]
+               }
+
+            if self.exp_map:
+                attributes['ExpMap'] = exp_map_blob[i]
+
             features['features'].append({
-                'attributes': {
-                    'OID': i + 1,
-                    'Confidence': str(scores[i]),
-                    'Label': labels[i],
-                },
+                'attributes': attributes,
                 'geometry': {
                     'rings': rings
                 }
             })
-            if self.exp_map:
-                features['features'][i].update({'ExpMap' : exp_map_blob[i]})
-                
+
         return {'output_vectors': json.dumps(features)}
 """
 entity_recognizer_placeholder = """
