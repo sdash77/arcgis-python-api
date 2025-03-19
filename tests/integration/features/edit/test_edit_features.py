@@ -1,3 +1,4 @@
+import time
 import unittest
 import pandas as pd
 from pandas import Timestamp
@@ -5,6 +6,7 @@ from arcgis.gis import GIS
 from arcgis.geometry import Geometry
 from arcgis.features import Feature, FeatureSet, FeatureLayer
 from utils.decorators import integration_test, profiles
+from utils.data_utils import cleanup_published_items
 
 ###########################################################################
 test_data = {
@@ -3304,6 +3306,11 @@ test_data = {
 class TestFeatureLayerEditFeatures(unittest.TestCase):
     """Tests the FeatureLayer.edit_features method"""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.items = []
+        cls.uid = int(time.time())
+
     def setUp(self):
         sdf = pd.DataFrame(test_data)
         sdf.SHAPE = sdf.SHAPE.apply(lambda x: Geometry(x))
@@ -3311,44 +3318,33 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         self._sdf = sdf
 
     def test_sedf_adds(self):
-        item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
-        print(item)
+        item = self.gis.content.import_data(
+            self._sdf, title=f"sedf_adds_{self.uid}", tags="ntgrtn-tst"
+        )
+        self.items.append(item)
         resp = item.layers[0].edit_features(adds=self._sdf)
         assert resp["addResults"]
 
-        if item:
-            related = self._get_relationships(item)
-            item.delete()
-            for relate in related:
-                try:
-                    relate.delete()
-                except:
-                    ...
-
     def test_sedf_updates(self):
         """tests performing the updates with SeDF"""
-        item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
-
-        resp = item.layers[0].edit_features(adds=self._sdf)
+        item = self.gis.content.import_data(
+            self._sdf, title=f"sedf_updates_{self.uid}", tags="ntgrtn-tst"
+        )
+        self.items.append(item)
         update_sdf = self._sdf.head().copy()
         update_sdf["OBJECTID"] = range(len(update_sdf))
         update_sdf["OBJECTID"] += 1
         respupdate = item.layers[0].edit_features(updates=update_sdf)
         assert respupdate["updateResults"]
-        if item:
-            related = self._get_relationships(item)
-            item.delete()
-            for relate in related:
-                try:
-                    relate.delete()
-                except:
-                    ...
 
     def test_deletes(self):
         """tests performing the updates with SeDF"""
-        item = None
+
         try:
-            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
+            item = self.gis.content.import_data(
+                self._sdf, title=f"sedf_deletes_{self.uid}", tags="ntgrtn-tst"
+            )
+            self.items.append(item)
             sdf = item.layers[0].query(as_df=True)
             oidfld = "OBJECTID"
             for fld in sdf.columns:
@@ -3360,51 +3356,34 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             assert resp["deleteResults"]
         except Exception as e:
             raise e
-        finally:
-            if item:
-                related = self._get_relationships(item)
-                item.delete()
-                for relate in related:
-                    try:
-                        relate.delete()
-                    except:
-                        ...
 
     def test_featureset_adds(self):
-        item = None
+
         try:
-            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
-            sdf = item.layers[0].query(as_df=True)
+            item = self.gis.content.import_data(
+                self._sdf, title=f"sedf_fs_adds_{self.uid}", tags="ntgrtn-tst"
+            )
+            self.items.append(item)
             sdf = self._sdf.head().copy()
             sdf_updates = self._sdf.tail().copy()
             sdf_updates["OBJECTID"] = range(len(sdf_updates))
             sdf_updates["OBJECTID"] += 1
             fs = sdf_updates.spatial.to_featureset()
-
+            assert fs
             fs_adds = sdf.spatial.to_featureset()
 
-            resp = item.layers[0].edit_features(
-                adds=fs_adds
-            )  # , updates=sdf_updates.spatial.to_featureset()
-            # )
-            # assert resp['updateResults']
+            resp = item.layers[0].edit_features(adds=fs_adds)
             assert resp["addResults"]
         except Exception as e:
             raise e
-        finally:
-            if item:
-                related = self._get_relationships(item)
-                item.delete()
-                for relate in related:
-                    try:
-                        relate.delete()
-                    except:
-                        ...
 
     def test_featureset_updates(self):
-        item = None
+
         try:
-            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
+            item = self.gis.content.import_data(
+                self._sdf, title=f"sedf_fs_updates_{self.uid}", tags="ntgrtn-tst"
+            )
+            self.items.append(item)
             sdf = item.layers[0].query(as_df=True)
             sdf_updates = sdf.tail().copy().head()
             sdf_updates["OBJECTID"] = range(len(sdf_updates))
@@ -3417,23 +3396,17 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             assert resp["updateResults"]
         except Exception as e:
             raise e
-        finally:
-            if item:
-                related = self._get_relationships(item)
-                item.delete()
-                for relate in related:
-                    try:
-                        relate.delete()
-                    except:
-                        ...
 
     def test_dict_adds(self):
         """
         Tests adding content via List[Dict[str, Any]
         """
-        item = None
+
         try:
-            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
+            item = self.gis.content.import_data(
+                self._sdf, title=f"sedf_dict_adds_{self.uid}", tags="ntgrtn-tst"
+            )
+            self.items.append(item)
             sdf = self._sdf.head().copy()
             fs = sdf.spatial.to_featureset()
             adds = [feat.as_dict for feat in fs.features]
@@ -3441,24 +3414,17 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             assert resp["addResults"]
         except Exception as e:
             raise e
-        finally:
-            if item:
-                related = self._get_relationships(item)
-                item.delete()
-                for relate in related:
-                    try:
-                        relate.delete()
-                    except:
-                        ...
 
     def test_dict_updates(self):
         """
         Tests updates content via List[Dict[str, Any]
         """
-        item = None
+
         try:
-            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
-            sdf = item.layers[0].query(as_df=True)
+            item = self.gis.content.import_data(
+                self._sdf, title=f"sedf_dict_updates_{self.uid}", tags="ntgrtn-tst"
+            )
+            self.items.append(item)
             sdf = self._sdf.head().copy()
             fs = sdf.spatial.to_featureset()
             updates = [feat.as_dict for feat in fs.features]
@@ -3466,39 +3432,17 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             assert resp["updateResults"]
         except Exception as e:
             raise e
-        finally:
-            if item:
-                related = self._get_relationships(item)
-                item.delete()
-                for relate in related:
-                    try:
-                        relate.delete()
-                    except:
-                        ...
-
-    def _get_relationships(self, item):
-        """ """
-        related = []
-        from arcgis.gis import Item
-
-        for direction in Item._RELATIONSHIP_DIRECTIONS:
-            for rel in Item._RELATIONSHIP_TYPES:
-                try:
-                    rels = item.related_items(rel, direction=direction)
-                    if rels:
-                        related.extend(rels)
-                except:
-                    ...
-        return related
 
     def test_list_features_adds(self):
         """
         Tests updates content via List[Feature]
         """
-        item = None
+
         try:
-            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
-            sdf = item.layers[0].query(as_df=True)
+            item = self.gis.content.import_data(
+                self._sdf, title=f"sedf_list_adds_{self.uid}", tags="ntgrtn-tst"
+            )
+            self.items.append(item)
             sdf = self._sdf.head().copy()
             fs = sdf.spatial.to_featureset()
             features = fs.features
@@ -3507,23 +3451,16 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             assert resp
         except Exception as e:
             raise e
-        finally:
-            if item:
-                related = self._get_relationships(item)
-                item.delete()
-                for relate in related:
-                    try:
-                        relate.delete()
-                    except:
-                        ...
 
     def test_list_features_adds_no_attributes(self):
         """
         Tests updates content via List[Feature]
         """
-        item = None
         try:
-            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
+            item = self.gis.content.import_data(
+                self._sdf, title=f"sedf_list_adds_no_attr_{self.uid}", tags="ntgrtn-tst"
+            )
+            self.items.append(item)
             feature_layer: FeatureLayer = item.layers[0]
 
             geometry = Geometry(
@@ -3532,23 +3469,18 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
 
             # this throws the error
             resp = feature_layer.edit_features(adds=[Feature(geometry=geometry)])
+            assert resp
         except Exception as e:
             raise e
-        finally:
-            if item:
-                related = self._get_relationships(item)
-                item.delete()
-                for relate in related:
-                    try:
-                        relate.delete()
-                    except:
-                        ...
 
     @unittest.skip("not yet")
     def test_asset_maps(self):
-        item = None
+
         try:
-            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
+            item = self.gis.content.import_data(
+                self._sdf, title=f"sedf_asset_maps_{self.uid}", tags="ntgrtn-tst"
+            )
+            self.items.append(item)
             feature_layer: FeatureLayer = item.layers[0]
 
             adds = [
@@ -3577,15 +3509,10 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             resp = feature_layer.edit_features(adds=adds, asset_maps=asset_maps)
         except Exception as e:
             raise e
-        finally:
-            if item:
-                related = self._get_relationships(item)
-                item.delete()
-                for relate in related:
-                    try:
-                        relate.delete()
-                    except:
-                        ...
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.items)
 
 
 if __name__ == "__main__":
