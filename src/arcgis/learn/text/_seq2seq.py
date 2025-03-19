@@ -1198,7 +1198,7 @@ class SequenceToSequence(ArcGISModel):
                 f"This method is not supported when the backbone is configured as {self._submodel}."
             )
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -1222,7 +1222,7 @@ class SequenceToSequence(ArcGISModel):
             )
 
         if self._backbone != "llm":
-            return super().lr_find(allow_plot=allow_plot)
+            return super().lr_find(allow_plot=allow_plot, **kwargs)
         else:
             raise Exception(
                 f"This method is not supported when the backbone is configured as {self._submodel}."
