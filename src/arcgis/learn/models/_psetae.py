@@ -237,7 +237,7 @@ class PSETAE(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
-        =====================   ===========================================
+        ---------------------   -------------------------------------------
         total_sample_size       Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================
