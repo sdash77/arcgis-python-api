@@ -2407,7 +2407,7 @@ def show_local_interpretation(
         )
         return
     if method == "Tree":
-        explainer = shap.TreeExplainer(model._model, algorithm="Tree")
+        explainer = shap.TreeExplainer(model._model)
     elif method == "KernelRegressor":
         if hasattr(model._data, "_training_indexes"):
             explainer = shap.KernelExplainer(
@@ -2510,9 +2510,17 @@ def show_local_interpretation(
                 matplotlib=True,
             )
         else:
-            shap.force_plot(
-                explainer.expected_value, shap_values, processed_df, matplotlib=True
-            )
+            if isinstance(explainer.expected_value, float):
+                shap.force_plot(
+                    explainer.expected_value, shap_values, processed_df, matplotlib=True
+                )
+            else:
+                shap.plots.force(
+                    explainer.expected_value[0],
+                    shap_values[0][:, 0],
+                    processed_df,
+                    matplotlib=True,
+                )
     elif method == "KernelRegressor":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
