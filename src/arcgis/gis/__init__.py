@@ -11225,7 +11225,7 @@ class Group(dict):
         else:
             raise ValueError("Display settings must be set to a valid value.")
         if not autojoin:
-            autojoin = kwargs.pop("auto_join", False)       
+            autojoin = kwargs.pop("auto_join", False)
         resp = self._portal.update_group(
             self.groupid,
             title,
@@ -11246,7 +11246,7 @@ class Group(dict):
             leaving_disallowed=leaving_disallowed,
             hidden_members=hidden_members,
             membership_access=membership_access,
-            autojoin=autojoin
+            autojoin=autojoin,
         )
         if resp:
             self._hydrate()
