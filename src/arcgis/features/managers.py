@@ -477,6 +477,8 @@ class AttachmentManager(object):
         if (
             self._layer._gis._portal.is_arcgisonline == False
             and self._layer.properties.hasAttachments
+            and self._layer._gis
+            and self._layer._gis.version <= [8, 2]
         ):
             rows = []
 
