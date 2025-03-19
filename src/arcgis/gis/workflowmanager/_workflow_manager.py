@@ -9,6 +9,7 @@ import threading
 import urllib.parse
 from enum import Enum
 from typing import Optional, Callable
+from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)
 
@@ -333,6 +334,87 @@ class WorkflowManagerAdmin:
             return_obj = json.loads(return_obj)
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj
+
+
+    def export_item_async(
+        self,
+        item,
+        job_template_ids: Optional[str] = None,
+        diagram_ids: Optional[str] = None,
+        include_other_configs: bool = True,
+        passphrase: Optional[str] = None,
+    ):
+        """
+        Starts exporting a new Workflow Manager configuration (.wmc) file based on the indicated item. This file can be
+        used with the import endpoint to update other item configurations. Configurations from Workflow items with a
+        server that is on a more recent version will not import due to incompatability. If includeOtherConfiguration is
+        set to false, the exported file only includes the individual configuration. If includeOtherConfiguration is
+        undefined, it defaults to true. If includeOtherConfiguration is set to true, the configuration file includes
+        the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and queries,
+        templates, and user settings of the indicated item. Encrypted settings must have a passphrase defined.
+        If no passphrase is specified, encrypted keys will be exported without the values. The adminAdvanced privilege
+        is required. An export ID is returned to retrieve the configuration file. Use the exportId endpoint to retrieve
+        the file.
+
+        =====================  =========================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------
+        item                   Required Item. The Workflow Manager Item to be exported
+        ---------------------  ---------------------------------------------------------
+        job_template_ids       Optional. The job template(s) to be exported. If job template is exported,
+                               the associated diagram must be included to be exported.
+        ---------------------  ---------------------------------------------------------
+        diagram_ids            Optional. The diagram(s) to be exported. If not defined, all diagrams are exported.
+                               If defined as empty, no diagram is exported
+        ---------------------  ---------------------------------------------------------
+        include_other_configs  Optional. If false other configurations are not exported including templates,
+                               User defined settings, shared searches, shared queries, email settings etc.
+        ---------------------  ---------------------------------------------------------
+        passphrase             Optional. If exporting encrypted user defined settings, define a passphrase.
+                               If no passphrase is specified, the keys for encrypted user defined settings will be
+                               exported without their values.
+        =====================  =========================================================
+
+        :return:
+            success object
+
+        """
+
+        # Create a ItemExecution object
+        ie = ItemExecution(item, ExecutionType.EXPORT)
+        # Subscribe to this job
+        nm = NotificationManager(item, self, ie._callback)
+
+        nm.connect()
+
+        # Call the actual endpoint
+        params = {"includeOtherConfiguration": include_other_configs}
+        if job_template_ids is not None:
+            params["jobTemplateIds"] = job_template_ids
+        if diagram_ids is not None:
+            params["diagramIds"] = diagram_ids
+        if passphrase is not None:
+            params["passphrase"] = passphrase
+
+        url = "{base}/admin/{id}/exportAsync".format(base=self._url, id=item.id)
+
+        try:
+            return_obj = self._gis._con.post(
+                url, params=params, try_json=False, json_encode=False, post_json=True
+            )
+
+            # If it fails, unsubscribe then throw
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception(return_obj)
+        except:
+            nm.disconnect()
+            raise
+
+        # If it succeeds, return the JobExecution
+        ie._started()
+        return ie
 
     def import_item(
         self, item, config_file, passphrase: Optional[str] = None
@@ -3705,14 +3787,9 @@ class Job(object):
         return self._execute_step(step_ids, execution_type=ExecutionType.FINISH)
 
 
-class JobExecution:
+class WorkflowManagerExecution:
     """
-    Represents a single step executing in a workflow manager job.  The `JobExecution` class allows for the asynchronous
-    operation of an executing step. The status of the step execution can then be queried by the class properties,
-    status, result, elapse_time and messages. This class is not intended for users to call directly.
-
-    See :attr:`~arcgis.gis.workflowmanager.Job.run`, :attr:`~arcgis.gis.workflowmanager.Job.stop` or
-    :attr:`~arcgis.gis.workflowmanager.Job.finish` for examples.
+    TODO
 
     ===============     ====================================================================
     **Parameter**        **Description**
@@ -3726,51 +3803,14 @@ class JobExecution:
 
     _start_time = None
     _end_time = None
-    _execution_type = None
 
-    def __init__(self, job: Job, execution_type: ExecutionType):
-        self._job = job
+    def __init__(self):
         self._messages = []
         self._event = threading.Event()
-        self._execution_type = execution_type
 
+    @abstractmethod
     def _callback(self, msg: Notification, nm: NotificationManager):
-        if (
-            "jobId" in msg.message
-            and msg.message["jobId"] == self._job.job_id
-            and msg.msg_type not in [MessageType.JOB_STATE, MessageType.CREATED]
-        ):
-            logger.debug(f"Received {msg}")
-            self._messages.append(msg)
-            if self._execution_type is ExecutionType.RUN:
-                if msg.msg_type in [
-                    MessageType.STEP_FINISHED,
-                    MessageType.STEP_STOPPED,
-                    MessageType.STEP_ERROR,
-                    MessageType.STEP_INFO_REQUIRED,
-                ]:
-                    self._end_time = datetime.datetime.now()
-                    self._event.set()
-                    nm._disconnect_check(self._job.job_id)
-            elif self._execution_type is ExecutionType.STOP:
-                if msg.msg_type in [
-                    MessageType.STEP_PAUSED,
-                    MessageType.STEP_STOPPED,
-                    MessageType.STEP_ERROR,
-                    MessageType.STEP_CANCELLED,
-                ]:
-                    self._end_time = datetime.datetime.now()
-                    self._event.set()
-                    nm._disconnect_check(self._job.job_id)
-            elif self._execution_type is ExecutionType.FINISH:
-                if msg.msg_type in [
-                    MessageType.STEP_STARTED,
-                    MessageType.STEP_ERROR,
-                    MessageType.STEP_FINISHED,
-                ]:
-                    self._end_time = datetime.datetime.now()
-                    self._event.set()
-                    nm._disconnect_check(self._job.job_id)
+        pass
 
     def _started(self):
         self._start_time = datetime.datetime.now()
@@ -3852,7 +3892,121 @@ class JobExecution:
         return not self.running()
 
     def __repr__(self):
+        return f'Execution({{"status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
+
+
+class JobExecution(WorkflowManagerExecution):
+    """
+    Represents a single step executing in a workflow manager job.  The `JobExecution` class allows for the asynchronous
+    operation of an executing step. The status of the step execution can then be queried by the class properties,
+    status, result, elapse_time and messages. This class is not intended for users to call directly.
+
+    See :attr:`~arcgis.gis.workflowmanager.Job.run`, :attr:`~arcgis.gis.workflowmanager.Job.stop` or
+    :attr:`~arcgis.gis.workflowmanager.Job.finish` for examples.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    job                 Required :class:`~arcgis.gis.workflowmanager.Job` The job to execute
+    ---------------     --------------------------------------------------------------------
+    execution_type      Required :class:`~arcgis.gis.workflowmanager.ExecutionType`. The execution type
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, job: Job, execution_type: ExecutionType):
+        super().__init__()
+        self._job = job
+        self._execution_type = execution_type
+
+    def _callback(self, msg: Notification, nm: NotificationManager):
+        if (
+            "jobId" in msg.message
+            and msg.message["jobId"] == self._job.job_id
+            and msg.msg_type not in [MessageType.JOB_STATE, MessageType.CREATED]
+        ):
+            logger.debug(f"Received {msg}")
+            self._messages.append(msg)
+            if self._execution_type is ExecutionType.RUN:
+                if msg.msg_type in [
+                    MessageType.STEP_FINISHED,
+                    MessageType.STEP_STOPPED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_INFO_REQUIRED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+            elif self._execution_type is ExecutionType.STOP:
+                if msg.msg_type in [
+                    MessageType.STEP_PAUSED,
+                    MessageType.STEP_STOPPED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_CANCELLED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+            elif self._execution_type is ExecutionType.FINISH:
+                if msg.msg_type in [
+                    MessageType.STEP_STARTED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_FINISHED,
+                ]:
+                    self._end_time = datetime.datetime.now()
+                    self._event.set()
+                    nm._disconnect_check(self._job.job_id)
+
+    def __repr__(self):
         return f'JobExecution({{"job": {self._job.job_id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
+
+
+class ItemExecution(WorkflowManagerExecution):
+    """
+    TODO
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    job                 Required :class:`~arcgis.gis.workflowmanager.Job` The job to execute
+    ---------------     --------------------------------------------------------------------
+    execution_type      Required :class:`~arcgis.gis.workflowmanager.ExecutionType`. The execution type
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, item, execution_type: ExecutionType):
+        super().__init__()
+        self._item = item
+        self._execution_type = execution_type
+
+    def _callback(self, msg: Notification, nm: NotificationManager):
+        if (
+            "itemId" in msg.message
+            and msg.message["itemId"] == self._item.id
+            and msg.msg_type in [MessageType.EXPORTCOMPLETED, MessageType.IMPORTCOMPLETED]
+        ):
+            logger.debug(f"Received Export {msg}")
+            self._messages.append(msg)
+
+            if self._execution_type is ExecutionType.EXPORT:
+                self._export_id = msg.message["exportId"]
+
+            self._end_time = datetime.datetime.now()
+            self._event.set()
+            nm.disconnect()
+
+
+    @property
+    def export_id(self):
+        if not self.running and self._execution_type is ExecutionType.EXPORT:
+            return self._export_id
+        return None
+
+
+
+    def __repr__(self):
+        return f'ItemExecution({{"item": {self._item.id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
 
 
 class WMRole(object):
@@ -4371,7 +4525,7 @@ class NotificationManager:
 
     """
 
-    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager):
+    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager, item_exec_callback = None):
         self._item = item
         _initialize(self, item._gis)
         self.workflow_item_id = item.id
@@ -4384,6 +4538,7 @@ class NotificationManager:
         self._received_connected_msg = None
         self._timeout = 30
         self._subscription_lock = threading.RLock()
+        self.item_exec_callback = item_exec_callback
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self._server_url.replace("http://", "ws://").replace(
@@ -4411,7 +4566,10 @@ class NotificationManager:
     def _subscriber(self, message):
         try:
             message_dict = json.loads(message)
-
+            print('IN SUBSCRIBER')
+            print(message_dict)
+            print(self.item_exec_callback)
+            print('-----------------------------')
             # ensure we are connected via setting an event before subscribing
             if message_dict.get("connected"):
                 self._received_connected_msg.set()
@@ -4424,6 +4582,8 @@ class NotificationManager:
                     if job_id in self.subscribed_jobs.keys():
                         callback = self.subscribed_jobs[job_id]
                         callback(msg, self)
+                elif "itemId" in msg.message and self.item_exec_callback is not None:
+                    self.item_exec_callback(msg, self)
         except:
             logger.exception(f"Error with messages and callbacks")
 
@@ -4631,6 +4791,8 @@ class MessageType(Enum):
     STEP_ERROR = "STEPERROR"
     STEP_INFO_REQUIRED = "STEPINFOREQUIRED"
     STEP_INFORMATION = "STEPINFORMATION"
+    EXPORTCOMPLETED = "EXPORTCOMPLETED"
+    IMPORTCOMPLETED = "IMPORTCOMPLETED"
 
 
 class ExecutionType(Enum):
@@ -4642,7 +4804,9 @@ class ExecutionType(Enum):
 
     RUN = "RUN"
     STOP = "STOP"
-    FINISH = "FINISH"
+    FINISH = "FINISH",
+    IMPORT = "IMPORT"
+    EXPORT = "EXPORT"
 
 
 class ExecutionStatus(Enum):
