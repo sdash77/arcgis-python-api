@@ -18,7 +18,7 @@ class TestMapContent(unittest.TestCase):
         Map id can be changed if not found.
         """
         # establish gis connection
-        story = storymap.StoryMap()
+        story = storymap.StoryMap(gis=gis)
 
         wm_test = arcgismapping.Map()
         wm_item = wm_test.save(
@@ -44,7 +44,7 @@ class TestMapContent(unittest.TestCase):
         Test the properties found on the Map in the StoryMap
         """
         # establish gis connection
-        story = storymap.StoryMap()
+        story = storymap.StoryMap(gis=gis)
 
         wm_test = arcgismapping.Map()
         wm_test.content.add(Service("https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/2"))

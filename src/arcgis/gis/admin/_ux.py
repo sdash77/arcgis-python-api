@@ -1267,13 +1267,13 @@ class HomePageSettings(object):
             return footer
 
     # ----------------------------------------------------------------------
-    def set_footer(self, text: str, show_text: bool | None = None):
+    def set_footer(self, text: str | None = None, show_text: bool | None = None):
         """Set the text and the visibility of the text in the footer"""
         if self._new_hp:
             hp = self._reader_hp()
             if text:
                 hp["footer"]["copy"] = text
-            if show_text:
+            if show_text in [True, False]:
                 hp["footer"]["showCopy"] = show_text
             params = {
                 "key": "home.page.json",
