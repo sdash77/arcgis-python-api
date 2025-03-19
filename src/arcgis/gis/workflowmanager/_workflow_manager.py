@@ -335,6 +335,55 @@ class WorkflowManagerAdmin:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj
 
+    def import_item(
+        self, item, config_file, passphrase: Optional[str] = None
+    ):  # TODO TypeHint removed in order to avoid import
+        """
+        Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
+        items with a server that is on a more recent version will not import due to incompatibility. This will
+        completely replace the version, job templates, diagrams, roles, role-group associations, lookup tables,
+        charts and queries, templates, and user settings of the indicated item, and it is recommended to back
+        up configurations before importing. Any encrypted settings included will only have their key imported
+        and will need the value updated. Importing will fail if any jobs exist in the destination item.
+        Excess scheduled tasks will be dropped based on the portal limit.
+
+        ==================  =========================================================
+        **Argument**        **Description**
+        ------------------  ---------------------------------------------------------
+        item                Required Item. The Workflow Manager Item that to import the configuration to.
+        ------------------  ---------------------------------------------------------
+        config_file         Required. The file path to the workflow manager configuration file.
+        ------------------  ---------------------------------------------------------
+        passphrase          Optional. If importing encrypted user defined settings, specify the same passphrase
+                            used when exporting the configuration file. If no passphrase is specified, the keys for
+                            encrypted user defined settings will be imported without their values.
+        ==================  =========================================================
+
+        :return:
+            success object
+
+        """
+
+        url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+        data = {}
+        if passphrase is not None:
+            data["passphrase"] = passphrase
+
+        return_obj = self._gis._con.post(
+            url,
+            files={"file": config_file},
+            params=data,
+            try_json=False,
+            json_encode=False,
+            post_json=False,
+        )
+        return_obj = json.loads(return_obj)
+
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return return_obj
 
     def export_item_async(
         self,
@@ -416,9 +465,10 @@ class WorkflowManagerAdmin:
         ie._started()
         return ie
 
-    def import_item(
+
+    def import_item_async(
         self, item, config_file, passphrase: Optional[str] = None
-    ):  # TODO TypeHint removed in order to avoid import
+    ):  # TODO
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatibility. This will
@@ -445,26 +495,42 @@ class WorkflowManagerAdmin:
 
         """
 
-        url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+        # Create a ItemExecution object
+        ie = ItemExecution(item, ExecutionType.IMPORT)
+        # Subscribe to this job
+        nm = NotificationManager(item, self, ie._callback)
+
+        nm.connect()
+
+        # Call the actual endpoint
+        url = "{base}/admin/{id}/importAsync".format(base=self._url, id=item.id)
         data = {}
         if passphrase is not None:
             data["passphrase"] = passphrase
 
-        return_obj = self._gis._con.post(
-            url,
-            files={"file": config_file},
-            params=data,
-            try_json=False,
-            json_encode=False,
-            post_json=False,
-        )
-        return_obj = json.loads(return_obj)
+        try:
+            return_obj = self._gis._con.post(
+                url,
+                files={"file": config_file},
+                params=data,
+                try_json=False,
+                json_encode=False,
+                post_json=False,
+            )
+            return_obj = json.loads(return_obj)
 
-        if "error" in return_obj:
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        return return_obj
+            # If it fails, unsubscribe then throw
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception(return_obj)
+        except:
+            nm.disconnect()
+            raise
+
+        # If it succeeds, return the JobExecution
+        ie._started()
+        return ie
 
 
 class JobManager:
@@ -4525,7 +4591,7 @@ class NotificationManager:
 
     """
 
-    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager, item_exec_callback = None):
+    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager | WorkflowManagerAdmin, item_exec_callback = None):
         self._item = item
         _initialize(self, item._gis)
         self.workflow_item_id = item.id
@@ -4566,10 +4632,6 @@ class NotificationManager:
     def _subscriber(self, message):
         try:
             message_dict = json.loads(message)
-            print('IN SUBSCRIBER')
-            print(message_dict)
-            print(self.item_exec_callback)
-            print('-----------------------------')
             # ensure we are connected via setting an event before subscribing
             if message_dict.get("connected"):
                 self._received_connected_msg.set()
