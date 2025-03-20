@@ -327,7 +327,8 @@ class WebExperience(object):
         a template from the experience builder to create their template, in addition to a custom
         item name (done as arguments in the initial creation of the WebExperience).
         """
-
+        if not gis:
+            gis = self._gis
         if config is None:
             if isinstance(template, Templates):
                 template = template.value
@@ -348,7 +349,7 @@ class WebExperience(object):
                     + no_space
                     + "/config.json"
                 )
-                temp_dict = self._gis._con.get(temp_url, {"f": "json"})
+                temp_dict = gis._con.get(temp_url, {"f": "json"})
             else:
                 json_path = os.path.join(
                     os.path.dirname(__file__),
@@ -360,24 +361,24 @@ class WebExperience(object):
                     temp_dict = json.load(f)
 
             if "attributes" in temp_dict:
-                temp_dict["attributes"]["portalUrl"] = self._gis.url
+                temp_dict["attributes"]["portalUrl"] = gis.url
             else:
-                temp_dict["attributes"] = {"portalUrl": self._gis.url}
-            if self._gis._is_agol:
-                exb_version = self._gis._con.get(
+                temp_dict["attributes"] = {"portalUrl": gis.url}
+            if gis._is_agol:
+                exb_version = gis._con.get(
                     "https://experience.arcgis.com/version.json",
                     {"f": "json"},
                 )["exbVersion"]
             else:
                 try:
-                    url = self._gis.url + "/apps/experiencebuilder/version.json"
-                    exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
+                    url = gis.url + "/apps/experiencebuilder/version.json"
+                    exb_version = gis._con.get(url, {"f": "json"})["exbVersion"]
                 except:
                     url = (
-                        self._gis.url.split("/home")[0]
+                        gis.url.split("/home")[0]
                         + "/apps/experiencebuilder/version.json"
                     )
-                    exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
+                    exb_version = gis._con.get(url, {"f": "json"})["exbVersion"]
 
             temp_dict["exbVersion"] = exb_version
             temp_dict["originExbVersion"] = exb_version
@@ -400,16 +401,11 @@ class WebExperience(object):
 
         else:
             temp_dict = config
-            temp_dict["attributes"]["portalUrl"] = self._gis.url
+            temp_dict["attributes"]["portalUrl"] = gis.url
             if name is None:
                 title = "Experience via Python %s" % uuid.uuid4().hex[:10]
             else:
                 title = name
-
-        if gis:
-            temp_dict["attributes"]["portalUrl"] = gis.url
-        else:
-            temp_dict["attributes"]["portalUrl"] = self._gis.url
 
         keywords = ",".join(
             [
@@ -436,12 +432,12 @@ class WebExperience(object):
         }"""
 
         if folder and isinstance(folder, str):
-            folder = self._gis.content.folders.get(folder)
-        # add to active gis and set properties
+            folder = gis.content.folders._get_or_create(folder)
+        
         if not folder:
-            if not gis:
-                gis = self._gis
             folder = gis.content.folders.get()
+        
+        # add to active gis and set properties
 
         item = folder.add(item_properties=props).result()
 
@@ -869,7 +865,7 @@ class WebExperience(object):
                 "text": data,
             }
             if folder and isinstance(folder, str):
-                folder_object = gis.content.folders.get(folder)
+                folder_object = gis.content.folders._get_or_create(folder)
             else:
                 folder_object = gis.content.folders.get()
             return folder_object.add(widg_props).result()
