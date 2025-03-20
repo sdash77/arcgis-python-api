@@ -429,7 +429,7 @@ def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs
     imagespace = emd_stats.get("ImageSpaceUsed")
 
     realdates = [datetime.datetime.fromordinal(i + 693593) for i in serialDates]
-    years = list(set(year for year in (date.year for date in realdates)))
+    years = sorted(set([date.year for date in realdates]))
 
     ts_type = check_timeseries_type(realdates)
 
@@ -522,12 +522,12 @@ def prepare_climax_data(
 def show_results(self, rows, variable, **kwargs):
     variable = self._data._out_variables[0] if variable == "" else variable
     if len(self._data._out_variables) != 1:
-        variable_no_x = {i: n for n, i in enumerate(self._data._out_variables)}[
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._data._out_variables)}[
             variable.lower()
         ]
         variable_no_y = variable_no_x
     else:
-        variable_no_x = {i: n for n, i in enumerate(self._data._variables)}[
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._data._variables)}[
             variable.lower()
         ]
         variable_no_y = 0
@@ -616,12 +616,14 @@ def show_batch(self, rows=4, variable="", **kwargs):
     xs, ys, years = [], [], []
     variable = self._out_variables[0] if variable == "" else variable
     if not len(self._out_variables) == 1:
-        variable_no_x = {i: n for n, i in enumerate(self._out_variables)}[
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._out_variables)}[
             variable.lower()
         ]
         variable_no_y = variable_no_x
     else:
-        variable_no_x = {i: n for n, i in enumerate(self._variables)}[variable.lower()]
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._variables)}[
+            variable.lower()
+        ]
         variable_no_y = 0
     for n, imgs in enumerate(self.train_dl):
         if n != rows:

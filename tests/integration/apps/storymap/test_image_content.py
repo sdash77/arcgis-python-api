@@ -15,7 +15,7 @@ class TestImageContent(unittest.TestCase):
 
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         img = Image(
             "https://www.nps.gov/npgallery/GetAsset/69680c29-caa3-42da-93d9-32925e9ed409/proxy/hires"
         )
@@ -41,7 +41,7 @@ class TestImageContent(unittest.TestCase):
         """Test creating a gallery and adding images to it"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         gallery = Gallery()
         assert gallery
 

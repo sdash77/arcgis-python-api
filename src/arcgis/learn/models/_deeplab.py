@@ -449,50 +449,24 @@ class DeepLab(ArcGISModel):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         transformer_backbone = list(vit_config.keys())
         return transformer_backbone
 
     @staticmethod
     def dofa_backbones():
-        """Supported list of Dynamic One-For-All (DOFA) backbones for this model."""
+        """Supported list of dofa backbones for this model."""
         from ._dofa_utils import dofa_backbones_downstream
 
         return dofa_backbones_downstream
 
     @staticmethod
-    def clay_backbones():
-        """Supported list of Clay Foundation Model backbones for this model."""
-        from ._dofa_utils import clay_backbones_downstream
-
-        return clay_backbones_downstream
-
-    @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
-        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         return torchgeo_backbone
-
-    @staticmethod
-    def satlas_backbones():
-        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
-
-        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
-
-        swin_keys = [
-            attr
-            for attr in dir(Swin_Weights)
-            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
-        ]
-
-        satlas_backbone = list(
-            map(
-                lambda m: "hf:" + m,
-                resnet_keys + swin_keys,
-            )
-        )
-        return satlas_backbone
 
     @staticmethod
     def _supported_backbones():
@@ -512,18 +486,14 @@ class DeepLab(ArcGISModel):
 
         transformer_backbone = DeepLab.transformer_backbones()
         torchgeo_backbone = DeepLab.torchgeo_backbones()
-        satlas_backbone = DeepLab.satlas_backbones()
         dofa_backbone = DeepLab.dofa_backbones()
-        clay_backbone = DeepLab.clay_backbones()
 
         return (
             [*_resnet_family, *_densenet_family, *_vgg_family]
             + timm_backbones
             + transformer_backbone
             + torchgeo_backbone
-            + satlas_backbone
             + dofa_backbone
-            + clay_backbone
         )
 
     @property
@@ -590,7 +560,6 @@ class DeepLab(ArcGISModel):
             empty_data.emd_path = emd_path
             empty_data.emd = emd
             empty_data._band_names = emd.get("Bands")
-            empty_data._emd = emd
             return cls(empty_data, **model_params, pretrained_path=str(model_file))
         else:
             return cls(data, **model_params, pretrained_path=str(model_file))
