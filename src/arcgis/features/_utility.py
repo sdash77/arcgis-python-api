@@ -232,7 +232,6 @@ class UtilityNetworkManager(object):
         }
         if trace_config_global_id:
             params["traceConfigurationGlobalId"] = trace_config_global_id
-
         # Both result_type and result_types will be mapped to resultTypes,
         # however prioritize result_types if both are provided
         if result_types:
