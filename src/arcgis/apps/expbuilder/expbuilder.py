@@ -433,10 +433,10 @@ class WebExperience(object):
 
         if folder and isinstance(folder, str):
             folder = gis.content.folders._get_or_create(folder)
-        
+
         if not folder:
             folder = gis.content.folders.get()
-        
+
         # add to active gis and set properties
 
         item = folder.add(item_properties=props).result()
