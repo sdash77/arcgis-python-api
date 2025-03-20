@@ -24,7 +24,6 @@ try:
     from torchvision.models.detection.roi_heads import fastrcnn_loss
     from torchvision.models.detection.transform import resize_boxes
     from ._transformer_backbone import vit_config
-    from ._dofa_utils import dofa_config, dofa_backbones_downstream
 
     HAS_FASTAI = True
 
@@ -84,11 +83,8 @@ class MyFasterRCNN:
             )
             is_transformer = False
             is_torchgeo = False
-            is_dofa = False
             if backbone.__name__ in transformer_backbone_downstream:
                 is_transformer = True
-            elif backbone.__name__ in dofa_backbones_downstream:
-                is_dofa = True
             if (
                 backbone is not None
                 and "hf:" + backbone.__name__ in FasterRCNN.torchgeo_backbones()
@@ -157,8 +153,6 @@ class MyFasterRCNN:
                         backbone, backbone_cut
                     )[-1][1]
                 elif is_transformer:
-                    backbone_small = backbone_small[0]
-                elif is_dofa:
                     backbone_small = backbone_small[0]
                 else:
                     backbone_small.out_channels = (
@@ -687,12 +681,6 @@ class FasterRCNN(ModelExtension):
         return transformer_backbone
 
     @staticmethod
-    def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
-        dofa_backbone = list(dofa_config.keys())
-        return dofa_backbone
-
-    @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
@@ -710,14 +698,12 @@ class FasterRCNN(ModelExtension):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = FasterRCNN.transformer_backbones()
         torchgeo_backbone = FasterRCNN.torchgeo_backbones()
-        dofa_backbone = FasterRCNN.dofa_backbones()
 
         return (
             [*_resnet_family]
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
-            + dofa_backbone
         )
 
     @property

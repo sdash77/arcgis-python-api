@@ -737,6 +737,8 @@ class BackboneFastai(nn.Module):
             self.backbone_fpn = SimpleFeaturePyramid(backbone=backbone)
         else:
             self.backbone_fpn = ViTUpsample(backbone=backbone)
+        if hasattr(backbone, "_is_vitdet"):
+            self.backbone_fpn._is_vitdet = backbone._is_vitdet
 
         # create dummy layer to set cut=1 in create_body of fastai
         self.dummy = nn.MaxPool2d(kernel_size=2)

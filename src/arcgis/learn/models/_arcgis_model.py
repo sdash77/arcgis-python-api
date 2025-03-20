@@ -459,7 +459,7 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-    # print(model)
+    # print(model.backbone._is_vitdet)
     if hasattr(model, "_is_dofa"):
         return model
     if (
