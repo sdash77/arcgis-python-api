@@ -2,10 +2,11 @@ from arcgis.gis import SharingLevel
 import unittest
 import uuid
 from utils.decorators import integration_test, profiles
+from integration.config import INTEGRATION_TEST_ITEM_TAG
 
 
 @integration_test
-@profiles.enterprise_and_agol
+@profiles.all
 class TestItemAccess(unittest.TestCase):
     """
     Tests item access can be updated properly through item.update(). This
@@ -18,13 +19,15 @@ class TestItemAccess(unittest.TestCase):
     """
 
     def setUp(self):
-        self.folder = self.gis.content.folders._get_or_create("integration_testing_gis_item_access")
+        self.folder = self.gis.content.folders._get_or_create(
+            "integration_testing_gis_item_access"
+        )
         self.test_item = self.folder.add(
             item_properties={
                 "title": "test item access",
                 "access": "public",
                 "type": "Feature Service",
-                "tags": "integration_testing",
+                "tags": INTEGRATION_TEST_ITEM_TAG,
             },
             url="https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/CapitolhillEnrichedByPop372895/FeatureServer",
         ).result()
@@ -42,12 +45,20 @@ class TestItemAccess(unittest.TestCase):
         assert self.test_item.sharing.shared_with["level"].value == "PRIVATE"
         assert self.test_item.sharing.shared_with["groups"] == []
 
+        orig_val = self.test_item.access
         self.test_item.update(item_properties={"access": "org"})
+        self.assertNotEqual(
+            orig_val, self.test_item.access, "Item access value not updated."
+        )
         assert self.test_item.sharing.shared_with["level"].value == "ORGANIZATION"
         assert self.test_item.sharing.shared_with["level"] == SharingLevel.ORG
         assert self.test_item.shared_with["groups"] == []
 
+        next_val = self.test_item.access
         self.test_item.update(item_properties={"access": "public"})
+        self.assertNotEqual(
+            next_val, self.test_item.access, "Access property not updated on Item."
+        )
         assert self.test_item.sharing.shared_with["level"].value == "EVERYONE"
         assert self.test_item.sharing.shared_with["level"] == SharingLevel.EVERYONE
         assert self.test_item.shared_with["groups"] == []
@@ -57,7 +68,8 @@ class TestItemAccess(unittest.TestCase):
         result = self.test_item.sharing.sharing_level = SharingLevel.ORG
         assert result.value == "ORGANIZATION"
         shr_group = self.gis.groups.create(
-            f"test group {uuid.uuid4().hex[:4]}", tags="integration_testing"
+            f"test_group_{uuid.uuid4().hex[:4]}",
+            tags=INTEGRATION_TEST_ITEM_TAG,
         )
         grp_share_res = self.test_item.sharing.groups.add(shr_group)
         assert grp_share_res
@@ -65,11 +77,35 @@ class TestItemAccess(unittest.TestCase):
         assert self.test_item.sharing.shared_with["level"] != SharingLevel.EVERYONE
         assert self.test_item.shared_with["groups"][0].id == shr_group.id
 
-        self.test_item.sharing.sharing_level = "EVERYONE"
-        assert self.test_item.sharing.shared_with["level"].value == "EVERYONE"
+        org_share = self.test_item.sharing.shared_with["level"]
+        public_share = self.test_item.sharing.sharing_level = SharingLevel.EVERYONE
+        self.assertNotEqual(
+            org_share.value,
+            public_share.value,
+            "Sharing level value not set to EVERYONE as expected.",
+        )
+        self.assertEqual(
+            self.test_item.sharing.shared_with["level"].value,
+            "EVERYONE",
+            "Sharing level is not EVERYONE",
+        )
 
         self.test_item.sharing.sharing_level = "PRIVATE"
-        assert self.test_item.sharing.shared_with["level"].value == "PRIVATE"
+        self.assertNotEqual(
+            self.test_item.sharing.sharing_level,
+            public_share,
+            "Sharing level should not PRIVATE not EVERYONE",
+        )
+        self.assertNotEqual(
+            self.test_item.sharing.sharing_level,
+            org_share,
+            "Sharing level should not PRIVATE not ORG",
+        )
+        self.assertEqual(
+            self.test_item.sharing.shared_with["level"].value,
+            "PRIVATE",
+            "Sharing level not PRIVATE as expected.",
+        )
 
         shr_group.delete()
 
