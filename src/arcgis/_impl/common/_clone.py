@@ -5805,7 +5805,7 @@ class _QuickCaptureDefinition(_ItemDefinition):
                 data = self._get_item_data()
 
                 # Add the new item
-                new_item = self._add_new_item(item_properties, data, stream = False)
+                new_item = self._add_new_item(item_properties, data, stream=False)
 
                 # Get the Quick Capture json resource
                 qc_json = new_item.resources.get("qc.project.json", try_json=True)
