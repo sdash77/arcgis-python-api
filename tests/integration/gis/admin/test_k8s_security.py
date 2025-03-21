@@ -64,6 +64,7 @@ class TestSecutiryKubernetes(unittest.TestCase):
         res = config.test(config_value, config_value)
         assert res
 
+    @unittest.skip("Skip until get back to our own k8s environment")
     def test_configuration_update_store(self):
         config_value = {"type": "BUILTIN", "properties": {}}
         config = self.gis.admin.security.configuration

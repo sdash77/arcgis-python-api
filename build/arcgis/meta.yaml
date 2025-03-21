@@ -19,8 +19,6 @@ requirements:
   - certifi
   - cryptography
   - dask >=2024.12.1,<2025.1.0
-  - gdal >=3.9.2,<4 [win]
-  - gdal >=3.6.2,<4 [not win]
   - geomet
   - keyring >=23.3.0
   - lxml
@@ -30,7 +28,7 @@ requirements:
   - pandas >=2.0.0,<2.3.0
   - pillow
   - puremagic >=1.15,<2
-  - pyarrow >=16,<17
+  - pyarrow >=14,<17
   - pylerc
   - pyspnego >=0.8.0
   - pywin32-security [win]
