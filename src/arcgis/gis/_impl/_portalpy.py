@@ -2387,7 +2387,7 @@ class Portal(object):
         leaving_disallowed: bool = False,
         hidden_members: bool = False,
         membership_access: Optional[str] = None,
-        autojoin: bool = False
+        autojoin: bool = False,
     ):
         """Updates a group.
 
