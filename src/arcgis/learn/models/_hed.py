@@ -54,9 +54,7 @@ class CustomHED:
         else:
             self._is_multispectral = False
 
-        model = self.hed._HEDModel(
-            self._backbone, data.chip_size, pretrained=pretrained_backbone
-        )
+        model = self.hed._HEDModel(self._backbone, data, pretrained=pretrained_backbone)
 
         return model
 

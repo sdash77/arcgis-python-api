@@ -451,7 +451,7 @@ class SingleShotDetector(ArcGISModel):
                     ),
                     cut=backbone_cut,
                     chip_size=(data.chip_size, data.chip_size),
-                    channel_in=len(data._extract_bands),
+                    channel_in=len(getattr(data, "_extract_bands", [0, 1, 2])),
                     use_custom=self._backbone.__name__ in vit_config.keys(),
                 )
 
