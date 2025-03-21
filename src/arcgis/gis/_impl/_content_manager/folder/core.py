@@ -914,6 +914,8 @@ class Folder:
                 file is None and text is None and url is None and data_url is None
             ):
                 params["async"] = False
+                if not url and "url" in params:
+                    url = params.get("url")
                 if url:
                     params["url"] = url
                 else:
