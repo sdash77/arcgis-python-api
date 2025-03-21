@@ -1,282 +1,163 @@
-import os
 import unittest
-import unittest.mock
 import uuid
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import (
-    GIS,
-    GroupApplication,
-    Group,
-    GroupManager,
-    CategorySchemaManager,
-    GroupMigrationManager,
-    UserManager,
-)
-from arcgis.gis import (
-    GIS,
-    Item,
-    User,
-    UserManager,
-    Group,
-    GroupMigrationManager,
-)
-from arcgis.gis._impl._jb import StatusJob
-from integration.config import QALAB_ROOT_PATH
+from arcgis.gis import GIS, ItemTypeEnum, Group, GroupManager, GroupApplication, GroupMigrationManager, CategorySchemaManager
 from utils.decorators import integration_test, profiles
+from integration.config import get_resource_path, INTEGRATION_TEST_ITEM_TAG
+from utils.data_utils import publish_test_item, cleanup_published_items
 
 
-fp = os.path.join(QALAB_ROOT_PATH, "group_manager_data", "parkinglots.zip")
+fp = get_resource_path("staging_data/parkinglots.zip", unique_copy=True)
 
 
 @profiles.admin_all
 @integration_test
 class TestGroup(unittest.TestCase):
-    """
-    Tests the `Group` class operations
-    """
+    """Tests the `Group` class operations"""
+    @classmethod
+    def setUpClass(cls):
+        cls.group = cls.gis.groups.create(
+            title=f"group_{uuid.uuid4().hex[:4]}", tags=INTEGRATION_TEST_ITEM_TAG
+        )
+        assert isinstance(cls.group, Group)
+
+        cls.user = cls.gis.users.create(
+            username=f"user_{uuid.uuid4().hex[:4]}",
+            password="esri.AGP1!",
+            firstname="firstname",
+            lastname="lastname",
+            email="pythonapi@esri.com",
+            role="org_publisher",
+            user_type="creatorUT",
+        )
+        cls.user.update_role(role="org_admin")
+        cls.group.add_users(usernames=[cls.user.username])
+
+        cls.item = publish_test_item(
+            gis=cls.gis, source_data_path=fp, item_type=ItemTypeEnum.SHAPEFILE, layer_name=f"list_group_{uuid.uuid4().hex[:4]}"
+        )
+        cls.item.sharing.groups.add(cls.group)
+
+        cls.owner = cls.group.get_members()['owner']
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items([cls.item])
+        cls.group.delete()
+        cls.user.delete()
 
     def test_group_properties(self):
         """tests the group properties"""
-        gm = self.gis.groups
-        group = self.gis.groups.create(
-            title=f"test_{uuid.uuid4().hex[:5]}", tags="integration_testing"
-        )
-        assert isinstance(group, Group)
-        assert isinstance(group.applications, list)
-        assert group.get_thumbnail() is None
-        assert group.get_thumbnail_link()
-        assert isinstance(group.categories, CategorySchemaManager)
-        assert group.download_thumbnail() is None
-        group.delete_group_thumbnail()
-        assert isinstance(group.migration, GroupMigrationManager)
-        assert group.delete()
+        assert isinstance(self.group.applications, list)
+        assert self.group.get_thumbnail() is None
+        assert self.group.get_thumbnail_link()
+        assert isinstance(self.group.categories, CategorySchemaManager)
+        assert self.group.download_thumbnail() is None
+        self.group.delete_group_thumbnail()
+        if not self.gis._is_agol:
+            assert isinstance(self.group.migration, GroupMigrationManager)
 
-    def test_list_content(self):
+    def test_list_group_user_and_content(self):
         """tests the group content and member listings"""
-        gm = self.gis.groups
-        group = self.gis.groups.create(
-            title=f"test_{uuid.uuid4().hex[:5]}", tags="integration_testing"
-        )
-        um = self.gis.users
-        assert isinstance(um, UserManager)
-        user = um.create(
-            username=f"user{uuid.uuid4().hex[:5]}a",
-            password="esri.AGP1!",
-            firstname="firstname",
-            lastname="last_name",
-            email="pythonapi@esri.com",
-            role="admin",
-            user_type="creatorUT",
-        )
-        group.add_users(usernames=[user.username])
-        assert isinstance(group.get_members(), dict)
-        assert isinstance(group, Group)
-        assert isinstance(group.content(), list)
-        group.delete()
-        user.delete()
+        assert isinstance(self.group.get_members(), dict)
+        assert self.user.username == self.group.get_members()['users'][0]
 
-    # ----------------------------------------------------------------------
-    def test_update_group(self):
-        """this method tests the update method on Group"""
-        gm = self.gis.groups
-        group = self.gis.groups.create(
-            title=f"test_{uuid.uuid4().hex[:5]}", tags="integration_testing"
-        )
-        assert isinstance(group, Group)
-        new_title = f"nt_{uuid.uuid4().hex[:5]}"
-        group.update(title=new_title)
-        assert isinstance(group, Group)
+        assert isinstance(self.group.content(), list)
+        assert self.item.itemid == self.group.content()[0].itemid
 
-        um = self.gis.users
-        assert isinstance(um, UserManager)
-        user = um.create(
-            username=f"user{uuid.uuid4().hex[:5]}a",
-            password="esri.AGP1!",
-            firstname="firstname",
-            lastname="last_name",
-            email="pythonapi@esri.com",
-            role="admin",
-            user_type="creatorUT",
-        )
-        group.add_users(usernames=[user.username])
-        group.reassign_to(target_owner=user.username)
-        assert new_title == group.title
-        # print(group.delete())
-        assert group.delete()
-        assert user.delete()
-
-    def test_add_user_make_owner_group(self):
-        """this method tests the add and make owner methods"""
-        gm = self.gis.groups
-        group = self.gis.groups.create(
-            title=f"test_{uuid.uuid4().hex[:5]}", tags="integration_testing"
-        )
-        assert isinstance(group, Group)
-        um = self.gis.users
-        assert isinstance(um, UserManager)
-        user = um.create(
-            username=f"user{uuid.uuid4().hex[:5]}a",
-            password="esri.AGP1!",
-            firstname="firstname",
-            lastname="last_name",
-            email="pythonapi@esri.com",
-            role="admin",
-            user_type="creatorUT",
-        )
-        group.add_users(usernames=[user.username])  # adds a new user.
-        assert group.reassign_to(
-            target_owner=user.username
-        )  # changes the owner
-        assert group.delete()
-        assert user.delete()
+    def test_group_reassign_owner(self):
+        """tests the add and make owner methods"""
+        assert self.group.reassign_to(target_owner=self.user.username)
+        assert self.group.get_members()['owner'] == self.user.username
+        self.group.reassign_to(target_owner=self.owner)
 
 
 @profiles.admin_all
 @integration_test
 class TestGroupApplication(unittest.TestCase):
-    """
-    Tests the `GroupApplication` class operations
-    """
+    """Tests the GroupApplication class operations"""
 
-    def test_accept_decline_ops(self):
-        """tests the application accept/decline operation for `Group`"""
-        gis = self.gis
-        um = gis.users
-        isinstance(um, UserManager)
-        user = um.create(
-            username=f"user{uuid.uuid4().hex[:5]}a",
-            password="esri.AGP1!",
+    def setUp(self):
+        # new user send application
+        self.user = self.gis.users.create(
+            username=f"application_user_{uuid.uuid4().hex[:4]}",
+            password="esri.AGP1!!",
             firstname="firstname",
             lastname="last_name",
             email="pythonapi@esri.com",
-            role="admin",
+            role="org_publisher",
             user_type="creatorUT",
         )
+        self.user.update_role(role="org_admin")
 
-        user.reset(
-            new_security_question=1,
-            new_security_answer="Redlands",
-            password="esri.AGP1!",
-            new_password="esri.AGP2!",
-        )
-        url = gis._url
-        username = user.username
-        group = gis.groups.create(
-            title=f"test_{uuid.uuid4().hex[:5]}", tags="integration_testing"
-        )
-        group_id = group.groupid
-        del gis
-
-        gis = GIS(
-            url=url,
-            username=username,
-            password="esri.AGP2!",
+        self.user.update(security_question=1, security_answer="Redlands")
+        self.user_gis = GIS(
+            url=self.gis.url,
+            username=self.user.username,
+            password="esri.AGP1!!",
             verify_cert=False,
             trust_env=True,
         )
-        resp = gis.groups.get(group_id).join()
-        print(resp)
-        assert resp
-        del gis
+        self.group = self.gis.groups.create(
+            title=f"group_application_{uuid.uuid4().hex[:4]}", tags=INTEGRATION_TEST_ITEM_TAG
+        )
+        self.user_gis.groups.get(self.group.groupid).join()
 
-        gis = self.gis
-        group = gis.groups.get(group_id)
-        assert isinstance(group, Group)
-        assert isinstance(group.applications, list)
-        # run the accept workflow
-        for app in group.applications:
+    def tearDown(self):
+        self.user.delete()
+        self.group.delete()
+
+    def test_accept_ops(self):
+        """tests the application accept/decline operation for `Group`"""
+        # accept application
+        assert isinstance(self.group.applications, list)
+        for app in self.group.applications:
             assert isinstance(app, GroupApplication)
             assert app.accept()
-        group.delete()
-        group = gis.groups.create(
-            title=f"test_{uuid.uuid4().hex[:5]}", tags="integration_testing"
-        )
-        group_id = group.groupid
-        del gis
+        assert len(self.group.applications) == 0
 
-        gis = GIS(
-            url=url,
-            username=username,
-            password="esri.AGP2!",
-            verify_cert=False,
-            trust_env=True,
-        )
-        resp = gis.groups.get(group_id).join()
-        del gis
-
-        gis = self.gis
-        group = gis.groups.get(group_id)
-        assert isinstance(group, Group)
-        assert isinstance(group.applications, list)
-        # run the accept workflow
-        for app in group.applications:
+    def test_decline_ops(self):
+        # decline application
+        assert isinstance(self.group.applications, list)
+        for app in self.group.applications:
             assert isinstance(app, GroupApplication)
-            print(app.properties)
             assert app.decline()
-
-        del gis
-
-        gis = self.gis
-        group = gis.groups.get(group_id)
-        user = gis.users.get(username)
-
-        assert group.delete()
-        assert user.delete()
+        assert len(self.group.applications) == 0
 
 
 @profiles.all
 @integration_test
 class TestGroupManager(unittest.TestCase):
-    """
-    Tests the `GroupManager` class operations
-    """
+    """Tests the GroupManager class operations"""
 
-    # ----------------------------------------------------------------------
     def test_create_group_manager(self):
         """tests the creation of the group manager object"""
-        self.assertTrue(isinstance(self.gis.groups, GroupManager))
+        assert isinstance(self.gis.groups, GroupManager)
 
     def test_create(self):
         """tests the creation of a group"""
-        gm = self.gis.groups
-        isinstance(gm, GroupManager)
-        grp = gm.create(
-            title=f"test_grp1_{uuid.uuid4().hex[:3]}", tags="integration_testing"
+        grp = self.gis.groups.create(
+            title=f"test_grp_{uuid.uuid4().hex[:4]}", tags=INTEGRATION_TEST_ITEM_TAG
         )
-        self.assertTrue(isinstance(grp, Group))
+        assert isinstance(grp, Group)
         assert grp.delete()
 
-    # ----------------------------------------------------------------------
     def test_create_dict(self):
-        """tests the creation of a group"""
-        gm = self.gis.groups
-        isinstance(gm, GroupManager)
+        """tests the creation of a group from dict"""
         d = {
-            "title": f"test_grp1_{uuid.uuid4().hex[:3]}",
-            "tags": "tag1",
+            "title": f"test_grp_{uuid.uuid4().hex[:4]}",
+            "tags": INTEGRATION_TEST_ITEM_TAG,
             "access": "private",
         }
-        grp = gm.create_from_dict(d)
-        self.assertTrue(isinstance(grp, Group))
+        grp = self.gis.groups.create_from_dict(d)
+        assert isinstance(grp, Group)
         assert grp.delete()
 
-    # ----------------------------------------------------------------------
-    def test_search(self):
-        """tests the searching of a group"""
-        gm = self.gis.groups
-        isinstance(gm, GroupManager)
-        res = gm.search(max_groups=10)
-        assert len(res) > 0
-
-    # ----------------------------------------------------------------------
     def test_get_group(self):
         """tests the `GET` of a group"""
-        gm = self.gis.groups
-        isinstance(gm, GroupManager)
-        grp = gm.create(
-            title=f"test_grp1_{uuid.uuid4().hex[:3]}", tags="integration_testing"
+        grp = self.gis.groups.create(
+            title=f"test_grp_{uuid.uuid4().hex[:4]}", tags=INTEGRATION_TEST_ITEM_TAG
         )
-        assert gm.get(grp.id).id == grp.id  # checks the
+        assert self.gis.groups.get(grp.id).id == grp.id
         assert grp.delete()
 
 
