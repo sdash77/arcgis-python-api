@@ -2249,17 +2249,11 @@ class FeatureLayer(Layer):
             datum_transformation=datum_transformation,
             time_reference_unknown_client=time_reference_unknown_client,
         )
-        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
-            "supportsPagination", False
-        )
-        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=True,
             as_df=as_df,
-            supports_pagination=supports_pagination,
-            max_record_count=max_record_count,
         ).execute()
 
     # ----------------------------------------------------------------------
@@ -3759,17 +3753,11 @@ class FeatureLayer(Layer):
             format_3d_objects=format_3d_objects,
             time_reference_unknown_client=time_reference_unknown_client,
         )
-        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
-            "supportsPagination", False
-        )
-        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=True,
             query_3d=True,
-            supports_pagination=supports_pagination,
-            max_record_count=max_record_count,
         ).execute()
 
 
@@ -4091,17 +4079,11 @@ class Table(FeatureLayer):
             return_exceeded_limit_features=return_exceeded_limit_features,
             time_reference_unknown_client=time_reference_unknown_client,
         )
-        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
-            "supportsPagination", False
-        )
-        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=False,
             as_df=as_df,
-            supports_pagination=supports_pagination,
-            max_record_count=max_record_count,
         ).execute()
 
 

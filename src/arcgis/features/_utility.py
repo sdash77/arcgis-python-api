@@ -90,7 +90,7 @@ class UtilityNetworkManager(object):
         trace_type: str,
         moment: int | None = None,
         configuration: dict | TraceConfiguration | None = None,
-        result_type: str | None = None,
+        result_type: list[dict] | None = None,
         result_types: list[dict] | None = None,
         trace_config_global_id: str | None = None,
         out_sr: int | None = None,
@@ -170,6 +170,8 @@ class UtilityNetworkManager(object):
                                    To see all configuration properties see:
                                    `Trace Configuration Properties
                                    <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+        -----------------------    --------------------------------------------------------------------
+        result_type                ** Deprecated, use `result_types` instead. **
         -----------------------    --------------------------------------------------
         result_types               Optional parameter specifying the types of results
                                    to return.
@@ -230,10 +232,12 @@ class UtilityNetworkManager(object):
         }
         if trace_config_global_id:
             params["traceConfigurationGlobalId"] = trace_config_global_id
-        if self._gis.version <= [7, 3]:
-            params["resultType"] = result_type
-        else:
+        # Both result_type and result_types will be mapped to resultTypes,
+        # however prioritize result_types if both are provided
+        if result_types:
             params["resultTypes"] = result_types
+        elif result_type:
+            params["resultTypes"] = result_type
         if out_sr:
             params["outSR"] = out_sr
         if pbf is True:
@@ -434,7 +438,7 @@ class UtilityNetworkManager(object):
         subnetwork_name: str,
         trace_configuration: dict | TraceConfiguration | None = None,
         export_acknowledgement: bool = False,
-        result_type: str | None = None,
+        result_type: list[dict] | None = None,
         result_types: list[dict] | None = None,
         moment: int | None = None,
         run_async: bool = False,
@@ -465,6 +469,8 @@ class UtilityNetworkManager(object):
                                                     See: `Trace <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
         ------------------------------------        --------------------------------------------------------------------
         export_acknowledgement                      Optional Boolean. Specify whether the export is acknowledged.
+        ------------------------------------        --------------------------------------------------------------------
+        result_type                                 ** Deprecated, use `result_types` instead. **
         ------------------------------------        --------------------------------------------------------------------
         result_types                                Optional list of dictionaries. Specifies the type of results to return.
 
@@ -537,10 +543,12 @@ class UtilityNetworkManager(object):
             "traceConfiguration": trace_configuration,
             "async": run_async,
         }
-        if self._gis.version <= [7, 3]:
-            params["resultType"] = result_type
-        else:
+        # Both result_type and result_types will be mapped to resultTypes,
+        # however prioritize result_types if both are provided
+        if result_types:
             params["resultTypes"] = result_types
+        elif result_type:
+            params["resultTypes"] = result_type
         if out_sr:
             params["outSR"] = out_sr
         if pbf:

@@ -2,9 +2,14 @@ import unittest
 import os
 import random
 import string
+import time
+import uuid
+
+from arcgis.gis._impl import ItemTypeEnum
+from utils.data_utils import publish_test_item, cleanup_published_items
 from utils.decorators import integration_test, from_to_profiles
 
-from integration.config import QALAB_ROOT_PATH
+from integration.config import QALAB_ROOT_PATH, get_resource_path
 
 # QALAB_ROOT_PATH = "/Volumes/pydata/v109/geosaurus"
 QA_LABS_FOLDER = os.path.join(QALAB_ROOT_PATH, "clone_services")
@@ -14,33 +19,33 @@ QA_LABS_FOLDER = os.path.join(QALAB_ROOT_PATH, "clone_services")
 @from_to_profiles.all_except_k8s
 class TestCloneServices(unittest.TestCase):
 
-    # @unittest.skip("Skipping test")
-    def test_default_cloning(self):
-        created_items = []
-        try:
-            source = self.from_gis
-            target = self.to_gis
-            folder = source.content.folders.get()
-            test_file = os.path.join(QA_LABS_FOLDER, "normal_service.zip")
-            props = {
-                "title": "normal_service_"
-                + "".join(random.choices(string.ascii_letters, k=5)),
-                "type": "File Geodatabase",
-                "url": target.url,
-            }
-            job = folder.add(
-                **{
-                    "item_properties": props,
-                    "file": test_file,
-                }
-            )
-            service_item = job.result()
-            assert service_item
-            created_items.append(service_item)
+    @classmethod
+    def setUpClass(cls):
+        cls.items_to_delete = []
 
-            layer_item = service_item.publish()
-            assert layer_item
-            created_items.append(layer_item)
+    def test_default_cloning(self):
+        uid = uuid.uuid4().hex
+        created_items = []
+        source = self.from_gis
+        target = self.to_gis
+        layer_item = None
+        clone_list = None
+        try:
+            staging_data_path = "staging_data/cloning"
+            test_file = get_resource_path(
+                f"{staging_data_path}/normal_service.zip",
+                unique_copy=True,
+            )
+
+            layer_item = publish_test_item(
+                source,
+                layer_name=f"normal_service_{uid}",
+                source_data_path=test_file,
+                item_type=ItemTypeEnum.FILE_GEODATABASE,
+                target_url=target.url,
+            )
+            self.assertIsNotNone(layer_item, "Failed to publish layer item")
+            self.items_to_delete.append(layer_item)
 
             clone_list = target.content.clone_items(
                 [layer_item], search_existing_items=False
@@ -53,38 +58,36 @@ class TestCloneServices(unittest.TestCase):
             assert cloned_layer.layers[0].query(
                 where="1=1", return_count_only=True
             ) == layer_item.layers[0].query(where="1=1", return_count_only=True)
-
         finally:
-            for item in created_items:
-                item.delete(permanent=True)
+            if clone_list:
+                cleanup_published_items(clone_list)
+            if layer_item:
+                cleanup_published_items([layer_item])
 
     # @unittest.skip("Skipping test")
     def test_export_cloning(self):
+        uid = uuid.uuid4().hex
         created_items = []
+        source = self.from_gis
+        target = self.to_gis
+        layer_item = None
+        clone_list = None
         try:
-            source = self.from_gis
-            target = self.to_gis
-            folder = source.content.folders.get()
-            test_file = os.path.join(QA_LABS_FOLDER, "normal_service.zip")
-            props = {
-                "title": "normal_service_"
-                + "".join(random.choices(string.ascii_letters, k=5)),
-                "type": "File Geodatabase",
-                "url": target.url,
-            }
-            job = folder.add(
-                **{
-                    "item_properties": props,
-                    "file": test_file,
-                }
+            staging_data_path = "staging_data/cloning"
+            test_file = get_resource_path(
+                f"{staging_data_path}/normal_service.zip",
+                unique_copy=True,
             )
-            service_item = job.result()
-            assert service_item
-            created_items.append(service_item)
 
-            layer_item = service_item.publish()
-            assert layer_item
-            created_items.append(layer_item)
+            layer_item = publish_test_item(
+                source,
+                layer_name=f"normal_service_{uid}",
+                source_data_path=test_file,
+                item_type=ItemTypeEnum.FILE_GEODATABASE,
+                target_url=target.url,
+            )
+            self.assertIsNotNone(layer_item, "Failed to publish layer item")
+            self.items_to_delete.append(layer_item)
 
             clone_list = target.content.clone_items(
                 [layer_item], search_existing_items=False, export_service=True
@@ -99,39 +102,37 @@ class TestCloneServices(unittest.TestCase):
             assert cloned_layer.layers[0].query(
                 where="1=1", return_count_only=True
             ) == layer_item.layers[0].query(where="1=1", return_count_only=True)
-
         finally:
-            for item in created_items:
-                item.delete(permanent=True)
+            if clone_list:
+                cleanup_published_items(clone_list)
+            if layer_item:
+                cleanup_published_items([layer_item])
 
     # @unittest.skip("Skipping test")
     def test_read_only_cloning(self):
         # covers export and normal
+        uid = uuid.uuid4().hex
         created_items = []
+        source = self.from_gis
+        target = self.to_gis
+        layer_item = None
+        clone_list = None
         try:
-            source = self.from_gis
-            target = self.to_gis
-            folder = source.content.folders.get()
-            test_file = os.path.join(QA_LABS_FOLDER, "normal_service.zip")
-            props = {
-                "title": "normal_service_"
-                + "".join(random.choices(string.ascii_letters, k=5)),
-                "type": "File Geodatabase",
-                "url": target.url,
-            }
-            job = folder.add(
-                **{
-                    "item_properties": props,
-                    "file": test_file,
-                }
+            staging_data_path = "staging_data/cloning"
+            test_file = get_resource_path(
+                f"{staging_data_path}/normal_service.zip",
+                unique_copy=True,
             )
-            service_item = job.result()
-            assert service_item
-            created_items.append(service_item)
 
-            layer_item = service_item.publish()
-            assert layer_item
-            created_items.append(layer_item)
+            layer_item = publish_test_item(
+                source,
+                layer_name=f"normal_service_{uid}",
+                source_data_path=test_file,
+                item_type=ItemTypeEnum.FILE_GEODATABASE,
+                target_url=target.url,
+            )
+            self.assertIsNotNone(layer_item, "Failed to publish layer item")
+            self.items_to_delete.append(layer_item)
 
             layer = layer_item.layers[0]
             fields = layer.properties["fields"]
@@ -169,48 +170,47 @@ class TestCloneServices(unittest.TestCase):
                     == fields[i]["editable"]
                     == False
                 )
-
         finally:
-            for item in created_items:
-                item.delete(permanent=True)
+            cleanup_published_items(clone_list)
+            if layer_item:
+                cleanup_published_items([layer_item])
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.items_to_delete)
 
 
 @integration_test
 @from_to_profiles.all_except_k8s
 class TestCloneEditorTracking(unittest.TestCase):
 
-    # @unittest.skip("Skipping test")
-    def test_standard_editor(self):
-        created_items = []
-        try:
-            source = self.from_gis
-            target = self.to_gis
-            folder = source.content.folders.get()
-            test_file = os.path.join(QA_LABS_FOLDER, "editor_tracking_test.zip")
-            rand_name = "editor_tracking_test_" + "".join(
-                random.choices(string.ascii_letters, k=5)
-            )
-            props = {
-                "title": rand_name,
-                "type": "File Geodatabase",
-                "url": target.url,
-            }
-            job = folder.add(
-                **{
-                    "item_properties": props,
-                    "file": test_file,
-                }
-            )
-            service_item = job.result()
-            assert service_item
-            created_items.append(service_item)
-            pub_params = {
-                "editorTrackingInfo": {"preserveEditUsersAndTimestamps": True},
-                "name": rand_name,
-            }
+    @classmethod
+    def setUpClass(cls):
+        cls.items_to_delete = []
 
-            layer_item = service_item.publish(publish_parameters=pub_params)
-            assert layer_item
+    def test_standard_editor(self):
+        uid = uuid.uuid4().hex
+        created_items = []
+        source = self.from_gis
+        target = self.to_gis
+        layer_item = None
+        clone_list = None
+        try:
+            staging_data_path = "staging_data/cloning"
+            test_file = get_resource_path(
+                f"{staging_data_path}/editor_tracking_test.zip",
+                unique_copy=True,
+            )
+
+            layer_item = publish_test_item(
+                source,
+                layer_name=f"normal_service_{uid}",
+                source_data_path=test_file,
+                item_type=ItemTypeEnum.FILE_GEODATABASE,
+                target_url=target.url,
+            )
+            self.assertIsNotNone(layer_item, "Failed to publish layer item")
+            self.items_to_delete.append(layer_item)
             created_items.append(layer_item)
             edit_field = layer_item.layers[0].properties["editFieldsInfo"][
                 "creatorField"
@@ -242,41 +242,34 @@ class TestCloneEditorTracking(unittest.TestCase):
             )
 
         finally:
-            for item in created_items:
-                item.delete(permanent=True)
+            if clone_list:
+                cleanup_published_items(clone_list)
+            if layer_item:
+                cleanup_published_items([layer_item])
 
-    # @unittest.skip("Skipping test")
     def test_export_editor(self):
+        uid = uuid.uuid4().hex
         created_items = []
+        source = self.from_gis
+        target = self.to_gis
+        layer_item = None
+        clone_export_list = None
         try:
-            source = self.from_gis
-            target = self.to_gis
-            folder = source.content.folders.get()
-            test_file = os.path.join(QA_LABS_FOLDER, "editor_tracking_test.zip")
-            rand_name = "editor_tracking_test_" + "".join(
-                random.choices(string.ascii_letters, k=5)
+            staging_data_path = "staging_data/cloning"
+            test_file = get_resource_path(
+                f"{staging_data_path}/editor_tracking_test.zip",
+                unique_copy=True,
             )
-            props = {
-                "title": rand_name,
-                "type": "File Geodatabase",
-                "url": target.url,
-            }
-            job = folder.add(
-                **{
-                    "item_properties": props,
-                    "file": test_file,
-                }
-            )
-            service_item = job.result()
-            assert service_item
-            created_items.append(service_item)
 
-            pub_params = {
-                "editorTrackingInfo": {"preserveEditUsersAndTimestamps": True},
-                "name": rand_name,
-            }
-            layer_item = service_item.publish(publish_parameters=pub_params)
-            assert layer_item
+            layer_item = publish_test_item(
+                source,
+                layer_name=f"normal_service_{uid}",
+                source_data_path=test_file,
+                item_type=ItemTypeEnum.FILE_GEODATABASE,
+                target_url=target.url,
+            )
+            self.assertIsNotNone(layer_item, "Failed to publish layer item")
+            self.items_to_delete.append(layer_item)
             created_items.append(layer_item)
             edit_field = layer_item.layers[0].properties["editFieldsInfo"][
                 "creatorField"
@@ -312,8 +305,10 @@ class TestCloneEditorTracking(unittest.TestCase):
                 )
 
         finally:
-            for item in created_items:
-                item.delete(permanent=True)
+            if clone_export_list:
+                cleanup_published_items(clone_export_list)
+            if layer_item:
+                cleanup_published_items([layer_item])
 
 
 if __name__ == "__main__":

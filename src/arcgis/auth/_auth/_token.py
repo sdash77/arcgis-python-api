@@ -940,19 +940,24 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             or r.text.find("Token is valid but access is denied.") > -1
             or (parsed.scheme, parsed.netloc, parsed.path) in self._no_go_token
         ):
-            # parsed = parse.urlparse(r.url)
-            self._no_go_token.add((parsed.scheme, parsed.netloc, parsed.path))
-            # Recreate the request without the token
-            #
-            r.content
-            r.raw.release_conn()
-            r.request.headers["referer"] = self._referer  # or "http"
-            r.request.headers.pop("X-Esri-Authorization", None)
-            _r = r.connection.send(r.request, **kwargs)
-            _r.headers["referer"] = self._referer  # or "http"
-            _r.headers.pop("X-Esri-Authorization", None)
-            _r.history.append(r)
-            return _r
+            try:
+                data = json.loads(r.text)
+            except:
+                data = None
+            if (data and "error" in data) or data is None:
+                self._no_go_token.add((parsed.scheme, parsed.netloc, parsed.path))
+                # Recreate the request without the token
+                #
+                r.content
+                r.raw.release_conn()
+                r.request.headers["referer"] = self._referer  # or "http"
+                r.request.headers.pop("X-Esri-Authorization", None)
+                _r = r.connection.send(r.request, **kwargs)
+                _r.headers["referer"] = self._referer  # or "http"
+                _r.headers.pop("X-Esri-Authorization", None)
+                _r.history.append(r)
+                return _r
+
         elif r.status_code >= 400 and r.status_code < 500:
             self._no_go_token.add((parsed.scheme, parsed.netloc, parsed.path))
             # Recreate the request without the token
