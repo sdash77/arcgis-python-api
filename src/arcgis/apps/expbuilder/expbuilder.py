@@ -912,8 +912,8 @@ class WebExperience(object):
             folder=folder,
         )
         self._local = False
-        if "resources" in os.listdir(self._source_path):
-            images_path = os.path.join(self._source_path, "resources", "images")
+        images_path = os.path.join(self._source_path, "resources", "images")
+        if os.path.exists(images_path):
             image_list = os.path.join(images_path, "image-resources-list.json")
             icon_list = os.path.join(images_path, "icon-resources-list.json")
             if os.path.exists(image_list):
