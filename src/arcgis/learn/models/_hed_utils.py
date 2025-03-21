@@ -35,8 +35,7 @@ from fastai.vision import flatten_model
 from ._timm_utils import get_backbone
 from fastai.basic_train import LearnerCallback
 from torch.nn.parallel import DistributedDataParallel
-from ._transformer_backbone import swin_config
-from ._dofa_utils import dofa_config
+from ._transformer_backbone import swin_config, vit_config
 
 
 def modify_layers(backbone, backbone_fn):
@@ -114,10 +113,10 @@ def get_hooks(backbone, chip_size):
 class _HEDModel(nn.Module):
     def __init__(self, backbone_fn, data, pretrained=True):
         super().__init__()
-        self._dofa = False
         chip_size = data.chip_size
         in_channels = len(getattr(data, "_extract_bands", [0, 1, 2]))
-        if backbone_fn.__name__ in swin_config.keys():
+        transformer_backbone_list = list(swin_config.keys()) + list(vit_config.keys())
+        if backbone_fn.__name__ in transformer_backbone_list:
             self.backbone = backbone_fn(pretrained=pretrained)
             backbone_out = self.backbone(
                 torch.randn(

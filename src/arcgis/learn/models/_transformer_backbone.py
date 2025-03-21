@@ -98,7 +98,6 @@ swin_config = dict(
     swin_small="swin_small_patch4_window7_224",
     swin_base="swin_base_patch4_window12_384_in22k",
     swin_large="swin_large_patch4_window12_384_in22k",
-    **vit_config
 )
 
 transformer_backbone_downstream = list(swin_config.keys()) + list(vit_config.keys())
