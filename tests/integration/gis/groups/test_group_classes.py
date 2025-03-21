@@ -80,7 +80,7 @@ class TestGroupApplication(unittest.TestCase):
         # new user send application
         self.user = self.gis.users.create(
             username=f"application_user_{uuid.uuid4().hex[:4]}",
-            password="esri.AGP1!!",
+            password="esri.AGP1!",
             firstname="firstname",
             lastname="last_name",
             email="pythonapi@esri.com",
@@ -89,11 +89,16 @@ class TestGroupApplication(unittest.TestCase):
         )
         self.user.update_role(role="org_admin")
 
-        self.user.update(security_question=1, security_answer="Redlands")
+        self.user.reset(
+            new_security_question=1,
+            new_security_answer="Redlands",
+            password="esri.AGP1!",
+            new_password="esri.AGP2!"
+        )
         self.user_gis = GIS(
             url=self.gis.url,
             username=self.user.username,
-            password="esri.AGP1!!",
+            password="esri.AGP2!",
             verify_cert=False,
             trust_env=True,
         )
