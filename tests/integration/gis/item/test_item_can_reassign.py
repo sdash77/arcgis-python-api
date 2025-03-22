@@ -50,11 +50,11 @@ class TestCanReassignItems(unittest.TestCase):
                 self.assertEqual(
                     username_res[0],
                     True,
-                    f"Reassignment of {item.type} item to {user.username} failed.",
+                    f"Can reassign failed on {item.title} {item.type} item to {user.username} failed.",
                 )
                 self.assertTrue(
                     username_res[1].get("success"),
-                    f"Reassignment of {item.type} item to {user.username} failed.",
+                    f"Can reassign failed on {item.title} {item.type} item to {user.username} failed.",
                 )
                 self.assertIn(
                     "itemId",
@@ -67,11 +67,11 @@ class TestCanReassignItems(unittest.TestCase):
                 user_res = item.can_reassign(target_user=user)
                 self.assertIsInstance(user_res, tuple, "Result must be a tuple.")
                 self.assertEqual(
-                    user_res[0], True, f"Reassignment to {user.username} failed."
+                    user_res[0], True, f"Can reassign to {user.username} failed."
                 )
                 self.assertTrue(
                     user_res[1].get("success"),
-                    f"Reassignment to {user.username} failed.",
+                    f"Can reassign to {user.username} failed.",
                 )
                 self.assertIn(
                     "itemId",
