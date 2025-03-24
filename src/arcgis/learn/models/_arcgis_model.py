@@ -593,7 +593,7 @@ def get_wavelengths_from_bandnames(band_names):
     return wavelengths
 
 
-def get_wavelenths_bandnames(data, **kwargs):
+def get_wavelenths_bandnames(data, in_channels, **kwargs):
     wavelengths = kwargs.get("wavelengths", None)
     band_names = None
     if wavelengths is None:
@@ -606,10 +606,10 @@ def get_wavelenths_bandnames(data, **kwargs):
                 '\nThis backbone require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
             )
         wavelengths = get_wavelengths_from_bandnames(band_names)
-        assert len(wavelengths) == len(data._extract_bands)
+        assert len(wavelengths) == in_channels
         band_names = band_names
     else:
-        if len(wavelengths) != len(data._extract_bands):
+        if len(wavelengths) != in_channels:
             raise Exception(
                 'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
             )
@@ -646,7 +646,9 @@ def get_backbone_func(backbone, data, **kwargs):
             wavelengths = None
             band_names = None
             if backbone in wavelengths_required_models:
-                wavelengths, band_names = get_wavelenths_bandnames(data, **kwargs)
+                wavelengths, band_names = get_wavelenths_bandnames(
+                    data, in_channels, **kwargs
+                )
 
             backbone = partial(
                 custom_backbone,
@@ -661,6 +663,7 @@ def get_backbone_func(backbone, data, **kwargs):
                 num_classes=kwargs.get("num_classes", data.c),
             )
             backbone.__name__ = backbone_name
+            backbone._wavelengths = wavelengths
     else:
         backbone = backbone
     return backbone
@@ -738,6 +741,8 @@ class ArcGISModel(object):
         self._pretrained_path = kwargs.get("pretrained_path", None)
         if hasattr(self._data, "arcgis_init_kwargs"):
             self._check_data_support_with_pretrained_path()
+        if getattr(self._backbone, "_wavelengths", False):
+            kwargs["wavelengths"] = self._backbone._wavelengths
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
             if not getattr(data, "_is_empty", False) and hasattr(
@@ -1384,6 +1389,11 @@ class ArcGISModel(object):
         else:
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
+
+        if self._model_kwargs.get("wavelengths", False):
+            _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[
+                "wavelengths"
+            ]
 
         if compute_metrics:
             if self._model_metrics_cache == None:
