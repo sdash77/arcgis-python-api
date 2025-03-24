@@ -465,7 +465,6 @@ def _change_tail(model, data, tail_weights_type=None, **kwargs):
             or getattr(model.backbone, "_is_vitdet", False)
         )
     ) or getattr(model, "_is_vitdet", False):
-        print("in=====================================")
         return model
 
     tail_name, tail = _get_tail(model)
