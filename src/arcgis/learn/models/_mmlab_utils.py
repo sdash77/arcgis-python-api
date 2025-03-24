@@ -83,7 +83,7 @@ def load_mmlab_checkpoint(model, checkpoint):
     )
     CheckpointLoader._schemes["http://"] = CheckpointLoader._schemes["https://"]
     CheckpointLoader._schemes["https://"].__name__ = "load_from_http"
-    load_checkpoint(model, checkpoint, "cpu", False)  # , logging.getLogger())
+    load_checkpoint(model, checkpoint, "cpu", False, logging.getLogger())
 
     logging.disable(0)
 

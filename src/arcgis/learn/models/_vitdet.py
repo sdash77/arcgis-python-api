@@ -540,7 +540,7 @@ class ViT(nn.Module):
                 posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
                 state_dict[k] = posemb
 
-        load_state_dict(self, state_dict, False)  # , logging.getLogger())
+        load_state_dict(self, state_dict, False, logging.getLogger())
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -739,6 +739,7 @@ class BackboneFastai(nn.Module):
             self.backbone_fpn = ViTUpsample(backbone=backbone)
         if hasattr(backbone, "_is_vitdet"):
             self.backbone_fpn._is_vitdet = backbone._is_vitdet
+            self._is_vitdet = backbone._is_vitdet
 
         # create dummy layer to set cut=1 in create_body of fastai
         self.dummy = nn.MaxPool2d(kernel_size=2)

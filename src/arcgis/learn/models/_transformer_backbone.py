@@ -11,7 +11,7 @@ from torchvision.ops.feature_pyramid_network import (
 )
 
 wavelengths_required_cfg = dict(
-    dofa_base1=dict(
+    dofa_base=dict(
         backbone_name="dofa_base1",
         patch_size=16,
         embed_dim=768,
@@ -20,7 +20,7 @@ wavelengths_required_cfg = dict(
         drop_path_rate=0.0,
         pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_base_patch16_224-a0275954.pth",
     ),
-    dofa_large1=dict(
+    dofa_large=dict(
         backbone_name="dofa_large",
         patch_size=16,
         embed_dim=1024,
@@ -166,7 +166,6 @@ def custom_backbone(
                 classifier._is_vitdet = True
                 return classifier
             backbone_fpn = BackboneFastai(backbone=backbone, is_fpn=is_fpn)
-            backbone_fpn._is_vitdet = True
             backbone_fpn.__name__ = backbone_name
 
         elif backbone_name in swin_config.keys():
