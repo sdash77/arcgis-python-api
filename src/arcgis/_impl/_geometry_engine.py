@@ -66,23 +66,7 @@ class GeometryEngineManager:
             GeometryEngine.FIONA,
         ]:
             if self.available_engines[engine]:
-                return self._validate_shapefile_engine(
-                    engine
-                )  # Validate SHAPEFILE engine
-
-    def _validate_shapefile_engine(self, engine):
-        """
-        If SHAPEFILE (pyshp) is selected, ensure we also have a geometry engine (shapely or arcpy).
-        """
-        if engine == GeometryEngine.SHAPEFILE and not (
-            self.available_engines[GeometryEngine.SHAPELY]
-            or self.available_engines[GeometryEngine.ARCPY]
-        ):
-            raise RuntimeError(
-                "pyshp (shapefile) is available, but no geometry engine (shapely or arcpy) is installed. "
-                "Please install shapely or use an environment with arcpy."
-            )
-        return engine
+                return engine  # Return the first available engine from the default priority order
 
 
 # Create a global instance so all modules can import it
