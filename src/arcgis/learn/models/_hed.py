@@ -201,6 +201,7 @@ class HEDEdgeDetector(ModelExtension):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         transformer_backbone = list(swin_config.keys()) + list(vit_config.keys())
         return transformer_backbone
 
