@@ -1,5 +1,5 @@
 from __future__ import annotations
-import html
+import warnings
 import tempfile
 from time import sleep
 from typing import Optional, Union
@@ -696,6 +696,12 @@ def populate_resource_dict(story, resource, complete_resource_dict, resource_fil
                     name = "draft_" + resource_dict["data"]["itemId"]
                     # get the json file draft
                     resource_file = story._item.resources.get(name)
+                    if resource_file and "error" in resource_file:
+                        # if resource returns 403, skip and add warning
+                        warnings.warn(
+                            f"{name}: Resource is not accessible, the content placeholder will be copied but resource will have to be added manually."
+                        )
+                        return complete_resource_dict, resource_files
                     resource_files[name] = resource_file
     return complete_resource_dict, resource_files
 
