@@ -510,7 +510,7 @@ class TextClassifier(ArcGISModel):
             )
         self.learn.freeze()
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -533,7 +533,7 @@ class TextClassifier(ArcGISModel):
                 f"only supports inference."
             )
         if self._backbone != "llm":
-            return super().lr_find(allow_plot=allow_plot)
+            return super().lr_find(allow_plot=allow_plot, **kwargs)
         else:
             raise Exception(
                 f"This method is not supported when the backbone is configured as {self._submodel}."

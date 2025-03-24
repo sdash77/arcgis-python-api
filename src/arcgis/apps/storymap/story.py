@@ -1074,12 +1074,13 @@ class StoryMap(object):
         target_story        Required StoryMap instance. The target story that the content will be
                             copied to.
         ---------------     --------------------------------------------------------------------
-        node_list           Required list of strings. The list of node ids indicating the content
-                            that will be copied to the target story.
+        node_list           Required list of content. The list of content
+                            that will be copied to the target story.You can get the list of contents
+                            for the story using the `content_list` property.
         ===============     ====================================================================
 
         :return:
-            True if all nodes have been successfully copied over.
+            True if all content have been successfully copied over.
 
         """
         return utils.copy_content(self, target_story, node_list)

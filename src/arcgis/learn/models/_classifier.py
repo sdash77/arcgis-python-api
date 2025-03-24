@@ -385,6 +385,7 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         from ._timm_utils import shortened_transformer_backbone
 
         transformer_model = shortened_transformer_backbone()
@@ -435,6 +436,7 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
