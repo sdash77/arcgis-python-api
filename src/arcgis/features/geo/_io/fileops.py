@@ -729,7 +729,7 @@ def from_featureclass(filename, **kwargs):
     if USE_ARCPY:
         return _arcpy_workflow(filename, **kwargs)
     if USE_GDAL:
-        return _gdal_workflow(filename)
+        return _gdal_workflow(filename, **kwargs)
     if USE_PYSHP and filename.lower().endswith(".shp"):
         return _shapefile_workflow(filename)
     if USE_FIONA and (
@@ -756,8 +756,8 @@ def _http_workflow(filename):
     return df
 
 
-def _gdal_workflow(filename):
-    df = _gdal_to_sedf(file_path=filename)
+def _gdal_workflow(filename, **kwargs):
+    df = _gdal_to_sedf(file_path=filename, **kwargs)
     df.spatial._meta.source = filename
     return df
 
@@ -1498,7 +1498,7 @@ def _zip_dir(path, dir_name):
 
 
 # --------------------------------------------------------------------------
-def _gdal_to_sedf(file_path):
+def _gdal_to_sedf(file_path, **kwargs):
     def parse_datetime(value):
         """Attempt to parse a datetime string into a Python datetime object."""
         try:
@@ -1584,7 +1584,22 @@ def _gdal_to_sedf(file_path):
         for field in out_layer.schema
         if field.type in [ogr.OFTDate, ogr.OFTDateTime]
     ]
-    spatial_ref = out_layer.GetSpatialRef()
+    if kwargs.get("sr"):
+        sr = kwargs.get("sr")
+        spatial_ref = osr.SpatialReference()
+
+        if isinstance(sr, int):
+            # If sr is an integer EPSG code (e.g., 3857), create SpatialReference from EPSG code
+            spatial_ref.ImportFromEPSG(sr)
+        elif isinstance(sr, str) and sr.startswith("EPSG:"):
+            # If sr is a string and starts with "EPSG:", extract EPSG code and create SpatialReference
+            epsg_code = int(sr.split(":")[1])
+            spatial_ref.ImportFromEPSG(epsg_code)
+        elif isinstance(sr, str):
+            # If sr is a WKT string, use ImportFromWkt
+            spatial_ref.ImportFromWkt(sr)
+    else:
+        spatial_ref = out_layer.GetSpatialRef()
     sr_code = int(spatial_ref.GetAuthorityCode(None)) if spatial_ref else 4326
 
     # Precompute field indices to avoid repeated calls to GetFieldIndex

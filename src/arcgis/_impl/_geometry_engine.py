@@ -30,8 +30,8 @@ class GeometryEngineManager:
         """
         self.available_engines = {
             GeometryEngine.ARCPY: self._is_installed("arcpy"),
-            GeometryEngine.SHAPELY: self._is_installed("shapely"),
             GeometryEngine.SHAPEFILE: self._is_installed("shapefile"),
+            GeometryEngine.SHAPELY: self._is_installed("shapely"),
             GeometryEngine.GDAL: self._is_installed("osgeo"),
             GeometryEngine.FIONA: self._is_installed("fiona"),
         }
@@ -56,17 +56,33 @@ class GeometryEngineManager:
             if self.available_engines.get(selected_engine, False):
                 return selected_engine  # Use user-specified engine if available
 
-        # Default priority order: arcpy > gdal > shapely > fiona
+        # Default priority order: arcpy > gdal > shapefile > fiona
         # Iterate through the default engines and select the first available one
         for engine in [
             GeometryEngine.ARCPY,
             GeometryEngine.GDAL,
-            GeometryEngine.SHAPELY,
             GeometryEngine.SHAPEFILE,
+            GeometryEngine.SHAPELY,
             GeometryEngine.FIONA,
         ]:
             if self.available_engines[engine]:
-                return engine  # Return the first available engine from the default priority order
+                return self._validate_shapefile_engine(
+                    engine
+                )  # Validate SHAPEFILE engine
+
+    def _validate_shapefile_engine(self, engine):
+        """
+        If SHAPEFILE (pyshp) is selected, ensure we also have a geometry engine (shapely or arcpy).
+        """
+        if engine == GeometryEngine.SHAPEFILE and not (
+            self.available_engines[GeometryEngine.SHAPELY]
+            or self.available_engines[GeometryEngine.ARCPY]
+        ):
+            raise RuntimeError(
+                "pyshp (shapefile) is available, but no geometry engine (shapely or arcpy) is installed. "
+                "Please install shapely or use an environment with arcpy."
+            )
+        return engine
 
 
 # Create a global instance so all modules can import it
