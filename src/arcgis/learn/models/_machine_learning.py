@@ -8,6 +8,7 @@ import math
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
+from packaging import version
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
@@ -929,6 +930,13 @@ class MLModel(object):
         else:
             warnings.warn(
                 f"Sklearn/xgboost/lightgbm/catboost version has changed. Model Trained using version {emd['version']}"
+            )
+
+        if version.parse(emd["version"]) < version.parse(
+            str(sklearn.__version__)
+        ) and version.parse(str(sklearn.__version__)) >= version.parse("1.4.0"):
+            raise Exception(
+                f"Sklearn Version Mismatch Detected.Model Trained using version {emd['version']}"
             )
 
         _is_classification = True
