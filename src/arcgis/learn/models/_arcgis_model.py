@@ -919,7 +919,7 @@ class ArcGISModel(object):
                         self.learn.lr_find(
                             start_lr=start_lr,
                             end_lr=end_lr,
-                            # mixed_precision=mixed_precision,
+                            mixed_precision=mixed_precision,
                         )
             except Exception as e:
                 # if some error comes in lr_find
@@ -1243,7 +1243,7 @@ class ArcGISModel(object):
                     epochs,
                     lr,
                     callbacks=callbacks,
-                    # mixed_precision=mixed_precision,
+                    mixed_precision=mixed_precision,
                     **kwargs,
                 )
             else:
@@ -1251,7 +1251,7 @@ class ArcGISModel(object):
                     epochs,
                     lr,
                     callbacks=callbacks,
-                    # mixed_precision=mixed_precision,
+                    mixed_precision=mixed_precision,
                     **kwargs,
                 )
 
