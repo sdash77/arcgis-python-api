@@ -2019,7 +2019,9 @@ class FeatureClassifier(ArcGISModel):
                             "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
                         )
                 except:
-                    Print("The backbone does not support the Grad-CAM feature.")
+                    raise Exception(
+                        f"The backbone does not support the Grad-CAM feature."
+                    )
             else:
                 if kwargs.get("multi_all_cam"):
                     # if not predicted the image will be displayed
