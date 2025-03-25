@@ -833,6 +833,7 @@ def CommonTestTextModels(model_name, model, data, labels):
 
 
 def update_parameter():
+    parameter = []
     check_ms = False
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"]:
@@ -858,6 +859,7 @@ def update_parameter():
 
 def update_parameter_ms():
     check_ms = True
+    parameter = []
     for key, val in data.items():
         if (
             val["should_test"]
@@ -885,6 +887,7 @@ def update_parameter_ms():
 
 
 def update_parameter_fl():
+    parameter_fl = []
     for key, val in data.items():
         if (
             val["should_test"]
@@ -910,6 +913,7 @@ def update_parameter_fl():
 
 
 def update_parameter_df():
+    parameter_df = []
     for key, val in data.items():
         if val["should_test"] and val["model_name"] in ["automl", "mlmodel"]:
             parameter_df.append(
@@ -933,6 +937,7 @@ def update_parameter_df():
 
 
 def text_models():
+    parameter_text = []
     for key, val in data_inference_only.items():
         parameter_text.append(
             [key, val["model_name"], val["model"], val["data"], val["labels"]]
@@ -1114,11 +1119,12 @@ class TestTraining(unittest.TestCase):
             ms_flag,
             data_folder_path,
             num_epochs,
+            self
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_ms, skip_on_empty=True)
-    def test(
+    def test_ms(
         self,
         name,
         model_test,
@@ -1151,6 +1157,7 @@ class TestTraining(unittest.TestCase):
             self,
         )
         else:
+            print("ignoring nightly training for ms data")
             pass
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
