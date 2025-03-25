@@ -1,4 +1,9 @@
+import json
 import unittest
+import urllib.request
+
+import requests
+
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 from utils.decorators import integration_test, profiles
@@ -266,11 +271,54 @@ class TestUtilityNetworkManager(unittest.TestCase):
             ],
             trace_type="subnetwork",
             configuration=trace_configs,
+            result_types=[
+                {
+                    "type": "features",
+                    "includeGeometry": False,
+                    "includePropagatedValues": False,
+                    "networkAttributeNames": [],
+                    "diagramTemplateName": "",
+                    "resultTypeFields": [],
+                }
+            ],
         )
         assert trace
         assert trace["success"] is True
+        trace_features = trace.get("traceResults").get("featureElements")
+        trace_features_count = len(trace_features)
+        self.assertTrue(
+            trace_features_count > 6000,
+            f"Incorrect count of trace features returned: {trace_features_count}",
+        )
 
     def test_export_subnetwork(self):
+        export = self.utility_network_manager.export_subnetwork(
+            domain_name="electric",
+            tier_name="Electric Distribution",
+            subnetwork_name="RMT001",
+            result_types=[
+                {
+                    "type": "associations",
+                    "includeGeometry": False,
+                    "includePropagatedValues": False,
+                    "networkAttributeNames": [],
+                    "diagramTemplateName": "",
+                    "resultTypeFields": [],
+                }
+            ],
+        )
+        assert export
+        assert export["success"] is True
+        result_type_query = urllib.request.urlopen(export.get("url"))
+        result_type_result = json.loads(result_type_query.read())
+        self.assertEqual(
+            1708,
+            len(result_type_result.get("associations")),
+            "Incorrect quantity of result associations",
+        )
+
+    @unittest.skip("This test no longer throws an exception")
+    def test_export_dirty_subnetwork_fails(self):
         """Test export of subnetwork"""
         with self.assertRaises(Exception) as ex:
             export = self.utility_network_manager.export_subnetwork(
