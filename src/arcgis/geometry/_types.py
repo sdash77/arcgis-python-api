@@ -52,22 +52,22 @@ def _is_valid(value):
             if len(value["paths"]) == 0:
                 return True
             return _is_line(coords=value["paths"])
-        elif "curvePath" in value:
-            if len(value["curvePath"]) == 0:
-                return True
-            return _is_curve_line(coords=value["curvePath"])
         elif "rings" in value:
             if len(value["rings"]) == 0:
                 return True
             return _is_polygon(coords=value["rings"])
-        elif "curveRings":
-            if len(value["curveRings"]) == 0:
-                return True
-            return _is_curve_polygon(coords=value["curveRings"])
         elif "points" in value:
             if len(value["points"]) == 0:
                 return True
             return _is_point(coords=value["points"])
+        elif "curvePath" in value:
+            if len(value["curvePath"]) == 0:
+                return True
+            return _is_curve_line(coords=value["curvePath"])
+        elif "curveRings":
+            if len(value["curveRings"]) == 0:
+                return True
+            return _is_curve_polygon(coords=value["curveRings"])
 
     return False
 
