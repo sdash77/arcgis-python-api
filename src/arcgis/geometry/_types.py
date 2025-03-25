@@ -52,16 +52,71 @@ def _is_valid(value):
             if len(value["paths"]) == 0:
                 return True
             return _is_line(coords=value["paths"])
+        elif "curvePath" in value:
+            if len(value["curvePath"]) == 0:
+                return True
+            return _is_curve_line(coords=value["curvePath"])
         elif "rings" in value:
             if len(value["rings"]) == 0:
                 return True
             return _is_polygon(coords=value["rings"])
+        elif "curveRings":
+            if len(value["curveRings"]) == 0:
+                return True
+            return _is_curve_polygon(coords=value["curveRings"])
         elif "points" in value:
             if len(value["points"]) == 0:
                 return True
             return _is_point(coords=value["points"])
 
     return False
+
+
+def _is_curve_polygon(coords):
+    """
+    Checks if the input coordinates define a valid curved polygon.
+    A curved polygon should:
+    - Be a list of rings (closed paths).
+    - Have at least one valid curved ring.
+    - Ensure each ring has a valid structure.
+    """
+    if not isinstance(coords, list) or len(coords) == 0:
+        return False
+
+    # MultiPolygon case: list of list of rings
+    if isinstance(coords[0], list) and isinstance(coords[0][0], list):
+        return all(_is_curve_polygon(poly) for poly in coords)
+
+    # Single Polygon case
+    for ring in coords:
+        if len(ring) < 4:
+            return False
+        if not _is_curve_line(ring):  # Validate as a curved line
+            return False
+        if ring[0] != ring[-1]:  # Ensure the ring is closed
+            return False
+
+    return True
+
+
+def _is_curve_line(coords):
+    """
+    Checks if the input coordinates define a valid curved line.
+    A curved line should:
+    - Contain at least 2 points.
+    - Include Bezier or Circular Arc definitions.
+    """
+    if not isinstance(coords, list) or len(coords) < 2:
+        return False
+
+    has_curve = False
+    for point in coords:
+        if isinstance(point, dict) and "curve" in point:  # Check for curve definition
+            has_curve = True
+        elif not _is_point(point):  # Ensure all points are valid
+            return False
+
+    return has_curve  # Ensure at least one curve segment exists
 
 
 def _is_polygon(coords):
