@@ -128,13 +128,8 @@ class ServerProfileManager(object):
 
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
-
-            if self._keyring_version() >= [23]:
-                password = keyring.get_credential(self._profile_name, profile)
-
-                password = getattr(password, "password", None)
-            else:
-                password = keyring.get_password(self._profile_name, profile)
+            credential = keyring.get_credential(self._profile_name, profile)
+            password = getattr(credential, "password", None)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -179,7 +174,7 @@ class ServerProfileManager(object):
         import keyring
 
         supported_keyrings = [
-            keyring.backends.OS_X.Keyring,
+            keyring.backends.macOS.Keyring,
             keyring.backends.SecretService.Keyring,
             keyring.backends.Windows.WinVaultKeyring,
             keyring.backends.kwallet.DBusKeyring,
@@ -224,9 +219,9 @@ class ServerProfileManager(object):
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict[
-                    "profile"
-                ] = p  # add a new column to DF that lists the profile name
+                p_dict["profile"] = (
+                    p  # add a new column to DF that lists the profile name
+                )
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)
@@ -662,16 +657,11 @@ class ProfileManager(object):
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
 
-            if self._keyring_version() >= [23]:
-                password = keyring.get_credential(
-                    "arcgis_python_api_profile_passwords", profile
-                )
+            credential = keyring.get_credential(
+                "arcgis_python_api_profile_passwords", profile
+            )
 
-                password = getattr(password, "password", None)
-            else:
-                password = keyring.get_password(
-                    "arcgis_python_api_profile_passwords", profile
-                )
+            password = getattr(credential, "password", None)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -717,24 +707,7 @@ class ProfileManager(object):
         """
         import keyring
 
-        if self._keyring_version() >= [23, 0, 0]:
-            supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
-        else:
-            try:
-                import keyring.backends.OS_X
-                import keyring.backends.kwallet
-                import keyring.backends.chainer
-                import keyring.backends.Windows
-                import keyring.backends.SecretService
-            except Exception as keyringex:
-                print(f"Error importing keyring {str(keyringex)}")
-            supported_keyrings = [
-                keyring.backends.OS_X.Keyring,
-                keyring.backends.SecretService.Keyring,
-                keyring.backends.Windows.WinVaultKeyring,
-                keyring.backends.kwallet.DBusKeyring,
-                keyring.backends.chainer.ChainerBackend,
-            ]
+        supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
         current_keyring = type(keyring.get_keyring())
         return current_keyring in supported_keyrings
 
@@ -774,9 +747,9 @@ class ProfileManager(object):
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict[
-                    "profile"
-                ] = p  # add a new column to DF that lists the profile name
+                p_dict["profile"] = (
+                    p  # add a new column to DF that lists the profile name
+                )
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)
@@ -1061,31 +1034,36 @@ class ProfileManager(object):
             )
 
     # ----------------------------------------------------------------------
-    def _retrieve(self, profile):
-        """gets the login information"""
-        url, username, password, key_file, cert_file, client_id = (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+    def _retrieve_dict(self, profile):
+        """gets the login information as a dictionary"""
+        result = {}
         if profile.lower() in [p.lower() for p in self.list()]:
             cfg_file_path = self._cfg_file_path
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
             if config.has_option(profile, "url"):
-                url = config[profile]["url"]
+                result["url"] = config[profile]["url"]
             if config.has_option(profile, "username"):
-                username = config[profile]["username"]
+                result["username"] = config[profile]["username"]
             if config.has_option(profile, "key_file"):
-                key_file = config[profile]["key_file"]
+                result["key_file"] = config[profile]["key_file"]
             if config.has_option(profile, "cert_file"):
-                cert_file = config[profile]["cert_file"]
+                result["cert_file"] = config[profile]["cert_file"]
             if config.has_option(profile, "client_id"):
-                client_id = config[profile]["client_id"]
+                result["client_id"] = config[profile]["client_id"]
 
-            password = self._securely_get_password(profile)
-        return url, username, password, key_file, cert_file, client_id
+            result["password"] = self._securely_get_password(profile)
+        return result
+
+    def _retrieve(self, profile):
+        """gets the login information"""
+        result = self._retrieve_dict(profile)
+        return (
+            result.get("url"),
+            result.get("username"),
+            result.get("password"),
+            result.get("key_file"),
+            result.get("cert_file"),
+            result.get("client_id"),
+        )

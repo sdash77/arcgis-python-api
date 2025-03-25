@@ -90,28 +90,28 @@ class UtilityNetworkManager(object):
         trace_type: str,
         moment: int | None = None,
         configuration: dict | TraceConfiguration | None = None,
-        result_type: str | None = None,
+        result_type: list[dict] | None = None,
         result_types: list[dict] | None = None,
         trace_config_global_id: str | None = None,
         out_sr: int | None = None,
         pbf: bool = False,
     ) -> dict:
         """
-        A trace refers to a pre-configured algorithm that systematically
-        travels a network to return results. Generalized traces allow you to
-        trace across multiple types of domain networks. For example, running
-        a Connected trace from your electric network through to your gas
-        network. An assortment of options is provided with trace to support
-        various analytic work flows. All traces use the network topology to
-        read cached information about network features. This can improve
-        performance of complex traces on large networks. Trace results are
-        not guaranteed to accurately represent a utility network when dirty
-        areas are present. The network topology must be validated to ensure
-        it reflects the most recent edits or updates made to the network.
+        A trace refers to a pre-configured algorithm that systematically travels
+        a network to return results. Generalized traces allow you to trace
+        across multiple types of domain networks. For example, running a
+        Connected trace through your electric network. An assortment of options
+        is provided with trace to support various analytic workflows. All traces
+        use the network topology to read cached information about network
+        features. This is done to improve performance of complex traces on large
+        networks. Trace results are not guaranteed to accurately represent a
+        utility network when dirty areas are present. The network topology must be
+        validated to ensure it reflects the most recent edits or updates made to
+        the network
 
         .. note::
-            The active portal account must be licensed with the ArcGIS Utility
-            Network user type extention to use this operation.
+            The active portal account must be licensed with the *Advanced Editing*
+            user type extension to use this operation.
 
         =======================    ==================================================
         **Parameter**              **Description**
@@ -119,7 +119,7 @@ class UtilityNetworkManager(object):
         locations                  Required list of dictionaries. The locations for
                                    starting points and barriers. An empty array must
                                    be used when performing a subnetwork trace if a
-                                   subnetworkName is provided as part of the
+                                   *subnetworkName* is provided as part of the
                                    `configuration`—for example, `locations=[]`.
 
 
@@ -146,11 +146,19 @@ class UtilityNetworkManager(object):
 
                                    Values:
 
-                                    'connected' | 'subnetwork' | 'subnetworkController' | 'upstream' | 'downstream' | 'loops' | 'shortestPath' | 'isolation'
+                                   * 'connected'
+                                   * 'subnetwork'
+                                   * 'subnetworkController'
+                                   * 'upstream'
+                                   * 'downstream'
+                                   * 'loops'
+                                   * 'shortestPath'
+                                   * 'isolation'
         -----------------------    --------------------------------------------------
-        moment                     Optional Integer. Specifies the session moment. This
-                                   should only be specified if you do not want to use
-                                   the current moment.
+        moment                     Optional Integer. Unix Epock tiem in millisconds.
+                                   Specifies the session moment. This should only be
+                                   specified if you do not want to use the current
+                                   moment.
 
                                    Example: moment = <Epoch time in milliseconds>
         -----------------------    --------------------------------------------------
@@ -162,19 +170,23 @@ class UtilityNetworkManager(object):
                                    To see all configuration properties see:
                                    `Trace Configuration Properties
                                    <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+        -----------------------    --------------------------------------------------------------------
+        result_type                ** Deprecated, use `result_types` instead. **
         -----------------------    --------------------------------------------------
-        result_types               Optional parameter specifying hte types of results
+        result_types               Optional parameter specifying the types of results
                                    to return.
 
                                    .. code-block::
+
                                        [{
-                                           "type" : "elements" | "aggregatedGeometry" | "connectivity",
+                                           "type" : "elements" | "aggregatedGeometry" | "connectivity" | "features" | "associations",
                                            "includeGeometry" : true | false,
                                            "includePropagatedValues": true | false,
                                            "networkAttributeNames" :["attribute1Name","attribute2Name",...],
                                            "diagramTemplateName": <value>,
                                            "resultTypeFields":[{"networkSourceId":<int>,"fieldname":<value>},...]
-                                       },...]
+                                        },...
+                                       ]
         -----------------------    --------------------------------------------------
         trace_config_global_id     Optional String. The global ID of a named trace configuration.
                                    When specified, this configuration is used instead of the
@@ -188,17 +200,19 @@ class UtilityNetworkManager(object):
                                    the PBF format. The default is False.
         =======================    ==================================================
 
+        .. note::
+            When the Elements, Features, Connectivity, or Containment and attachment
+            associations result_types options are specified, the output .json file
+            includes a sourceMapping element. This element allows you to look up the
+            layer name associated with each networkSourceId. To learn more, see
+            `Configure a trace <https://pro.arcgis.com/en/pro-app/latest/help/data/utility-network/configure-a-trace.htm>`_
+
         :return:
             A dictionary with keys and value types of:
 
                 | {
                 |    "traceResults": {
                 |        "elements": list,
-                |        "diagramName": str,
-                |        "globalFunctionResults": list,
-                |        "kFeaturesForKNNFound": bool,
-                |        "startingPointsIgnored" bool,
-                |        "warnings": list
                 |    }
                 |    "success": bool
                 | }
@@ -218,10 +232,13 @@ class UtilityNetworkManager(object):
         }
         if trace_config_global_id:
             params["traceConfigurationGlobalId"] = trace_config_global_id
-        if self._gis.version <= [7, 3]:
-            params["resultType"] = result_type
-        else:
+
+        # Both result_type and result_types will be mapped to resultTypes,
+        # however prioritize result_types if both are provided
+        if result_types:
             params["resultTypes"] = result_types
+        elif result_type:
+            params["resultTypes"] = result_type
         if out_sr:
             params["outSR"] = out_sr
         if pbf is True:
@@ -234,22 +251,27 @@ class UtilityNetworkManager(object):
         """
         Disables the network topology for a utility network. When the
         topology is disabled, feature and association edits do not generate
-        dirty areas. Analytics and diagram generation can't be performed if
+        dirty areas. Analytics and diagram generation can't be performed when
         the topology is not present.
 
-        When the topology is disabled, the following happens:
+        When the network topology is disabled, the following happens:
 
         - All current rows in the topology tables are deleted.
         - No dirty areas are generated from edits.
-        - Remaining error features still exist and can be cleaned up without the overhead of dirty areas.
+        - Existing errors remain and can be addressed prior to enabling the
+          network topology, without the overhead of dirty areas.
 
         To perform certain network configuration tasks, the network
         topology must be disabled.
 
-        - This operation must be executed by the portal utility network owner.
-        - The topology can be disabled in the default version or in a named version.
+        - Operation must be executed by the portal utility network owner.
+        - The topology can be disabled in the default version or in a named
+          version.  If the toplogy is disabled in a named version, the
+          reconcile process can be used to inherit the state from the default
+          branch version.
 
-        :return: Dictionary indicating 'success' or 'error'
+        :return:
+            Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/disableTopology" % self._url
@@ -265,24 +287,24 @@ class UtilityNetworkManager(object):
         """
         Enabling the network topology for a utility network is done on the
         **DEFAULT** version. Enabling is **not** supported in named versions.
-        When the topology is enabled, all feature and association edits
-        generate dirty areas, which are then consumed when the network
-        topology is updated.
+        When the network topology is enabled, all feature and association edits
+        generate dirty areas, which are then cleaned  when the network topology
+        is validated.
 
-        When topology is enabled, the following happens:
-        - Any existing errors are deleted.
-        - The topology is updated for the full extent of the network.
-        - Any newly discovered errors are added to the dirty areas sublayer.
-        - The topology is marked as enabled.
+        When the network topology is enabled, the following happens:
+        - Existing errors are deleted.
+        - The topology is built for the full extent of the network.
+        - Error dirty areas are created for any newly discovered errors.
+        - The network topology is marked as enabled.
 
         .. note::
-            The active portal account must be licensed with the ArcGIS Utility
-            Network user type extension to use this operation.
+            The active portal account must be licensed with the *Advanced Editing*
+            user type extension to use this operation.
 
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        error_count                              Optional Integer. Sets the threshold when the `enable_topology` will
+        error_count                              Optional Integer. Sets the threshold when the *enable_topology* will
                                                  stop if the maximum number of errors is met. The default value is
                                                  10,000.
         ====================================     ====================================================================
@@ -307,27 +329,27 @@ class UtilityNetworkManager(object):
     ) -> dict:
         """
         A subnetwork controller (or simply, a source or a sink) is the
-        origin (or destination) of resource flow for a subpart of the
-        network. Examples of subnetwork controllers are circuit breakers in
-        electric networks, or town border stations in gas networks.
-        Subnetwork controllers correspond to devices that have the
-        Subnetwork Controller network capability set. A source is removed
-        with `disable_subnetwork_controller`.
+        origin (or destination) of resource flow for a subset (or subnetwork)
+        of the network. Examples of subnetwork controllers are circuit breakers
+        in electric networks, town border stations in gas networks, and pump
+        stations in water networks. Subnetwork controllers correspond to devices
+        that have the *Subnetwork Controller* network category set. A source is
+        removed with this method.
 
-        ====================================        ====================================================================
-        **Parameter**                                **Description**
-        ------------------------------------        --------------------------------------------------------------------
-        network_source_id                           Required String. The network source ID that the subnetwork controller
-                                                    participates in.
-        ------------------------------------        --------------------------------------------------------------------
-        global_id                                   Required String. The global ID of the device being disabled as a
-                                                    network controller.
-        ------------------------------------        --------------------------------------------------------------------
-        terminal_id                                 Required String. The terminal ID of the device being disabled as a
-                                                    network controller.
-        ------------------------------------        --------------------------------------------------------------------
-        out_sr                                      Required int. The output spatial reference as a wkid.
-        ====================================        ====================================================================
+        ======================        ============================================================
+        **Parameter**                 **Description**
+        ----------------------        ------------------------------------------------------------
+        network_source_id             Required String. The network source ID that the subnetwork
+                                      controller participates in.
+        ----------------------        ------------------------------------------------------------
+        global_id                     Required String. The global ID of the device being disabled
+                                      as a network controller.
+        ----------------------        ------------------------------------------------------------
+        terminal_id                   Required String. The terminal ID of the device being
+                                      disabled as a network controller.
+        ----------------------        ------------------------------------------------------------
+        out_sr                        Required int. The output spatial reference as a wkid.
+        ======================        ============================================================
 
         """
 
@@ -359,10 +381,10 @@ class UtilityNetworkManager(object):
     ) -> dict:
         """
         A subnetwork controller is the origin (or destination) of resource
-        flow for a subpart of the network (e.g., a circuit breaker in
-        electric networks, or a town border station in gas networks).
-        Controllers correspond to Devices that have the Subnetwork
-        Controller network capability set.
+        flow for a subset (or subnetwork) of the network (e.g., a circuit
+        breaker in electric networks, a town border station in gas networks, or
+        pump stations in water networks). Controllers correspond to Devices that
+        have the *Subnetwork Controller* network category set.
 
         ====================================        ====================================================================
         **Parameter**                                **Description**
@@ -373,8 +395,8 @@ class UtilityNetworkManager(object):
         global_id                                   Required String. The global ID of the device being enabled as a
                                                     network controller.
         ------------------------------------        --------------------------------------------------------------------
-        terminal_id                                 Required String. The terminal ID of the device being enabled as a
-                                                    network controller.
+        terminal_id                                 Required String. The terminal ID for the terminal on the device being
+                                                    enabled as a network controller.
         ------------------------------------        --------------------------------------------------------------------
         subnetwork_controller_name                  Required String. The name of the subnetwork controller.
         ------------------------------------        --------------------------------------------------------------------
@@ -417,7 +439,7 @@ class UtilityNetworkManager(object):
         subnetwork_name: str,
         trace_configuration: dict | TraceConfiguration | None = None,
         export_acknowledgement: bool = False,
-        result_type: str | None = None,
+        result_type: list[dict] | None = None,
         result_types: list[dict] | None = None,
         moment: int | None = None,
         run_async: bool = False,
@@ -425,13 +447,13 @@ class UtilityNetworkManager(object):
         pbf: bool = False,
     ) -> dict:
         """
-        The `export_subnetwork` operation is used to export information
-        about a subnetwork into a JSON file. That information can then be
-        consumed by outside systems such as outage management and asset
-        tracking. The exportSubnetwork operation allows you to delete
-        corresponding rows in the Subnetwork Sources table as long as the
-        IsDeleted attribute is set to True. This indicates a source feeding
-        the subnetwork has been removed.
+        The *export_subnetwork* operation is used to export information about a
+        subnetwork into a JSON file. That information can then be consumed by
+        outside systems such as outage management and asset tracking. The
+        operation allows you to delete corresponding rows in the Subnetworks
+        table as long as the *IsDeleted* attribute is set to *True*. This
+        indicates a subnetwork controller feeding the subnetwork has been
+        removed.
 
         ====================================        ====================================================================
         **Parameter**                                **Description**
@@ -443,11 +465,13 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         subnetwork_name                             Required String. The name of the subnetwork.
         ------------------------------------        --------------------------------------------------------------------
-        trace_configuration                         Optional Dictionary or TraceConfiguration object. Specifies the collection of trace
-                                                    configuration parameters.
+        trace_configuration                         Optional Dictionary or TraceConfiguration object. Specifies the
+                                                    collection of trace configuration parameters.
                                                     See: `Trace <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
         ------------------------------------        --------------------------------------------------------------------
         export_acknowledgement                      Optional Boolean. Specify whether the export is acknowledged.
+        ------------------------------------        --------------------------------------------------------------------
+        result_type                                 ** Deprecated, use `result_types` instead. **
         ------------------------------------        --------------------------------------------------------------------
         result_types                                Optional list of dictionaries. Specifies the type of results to return.
 
@@ -466,12 +490,14 @@ class UtilityNetworkManager(object):
                                                             },...
                                                         ]
         ------------------------------------        --------------------------------------------------------------------
-        moment                                      Optional Integer. Specify the session moment if you do not want to use
-                                                    the current moment.
+        moment                                      Optional Integer. Unix Epoch time in milliseconds. Specify the
+                                                    session moment if you do not want to use the current moment.
         ------------------------------------        --------------------------------------------------------------------
         out_sr                                      Optional Integer. Optional parameter specifying the output spatial reference.
         ------------------------------------        --------------------------------------------------------------------
         pbf                                         Optional Boolean. If true, the response will be in PBF format.
+                                                    The default from the REST is False. In Pro, starting at 3.3, the default is True so make
+                                                    sure to set `pbf` to True if you want to mimic that response.
         ====================================        ====================================================================
 
         :return:
@@ -484,11 +510,28 @@ class UtilityNetworkManager(object):
                 |    "success": bool
                 | }
 
+        .. note::
+            When the Features, Connectivity, or Containment and attachment
+            associations *result_types* options are specified, the output
+            *.json* file includes a *sourceMapping* element which allows you
+            to look up the layer name associated with each *networkSourceId*.
+
         """
 
         url = "%s/exportSubnetwork" % self._url
         if isinstance(trace_configuration, TraceConfiguration):
             trace_configuration = trace_configuration.to_dict()
+
+        # if 'supportFlowDirections' is False, remove `use_digitized_direction` from the trace configuration
+        if (
+            "supportFlowDirections" in self.properties
+            and not self.properties["supportFlowDirections"]
+        ):
+            if "use_digitized_direction" in trace_configuration:
+                del trace_configuration["use_digitized_direction"]
+            elif "useDigitizedDirection" in trace_configuration:
+                del trace_configuration["useDigitizedDirection"]
+
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -501,10 +544,12 @@ class UtilityNetworkManager(object):
             "traceConfiguration": trace_configuration,
             "async": run_async,
         }
-        if self._gis.version <= [7, 3]:
-            params["resultType"] = result_type
-        else:
+        # Both result_type and result_types will be mapped to resultTypes,
+        # however prioritize result_types if both are provided
+        if result_types:
             params["resultTypes"] = result_types
+        elif result_type:
+            params["resultTypes"] = result_type
         if out_sr:
             params["outSR"] = out_sr
         if pbf:
@@ -535,12 +580,16 @@ class UtilityNetworkManager(object):
                                                     Values:
 
                                                             [ "initialEnableTopology" | "fullValidateTopology" | "partialValidateTopology" | "enableTopology" | "disableTopology" | "definitionModification" | "updateIsConnected" | "indexUpdate" | "all"]
-                                                    Example:
 
-                                                        moments_to_return=["enableTopology","initialEnableTopology"]
+                                                    .. code-block:: python
+
+                                                        >>> # Example Usage:
+
+                                                        >>> query_network_moments(moments_to_return=["enableTopology","initialEnableTopology"],
+                                                                                  ...)
         ------------------------------------        --------------------------------------------------------------------
-        moment                                      Optional Integer. Specify the session moment if you do not want to use
-                                                    the current moment.
+        moment                                      Optional Integer. Unix Epoch time in milliseconds. Specify the
+                                                    session moment if you do not want to use the current moment.
         ====================================        ====================================================================
 
         :return:
@@ -555,39 +604,10 @@ class UtilityNetworkManager(object):
             "f": "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
-            "momentsToReturn": moments_to_return
-            if moments_to_return is not None
-            else ["all"],
+            "momentsToReturn": (
+                moments_to_return if moments_to_return is not None else ["all"]
+            ),
             "moment": moment,
-        }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.3.0")
-    def query_overrides(
-        self,
-        attribute_ids: Optional[list[str]] = None,
-        all_attributes: bool = False,
-        all_connectivity: bool = False,
-    ):
-        """
-        Network attributes support the ability to have their values
-        overridden without having to edit features and validate the network
-        topology (build the index). The utility network also supports the
-        ability to place ephemeral connectivity (e.g., jumpers in an
-        electrical network) between two devices or junctions without having
-        to edit features or connectivity associations and validate the
-        network topology (build the index). This operation allows the
-        client to query all the overrides associated with the network
-        attributes (by network attribute id). In addition, all connectivity
-        overrides are returned.
-        """
-        url = "%s/queryOverrides" % self._url
-        params = {
-            "f": "json",
-            "attributeIDs": attribute_ids,
-            "allAttributes": all_attributes,
-            "allConnectivity": all_connectivity,
         }
         return self._con.post(url, params)
 
@@ -641,8 +661,8 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         out_sr                                      Optional Dictionary. Represents the output spatial reference.
         ------------------------------------        --------------------------------------------------------------------
-        moment                                      Optional Integer. Specify the session moment if you do not want to use
-                                                    the current moment.
+        moment                                      Optional Integer. Unix Epoch time in milliseconds. Specify the
+                                                    session moment if you do not want to use the current moment.
         ====================================        ====================================================================
 
         :return:
@@ -671,13 +691,12 @@ class UtilityNetworkManager(object):
     def update_is_connected(self) -> dict:
         """
 
-        Utility network features have an attribute called IsConnected that
-        lets you know if a feature is connected to a source or sink, and
-        therefore it could potentially be part of an existing subnetwork.
-        The `update_is_connected` operation updates this attribute on
-        features in the specified utility network. This operation can only
-        be executed on the default version by the portal utility network
-        owner.
+        Utility network features have an attribute called *IsConnected* that
+        lets you know if a feature is connected to a subnetwork controller, and
+        could potentially be part of an existing subnetwork. This operation
+        updates this attribute on features in the specified utility network.
+        This operation can only be executed on the default version by the portal
+        utility network owner.
         """
         url = "%s/updateIsConnected" % self._url
         params = {"f": "json"}
@@ -694,30 +713,31 @@ class UtilityNetworkManager(object):
         trace_configuration: dict | None = None,
     ) -> dict:
         """
-        A subnetwork is updated by calling the `update_subnetwork` operation.
-        With this operation, one or all of the subnetworks in a single tier
-        can be updated. When a subnetwork is updated, four things can occur;
-        the Subnetwork Name attribute is updated for all features in the
-        subnetwork, the record representing the subnetwork inside the
-        SubnetLine class is refreshed, the Subnetworks table is updated and
-        finally diagrams are generated or updated for the subnetwork.
+        A subnetwork is updated by calling the update_subnetwork operation. With
+        this operation, one or all of the subnetworks in a single tier can be
+        updated. When a subnetwork is updated, four things can occur; the
+        Subnetwork Name attribute is updated for all features in the subnetwork,
+        the record representing the subnetwork inside the SubnetLine feature
+        class is generated or updated, rows for the subnetwork controllers in the
+        Subnetworks table are updated, and diagrams are generated or updated for
+        the subnetwork.
 
         ====================================        ====================================================================
         **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
-        domain_name                                 Required String. The name fo the domain network that the subnetwork
+        domain_name                                 Required String. The name of the domain network that the subnetwork
                                                     is a part of.
         ------------------------------------        --------------------------------------------------------------------
         tier_name                                   Required String. The name of the tier that the subnetwork is a part of.
         ------------------------------------        --------------------------------------------------------------------
         subnetwork_name                             Optional String. Represents the name of the subnetwork to update. If
                                                     this parameter is not specified, the `all_subnetwork_tier` parameter
-                                                    should be set to `True`. Otherwise an error will occur.
+                                                    should be set to `True`, otherwise an error will occur.
         ------------------------------------        --------------------------------------------------------------------
-        all_subnetwork_tier                         Optional Bool. Set to `True` when all the subnetworks in a tier
+        all_subnetwork_tier                         Optional Boolean. Set to `True` when all the subnetworks in a tier
                                                     need to be updated.
         ------------------------------------        --------------------------------------------------------------------
-        continue_on_failure                         Optional Bool. Continue updating subnetworks when `all_subnetwork_tier`
+        continue_on_failure                         Optional Boolean. Continue updating subnetworks when `all_subnetwork_tier`
                                                     is `True` and a failure occurs when processing a subnetwork.
         ------------------------------------        --------------------------------------------------------------------
         trace_configuration                         Optional Dictionary. Represents the collection of trace configuration
@@ -728,6 +748,17 @@ class UtilityNetworkManager(object):
 
         """
         url = "%s/updateSubnetwork" % self._url
+
+        # if 'supportFlowDirections' is False, remove `use_digitized_direction` from the trace configuration
+        if (
+            "supportFlowDirections" in self.properties
+            and not self.properties["supportFlowDirections"]
+        ):
+            if "use_digitized_direction" in trace_configuration:
+                del trace_configuration["use_digitized_direction"]
+            elif "useDigitizedDirection" in trace_configuration:
+                del trace_configuration["useDigitizedDirection"]
+
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -775,15 +806,15 @@ class UtilityNetworkManager(object):
                                                             }
                                                         }
         ------------------------------------        --------------------------------------------------------------------
-        run_async                                   Optional Boolean. If Turem the request is processed as an asynchronous
-                                                    job. The URL is returned to check the status of a job.
+        run_async                                   Optional Boolean. If *True* the request is processed as an
+                                                    asynchronous job. The URL is returned to check the status of a job.
         ------------------------------------        --------------------------------------------------------------------
         return_edits                                Optional Boolean. Returned results are organized in a layer-by-layer fashion.
                                                     If `return_edits` is set to True, each layer may have edited features
-                                                    returned in an editedFeatures object.
-                                                    The editedFeatures object returns full features including the original
-                                                    features prior to delete; the original and current features for updates;
-                                                    and the current rows for inserts, which may contain implicit changes
+                                                    returned in an *editedFeatures* object.The editedFeatures object
+                                                    returns full features including the original features prior to
+                                                    to delete; the original and current features for updates; and the
+                                                    current rows for inserts, which may contain implicit changes
                                                     (for example, as a result of a calculation rule).
 
                                                     The response includes no editedFeatures and 'exceededTransferLimit = true'
@@ -831,39 +862,19 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.3.0")
-    def apply_overrides(
-        self,
-        adds: Optional[Union[list, dict[str, Any]]] = None,
-        deletes: Optional[Union[list, dict[str, Any]]] = None,
-    ):
-        """
-        Network attributes support the ability to have their values
-        overridden without having to edit features and validate the network
-        topology (build the index). The utility network also supports the
-        ability to place ephemeral connectivity (for example, jumpers in an
-        electrical network) between two devices or junctions without having
-        to edit features or connectivity associations and validate the
-        network topology (build the index). When specified by the client, a
-        trace operation may optionally incorporate the network attribute
-        and connectivity override values when the trace is run on.
-
-
-        """
-        url = "%s/applyOverrides" % self._url
-        params = {"f": "json", "adds": adds, "deletes": deletes}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
     def associations(self) -> dict:
         """
         The associations resource provides access to operations that
         allow you to query and extract useful information from the
         associations table of a utility network.
 
-        Available starting at Enterprise 10.9.1
+        .. note::
+            Available starting at Enterprise 10.9.1
 
-        :return: A dictionary with two keys
+        :return:
+            A dictionary with two keys
+
+        .. code-block:: python
 
             {"associations":list, "success": bool}
         """
@@ -882,16 +893,17 @@ class UtilityNetworkManager(object):
         return_deletes: bool = False,
     ) -> dict:
         """
-        The query operation allows you to query the associations table
-        and return association information for network features in a utility network.
+        The query operation allows you to query the associations table and
+        return association information for network features in a utility network.
 
-        Available starting at Enterprise 10.9.1
+        .. note::
+            Available starting at Enterprise 10.9.1
 
         ====================================        ====================================================================
         **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         elements                                    Required List of Dictionary. The feature or object elements for which
-                                                    the association is querried.
+                                                    the association is queried.
 
                                                     .. code-block:: python
 
@@ -908,7 +920,12 @@ class UtilityNetworkManager(object):
 
                                                     Values:
 
-                                                        "connectivity" | "attachment" | "contianment" | "junctionEdgeFromConnectivity" | "junctionMidspanConnectivity" | "junctionEdgeToConnectivity"
+                                                    * "connectivity"
+                                                    * "attachment"
+                                                    * "containment"
+                                                    * "junctionEdgeFromConnectivity"
+                                                    * "junctionMidspanConnectivity"
+                                                    * "junctionEdgeToConnectivity"
         ------------------------------------        --------------------------------------------------------------------
         return_deletes                              Optional Boolean. Specify whether to return logically deleted associations.
         ====================================        ====================================================================
@@ -989,7 +1006,13 @@ class UtilityNetworkManager(object):
 
                                                     Values:
 
-                                                        "unspecified" | "dirtyAreaExpansion" | "firstContainers" | "spatialParents" | "topContainers" | "errorsNotModified" | "modifiedObjects"
+                                                    * "unspecified"
+                                                    * "dirtyAreaExpansion"
+                                                    * "firstContainers"
+                                                    * "spatialParents"
+                                                    * "topContainers"
+                                                    * "errorsNotModified"
+                                                    * "modifiedObjects"
         ------------------------------------        --------------------------------------------------------------------
         direction                                   Optional String. Specify the direction of the association traversal.
 
@@ -1016,7 +1039,7 @@ class UtilityNetworkManager(object):
                                                        "none" | "inError" | "notInError"
         ------------------------------------        --------------------------------------------------------------------
         stop_at_first_spatial                       Optional Bool. Specify whether to stop the traversal of associations
-                                                    from nonspatial objext to feature when a spatial feature is encountered.
+                                                    from nonspatial object to feature when a spatial feature is encountered.
                                                     The traversal will stop at the feature and will not traverse to the
                                                     next nonspatial object.
         ------------------------------------        --------------------------------------------------------------------
@@ -1088,7 +1111,7 @@ class UtilityNetworkManager(object):
                                                             "globalIds" : [<guid>],
                                                         }]
         ------------------------------------        --------------------------------------------------------------------
-        max_geom_count                              Required Int. The maximum number of geometries that can be synthesized
+        max_geom_count                              Required Integer. The maximum number of geometries that can be synthesized
                                                     and returned in the result.
         ------------------------------------        --------------------------------------------------------------------
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
@@ -1097,13 +1120,13 @@ class UtilityNetworkManager(object):
         attachment_associations                     Optional Boolean. Whether to synthesize the geometry representing the
                                                     structural attachment associations.
         ------------------------------------        --------------------------------------------------------------------
-        conectivity_associations                    Optional Boolean. Whether to synthesize the geometry representing the
+        connectivity_associations                   Optional Boolean. Whether to synthesize the geometry representing the
                                                     connectivity associations.
         ------------------------------------        --------------------------------------------------------------------
         containment_associations                    Optional Boolean. Whether to synthesize the geometry representing the
                                                     containment associations.
         ------------------------------------        --------------------------------------------------------------------
-        locations                                   Optional Bool. Specify whether to synthesize the geometry representing
+        locations                                   Optional Boolean. Specify whether to synthesize the geometry representing
                                                     the derived location of the object. This option only affects the
                                                     results when objects are features or nonspatial objects.
         ------------------------------------        --------------------------------------------------------------------
@@ -1144,7 +1167,8 @@ class UtilityNetworkManager(object):
         It is returned as an array of named trace configurations with the creator,
         name, and global ID for each.
 
-        :return: An instance of TraceConfigurationsManager Class
+        :return:
+            A :class:`~arcgis.features._utility.TraceConfigurationsManager` object.
         """
 
         if self._gis.version >= [9, 2]:
@@ -1336,7 +1360,7 @@ class TraceConfigurationsManager(object):
                                     .. code-block:: python
 
                                         [{
-                                            "type" : "elements" | "aggregatedGeometry",
+                                            "type" : "elements" | "aggregatedGeometry" | "connectivity" | "features" | "associations",
                                             "includeGeometry" : true | false,
                                             "includePropagatedValues": true | false,
                                             "networkAttributeNames" :["attribute1Name","attribute2Name",...],
@@ -1420,7 +1444,7 @@ class TraceConfigurationsManager(object):
                                     .. code-block:: python
 
                                         [{
-                                            "type" : "elements" | "aggregatedGeometry",
+                                            "type" : "elements" | "aggregatedGeometry" | "connectivity" | "features" | "associations",
                                             "includeGeometry" : true | false,
                                             "includePropagatedValues": true | false,
                                             "networkAttributeNames" :["attribute1Name","attribute2Name",...],

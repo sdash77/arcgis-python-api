@@ -34,6 +34,7 @@ from ._pointcnn_utils import get_indices
 
 try:
     from .._utils.nearest_neighbors import knn_batch as knn_search
+
 except Exception:
     raise Exception(
         f"The arcgis package was not installed, correctly(knn). Use deep learning essentials metapackage from https://github.com/Esri/deep-learning-frameworks"
@@ -425,9 +426,9 @@ class SharedMLP(nn.Sequential):
                     args[i],
                     args[i + 1],
                     bn=(not first or not preact or (i != 0)) and bn,
-                    activation=activation
-                    if (not first or not preact or (i != 0))
-                    else None,
+                    activation=(
+                        activation if (not first or not preact or (i != 0)) else None
+                    ),
                     preact=preact,
                     instance_norm=instance_norm,
                 ),

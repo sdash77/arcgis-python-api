@@ -1,6 +1,7 @@
 try:
     # nlp.analyze_pipes(pretty=True)
     import spacy
+    import warnings
     import numpy as np
     import pandas as pd
     from spacy.util import minibatch, compounding
@@ -10,6 +11,7 @@ try:
     from .._utils.text_data import copy_metrics
     from ..models._codetemplate import entity_recognizer_placeholder
 
+    warnings.filterwarnings("ignore", category=UserWarning)
     HAS_SPACY = True
 except:
     HAS_SPACY = False
@@ -88,7 +90,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             pretrained_path = str(_get_emd_path(pretrained_path))
             self.load(pretrained_path)
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
         Helps in choosing the optimum learning rate for training the model.
@@ -366,7 +368,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         path = Path(path)
         self._emd_template = {}
         self._emd_template["ModelConfiguration"] = "_ner"
-        self._emd_template["InferenceFunction"] = "EntityRecognizer.py"
         self._emd_template["ModelFile"] = str(Path(path).name)
         self._emd_template["ModelName"] = type(self).__name__
         self._emd_template["Labels"] = self.model.get_pipe("ner").labels
@@ -471,8 +472,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
 
         self.model.to_disk(self.model_dir)
         emd_path = self._create_emd(self.model_dir, compute_metrics=compute_metrics)
-        with open(self.model_dir / self._emd_template["InferenceFunction"], "w") as f:
-            f.write(self._code)
 
         if save_html:
             if self._is_empty:
@@ -746,7 +745,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         else:
             return logging.error("Model needs to be fitted, before extraction.")
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, ds_type="valid", rows=5):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 

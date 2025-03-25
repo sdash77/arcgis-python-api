@@ -1,6 +1,7 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+
 from __future__ import annotations
 import json
 import tempfile
@@ -13,8 +14,10 @@ from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 from ._dsmgr import DataStoreMetricsManager
+from ._partnercollab import PartneredCollabManager
 from arcgis.auth.tools import LazyLoader
 import urllib.parse
+from arcgis.gis.tasks._schedule import Task
 
 _pd = LazyLoader("pandas")
 
@@ -35,6 +38,7 @@ class AGOLAdminManager(object):
     :param collaborations: the CollaborationManager object (optional)
     """
 
+    _collabmgr: PartneredCollabManager | None = None
     _con = None
     _gis = None
     _ux = None
@@ -51,6 +55,7 @@ class AGOLAdminManager(object):
     _certificates = None
     _servers = None
     _dmm = None
+    _orb = None
 
     # ----------------------------------------------------------------------
     def __init__(self, gis, ux=None, metadata=None, collaborations=None):
@@ -78,6 +83,25 @@ class AGOLAdminManager(object):
 
     # ----------------------------------------------------------------------
     @property
+    def org_recyclebin(self) -> "OrgRecycleBin":
+        """
+        Returns the organization's recyclebin, which will allow administrators
+        to manage recycled content for the whole organization.
+
+        :return:
+            :class:`~arcgis.gis._impl._content_manager.OrgRecycleBin` object.
+        """
+        if self._orb is None:
+            from .._impl._content_manager._recyclebin import OrgRecycleBin
+
+            url: str = (
+                f"{self._gis.resturl}content/portals/{self._gis.properties['id']}"
+            )
+
+            return OrgRecycleBin(url=url, gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
     def ux(self) -> "UX":
         """returns a UX/UI manager
 
@@ -90,6 +114,20 @@ class AGOLAdminManager(object):
 
             self._ux = UX(gis=self._gis)
         return self._ux
+
+    # ----------------------------------------------------------------------
+    @property
+    def partnered_collaboration(self) -> PartneredCollabManager:
+        """
+        Returns a manager to work with partnered collaborations
+
+        :return:
+            :class:`~arcgis.gis.admin.PartneredCollabManager`
+        """
+        if self._collabmgr is None:
+            url: str = self._gis.resturl + "portal/self/trustedOrgs"
+            self._collabmgr = PartneredCollabManager(url=url, gis=self._gis)
+        return self._collabmgr
 
     # ----------------------------------------------------------------------
     @property
@@ -192,7 +230,9 @@ class AGOLAdminManager(object):
 
         if item_type:
             params["types"] = item_type.value
-        url: str = f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
         session = self._gis._con._session
         resp = session.get(url=url, params=params)
         resp.raise_for_status()
@@ -385,13 +425,13 @@ class AGOLAdminManager(object):
         ================  ===============================================================================
 
 
-        :return: List of Tasks
+        :yields: Task
 
         """
-        _tasks = []
-        num = 100
-        url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
-        params = {"f": "json", "start": 1, "num": num}
+
+        num: int = 100
+        url: str = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
+        params: dict = {"f": "json", "start": 1, "num": num}
         if item:
             params["itemId"] = item.itemid
         if not active is None:
@@ -400,18 +440,23 @@ class AGOLAdminManager(object):
             params["userFilter"] = user.username
         if types:
             params["types"] = types
-        res = self._con.get(url, params)
-        start = res["nextStart"]
-        _tasks.extend(res["tasks"])
+        start: int = 1
         while start != -1:
             params["start"] = start
             params["num"] = num
             res = self._con.get(url, params)
-            if len(res["tasks"]) == 0:
+            if len(res.get("tasks", [])) == 0:
                 break
-            _tasks.extend(res["tasks"])
+            else:
+                for task in res.get("tasks", []):
+                    owner: str = task["userId"]
+                    task_id: str = task["id"]
+                    task_url: str = (
+                        f"{self._gis._portal.resturl}community/users/{owner}/tasks/{task_id}"
+                    )
+                    yield Task(url=task_url, gis=self._gis)
+
             start = res["nextStart"]
-        return _tasks
 
     # ----------------------------------------------------------------------
     def history(
@@ -461,12 +506,12 @@ class AGOLAdminManager(object):
                                   cwp (collaboration workspace participate), g (group), i (item),
                                   idp (identity provider), inv (invitation), r (role), u (user)
         ----------------  -------------------------------------------------------------------------------
-        actors            Optional String. Comma seperated list of usernames.
+        actors            Optional String. Comma separated list of usernames.
         ----------------  -------------------------------------------------------------------------------
         owners            Optional String. Filter events by a comma-separated list of user names who own
                           the action targets in a batch result set.
         ----------------  -------------------------------------------------------------------------------
-        actions           Optional String. Comma seperated list of actions to query for.
+        actions           Optional String. Comma separated list of actions to query for.
 
                           Values: `add`, `addusers`, `create`, `delete`, `removeusers`, `share`, `unshare`,
                           `update`, `failedlogin`, `login`, and `updateUsers`.
@@ -478,16 +523,16 @@ class AGOLAdminManager(object):
 
                           Values: `asc` or `desc`
         ----------------  -------------------------------------------------------------------------------
-        data_format       Optional String.  The way the data is returned to the user.  The response can
-                          be a `df`, `csv`, or 'raw'.  'df' returns a DataFrame, 'csv' returns a comma
-                          seperated file, and 'raw' returns the JSON string as a dictionary.
+        data_format       Optional String.  The default 'csv' value returns a comma-separate file of the
+                          results. It is the only currently available format.
 
-                          Values: `df`, `csv`, 'raw'
+                          Values: `csv`
         ----------------  -------------------------------------------------------------------------------
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :return: string or pd.DataFrame or dict
+        :return:
+            A string representing the file path of the csv file results.
 
         """
         _date_handler = _utils._date_handler

@@ -1,6 +1,7 @@
 """
 Classes to manage a GIS Collaboration
 """
+
 from __future__ import annotations
 import concurrent.futures
 import functools

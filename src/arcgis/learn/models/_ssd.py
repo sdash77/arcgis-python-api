@@ -15,12 +15,14 @@ HAS_FASTAI = True
 
 try:
     import torch
+    from torch import nn
     from torch import tensor, Tensor
     import numpy as np
+    import fastai
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body, cnn_config
-    from fastai.vision import ImageList
+    from fastai.vision import ImageList, flatten_model
     from fastai.vision import imagenet_stats
     from fastai.vision.image import bb2hw, Image, pil2tensor
     from torchvision import models
@@ -68,6 +70,8 @@ try:
     import matplotlib.pyplot as plt
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
+    from ._transformer_backbone import vit_config
+    from ._dofa_utils import dofa_config, dofa_backbones_downstream
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -244,7 +248,6 @@ class SSDTracer(torch.nn.Module):
 
 
 class SingleShotDetector(ArcGISModel):
-
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
     and aspect ratios. Based on Fast.ai MOOC Version2 Lesson 9.
@@ -293,11 +296,16 @@ class SingleShotDetector(ArcGISModel):
                             for this model, which is 'pytorch' by default.
 
                             valid options are 'pytorch', 'tensorflow'
+    ---------------------   -------------------------------------------
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return:
         :class:`~arcgis.learn.SingleShotDetector` Object
     """
+
+    MIN_BATCH_VAL_AMP = 8
 
     def __init__(
         self,
@@ -399,8 +407,9 @@ class SingleShotDetector(ArcGISModel):
 
                 if grids is None:
                     logger.info("Computing optimal grid size...")
-                    hw = data.height_width
-                    hw = np.array(hw)
+
+                    # scale between 0-1
+                    hw = data.height_width / data.x[0].shape[-1]
 
                     # find most suitable centroids for dataset
                     centroid = kmeans(hw, 1)
@@ -424,7 +433,7 @@ class SingleShotDetector(ArcGISModel):
                             int,
                             map(
                                 round,
-                                data.chip_size / centroid,
+                                1 / centroid,
                             ),
                         )
                     )
@@ -432,20 +441,30 @@ class SingleShotDetector(ArcGISModel):
                     grids.sort(reverse=True)
                     if grids[-1] == 0:
                         grids[-1] = 1
-                    grids = list(set(grids))
 
                 self._create_anchors(grids, zooms, ratios)
 
-                feature_sizes = _get_feature_size(
-                    self._orig_backbone
-                    if hasattr(self, "_orig_backbone")
-                    else self._backbone,
-                    cut=backbone_cut,
-                    chip_size=(data.chip_size, data.chip_size),
-                )
+                if not self._backbone.__name__ in dofa_backbones_downstream:
 
-                num_features = feature_sizes[-1][-1]
-                num_channels = feature_sizes[-1][1]
+                    feature_sizes = _get_feature_size(
+                        (
+                            self._orig_backbone
+                            if hasattr(self, "_orig_backbone")
+                            else self._backbone
+                        ),
+                        cut=backbone_cut,
+                        chip_size=(data.chip_size, data.chip_size),
+                    )
+
+                    num_features = feature_sizes[-1][-1]
+                    num_channels = feature_sizes[-1][1]
+
+                else:
+                    m = nn.Sequential(
+                        *create_body(self._backbone, False, None).children()
+                    )
+                    num_features = data.chip_size
+                    num_channels = m[0].blocks[-1].mlp.fc2.out_features
 
                 if (
                     grids[0] > 8
@@ -501,6 +520,29 @@ class SingleShotDetector(ArcGISModel):
             if pretrained_path is not None:
                 self.load(pretrained_path)
 
+            if backbone in SingleShotDetector.transformer_backbones():
+                self.unfreeze()
+                self._freeze()
+
+    def _freeze(self):
+        layers = flatten_model(self.learn.model[0][0].backbone)
+        idx = len(layers)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for layer in layers[start_idx:idx]:
+            if (
+                isinstance(layer, (torch.nn.BatchNorm2d))
+                or isinstance(layer, (fastai.torch_core.ParameterModule))
+                or isinstance(layer, (torch.nn.BatchNorm1d))
+                or isinstance(layer, (torch.nn.LayerNorm))
+            ):
+                continue
+            for p in layer.parameters():
+                p.requires_grad = False
+
+        return idx
+
     def __str__(self):
         return self.__repr__()
 
@@ -513,6 +555,26 @@ class SingleShotDetector(ArcGISModel):
         return SingleShotDetector._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
+        transformer_backbone = list(vit_config.keys())
+        return transformer_backbone
+
+    @staticmethod
+    def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
+        dofa_backbone = list(dofa_config.keys())
+        return dofa_backbone
+
+    @staticmethod
+    def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return SingleShotDetector._supported_backbones()
@@ -522,12 +584,22 @@ class SingleShotDetector(ArcGISModel):
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
 
-        return [
-            *_resnet_family,
-            *_densenet_family,
-            *_vgg_family,
-            models.mobilenet_v2.__name__,
-        ] + timm_backbones
+        transformer_backbone = SingleShotDetector.transformer_backbones()
+        torchgeo_backbone = SingleShotDetector.torchgeo_backbones()
+        dofa_backbone = SingleShotDetector.dofa_backbones()
+
+        return (
+            [
+                *_resnet_family,
+                *_densenet_family,
+                *_vgg_family,
+                models.mobilenet_v2.__name__,
+            ]
+            + transformer_backbone
+            + timm_backbones
+            + torchgeo_backbone
+            + dofa_backbone
+        )
 
     @property
     def supported_datasets(self):
@@ -593,6 +665,8 @@ class SingleShotDetector(ArcGISModel):
         ssd_version = int(emd.get("SSDVersion", 1))
         chip_size = emd["ImageWidth"]
 
+        model_params = emd["ModelParameters"]
+
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
@@ -638,20 +712,35 @@ class SingleShotDetector(ArcGISModel):
             data.c += 1
             data.emd_path = emd_path
             data.emd = emd
+            data._band_names = emd.get("Bands")
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
+
             data = get_multispectral_data_params_from_emd(data, emd)
 
         data.resize_to = resize_to
 
-        ssd = cls(
-            data,
-            emd["Grids"],
-            emd["Zooms"],
-            emd["Ratios"],
-            pretrained_path=str(model_file),
-            backend=backend,
-            backbone=backbone,
-            ssd_version=ssd_version,
-        )
+        if not backbone in dofa_backbones_downstream:
+            ssd = cls(
+                data,
+                emd["Grids"],
+                emd["Zooms"],
+                emd["Ratios"],
+                pretrained_path=str(model_file),
+                backend=backend,
+                backbone=backbone,
+                ssd_version=ssd_version,
+            )
+        else:
+            ssd = cls(
+                data,
+                emd["Grids"],
+                emd["Zooms"],
+                emd["Ratios"],
+                pretrained_path=str(model_file),
+                ssd_version=ssd_version,
+                **model_params,
+            )
 
         if not data_passed:
             ssd.learn.data.single_ds.classes = ssd._data.classes
@@ -943,14 +1032,16 @@ class SingleShotDetector(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            )
         _emd_template["ModelConfiguration"] = "_DynamicSSD"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
         if "timm" in self._backbone.__module__:
             bckbn_name = "timm:" + self._backbone.__name__
+        elif "_hf_" in self._backbone.__module__:
+            bckbn_name = "hf:" + self._backbone.__name__
         else:
             bckbn_name = self._backbone.__name__
         _emd_template["backbone"] = bckbn_name
@@ -1101,7 +1192,7 @@ class SingleShotDetector(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
@@ -1660,3 +1751,31 @@ class SingleShotDetector(ArcGISModel):
             )
 
     ## Tensorflow specific functions end ##
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        # unstable pytorch AMP scaler if batch size less than the given value
+        if self.learn.data.batch_size <= self.MIN_BATCH_VAL_AMP:
+            mixed_precision = False
+
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=mixed_precision,
+            **kwargs,
+        )

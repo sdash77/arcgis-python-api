@@ -10,29 +10,7 @@ from arcgis.features.geo._accessor import GeoSeriesAccessor
 from arcgis.features.geo._accessor import _is_geoenabled
 from arcgis.features.geo._array import GeoArray
 
-_HASARCPY, _HASSHAPELY = None, None
-
-
-# ----------------------------------------------------------------------
-def _check_geometry_engine():
-    """checks if the geometry engine exists"""
-    global _HASARCPY
-    global _HASSHAPELY
-    if _HASARCPY is None:
-        try:
-            import arcpy
-
-            _HASARCPY = True
-        except:
-            _HASARCPY = False
-    if _HASSHAPELY is None:
-        try:
-            import shapely
-
-            _HASSHAPELY = True
-        except:
-            _HASSHAPELY = False
-    return _HASARCPY, _HASSHAPELY
+from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_SHAPELY
 
 
 # --------------------------------------------------------------------------
@@ -103,9 +81,11 @@ def _overlay_intersection(df1, df2):
         this, other = this.align(other)
         data = np.array(
             [
-                getattr(this_elem, "intersect")(other_elem, gtype)
-                if not this_elem.is_empty | other_elem.is_empty
-                else None
+                (
+                    getattr(this_elem, "intersect")(other_elem, gtype)
+                    if not this_elem.is_empty | other_elem.is_empty
+                    else None
+                )
                 for this_elem, other_elem in zip(this, other)
             ]
         )
@@ -236,11 +216,9 @@ def overlay(sdf1, sdf2, op="union"):
             ("symmetric_difference is only supported for " "polygon geometries.")
         )
 
-    _hasao, _hasshp = _check_geometry_engine()
-
     if (
-        _hasao == False
-        and _hasshp
+        HAS_ARCPY == False
+        and HAS_SHAPELY
         and sdf1.spatial.geometry_type != ["polygon"]
         and sdf2.spatial.geometry_type != ["polygon"]
     ):
@@ -248,7 +226,7 @@ def overlay(sdf1, sdf2, op="union"):
             ("Using shapely's geometry engine only " "support Polygon geometries.")
         )
 
-    if (_hasao or _hasshp) and op in allowed_hows:
+    if (HAS_ARCPY or HAS_SHAPELY) and op in allowed_hows:
         if op in ["union", "identity"]:
             return _overlay_union(sdf1, sdf2)
         elif op in ["difference", "erase"]:

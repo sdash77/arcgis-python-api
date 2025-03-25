@@ -1,4 +1,5 @@
 """set of common utilities"""
+
 import os
 import sys
 import time
@@ -11,6 +12,7 @@ from contextlib import contextmanager
 import logging
 import decimal
 import functools
+import re
 
 
 @functools.lru_cache(maxsize=35)
@@ -193,6 +195,48 @@ def timestamp_to_datetime(timestamp):
        datetime object
     """
     return datetime.datetime.fromtimestamp(timestamp / 1000)
+
+
+# ----------------------------------------------------------------------
+def _text_replace(text, replacements: dict[str, str]):
+    """
+    Uses regex to replace all occurrences of keys in the
+    replacements dictionary with their corresponding values
+    in the text string.
+
+    Inputs:
+        text - string
+        replacements - dictionary of key/value pairs
+    output:
+        string
+    """
+
+    pattern = re.compile("|".join(map(re.escape, replacements.keys())))
+
+    def replacement_func(match):
+        matched_text = match.group(0)
+        return replacements[matched_text]
+
+    new_text = pattern.sub(replacement_func, text)
+    return new_text
+
+
+def _get_unique_name(name):
+    """Create a new unique name for a service.
+    Keyword arguments:
+    target - The instance of arcgis.gis.GIS (the portal) to clone the feature service to.
+    name - The original name.
+    """
+
+    if name[0].isdigit():
+        name = "_" + name
+    name = name.replace(" ", "_")
+
+    guid = uuid.uuid4().hex[0:5]
+    ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
+    if len(ends_with_guid) > 0:
+        name = name[:-32]
+    return "{0}_{1}".format(name, guid)
 
 
 ###########################################################################

@@ -20,48 +20,45 @@ _arcgis_features = LazyLoader("arcgis.features")
 _log = logging.getLogger()
 
 
-def _status(session: EsriSession, result: dict[str, Any]) -> dict[str, Any]:
+def _status(
+    session: EsriSession, result: dict[str, Any], job_url: str
+) -> dict[str, Any]:
     """Checks the status of the apply edits call"""
-    if "statusUrl" in result:
-        status_url = result.get("statusUrl", None)
-        if status_url is None:
-            return result
-        else:
-            i: int = 1
-            while True:
-                time.sleep(i)
-
-                resp: requests.Response = session.get(
-                    url=status_url,
-                    params={
-                        "f": "json",
-                    },
-                )
-                resp.raise_for_status()
-                result: dict[str, Any] = resp.json()
-
-                if "resultUrl" in result:
-                    # return the payload
-                    return session.get(
-                        url=result["resultUrl"],
-                        params={
-                            "f": "json",
-                        },
-                    ).json()
-                elif "error" in result:
-                    return result
-                elif result.get("status", None) in [
-                    "FAILED",
-                    "failed",
-                    "completed",
-                    "COMPLETED",
-                ]:
-                    return result
-                else:
-                    status_url = result.get("statusUrl", None)
-                i += 1
-                if i > 5:
-                    i = 5
+    # handles case where job is put into pending status mode (this is rare)
+    i: int = 1
+    resp: requests.Response = session.get(
+        url=job_url,
+        params={
+            "f": "json",
+        },
+    )
+    resp.raise_for_status()
+    result: dict[str, Any] = resp.json()
+    while not result.get("status", "none").lower() in [
+        "completed",
+        "failed",
+    ]:
+        if result.get("status", "none").lower() == "none":
+            return result  # null case, something went wrong.
+        time.sleep(i)
+        resp: requests.Response = session.get(
+            url=job_url,
+            params={
+                "f": "json",
+            },
+        )
+        resp.raise_for_status()
+        result: dict[str, Any] = resp.json()
+        if i < 5:
+            i += 1
+    if "resultUrl" in result:
+        # return the payload
+        return session.get(
+            url=result["resultUrl"],
+            params={
+                "f": "json",
+            },
+        ).json()
     return result
 
 
@@ -69,7 +66,7 @@ def apply_edits(
     fl: _arcgis_features.FeatureLayer,
     adds: list[dict[str, Any]] | None = None,
     updates: list[dict[str, Any]] | None = None,
-    deletes: list[dict[str, Any]] | None = None,
+    deletes: list[str] | list[int] | str | None = None,
     attachments: Attachments | None = None,
     use_global_ids: bool = False,
     version_info: VersionInfo | None = None,
@@ -101,6 +98,7 @@ def apply_edits(
         "useGlobalIds": use_global_ids,
         "returnEditMoment": return_edit_moment,
         "trueCurveClient": true_curve_client,
+        "editsUploadFormat": "json",
     }
     if return_edit_results:
         params["returnEditResults"] = return_edit_results
@@ -147,6 +145,14 @@ def apply_edits(
         in fl.properties["advancedEditingCapabilities"]
         and fl.properties["advancedEditingCapabilities"]["supportsApplyEditsbyUploadID"]
     ):
+        if isinstance(deletes, str):
+            deletes = [
+                int(d) if (isinstance(d, str) and d.isdigit()) else d
+                for d in deletes.split(",")
+            ]
+        elif deletes is None:
+            deletes = []
+
         data = {
             "adds": adds,
             "updates": updates,
@@ -163,6 +169,8 @@ def apply_edits(
             data["attachments"] = attachments
         elif use_global_ids == False and attachments:
             _log.warning("Cannot add attachments without `user_global_ids` being True.")
+        if attachments is None:
+            data.pop("attachments", None)
         with tempfile.TemporaryDirectory() as folder:
             fp = os.path.join(folder, f"{uuid.uuid4().hex}.json")
             with open(fp, "w") as writer:
@@ -197,6 +205,7 @@ def apply_edits(
                 **{
                     "session": session,
                     "result": result,
+                    "job_url": status_url,
                 },
             )
             executor.shutdown(wait=True)

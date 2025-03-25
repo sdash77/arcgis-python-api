@@ -7,6 +7,7 @@ import logging
 import requests
 import concurrent.futures
 from functools import lru_cache
+from types import NoneType
 from typing import Any, Iterator
 from ._exceptions import FolderException
 from ._util import (
@@ -17,15 +18,136 @@ from ._util import (
     chunk_by_file_size,
     create_upload_tuple,
     status,
+    _process_parameters,
 )
 from arcgis.auth.tools import LazyLoader
 from ..._dataclasses import ItemProperties, ItemTypeEnum
+from ...._impl._util import is_valid_item_id
 from arcgis.auth import EsriSession
 
 _arcgis_gis = LazyLoader("arcgis.gis")
 logger = logging.getLogger(__name__)
 
 __all__ = ["Folder", "Folders"]
+
+_JSON_ITEMS: list[str] = [
+    "360 VR Experience",
+    "Map Area",
+    "Web Map",
+    "Web Scene",
+    "Feature Collection",
+    "Feature Collection Template",
+    "Feature Service",
+    "Group Layer",
+    "Image Service",
+    "Map Service",
+    "Oriented Imagery Catalog",
+    "Relational Database Connection",
+    "3DTilesService",
+    "Scene Service",
+    "Vector Tile Service",
+    "WFS",
+    "WMTS",
+    "Dashboard",
+    "Data Pipeline",
+    "Deep Learning Studio Project",
+    "Esri Classification Schema",
+    "Excalibur Imagery Project",
+    "GeoBIM Application",
+    "GeoBIM Project",
+    "Hub Event",
+    "Hub Initiative",
+    "Hub Initiative Template",
+    "Hub Page",
+    "Hub Project",
+    "Hub Site Application",
+    "Insights Workbook",
+    "Insights Model",
+    "Insights Page",
+    "Insights Theme",
+    "Investigation",
+    "Knowledge Studio Project",
+    "Mission",
+    "Mobile Application",
+    "Ortho Mapping Project",
+    "Ortho Mapping Template",
+    "Solution",
+    "StoryMap",
+    "Web AppBuilder Widget",
+    "Web Experience",
+    "Web Experience Template",
+    "Web Mapping Application",
+    "Workforce Project",
+    "Color Set",
+    "Content Category Set",
+    "StoryMap Theme",
+    "Style",
+    "Symbol Set",
+]
+
+
+class Job:
+    _item: _arcgis_gis.Item | None = None
+
+    def __init__(
+        self,
+        futures: Dict[concurrent.futures.Future, str],
+        commit_url: str,
+        commit_params: Dict[str, Any],
+        session: requests.Session,
+        itemid: str,
+        params: Dict[str, Any],
+        folder: Folder,
+    ):
+        self.futures = futures
+        self.commit_url = commit_url
+        self.commit_params = commit_params
+        self.session = session
+        self.itemid = itemid
+        self.params = params
+        self.folder = folder
+        self.messages = []
+
+    def __str__(self) -> str:
+        return f"< Job for Item: {self.itemid} >"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def result(self) -> _arcgis_gis.Item:
+        if self._item:
+            return self._item
+        results = []
+        self.messages = []
+        for future in concurrent.futures.as_completed(self.futures):
+            r = future.result()
+            r.raise_for_status()
+            data: dict[str, Any] = r.json()
+            if "success" in data:
+                results.append(data["success"])
+            elif "status" in data and data["status"] == "success":
+                results.append(True)
+            else:
+                results.append(False)
+            logger.info(r.text)
+            self.messages.append(r.text)
+
+        if all(results):
+            self.commit_params.update(self.params)
+            resp: requests.Response = self.session.post(
+                url=self.commit_url, data=self.commit_params
+            )
+            resp.raise_for_status()
+            res: dict[str, Any] = resp.json()
+            if "success" in res and res["success"]:
+                item: _arcgis_gis.Item = self.folder._process_item_status(
+                    itemid=self.itemid
+                )
+                if "classification" in self.params:
+                    item.update({"classification": self.params["classification"]})
+                self._item = item
+                return self._item
+        raise FolderException("Failed to upload all parts")
 
 
 ###########################################################################
@@ -51,14 +173,11 @@ class Folder:
     ) -> None:
         self._folder = folder
         self._gis = gis
-        if owner is None:
-            self._owner = gis.users.me.username
-        else:
-            self._owner = owner
+        self._owner = owner or gis.users.me.username
         self._session = gis._con._session
         self._properties = properties
         if self._properties:
-            self._name = self._properties.get("name", None)
+            self._name = self._properties.get("title", None)
             self._fid = self._properties.get("id", None)
 
     # ---------------------------------------------------------------------
@@ -73,7 +192,7 @@ class Folder:
     @property
     def properties(self) -> dict[str, Any]:
         """Returns a Python dictionary of the
-        :class:`arcgis.gis._impl._content_manager.Folder` properties.
+        :class:`~arcgis.gis._impl._content_manager.Folder` properties.
 
         .. code-block:: python
 
@@ -120,15 +239,15 @@ class Folder:
         order: str | None = "asc",
         sort_on: str | None = None,
     ) -> Iterator[dict[str, Any]]:
-        """Returns a Python generator object to ierate over the the content in
-           the *folder*.
+        """Returns a Python generator object that can be iterated over to return
+        the content in the *folder*.
 
         ================  ==========================================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         item_type         Required string. The specific :class:`~arcgis.gis.Item` type to create
                           a generator for. Authoritative values can be entered by using the *value*
-                          attribute of any :class:`arcgis.gis.ItemTypeEnum` member.
+                          attribute of any :class:`~arcgis.gis._impl._dataclasses.ItemTypeEnum` member.
 
                           .. code-block:: python
 
@@ -186,7 +305,9 @@ class Folder:
         """
         url: str = f"{self._gis._portal.resturl}content/users/{self._owner}"
         if self._folder:
-            url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            url: str = (
+                f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            )
         params: dict[str, Any] = {
             "f": "json",
             "types": item_type,
@@ -279,11 +400,34 @@ class Folder:
         .. note::
             Only available on non-Root Folder
             :class:`folders <arcgis.gis._impl._content_manger.Folder>`.
+
+        .. return::
+            A boolean indicating success (True), or failure (False)
         """
-        url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        url: str = (
+            f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        )
         params = {
             "f": "json",
         }
+        if permanent:
+            # applicable to online if recycle bin is enabled
+            rsupport = self._gis.properties.get("recycleBinSupported", False)
+            renabled = (
+                self._gis.properties.recycleBinEnabled
+                if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+                else False
+            )
+            if (
+                (self._gis._is_agol or self._gis.version > [2023, 2])
+                and rsupport
+                and renabled
+            ):
+                params["permanentDelete"] = True
+            else:
+                logger.warning(
+                    "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
+                )
         resp: requests.Response = self._session.post(url, data=params)
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
@@ -291,12 +435,12 @@ class Folder:
             return True
         else:
             logger.warning(
-                f"Could not erase the folder: {self.name}. Recieved the error: {data}."
+                f"Could not erase the folder: {self.name}. Received the error: {data}."
             )
             return False
 
     # ---------------------------------------------------------------------
-    def _chunk_file(io: io.BytesIO | io.StringIO, size: int) -> Iterator[tuple]:
+    def _chunk_file(self, io: io.BytesIO | io.StringIO, size: int) -> Iterator[tuple]:
         """chunks the file"""
         for chunk in chunk_by_file_size(
             fp=io, size=size, parameter_name="file", upload_format=True
@@ -317,8 +461,10 @@ class Folder:
         parts_url: str = url.replace("/addItem", "/addPart")
         ftuple: tuple = file_list.pop("file")
         params.pop("async", None)
+        params_updated: dict = {k: (None, v) for k, v in params.items()}
+        file_list.update(params_updated)
         resp: requests.Response = self._session.post(
-            url=url, data=params, files=file_list
+            url=url, files=file_list
         )  # Gets the initial Item
         data: dict[str, Any] = resp.json()
         itemid = data.get("id", None) or data.get("itemId", None)
@@ -327,59 +473,47 @@ class Folder:
         parts_url: str = url.replace("/addItem", f"/items/{itemid}/addPart")
         commit_url: str = url.replace("/addItem", f"/items/{itemid}/commit")
         # Add By Each Part
-        import concurrent.futures
-
         results = []
         futures = {}
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as tp:
-            for idx, chunk in enumerate(
-                chunk_by_file_size(ftuple[1], size=upload_size, upload_format=False)
-            ):
-                part_name: str = ftuple[0]
-                part_params: dict[str, Any] = {
-                    "f": "json",
-                    "partNum": f"{idx + 1}",
-                    "streamdata": True,
-                    "size": len(chunk.getvalue()),
-                }
-                future = tp.submit(
-                    self._session.post,
-                    **{
-                        "url": parts_url,
-                        "params": part_params,
-                        "files": {"file": (part_name, chunk, None)},
-                    },
-                )
-                futures[future] = part_name
-            messages = []
-            for future in concurrent.futures.as_completed(futures):
-                r = future.result()
-                r.raise_for_status()
-                data: dict[str, Any] = r.json()
-                if "success" in data:
-                    results.append(data["success"])
-                elif "status" in data and data["status"] == "success":
-                    results.append(True)
-                else:
-                    results.append(False)
-                logger.info(r.text)
-                messages.append(r.text)
-        if all(results):
-            commit_params = {
+        tp: concurrent.futures.ThreadPoolExecutor = (
+            concurrent.futures.ThreadPoolExecutor(max_workers=6)
+        )
+
+        for idx, chunk in enumerate(
+            chunk_by_file_size(ftuple[1], size=upload_size, upload_format=False)
+        ):
+            logger.info(f"loading part: {idx} part into the upload queue.")
+            part_name: str = ftuple[0]
+            part_params: dict[str, Any] = {
+                "f": "json",
+                "partNum": f"{idx + 1}",
+                "streamdata": True,
+                "size": len(chunk),
+            }
+            future = tp.submit(
+                self._session.post,
+                **{
+                    "url": parts_url,
+                    "params": part_params,
+                    "files": {"file": (part_name, chunk, None)},
+                },
+            )
+            futures[future] = part_name
+        tp.shutdown(cancel_futures=False)
+        return Job(
+            futures=futures,
+            commit_url=commit_url,
+            commit_params={
                 "f": "json",
                 "id": itemid,
                 "type": params["type"],
                 "async": True,
-            }
-            commit_params.update(params)
-            resp: requests.Response = self._session.post(
-                url=commit_url, data=commit_params
-            )
-            resp.raise_for_status()
-            res: dict[str, Any] = resp.json()
-            if "success" in res and res["success"]:
-                return self._process_item_status(itemid=itemid)
-        raise FolderException(str(r.text))
+            },
+            session=self._session,
+            itemid=itemid,
+            params=params,
+            folder=self,
+        )
 
     # ---------------------------------------------------------------------
     def _add_async_large_files(
@@ -472,7 +606,7 @@ class Folder:
             itemid=itemid,
         )
         status_code: str | None = status_msg.get("status")
-        while status_code in ["processing"]:
+        while status_code in ["processing", "partial"]:
             time.sleep(i)
             if i >= 10:
                 i = 10
@@ -511,6 +645,7 @@ class Folder:
         check_status: bool = False,
     ) -> _arcgis_gis.Item | dict:
         """performs the add workflow"""
+
         resp: requests.Response = self._session.post(
             url=url, data=params, files=file_list
         )
@@ -527,13 +662,14 @@ class Folder:
     def add(
         self,
         item_properties: ItemProperties,
-        file: str = None,
+        file: str | None = None,
         text: str | None = None,
         url: str | None = None,
         data_url: str | None = None,
         item_id: str | None = None,
         stream: bool = True,
-    ) -> concurrent.futures.Future:
+        upload_file_size: int | None = None,
+    ) -> concurrent.futures.Future | Job:
         """
         Adds an :class:`~arcgis.gis.Item` to the current folder.
 
@@ -541,49 +677,59 @@ class Folder:
             This method returns a :class:`concurrent.futures.Future` object. To
             obtain *item*, use :meth:`concurrent.future.Future.result` method.
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item_properties     Required *ItemProperties* object. The properties for the item to add.
-                            When initializing the object, the *title* and *item_type* are
-                            required.
+        =================     ====================================================================
+        **Parameter**          **Description**
+        -----------------     --------------------------------------------------------------------
+        item_properties       Required *ItemProperties* object. The properties for the item to add.
+                              When initializing the object, the *title* and *item_type* are
+                              required.
 
-                            .. code-block:: python
+                              .. code-block:: python
 
-                                >>> from arcgis.gis import ItemProperties, ItemTypeEnum
+                                  >>> from arcgis.gis import ItemProperties, ItemTypeEnum
 
-                                >>> item_props = ItemProperties(title="<item_title>",
-                                                                item_type=ItemTypeEnum.SHAPEFILE.value)
-        ---------------     --------------------------------------------------------------------
-        file                Optional string, io.StringIO, or io.BytesIO. Provide the data to the
-                            item.
-        ---------------     --------------------------------------------------------------------
-        text                Optional String. The JSON content for the item to be submitted.
-        ---------------     --------------------------------------------------------------------
-        url                 Optional string. The URL of the item to be submitted. The URL can be
-                            a URL to a service, a web mapping application, or any other content
-                            available at that URL.
-        ---------------     --------------------------------------------------------------------
-        data_url            Optional string. The URL where the item can be downloaded. The
-                            resource will be downloaded and stored as a file type. Similar to
-                            uploading a file to be added, but instead of transferring the
-                            contents of the file, the URL of the data file is referenced and
-                            creates a file item. The referenced URL must be an unsecured URL
-                            where the data can be downloaded. This parameter requires the
-                            operation to be performed asynchronously. Once the job status
-                            returns as complete, the item can be downloaded and the item is
-                            added successfully.
-        ---------------     --------------------------------------------------------------------
-        item_id             Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
-                            This parameter allows the desired item id to be specified during creation which
-                            can be useful for cloning and automated content creation scenarios.
-                            The specified id must be a 32 character GUID string without any special characters.
+                                  >>> item_props = ItemProperties(title="<item_title>",
+                                                                  item_type=ItemTypeEnum.SHAPEFILE.value)
+        -----------------     --------------------------------------------------------------------
+        file                  Optional string, io.StringIO, or io.BytesIO. Provide the data to the
+                              item.
+        -----------------     --------------------------------------------------------------------
+        text                  Optional String. The JSON content for the item to be submitted.
+        -----------------     --------------------------------------------------------------------
+        url                   Optional string. The URL of the item to be submitted. The URL can be
+                              a URL to a service, a web mapping application, or any other content
+                              available at that URL.
+        -----------------     --------------------------------------------------------------------
+        data_url              Optional string. The URL where the item can be downloaded. The
+                              resource will be downloaded and stored as a file type. Similar to
+                              uploading a file to be added, but instead of transferring the
+                              contents of the file, the URL of the data file is referenced and
+                              creates a file item. The referenced URL must be an unsecured URL
+                              where the data can be downloaded. This parameter requires the
+                              operation to be performed asynchronously. Once the job status
+                              returns as complete, the item can be downloaded and the item is
+                              added successfully.
+        -----------------     --------------------------------------------------------------------
+        item_id               Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                              This parameter allows the desired item id to be specified during creation which
+                              can be useful for cloning and automated content creation scenarios.
+                              The specified id must be a 32 character GUID string without any special characters.
 
-                            If the `item_id` is already being used, an error will be raised
-                            during the `add` process.
+                              If the `item_id` is already being used, an error will be raised
+                              during the `add` operation.
 
-                            Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
-        ===============     ====================================================================
+                              Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+        -----------------     --------------------------------------------------------------------
+        stream                Optional bool. This parameter is used to override the default streaming
+                              upload methods for the ArcGIS API for Python. This should only be used
+                              in very rare cases where the enterprise disallows streaming uploads.
+                              The default is `True`.
+        -----------------     --------------------------------------------------------------------
+        upload_file_size      Optional int. This is used when uploading very large files
+                              (50GB+ in size).
+                              This is the part size to split the file into when performing a
+                              streaming upload.  Each piece will be the size of this value.
+        =================     ====================================================================
 
         :returns:
             :class:`concurrent.futures.Future` object
@@ -604,7 +750,7 @@ class Folder:
             >>> folders_obj = gis.content.folders
             >>> item_folder = folders_obj.get(folder="water_data")
 
-            >>> add_job = item_folder.add(item_props=item_props,
+            >>> add_job = item_folder.add(item_properties=item_props,
                                           file=data_path)
             >>> if not add_job.done():
             >>>     print("...job precessing...")
@@ -613,38 +759,47 @@ class Folder:
 
             >>> new_flyr_item = new_shp_item.publish()
         """
-        if isinstance(item_properties, ItemProperties):
-            item_properties: dict = {
-                key: value
-                for key, value in item_properties.to_dict().items()
-                if not value is None
-            }
-        if not file:
-            stream = False
-        elif file and item_id:
-            stream = True
-        upload_size: int = None
-        thumbnail: str = item_properties.pop("thumbnail", None)
+        item_properties: dict = dict(item_properties)
+        # remove None values
+        item_properties = {
+            key: value for key, value in item_properties.items() if not value is None
+        }
+        if item_properties.get("overwrite", False):
+            logger.warning(
+                "The property `overwrite` is deprecated and support will be removed two releases after 2.4.0."
+            )
+        text: str = text or item_properties.pop("text", None)
+
+        if (
+            file
+            and isinstance(file, (io.StringIO, io.BytesIO))
+            and not item_properties.get("fileName")
+        ):
+            raise ValueError(
+                "When providing a `StringIO` or `BytesIO` object, `file_name` must be given in the `ItemProperties` class."
+            )
+
+        upload_size: float | int | None = None
+        thumbnail: str | None = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
         file_list: dict[str, Any] = {}
-        owner: str = None
+        owner: str | None = None
         params: dict[str, Any] = {
             "f": "json",
             "async": True,
         }
-        if item_id and isinstance(item_id, str) and len(item_id) == 32:
+        if is_valid_item_id(item_id):
             params["itemIdToCreate"] = item_id
+
         if thumbnail and isinstance(thumbnail, tuple):
             fn, thumbnail = thumbnail
             file_list["thumbnail"] = create_upload_tuple(thumbnail, file_name=fn)
-
         elif thumbnail and os.path.isfile(thumbnail):
             file_list["thumbnail"] = create_upload_tuple(thumbnail)
 
         if metadata:
-            file_list["metadata"] = create_upload_tuple(
-                item_properties.pop("metadata", None)
-            )
+            file_list["metadata"] = create_upload_tuple(metadata)
+
         for k in list(item_properties.keys()):
             try:
                 if isinstance(item_properties[k], str) and os.path.isfile(
@@ -655,7 +810,6 @@ class Folder:
                 ...
         params.update(item_properties)
 
-        folder: str = self._folder_id
         if self._owner:
             owner = self._owner
         elif owner and hasattr(owner, "username"):
@@ -665,41 +819,47 @@ class Folder:
         elif isinstance(owner, str) == False:
             raise ValueError("Owner must be a string or User object.")
 
-        if folder and folder != "Root Folder":
-            curl: str = (
-                f"{self._gis._portal.resturl}content/users/{owner}/{folder}/addItem"
-            )
-        else:
-            curl: str = f"{self._gis._portal.resturl}content/users/{owner}/addItem"
+        folder: str = self._folder_id
+        is_root_folder: bool = folder == "Root Folder"
+        curl: str = (
+            f"{self._gis._portal.resturl}content/users/{owner if is_root_folder else f'{owner}/{folder}'}/addItem"
+        )
+
         max_workers: int = 1
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as tp:
             if stream == True and file:
                 # upload by streaming data
                 logger.info("Adding Item by parts using streaming.")
-
+                upload_size = upload_file_size
                 params["multipart"] = True
-                params["fileName"] = params.get("fileName", None) or os.path.basename(
-                    file
-                )
+                params["fileName"] = params.get("fileName") or os.path.basename(file)
                 params["async"] = True
-                file_list["file"] = create_upload_tuple(file)
-                future = tp.submit(
-                    self._add_async_streaming,
+                params = _process_parameters(params)
+                file_list["file"] = create_upload_tuple(
+                    file, file_name=item_properties.pop("fileName", None)
+                )
+                job = self._add_async_streaming(
                     **{
                         "url": curl,
                         "params": params,
                         "file_list": file_list,
                         "upload_size": upload_size,
-                    },
+                    }
                 )
-                tp.shutdown(wait=True)
-                return future
-            elif text and file is None and url is None and data_url is None:
+
+                return job
+            if (text and file is None and url is None and data_url is None) or (
+                text is None
+                and file is None
+                and url is None
+                and item_properties["type"] in _JSON_ITEMS
+            ):
                 #  text workflow
                 params["async"] = False
                 if not isinstance(text, str):
                     text: str = json.dumps(text)
                 params["text"] = text
+                params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -711,10 +871,12 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            elif file and text is None and url is None and data_url is None:
+            if file and text is None and url is None and data_url is None:
                 #  file workflow
                 params["async"] = True
-                file_list["file"] = create_upload_tuple(file)
+                file_list["file"] = create_upload_tuple(
+                    file, file_name=item_properties.get("file_name", None)
+                )
                 upload_size = calculate_upload_size(file)
                 if upload_size <= 5242880:  # 5mb
                     logger.info(
@@ -722,6 +884,7 @@ class Folder:
                     )
                     #  perform basic upload.
                     params["multipart"] = False
+                    params = _process_parameters(params)
                     future = tp.submit(
                         self._add_async_text,
                         **{
@@ -740,7 +903,7 @@ class Folder:
                     params["fileName"] = params.get(
                         "fileName", None
                     ) or os.path.basename(file)
-
+                    params = _process_parameters(params)
                     future = tp.submit(
                         self._add_async_large_files,
                         **{
@@ -752,9 +915,17 @@ class Folder:
                     )
                     tp.shutdown(wait=True)
                     return future
-            elif file is None and text is None and url and data_url is None:
+            if (file is None and text is None and url and data_url is None) or (
+                file is None and text is None and url is None and data_url is None
+            ):
                 params["async"] = False
-                params["url"] = url
+                if not url and "url" in params:
+                    url = params.get("url")
+                if url:
+                    params["url"] = url
+                else:
+                    logger.warning("Creating an empty item.")
+                params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -766,9 +937,10 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            elif file is None and text is None and url is None and data_url:
+            if file is None and text is None and url is None and data_url:
                 params["async"] = True
                 params["dataUrl"] = data_url
+                params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -780,12 +952,6 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-
-            else:
-                raise ValueError(
-                    "A single value of `file`, `text`, `url`, or `data_url` must be provided to add content to the WebGIS."
-                )
-        return
 
 
 ###########################################################################
@@ -823,13 +989,21 @@ class Folders:
     @lru_cache(maxsize=255)
     def _me(self) -> dict[str, Any]:
         """Gets the logged in user."""
-        url: str = f"{self._gis._portal.resturl}/community/self"
+        url: str = f"{self._gis._portal.resturl}community/self"
         params = {
             "f": "json",
         }
         resp: requests.Response = self._session.get(url=url, params=params)
         resp.raise_for_status()
         return resp.json()
+
+    # ---------------------------------------------------------------------
+    def _get_or_create(self, folder: str, owner: str | None = None) -> Folder:
+        """gets or creates a folder"""
+        fldr: Folder = self.get(folder=folder, owner=owner)
+        if fldr is None:
+            fldr = self.create(folder=folder, owner=owner)
+        return fldr
 
     # ----------------------------------------------------------------------
     def get(
@@ -880,7 +1054,9 @@ class Folders:
             >>> h2o_folder
                 < Folder: Water_Resources Owner: h2o_project_user>
         """
-        if folder in ["/", "root", None, "Root Folder"]:
+        if folder is None:
+            folder = "Root Folder"
+        elif folder.lower() in ["/", "root", "Root Folder", "root folder"]:
             folder = "Root Folder"
         for fld in self.list(owner=owner):
             if (
@@ -891,14 +1067,19 @@ class Folders:
         return None
 
     # ---------------------------------------------------------------------
-    def create(self, folder: str, owner: str | "User" = None) -> Folder:
+    def create(
+        self,
+        folder: str,
+        owner: str | "User" = None,
+        exist_ok: bool = False,
+    ) -> Folder:
         """
         The ``create`` method creates a folder named with the value of the
         *folder* argument owned by the :class:`user <arcgis.gis.User>` entered
         in the *owner* argument.
 
         .. note::
-            The ``create`` method does nothing if the folder already exists.
+            The ``create`` method raises a `FolderException` if the folder already exists.
             Additionally, if owner is not specified, owner is set as the logged in user.
 
 
@@ -912,6 +1093,9 @@ class Folders:
 
                           .. note::
                               Must have administrator privileges to create content for another *user*.
+        ----------------  --------------------------------------------------------------------------
+        exist_ok          Optional Bool. If exist_ok is False (the default), a FolderException is raised
+                          if the target directory already exists.
         ================  ==========================================================================
 
         :return:
@@ -922,10 +1106,12 @@ class Folders:
             # Usage Example
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_or_enterprise_admin_profile")
-            >>> new_folder = gis.content.create("Hurricane_Data", owner= "User1234")
+            >>> new_folder = gis.content.folders.create("Hurricane_Data", owner= "User1234")
             >>> new_folder.name
                 'Hurricane_Data'
         """
+        if exist_ok:
+            return self._get_or_create(folder=folder, owner=owner)
         if folder in ["/", None, ""]:  # we don't create root folder
             logger.warning("Cannot create the root folder, just returning the root.")
             return Folder(gis=self._gis)
@@ -971,7 +1157,7 @@ class Folders:
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             Optional string. An :attr:`~arcgis.gis.User.username`
-                          value or :class:`arcgis.gis.User` object to indicate
+                          value or :class:`~arcgis.gis.User` object to indicate
                           the *user* whose folders to examine.
 
                           .. note::
@@ -1019,7 +1205,7 @@ class Folders:
             owner: str = self._me.get("username", None)
 
         if owner is None:
-            logger.warning("User is anonymous, exitting")
+            logger.warning("User is anonymous, exiting")
             return None
 
         url: str = f"{self._gis._portal.resturl}content/users/{owner}"

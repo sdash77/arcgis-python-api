@@ -2,6 +2,7 @@
 Chan's Convex Hull O(n log h)
 https://en.wikipedia.org/wiki/Chan%27s_algorithm
 """
+
 from __future__ import annotations
 from functools import reduce
 import sys

@@ -13,6 +13,7 @@ try:
     import optuna
     import time
     import numpy as np
+    from .._data import prepare_data
 
     from fastai.data_block import get_files
     from pathlib import Path
@@ -54,8 +55,6 @@ class train_callback(LearnerCallback):
         super().__init__(learn)
 
     def on_batch_end(self, **kwargs):
-        # print(self.counter)
-        self.counter += 1
         is_present = importlib.util.find_spec("arcpy")
         if is_present is not None:
             import arcpy
@@ -65,6 +64,7 @@ class train_callback(LearnerCallback):
         if self.counter > self.stop_var:
             self.counter = 0
             return {"stop_epoch": True}
+        self.counter += 1
 
 
 def generate_output_report(
@@ -300,7 +300,7 @@ def generate_output_report(
 
     if mode == "advanced":
         model_report = ""
-        model_report += "<h2>Network wise study details</h2>"
+        model_report += "<h2>Network wise optuna study details</h2>"
 
         for i, ex in enumerate(exhaustive_mode_studies):
             model_report += "<hr/><h3>Network Name: " + ex.study_name + "</h3>"
@@ -488,6 +488,8 @@ def generate_output_report(
 def _get_model(model, **params):
     global self_obj
     self = self_obj
+    self.prepare_data_args["batch_size"] = None
+    self._data = prepare_data(**self.prepare_data_args)
     return getattr(ag.learn, model)(self._data, **params)
 
 
@@ -505,7 +507,7 @@ def _objective(trial):
         if key == "type_int":
             for k, v in val.items():
                 params[k] = trial.suggest_int(k, v[0], v[1])
-
+    params["backbone"] = params["backbones"]
     if self_obj.verbose:
         log_msg = "{date}: selected params: {params}".format(
             date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),

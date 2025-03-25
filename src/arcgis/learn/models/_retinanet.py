@@ -8,6 +8,7 @@ import statistics
 import warnings
 from .._data import _raise_fastai_import_error
 import traceback
+import urllib
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -18,12 +19,12 @@ try:
     import torch
     from torch import Tensor
     import numpy as np
-    import pandas as pd
     import PIL
+    import fastai
     from fastai.vision.learner import create_body
-    from fastai.vision import ImageList
-    from fastai.vision import imagenet_stats, normalize
-    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
+    from fastai.vision import ImageList, flatten_model
+    from fastai.vision import imagenet_stats
+    from fastai.vision.image import bb2hw
     from fastai.core import ifnone
     from torchvision import models
     from .._utils.pascal_voc_rectangles import (
@@ -38,7 +39,6 @@ try:
         AveragePrecision,
         _process_bboxes_jit,
     )
-    from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
     from ._arcgis_model import _resnet_family
     from .._image_utils import (
@@ -49,11 +49,11 @@ try:
     )
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
-    from fastprogress.fastprogress import progress_bar
     from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
+    from ._transformer_backbone import vit_config
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -118,6 +118,8 @@ class RetinaNet(ArcGISModel):
         :class:`~arcgis.learn.RetinaNet` Object
     """
 
+    MIN_BATCH_VAL_AMP = 8
+
     def __init__(
         self,
         data,
@@ -167,7 +169,14 @@ class RetinaNet(ArcGISModel):
             backbone_cut = None
 
         # Cut-off the backbone before the penultimate layer
-        self._encoder = create_body(self._backbone, backbone_pretrained, backbone_cut)
+        try:
+            self._encoder = create_body(
+                self._backbone, backbone_pretrained, backbone_cut
+            )
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+            )
 
         # Initialize the model, loss function and the Learner object
         self._model = RetinaNetModel(
@@ -199,6 +208,28 @@ class RetinaNet(ArcGISModel):
         if pretrained_path is not None:
             self.load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable
+        if backbone in RetinaNet.transformer_backbones():
+            self.unfreeze()
+            self._freeze()
+
+    def _freeze(self):
+        layers = flatten_model(self.learn.model.encoder[0].backbone)
+        idx = len(layers)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for layer in layers[start_idx:idx]:
+            if (
+                isinstance(layer, (torch.nn.BatchNorm2d))
+                or isinstance(layer, (fastai.torch_core.ParameterModule))
+                or isinstance(layer, (torch.nn.BatchNorm1d))
+                or isinstance(layer, (torch.nn.LayerNorm))
+            ):
+                continue
+            for p in layer.parameters():
+                p.requires_grad = False
+
+        return idx
 
     def __str__(self):
         return self.__repr__()
@@ -339,10 +370,16 @@ class RetinaNet(ArcGISModel):
         return RetinaNet._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        transformer_backbone = list(vit_config.keys())
+        return transformer_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family] + timm_backbones
+        transformer_backbone = RetinaNet.transformer_backbones()
+        return [*_resnet_family] + transformer_backbone + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -359,9 +396,9 @@ class RetinaNet(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            )
         _emd_template["ModelConfiguration"] = "_RetinaNet_Inference"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -389,7 +426,9 @@ class RetinaNet(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {"accuracy": self.average_precision_score(show_progress=True)}
+        return {
+            "average_precision_score": self.average_precision_score(show_progress=True)
+        }
 
     def _analyze_pred(
         self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None
@@ -600,7 +639,7 @@ class RetinaNet(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
@@ -961,3 +1000,31 @@ class RetinaNet(ArcGISModel):
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        # unstable pytorch AMP scaler if batch size less than the given value
+        if self.learn.data.batch_size <= self.MIN_BATCH_VAL_AMP:
+            mixed_precision = False
+
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=mixed_precision,
+            **kwargs,
+        )

@@ -2,6 +2,7 @@
 Generates Layer Types from the given inputs.
 
 """
+
 from __future__ import absolute_import
 import os
 from urllib.parse import urlparse
@@ -12,14 +13,14 @@ from arcgis.geoprocessing._tool import Toolbox
 from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
 from arcgis.gis import Layer
-from arcgis.mapping import VectorTileLayer
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import VectorTileLayer
+from arcgis.layers import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
-from arcgis.mapping._scenelyrs import SceneLayer
+from arcgis.layers._scenelyrs import SceneLayer
 from ..._impl._con import Connection
 from ._geodataservice import GeoData
-from ._layerfactory import Service
+from arcgis.layers import Service
 from ..admin._services import Service as AdminService
 
 
@@ -73,12 +74,12 @@ class AdminServiceFactory(type):
 
         url = service._url
         if isinstance(service, FeatureLayer) or os.path.basename(url).isdigit():
-            parent = Service(url=os.path.dirname(url), server=gis)
+            parent = Service(url_or_item=os.path.dirname(url), server=gis)
             return AdminServiceGen(parent, gis)
         elif isinstance(service, (NetworkDataset)):
             rd = {"naserver", "MapServer"}
             url = _str_replace(url, rd)
-            parent = Service(url=url, server=gis)
+            parent = Service(url_or_item=url, server=gis)
             return AdminServiceGen(parent, gis)
         else:
             rd = {"/rest/": "/admin/"}

@@ -39,12 +39,42 @@ NetworkDataset
     :members:
     :undoc-members:
 
+NetworkDatasetLayer
+-------------------
+.. autoclass:: arcgis.network.NetworkDatasetLayer
+    :members:
+    :undoc-members:
+
 ODCostMatrixLayer
---------------
+-----------------
 .. autoclass:: arcgis.network.ODCostMatrixLayer
     :members:
     :undoc-members:
     
+LocateSettings
+--------------
+.. autoclass:: arcgis.network.LocateSettings
+    :members:
+    :undoc-members:
+
+publish_routing_services
+------------------------
+.. autofunction:: arcgis.network.publish_routing_services
+
+Enumerations
+------------
+ToleranceUnits
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.network.ToleranceUnits
+    :members:
+    :undoc-members:
+
+SolverType
+^^^^^^^^^^
+.. autoclass:: arcgis.network.SolverType
+    :members:
+    :undoc-members:
+
 Submodules
 --------------
 .. toctree::

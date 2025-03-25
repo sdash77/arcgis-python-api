@@ -1,12 +1,144 @@
 """
 class to work with the living atlas
 """
-from typing import Optional
+
+from __future__ import annotations
+import time
+import datetime as _dt
+from typing import Optional, Any
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS
 from ...gis import Group, GroupManager
 from ._base import BasePortalAdmin
+from arcgis.auth import EsriSession
+import requests
+
+
+class LivingAtlasJob:
+    """The Living Atlas Update Job"""
+
+    def __init__(self, url: str, session: EsriSession):
+        self.url: str = url
+        self.session: EsriSession = session
+
+    @property
+    def properties(self) -> dict:
+        """
+        returns the job information
+        """
+        return self.session.get(
+            url=self.url,
+            params={
+                "f": "json",
+            },
+        ).json()
+
+    def status(self) -> str:
+        """returns the state of a given job"""
+        return self.properties.get("status", "unknown")
+
+    def result(self) -> dict[str, Any]:
+        """waits for the process to complete and returns the final messages"""
+        count: int = 1
+        status: str = self.properties.get("status", "UNKNOWN")
+        while not status in ["processing"]:
+            time.sleep(count)
+            if count < 5:
+                count += 1
+            status = self.properties.get("status", "UNKNOWN")
+        return self.properties
+
+
+class LivingAtlasManager:
+    """
+    Provides a collection of tools to update living atlas on an existing enterprise configuration.
+    """
+
+    url: str | None = None
+    session: EsriSession | None = None
+
+    def __init__(self, url: str, session: EsriSession):
+        self.url = url
+        self.session = session
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return "< %s @ %s >" % (type(self).__name__, self.url)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return "< %s @ %s >" % (type(self).__name__, self.url)
+
+    @property
+    def properties(self) -> dict:
+        """returns the living atlas manager's properties"""
+        return self.session.get(
+            url=self.url,
+            params={
+                "f": "json",
+            },
+        ).json()
+
+    @property
+    def package_directory(self) -> dict:
+        """returns the information about the package directory"""
+        url: str = f"{self.url}/packageDirectory"
+        params: dict = {
+            "f": "json",
+        }
+        resp: requests.Response = self.session.get(url=url, params=params)
+        return resp.json()
+
+    def check(self) -> dict:
+        """Provides a way for users to see if new living atlas content is available for update"""
+        url: str = f"{self.url}/checkForUpdates"
+        params: dict = {
+            "f": "json",
+        }
+        resp: requests.Response = self.session.get(url=url, params=params)
+        resp.raise_for_status()
+        return resp.json()
+
+    def update(
+        self, package_id: str, start_time: _dt.datetime | None = None
+    ) -> LivingAtlasJob | dict:
+        """
+        Updates the living atlas to a given package
+
+        ===============     ====================================================
+        **Parameter**        **Description**
+        ---------------     ----------------------------------------------------
+        package_id          Required str. The package ID to update with.  This can be obtained from `check` method.
+        ---------------     ----------------------------------------------------
+        start_time          Optional datetime.datetime. The date/time to run the update.
+        ===============     ====================================================
+
+        """
+        if start_time is None:
+            start_time: str = ""
+        elif isinstance(start_time, _dt.datetime):
+            start_time: int = int(start_time.timestamp() * 1000)
+        else:
+            raise ValueError(
+                "The start_time parameter must be of type datetime.datetime or None"
+            )
+        params: dict[str, Any] = {
+            "f": "json",
+            "packageId": package_id,
+            "startTime": start_time,
+            "async": "true",
+        }
+        url: str = f"{self.url}/downloadAndInstallUpdates"
+        resp: requests.Response = self.session.post(url=url, data=params)
+        job: dict = resp.json()
+        if "jobId" in job and job.get("success", False):
+            job_url: str = (
+                f"{self._gis._portal.resturl}/portals/self/jobs/{jobs['jobId']}"
+            )
+
+            return LivingAtlasJob(url=job_url, session=self.session)
+        return job
 
 
 ########################################################################
@@ -103,8 +235,7 @@ class LivingAtlas(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
-
-        super(LivingAtlas, self).__init__(url=url, gis=gis)
+        super()
         self._url = url.replace("http://", "https://")
         if isinstance(gis, Connection):
             self._con = gis
@@ -114,14 +245,14 @@ class LivingAtlas(BasePortalAdmin):
         else:
             raise ValueError("connection must be of type GIS or Connection")
 
-        self._init()
-
     # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """initializer"""
         try:
             self._groupquery = self._gis.properties["livingAtlasGroupQuery"]
         except:
+            self._groupquery = 'title:"Living Atlas" AND owner:esri_livingatlas'
+        if self._groupquery == "":
             self._groupquery = 'title:"Living Atlas" AND owner:esri_livingatlas'
         groups = self._gis.groups
         self._groups = []
@@ -564,3 +695,11 @@ class LivingAtlas(BasePortalAdmin):
         else:
             return False
         return False
+
+    @property
+    def update_manager(self) -> dict[str, Any]:
+        """returns the status of the living atlas page"""
+        if self._gis.version >= [2024, 1]:
+            url: str = f"{self._gis._portal.resturl}/portals/self/livingatlascatalog"
+            return LivingAtlasManager(url=url, session=self._gis.session)
+        return None

@@ -4,49 +4,49 @@ about:
   license: Esri Master License Agreement (MLA)
   summary: ArcGIS API for Python
 build:
-  number: '0'
+  number: {{ environ.get('BUILD_NUMBER', '0') }}
 package:
   name: arcgis
-  version: 2.3.0
+  version: 2.4.1
 requirements:
   build:
   - python
   - setuptools
+  - requests
   run:
   - python
-  - urllib3 <2
-  - pillow
   - cachetools
-  - notebook
-  - jupyter_client <=6.1.12
-  - ipywidgets >=7,<8
-  - widgetsnbextension >=3
-  - pandas >=2.0.0,<3
-  - ujson >=3
-  - numpy >=1.21.6
-  - pyshp >=2,<3
-  - matplotlib
+  - certifi
+  - cryptography
+  - dask >=2024.12.1,<2025.1.0
+  - geomet
   - keyring >=23.3.0
-  - requests >=2.31.0,<3
-  - requests-toolbelt
+  - lxml
+  - matplotlib
+  - matplotlib-inline
+  - numpy >=1.21.6,<2
+  - pandas >=2.0.0,<2.3.0
+  - pillow
+  - puremagic >=1.15,<2
+  - pyarrow >=14,<17
+  - pylerc
+  - pyspnego >=0.8.0
+  - pywin32-security [win]
+  - requests >=2.32.3,<3
+  - requests-gssapi
   - requests-kerberos
   - requests-oauthlib
-  - puremagic >=1.15,<2
-  - pywin32-security [win]
-  - pylerc
-  - python-certifi-win32 [win and py<310]
-  - truststore [py>=310]
-  - cryptography
-  - lxml
-  - certifi
-  - dask >=2023.3.2
-  - geomet
-  - requests-gssapi
-  - pyspnego >=0.8.0
-  - matplotlib-inline
-  - pyarrow >=11.0.0
+  - requests-toolbelt
+  - truststore >=0.10.0
+  - ujson >=3
+  - urllib3 >=2.1.0,<3
+  - pydantic >=2.8.2, <3
+  - networkx >=3.3, <4
+  - websocket-client >=1.2.3, <2.0.0
 source:
-  path: ../../src
+  git_url: ../..
 test:
   imports:
   - arcgis.gis
+extra:
+  build_string: {{ GIT_BUILD_STR }}

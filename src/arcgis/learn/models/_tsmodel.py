@@ -31,6 +31,7 @@ try:
     from .._utils.TSData import To3dTensor, ToTensor
     from .._utils.common import _get_emd_path
     from ._tsmodel_archs._TST import TST
+    from ..text._model_extension_text import TextModelExtension
 
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
@@ -140,37 +141,46 @@ class TimeSeriesModel(ArcGISModel):
         if self.multistep and len(list(fields_needed)) != 1:
             self.step = seq_len // 2
 
-        if not data_bunch:
-            self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
-        elif kwargs.get("pretrained_path"):
-            self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
-            self.learn.data = data_bunch
+        self.model_extension = False
+        self.inference_model = None
+
+        if kwargs.get("model_extension", False):
+            self.inference_model = kwargs.get("extensible_model", None)
+            assert self.inference_model is not None
+            self.inference_model = self.inference_model.model
+            self.model_extension = True
         else:
-            if not _model_arch.get(model_arch.lower()):
-                raise Exception("Invalid model architecture")
-
-            model_arch_ob = _model_arch.get(model_arch.lower())
-            if model_arch.lower() == "lstm":
-                model = model_arch_ob(
-                    data_bunch.features, data_bunch.c, self._device, **kwargs
-                ).to(self._device)
-            elif model_arch.lower() == "timeseriestransformer":
-                model = model_arch_ob(
-                    data_bunch.features, data_bunch.c, seq_len, **kwargs
-                ).to(self._device)
+            if not data_bunch:
+                self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
+            elif kwargs.get("pretrained_path"):
+                self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
+                self.learn.data = data_bunch
             else:
-                if model_arch.lower() in ["resnet", "fcn"]:
-                    kwargs["device"] = self._device
-                model = model_arch_ob(data_bunch.features, data_bunch.c, **kwargs).to(
-                    self._device
-                )
-                if model_arch.lower() in ["resnet", "fcn"]:
-                    del kwargs["device"]
-            self.learn = Learner(data_bunch, model, path=data.path)
-            self.learn.data = data_bunch
+                if not _model_arch.get(model_arch.lower()):
+                    raise Exception("Invalid model architecture")
 
-        self.learn.layer_groups = split_model_idx(self.learn.model, [1])
-        self._model_arch = model_arch.lower()
+                model_arch_ob = _model_arch.get(model_arch.lower())
+                if model_arch.lower() == "lstm":
+                    model = model_arch_ob(
+                        data_bunch.features, data_bunch.c, self._device, **kwargs
+                    ).to(self._device)
+                elif model_arch.lower() == "timeseriestransformer":
+                    model = model_arch_ob(
+                        data_bunch.features, data_bunch.c, seq_len, **kwargs
+                    ).to(self._device)
+                else:
+                    if model_arch.lower() in ["resnet", "fcn"]:
+                        kwargs["device"] = self._device
+                    model = model_arch_ob(
+                        data_bunch.features, data_bunch.c, **kwargs
+                    ).to(self._device)
+                    if model_arch.lower() in ["resnet", "fcn"]:
+                        del kwargs["device"]
+                self.learn = Learner(data_bunch, model, path=data.path)
+                self.learn.data = data_bunch
+
+            self.learn.layer_groups = split_model_idx(self.learn.model, [1])
+            self._model_arch = model_arch.lower()
         if kwargs.get("pretrained_path"):
             del kwargs["pretrained_path"]
         self._kwargs = kwargs
@@ -187,7 +197,7 @@ class TimeSeriesModel(ArcGISModel):
         return ["valid_loss"]
 
     @classmethod
-    def from_model(cls, emd_path, data=None):
+    def from_model(cls, emd_path, data=None, **kwargs):
         """
         Creates a :class:`~arcgis.learn.TimeSeriesModel` Object from an Esri Model Definition (EMD) file.
 
@@ -211,20 +221,23 @@ class TimeSeriesModel(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        dependent_variable = emd["dependent_variable"]
+        _is_classification = False
+        dependent_variable = emd.get("dependent_variable", [])
+        categorical_variables = emd.get("categorical_variables", [])
+        continuous_variables = emd.get("continuous_variables", [])
+        seq_len = emd.get("seq_len", None)
+
+        if "InferenceFunction" in emd:
+            extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
+        else:
+            if emd["_is_classification"] == "classification":
+                _is_classification = True
+            model_params = emd["model_params"]
+            model_arch = emd["model_arch"]
         # added reverse support to the EMD params.
         if isinstance(dependent_variable, str):
             dependent_variable = [dependent_variable]
-        categorical_variables = emd["categorical_variables"]
-        continuous_variables = emd["continuous_variables"]
 
-        _is_classification = False
-        if emd["_is_classification"] == "classification":
-            _is_classification = True
-
-        model_params = emd["model_params"]
-        model_arch = emd["model_arch"]
-        seq_len = emd["seq_len"]
         index_field = emd.get("index_field", None)
         test_size = emd.get("test_size", None)
         step = emd.get("step", 1)
@@ -262,15 +275,29 @@ class TimeSeriesModel(ArcGISModel):
             data._index_field = index_field
             data._test_size = test_size
 
-            class_object = cls(
-                data,
-                seq_len,
-                model_arch=model_arch,
-                pretrained_path=emd_path,
-                step=step,
-                multistep=multistep,
-                **model_params,
-            )
+            if "InferenceFunction" in emd:
+                try:
+                    if extensible_model.model_loaded:
+                        class_object = cls(
+                            data,
+                            seq_len,
+                            model_arch="inference_model",
+                            pretrained_path=emd_path,
+                            model_extension=True,
+                            extensible_model=extensible_model,
+                        )
+                except:
+                    raise Exception("Could not load the inference model")
+            else:
+                class_object = cls(
+                    data,
+                    seq_len,
+                    model_arch=model_arch,
+                    pretrained_path=emd_path,
+                    step=step,
+                    multistep=multistep,
+                    **model_params,
+                )
             class_object._data.emd = emd
             class_object._data.emd_path = emd_path
             return class_object
@@ -344,7 +371,12 @@ class TimeSeriesModel(ArcGISModel):
 
         with io.capture_output() as captured:
             saved_path = super().save(
-                path, framework, False, gis, save_optimizer=save_optimizer, **kwargs
+                path,
+                framework,
+                False,
+                gis,
+                save_optimizer=save_optimizer,
+                **kwargs,
             )
         if publish:
             file_name = os.path.basename(saved_path) + ".dlpk"
@@ -637,7 +669,10 @@ class TimeSeriesModel(ArcGISModel):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -660,7 +695,10 @@ class TimeSeriesModel(ArcGISModel):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -744,7 +782,10 @@ class TimeSeriesModel(ArcGISModel):
             single_swap_pred,
             number_of_predictions,
         ) = self._infer_number_of_pred(
-            orig_dataframe, number_of_predictions, match_field_names, fields_needed
+            orig_dataframe,
+            number_of_predictions,
+            match_field_names,
+            fields_needed,
         )
 
         dataframe = orig_dataframe.copy()
@@ -864,15 +905,17 @@ class TimeSeriesModel(ArcGISModel):
         while index < len(prediction_sequence_list):
             if pd.isna(prediction_sequence_list[index]).any() or any(
                 [
-                    True
-                    if i
-                    in [
-                        "",
-                        None,
-                        "null",
-                        "None",
-                    ]
-                    else False
+                    (
+                        True
+                        if i
+                        in [
+                            "",
+                            None,
+                            "null",
+                            "None",
+                        ]
+                        else False
+                    )
                     for i in prediction_sequence_list[index]
                 ]
             ):
@@ -931,9 +974,11 @@ class TimeSeriesModel(ArcGISModel):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_layer_name + ".xlsx")
                 orig_dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
+                folder = gis.content.folders.get()
+                online_table = folder.add(
+                    {"type": "Microsoft Excel", "overwrite": True},
+                    file=table_file,
+                ).result()
                 return online_table.publish(overwrite=True)
 
     def _apply_inverse_transform(self, transformed_results):
@@ -950,7 +995,11 @@ class TimeSeriesModel(ArcGISModel):
         return np.stack(transformed_results_ret, axis=1)
 
     def _add_predict_rows(
-        self, number_of_predictions, orig_dataframe, match_field_names, fields_needed
+        self,
+        number_of_predictions,
+        orig_dataframe,
+        match_field_names,
+        fields_needed,
     ):
         # Changed to make code future ready as the previous method of adding
         # pandas series will be deprecated.
@@ -1030,13 +1079,16 @@ class TimeSeriesModel(ArcGISModel):
                 end_value, freq=delta, periods=number_of_predictions + 1
             )
             orig_dataframe.loc[
-                orig_dataframe.tail(number_of_predictions).index, index_field_name
+                orig_dataframe.tail(number_of_predictions).index,
+                index_field_name,
             ] = tindex[1:]
         if len(datetime_dict):
             for key, value in datetime_dict.items():
                 new_delta, end_value_temp = value
                 tindex = pd.period_range(
-                    end_value_temp, freq=new_delta, periods=number_of_predictions + 1
+                    end_value_temp,
+                    freq=new_delta,
+                    periods=number_of_predictions + 1,
                 )
                 orig_dataframe.loc[
                     orig_dataframe.tail(number_of_predictions).index, key
@@ -1045,7 +1097,11 @@ class TimeSeriesModel(ArcGISModel):
         return orig_dataframe
 
     def _infer_number_of_pred(
-        self, orig_dataframe, number_of_predictions, match_field_names, fields_needed
+        self,
+        orig_dataframe,
+        number_of_predictions,
+        match_field_names,
+        fields_needed,
     ):
         # Type of inference
         #     ├── Multivariate
@@ -1120,7 +1176,7 @@ class TimeSeriesModel(ArcGISModel):
                 if isinstance(transform, LabelEncoder):
                     transformed_data = transform.transform(
                         np.array(
-                            transformed_data,
+                            transformed_data.to_numpy(na_value=np.nan),
                             dtype=type(processed_dataframe[col][0]),
                         )
                     )
@@ -1128,15 +1184,15 @@ class TimeSeriesModel(ArcGISModel):
                 else:
                     transformed_data = transform.transform(
                         np.array(
-                            transformed_data,
+                            transformed_data.to_numpy(na_value=np.nan),
                             dtype=type(processed_dataframe[col][0]),
                         ).reshape(-1, 1)
                     )
 
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col].head(len(transformed_data)).loc[
-                :
-            ] = np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            processed_dataframe_transform[col].head(len(transformed_data)).loc[:] = (
+                np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            )
         return processed_dataframe_transform
 
     def score(self):
@@ -1210,6 +1266,8 @@ class TimeSeriesModel(ArcGISModel):
     def show_results(self, rows=5):
         """
         Prints the graph with predictions.
+
+        Experimental support for multivariate timeseries.
 
         =====================   ===========================================
         **Parameter**            **Description**

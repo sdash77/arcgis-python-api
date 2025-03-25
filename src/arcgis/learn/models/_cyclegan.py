@@ -40,7 +40,6 @@ except Exception as e:
 
 
 class CycleGAN(ArcGISModel):
-
     """
     Creates a model object which generates images of type A from type B or type B from type A.
 
@@ -169,9 +168,9 @@ class CycleGAN(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
+            )
         _emd_template["ModelType"] = "CycleGAN"
         _emd_template["n_intput_channel"] = self._data.n_channel
         _emd_template["SupportsVariableTileSize"] = True
@@ -299,3 +298,27 @@ class CycleGAN(ArcGISModel):
     @staticmethod
     def _supported_datasets():
         return ["CycleGAN"]
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=False,
+            **kwargs,
+        )

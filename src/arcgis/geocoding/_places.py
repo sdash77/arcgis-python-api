@@ -93,7 +93,7 @@ class PlacesAPI:
     @lru_cache(maxsize=255)
     def _check_privileges(self, gis: GIS) -> bool:
         """
-        Checks to see if the current login has the proper permisions to use
+        Checks to see if the current login has the proper permissions to use
         the Places API
 
         :return: bool
@@ -219,7 +219,7 @@ class PlacesAPI:
         if search_text is None:
             search_text = ""
         if not categories is None:
-            params["categoriesIds"] = ",".join(categories)
+            params["categoryIds"] = ",".join(categories)
         url: str = f"{self._urls['base_url']}{self._urls['near-point']}"
         resp: requests.Response = self.session.get(url=url, params=params)
         resp.raise_for_status()
@@ -288,7 +288,7 @@ class PlacesAPI:
             "pageSize": page_size,
         }
         if not categories is None:
-            params["categoriesIds"] = ",".join(categories)
+            params["categoryIds"] = ",".join(categories)
         url: str = f"{self._urls['base_url']}{self._urls['within-extent']}"
         resp: requests.Response = self.session.get(url=url, params=params)
         resp.raise_for_status()

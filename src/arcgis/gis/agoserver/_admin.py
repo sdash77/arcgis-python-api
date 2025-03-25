@@ -8,9 +8,8 @@ from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.gis import GIS
 
-_scenemgr = LazyLoader("arcgis.mapping._scenelyrs._lyrs")
+_lyrs = LazyLoader("arcgis.layers")
 _featuremgr = LazyLoader("arcgis.features.managers")
-_mapservermgr = LazyLoader("arcgis.mapping._types")
 _imagemgr = LazyLoader("arcgis.raster._layer")
 
 _log = logging.getLogger()
@@ -70,14 +69,12 @@ class AGOLServerManager:
         return InsensitiveDict(resp)
 
     @lru_cache(maxsize=50)
-    def get(
-        self, name: str
-    ) -> Union[
-        _mapservermgr.VectorTileLayerManager,
+    def get(self, name: str) -> Union[
+        _lyrs.VectorTileLayerManager,
         _imagemgr.ImageryLayerCacheManager,
-        _scenemgr.SceneLayerManager,
+        _lyrs.SceneLayerManager,
         _featuremgr.FeatureLayerCollectionManager,
-        _mapservermgr.MapImageLayerManager,
+        _lyrs.MapImageLayerManager,
     ]:
         """
         Returns a single service manager.
@@ -88,11 +85,11 @@ class AGOLServerManager:
         name                   Required String. The name of the service.
         ==================     ====================================================================
 
-        :returns: Union[:class:`~arcgis.mapping.VectorTileLayer`,
+        :returns: Union[:class:`~arcgis.layers.VectorTileLayer`,
                         :class:`~arcgis.raster.ImageryLayerCacheManager`,
-                        :class:`~arcgis.mapping.SceneLayerManager`,
+                        :class:`~arcgis.layers.SceneLayerManager`,
                         :class:`~arcgis.features.managers.FeatureLayerCollectionManager`,
-                        :class:`~arcgis.mapping.MapImageLayerManager`]
+                        :class:`~arcgis.layers.MapImageLayerManager`]
         """
 
         if self.is_tile_server == False:
@@ -157,25 +154,23 @@ class AGOLServerManager:
                     url = f"{self._url}/{name}/{service['type']}"
                 else:
                     url = f"{self._url}/{name}.{service['type']}"
-                serivce_type = service["type"].lower()
-                if serivce_type == "mapserver":
-                    services.append(
-                        _mapservermgr.MapImageLayerManager(url=url, gis=self._gis)
-                    )
-                elif serivce_type == "featureserver":
+                service_type = service["type"].lower()
+                if service_type == "mapserver":
+                    services.append(_lyrs.MapImageLayerManager(url=url, gis=self._gis))
+                elif service_type == "featureserver":
                     services.append(
                         _featuremgr.FeatureLayerCollectionManager(
                             url=url, gis=self._gis
                         )
                     )
 
-                elif serivce_type.find("vector") > -1:
+                elif service_type.find("vector") > -1:
                     services.append(
-                        _mapservermgr.VectorTileLayerManager(url=url, gis=self._gis)
+                        _lyrs.VectorTileLayerManager(url=url, gis=self._gis)
                     )
-                elif serivce_type == "sceneserver":
-                    services.append(_scenemgr.SceneLayerManager(url=url, gis=self._gis))
-                elif serivce_type == "imageserver":
+                elif service_type == "sceneserver":
+                    services.append(_lyrs.SceneLayerManager(url=url, gis=self._gis))
+                elif service_type == "imageserver":
                     services.append(
                         _imagemgr.ImageryLayerCacheManager(url, gis=self._gis)
                     )

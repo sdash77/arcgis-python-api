@@ -4,6 +4,7 @@ Mixin Classes for Attr-support.
 Copyright (c) 2013 Brendan Curran-Johnson
 https://github.com/bcj/AttrDict
 """
+
 from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, MutableMapping, Sequence
@@ -236,7 +237,11 @@ class AttrDict(dict, MutableAttr):
         """
         Serialize the object.
         """
-        return (self.copy(), self._sequence_type, self._allow_invalid_attributes)
+        return (
+            self.copy(),
+            self._sequence_type,
+            self._allow_invalid_attributes,
+        )
 
     def __setstate__(self, state):
         """
@@ -282,7 +287,11 @@ class AttrOrderedDict(OrderedDict, MutableAttr):
         """
         Serialize the object.
         """
-        return (self.copy(), self._sequence_type, self._allow_invalid_attributes)
+        return (
+            self.copy(),
+            self._sequence_type,
+            self._allow_invalid_attributes,
+        )
 
     def __setstate__(self, state):
         """
@@ -368,18 +377,28 @@ class PropertyMap(MutableAttr):
         """
         Return a string representation of the object.
         """
+
+        def _handle_dataclasses(obj):
+            if hasattr(obj, "model_dump"):
+                return obj.model_dump(exclude_none=True, by_alias=True)
+            return obj
+
         # sequence type seems like more trouble than it is worth.
         # If people want full serialization, they can pickle, and in
         # 99% of cases, sequence_type won't change anyway
         return json.dumps(
-            dict(self._mapping), indent=2
+            dict(self._mapping), indent=2, default=_handle_dataclasses
         )  # six.u("PropertyMap({mapping})").format(mapping=repr(self._mapping))
 
     def __getstate__(self):
         """
         Serialize the object.
         """
-        return (self._mapping, self._sequence_type, self._allow_invalid_attributes)
+        return (
+            self._mapping,
+            self._sequence_type,
+            self._allow_invalid_attributes,
+        )
 
     def __setstate__(self, state):
         """

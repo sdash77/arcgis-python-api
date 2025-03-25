@@ -43,7 +43,6 @@ except Exception as e:
 
 
 class PointCNN(ArcGISModel):
-
     """
     Model architecture from https://arxiv.org/abs/1801.07791.
     Creates a Point Cloud classification model.
@@ -91,6 +90,9 @@ class PointCNN(ArcGISModel):
     ---------------------   -------------------------------------------
     sample_point_num        Optional integer. The number of points that the model
                             will actually process.
+    ---------------------   -------------------------------------------
+    focal_loss              Optional boolean. If True, it will use focal loss.
+                            Default: False
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.PointCNN`  Object
@@ -108,6 +110,7 @@ class PointCNN(ArcGISModel):
 
         self._backbone = None
         self.sample_point_num = kwargs.get("sample_point_num", data.max_point)
+        self._focal_loss = kwargs.get("focal_loss", False)
         self.learn = Learner(
             data,
             PointCNNSeg(
@@ -117,7 +120,7 @@ class PointCNN(ArcGISModel):
                 kwargs.get("encoder_params", None),
                 kwargs.get("dropout", None),
             ),
-            loss_func=CrossEntropyPC(data.c),
+            loss_func=CrossEntropyPC(data.c, data.device, self._focal_loss),
             metrics=[
                 AverageMetric(accuracy),
                 AverageMetric(precision),
@@ -230,6 +233,7 @@ class PointCNN(ArcGISModel):
         early_stopping=False,
         checkpoint=True,
         tensorboard=False,
+        mixed_precision=False,
         **kwargs,
     ):
         """
@@ -283,6 +287,11 @@ class PointCNN(ArcGISModel):
                                 should be one of the metric that is displayed in
                                 the training table. Use `{model_name}.available_metrics`
                                 to list the available metrics to set here.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
+                                training. If set to `True`, model training will be done in
+                                mixed precision mode. Only `Pytorch` based models are supported.
+                                The default value is 'False'.
         =====================   ===========================================
 
         **kwargs**
@@ -308,13 +317,20 @@ class PointCNN(ArcGISModel):
 
         if lr is None:
             print("Finding optimum learning rate.")
-            lr = self.lr_find(allow_plot=False)
+            lr = self.lr_find(allow_plot=False, mixed_precision=mixed_precision)
 
         if isinstance(lr, slice):
             lr = lr.stop
 
         super().fit(
-            epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            mixed_precision=mixed_precision,
+            **kwargs,
         )
 
     @property
@@ -354,6 +370,7 @@ class PointCNN(ArcGISModel):
         _emd_template["ExtractBands"] = "N/A"
         _emd_template["ModelParameters"]["encoder_params"] = self.encoder_params
         _emd_template["ModelParameters"]["sample_point_num"] = self.sample_point_num
+        _emd_template["FocalLoss"] = self._focal_loss
 
         _emd_template["DataAttributes"]["block_size"] = self._data.block_size
         _emd_template["DataAttributes"]["max_point"] = self._data.max_point

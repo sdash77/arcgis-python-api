@@ -7,6 +7,7 @@ Since the content sent to and from this resource (and operations
 within it) could contain confidential data like passwords, it is
 recommended that this resource be accessed over HTTPS protocol.
 """
+
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -696,7 +697,7 @@ class User(dict):
         ------------------     --------------------------------------------------------------------
         password               Optional string. The password for this user.
         ------------------     --------------------------------------------------------------------
-        fullname               Optional string. A full name for this user.
+        full_name               Optional string. A full name for this user.
         ------------------     --------------------------------------------------------------------
         description            Optional string. Provide comments or description for this user.
         ------------------     --------------------------------------------------------------------
@@ -1343,7 +1344,7 @@ class Role(dict):
         return True
 
     # ----------------------------------------------------------------------
-    def set_privileges(self, privilage: str) -> bool:
+    def set_privileges(self, privilege: str) -> bool:
         """
         Assigns a privilege to this role.
 
@@ -1375,12 +1376,12 @@ class Role(dict):
 
         """
         allowed = ["administer", "publish", "access"]
-        if privilage.lower() in allowed:
-            privilage = privilage.upper()
+        if privilege.lower() in allowed:
+            privilege = privilege.upper()
         else:
             raise ValueError("Invalid privilage.")
         return self._security._assign_privilege(
-            rolename=self.rolename, privilege=privilage
+            rolename=self.rolename, privilege=privilege
         )
 
     # ----------------------------------------------------------------------

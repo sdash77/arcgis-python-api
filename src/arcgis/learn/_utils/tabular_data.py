@@ -219,6 +219,7 @@ class TabularDataObject(object):
                                 f"We see a class imbalance in the dataset. "
                                 f'The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does '
                                 f"not have enough data points in your dataset."
+                                f"The imbalance class(es) should have at least 1% of total number of data points to stratify."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")
@@ -226,7 +227,7 @@ class TabularDataObject(object):
                         from sklearn.model_selection import train_test_split
 
                         if (
-                            len(set(dependent_variable_column.values))
+                            dependent_variable_column.nunique().values[0]
                             > len(dependent_variable_column.values) * val_split_pct
                         ):
                             classes = len(set(dependent_variable_column.values))
@@ -642,6 +643,14 @@ class TabularDataObject(object):
 
         try:
             processed_data = _procs.fit_transform(dataframe)
+            if self._procs:
+                list_of_transformed_cols = []
+                for cnt, transform in enumerate(self._procs.transformers):
+                    for col in self._procs.transformers[cnt][-1]:
+                        list_of_transformed_cols.append(col)
+                processed_orig_data = dataframe.copy()
+                processed_orig_data[list_of_transformed_cols] = processed_data
+                processed_data = processed_orig_data
         except:
             msg = arcpy_localization_helper(
                 "Unable to fit transforms. This could be because some of the columns in your dataset have multiple "
@@ -1428,7 +1437,7 @@ class TabularDataObject(object):
                         bands.append(raster[1])
                         band_count = len(raster[1])
                         if band_count > raster[0].band_count:
-                            raise (
+                            raise Exception(
                                 "Incorrect band ids passed. The input raster has only "
                                 + str(band_count)
                                 + " bands"
@@ -1524,10 +1533,10 @@ class TabularDataObject(object):
             index_field,
             **kwargs,
         )
-        measurer = np.vectorize(len)
-        col_length = dict(
-            zip(dataframe, measurer(dataframe.values.astype(str)).max(axis=0))
-        )
+
+        # Vectorize consumes a lot of memory. Refer bug 11894. Alternative is to use applymap as below.
+        col_length = dataframe.astype(str).applymap(len).max(axis=0)
+
         unique_values = {}
         for i in dataframe.columns:
             if i != "SHAPE":
@@ -1632,22 +1641,22 @@ class TabularDataObject(object):
             dataframe,
             {
                 "dependent_variable": dependent_variable,
-                "categorical_variables": categorical_variables
-                if categorical_variables
-                else [],
-                "continuous_variables": continuous_variables
-                if continuous_variables
-                else [],
+                "categorical_variables": (
+                    categorical_variables if categorical_variables else []
+                ),
+                "continuous_variables": (
+                    continuous_variables if continuous_variables else []
+                ),
                 "text_variables": text_variables if text_variables else [],
                 "image_variables": image_variables if image_variables else [],
                 "embed_variables": new_embd_cols if new_embd_cols else [],
                 "index_data": index_data,
-                "feature_field_variables": feature_field_variables
-                if feature_field_variables
-                else [],
-                "raster_field_variables": raster_field_variables
-                if raster_field_variables
-                else [],
+                "feature_field_variables": (
+                    feature_field_variables if feature_field_variables else []
+                ),
+                "raster_field_variables": (
+                    raster_field_variables if raster_field_variables else []
+                ),
             },
         )
 
@@ -2398,7 +2407,7 @@ def show_local_interpretation(
         )
         return
     if method == "Tree":
-        explainer = shap.TreeExplainer(model._model, algorithm="Tree")
+        explainer = shap.TreeExplainer(model._model)
     elif method == "KernelRegressor":
         if hasattr(model._data, "_training_indexes"):
             explainer = shap.KernelExplainer(
@@ -2501,9 +2510,17 @@ def show_local_interpretation(
                 matplotlib=True,
             )
         else:
-            shap.force_plot(
-                explainer.expected_value, shap_values, processed_df, matplotlib=True
-            )
+            if isinstance(explainer.expected_value, float):
+                shap.force_plot(
+                    explainer.expected_value, shap_values, processed_df, matplotlib=True
+                )
+            else:
+                shap.plots.force(
+                    explainer.expected_value[0],
+                    shap_values[0][:, 0],
+                    processed_df,
+                    matplotlib=True,
+                )
     elif method == "KernelRegressor":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)

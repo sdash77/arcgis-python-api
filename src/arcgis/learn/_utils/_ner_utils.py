@@ -1,10 +1,12 @@
 import os
+import re
 import json
 import random
 import logging
 import tempfile
 import datetime
 import traceback
+import warnings
 from pathlib import Path
 from .text_data import TextDataObject
 
@@ -19,7 +21,6 @@ try:
 except Exception as e:
     spacy_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_SPACY = False
-
 
 __all__ = ["_from_iob_tags", "_from_json", "_NERData", "even_mults", "_timelapsed"]
 
@@ -152,6 +153,111 @@ def _get_tags_and_tokens_collection(path, ignore_tag_order=False, encoding="UTF-
     return tags_collection, tokens_collection, unique_tags
 
 
+# def remove_duplicates(df_row_list):
+#     seen = []
+#     return [x if x not in seen and not seen.append(x) else np.nan for x in df_row_list]
+
+
+def ranges_overlap(range1, range2):
+    min1, max1 = min(range1), max(range1)
+    min2, max2 = min(range2), max(range2)
+    return max1 >= min2 and max2 >= min1
+
+
+def drop_empty_rows_and_keys(list_of_dicts):
+    keys_to_drop = set()
+    for key in list_of_dicts[0].keys():
+        values = [d[key] for d in list_of_dicts if key in d]
+        if all(value == "" or value is None for value in values):
+            keys_to_drop.add(key)
+
+    for d in list_of_dicts:
+        for key in keys_to_drop:
+            d.pop(key, None)
+
+    rows_to_drop = []
+    for i, d in enumerate(list_of_dicts):
+        if all(value == "" or value is None for value in d.values()):
+            rows_to_drop.append(i)
+
+    for index in sorted(rows_to_drop, reverse=True):
+        del list_of_dicts[index]
+
+    return list_of_dicts
+
+
+def _convert_csv_to_ner_json(
+    path, text_key="input", encoding="UTF-8", return_first=False
+):
+    # New
+    csv_data = pd.read_csv(path, encoding=encoding).dropna(axis=0, how="all")
+    csv_data.dropna(how="all", axis=1, inplace=True)
+    keys = set(csv_data.keys())
+    if text_key not in keys:
+        raise Exception(
+            f"Please specify the column containing the text by using the `text_columns` parameter in the "
+            f"`prepare_textdata` function"
+        )
+
+    if any([True for i in keys if "unnamed" in i.lower()]):
+        raise Exception(
+            f"The input CSV is missing some column names. Kindly provide the column name(s) to be used as entity tag "
+            f"or class name."
+        )
+    # Filter the cases where None of the entity has a valid value.
+    temp_csv_data = csv_data[list(keys - {text_key})].dropna(how="all")
+    csv_data = csv_data[csv_data.index.isin(temp_csv_data.index)]
+    # calculate the index of the token and prepare it as a JSON format
+    csv_data = csv_data.to_dict(orient="records")
+
+    all_records = []
+    for idx, i in enumerate(csv_data):
+        z = {
+            "id": idx + 1,
+            "text": i[text_key],
+        }
+        temp_list = []
+        for key in keys - {text_key}:
+            temp = i[key]
+            if isinstance(temp, (int, float)) and temp is not None:
+                temp = str(temp)
+            all_elems = set(elem.strip() for elem in list(set(temp.split(";"))))
+            for val in all_elems:
+                matches = [
+                    (match.start(), match.end())
+                    for match in re.finditer(re.escape(val), i[text_key])
+                ]
+                slice_len = 1 if return_first else len(matches)
+                if temp_list:
+                    overlapping_ids = any(
+                        ranges_overlap([tl[0], tl[1]], [match[0], match[1]])
+                        for tl in temp_list
+                        for match in matches
+                    )
+                    if not overlapping_ids:
+                        temp_list.extend(
+                            [[match[0], match[1], key] for match in matches[:slice_len]]
+                        )
+                else:
+                    temp_list.extend(
+                        [[match[0], match[1], key] for match in matches[:slice_len]]
+                    )
+
+        z["labels"] = temp_list
+        all_records.append(z)
+
+    all_records_updated = drop_empty_rows_and_keys(all_records)
+    train_data = []
+
+    for i, item in enumerate(all_records_updated):
+        try:
+            if len(item["labels"]):
+                train_data.append((item["text"], {"entities": item["labels"]}))
+        except KeyError as key:
+            raise Exception(f"{key} key not present in record {i} of input csv file.")
+    return train_data
+
+
 class _NERData:
     working_dir = None
     """
@@ -160,7 +266,7 @@ class _NERData:
     #     =====================   ===========================================
     #     **Parameter**            **Description**
     #     ---------------------   -------------------------------------------
-    #     dataset_type            Required string. ['ner_json', 'IOB', 'BILUO']
+    #     dataset_type            Required string. ['ner_json', 'IOB', 'BILUO', 'csv']
     #     ---------------------   -------------------------------------------
     #     address_tag             Optional dict. Address field/tag name
     #                             in the training data.
@@ -180,6 +286,7 @@ class _NERData:
         seed=42,
         val_split_pct=0.1,
         encoding="UTF-8",
+        text_columns=None,
     ):
         self.dataset_type = dataset_type
         self.path = path
@@ -190,6 +297,7 @@ class _NERData:
         self.seed = seed
         self.val_split_pct = val_split_pct
         self.encoding = encoding
+        self.text_columns = text_columns
         self.prepare_data_for_spacy()
 
     def show_batch(self):
@@ -210,10 +318,33 @@ class _NERData:
 
         return data
 
-    def prepare_data_for_transformer(self, ignore_tag_order=True, label2id=None):
+    def _ner_json_process(self, data_list):
         unique_tags = set()
         path = Path(self.path)
         tags_collection, tokens_collection = [], []
+        for i, row in enumerate(data_list):
+            prev_start = 0
+            tmp_tags_list, tmp_tokens_list = [], []
+            text, labels = row[0], row[1]["entities"]
+            for item in sorted(labels, key=lambda x: x[0]):
+                c_text = text[prev_start : item[0]].strip()
+                tmp_tags_list.append("O")
+                unique_tags.add("O")
+                tmp_tokens_list.append(c_text)
+                c_text = text[item[0] : item[1]].strip()
+                tmp_tags_list.append(item[2])
+                tmp_tokens_list.append(c_text)
+                unique_tags.add(item[2])
+                prev_start = item[1]
+
+            tags_collection.append(tmp_tags_list)
+            tokens_collection.append(tmp_tokens_list)
+        return unique_tags, tags_collection, tokens_collection
+
+    def prepare_data_for_transformer(
+        self, ignore_tag_order=True, label2id=None, return_first=False
+    ):
+        path = Path(self.path)
         if self.class_mapping:
             address_tag = self.class_mapping.get("address_tag")
         else:
@@ -231,23 +362,9 @@ class _NERData:
             #  ('of the', 'O'),
             #  ('Associated Bank in the 1500 block of W Broadway', 'Address')]
             data_list = _from_json(path=path, encoding=self.encoding)
-            for i, row in enumerate(data_list):
-                prev_start = 0
-                tmp_tags_list, tmp_tokens_list = [], []
-                text, labels = row[0], row[1]["entities"]
-                for item in sorted(labels, key=lambda x: x[0]):
-                    c_text = text[prev_start : item[0]].strip()
-                    tmp_tags_list.append("O")
-                    unique_tags.add("O")
-                    tmp_tokens_list.append(c_text)
-                    c_text = text[item[0] : item[1]].strip()
-                    tmp_tags_list.append(item[2])
-                    tmp_tokens_list.append(c_text)
-                    unique_tags.add(item[2])
-                    prev_start = item[1]
-
-                tags_collection.append(tmp_tags_list)
-                tokens_collection.append(tmp_tokens_list)
+            unique_tags, tags_collection, tokens_collection = self._ner_json_process(
+                data_list
+            )
 
         elif self.dataset_type in ["BIO", "IOB", "LBIOU", "BILUO"]:
             (
@@ -260,6 +377,13 @@ class _NERData:
 
             if ignore_tag_order:
                 unique_tags = set({x.split("-")[-1] for x in unique_tags})
+        elif self.dataset_type == "csv":
+            data_list = _convert_csv_to_ner_json(
+                path, self.text_columns, return_first=return_first
+            )
+            unique_tags, tags_collection, tokens_collection = self._ner_json_process(
+                data_list
+            )
         else:
             error_message = (
                 f"Wrong argument - {self.dataset_type} supplied for `dataset_type` parameter. "
@@ -316,6 +440,13 @@ class _NERData:
         if self.dataset_type == "ner_json":
             train_data = _from_json(path=path, encoding=self.encoding)
             path = path.parent
+
+        elif self.dataset_type == "csv":
+            train_data = _convert_csv_to_ner_json(
+                path, self.text_columns, encoding=self.encoding
+            )
+            path = path.parent
+
         elif self.dataset_type == "BIO" or self.dataset_type == "IOB":
             tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(
                 path, encoding=self.encoding
@@ -412,7 +543,6 @@ class _spaCyNERItemlist:
         """
         text = item[0]
         df = pd.DataFrame(item[1].get("entities"))
-
         out_dict = {}
         if len(df):
             for x in df[2].unique():
@@ -444,7 +574,6 @@ class _spaCyNERItemlist:
 
 
 class spaCyNERDatabunch:
-
     """
     Creates a databunch object.
 
@@ -474,6 +603,7 @@ class spaCyNERDatabunch:
         self.val_ds = _spaCyNERItemlist(
             batch_size, data=ds[int(len(ds) * (1 - val_split_pct)) :]
         )
+
         self.entities = list(
             set(self.train_ds.entities).union(set(self.val_ds.entities))
         )

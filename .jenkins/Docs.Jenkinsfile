@@ -1,7 +1,9 @@
+def geoserpent_scm = [$class: 'GitSCM', branches: [[name: '$GeoserpentBranch']], extensions: [[$class: 'CloneOption', noTags: true, reference: '', shallow: true, timeout: 240]], userRemoteConfigs: [[credentialsId: 'github_geosaurusaccnt', refspec: '+refs/heads/$GeoserpentBranch:refs/remotes/origin/$GeoserpentBranch', url: 'https://github.com/ArcGIS/geoserpent.git']]]
+
 pipeline {
     agent {
         docker {
-            image "harbor-west.esri.com/python-api/arcgis-learn-pr-docs:2.3.0"
+            image "harbor-west.esri.com/python-api/arcgis-learn-pr-docs:latest"
             registryUrl 'https://harbor-west.esri.com'
             registryCredentialsId 'avworld_geosaurusaccnt'
             alwaysPull true
@@ -10,15 +12,24 @@ pipeline {
             customWorkspace "workspace/$JOB_NAME/$BUILD_NUMBER"
         }
     }
+    parameters {
+        string(name: 'GeoserpentBranch', defaultValue: 'main', description: 'Geoserpent source branch for arcgis-mapping')
+    }
 
     stages {
         stage('Setup') {
             steps {
+                dir("geoserpent") {
+                    checkout geoserpent_scm
+                }
                 // copy in dependent binaries to relevant path
-                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/graph/* ./src/arcgis/graph'
-                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/knn/* ./src/arcgis/learn/_utils'
-                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/tracking-engine/* ./src/arcgis/learn/_tracking'
-                sh 'python -m pip install -e ./src --no-deps'
+                sh 'python ./build/manage_binaries.py copy --local'
+                // install arcgis
+                sh 'python -m pip install ./src --no-deps'
+                // install arcgis-mapping
+                sh 'python -m pip install ./geoserpent/arcgis-mapping/src --no-deps'
+                // copy arcgis.map namespace to arcgis
+                sh 'cp -r geoserpent/arcgis-mapping/src/arcgis/map src/arcgis'
             }
         }
         stage('Sphinx HTML') {
@@ -46,6 +57,7 @@ pipeline {
 
                             // deploy to geosaurus share (by commit)
                             sh "mkdir -p /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT/html"
+                            sh "cp ../html.zip /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT"
                             sh "cp -r . /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT/html"
                         }
                     }
@@ -73,6 +85,7 @@ pipeline {
 
                             // deploy to geosaurus share (by commit)
                             sh "mkdir -p /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT/json"
+                            sh "cp ../json.zip /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT"
                             sh "cp -r . /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT/json"
                         }
                     }

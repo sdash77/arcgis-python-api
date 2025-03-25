@@ -95,18 +95,17 @@ class LocationTrackingManager:
             )
         if float(
             self._gis.properties.get("currentVersion", "0")
-        ) <= 7.3 and tracks_layer_rolling_index_strategy in ["Century", "Decade"]:
+        ) <= 7.3 and tracks_layer_rolling_index_strategy in [
+            "Century",
+            "Decade",
+        ]:
             raise ValueError(
                 f"'{tracks_layer_rolling_index_strategy}' is not supported for this version of Enterprise"
             )
         folder_title = (
             "Location Sharing" if self._use_location_sharing else "Location Tracking"
         )
-        for folder in self._gis.users.me.folders:
-            if folder["title"] == folder_title:
-                break
-        else:
-            self._gis.content.create_folder(folder_title)
+        self._gis.content.folders._get_or_create(folder_title)
         service_name = "location_tracking"
         if not self._gis.content.is_service_name_available(
             service_name, service_type="featureService"
@@ -161,10 +160,11 @@ class LocationTrackingManager:
                 "snippet": f"Location {'Sharing' if self._use_location_sharing else 'Tracking'} Service",
             }
         )
-        item.share(org=True)
+        item.sharing.sharing_level = "ORGANIZATION"
         self._gis.update_properties(
             {"locationTrackingService": {"url": item.url, "id": item.itemid}}
         )
+        self._gis._properties = None
         return True
 
     def pause(self):
@@ -247,9 +247,10 @@ class LocationTrackingManager:
                 else "Location Tracking"
             )
             for folder in self._gis.users.get(item.owner).folders:
-                if folder["title"] == folder_title:
-                    self._gis.content.delete_folder(folder["title"], owner=item.owner)
+                if folder.name == folder_title:
+                    folder.delete(permanent=True)
                     break
+        self._gis._properties = None
         return True
 
     def create_track_view(self, title: str):
@@ -268,8 +269,8 @@ class LocationTrackingManager:
         folder = None
         if self.item.ownerFolder is not None:
             for f in self._gis.users.get(self.item.owner).folders:
-                if f["id"] == self.item.ownerFolder:
-                    folder = f["title"]
+                if f._fid == self.item.ownerFolder:
+                    folder = f.name
                     break
         group = self._gis.groups.create(
             title,
@@ -281,7 +282,10 @@ class LocationTrackingManager:
         group.protected = True
         item = self._gis.content.create_service(
             "{}_Track_View".format(group.id),
-            create_params={"name": "{}_Track_View".format(group.id), "isView": True},
+            create_params={
+                "name": "{}_Track_View".format(group.id),
+                "isView": True,
+            },
             folder=folder,
             service_type="locationTrackingService",
             is_view=True,
@@ -298,7 +302,7 @@ class LocationTrackingManager:
         # Older versions of the LTS may not have this layer
         if len(item.layers) >= 3:
             item.layers[2].manager.update_definition(definition)
-        if self._gis.properties.isPortal:
+        if self._gis.properties.isPortal and self._gis.version <= [7, 1]:
             # Set allowOthersToQuery to True - workaround for missing feature in Enterprise 10.7/10.7.1
             arcgis.features.FeatureLayerCollection(
                 item.url, self._gis
@@ -313,7 +317,7 @@ class LocationTrackingManager:
                     }
                 }
             )
-        item.share(groups=[group])
+        item.sharing.groups.add(group)
         if group.owner != self.item.owner:
             group.reassign_to(self.item.owner)
             group.remove_users([self._gis.users.me])
@@ -423,10 +427,13 @@ class LocationTrackingManager:
             {"tableMetadata": {"dataRetention": "{}".format(str(value).lower())}}
         )
 
-    @_lazy_property
+    @property
     def item(self):
         """The Location Sharing :class:`~arcgis.gis.Item`"""
         try:
+            if not "locationTracking" in self._gis.properties["helperServices"]:
+                self._gis._properties = None
+
             return self._gis.content.get(
                 self._gis.properties.helperServices["locationTracking"]["id"]
             )
@@ -470,9 +477,12 @@ class LocationTrackingManager:
         except:
             return "disabled"
 
-    @_lazy_property
+    @property
     def _service(self):
         try:
+            if not "locationTracking" in self._gis.properties["helperServices"]:
+                self._gis._properties = None
+
             return arcgis.features.FeatureLayerCollection(
                 self._gis.properties.helperServices["locationTracking"]["url"],
                 self._gis,

@@ -2,7 +2,7 @@ import logging as _logging
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 
@@ -83,6 +83,45 @@ def aggregate_points(
 
     return _execute_gp_tool(
         gis, "AggregatePoints", kwargs, param_db, return_values, _use_async, url
+    )
+
+
+def calculate_composite_index(
+    input_layer,
+    input_variables,
+    index_method=None,
+    output_index_reverse=False,
+    output_index_min_max=None,
+    output_name=None,
+    context=None,
+    gis=None,
+):
+    kwargs = locals()
+
+    param_db = {
+        "input_layer": (str, "inputLayer"),
+        "input_variables": (str, "inputVariables"),
+        "index_method": (str, "indexMethod"),
+        "output_index_reverse": (bool, "outputIndexReverse"),
+        "output_index_min_max": (list, "outputIndexMinMax"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+    }
+    return_values = [
+        {
+            "name": "calculate_composite_index",
+            "display_name": "calculateCompositeIndex",
+            "type": str,
+        },
+        {"name": "index_result_layer", "display_name": "indexResultLayer", "type": str},
+    ]
+
+    if gis is None:
+        gis = arcgis.env.active_gis
+    url = gis.properties.helperServices.analysis.url
+
+    return _execute_gp_tool(
+        gis, "CalculateCompositeIndex", kwargs, param_db, return_values, _use_async, url
     )
 
 

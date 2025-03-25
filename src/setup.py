@@ -10,6 +10,7 @@ from setuptools import find_packages
 from setuptools.dist import Distribution
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 from setuptools.command.egg_info import egg_info as _egg_info
 
 # To use a consistent encoding
@@ -18,7 +19,6 @@ from os import path
 import sys
 from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
-import atexit
 import logging
 import site
 
@@ -64,110 +64,36 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "urllib3>=1.21.1,<3",
+        "urllib3>=2.1.0,<3",
         "cachetools",
         "lxml",
-        "notebook",
         "cryptography",
-        "ipywidgets >=7,<8",
-        "widgetsnbextension >=3",
-        "jupyter-client <=6.1.12",
-        "pandas >=2.0.0,<3",
-        "numpy >=1.21.6",
+        "pandas >=2.0.0,<2.3.0",
+        "numpy >=1.21.6,<2",
         "matplotlib",
         "keyring >=23.3.0",
         "pylerc",
         "ujson >=3",
-        "jupyterlab",
-        "python-certifi-win32;python_version<'3.10'",
-        "truststore>=0.7.0;python_version>'3.9'",
+        "truststore>=0.10.0",
         'pywin32 >=223;platform_system=="Windows"',
-        "pyshp >=2",
         "geomet",
-        "requests >=2.31.0,<3",
+        "requests >=2.32.3,<3",
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",
-        "requests-kerberos",
-        "requests-gssapi",
-        "dask >=2023.3.2",
+        "dask[dataframe] >=2024.12.1,<2025.1.0",
         "matplotlib-inline",
-        "pyarrow >=11.0.0",
+        "pyarrow >=16,<17",
         "puremagic >=1.15,<2",
+        "pydantic >=2.8.2, <3",
+        "networkx >=3.3, <4",
+        "websocket-client >=1.2.3, <2.0.0",
     ]
 
 
 def _post_install():
-    """This function will run after 'pip install' finishes. It has 2 parts:
-    1) activate the notebook map widget, equivalent of running these cmds:
-        - jupyter nbextension install --py --sys-prefix arcgis
-        - jupyter nbextension enable --py --sys-prefix arcgis
-        - jupyter nbextension enable --py --sys-prefix widgetsnbextension
-    2) If the O.S. is Mac OSX, run the OpenSSL workaround as described in
-       this issue: https://bugs.python.org/issue28150, equivalent of running
-       '/Applications/Python X.X/Install Certificates.command' cmd
-    """
-    if conda_install_mode:
-        # Don't run any post installation methods for conda installs
-        return
-
-    # 1) activate the notebook map widget
-    try:
-        import notebook.nbextensions as nbext
-        import arcgis
-
-        activate_map_widget = True
-    except Exception as e:
-        log.exception(
-            "arcgis/notebook packages don't appear to be installed: "
-            "map widget not activated, may not work. The rest of "
-            "install is unaffected by this. Exception caught: "
-        )
-        log.exception(e)
-        activate_map_widget = False
-
-    if activate_map_widget:
-        log.warning("Attempting to activate map widget...")
-        print("Attempting to activate map widget...")
-        try:
-            log.warning(
-                nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
-            )
-
-            log.warning(
-                nbext.enable_nbextension_python("arcgis", sys_prefix=True, logger=log)
-            )
-
-            log.warning(
-                nbext.enable_nbextension_python(
-                    "widgetsnbextension", sys_prefix=True, logger=log
-                )
-            )
-
-        except Exception as e:
-            print(f"Activating the widget failed {e}")
-            log.exception("Activating map widget failed: Continuing install..")
-            log.exception(e)
-
-    # 2) If the OS is Mac OSX, run the OpenSSL workaround
-    platform_is_osx = sys.platform == "darwin"
-    if not platform_is_osx:
-        return
-    for potential_cert_script in glob("/Applications/Python*/*"):
-        if "Install Certificates.command" in potential_cert_script:
-            try:
-                cmd_output = check_output(potential_cert_script, stderr=STDOUT)
-                log.warning(
-                    "OpenSSL workaround for OSX completed successfully. "
-                    "See https://bugs.python.org/issue28150 for info. "
-                    "Output: {}".format(cmd_output.decode("utf-8"))
-                )
-            except Exception:
-                log.exception(
-                    "OpenSSL workaround for OSX did not complete "
-                    "successfully. This may or may not allow secure SSL "
-                    "to work. See https://bugs.python.org/issue28150. "
-                )
+    """stub for post-installation logic when installing source distribution"""
+    return
 
 
 # Each of these classes represent the different modes that pip install
@@ -188,6 +114,14 @@ class install(_install):
         super().run()
 
 
+class bdist_wheel(_bdist_wheel):
+    """Configures bdist_wheel to be platform-agostic"""
+
+    def finalize_options(self):
+        _bdist_wheel.finalize_options(self)
+        self.root_is_pure = True
+
+
 class egg_info(_egg_info):
     """Post-installation logic to run for 'egg_info' mode"""
 
@@ -204,35 +138,22 @@ try:
 except:
     long_description = "ArcGIS API for Python"
 
-# Assemble the `data_files` list of all non-python files
-data_files = [
-    (
-        "share/jupyter/nbextensions/arcgis",
-        [
-            "arcgis/widgets/js/dist/extension.js",
-            "arcgis/widgets/js/dist/arcgis-map-ipywidget.js",
-            "arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map",
-            "arcgis/apps/workforce/_store/resources/default-project-thumbnail.png",
-        ],
-    ),
-]
-
 
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "3"
+    MINOR = "4"
     try:
         import os
 
         def __path(filename):
             return os.path.join(os.path.dirname(__file__), filename)
 
-        MICRO = "0"
+        MICRO = "1"
         if os.path.exists(__path("build.info")):
             MICRO = open(__path("build.info")).read().strip()
     except:
-        MICRO = "0"
+        MICRO = "1"
     return f"{MAJOR}.{MINOR}.{MICRO}"
 
 
@@ -266,9 +187,6 @@ kwargs = {
         # Indicate who your project is intended for
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
-        # Frameworks
-        "Framework :: IPython",
-        "Framework :: Jupyter",
         # OS
         "Operating System :: OS Independent",
         # Pick your license as you wish (should match "license" above)
@@ -276,9 +194,9 @@ kwargs = {
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "
@@ -290,9 +208,8 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
-    "python_requires": ">=3.9, <3.12",
+    "python_requires": ">=3.10, <3.13",
     "include_package_data": True,
-    "data_files": data_files,
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
@@ -313,6 +230,7 @@ kwargs = {
         "develop": develop,
         "install": install,
         "egg_info": egg_info,
+        "bdist_wheel": bdist_wheel,
     },
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -320,6 +238,11 @@ kwargs = {
     # $ pip install -e .[dev,test]
     "extras_require": {
         "gp": ["dill"],
+        "gdal": ["gdal >=3.9.2, <4"],
+        "kerberos": [
+            "requests-kerberos",
+            "requests-gssapi",
+        ],
     },
     "distclass": BinaryDistribution,
     # extras_require={
@@ -334,6 +257,7 @@ kwargs = {
     # },
     "package_data": {
         "arcgis": [
+            "apps/workforce/_store/resources/default-project-thumbnail.png",
             "gis/_impl/*.pyd",
             "gis/_impl/*.so",
             "graph/_decoder/**/*.pyd",

@@ -5,6 +5,7 @@ from ._arcgis_model import ArcGISModel, _EmptyData
 import traceback
 from .._utils.env import raise_fastai_import_error
 from ._codetemplate import image_classifier_prf
+import urllib
 
 try:
     from ._change_detector_utils import get_learner
@@ -19,7 +20,6 @@ except ImportError:
 
 
 class ChangeDetector(ArcGISModel):
-
     """
     Creates a Change Detection model.
 
@@ -34,7 +34,7 @@ class ChangeDetector(ArcGISModel):
                             from :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used
-                            for creating the encoder of the :class:`~arcgis.learn.ConnectNet`,
+                            for creating the encoder of the :class:`~arcgis.learn.ChangeDetector`,
                             which is `resnet18` by default. It supports
                             the ResNet family of backbones.
     ---------------------   -------------------------------------------
@@ -47,7 +47,7 @@ class ChangeDetector(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :return: :class:`~arcgis.learn.ConnectNet` object
+    :return: :class:`~arcgis.learn.ChangeDetector` object
     """
 
     def __init__(
@@ -69,7 +69,12 @@ class ChangeDetector(ArcGISModel):
         super().__init__(data, backbone, pretrained_path=pretrained_path)
         backbone = self._backbone.__name__.lower()
         self.SA_type = attention_type
-        self.learn = get_learner(self._data, backbone, self.SA_type)
+        try:
+            self.learn = get_learner(self._data, backbone, self.SA_type)
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+            )
         self._code = image_classifier_prf
         self._arcgis_init_callback()  # make first conv weights learnable
         if pretrained_path is not None:
@@ -120,7 +125,7 @@ class ChangeDetector(ArcGISModel):
                                 None for inferencing.
         =====================   ===========================================
 
-        :return: :class:`~arcgis.learn.ConnectNet` Object
+        :return: :class:`~arcgis.learn.ChangeDetector` Object
         """
         emd_path = _get_emd_path(emd_path)
         emd_path = Path(emd_path)
@@ -216,9 +221,9 @@ class ChangeDetector(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         if self._is_multispectral:
             # change this when we start to honour extract bands parameter.
             _emd_template["ExtractBands"] = list(

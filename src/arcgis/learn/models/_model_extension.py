@@ -3,10 +3,10 @@ import json
 from ._arcgis_model import _EmptyData, _change_tail, ArcGISModel, _get_device
 from ._codetemplate import code, image_classifier_prf, panoptic_segmenter_prf
 import warnings
-import arcgis
-import sys, os, importlib
+import sys, importlib
 from functools import partial
 import logging
+import urllib
 
 logger = logging.getLogger()
 
@@ -15,18 +15,14 @@ HAS_FASTAI = True
 
 try:
     import torch
-    from torch import nn
     import numpy as np
     from fastai.basic_train import Learner, LearnerCallback
-    from fastai.torch_core import split_model_idx
     from fastai.vision import ImageList
-    from fastai.vision import imagenet_stats, normalize
+    from fastai.vision import imagenet_stats
     from fastai.core import has_arg, split_kwargs_by_func
     from fastai.basic_data import DatasetType
-    from fastai.callback import Callback
     from fastai.torch_core import to_cpu, grab_idx
-    from fastai.basic_train import loss_batch
-    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
+    from fastai.vision.image import bb2hw
     from .._utils.classified_tiles import per_class_metrics
     from ._deeplab_utils import compute_miou
     import PIL
@@ -48,13 +44,12 @@ try:
         _exclude_detection,
     )
     from .._video_utils import VideoUtils
-    import inspect
     from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     import types
     from ._maskrcnn import grid_anchors
-    from .._utils.pascal_voc_rectangles import _reconstruct
     from .._utils.utils import chips_to_batch
+    from ._model_extension_config import MMDetectionConfig, MMSegmentationConfig
 
     HAS_FASTAI = True
 
@@ -106,6 +101,11 @@ class ModelExtension(ArcGISModel):
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
         self._learn_version = kwargs.get("ArcGISLearnVersion", "1.9.1")
+        mmlab_config = {
+            "MMDetectionConfig": MMDetectionConfig,
+            "MMSegmentationConfig": MMSegmentationConfig,
+        }
+        model_conf = mmlab_config.get(model_conf.__name__, model_conf)
 
         if self._learn_version >= "1.9.0":
             if pretrained_path is not None:
@@ -122,7 +122,13 @@ class ModelExtension(ArcGISModel):
         self._model_conf_class = model_conf
         self._backend = "pytorch"
         self._kwargs = kwargs
-        model = self._model_conf.get_model(data, backbone, **kwargs)
+        try:
+            model = self._model_conf.get_model(data, backbone, **kwargs)
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+            )
+
         if backbone is not None:
             backbone_name = backbone if type(backbone) is str else backbone.__name__
             if model_conf.__name__ == "MyFasterRCNN" and backbone_name not in [
@@ -133,8 +139,10 @@ class ModelExtension(ArcGISModel):
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
                 )
-        if self._is_multispectral:
-            model = _change_tail(model, data)
+        if self._is_multispectral or (
+            not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
+        ):
+            model = _change_tail(model, data, backbone=self._backbone)
         if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
@@ -209,9 +217,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                )
             _emd_template["IsEdgeDetection"] = getattr(
                 self, "_is_edge_detection", False
             )
@@ -222,9 +230,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISPanopticSegmenter.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+                )
             _emd_template["ModelConfiguration"] = "_panoptic_inferencing"
 
         else:
@@ -232,9 +240,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+                )
             _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["Classes"] = []
@@ -357,6 +365,8 @@ class ModelExtension(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
             if dataset_type == "Panoptic_Segmentation":
@@ -1152,7 +1162,8 @@ class ModelExtension(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path
-                                input_video_path appended with _prediction.
+                                input_video_path appended with _prediction.avi.
+                                Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

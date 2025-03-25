@@ -20,7 +20,6 @@ from arcgis.geometry import (
 from arcgis.gis import GIS
 from arcgis import env as _env
 from arcgis.geocoding import geocode, reverse_geocode
-from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
 import pandas as pd
 
@@ -720,7 +719,7 @@ class Country(object):
         ----------------------------     --------------------------------------------------------------------
         enrich_variables                 Enrich variables can be specified using either a list of strings or
                                          the Pandas DataFrame returned from the :func:`~arcgis.geoenrichment.Country.enrich_variables`
-                                         property. If using a list of strings, the values are mached against
+                                         property. If using a list of strings, the values are matched against
                                          the :func:`~arcgis.geoenrichment.Country.enrich_variables` dataframe
                                          columns for `name`, 'enrich_name', or 'enrich_field_name'. All the
                                          values must match to one of these columns.
@@ -892,9 +891,6 @@ class Country(object):
             )
 
         """
-        # pull out named area properties if present and set to use country instead of just BA global
-        standard_geography_level = None
-
         # If dictionary was passed, turn to list
         if isinstance(study_areas, dict):
             if isinstance(study_areas, Geometry):
@@ -909,9 +905,11 @@ class Country(object):
         if isinstance(study_areas, list):
             # For extent
             study_areas = [
-                Geometry(area).polygon
-                if isinstance(area, dict) and "xmin" in area
-                else area
+                (
+                    Geometry(area).polygon
+                    if isinstance(area, dict) and "xmin" in area
+                    else area
+                )
                 for area in study_areas
             ]
             first_geo = study_areas[0]
@@ -1685,9 +1683,11 @@ def enrich(
         #
         # [f(x) if condition else g(x) for x in sequence]
         study_areas = [
-            Geometry(area).polygon
-            if isinstance(area, dict) and "xmin" in area
-            else area
+            (
+                Geometry(area).polygon
+                if isinstance(area, dict) and "xmin" in area
+                else area
+            )
             for area in study_areas
         ]
         first_geo = study_areas[0]
@@ -1723,6 +1723,10 @@ def enrich(
                 elif isinstance(value, Geometry) or "geometry" in value:
                     if isinstance(value, Polyline) or isinstance(value, Polygon):
                         value = value.true_centroid
+                        if value is None:
+                            raise ValueError(
+                                "Arcpy or shapely are needed to use polyline geometries. "
+                            )
                     elif "geometry" in value:
                         value = value["geometry"]
 
@@ -1730,6 +1734,10 @@ def enrich(
                     if "rings" in value:
                         polygon = Polygon(value)
                         value = polygon.true_centroid
+                        if value is None:
+                            raise ValueError(
+                                "Arcpy or shapely are needed to use polygon geometries. "
+                            )
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
@@ -2309,7 +2317,9 @@ def interesting_facts(
     if out_sr is None:
         out_sr = {"wkid": 3857}
 
-    url: str = f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
+    url: str = (
+        f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
+    )
     study_areas = _process_study_areas(areas=study_areas)
     params = {
         "studyAreas": study_areas,

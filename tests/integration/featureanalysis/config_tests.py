@@ -8,9 +8,8 @@ from arcgis.gis import ProfileManager
 import os
 import sys
 fa_path = os.getcwd()
-for path in sys.path:
-    if not fa_path:
-        sys.path.insert(0, fa_path)
+if fa_path not in sys.path:
+    sys.path.insert(0, fa_path)
 
 
 test_items = [
@@ -121,29 +120,20 @@ def setup_profiles(
         print("Creating ent profile")
         pm.create(
             ent_name,
-            url="https://pythonapi.playground.esri.com/portal/",
-            username="playground_test",
-            password="i_love_testing123",
+            url="https://pythonapitest.dev.geocloud.com/portal/",
+            username="arcgis_python",
+            password="amazing_arcgis_123",
         )
         print(pm.get(ent_name))
 
     if not kube_name in updated_list:
         print("Creating kube profile")
-        try:
-            pm.create(
-                kube_name,
-                url=get_kube_server(),
-                username=get_kube_credentials()[0],
-                password=get_kube_credentials()[1],
-            )
-        except:
-            # hard-coded as backup
-            pm.create(
-                kube_name,
-                url="https://1120pubbi-1120pubbi.apps.openshift412release.esri.com/web/home/",
-                username="creator2",
-                password="portalaccount1",
-            )
+        pm.create(
+            kube_name,
+            url="https://11-1-k8s.python.geocloud.com/arcgis/home",
+            username="geosaurusaccnt",
+            password="geosaurus_automation123",
+        )
         print(pm.get(kube_name))
 
 

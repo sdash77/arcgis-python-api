@@ -227,9 +227,11 @@ class SerialChart(_BaseWidget):
             "valueAxis": self._value_axis_properties._convert_to_json(),
             "legend": {
                 "enabled": self._legend.visibility,
-                "position": "right"
-                if self._legend.placement == "side"
-                else self._legend.placement,
+                "position": (
+                    "right"
+                    if self._legend.placement == "side"
+                    else self._legend.placement
+                ),
                 "markerSize": 15,
                 "markerType": "circle",
                 "align": "center",
@@ -284,9 +286,9 @@ class SerialChart(_BaseWidget):
             "dataSource": self._datasource,
             "outFields": ["*"],
             "groupByFields": [],
-            "orderByFields": [self._orderby_field + " asc"]
-            if self._orderby_field
-            else [],
+            "orderByFields": (
+                [self._orderby_field + " asc"] if self._orderby_field else []
+            ),
             "statisticDefinitions": [],
             "querySpatialRelationship": "esriSpatialRelIntersects",
             "returnGeometry": False,
@@ -1204,14 +1206,14 @@ class SerialChartData(object):
         """
 
         data = {
-            "valueField": value_field[0]
-            if isinstance(value_field, list)
-            else value_field,
-            "title": label
-            if label
-            else value_field[0]
-            if isinstance(value_field, list)
-            else value_field,
+            "valueField": (
+                value_field[0] if isinstance(value_field, list) else value_field
+            ),
+            "title": (
+                label
+                if label
+                else value_field[0] if isinstance(value_field, list) else value_field
+            ),
             "lineColor": line_color,
             "lineColorField": "_lineColor_",
             "fillColorsField": "_fillColor_",

@@ -111,7 +111,7 @@ def define_gen(
     elif netG == "encoder":
         netG = Encoder(input_nc, output_nc, ngf, n_downsample_global, norm_layer)
     else:
-        raise ("generator not implemented!")
+        raise NotImplementedError("generator not implemented!")
     if len(gpu_ids) > 0:
         assert torch.cuda.is_available()
         netG.cuda(gpu_ids[0])
@@ -157,7 +157,7 @@ class GANLoss(nn.Module):
         if use_lsgan:
             self.loss = nn.MSELoss()
         else:
-            self.loss = nn.BCELoss()
+            self.loss = nn.BCEWithLogitsLoss()
 
     def get_target_tensor(self, input, target_is_real):
         target_tensor = None
@@ -642,7 +642,9 @@ from torchvision import models
 class Vgg19(torch.nn.Module):
     def __init__(self, requires_grad=False):
         super(Vgg19, self).__init__()
-        vgg_pretrained_features = models.vgg19(pretrained=True).features
+        vgg_pretrained_features = models.vgg19(
+            weights=models.VGG19_Weights.DEFAULT
+        ).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
         self.slice3 = torch.nn.Sequential()

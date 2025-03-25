@@ -153,9 +153,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -386,9 +386,10 @@ class ChildObjectDetector:
         else:
             batch = norm(batch.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
-        batch_classes, batch_bboxes = self.retinanet.learn.model(
-            torch.tensor(batch).to(self.device).float()
-        )
+        with torch.no_grad():
+            batch_classes, batch_bboxes = self.retinanet.learn.model(
+                torch.tensor(batch).to(self.device).float()
+            )
 
         num_boxes = 0
         for chip_idx, (clas, bbox) in enumerate(zip(batch_classes, batch_bboxes)):

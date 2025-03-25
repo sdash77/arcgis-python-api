@@ -45,7 +45,7 @@ class FeedsManager:
             all_feeds
 
         """
-        all_feeds_response = self._util._get_request("feeds")
+        all_feeds_response = self._util._get_request("feed")
         if all_feeds_response is not None and type(all_feeds_response) is list:
             feed_items = [
                 Feed(self._gis, self._util, feed) for feed in all_feeds_response

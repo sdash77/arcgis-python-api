@@ -56,7 +56,8 @@ class EfficientDet(ArcGISModel):
                             Only (JPEG+PASCAL_VOC_rectangles) format supported.
     ---------------------   -----------------------------------------------------
     backbone                Optional String. Backbone convolutional neural network
-                            model used for EfficientDet.
+                            model used for EfficientDet, which
+                            is `efficientdet_lite0` by default.
     ---------------------   -----------------------------------------------------
     pretrained_path         Optional String. Path where a compatible pre-trained
                             model is saved. Accepts a Deep Learning Package
@@ -485,7 +486,7 @@ class EfficientDet(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

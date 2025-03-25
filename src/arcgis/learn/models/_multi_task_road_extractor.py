@@ -198,9 +198,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
                         "Could not find the emd file in the specified path. Please provide correct path"
                     )
 
-                kwargs[
-                    "orient_bin_size"
-                ] = bin_size  # To ensure the data is consistent across multiple runs
+                kwargs["orient_bin_size"] = (
+                    bin_size  # To ensure the data is consistent across multiple runs
+                )
 
             self._orient_data = self._get_road_orient_data(data, **kwargs)
             if len(data.classes) > 2:
@@ -409,7 +409,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
         self._model_init_kwargs = kwargs.get("model_init_kwargs", {})
 
-        if "timm" in self._backbone.__module__ and self._mtl_model == "linknet":
+        if ("timm" in self._backbone.__module__ and self._mtl_model == "linknet") or (
+            "_hf_" in self._backbone.__module__ and self._mtl_model == "linknet"
+        ):
             self._model_init_kwargs["is_timm"] = True
 
         self._model = mtl_models[self._mtl_model](
@@ -553,6 +555,14 @@ class MultiTaskRoadExtractor(ArcGISModel):
         return MultiTaskRoadExtractor._supported_backbones()
 
     @staticmethod
+    def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return MultiTaskRoadExtractor._supported_backbones()
@@ -575,7 +585,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family] + timm_backbones
+        torchgeo_backbone = MultiTaskRoadExtractor.torchgeo_backbones()
+
+        return [*_resnet_family] + timm_backbones + torchgeo_backbone
 
     @property
     def supported_datasets(self):
@@ -598,9 +610,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ModelConfiguration"] = "_road_infrencing"
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -611,9 +623,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
             "backbone": self._backbone,
             "backend": self._backend,
             "opt_func": self._opt_func_name if hasattr(self, "_opt_func_name") else "",
-            "opt_func_args": self._opt_func_args
-            if hasattr(self, "_opt_func_args")
-            else "",
+            "opt_func_args": (
+                self._opt_func_args if hasattr(self, "_opt_func_args") else ""
+            ),
             "loss": self._loss_f.__class__.__name__,
             "loss_weights": self._loss_f.__dict__["loss_weights"],
             "mtl_model": self._mtl_model,
@@ -677,6 +689,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         model_file = Path(emd["ModelFile"])
         chip_size = emd["ImageWidth"]
         model_params = emd["ModelParameters"]
+        backbone = model_params["backbone"]
         orient_c = int(360.0 / emd["RoadOrientation"]["orient_bin_size"]) + 1
 
         if not model_file.is_absolute():
@@ -695,6 +708,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
             data.orient_c = orient_c
             data.class_mapping = class_mapping
             data._is_empty = True
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd

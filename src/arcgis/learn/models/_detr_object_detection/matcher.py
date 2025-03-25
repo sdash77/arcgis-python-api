@@ -17,6 +17,7 @@ from arcgis.learn._utils.coco_detection_utils import (
     box_cxcywh_to_xyxy,
     generalized_box_iou,
 )
+import numpy as np
 
 
 class HungarianMatcher(nn.Module):
@@ -108,7 +109,8 @@ class HungarianMatcher(nn.Module):
 
             sizes = [len(v["boxes"]) for v in targets]
             indices = [
-                linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))
+                linear_sum_assignment_with_inf(c[i])
+                for i, c in enumerate(C.split(sizes, -1))
             ]
             return [
                 (
@@ -117,6 +119,35 @@ class HungarianMatcher(nn.Module):
                 )
                 for i, j in indices
             ]
+
+
+def linear_sum_assignment_with_inf(cost_matrix):
+    cost_matrix = np.asarray(cost_matrix)
+    min_inf = np.isneginf(cost_matrix).any()
+    max_inf = np.isposinf(cost_matrix).any()
+    if min_inf and max_inf:
+        raise ValueError("matrix contains both inf and -inf")
+
+    if min_inf or max_inf:
+        values = cost_matrix[~np.isinf(cost_matrix)]
+        min_values = values.min()
+        max_values = values.max()
+        m = min(cost_matrix.shape)
+
+        positive = m * (
+            max_values - min_values + np.abs(max_values) + np.abs(min_values) + 1
+        )
+        if max_inf:
+            place_holder = (max_values + (m - 1) * (max_values - min_values)) + positive
+        elif min_inf:
+            place_holder = (min_values + (m - 1) * (min_values - max_values)) - positive
+
+        cost_matrix[np.isinf(cost_matrix)] = place_holder
+    try:
+        return linear_sum_assignment(cost_matrix)
+    except:
+        cost_matrix[np.isnan(cost_matrix)] = 0
+        return linear_sum_assignment(cost_matrix)
 
 
 def build_matcher(args):

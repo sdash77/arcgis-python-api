@@ -25,6 +25,8 @@ class Job(object):
     _start_time = None
     _end_time = None
     _verbose = None
+    _has_id = None
+    _jobid = None
 
     # ----------------------------------------------------------------------
     def __init__(
@@ -92,9 +94,10 @@ class Job(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the amount of time that has passed while the
+        :class:`~arcgis.gis.server.AsyncJob` ran.
         """
         if self._end_time:
             return self._end_time - self._start_time
@@ -175,6 +178,42 @@ class NotebookJob(Job):
         else:
             return f"<{self._task_name} job {self._jobid}>"
 
+    @property
+    def _job_description(self) -> dict[str, Any]:
+        """returns the job status payload"""
+        url: str = f"{self._url}"
+        params: dict = {
+            "f": "json",
+        }
+        resp: requests.Response = self._gis.session.get(url, params=params)
+        data: dict = resp.json()
+        return data
+
+    # ----------------------------------------------------------------------
+    def running(self):
+        """
+        Return True if the call is currently being executed and cannot be cancelled.
+
+        :return: boolean
+        """
+        return self._job_description.get("status") in [
+            "PROCESSING",
+            "PARTIAL",
+        ]
+
+    # ----------------------------------------------------------------------
+    def done(self):
+        """
+        Return True if the call was successfully cancelled or finished running.
+
+        :return: boolean
+        """
+        return self._job_description.get("status") in [
+            "COMPLETED",
+            "CANCELLED",
+        ]
+
+    # ----------------------------------------------------------------------
     def cancel(self) -> bool:
         """cancels the current job"""
         url: str = f"{self._url}/cancel"

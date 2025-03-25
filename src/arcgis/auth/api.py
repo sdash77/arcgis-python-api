@@ -1,62 +1,37 @@
 from __future__ import annotations
+from contextlib import contextmanager
+import os
 import sys
 import logging
 from typing import Dict, Any, Tuple
-from .tools._util import check_module_exists
-
-__log__ = logging.getLogger()
-
-if sys.platform == "win32" and check_module_exists("certifi_win32"):  # pragma: no cover
-    # when on Windows, append to the certifi
-    # the users trusted certificate store
-    # when certifi_win32 is present.
-    try:
-        import certifi_win32
-
-        certifi_win32.wincerts.verify_combined_pem()
-        certifi_win32.wincerts.where()
-    except ImportError:
-        pass
-elif check_module_exists("truststore"):  # pragma: no cover
-    try:
-        import truststore
-
-        truststore.inject_into_ssl()
-    except ImportError as ie:
-        __log__.warning(f"truststore raised a warning: {ie}")
-    except Exception as e:
-        __log__.warning(f"truststore raised a warning: {e}")
-
+import requests
 
 from requests.sessions import Session
-from requests.adapters import HTTPAdapter
-
-
 from urllib3 import Retry
-from urllib3 import __version__ as __URLLIB3VERSION__
-
-__URLLIB3VERSION__ = [
-    int(i) if i.isdigit() else i for i in __URLLIB3VERSION__.split(".")
-]
-
-from ._version import __version__
-
 from ._auth import (
     EsriPKIAuth,
     EsriWindowsAuth,
     EsriKerberosAuth,
 )
-
 from ._auth._winauth import HAS_KERBEROS
 from ._auth._negotiate import HAS_GSSAPI
+from ._version import __version__
+from .tools import EsriTrustStoreAdapter
+from .tools._lazy import LazyLoader
 
-from requests_toolbelt.adapters.host_header_ssl import HostHeaderSSLAdapter
-
-from .tools import LazyLoader
-
-
-urllib3 = LazyLoader("urllib3")
 __USERAGENT__ = f"Geosaurus/{__version__}"
+__log__ = logging.getLogger()
+
+
+def _is_cert_files(certs: tuple) -> bool:
+    """checks if the tuple is all files"""
+    checks: list[bool] = []
+    for fp in certs:
+        try:
+            checks.append(os.path.isfile(fp))
+        except:
+            checks.append(False)
+    return all(checks)
 
 
 ###########################################################################
@@ -90,7 +65,7 @@ class EsriSession:
 
         `auth1 + auth2 + auth3`
 
-    It is recommended that you do not stack unneeded authenicators because they
+    It is recommended that you do not stack unneeded authenticators because they
     can caused unintended failures.
 
     ==================     ====================================================================
@@ -141,7 +116,7 @@ class EsriSession:
     status_to_retry        Optional Tuple. The status codes to run retries on.  The default is
                            (413, 429, 503, 500, 502, 504).
     ------------------     --------------------------------------------------------------------
-    method_whitelist       Optional List.  When `retries` is specified, the user can specifiy what methods are retried.
+    method_whitelist       Optional List.  When `retries` is specified, the user can specify what methods are retried.
                            The default is `'POST', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT', 'TRACE'`
     ------------------     --------------------------------------------------------------------
     proxies                Optional Dict. A key/value mapping where the keys are the transfer protocol and the value is the <url>:<port>.
@@ -158,143 +133,127 @@ class EsriSession:
 
     """
 
-    _session = None
-    _verify = None
-    _baseurl = None  # if partial url given, try the base url
-    _referer = None
-    allow_redirects = None
+    _session: Session | None = None
+    _verify: bool | None = None
+    _baseurl: str | None = None  # if partial url given, try the base url
+    _referer: str | None = None
+    _cert: tuple[str] | None = None
+    _useragent: str | None = None
+    _retry: Retry | None = None
 
     # ----------------------------------------------------------------------
     def __init__(
         self,
-        auth: "AuthBase" = None,
-        cert: Tuple[str] = None,
-        verify_cert: bool | str = True,
-        allow_redirects: bool = True,
+        auth: requests.auth.AuthBase | None = None,
+        verify_cert: bool = True,
+        cert: tuple[str, str] | None = None,
         headers: Dict[str, Any] = None,
-        referer="http",
+        referer: str | None = "http",
+        trust_env: bool | None = None,
+        assert_hostname: bool = True,
         **kwargs,
     ) -> "EsriSession":
         super()
+        verify: bool = verify_cert
+        if not verify is None and not isinstance(verify, bool):
+            raise ValueError(
+                "`verify only accepts a boolean.  If you want to pass a CA bundle, please use ca_bundle`"
+            )
+        self._session: Session = Session()
+        self._session.verify = verify
+        if not auth is None:
+            self.auth = auth
+        if cert is None:
+            self._x509_cert, self._x509_pw = None, None
+        elif cert and len(cert) == 2 and _is_cert_files(certs=cert):
+            self._x509_cert, self._x509_pw = cert, None
+        elif cert and len(cert) == 2:
+            self._x509_cert, self._x509_pw = cert[0], cert[1]
+        else:
+            raise ValueError(
+                "Parameter `cert` must either be a tuple of size 2 where the "
+                "first value is a pfx certificate and the second a password, or None."
+            )
 
-        self._session = Session()
-        self._session.stream = kwargs.pop("stream", False)
-        check_hostname = kwargs.get("check_hostname", True)
-        self._session.trust_env = kwargs.pop("trust_env", True)
-        self._prevent_keep_alive = kwargs.pop("keep_alive", False)
-        if check_hostname == False:
-            self.mount("https://", HostHeaderSSLAdapter())
-        self._session.cert = cert
-        self._cert = cert
-        self.allow_redirects = allow_redirects
-        self.verify_cert = verify_cert
-        self._useragent = __USERAGENT__
-        self._session.headers["User-Agent"] = self._useragent
+        self.assert_hostname = assert_hostname
+
         if referer is None:
-            referer = ""
-        self._referer = referer
+            referer: str = ""
+        if referer or referer == "":
+            self.update_headers(
+                {
+                    "referer": referer,
+                }
+            )
+        if self._useragent is None:
+            self._useragent: str = __USERAGENT__
+            self.update_headers({"User-Agent": self._useragent})
+
         if isinstance(headers, dict):
             self.update_headers(headers)
+
+        self._session.stream: bool = kwargs.pop("stream", False)
+        self.timeout: int | float = kwargs.pop("timeout", 10)
+        self.proxies: dict | None = kwargs.get("proxies", None)
+        self.allow_redirects: bool = kwargs.get("allow_redirects", True)
+
+        self._ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
+        if isinstance(self._ca_bundles, str):
+            self._ca_bundles: list[str] = [self._ca_bundles]
+
         if not "referer" in self._session.headers:
             self._session.headers["referer"] = self._referer
 
-        if auth and cert is None:
-            self._session.auth = auth
+        self._retry: Retry = Retry(
+            total=kwargs.get("retries", 5),
+            read=kwargs.get("retries", 5),
+            connect=kwargs.get("retries", 5),
+            status_forcelist=kwargs.get(
+                "status_to_retry", (413, 429, 503, 500, 502, 504)
+            ),
+            allowed_methods=kwargs.get(
+                "method_whitelist",
+                frozenset(
+                    [
+                        "POST",
+                        "DELETE",
+                        "GET",
+                        "HEAD",
+                        "OPTIONS",
+                        "PUT",
+                        "TRACE",
+                    ]
+                ),
+            ),
+        )
 
-        elif auth and cert:
-            self.auth = EsriPKIAuth(
-                cert=cert,
-                referer=referer,
-                verify_cert=verify_cert,
-                auth=auth,
-                session=self,
-            )
-        elif auth is None and cert:
-            self.auth = EsriPKIAuth(
-                cert=cert,
-                referer=referer,
-                verify_cert=verify_cert,
-                session=self,
-            )
-        elif sys.platform == "win32" and HAS_GSSAPI:  # Default Case Load IWA/WinAuth
-            self.auth = EsriWindowsAuth(referer=referer, verify_cert=verify_cert)
-        elif HAS_KERBEROS:
-            self.auth = EsriKerberosAuth(referer=self._referer, verify_cert=verify_cert)
+        self._adapter: EsriTrustStoreAdapter = EsriTrustStoreAdapter(
+            max_retries=self._retry,
+            assert_hostname=self.assert_hostname,
+            verify=verify,
+            additional_certs=self._ca_bundles,
+            pki_data=self._x509_cert,
+            pki_password=self._x509_pw,
+        )
+        self.verify = verify
+        self._session.mount("http://", self._adapter)
+        self._session.mount("https://", self._adapter)
+        self.auth = auth
 
-        proxies = kwargs.get("proxies", None)
-        if proxies:
-            self.proxies = proxies
-
-        if "retries" in kwargs and kwargs.get("retries"):
-            if __URLLIB3VERSION__[0] <= 1:
-                r = Retry(
-                    total=kwargs.get("retries", 5),
-                    read=kwargs.get("retries", 5),
-                    connect=kwargs.get("retries", 5),
-                    status_forcelist=kwargs.get(
-                        "status_to_retry", (413, 429, 503, 500, 502, 504)
-                    ),
-                    method_whitelist=kwargs.get(
-                        "method_whitelist",
-                        frozenset(
-                            [
-                                "POST",
-                                "DELETE",
-                                "GET",
-                                "HEAD",
-                                "OPTIONS",
-                                "PUT",
-                                "TRACE",
-                            ]
-                        ),
-                    ),
+        if auth is None:
+            if cert and len(cert) > 1:
+                self._session.auth = EsriPKIAuth(session=self)
+            elif (
+                sys.platform == "win32" and HAS_GSSAPI
+            ):  # Default Case Load IWA/WinAuth
+                self._session.auth = EsriWindowsAuth(
+                    referer=referer,
+                    session=self,
                 )
-            else:
-                r = Retry(
-                    total=kwargs.get("retries", 5),
-                    read=kwargs.get("retries", 5),
-                    connect=kwargs.get("retries", 5),
-                    status_forcelist=kwargs.get(
-                        "status_to_retry", (413, 429, 503, 500, 502, 504)
-                    ),
-                    allowed_methods=kwargs.get(
-                        "method_whitelist",
-                        frozenset(
-                            [
-                                "POST",
-                                "DELETE",
-                                "GET",
-                                "HEAD",
-                                "OPTIONS",
-                                "PUT",
-                                "TRACE",
-                            ]
-                        ),
-                    ),
+            elif HAS_KERBEROS:
+                self._session.auth = EsriKerberosAuth(
+                    referer=self._referer, session=self
                 )
-            if isinstance(self.auth, EsriPKIAuth):
-                from .tools._pki_adaptor import PKIAdapter
-
-                adapter = PKIAdapter(
-                    pki_data=cert,
-                    pki_password=kwargs.pop("pki_password", None),
-                    max_retries=r,
-                )
-                self._session.cert = None
-                self.auth = None
-            else:
-                adapter = HTTPAdapter(max_retries=r)
-            self._session.mount("http://", adapter)
-            self._session.mount("https://", adapter)
-        if isinstance(self.auth, EsriPKIAuth) and not "retries" in kwargs:
-            from .tools._pki_adaptor import PKIAdapter
-
-            adapter = PKIAdapter(
-                pki_data=cert,
-                pki_password=kwargs.pop("pki_password", None),
-            )
-            self._session.mount("http://", adapter)
-            self._session.mount("https://", adapter)
 
     # ----------------------------------------------------------------------
     def close(self):
@@ -311,14 +270,43 @@ class EsriSession:
 
     # ----------------------------------------------------------------------
     @property
+    def ca_bundles(self) -> list[str] | str:
+        """returns the path to the extra CA bundles"""
+        return self._adapter.additional_certs
+
+    # ----------------------------------------------------------------------
+    @property
+    def trust_env(self) -> bool | None:
+        """Trust environment settings for proxy configuration, default authentication and similar."""
+        if self._session is None:
+            self._session = Session()
+        return self._session.trust_env
+
+    # ----------------------------------------------------------------------
+    @trust_env.setter
+    def trust_env(self, value: bool):
+        """Trust environment settings for proxy configuration, default authentication and similar."""
+        if self._session is None:
+            self._session = Session()
+        if self._session.trust_env != value and isinstance(value, bool):
+            self._session.trust_env = value
+        elif value is None:
+            self._session.trust_env = value
+
+    # ----------------------------------------------------------------------
+    @property
     def stream(self) -> bool:
         """Gets/Sets the stream property for the current session object"""
+        if self._session is None:
+            self._session = Session()
         return self._session.stream
 
     # ----------------------------------------------------------------------
     @stream.setter
     def stream(self, stream: bool):
         """Gets/Sets the stream property for the current session object"""
+        if self._session is None:
+            self._session = Session()
         if isinstance(stream, bool):
             self._session.stream = stream
 
@@ -326,12 +314,16 @@ class EsriSession:
     @property
     def headers(self) -> Dict[str, Any]:
         """Gets/Sets the headers from the current session object"""
+        if self._session is None:
+            self._session = Session()
         return self._session.headers
 
     # ----------------------------------------------------------------------
     @headers.setter
     def headers(self, values: Dict[str, Any]):
         """Gets/Sets the headers from the current session object"""
+        if self._session is None:
+            self._session = Session()
         if isinstance(values, dict):
             from requests.utils import CaseInsensitiveDict
 
@@ -341,6 +333,8 @@ class EsriSession:
     # ----------------------------------------------------------------------
     def update_headers(self, values: Dict[str, Any]) -> bool:
         """Performs an update call on the headers"""
+        if self._session is None:
+            self._session = Session()
         try:
             self._session.headers.update(values)
             return True
@@ -351,6 +345,8 @@ class EsriSession:
     @property
     def referer(self) -> str:
         """Gets/Sets the referer"""
+        if self._session is None:
+            self._session = Session()
         try:
             return self._session.headers["referer"]
         except:
@@ -360,6 +356,8 @@ class EsriSession:
     @referer.setter
     def referer(self, value: str):
         """Gets/Sets the referer"""
+        if self._session is None:
+            self._session = Session()
         self._session.headers["referer"] = value
 
     # ----------------------------------------------------------------------
@@ -372,22 +370,36 @@ class EsriSession:
 
     # ----------------------------------------------------------------------
     @property
-    def verify_cert(self) -> bool | str:
+    def verify(self) -> bool | str:
         """
         Get/Set property that allows for the verification of SSL certificates
 
         :returns: bool
         """
+        if self._session is None:
+            self._session = Session()
         return self._session.verify
 
     # ----------------------------------------------------------------------
-    @verify_cert.setter
-    def verify_cert(self, value: bool | str):
-        if isinstance(value, (bool, str)) and value != self._session.verify:
+    @verify.setter
+    def verify(self, value: bool):
+        if self._session is None:
+            self._session = Session()
+        if isinstance(value, bool):
             self._session.verify = value
+            self._adapter: EsriTrustStoreAdapter = EsriTrustStoreAdapter(
+                max_retries=self._retry,
+                assert_hostname=self._adapter.assert_hostname,
+                verify=value,
+                additional_certs=self._adapter.additional_certs,
+                pki_data=self._x509_cert,
+                pki_password=self._x509_pw,
+            )
+            self._session.mount("http://", self._adapter)
+            self._session.mount("https://", self._adapter)
 
     # ----------------------------------------------------------------------
-    def mount(self, prefix: str, adapter: "HTTPAdatper"):
+    def mount(self, prefix: str, adapter: "HTTPAdapter"):
         """
         Registers a connection adapter to a prefix.
 
@@ -455,28 +467,29 @@ class EsriSession:
 
         :return: Tuple[str]
         """
-        return self._cert or self._session.cert
+        return self._cert
 
     @cert.setter
-    def cert(self, cert: Tuple[str]):
+    def cert(self, cert: tuple[str]):
         """
         Get/Set the users certificate as a (private, public) keys.
 
         :return: Tuple[str]
         """
-        if cert is None:
-            self._cert = None
-            self._session.cert = None
-            if isinstance(self._session.auth, EsriPKIAuth):
-                self._session.auth = None
-        else:
+        if cert:
             self._cert = cert
-            self._session.cert = cert
-            self._session.auth = EsriPKIAuth(
-                cert=cert,
-                referer=self._referer,
-                verify_cert=self.verify_cert,
+            self._x509_cert, self._x509_pw = cert
+            self._adapter: EsriTrustStoreAdapter = EsriTrustStoreAdapter(
+                max_retries=self._retry,
+                assert_hostname=self._adapter.assert_hostname,
+                verify=self._adapter.verify,
+                additional_certs=self._adapter.additional_certs,
+                pki_data=cert[0],
+                pki_password=cert[1],
             )
+
+            self.mount("https://", self._adapter)
+            self.mount("http://", self._adapter)
 
     # ----------------------------------------------------------------------
     def get(self, url, **kwargs) -> "requests.Response":
@@ -486,6 +499,8 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
+
+        kwargs.pop("verify", None)
         if "allow_redirects" in kwargs:
             redirects = kwargs.pop("allow_redirects")
         else:
@@ -494,9 +509,10 @@ class EsriSession:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.get(
-            url, allow_redirects=redirects, proxies=proxies, **kwargs
-        )
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.get(
+                url, allow_redirects=redirects, proxies=proxies, **kwargs
+            )
 
     # ----------------------------------------------------------------------
     def options(self, url, **kwargs) -> "requests.Response":
@@ -506,11 +522,13 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
+        kwargs.pop("verify", None)
         if "proxies" in kwargs:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.options(url, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.options(url, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def head(self, url, **kwargs) -> "requests.Response":
@@ -520,11 +538,13 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
+        kwargs.pop("verify", None)
         if "proxies" in kwargs:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.head(url, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.head(url, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def post(self, url, data=None, json=None, **kwargs) -> "requests.Response":
@@ -537,6 +557,7 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
+        kwargs.pop("verify", None)
         if "proxies" in kwargs:
             proxies = kwargs.pop("proxies")
         else:
@@ -545,14 +566,15 @@ class EsriSession:
             redirects = kwargs.pop("allow_redirects")
         else:
             redirects = self.allow_redirects
-        return self._session.post(
-            url,
-            data=data,
-            json=json,
-            allow_redirects=redirects,
-            proxies=proxies,
-            **kwargs,
-        )
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.post(
+                url,
+                data=data,
+                json=json,
+                allow_redirects=redirects,
+                proxies=proxies,
+                **kwargs,
+            )
 
     # ----------------------------------------------------------------------
     def put(self, url, data=None, **kwargs) -> "requests.Response":
@@ -564,11 +586,13 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
+        kwargs.pop("verify", None)
         if "proxies" in kwargs:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.put(url, data=data, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.put(url, data=data, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def patch(self, url, data=None, **kwargs) -> "requests.Response":
@@ -580,11 +604,13 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
+        kwargs.pop("verify", None)
         if "proxies" in kwargs:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.patch(url, data=data, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.patch(url, data=data, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def delete(self, url, **kwargs) -> "requests.Response":
@@ -594,8 +620,22 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
+        kwargs.pop("verify", None)
         if "proxies" in kwargs:
             proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
-        return self._session.delete(url, proxies=proxies, **kwargs)
+        with self._handle_drop_auth(drop_auth=kwargs.pop("drop_auth", False)):
+            return self._session.delete(url, proxies=proxies, **kwargs)
+
+    @contextmanager
+    def _handle_drop_auth(self, drop_auth: bool):
+        """Context manager to handle dropping the auth for requests that must be made anonymously"""
+        try:
+            session_auth = self._session.auth
+            if drop_auth:
+                self._session.auth = None
+            yield
+        finally:
+            if drop_auth:
+                self._session.auth = session_auth

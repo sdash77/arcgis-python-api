@@ -6,12 +6,13 @@ administrator connects to.
 For ArcGIS Online GIS, administrators will get an instance of AGOLAdminManager from the gis.admin property.
 For ArcGIS Enterprise GIS , administrators will get an instance of PortalAdminManager from the gis.admin property.
 """
+
 from .portaladmin import PortalAdminManager
 from .agoladmin import AGOLAdminManager
 from ._federation import Federation
 from ._logs import Logs
 from ._license import LicenseManager, License, Bundle
-from ._livingatlas import LivingAtlas
+from ._livingatlas import LivingAtlas, LivingAtlasManager, LivingAtlasJob
 from ._machines import Machines, Machine
 from ._metadata import MetadataManager
 from ._security import EnterpriseGroups, EnterpriseUsers, OAuth
@@ -29,6 +30,7 @@ from ._ux import (
     ItemSettings,
     SecuritySettings,
     StockImage,
+    UtilityServicesSettings,
 )
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy
@@ -43,5 +45,7 @@ from ._dsmgr import (
     DataStoreTimeUnit,
     DataStoreMetric,
 )
+from ._partnercollab import PartneredCollabManager, PartneredCollaboration
+from ._classification import ClassificationManager
 
 __all__ = ["PortalAdminManager", "AGOLAdminManager"]

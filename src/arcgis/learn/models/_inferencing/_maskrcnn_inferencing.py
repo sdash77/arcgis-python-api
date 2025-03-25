@@ -125,9 +125,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -327,15 +327,22 @@ class ChildInstanceDetector:
 def predict_mask_rcnn(
     model, images, device, chip_size, threshold=0.5, use_tta=False, merge_policy="mean"
 ):
-    model = model.to(device)
-    normed_batch_tensor = torch.tensor(images).to(device).float()
-    if use_tta:
-        predictions = predict_tta(model, normed_batch_tensor, threshold, merge_policy)
-    else:
-        temp = model.roi_heads.score_thresh
-        model.roi_heads.score_thresh = threshold
-        predictions = model(list(normed_batch_tensor))
-        model.roi_heads.score_thresh = temp
+    with torch.no_grad():
+        model = model.to(device)
+        normed_batch_tensor = torch.tensor(images).to(device).float()
+        if use_tta:
+            predictions = predict_tta(
+                model, normed_batch_tensor, threshold, merge_policy
+            )
+        else:
+            temp = model.roi_heads.score_thresh
+            model.roi_heads.score_thresh = threshold
+            predictions = model(list(normed_batch_tensor))
+            model.roi_heads.score_thresh = temp
+
+        for pred in predictions:
+            for k in pred.keys():
+                pred[k] = pred[k].detach().cpu()
 
     return predictions
 
@@ -370,7 +377,7 @@ def pixel_mask_image(
 
     for batch_idx in range(len(predictions)):
         i, j = batch_idx // side, batch_idx % side
-        masks = predictions[batch_idx]["masks"].squeeze().detach().cpu().numpy()
+        masks = predictions[batch_idx]["masks"].squeeze().numpy()
         if masks.shape[0] != 0:  # handle for prediction with n masks
             if (
                 len(masks.shape) == 2
@@ -383,6 +390,8 @@ def pixel_mask_image(
                         cv2.RETR_TREE,
                         cv2.CHAIN_APPROX_NONE,
                     )
+                    contours = list(contours)
+
                     if len(contours) > 0:
                         hierarchy = hierarchy[0]
                         for c_idx, contour in enumerate(contours):
@@ -428,12 +437,7 @@ def pixel_mask_image(
                                         predictions[batch_idx]["scores"][n].tolist()
                                         * 100
                                     )
-                                    box = (
-                                        predictions[batch_idx]["boxes"][n]
-                                        .cpu()
-                                        .detach()
-                                        .numpy()
-                                    )
+                                    box = predictions[batch_idx]["boxes"][n].numpy()
                                     box[0] += j * chip_size
                                     box[2] += j * chip_size
                                     box[1] += i * chip_size

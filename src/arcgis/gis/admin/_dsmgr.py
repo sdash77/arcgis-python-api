@@ -219,6 +219,16 @@ class DataStoreMetricsManager:
         :returns: list[dict[str,Any]]
 
         """
+        site_look_up: dict[str, int] = {
+            "standard": 500000,
+            "M1": 500000 * 2,
+            "M2": 500000 * 2,
+            "M3": 500000 * 4,  # 2TB
+            "M4": 500000 * 8,  # 4TB
+        }
+        storage_type: str = dict(self._gis.properties["subscriptionInfo"]).get(
+            "dataStoreLevel", "standard"
+        )
         params: dict[str, Any] = {
             "f": "json",
             "metric": DataStoreMetric.FEATURESTORAGE.value,
@@ -232,7 +242,7 @@ class DataStoreMetricsManager:
         return [
             {
                 "ts": _dt.datetime.fromtimestamp(entry["ts"] / 1000.0),
-                "value": int(round(entry["value"] / 500000, 2) * 100),
+                "value": round(data[0]["value"] / site_look_up[storage_type] * 100, 2),
             }
             for entry in data
         ]

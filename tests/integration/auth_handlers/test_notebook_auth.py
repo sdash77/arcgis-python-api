@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 from arcgis.auth import EsriNotebookAuth, EsriSession, EsriKerberosAuth
 
@@ -15,8 +12,11 @@ if "api_key" in get_config_parser():
 else:
     SKIPME = True
 
+from utils.decorators import integration_test
+
 
 @unittest.skipIf(SKIPME == True, "could not read the configuration file.")
+@integration_test
 class TestAPIKey(unittest.TestCase):
     """Tests working with the API Key"""
 

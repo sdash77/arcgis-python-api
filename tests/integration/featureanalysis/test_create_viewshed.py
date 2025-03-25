@@ -5,6 +5,7 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import create_viewshed
 from .config_tests import setup_profiles
+from utils.decorators import integration_test
 
 data = [
     {
@@ -805,6 +806,7 @@ profiles = ["online_test", "ent_test", "kube_test"]
 setup_profiles(profiles[0], profiles[1], profiles[2])
 
 
+@integration_test
 class TestCreateViewshed(unittest.TestCase):
     def test_overwrite(self):
         """tests overwriting an Item layer using the context param"""

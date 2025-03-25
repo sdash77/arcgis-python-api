@@ -1,5 +1,6 @@
 """ Defines the Assignment object.
 """
+
 from .feature_model import FeatureModel
 from .managers import *
 from ._schemas import AssignmentSchema
@@ -390,9 +391,9 @@ class Assignment(FeatureModel):
         else:
             raise ValidationError("Invalid Assignment Type", self)
         if self._assignment_type:
-            self._feature.attributes[
-                self._schema.assignment_type
-            ] = self._assignment_type.code
+            self._feature.attributes[self._schema.assignment_type] = (
+                self._assignment_type.code
+            )
         else:
             self._feature.attributes[self._schema.assignment_type] = None
 
@@ -455,13 +456,13 @@ class Assignment(FeatureModel):
         else:
             self._dispatcher = self.project._cached_dispatcher
         if self.project._is_v2_project:
-            self._feature.attributes[
-                self._schema.dispatcher_id
-            ] = self._dispatcher.global_id
+            self._feature.attributes[self._schema.dispatcher_id] = (
+                self._dispatcher.global_id
+            )
         else:
-            self._feature.attributes[
-                self._schema.dispatcher_id
-            ] = self._dispatcher.object_id
+            self._feature.attributes[self._schema.dispatcher_id] = (
+                self._dispatcher.object_id
+            )
 
     @property
     def due_date(self):

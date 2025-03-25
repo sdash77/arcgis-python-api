@@ -279,8 +279,10 @@ class YOLOv3(ArcGISModel):
     @property
     def _model_metrics(self):
         if getattr(self._data, "_is_coco", "") == True:
-            return {"accuracy": {"IoU": 0.50, "AP": 0.558}}
-        return {"accuracy": self.average_precision_score(show_progress=True)}
+            return {"average_precision_score": {"IoU": 0.50, "AP": 0.558}}
+        return {
+            "average_precision_score": self.average_precision_score(show_progress=True)
+        }
 
     def _analyze_pred(
         self, pred, thresh=0.1, nms_overlap=0.1, ret_scores=True, device=None
@@ -420,8 +422,7 @@ class YOLOv3(ArcGISModel):
     ):
         """
         Predicts and displays the results of a trained model on a single image.
-        This method is only supported for RGB images. The image size should at
-        least be 416x416px if using COCO pretrained weights.
+        The image size should at least be 416x416px if using COCO pretrained weights.
         This method is only supported for RGB images.
 
         =====================   ===========================================
@@ -475,7 +476,7 @@ class YOLOv3(ArcGISModel):
         if not HAS_PIL:
             raise Exception("This function requires PIL.")
 
-        if self._data._is_multispectral:
+        if self._is_multispectral:
             raise Exception("This method is not supported for multispectral images.")
 
         if isinstance(image_path, str):
@@ -704,7 +705,7 @@ class YOLOv3(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
@@ -911,9 +912,9 @@ class YOLOv3(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            )
         _emd_template["ModelConfiguration"] = "_yolov3_inference"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]

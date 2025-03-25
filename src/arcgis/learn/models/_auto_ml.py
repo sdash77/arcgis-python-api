@@ -8,8 +8,6 @@ import pickle
 import warnings
 import math
 import shutil
-import os
-import time
 from pathlib import Path
 import traceback
 import arcgis
@@ -27,7 +25,11 @@ try:
         add_h3,
         _extract_embeddings,
     )
-    from arcgis.learn._utils.common import _get_emd_path
+    from arcgis.learn._utils.common import (
+        _get_emd_path,
+        check_path_or_url,
+        _get_hosted_dlpk,
+    )
     from arcgis.learn._utils.utils import arcpy_localization_helper
     import pickle
     from sklearn.preprocessing import normalize
@@ -38,6 +40,7 @@ except:
     HAS_FASTAI = False
 
 try:
+    # TODO: still failing
     import sklearn
     from sklearn import *
     from sklearn import preprocessing
@@ -385,10 +388,10 @@ class AutoML(object):
         Fits the AutoML model.
         """
         if getattr(self._data, "_is_not_empty", True):
-            if isinstance(self._all_labels[0], int):
+            if isinstance(self._all_labels.iloc[0], int):
                 self._all_labels = self._all_labels.astype(np.int32)
-            elif isinstance(self._all_labels[0], float):
-                self._all_labels = self._all_labels.astype(np.float)
+            elif isinstance(self._all_labels.iloc[0], float):
+                self._all_labels = self._all_labels.astype(np.float64)  #
             if self._sensitive_variables:
                 sensitive_features = self._all_data_df[
                     self._sensitive_variables
@@ -483,11 +486,20 @@ class AutoML(object):
                 val_labels = val_labels.astype(int)
             else:
                 val_labels = self._validation_labels
-        val_labels = self._validation_labels.astype(int)
+        # val_labels = self._validation_labels.astype(int)
         if getattr(self._data, "_is_not_empty", True):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning)
-                return self._model.score(self._validation_data_df, val_labels)
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    return self._model.score(
+                        self._data._dataframe,
+                        self._data._dataframe[self._data._dependent_variable],
+                    )
+            except:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    return self._model.score(self._validation_data_df, val_labels)
+
         else:
             raise Exception(
                 "This method is not available when the model is initiated for prediction"
@@ -563,6 +575,11 @@ class AutoML(object):
         y_pred = y_pred.reset_index(drop=True)
 
         if self._data._is_classification:
+            y_true_unique = y_true.nunique()
+            if y_true_unique > 2:
+                raise Exception(
+                    "This method is available only for Binary classification and Regression.It does not support multi class classification yet"
+                )
             le_1 = LabelEncoder()
             le_1.fit(y_true)
             y_true = le_1.transform(y_true)
@@ -734,6 +751,7 @@ class AutoML(object):
         _create_zip(Path(save_model_path).name, str(save_model_path))
 
         print("Model has been saved in the path", save_model_path)
+        self._model._results_path = str(save_model_path)
         return save_model_path
 
     def _save_explainer(self, path):
@@ -822,10 +840,13 @@ class AutoML(object):
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-        emd_path_orig = Path(emd_path)
-        emd_path = _get_emd_path(emd_path)
         if not HAS_AUTO_ML_DEPS:
             _raise_fastai_import_error(import_exception=import_exception)
+        is_hosted_dlpk = check_path_or_url(emd_path)
+        if is_hosted_dlpk:
+            success, emd_path = _get_hosted_dlpk(emd_path)
+
+        emd_path = _get_emd_path(emd_path)
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
@@ -1272,7 +1293,8 @@ class AutoML(object):
             if column not in fields_needed:
                 if "emb_" not in column:
                     processed_dataframe = processed_dataframe.drop(column, axis=1)
-
+        if self._data._embedding_variables is None:
+            self._data._embedding_variables = []
         processed_numpy = processed_dataframe[
             self._data._continuous_variables
             + self._data._categorical_variables

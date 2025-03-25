@@ -2,6 +2,7 @@
 In the GIS, entities located in space with a set of properties can be represented as features. This module has the types
 to represent features and collection of features.
 """
+
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Any, Optional, Union
@@ -16,6 +17,7 @@ tempfile = LazyLoader("tempfile")
 uuid = LazyLoader("uuid")
 
 from datetime import datetime
+from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
@@ -30,12 +32,10 @@ from arcgis.geometry import (
 )
 from arcgis.gis import Layer
 
-try:
-    arcpy = LazyLoader("arcpy", strict=True)
+from arcgis._impl._geometry_engine import HAS_ARCPY
 
-    HASARCPY = True
-except:
-    HASARCPY = False
+if HAS_ARCPY:
+    arcpy = LazyLoader("arcpy", strict=True)
 
 
 class Feature(object):
@@ -775,6 +775,9 @@ class FeatureSet(object):
                 # add check for MultiPolygon
                 if geometry["type"] == "Polygon" and len(geometry["coordinates"]) > 1:
                     geometry["type"] = "MultiPolygon"
+                    # for multipolygons, each set of rings should be nested an extra level
+                    new_coords = [[poly] for poly in geometry["coordinates"]]
+                    geometry["coordinates"] = new_coords
                 item["geometry"] = geometry
                 item["properties"] = feature["attributes"]
 
@@ -814,6 +817,8 @@ class FeatureSet(object):
             feats = []
             for feat in features:
                 feats.append(extract(feat, esri_geom_type))
+
+            # assign to the geojson object
             geojson["features"] = feats
             return geojson
 
@@ -883,7 +888,7 @@ class FeatureSet(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        fs                  Required arcpy.FeatureSet. The featureset objec to consume.
+        fs                  Required arcpy.FeatureSet. The featureset object to consume.
         ===============     ====================================================================
 
         :return:
@@ -935,7 +940,7 @@ class FeatureSet(object):
 
             Input:
              dataframe - spatialdataframe object
-            Ouput:
+            Output:
               field type name
             """
             import numpy as np
@@ -1103,7 +1108,7 @@ class FeatureSet(object):
             # based on the geojson geometry type
 
             geom = feature["geometry"]
-            if HASARCPY:
+            if HAS_ARCPY:
                 geom = arcpy.AsShape(geom)
                 geometry = Geometry(geom)
             else:
@@ -1144,21 +1149,31 @@ class FeatureSet(object):
             fields=fields,
             has_z=featureset_dict["hasZ"] if "hasZ" in featureset_dict else False,
             has_m=featureset_dict["hasM"] if "hasM" in featureset_dict else False,
-            geometry_type=featureset_dict["geometryType"]
-            if "geometryType" in featureset_dict
-            else None,
-            object_id_field_name=featureset_dict["objectIdFieldName"]
-            if "objectIdFieldName" in featureset_dict
-            else None,
-            global_id_field_name=featureset_dict["globalIdFieldName"]
-            if "globalIdFieldName" in featureset_dict
-            else None,
-            display_field_name=featureset_dict["displayFieldName"]
-            if "displayFieldName" in featureset_dict
-            else None,
-            spatial_reference=featureset_dict["spatialReference"]
-            if "spatialReference" in featureset_dict
-            else None,
+            geometry_type=(
+                featureset_dict["geometryType"]
+                if "geometryType" in featureset_dict
+                else None
+            ),
+            object_id_field_name=(
+                featureset_dict["objectIdFieldName"]
+                if "objectIdFieldName" in featureset_dict
+                else None
+            ),
+            global_id_field_name=(
+                featureset_dict["globalIdFieldName"]
+                if "globalIdFieldName" in featureset_dict
+                else None
+            ),
+            display_field_name=(
+                featureset_dict["displayFieldName"]
+                if "displayFieldName" in featureset_dict
+                else None
+            ),
+            spatial_reference=(
+                featureset_dict["spatialReference"]
+                if "spatialReference" in featureset_dict
+                else None
+            ),
         )
 
     # ----------------------------------------------------------------------
@@ -1388,7 +1403,7 @@ class FeatureSet(object):
 
         """
         _, file_extension = os.path.splitext(out_name)
-        if file_extension.lower() not in [".csv", ".json"] and HASARCPY == False:
+        if file_extension.lower() not in [".csv", ".json"] and HAS_ARCPY == False:
             raise ImportError("ArcPy is required to export a feature class.")
         import sys
 
@@ -1527,8 +1542,58 @@ class FeatureCollection(Layer):
     # noinspection PyMissingConstructor
     def __init__(self, dictdata):
         self._hydrated = True
-        self.properties = PropertyMap(dictdata)
-        self.layer = self.properties
+        self._properties = PropertyMap(dictdata)
+
+    @property
+    def properties(self):
+        """
+        Returns a dictionary-like object of the current definition for the
+        *Feature Collection* object. Each feature collection is comprised of a:
+
+        * *featureSet*,
+        * *layerDefinition*
+        * *popupInfo*.
+
+        See the
+        `featureCollection Object Specification <https://developers.arcgis.com/web-map-specification/objects/featureCollection>`_
+        for full details.
+
+        .. note::
+            The *properties* and *layer* property of a :class:`~arcgis.features.FeatureCollection`
+            return the same information.
+
+        .. code-block:: python
+
+            # Usage Example:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> fcolln_item = gis.content.search(
+                                   query="*",
+                                   item_type="Feature Collection"
+                                )[0]
+
+            >>> fcolln_obj = fcolln_item.layers[0]
+            >>> list(fcolln_obj.properties.keys())
+
+            ['featureSet', 'layerDefinition', 'popupInfo']
+        """
+        return self._properties
+
+    @properties.setter
+    def properties(self, properties):
+        self._properties = PropertyMap(properties)
+
+    @property
+    @deprecated(
+        deprecated_in="2.4.0", removed_in="2.5.0", details="Use 'properties' instead."
+    )
+    def layer(self):
+        return self.properties
+
+    @layer.setter
+    def layer(self, layer):
+        self.properties(layer)
 
     @property
     def _lyr_json(self):
@@ -1589,12 +1654,12 @@ class FeatureCollection(Layer):
         ------------------     --------------------------------------------------------------------
         symbol                 Optional dict. Specify your symbol as a dictionary. Symbols for points
                                can be picked from the
-                               `Esri Symbol Page <http://esri.github.io/arcgis-python-api/tools/symbol.html>`_
+                               `Esri Symbol Page <https://developers.arcgis.com/web-map-specification/objects/symbol/>`_
 
                                If not specified, a default symbol will be created.
         ------------------     --------------------------------------------------------------------
         name                   Optional String. The name of the feature collection. This is used
-                               when feature collections are being persisted on a WebMap. If None is
+                               when feature collections are being persisted on a Map. If None is
                                provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
 

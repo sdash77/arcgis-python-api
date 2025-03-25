@@ -1,6 +1,7 @@
 """
 Modifies a local portal's system settings.
 """
+
 import json
 import requests
 from typing import Optional, Any
@@ -608,18 +609,30 @@ class System(BasePortalAdmin):
     @property
     def limits(self) -> dict[str, Any]:
         """
-        The limits resource provides limits associated with the portal
-        organization, such as user and organizational limits for scheduled
-        tasks.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  required Boolean. If true, external content is enabled, else it is
-                               disabled.
-        ==================     ====================================================================
+        The *limits* resource provides limits associated with the
+        organization, such as user and organizational limits or scheduled
+        tasks. See `ArcGIS Enterprise Portal limits <https://developers.arcgis.com/rest/enterprise-administration/portal/limits-system-.htm>`_
+        for detailed description of each limit.
 
         :returns: dict[str,Any]
+            A Python dictionary with a *ScheduledTask* key whose value is a list
+            of dictionaries with specific limit names and their values.
+
+        .. code-block:: python
+
+            # Usage example:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> ent_system = gis.admin.system
+            >>> ent_system.limits
+
+            {'ScheduleTask': [{'limitName': 'UpdateInsightsUserLimit', 'numLimit': 20},
+                              {'limitName': 'UpdateInsightsOrgLimit', 'numLimit': 50},
+                              .
+                              .
+                              .
+                              {'limitName': 'TaskRunHistoryCount', 'numLimit': 30}]}
         """
         if self._gis.version < [2023, 2]:
             return None
@@ -636,19 +649,40 @@ class System(BasePortalAdmin):
         self, properties: list[dict], *, category: str = "ScheduleTask"
     ) -> dict:
         """
-        The update operation updates one or more system limits in a
+        The *set_limit()* method updates one or more organizational limits in a
         specific category. Only limits that are included in this request
         will be updated.
 
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        properties             A JSON array containing one or more limits of specific category to be updated.
+        properties             A Python list of one or more dictionaries with *limitName* and
+                               *numLimit* keys whose values are the specific limit category and the
+                               specific value to update.See
+                               `Portal limits <https://developers.arcgis.com/rest/enterprise-administration/portal/limits-system-.htm>`_
+                               for comprehensive list of limit options to set.
         ------------------     --------------------------------------------------------------------
-        category               Optional String. Category limits to be updated. The default is `ScheduleTask`
+        category               Optional String. Category limits to be updated.
+
+                               .. note::
+                                   As of the Enterprise 11.2 release, `ScheduleTask` is the only
+                                   category implemented.
         ==================     ====================================================================
 
-        :returns: None
+        :returns:
+            Python dictionary with a *status* key indicating success or failure of the operation.
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> ent_system = gis.admin.system
+            >>> ent_system.set_limits(properties=[{"limitName": "TaskRunHistoryCount",
+                                                   "numLimit": 45}],
+                                      category="ScheduleTask")
+
+            {'status': 'success'}
         """
         if self._gis.version < [2023, 2]:
             return None

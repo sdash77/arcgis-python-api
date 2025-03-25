@@ -1,9 +1,13 @@
 """ Defines the Project object.
 """
+
 import arcgis
 from arcgis.features import FeatureLayer, Table
 from arcgis.gis import Group
 from arcgis._impl.common._utils import _lazy_property
+from arcgis.auth.tools import LazyLoader
+
+_imports = LazyLoader("arcgis._impl.imports")
 from warnings import warn
 import json
 
@@ -144,8 +148,8 @@ class Project:
         self.group.protected = False
         self.group.delete()
         for folder in self.gis.users.get(owner).folders:
-            if folder["title"] == title:
-                self.gis.content.delete_folder(folder["title"], owner=owner)
+            if folder.name == title:
+                folder.delete(permanent=True)
 
     def _update_data(self):
         # this function is used by v1 projects only
@@ -440,13 +444,15 @@ class Project:
 
     @_lazy_property
     def dispatcher_webmap(self):
-        """The dispatcher :class:`~arcgis.mapping.WebMap` for the project"""
-        return arcgis.mapping.WebMap(self.gis.content.get(self.dispatcher_web_map_id))
+        """The dispatcher :class:`~arcgis.map.Map` for the project"""
+        arcgismapping = _imports.get_arcgis_map_mod(True)
+        return arcgismapping.Map(self.gis.content.get(self.dispatcher_web_map_id))
 
     @_lazy_property
     def worker_webmap(self):
-        """The worker :class:`~arcgis.mapping.WebMap` for the project"""
-        return arcgis.mapping.WebMap(self.gis.content.get(self.worker_web_map_id))
+        """The worker :class:`~arcgis.map.Map` for the project"""
+        arcgismapping = _imports.get_arcgis_map_mod(True)
+        return arcgismapping.Map(self.gis.content.get(self.worker_web_map_id))
 
     @_lazy_property
     def group(self):

@@ -27,7 +27,7 @@ class Container:
     _properties = None
 
     def __init__(self, url: str, gis: GIS):
-        """initalizer"""
+        """initializer"""
         self._url = url
         self._gis = gis
 
@@ -39,7 +39,7 @@ class Container:
             self._properties = self._gis._con.get(url, params)
         return self._properties
 
-    def terminate(self) -> bool:
+    def shutdown(self) -> bool:
         """stops the current container"""
         url = f"{self._url}/terminateContainer"
         params = {"f": "json"}

@@ -10,7 +10,13 @@ try:
 except Exception as e:
     print(e)
 
-object_detection_models = ["FasterRCNN", "MMDetection", "MMSegmentation", "DETReg"]
+object_detection_models = [
+    "FasterRCNN",
+    "MMDetection",
+    "MMSegmentation",
+    "DETReg",
+    "RTDetrV2",
+]
 pixel_classification_models = ["MaskRCNN"]
 image_translation_models = [
     "Pix2Pix",
@@ -19,7 +25,7 @@ image_translation_models = [
     "ChangeDetector",
     "WNet_cGAN",
 ]
-point_cloud_models = ["PointCNN", "RandLANet", "SQNSeg"]
+point_cloud_models = ["PointCNN", "RandLANet", "SQNSeg", "PTv3Seg"]
 image_captioner_models = ["ImageCaptioner"]
 exception_models = [
     "MultiTaskRoadExtractor",
@@ -29,6 +35,8 @@ exception_models = [
     "CycleGAN",
     "ConnectNet",
     "Pix2PixHD",
+    "WNet_cGAN",
+    "PTv3Seg",
 ]
 
 unsupported_models = [
@@ -55,6 +63,7 @@ unsupported_models = [
     "_TransformerEntityRecognizer",
     "TextClassifier",
     "MMDetection3D",
+    "PTv3Det",
 ]
 
 
@@ -122,7 +131,16 @@ def estimate_batch_size(model, mode="train", **kwargs):
             try:
                 if mode == "train":
                     model._data.train_dl.batch_size = max_batchsize
-                    x, y = model._data.one_batch(detach=False)
+                    if model.__class__.__name__ == "PTv3Seg":
+                        from arcgis.learn._utils.pointcloud_serialization import (
+                            prepare_data_dict,
+                        )
+
+                        ptv_data = prepare_data_dict(model._data)
+                        x, y = ptv_data.one_batch(detach=False)
+                    else:
+                        x, y = model._data.one_batch(detach=False)
+
                     if model.__class__.__name__ in object_detection_models:
                         input_data = model._model_conf.on_batch_begin(
                             model.learn,
@@ -135,7 +153,6 @@ def estimate_batch_size(model, mode="train", **kwargs):
                             out = model.learn.model(
                                 input_data[0][0],
                                 input_data[0][1],
-                                torch.stack(input_data[0][2]),
                             )
                         else:
                             out = model.learn.model(*input_data[0])
@@ -165,7 +182,10 @@ def estimate_batch_size(model, mode="train", **kwargs):
                                 x[0].to(model._device), x[1].to(model._device)
                             )
                     elif model.__class__.__name__ in point_cloud_models:
-                        out = model.learn.model(x[0].to(model._device))
+                        if model.__class__.__name__ == "PTv3Seg":
+                            out = model.learn.model(x)
+                        else:
+                            out = model.learn.model(x[0].to(model._device))
                     elif model.__class__.__name__ in image_captioner_models:
                         out = model.learn.model(
                             x.to(model._device), [data.to(model._device) for data in y]
@@ -186,6 +206,10 @@ def estimate_batch_size(model, mode="train", **kwargs):
                             ),
                             np.uint8,
                         )
+                        if model.__class__.__name__ == "PTv3Seg":
+                            point_nums = torch.randint(
+                                1, height + 1, size=(max_batchsize,)
+                            )
                     else:
                         blank_img = np.ones(
                             (
@@ -199,30 +223,46 @@ def estimate_batch_size(model, mode="train", **kwargs):
                     tblank_img = torch.Tensor(blank_img).to(model._device)
                     eval_model = model.learn.model.to(model._device)
                     eval_model.eval()
-                    with torch.no_grad():
-                        if model.__class__.__name__ in object_detection_models:
-                            eval_model(model._model_conf.transform_input(tblank_img))
-                        elif model.__class__.__name__ in image_translation_models:
-                            if model.__class__.__name__ == "WNet_cGAN":
-                                eval_model(tblank_img, tblank_img, tblank_img)
-                            else:
-                                eval_model(tblank_img, tblank_img)
-                        elif model.__class__.__name__ in image_captioner_models:
-                            eval_model.sample(tblank_img)
+                    if model.__class__.__name__ in object_detection_models:
+                        eval_model(model._model_conf.transform_input(tblank_img))
+                    elif model.__class__.__name__ in image_translation_models:
+                        if model.__class__.__name__ == "WNet_cGAN":
+                            eval_model(tblank_img, tblank_img, tblank_img)
                         else:
-                            eval_model(tblank_img)
+                            eval_model(tblank_img, tblank_img)
+                    elif model.__class__.__name__ in image_captioner_models:
+                        eval_model.sample(tblank_img)
+                    elif model.__class__.__name__ == "PTv3Seg":
+                        from arcgis.learn._utils.pointcloud_serialization import (
+                            transform_data,
+                        )
+
+                        ptv3_d = transform_data(
+                            [tblank_img, point_nums.to(model._device)]
+                        )
+                        eval_model(ptv3_d[0])
+                    else:
+                        eval_model(tblank_img)
 
                 elif mode == "none":
                     model._data.train_dl.batch_size = max_batchsize
                     model._data.valid_dl.batch_size = max_batchsize
-                    x, y = model._data.one_batch(detach=False)
+                    if model.__class__.__name__ == "PTv3Seg":
+                        from arcgis.learn._utils.pointcloud_serialization import (
+                            prepare_data_dict,
+                        )
+
+                        ptv_data = prepare_data_dict(model._data)
+                        x, y = ptv_data.one_batch(detach=False)
+                    else:
+                        x, y = model._data.one_batch(detach=False)
                     if "model" in model._model_kwargs:
                         nonemodel = getattr(ag.learn, model.__class__.__name__)(
                             model._data, model=model._model_kwargs["model"]
                         )
                     else:
                         nonemodel = getattr(ag.learn, model.__class__.__name__)(
-                            model._data
+                            model._data, backbone=model._backbone
                         )
 
                     if nonemodel.__class__.__name__ in object_detection_models:
@@ -237,7 +277,6 @@ def estimate_batch_size(model, mode="train", **kwargs):
                             out = nonemodel.learn.model(
                                 input_data[0][0],
                                 input_data[0][1],
-                                torch.stack(input_data[0][2]),
                             )
                         else:
                             out = nonemodel.learn.model(*input_data[0])
@@ -267,7 +306,10 @@ def estimate_batch_size(model, mode="train", **kwargs):
                                 x[0].to(nonemodel._device), x[1].to(nonemodel._device)
                             )
                     elif model.__class__.__name__ in point_cloud_models:
-                        out = nonemodel.learn.model(x[0].to(nonemodel._device))
+                        if model.__class__.__name__ == "PTv3Seg":
+                            out = nonemodel.learn.model(x)
+                        else:
+                            out = nonemodel.learn.model(x[0].to(nonemodel._device))
                     elif model.__class__.__name__ in image_captioner_models:
                         out = nonemodel.learn.model(
                             x.to(nonemodel._device),

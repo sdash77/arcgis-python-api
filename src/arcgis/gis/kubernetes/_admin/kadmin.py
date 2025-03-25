@@ -13,6 +13,13 @@ from ._jobs import JobManager
 from arcgis.gis.admin._license import LicenseManager
 from arcgis.gis import Item, User
 from arcgis.apps.tracker._location_tracking import LocationTrackingManager
+from arcgis.gis.tasks._schedule import Task
+from arcgis.gis.admin._livingatlas import (
+    LivingAtlas,
+    LivingAtlasJob,
+    LivingAtlasManager,
+)
+from arcgis.gis.admin._classification import ClassificationManager
 
 
 class KubernetesAdmin(_BaseKube):
@@ -53,11 +60,12 @@ class KubernetesAdmin(_BaseKube):
     _category_schema = None
     _jobs = None
     _collaborations = None
+    _classification: ClassificationManager | None = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """class initializer"""
-        super(KubernetesAdmin, self)
+        super()
         self._url = url
         self._gis = gis
         self._con = gis._con
@@ -176,7 +184,9 @@ class KubernetesAdmin(_BaseKube):
         }
         if item_type:
             params["types"] = item_type.value
-        url: str = f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
         session = self._gis._con._session
         resp = session.get(url=url, params=params)
         resp.raise_for_status()
@@ -293,10 +303,9 @@ class KubernetesAdmin(_BaseKube):
         :return: List of :class:`Tasks <arcgis.gis.tasks.Task>`.
 
         """
-        _tasks = []
-        num = 100
-        url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
-        params = {"f": "json", "start": 1, "num": num}
+        num: int = 100
+        url: str = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
+        params: dict = {"f": "json", "start": 1, "num": num}
         if item:
             params["itemId"] = item.itemid
         if not active is None:
@@ -305,18 +314,23 @@ class KubernetesAdmin(_BaseKube):
             params["userFilter"] = user.username
         if types:
             params["types"] = types
-        res = self._con.get(url, params)
-        start = res["nextStart"]
-        _tasks.extend(res["tasks"])
+        start: int = 1
         while start != -1:
             params["start"] = start
             params["num"] = num
             res = self._con.get(url, params)
-            if len(res["tasks"]) == 0:
+            if len(res.get("tasks", [])) == 0:
                 break
-            _tasks.extend(res["tasks"])
+            else:
+                for task in res.get("tasks", []):
+                    owner: str = task["userId"]
+                    task_id: str = task["id"]
+                    task_url: str = (
+                        f"{self._gis._portal.resturl}community/users/{owner}/tasks/{task_id}"
+                    )
+                    yield Task(url=task_url, gis=self._gis)
+
             start = res["nextStart"]
-        return _tasks
 
     # ----------------------------------------------------------------------
     @property
@@ -446,3 +460,22 @@ class KubernetesAdmin(_BaseKube):
             url = self._gis._portal.resturl + "portals/self/webhooks"
             self._whm = WebhookManager(url=url, gis=self._gis)
         return self._whm
+
+    # ----------------------------------------------------------------------
+    @property
+    def classification(self) -> ClassificationManager:
+        """
+        Provides access to the functionality for managing the ArcGIS Enterprise
+        classification schema if it has been configured.
+
+        :return:
+            An instance of the :class:`~arcgis.gis.admin.ClassificationManager`.
+        """
+        if (
+            self._classification is None
+            and "hasClassificationSchema" in self._gis.properties
+            and self._gis.version >= [2024, 2]
+        ):
+            url: str = f"{self._gis.resturl}portals/self/classification"
+            self._classification = ClassificationManager(url=url, gis=self._gis)
+        return self._classification

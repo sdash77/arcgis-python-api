@@ -30,6 +30,15 @@ except:
     pass
 
 
+def _parse_float(f):
+    try:
+        from locale import atof as _atof
+
+        return _atof(f)  # localized string
+    except AttributeError:
+        return float(f)  # number
+
+
 def normalize_batch_imagenetstats(batch):
     imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
     mean = 255 * np.array(imagenet_stats[0], dtype=np.float32)
@@ -142,9 +151,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -299,10 +308,12 @@ class ChildObjectDetector:
         self.padding = int(
             scalars.get("padding", self.json_info["ImageHeight"] // 4)
         )  ## Default padding Imageheight//4.
-        self.nms_overlap = float(
+        self.nms_overlap = _parse_float(
             scalars.get("nms_overlap", 0.1)
         )  ## Default 0.1 NMS Overlap.
-        self.thres = float(scalars.get("threshold", 0.5))  ## Default 0.5 threshold.
+        self.thres = _parse_float(
+            scalars.get("threshold", 0.5)
+        )  ## Default 0.5 threshold.
         self.batch_size = (
             int(math.sqrt(int(scalars.get("batch_size", 64)))) ** 2
         )  ## Default 64 batch_size
@@ -402,7 +413,8 @@ def detect_object(
             torch.tensor(images).to(device).float(), **transform_kwargs
         )
 
-    pred_batch = model(batch_input)
+    with torch.no_grad():
+        pred_batch = model(batch_input)
 
     preds = model_configuration.post_process(
         pred_batch, nms_overlap, thres, tile_height, device
@@ -489,9 +501,11 @@ class ChildImageClassifier:
                     "name": "test_time_augmentation",
                     "dataType": "string",
                     "required": False,
-                    "value": "False"
-                    if "test_time_augmentation" not in self.json_info
-                    else str(self.json_info["test_time_augmentation"]),
+                    "value": (
+                        "False"
+                        if "test_time_augmentation" not in self.json_info
+                        else str(self.json_info["test_time_augmentation"])
+                    ),
                     "displayName": "Perform test time augmentation while predicting",
                     "description": "If True, will merge predictions from flipped and rotated images.",
                 },
@@ -583,7 +597,9 @@ class ChildImageClassifier:
                 "y",
                 "yes",
             ]
-            self.thres = float(scalars.get("threshold", 0.5))  ## Default 0.5 threshold.
+            self.thres = _parse_float(
+                scalars.get("threshold", 0.5)
+            )  ## Default 0.5 threshold.
             self.probability_raster = scalars.get(
                 "return_probability_raster", "false"
             ).lower() in ["true", "1", "t", "y", "yes"]
@@ -774,23 +790,29 @@ class ChildImageClassifier:
         input_image_tensor = torch.tensor(input_image).to(self.device).float()
 
         prithvimod = [
-            "prithivi100m_burn_scar",
-            "prithivi100m_crop_classification",
-            "prithivi100m_sen1floods",
-            "prithivi100m",
+            "prithvi100m_burn_scar",
+            "prithvi100m_crop_classification",
+            "prithvi100m_sen1floods",
+            "prithvi100m",
         ]
-        prithivi = True if model_info.get("Kwargs")["model"] in prithvimod else False
 
+        prithvi = (
+            True
+            if model_info.get("Kwargs", {}).get("model", None) in prithvimod
+            else False
+        )
+        # For all Prithvi models excluding the Crop classification model
         if (
-            prithivi
-            and model_info.get("Kwargs")["model"] != "prithivi100m_crop_classification"
+            prithvi
+            and model_info.get("Kwargs", {}).get("model", None)
+            != "prithvi100m_crop_classification"
             and input_image_tensor.max() > 1
         ):
             input_image_tensor = input_image_tensor / 10000
 
         if "NormalizationStats" in model_info:
             normalized_image_tensor = normalize_batch(
-                input_image_tensor.cpu(), model_info, prithivi=prithivi
+                input_image_tensor.cpu(), model_info, prithvi=prithvi
             )
             normalized_image_tensor = normalized_image_tensor.float().to(
                 input_image_tensor.device

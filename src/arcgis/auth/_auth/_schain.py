@@ -4,7 +4,11 @@ Allows for requests authentication to be chained.
 Inspired by: https://github.com/Colin-b/requests_auth
 
 """
+
+from __future__ import annotations
 from requests.auth import AuthBase
+
+__all__ = ["_MultiAuth", "SupportMultiAuth"]
 
 
 ###########################################################################

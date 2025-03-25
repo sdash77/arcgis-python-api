@@ -3,6 +3,13 @@ arcgis.notebook module
 
 .. automodule:: arcgis.notebook
 
+NotebookJob
+-----------
+.. autoclass:: arcgis.notebook.NotebookJob
+    :inherited-members:
+    :members:
+    :undoc-members:
+    
 create_snapshot
 ---------------
 .. autofunction:: arcgis.notebook.create_snapshot

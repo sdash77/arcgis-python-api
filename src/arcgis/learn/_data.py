@@ -265,7 +265,7 @@ def _get_bbox_classes(
             obs_angle.append(float(lst[2]))  # onservation angle
             occluded.append(float(lst[3]))  # if the object is occluded
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin) * 1.25, (ymax - ymin) * 1.25))
+            height_width.append(((xmax - xmin), (ymax - ymin)))
             hwl.append([hieght, width, length])
             d_xyz.append([x, y, z])
             rot_yaxis.append(float(lst[14]))  # angle of rotation along y axis
@@ -307,7 +307,7 @@ def _get_bbox_classes(
 
             classes.append(data_class_mapping)
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin) * 1.25, (ymax - ymin) * 1.25))
+            height_width.append(((xmax - xmin), (ymax - ymin)))
 
     if len(bboxes) == 0:
         return [[[0.0, 0.0, 0.0, 0.0]], [list(class_mapping.values())[0]]]
@@ -596,7 +596,12 @@ _models_dir = "models"
 
 
 def _prepare_working_dir(path):
-    _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+    try:
+        _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+    except Exception as e:
+        raise Exception(
+            "Failed to create the specified working directory. Create it manually and retry."
+        )
 
 
 def merge_emd_and_stats(data_folders):
@@ -775,6 +780,8 @@ def prepare_textdata(
     ---------------------   -------------------------------------------
     text_columns            Optional string.
                             This parameter is mandatory when task is "classification" or "sequence_translation".
+                            This parameter is mandatory when task is `entity_recognition` task with input dataset_type
+                            as `csv`.
                             The column that will contain the input text.
     ---------------------   -------------------------------------------
     label_columns           Optional list.
@@ -835,18 +842,16 @@ def prepare_textdata(
     dataset_type            Optional list.
                             This parameter is mandatory when task is "entity_recognition"
                             Accepted data format
-                            for this model are - 'ner_json','BIO' or 'LBIOU'
+                            for this model are - 'ner_json','BIO' or 'LBIOU', 'csv'
+                            For `csv` dataset type. If an entity has multiple values. It should be
+                            separated by `,`.
     ---------------------   -------------------------------------------
-    class_mapping           Optional dictionary. Mapping from id to
-                            its string label.
-                            For dataset_type=IOB, BILUO or ner_json:
-                            Provide address field as class mapping
-                            in below format:
-                            class_mapping={'address_tag':'address_field'}.
-                            Field defined as 'address_tag' will be treated
-                            as a location. In cases where trained model extracts
-                            multiple locations from a single document, that
-                            document will be replicated for each location.
+    class_mapping           Optional dictionary. This parameter is optional and can only be used when the
+                            task is entity recognition. The dictionary specifies the location entity. Use the format:
+                            class_mapping={'address_tag': 'location'}.
+                            The value linked to the 'address_tag' key will be identified as a location entity.
+                            If the model extracts multiple location entities from a single document,
+                            each location will be listed separately in the results.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -940,9 +945,14 @@ def prepare_textdata(
                 remove_urls=remove_urls,
             )
     elif task.lower() == "entity_recognition":
-        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO", "csv"]:
             from ._utils._ner_utils import _NERData
 
+            if dataset_type == "csv" and text_columns is None:
+                raise Exception(
+                    f"For entity_recognition task `text_columns` parameter  is required when the dataset_type parameter"
+                    f" is `csv`."
+                )
             if batch_size == 64:
                 batch_size = 8
             encoding = kwargs.get("encoding", "UTF-8")
@@ -955,6 +965,7 @@ def prepare_textdata(
                 val_split_pct=val_split_pct,
                 batch_size=batch_size,
                 encoding=encoding,
+                text_columns=text_columns,
             )
             if working_dir is not None:
                 data.working_dir = path = Path(os.path.abspath(working_dir))
@@ -963,16 +974,19 @@ def prepare_textdata(
                 data.working_dir = None
             if os.path.isfile(path):
                 path = os.path.dirname(path)
+
             _prepare_working_dir(path)
 
             return data
         else:
             logger = logging.getLogger()
             logger.error(
-                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values "
+                f"are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`, `csv`"
             )
             raise Exception(
-                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values "
+                f"are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`, `csv`"
             )
 
     else:
@@ -1180,9 +1194,7 @@ def prepare_tabulardata(
     if hasattr(arcgis, "env") and force_cpu == 1:
         arcgis.env._processorType = "CPU"
 
-    stratify = False
-    if kwargs.get("stratify") == True:
-        stratify = True
+    stratify = kwargs.pop("stratify", False)
 
     HAS_COLUMN_TRANSFORMS = False
 
@@ -1279,7 +1291,7 @@ def prepare_data(
     path                    Required string. Path to data directory or a list of paths.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
-                            its string label.
+                            its string label. Not supported for MaskRCNN model.
     ---------------------   -------------------------------------------
     chip_size               Optional integer, default 224. Size of the image to train
                             the model. Images are cropped to the specified chip_size.
@@ -1479,6 +1491,22 @@ def prepare_data(
                             number of subprocesses to use for data loading on the
                             Windows operating system. ``0`` means that the data will
                             be loaded in the main process.
+    ---------------------   -------------------------------------------
+    forecast_timesteps      Required int. Default set to 1. How far the
+                            model should forecast into the future. A forecast timestep
+                            is the interval at which predictions are made, For example,
+                            If we have 8-hourly data point and we want to make a 8 hr,
+                            16 hr, 24 hr forecast, forecast timesteps is set to 1, 2, 3
+                            respectively and so on. In case of hourly and monthly data
+                            point, for forecasts of 1, 2, 3 hr/month, forecast timestep
+                            is set to 1, 2, 3 respectively and so on. Applicable only
+                            for climaX model architecuture.
+    ---------------------   -------------------------------------------
+    hrs_each_step           Optional int. Default set to 1 (hrs). Number of hours in
+                            which data is collected, for example, if you have 8-hourly,
+                            hourly, montly, daily then, hrs_each_step is to be set to
+                            8, 1, 720 (30 days * 24), 24 hrs respectively. Applicable
+                            only for climaX model architecuture.
     =====================   ===========================================
 
     :return:
@@ -1596,6 +1624,12 @@ def prepare_data(
             else:
                 stats = eas
             dataset_type = stats["MetaDataMode"]
+            if dataset_type == "RCNN_Masks":
+                emdfile = path / "esri_model_definition.emd"
+                with open(emdfile) as f:
+                    emdstats = json.load(f)
+                if emdstats.get("IsMultidimensional", False):
+                    dataset_type = "PSETAE"
         # elif os.path.exists(path/'images_before') and os.path.exists(path/'images_after'):
         #     dataset_type = 'ChangeDetection'
         elif _check_esri_files(path / "A") and _check_esri_files(path / "B"):
@@ -1606,9 +1640,25 @@ def prepare_data(
         ):
             dataset_type = "WNet_cGAN"
         elif not has_esri_files:
-            raise Exception(
-                "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."
-            )
+            try:
+                varlst = [i for i in os.listdir(path) if i not in ["DATA", "models"]]
+                dim_name = [i for i in os.walk(os.path.join(path, varlst[0]))][0][1][0]
+                emd_file = os.path.join(
+                    path, varlst[0], dim_name, "esri_model_definition.emd"
+                )
+                with open(emd_file) as f:
+                    emd = json.load(f)
+                if (
+                    emd.get("IsMultidimensional", False)
+                    and emd.get("MetaDataMode") == "Export_Tiles"
+                ):
+                    dataset_type = "ClimaX"
+                else:
+                    dataset_type = "PSETAE"
+            except:
+                raise Exception(
+                    "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."
+                )
 
     # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
     if dataset_type == "Export_Tiles" and os.path.exists(path / "images2"):
@@ -1866,19 +1916,11 @@ def prepare_data(
         and "InputRastersProps" in emd
         and kwargs.get("imagery_type", None) is None
     ):
-        # Check by band names
-        band_mapping = {
-            i: b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])
-        }
-        for b in emd[
-            "WellKnownBandNames (FYI, these band names can be used in ExtractBands)"
-        ]:
-            if b.lower() in ["red", "green", "blue"]:
-                continue
-            if b.lower() in band_mapping:
-                imagery_type = sensor_name
-                _infered = True
-                break
+        # check if traing band is coming from other that RGB band
+        band_mapping = set(emd["InputRastersProps"]["BandNames"])
+        if not band_mapping.issubset(["red", "green", "blue", "r", "g", "b", ""]):
+            imagery_type = sensor_name
+            _infered = True
 
         if not _infered:
             # Check by values
@@ -2783,7 +2825,7 @@ def prepare_data(
             kwargs_transforms["size"] = img_size
         kwargs_transforms["tfm_y"] = True
 
-    elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+    elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO", "csv"]:
         from ._utils._ner_utils import _NERData
 
         if batch_size == 64:
@@ -2964,6 +3006,18 @@ def prepare_data(
             **kwargs,
         )
         data._estimate_batch = _estimate_batch
+        return data
+
+    elif dataset_type == "ClimaX":
+        from ._data_utils.climax_data import prepare_climax_data
+
+        data = prepare_climax_data(
+            path,
+            batch_size,
+            val_split_pct,
+            working_dir,
+            **kwargs,
+        )
         return data
 
     elif dataset_type == "WNet_cGAN":
@@ -3402,7 +3456,7 @@ def prepare_data(
         )
     data.orig_path = path
     data.resize_to = kwargs_transforms.get("size", None)
-    data.height_width = height_width
+    data.height_width = np.array(height_width)
     data.downsample_factor = kwargs.get("downsample_factor")
     data.dataset_type = dataset_type
 

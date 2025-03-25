@@ -32,7 +32,7 @@ def mmdet3d_model(data, **kwargs):
 
 
 def mmdet3d_loss(model_output, *model_target):
-    return model_output[1]["loss"]
+    return model_output[1]
 
 
 class MMDetection3D(ArcGISModel):
@@ -46,7 +46,7 @@ class MMDetection3D(ArcGISModel):
     model                           Required model name or path to the configuration file
                                     from :class:`~arcgis.learn.MMDetection3D` repository.
                                     The list of the supported models can be queried using
-                                    :attr:`~arcgis.learn.MMDetection.supported_models`.
+                                    :attr:`~arcgis.learn.MMDetection3D.supported_models`.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
@@ -142,7 +142,7 @@ class MMDetection3D(ArcGISModel):
         self._config.model.test_cfg.score_thr = detect_thresh
         self._config.model.test_cfg.nms_thr = nms_overlap
 
-    def _pred_batch(self, data, detect_thresh=0.2, nms_overlap=0.5):
+    def _pred_batch(self, data, detect_thresh=0.2, nms_overlap=0.2):
         self.learn.model.bbox_head.test_cfg.score_thr = detect_thresh
         self.learn.model.bbox_head.test_cfg.nms_thr = nms_overlap
         self.learn.model.eval()
@@ -209,13 +209,13 @@ class MMDetection3D(ArcGISModel):
         row_idx = 0
         while row_idx < rows:
             if ds_type == "valid":
-                data = self._data.valid_ds.get_batch(batch_size)
+                data = self._data.valid_ds.get_batch(batch_size, self._data.valid_dl)
             else:
-                data = self._data.train_ds.get_batch(batch_size)
+                data = self._data.train_ds.get_batch(batch_size, self._data.train_dl)
             preds = self._pred_batch(data, detect_thresh, nms_overlap)
 
             for idx in range(batch_size):
-                points = data["points"][idx][:, :3]
+                points = data["inputs"]["points"][idx][:, :3]
                 if points.shape[0] > max_display_point:
                     raise_maxpoint_warning(
                         row_idx, kwargs, None, max_display_point, save_html
@@ -228,11 +228,13 @@ class MMDetection3D(ArcGISModel):
                 else:
                     mask = torch.arange(0, points.shape[0])
                 points = points[mask]
-                gt_boxes = data["gt_bboxes_3d"][idx]
-                gt_boxes_labels = data["gt_labels_3d"][idx].detach().cpu()
+                gt_boxes = data["data_samples"][idx].gt_instances_3d.bboxes_3d
+                gt_boxes_labels = (
+                    data["data_samples"][idx].gt_instances_3d.labels_3d.detach().cpu()
+                )
                 gt_points_labels = gt_boxes.points_in_boxes_part(points).detach().cpu()
-                pred_boxes = preds[idx]["boxes_3d"]
-                pred_boxes_labels = preds[idx]["labels_3d"]
+                pred_boxes = preds[idx].pred_instances_3d.bboxes_3d
+                pred_boxes_labels = preds[idx].pred_instances_3d.labels_3d
                 pred_points_labels = (
                     pred_boxes.points_in_boxes_part(points).detach().cpu()
                 )
@@ -256,7 +258,7 @@ class MMDetection3D(ArcGISModel):
         self._reset_thresh()
 
     def average_precision_score(
-        self, detect_thresh=0.3, iou_thresh=0.1, nms_overlap=0.01, mean=False, **kwargs
+        self, detect_thresh=0.2, iou_thresh=0.1, nms_overlap=0.2, mean=False, **kwargs
     ):
         """
         Computes average precision on the validation/train set for each class.
@@ -411,7 +413,7 @@ class MMDetection3D(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a :class:`~arcgis.learn.MMDetection` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.MMDetection3D` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Parameter**            **Description**

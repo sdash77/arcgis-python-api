@@ -235,16 +235,20 @@ class RoadOrientation:
                 [
                     # Pairwise Transforms
                     [
-                        pytorch_tfms.RandomCrop(
-                            size=self.base.chip_size,
-                            padding_mode="constant",
-                            pad_if_needed=True,
-                        )
-                        if self.base.chip_size
-                        else None,
-                        pytorch_tfms.Resize(size=self.base.resize_to)
-                        if self.base.resize_to
-                        else None,
+                        (
+                            pytorch_tfms.RandomCrop(
+                                size=self.base.chip_size,
+                                padding_mode="constant",
+                                pad_if_needed=True,
+                            )
+                            if self.base.chip_size
+                            else None
+                        ),
+                        (
+                            pytorch_tfms.Resize(size=self.base.resize_to)
+                            if self.base.resize_to
+                            else None
+                        ),
                         pytorch_tfms.RandomHorizontalFlip(),
                         pytorch_tfms.RandomVerticalFlip(),
                         pytorch_tfms.Normalize(
@@ -261,9 +265,11 @@ class RoadOrientation:
                 [
                     # Pairwise Transforms
                     [
-                        pytorch_tfms.Resize(size=self.base.resize_to)
-                        if self.base.resize_to
-                        else None
+                        (
+                            pytorch_tfms.Resize(size=self.base.resize_to)
+                            if self.base.resize_to
+                            else None
+                        )
                     ],
                     # Image Transforms
                     [pytorch_tfms.ToTensor()],

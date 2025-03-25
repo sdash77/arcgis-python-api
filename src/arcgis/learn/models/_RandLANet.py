@@ -20,6 +20,7 @@ try:
     from pathlib import Path
     from .._utils.common import _get_emd_path
     from .._data import _raise_fastai_import_error
+    from copy import deepcopy
 
     HAS_FASTAI = True
 except Exception as e:
@@ -62,7 +63,9 @@ class RandLANet(PointCNN):
                                 - 'out_channels': Number of channels produced by each layer,
                                 - 'sub_sampling_ratio': Sampling ratio of random sampling at each layer,
                                 - 'k_n': Number of K-nearest neighbor for a point.
-
+    ---------------------   -------------------------------------------
+    focal_loss              Optional boolean. If True, it will use focal loss.
+                            Default: False
     =====================   ===========================================
 
     :return: `RandLANet` Object
@@ -92,11 +95,15 @@ class RandLANet(PointCNN):
         self.encoder_params["k_n"] = self.encoder_params.get("k_n", 16)
         self.encoder_params["num_classes"] = data.c
         if not isinstance(data, _EmptyData):
-            data = prepare_data_dict(data, self.sample_point_num, self.encoder_params)
+            data = prepare_data_dict(
+                deepcopy(data), self.sample_point_num, self.encoder_params
+            )
+        self._data = data
+        self._focal_loss = kwargs.get("focal_loss", False)
         self.learn = Learner(
             data,
             RandLANetSeg(self.encoder_params, data.extra_dim + 3),
-            loss_func=CrossEntropyPC(data.c),
+            loss_func=CrossEntropyPC(data.c, data.device, self._focal_loss),
             metrics=[
                 AverageMetric(accuracy),
                 AverageMetric(precision),

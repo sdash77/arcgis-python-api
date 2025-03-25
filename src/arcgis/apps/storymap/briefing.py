@@ -4,6 +4,7 @@ import uuid
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
+from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -56,45 +57,16 @@ class Briefing(object):
         item: Optional[Union[arcgis.gis.Item, str]] = None,
         gis: Optional[arcgis.gis.GIS] = None,
     ):
-        # Section: Set up gis
-        if gis is None:
-            # If no gis, find active env
-            gis = arcgis.env.active_gis
-            self._gis = gis
-        else:
-            self._gis = gis
-        if gis is None or gis._portal.is_logged_in is False:
-            # Check to see if user is authenticated
-            raise Exception("Must be logged into a Portal Account")
+        self._gis = gis or arcgis.env.active_gis
+        self._validate_gis()
 
         # Section: Set up existing story
         if item and isinstance(item, str):
-            # Get item using the item id
-            item = gis.content.get(item)
-            if item is None:
-                # Error with storymap in current gis
-                raise ValueError(
-                    "Cannot find storymap briefing associated with this item id in your portal. Please check it is correct."
-                )
-        if (
-            item
-            and isinstance(item, arcgis.gis.Item)
-            and item.type == "StoryMap"
-            and "storymapbriefing" in item.typeKeywords
-        ):
-            # Set item properties from existing item
-            self._item = item
-            self._itemid = self._item.itemid
-            self._resources = self._item.resources.list()
-            # Create existing story
+            item = self._get_item_by_id(item)
+
+        if self._is_existing_briefing(item):
+            self._validate_item(item)
             self._create_existing_briefing()
-        elif (
-            item
-            and isinstance(item, arcgis.gis.Item)
-            and "storymapbriefing" not in item.typeKeywords
-        ):
-            # Throw error if item is not of type Story Map
-            raise ValueError("Item is not a StoryMap Briefing")
         else:
             # If no item was provided create a new story map
             self._create_new_briefing()
@@ -102,50 +74,55 @@ class Briefing(object):
         self._url = self._get_url()
 
     # ----------------------------------------------------------------------
+    def _validate_gis(self):
+        if not self._gis._portal.is_logged_in:
+            raise Exception("Must be logged into a Portal Account")
+
+    def _get_item_by_id(self, item_id):
+        item = self._gis.content.get(item_id)
+        if item is None:
+            raise ValueError(
+                f"Cannot find storymap briefing associated with item id {item_id} in your portal. Please check it is correct."
+            )
+        return item
+
+    def _validate_item(self, item):
+        if not isinstance(item, arcgis.gis.Item):
+            raise ValueError("Invalid item provided")
+
+        type_keywords = set(item.typeKeywords)
+        if "StoryMap" not in type_keywords or "storymapbriefing" not in type_keywords:
+            raise ValueError("Item is not a StoryMap Briefing")
+
+        self._item = item
+        self._itemid = item.itemid
+        self._resources = item.resources.list()
+
+    def _is_existing_briefing(self, item):
+        return isinstance(item, arcgis.gis.Item)
+
+    # ----------------------------------------------------------------------
     def _create_existing_briefing(self):
-        # Get properties from most recent resource file.
-        # Can have multiple drafts so need to account for this.
-        # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
-        saved_drafts = []
-        for resource in self._resources:
-            for key, val in resource.items():
-                # Find all drafts in the resources and add to a list
-                if key == "resource" and (
-                    re.match("draft_[0-9]{13}.json", val) or re.match("draft.json", val)
-                ):
-                    saved_drafts.append(val)
-        # Find the correct draft to use
-        if len(saved_drafts) == 1:
-            # Only one draft saved
-            # Open JSON draft file for properties
-            data = self._item.resources.get(saved_drafts[0], try_json=True)
-            self._properties = data
-        elif len(saved_drafts) > 1:
-            # Multiple drafts saved
-            # Remove draft.json because oldest one
-            if "draft.json" in saved_drafts:
-                idx = saved_drafts.index("draft.json")
-                del saved_drafts[idx]
-            # check remaining to find most recent
-            start = saved_drafts[0][6:19]  # get only timestamp
-            current = saved_drafts[0]
-            for draft in saved_drafts:
-                compare = draft[6:19]
-                if start < compare:
-                    start = compare
-                    current = draft
-            # Open most recent JSON draft file for properties
-            data = self._item.resources.get(current, try_json=True)
-            self._properties = data
-        else:
-            # Briefing has no draft json so look for published json
+        saved_drafts = [
+            val
+            for resource in self._resources
+            for key, val in resource.items()
+            if key == "resource"
+            and (re.match("draft_[0-9]{13}.json", val) or re.match("draft.json", val))
+        ]
+
+        if len(saved_drafts) == 0:
             data = self._item.resources.get("published_data.json", try_json=True)
-            self._properties = data
+        else:
+            most_recent_draft = max(saved_drafts, key=lambda x: (x[6:19], x))
+            data = self._item.resources.get(most_recent_draft, try_json=True)
+
+        self._properties = data
 
     # ----------------------------------------------------------------------
     def _create_new_briefing(self):
-        # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.briefing)
+        # Get template from _util module
+        template = copy.deepcopy(utils._TEMPLATES["briefing"])
         # Add correct by-line and locale
         template["nodes"]["n-3r3mhh"]["data"]["byline"] = self._gis._username
 
@@ -159,9 +136,9 @@ class Briefing(object):
         # Create text for resource call
         text = json.dumps(template)
         # Create a temporary title
-        title = "Briefing via Python %s" % uuid.uuid4().hex[:10]
-        # Create draft resource name
-        draft = "draft_" + str(int(time.time() * 1000)) + ".json"
+        title = f"Briefing via Python {uuid.uuid4().hex[:10]}"
+        # Create a temporary draft name
+        draft = f"draft_{int(time.time() * 1000)}.json"
         # Will be posted as a draft
         br_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
             "version"
@@ -170,8 +147,8 @@ class Briefing(object):
             [
                 "alphabriefing",
                 "arcgis-storymaps",
-                "smdraftresourceid:" + draft,
-                "smversiondraft:" + br_version,
+                f"smdraftresourceid:{draft}",
+                f"smversiondraft:{br_version}",
                 "StoryMap",
                 "storymapbriefing",
                 "Web Application",
@@ -186,13 +163,13 @@ class Briefing(object):
             "typeKeywords": keywords,
             "type": "StoryMap",
         }
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
         # Add item to active gis and set properties
-        item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        folder = self._gis.content.folders.get()
+        self._item = folder.add(item_properties=item_properties).result()
         # Assign to story properties
-        self._item = item
-        self._itemid = item.itemid
+        self._itemid = self._item.itemid
         # Make a resource call with the template to create json draft needed
         utils._add_resource(self, resource_name=draft, text=text, access="private")
         # Assign resources to item
@@ -233,7 +210,7 @@ class Briefing(object):
             )
         else:
             # Enterprise
-            self._url = "https://{portal}/apps/storymaps/briefings/{briefingid}".format(
+            self._url = "{portal}/apps/storymaps/briefings/{briefingid}".format(
                 portal=self._gis.url, briefingid=self._itemid
             )
         return self._url
@@ -297,6 +274,11 @@ class Briefing(object):
         return actions
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class that can be accessed through the cover property in the cover slide.",
+    )
     def cover(
         self,
         title: Optional[str] = None,
@@ -342,6 +324,64 @@ class Briefing(object):
         return True
 
     # ----------------------------------------------------------------------
+    def get_logo(self):
+        """
+        Get the logo image for the briefing. The logo is seen in the header of the briefing.
+        """
+        # logo is found in story node (i.e. root node id)
+        root = self._properties["root"]
+        logo_resource = self._properties["nodes"][root]["data"]["storyLogoResource"]
+        resource = self._properties["resources"][logo_resource]["data"]["resourceId"]
+
+        return self._item.resources.get(resource)
+
+    # ----------------------------------------------------------------------
+    def set_logo(
+        self,
+        image: Optional[str] = None,
+        link: Optional[str] = None,
+        alt_text: Optional[str] = None,
+    ):
+        """
+        Set the logo for the briefing. The logo is seen in the header of the story.
+
+        .. note::
+            To remove the logo, link, or alt text, pass in an empty string. If they are None, nothing
+            will be changed for that parameter. For example if you only want to update the link but leave
+            the image and alt text as is, pass in None for the image and alt text. Pass in the new link
+            for the link parameter.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        image               Required string. The file path to the image to be used as the
+                            logo.
+        ---------------     --------------------------------------------------------------------
+        link                Optional string. The url to link to when the logo is clicked.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional string. The alt text to be used for screen readers.
+        ===============     ====================================================================
+
+        :return: True if successful.
+
+        .. code-block:: python
+
+            story = Briefing("<story item>")
+            story.set_logo("<image-path>.jpg/jpeg/png/gif")
+        """
+        # call method to update logo
+        return utils.set_logo(self, image, link, alt_text)
+
+    # ----------------------------------------------------------------------
+    def get_theme(self) -> str:
+        """
+        Get the theme name or the theme item that is used in the briefing.
+
+        return: The theme name or the theme item item_id.
+        """
+        return utils.get_theme(self)
+
+    # ----------------------------------------------------------------------
     def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
         """
         Each briefing has a theme node in its resources. This method can be used to change the theme.
@@ -370,7 +410,12 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        slides: list[Content.Slide],
+        layout: str,
+        *,
+        sublayout: Optional[str] = None,
+        title: Optional[str] = None,
+        subtitle: Optional[str] = None,
+        section_position: Optional[str] = None,
         position: Optional[int] = None,
     ):
         """
@@ -379,39 +424,54 @@ class Briefing(object):
         at which it will be in your story.
         Not passing in any content means a separator will be added.
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        slides              Required list of :class:`~arcgis.apps.storymap.story_content.Slide`.
-                            The list of slides to be added to the story. The order of the slides
-                            in the list is the order in which they will appear in the briefing.
-        ---------------     --------------------------------------------------------------------
-        position            Optional Integer. Indicates the position in which the slide will be
-                            added. If no position is provided, the slide will be placed at the end.
-        ===============     ====================================================================
+        ===================     ====================================================================
+        **Parameter**           **Description**
+        -------------------     --------------------------------------------------------------------
+        layout                  Required SlideLayout or string, the layout type of the slide.
+        -------------------     --------------------------------------------------------------------
+        sublayout               Optional SlideSubLayout or string, the sublayout type of the slide.
+                                Only applicable when the layout is "double" or "titleless-double".
+        -------------------     --------------------------------------------------------------------
+        title                   Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
+                                Text can only be of type heading (h2).
+        -------------------     --------------------------------------------------------------------
+        subtitle                Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the subtitle of the slide.
+                                Text can only be of type paragraph.
+        -------------------     --------------------------------------------------------------------
+        section_position        Optional string, the title panel position of the section slide. Only
+                                applicable for "section-double".
+                                Values: 'start' | 'end'
+        -------------------     --------------------------------------------------------------------
+        position                Optional Integer. Indicates the position in which the slide will be
+                                added. If no position is provided, the slide will be placed at the end.
+        ===================     ====================================================================
 
-        :return: True if the slide was added successfully.
+        :return: The new slide that was added to the story
 
         """
-        # Check that slides is a list
-        slides = slides if isinstance(slides, list) else [slides]
+        slide = Content.BriefingSlide(
+            layout=layout,
+            sublayout=sublayout,
+            title=title,
+            subtitle=subtitle,
+            section_position=section_position,
+            story=self,
+        )
 
-        for slide in slides:
-            if not isinstance(slide, Content.Slide):
-                raise ValueError("Only Slide objects can be added to a Briefing.")
+        # Add slide to story
+        slide._add_to_story(story=self)
 
-        for slide in slides:
-            # Add slide to story
-            slide._add_slide(story=self)
+        # Add to story children
+        utils._add_child(self, node_id=slide.node, position=position)
 
-            # Add to story children
-            utils._add_child(self, node_id=slide.node, position=position)
-
-        return True
+        return slide
 
     # ----------------------------------------------------------------------
     def move(
-        self, slide: int, position: Optional[int] = None, delete_current: bool = False
+        self,
+        slide: int,
+        position: Optional[int] = None,
+        delete_current: bool = False,
     ):
         """
         Move a slide to another position. The slide currently at that position will
@@ -466,12 +526,14 @@ class Briefing(object):
         tags: Optional[list] = None,
         access: str = None,
         publish: bool = False,
+        make_copyable: bool = None,
+        no_seo: bool = None,
     ):
         """
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
 
-        The title only needs to be specified if a change is wanted, otherwise exisiting title
+        The title only needs to be specified if a change is wanted, otherwise existing title
         is used.
 
         .. warning::
@@ -499,6 +561,10 @@ class Briefing(object):
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
+        ---------------     --------------------------------------------------------------------
+        make_copyable       Optional boolean. If True, the story is saved as copyable for users.
+        ---------------     --------------------------------------------------------------------
+        no_seo              Optional boolean. If True, the story is saved without SEO metadata.
         ===============     ====================================================================
 
 
@@ -506,7 +572,7 @@ class Briefing(object):
 
         """
         # call the save method in common utils module
-        return utils.save(self, title, tags, access, publish)
+        return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
     def delete_briefing(self):
@@ -534,7 +600,7 @@ class Briefing(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the duplicated story. Only availble
+        title               Optional string. The title of the duplicated story. Only available
                             for ArcGIS Online.
         ===============     ====================================================================
 

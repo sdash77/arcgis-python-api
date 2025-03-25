@@ -1,6 +1,7 @@
 """
 This contains an API to work with and manage the Kubernetes Sharing API
 """
+
 from __future__ import annotations
 import io
 import os
@@ -23,7 +24,7 @@ from arcgis.gis._impl._con import (
 from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 
-__version__ = "2.3.0"
+__version__ = "2.4.1"
 
 _log = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ class KbertnetesPy(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._ca_bundles: list[str] | str | None = kwargs.pop("ca_bundles", None)
         self._security_kwargs = kwargs.pop("security_kwargs", None)
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
@@ -153,6 +155,8 @@ class KbertnetesPy(object):
                     custom_adapter=custom_adapter,
                     use_gen_token=kwargs.get("use_gen_token", False),
                     security_kwargs=self._security_kwargs,
+                    is_hosted_nb_home=kwargs.pop("is_hosted_nb_home", False),
+                    ca_bundles=self._ca_bundles,
                 )
             else:
                 if token == api_key:
@@ -181,6 +185,8 @@ class KbertnetesPy(object):
                     custom_adapter=custom_adapter,
                     use_gen_token=kwargs.get("use_gen_token", False),
                     security_kwargs=self._security_kwargs,
+                    is_hosted_nb_home=kwargs.pop("is_hosted_nb_home", False),
+                    ca_bundles=self._ca_bundles,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -1753,6 +1759,7 @@ class KbertnetesPy(object):
         owner: str,
         folder: Optional[str] = None,
         force: bool = False,
+        permanent: bool = False,
     ):
         """Deletes an item.
 
@@ -1767,6 +1774,8 @@ class KbertnetesPy(object):
                           to the root folder.
         ----------------  --------------------------------------------------------
         force             Optional bool. If True, will force delete orphaned items
+        ----------------  --------------------------------------------------------
+        permanent         Optional bool. If True, item will not be sent to recycle bin.
         ================  ========================================================
 
         :return:
@@ -1782,6 +1791,8 @@ class KbertnetesPy(object):
             post_data = {"f": "json", "force": True}
         else:
             post_data = self._postdata()
+        if permanent:
+            post_data["permanentDelete"] = True
         resp = self.con.post(path, post_data)
 
         if resp:

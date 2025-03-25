@@ -347,12 +347,12 @@ class Header(object):
         if self._background_image:
             header_panel["backgroundImageUrl"] = self._background_image
             header_panel["backgroundImageSizing"] = self._background_image_placement[0]
-            header_panel[
-                "normalBackgroundImagePlacement"
-            ] = self._background_image_placement[1]
-            header_panel[
-                "horizontalBackgroundImagePlacement"
-            ] = self._background_image_placement[1]
+            header_panel["normalBackgroundImagePlacement"] = (
+                self._background_image_placement[1]
+            )
+            header_panel["horizontalBackgroundImagePlacement"] = (
+                self._background_image_placement[1]
+            )
 
         if self._logo_image_url:
             header_panel["logoImageURL"] = self._logo_image_url

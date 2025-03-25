@@ -418,9 +418,9 @@ class PointCNNSeg(nn.Module):
             self.encoder_layers.append(
                 ## in_channels is equal to num_extra_features for the first layer.
                 XConvDepthwise(
-                    in_channel=num_extra_features
-                    if i == 0
-                    else out_channels[i - 1] * m,
+                    in_channel=(
+                        num_extra_features if i == 0 else out_channels[i - 1] * m
+                    ),
                     lift_channel=out_channels[i] * m // 4,
                     out_channel=out_channels[i] * m,
                     P=P[i],
@@ -440,9 +440,11 @@ class PointCNNSeg(nn.Module):
             self.decoder_layers.append(  ## append decoder layers
                 ## Since in the
                 XConvDepthwise(
-                    in_channel=out_channels[j + 1] * m + (out_channels[j + 1] * m) // 4
-                    if (j + 1) == (len(P) - 1)
-                    else out_channels[j + 1] * m,
+                    in_channel=(
+                        out_channels[j + 1] * m + (out_channels[j + 1] * m) // 4
+                        if (j + 1) == (len(P) - 1)
+                        else out_channels[j + 1] * m
+                    ),
                     lift_channel=out_channels[j] * m // 4,
                     out_channel=out_channels[j] * m,
                     P=P[j],
@@ -524,16 +526,75 @@ class PointCNNSeg(nn.Module):
 
 
 class CrossEntropyPC(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, device, focal_loss=False):
         super().__init__()
         self.num_classes = num_classes
+        self.focal_loss = focal_loss
+        if self.focal_loss:
+            self.crit = FocalLoss(num_classes, device)
 
     def forward(self, inp, target):
-        inp = inp.contiguous()
-        target = target.contiguous()
-        inp = inp.view(-1, self.num_classes).contiguous()
-        target = target.view(-1).contiguous()
+        if isinstance(inp, dict):
+            target = inp["targets"]
+            inp = inp["seg_logits"]
+        else:
+            inp = inp.contiguous()
+            target = target.contiguous()
+            inp = inp.view(-1, self.num_classes).contiguous()
+            target = target.view(-1).contiguous()
+        if self.focal_loss:
+            return self.crit(inp, target)
         return F.cross_entropy(inp, target).contiguous()
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, num_class, device, gamma=2, alpha=None, use_sigmoid=False):
+        super().__init__()
+        # alpha: weight of each class
+        if isinstance(alpha, (list, np.ndarray)):
+            assert len(alpha) == num_class
+            alpha = torch.FloatTensor(alpha).view(num_class, 1)
+            alpha = alpha / alpha.sum()
+        else:
+            alpha = torch.ones(num_class, 1)
+        self.num_class = num_class
+        self.alpha = alpha.to(device)
+        self.gamma = gamma
+        self.use_sigmoid = use_sigmoid
+        if use_sigmoid:
+            self.alpha = 0.25
+
+    def sigmoid(self, pred, target):
+        # pred shape (N, Class)
+        # target shape (N,)
+        prob = pred.sigmoid()
+        one_hot_vector = F.one_hot(target, num_classes=self.num_class).squeeze().float()
+        weights = (1 - prob) * one_hot_vector + prob * (1 - one_hot_vector)
+        alphas = (1 - one_hot_vector) * self.alpha + one_hot_vector * (1 - self.alpha)
+        weights.pow_(self.gamma).mul_(alphas)
+        clas_loss = F.binary_cross_entropy_with_logits(
+            pred, one_hot_vector, weights.detach(), reduction="mean"
+        )
+        return clas_loss
+
+    def softmax(self, pred, target):
+        pred = pred.softmax(dim=1)
+        one_hot_vector = F.one_hot(target, num_classes=self.num_class).squeeze()
+        prob = (one_hot_vector * pred).sum(1)
+        alpha = self.alpha[target].squeeze()
+        loss = -1 * alpha * (1 - prob).pow(self.gamma).mul(prob.log())
+        return loss.mean()
+
+    def forward(self, pred, target):
+        # pred shape (N, Class)
+        # target shape (N,)
+        if self.use_sigmoid:
+            return self.sigmoid(pred, target)
+        log_prob = F.cross_entropy(pred, target, reduction="none").contiguous()
+        prob = torch.exp(-log_prob)
+        alpha = self.alpha[target].squeeze()
+        loss = (alpha * (1 - prob).pow(self.gamma).mul(log_prob)).mean()
+        return loss
 
 
 def accuracy(pred, target):

@@ -1,17 +1,17 @@
-import os
-import sys
-import json
 import uuid
-import tempfile
 from arcgis.gis import GIS, Item
 from arcgis import env as _env
 import pandas as pd
 from ._base import BaseOpenData
-
-_PD_LESS_THAN1 = [int(v) for v in pd.__version__.split(".")] < [1, 0, 0]
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the CSVLayer class found in `arcgis.layers.CSVLayer` instead.",
+)
 class CSVLayer(BaseOpenData):
     r"""
     Represents a CSV File Hosted on a Server.
@@ -42,6 +42,7 @@ class CSVLayer(BaseOpenData):
     ===============     ====================================================================
 
     """
+
     _url = None
     _gis = None
     _data = None
@@ -154,7 +155,7 @@ class CSVLayer(BaseOpenData):
         from arcgis._impl.common._isd import InsensitiveDict
 
         if self._renderer is None:
-            from arcgis.mapping import generate_renderer
+            from arcgis.layers import generate_renderer
 
             sr = generate_renderer(geometry_type="point")
             self._renderer = InsensitiveDict(dict(sr))
@@ -262,7 +263,7 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
-        """Represents the MapView's JSON format"""
+        """Represents the Map's JSON format"""
         add_layer = {
             "type": self._type,
             "delimiter": self.delimiter,
@@ -292,7 +293,7 @@ class CSVLayer(BaseOpenData):
 
     @property
     def _operational_layer_json(self):
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         return self._lyr_json
 
     # ----------------------------------------------------------------------

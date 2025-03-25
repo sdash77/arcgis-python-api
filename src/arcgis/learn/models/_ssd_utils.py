@@ -6,7 +6,7 @@ from fastprogress.fastprogress import progress_bar
 from fastai.basic_train import Callback
 from fastai.torch_core import add_metrics
 from .._utils.pointcloud_od import confusion_matrix3d
-
+import warnings
 import numpy as np
 import random
 import math
@@ -340,9 +340,11 @@ def postprocess(
         l_mask = l_mask.expand_as(a_ic)
         boxes = a_ic[l_mask].view(-1, 4)  # boxes are now in range[ 0, 1]
         boxes = (boxes - 0.5) * 2.0  # putting boxes in range[-1, 1]
-        ids, count = nms(
-            boxes.data, scores, nms_overlap, 50
-        )  # FIX- NMS overlap hardcoded
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ids, count = nms(
+                boxes.data, scores, nms_overlap, 50
+            )  # FIX- NMS overlap hardcoded
         ids = ids[:count]
         out1.append(scores[ids])
         bbox_list.append(boxes.data[ids])
@@ -366,6 +368,8 @@ class AveragePrecision(Callback):
         self.model = model
         self.n_classes = n_classes
         self.mode_3d = mode_3d
+        if mode_3d:
+            self.model.learn._epoch_metrics = []
 
     def on_epoch_begin(self, **kwargs):
         self.tps, self.clas, self.p_scores = [], [], []
@@ -378,6 +382,7 @@ class AveragePrecision(Callback):
         if (
             getattr(self.model, "_is_fasterrcnn", False)
             or "MMDetection" in self.model.__str__()
+            or "PTv3Det" in self.model.__str__()
         ):
             last_output = last_output[0]
 
@@ -397,6 +402,9 @@ class AveragePrecision(Callback):
         aps = compute_ap_score(
             self.tps, self.p_scores, self.clas, self.n_gts, self.n_classes, self.mode_3d
         )
+        if self.mode_3d:
+            class_aps = dict(zip(self.model._data.classes, aps))
+            self.model.learn._epoch_metrics.append(class_aps)
         aps = torch.mean(torch.tensor(aps))
         return add_metrics(last_metrics, aps)
 

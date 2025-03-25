@@ -139,7 +139,18 @@ class Backbone(BackboneBase):
         pretrained = load_backbone == "supervised"
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
-            pretrained=pretrained,
+            weights=(
+                getattr(
+                    torchvision.models,
+                    [
+                        i
+                        for i in dir(torchvision.models)
+                        if i.lower() == name + "_weights"
+                    ][0],
+                ).DEFAULT
+                if pretrained
+                else None
+            ),
             norm_layer=FrozenBatchNorm2d,
         )
         # load the SwAV pre-training model from the url instead of supervised pre-training model

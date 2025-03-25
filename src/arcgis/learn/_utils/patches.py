@@ -25,9 +25,11 @@ if fastai.__version__ == "1.0.60":
         if isinstance(img, ArcGISMSImage):
             img.show(ax=ax)
         else:
-            ax.imshow(image2np(img.data), **xtr) if (
-                hasattr(img, "data")
-            ) else ax.imshow(img, **xtr)
+            (
+                ax.imshow(image2np(img.data), **xtr)
+                if (hasattr(img, "data"))
+                else ax.imshow(img, **xtr)
+            )
         if hide_axis:
             ax.axis("off")
         return ax

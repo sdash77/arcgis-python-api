@@ -43,7 +43,7 @@ class APIKey(object):
         The ``properties`` property retrieves the properties of the current APIKey object.
 
         :return:
-            A dictionary containin the properties (if any) of the current APIKey object.
+            A dictionary containing the properties (if any) of the current APIKey object.
         """
         if self._properties is None:
             self._properties = InsensitiveDict(self._item.app_info)
@@ -158,7 +158,7 @@ class APIKey(object):
         if http_referers:
             params["httpReferrers"] = http_referers
         if privileges:
-            params["priveleges"] = privileges
+            params["privileges"] = privileges
         self._properties = None
         return self._gis._con.post(url, params)
 
@@ -237,7 +237,7 @@ class APIKeyManager(object):
         ----------------  -------------------------------------------------------------------------------
         title             Required String. The name of the API Key Item.
         ----------------  -------------------------------------------------------------------------------
-        tags              Required String. A comma seperated list of descriptive words describing the
+        tags              Required String. A comma separated list of descriptive words describing the
                           API Key item.
         ----------------  -------------------------------------------------------------------------------
         description       Optional String. A description of what the API Key is going to be used for.
@@ -296,10 +296,11 @@ class APIKeyManager(object):
 
             >>> gis.api_keys.create(title ="title_name", tags = "tags, apiKey, Manager",
             >>>                     http_referers = ["https://foo.com", "https://bar.com"],
-            >>>                     privleges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
+            >>>                     privileges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
             >>>                                        "premium:user:geocode", "premium:user:networkanalysis"])
         """
-        api_item = self._gis.content.add(
+        folder = self._gis.content.folders.get()
+        job = folder.add(
             {
                 "title": title,
                 "type": "API Key",
@@ -307,6 +308,7 @@ class APIKeyManager(object):
                 "description": description or "",
             }
         )
+        api_item = job.result()
         if privileges is None:
             privileges = [
                 "premium:user:geocode:temporary",

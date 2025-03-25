@@ -1,63 +1,74 @@
 name: geosaurus_dev_env
 channels:
 - defaults
-- fastai
-- pytorch
 - esri
+- esri/label/prerelease
 - esri-build
-- conda-forge
 dependencies:
-- ipywidgets >=7,<8
-- pandas >=2
-- ujson >=3
-- numpy>=1.21.6
+- python 3.11.*
 - pip
-- python>=3.9, <3.12
 - setuptools
-- widgetsnbextension >=3
-- jupyter_client <=6.1.12
-- keyring>19, <21.8.0
-- keyrings.alt
-- nbconvert
-- beautifulsoup4
-- requests
-- requests-kerberos>=0.12.0
-- requests-oauthlib>=1.2.0
-- requests-gssapi
-- pyspnego >=0.8.0
-- jupyterlab
-- pytest
-- matplotlib
-- tornado
-- scikit-learn
-- scikit-image
-- keras
-- selenium
-- scipy
-- pillow
-- fastai=1.0.63
-- torchvision >=0.15.0
-- pytorch >=2
-- cudatoolkit
-- rtree>=0.8.3
-- lxml
-- dask >=2023.3.2
-- matplotlib-inline
+# ---- arcgis ----
 - azure-storage-blob <=12.9
-- pyarrow >=12.0.0
+- cachetools
+- certifi
+- cryptography
+- dask >=2024.12.1,<2025.1.0
+- gdal >=3.6.2, <4
+- geomet
+- keyring>=23.3.0
+- lxml
+- matplotlib
+- matplotlib-inline
+- nbconvert
+- networkx >=3.3, <4
+- numpy>=1.21.6,<2
+- pandas >=2.0.0,<2.2.0
+- pillow
+- puremagic >=1.15,<2
+- pyarrow >=16,<17
+- pylerc
+- pyspnego >=0.8.0
+- pydantic >=2.8.2, <3
+# - pywin32-security
+- requests >=2.32.3,<3
+- requests-gssapi
+- requests-kerberos
+- requests-oauthlib
+- requests-toolbelt
+- truststore >=0.10.0
+- ujson >=3
+- urllib3 >=2.1.0,<3
+- websocket-client >=1.2.3,<2
+# ---- arcgis-mapping ----
+- anywidget 0.9.13
+- ipywidgets >=8.0.0
+- jupyterlab >=4.0.7,<5
+# ---- arcgis-learn ----
+# ONLY DEPS REQUIRED FOR BUILDING DOCS
+# arcgis_learn officially requires fastchan=1.0.63, 
+# using unconstrained for greater compatibility
+# as this is only to build the docs locally
+# docs should NOT be published from this environment
+# for testing only
+- fastai::fastai
+- pytorch >=2
+- timm 0.4.12.*
+- torchvision >=0.15.0
+# ---- sphinx/docs build ----
+- sphinx >=7,<8
+# ---- etc ----
+- black
+- keyrings.alt
+- selenium
+- protobuf
 - pip:
-  - unittest-xml-reporting
-  - setuptools >=38.6
-  - sphinx==3.2.1
-  - jinja2<3.1
-  - sphinx-rtd-theme==0.5.2
-  - pytest-blockage
-  - junit2html
+  # ---- sphinx/docs build ----
+  - sphinx_rtd_theme>=2,<3
+  - autodoc_pydantic>=2,<3
+  # ---- automated testing ----
   - coverage
-  - geomet
-  - pytest-cov
-  - requests_toolbelt>=0.9.1
-  - python-certifi-win32
-  - cachetools
-  - black
   - nose2
+  - parameterized
+  - requests-mock
+  - unittest-xml-reporting

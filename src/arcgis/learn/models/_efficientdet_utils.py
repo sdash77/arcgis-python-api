@@ -16,7 +16,7 @@ import math
 from dataclasses import dataclass
 from re import S
 from typing import Optional, Union
-
+import warnings
 
 from ._arcgis_model import SaveModelCallback
 from .._utils.env import HAS_TENSORFLOW, ARCGIS_ENABLE_TF_BACKEND
@@ -37,34 +37,41 @@ try:
     from fastai.callback import annealing_cos
     from fastai.core import ifnone
     import tensorflow as tf
-    from tensorflow_examples.lite.model_maker.core.task.object_detector import (
-        ObjectDetector,
-    )
-    from tensorflow_examples.lite.model_maker.core.task.configs import (
-        QuantizationConfig,
-    )
-    from tensorflow_examples.lite.model_maker.core.task.custom_model import _get_params
-    from tensorflow_examples.lite.model_maker.core.task import model_spec
-    from tensorflow_examples.lite.model_maker.core import compat
-    from tensorflow_examples.lite.model_maker.core.data_util import (
-        object_detector_dataloader,
-        dataloader,
-    )
-    from tensorflow_examples.lite.model_maker.core.task import model_spec as ms
-    from tensorflow_examples.lite.model_maker.core.task.model_spec import (
-        object_detector_spec,
-    )
-    from tensorflow_examples.lite.model_maker.third_party.efficientdet.keras import (
-        train,
-        util_keras,
-    )
-    from tensorflow_examples.lite.model_maker.core.data_util.object_detector_dataloader import (
-        DataLoader as tflite_data_loader,
-    )
     from lxml import etree
-    from tensorflow_examples.lite.model_maker.third_party.efficientdet.dataset import (
-        tfrecord_util,
-    )
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+
+        from tensorflow_examples.lite.model_maker.core.task.object_detector import (
+            ObjectDetector,
+        )
+        from tensorflow_examples.lite.model_maker.core.task.configs import (
+            QuantizationConfig,
+        )
+        from tensorflow_examples.lite.model_maker.core.task.custom_model import (
+            _get_params,
+        )
+        from tensorflow_examples.lite.model_maker.core.task import model_spec
+        from tensorflow_examples.lite.model_maker.core import compat
+        from tensorflow_examples.lite.model_maker.core.data_util import (
+            object_detector_dataloader,
+            dataloader,
+        )
+        from tensorflow_examples.lite.model_maker.core.task import model_spec as ms
+        from tensorflow_examples.lite.model_maker.core.task.model_spec import (
+            object_detector_spec,
+        )
+        from tensorflow_examples.lite.model_maker.third_party.efficientdet.keras import (
+            train,
+            util_keras,
+        )
+        from tensorflow_examples.lite.model_maker.core.data_util.object_detector_dataloader import (
+            DataLoader as tflite_data_loader,
+        )
+
+        from tensorflow_examples.lite.model_maker.third_party.efficientdet.dataset import (
+            tfrecord_util,
+        )
 
     HAS_FASTAI = True
 except:
@@ -229,7 +236,7 @@ def _get_optimizer(params):
         else:
             learning_rate = params["constant_lr"]
 
-    momentum = params["momentum"]
+    momentum = tf.Variable(params["momentum"], dtype=tf.float32, trainable=False)
     if params["optimizer"].lower() == "sgd":
         optimizer = tf.keras.optimizers.SGD(learning_rate, momentum=momentum)
     elif params["optimizer"].lower() == "adam":
@@ -703,6 +710,8 @@ class EfficientDetLearner(TfLearner):
         end_lr: float = 10,
         num_it: int = 100,
         one_cycle: bool = False,
+        mixed_precision: bool = False,
+        mixed_dtype=None,
     ) -> None:
         lr = self.lr_range(lr)
         for i in range(0, len(callbacks)):
@@ -1093,6 +1102,7 @@ def tf_fit_one_cycle(
     callbacks: Optional[CallbackList] = None,
     tot_epochs: int = None,
     start_epoch: int = None,
+    mixed_precision: bool = False,
 ) -> None:
     "Fit a model following the 1cycle policy."
     max_lr = learn.lr_range(max_lr)

@@ -12,9 +12,11 @@ from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
 from arcgis.gis.clone._ux import UXCloner
+import requests
 
-_basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+_basemap_definitions = LazyLoader("arcgis.layers._basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
+_cm = LazyLoader("arcgis.gis._impl._content_manager")
 
 _log = logging.getLogger(__name__)
 
@@ -671,9 +673,10 @@ class UX(object):
                 "tags": ["SharedTheme", "Logo"],
                 "type": "Image",
             }
-            im_item = self._gis.content.add(item_props, logo)
+            folder = self._gis.content.folders.get()
+            im_item = folder.add(item_props, file=logo).result()
             # share to everyone
-            im_item.share(everyone=True)
+            im_item.sharing.sharing_level = _cm.SharingLevel.EVERYONE.value
             # set in shared_theme dict
             shared_theme["logo"]["small"] = im_item.homepage + "/data"
         elif logo == "":
@@ -748,6 +751,15 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
+    def utility_services_settings(self):
+        """
+        Get an instance of the :class:`~arcgis.gis.admin.UtilityServices` class
+        to make edits to the org's utility services such as print, routing, etc.
+        """
+        return UtilityServicesSettings(gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
     def item_settings(self):
         """
         Get an instance of the :class:`~arcgis.gis.admin.ItemSettings` class to make edits to the org's default
@@ -765,341 +777,6 @@ class UX(object):
         the informational banner, password policy, etc.
         """
         return SecuritySettings(gis=self._gis)
-
-    # ----------------------------------------------------------------------
-    @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def enable_comments(self):
-        """
-        Get/Set item commenting and comments.
-
-        ================  ===============================================================
-        **Parameter**      **Description**
-        ----------------  ---------------------------------------------------------------
-        enable            Optional boolean. If True, the comments for the site are turned
-                          on.  False will disable comments (default)
-        ================  ===============================================================
-
-        :return: True if enabled, False if disabled
-        """
-        return self.item_settings.enable_comments
-
-    # ----------------------------------------------------------------------
-    @enable_comments.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def enable_comments(self, enable: bool = False):
-        """
-        See main ``enable_comments`` property docstring.
-        """
-        self.item_settings.enable_comments = enable
-
-    # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def set_background(
-        self, background_file: str | None = None, is_built_in: bool = True
-    ):
-        """
-        Configure your home page by setting the organization's background image. You can choose no image, a built-in image
-        or upload your own. If you upload your own image, the image is positioned at the top and center of the page.
-        The image repeats horizontally if it is smaller than the browser or device window. For best results, if you want
-        a single, nonrepeating background image, the image should be 1,920 pixels wide (or smaller if your users are on
-        smaller screens). The website does not resize the image. You can upload a file up to 1 MB in size.
-
-        For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
-
-        ================    ===============================================================
-        **Parameter**        **Description**
-        ----------------    ---------------------------------------------------------------
-        background_file     Optional string. If using a custom background, specify path to image file.
-                            To remove an existing background, specify None for this argument and
-                            False for is_built_in argument.
-        ----------------    ---------------------------------------------------------------
-        is_built_in         Optional bool, default=True. The built-in background is set by default.
-                            If uploading a custom image, this parameter is ignored.
-        ================    ===============================================================
-
-        :return: True | False
-        """
-        return self.homepage_settings.set_background(
-            background_file=background_file, is_built_in=is_built_in
-        )
-
-    # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def get_background(self, download_path: str):
-        """
-        Get your organization's home page background image. You can use the `set_background()` method to set an image
-        as the home page background image.
-
-        For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
-
-        ================  ===============================================================
-        **Parameter**      **Description**
-        ----------------  ---------------------------------------------------------------
-        download_path     required string. Folder path to download the background file.
-        ================  ===============================================================
-
-        :return: Path to downloaded background file. If None, then background is not set and nothing was downloaded.
-        """
-        return self.homepage_settings.get_background(download_path=download_path)
-
-    # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def set_banner(
-        self,
-        banner_file: str | None = None,
-        is_built_in: bool = False,
-        custom_html: str | None = None,
-    ):
-        """
-        Configure your home page by setting the organization's banner. You can choose one of the 5 built-in banners or
-        upload your own. For best results the dimensions of the banner image should be 960 x 180 pixels. You can also
-        specify a custom html for how the banner space should appear. For more information, refer to
-        http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
-
-        .. note::
-            This has now been replaced by the `set_informational_banner` method
-
-        ================    ===============================================================
-        **Parameter**        **Description**
-        ----------------    ---------------------------------------------------------------
-        banner_file         Optional string. If uploading a custom banner, then path to the
-                            banner file. If using a built-in banner, valid values are:
-
-                            * banner-1
-                            * banner-2
-                            * banner-3
-                            * banner-4
-                            * banner-5
-
-                            .. note::
-                                If `None`, existing banner is removed.
-        ----------------    ---------------------------------------------------------------
-        is_built_in         Optional bool, default=False. Specify True if using a built-in
-                            banner file.
-        ----------------    ---------------------------------------------------------------
-        custom_html         Optional string. Specify exactly how the banner should appear in
-                            html. For help on this, refer to
-                            http://server.arcgis.com/en/portal/latest/administer/windows/supported-html.htm
-        ================    ===============================================================
-
-        :return: True | False
-        """
-        # region check if banner has to be removed
-        if not banner_file and not custom_html:
-            # remove code
-
-            # find existing banner resource file
-            resource_list = self._portal_resources.list()
-            e_banner = [
-                banner for banner in resource_list if banner["key"].startswith("banner")
-            ]
-
-            # loop through and remove existing banner resource file
-            for banner in e_banner:
-                try:
-                    self._portal_resources.delete(banner["key"])
-                except:
-                    continue
-
-            # reset the home page - recurse
-            return self.set_banner("banner-2", True)
-        # endregion
-
-        # region: Set banner using banner file - built-in or new image
-        if banner_file:
-            rotator_panel = []
-            if not is_built_in:  # adding a new image file
-                # find image extension
-                from pathlib import Path
-
-                fpath = Path(banner_file)
-                f_splits = fpath.name.split(".")
-                if len(f_splits) > 1 and f_splits[1] == "png":
-                    key_val = "banner.png"
-                elif len(f_splits) > 1 and f_splits[1] == "jpg":
-                    key_val = "banner.jpg"
-                else:
-                    raise RuntimeError("Invalid image extension")
-
-                add_result = self._portal_resources.add(key_val, banner_file)
-
-                if add_result and custom_html:
-                    rotator_panel = [{"id": "banner-custom", "innerHTML": custom_html}]
-
-                elif add_result and not custom_html:
-                    # set rotator_panel_text
-                    rotator_panel = [
-                        {
-                            "id": "banner-custom",
-                            "innerHTML": "<img src='{}/portals/self/resources/{}?token=SECURITY_TOKEN' "
-                            "style='-webkit-border-radius:0 0 10px 10px; -moz-border-radius:0 0 10px 10px;"
-                            " -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px; margin-top:0; "
-                            "width:960px;'/>".format(self._portal.con.baseurl, key_val),
-                        }
-                    ]
-            else:  # using built-in image
-                if not custom_html:  # if no custom html is specified for built-in image
-                    rotator_panel = [
-                        {
-                            "id": banner_file,
-                            "innerHTML": "<img src='images/{}.jpg' "
-                            "style='-webkit-border-radius:0 0 10px 10px; -moz-border-radius:0 0 10px 10px; "
-                            "-o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px; margin-top:0; "
-                            "width:960px; height:180px;'/><div style='position:absolute; bottom:80px; "
-                            "left:80px; max-height:65px; width:660px; margin:0;'>"
-                            "<img src='{}/portals/self/resources/thumbnail.png?token=SECURITY_TOKEN' "
-                            "class='esriFloatLeading esriTrailingMargin025' style='margin-bottom:0; "
-                            "max-height:100px;'/><span style='position:absolute; bottom:0; margin-bottom:0; "
-                            "line-height:normal; font-family:HelveticaNeue,Verdana; font-weight:600; "
-                            "font-size:32px; color:#369;'>{}</span></div>".format(
-                                banner_file,
-                                self._portal.con.baseurl,
-                                self._gis.properties.name,
-                            ),
-                        }
-                    ]
-                else:  # using custom html for built-in image
-                    rotator_panel = [{"id": banner_file, "innerHTML": custom_html}]
-        # endregion
-
-        # region: Set banner just using a html text
-        elif custom_html:
-            rotator_panel = [{"id": "banner-html", "innerHTML": custom_html}]
-        # endregion
-
-        # Update the portal self with these banner values
-        update_result = self._gis.update_properties({"rotatorPanels": rotator_panel})
-        return update_result
-
-    # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def get_banner(self, download_path: str):
-        """
-        Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
-        code as your banner.
-
-        .. note::
-            This method has been replaced with the `get_informational_banner` method.
-
-        ================    =================================================================================
-        **Parameter**        **Description**
-        ----------------    ---------------------------------------------------------------------------------
-        download_path       required string. Folder path to download the banner file.
-        ================    =================================================================================
-
-        :return: Path to downloaded banner file. If None, then banner is not set and nothing was downloaded.
-
-        """
-        # create a portal resource manager obj
-
-        # find existing banner resource file
-        resource_list = self._portal_resources.list()
-        e_banner = [
-            banner for banner in resource_list if banner["key"].startswith("banner")
-        ]
-
-        # loop through and remove existing banner resource file
-        banner_path = None
-        for banner in e_banner:
-            try:
-                banner_path = self._portal_resources.get(banner["key"], download_path)
-
-            except:
-                continue
-        return banner_path
-
-    # ----------------------------------------------------------------------
-    @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def default_extent(self):
-        """
-        Get/Set the site's default extent
-
-        ================  ===============================================================
-        **Parameter**      **Description**
-        ----------------  ---------------------------------------------------------------
-        extent            Required dictionary. The default extent defines where a webmap
-                          will open.
-                          If a value of None is given, the default extent will be provided.
-                          Example Extent (default):
-                          {"type":"extent","xmin":-17999999.999994524,"ymin":-11999999.999991827,
-                          "xmax":17999999.999994524,"ymax":15999999.999982955,
-                          "spatialReference":{"wkid":102100}}
-        ================  ===============================================================
-
-        :return: dictionary
-
-        """
-        return self.map_settings.default_extent
-
-    # ----------------------------------------------------------------------
-    @default_extent.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def default_extent(self, extent: dict):
-        """
-        See main ``default_extent`` property docstring
-        """
-        self.map_settings.default_extent = extent
-
-    # ----------------------------------------------------------------------
-    @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def default_basemap(self):
-        """
-        Get/Set the site's default basemap.
-
-        The Default Basemap opens when users click New Map. Set the group
-        in the Basemap Gallery above and choose the map to open. It will
-        open at the default extent you set.
-
-        ================  ===============================================================
-        **Parameter**      **Description**
-        ----------------  ---------------------------------------------------------------
-        basemap           Required string. The new default basemap to set. If None, the
-                          default value will be set.
-        ================  ===============================================================
-
-        :return: dictionary
-
-        """
-        return self.map_settings.default_basemap
-
-    # ----------------------------------------------------------------------
-    @default_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def default_basemap(self, value: str):
-        """
-        See main ``default_basemap`` property docstring
-        """
-        self.map_settings.default_basemap = value
-
-    # ----------------------------------------------------------------------
-    @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def vector_basemap(self):
-        """
-        Get/Set the default vector basemap
-
-        ================  ===============================================================
-        **Parameter**      **Description**
-        ----------------  ---------------------------------------------------------------
-        basemap           required dictionary. The new default vector basemap to set for
-                          a given site.
-        ================  ===============================================================
-
-        :return: The current default vector basemap
-        """
-        return self.map_settings.vector_basemap
-
-    # ----------------------------------------------------------------------
-    @vector_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def vector_basemap(self, basemap: dict):
-        """
-        See main ``vector_basemap`` property docstring
-        """
-        self.map_settings.vector_basemap = basemap
 
 
 #############################################################################
@@ -1552,33 +1229,26 @@ class HomePageSettings(object):
         self, email: str | None = None, show_email: bool | None = None
     ):
         """Set the email shown in the footer of the homepage and whether it is visible."""
-        if self._new_hp:
-            hp = self._reader_hp()
-            if email:
-                hp["footer"]["contact"] = email
-            if show_email:
-                hp["footer"]["showContact"] = show_email
-            params = {
-                "key": "home.page.json",
-                "text": hp,
-                "f": "json",
-            }
-            return self._portal_resources.add(
-                key="home.page.json", text=json.dumps(params["text"])
-            )
-        else:
+        if not self._new_hp:
             return None
+        hp = self._reader_hp()
+        if email:
+            hp["footer"]["contact"] = email
+        if show_email is not None:
+            hp["footer"]["showContact"] = show_email
+        return self._portal_resources.add(key="home.page.json", text=json.dumps(hp))
 
     # ----------------------------------------------------------------------
     def get_contact_email(self):
         """Get the email and whether it is shown from the footer of the homepage."""
-        if self._new_hp:
-            hp = self._reader_hp()
-            contact = {
-                "email": hp["footer"]["contact"],
-                "show_email": hp["footer"]["showContact"],
-            }
-            return contact
+        if not self._new_hp:
+            return None
+        hp = self._reader_hp()
+        contact = {
+            "email": hp["footer"]["contact"],
+            "show_email": hp["footer"]["showContact"],
+        }
+        return contact
 
     # ----------------------------------------------------------------------
     def get_footer(self):
@@ -1587,23 +1257,23 @@ class HomePageSettings(object):
             hp = self._reader_hp()
             footer = {
                 "contact": self.get_contact_email(),
-                "text": hp["footer"]["copy"] if "copy" in hp["footer"] else "",
+                "text": (hp["footer"]["copy"] if "copy" in hp["footer"] else ""),
                 "show_text": hp["footer"]["showCopy"],
-                "color": hp["footer"]["bgColor"] if "bgColor" in hp["footer"] else "",
-                "custom_color": hp["footer"]["bgCustom"]
-                if "bgCustom" in hp["footer"]
-                else "",
+                "color": (hp["footer"]["bgColor"] if "bgColor" in hp["footer"] else ""),
+                "custom_color": (
+                    hp["footer"]["bgCustom"] if "bgCustom" in hp["footer"] else ""
+                ),
             }
             return footer
 
     # ----------------------------------------------------------------------
-    def set_footer(self, text: str, show_text: bool | None = None):
+    def set_footer(self, text: str | None = None, show_text: bool | None = None):
         """Set the text and the visibility of the text in the footer"""
         if self._new_hp:
             hp = self._reader_hp()
             if text:
                 hp["footer"]["copy"] = text
-            if show_text:
+            if show_text in [True, False]:
                 hp["footer"]["showCopy"] = show_text
             params = {
                 "key": "home.page.json",
@@ -1844,7 +1514,10 @@ class MapSettings(object):
 
         :return: An instance of Group if a group is set, else the default or None
         """
-        group = self._gis.properties["basemapGalleryGroupQuery"]
+        if self._gis.properties["useVectorBasemaps"]:
+            group = self._gis.properties["vectorBasemapGalleryGroupQuery"]
+        else:
+            group = self._gis.properties["basemapGalleryGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
             groups = self._gis.groups.search(group[3::])
@@ -1913,15 +1586,40 @@ class MapSettings(object):
     # ----------------------------------------------------------------------
     def update_basemap_gallery(self):
         """
-        Update the basemap gallery group by getting rid of deprecated maps.
+        Update the basemap gallery group by getting rid of deprecated maps and
+        adding any non-deprecated default basemaps.
         Returns the updated group.
         """
+
+        # can skip if vector
         if self.use_vector_basemap:
             return self.basemap_gallery_group
+
+        # get rid of deprecated basemaps
         basemap_group = self.basemap_gallery_group
         for item in basemap_group.content():
             if item.content_status == "deprecated" and item.type == "Web Map":
-                item.unshare([basemap_group])
+                dep_id = item.itemid
+                self._gis._portal.unshare_item_as_group_admin(dep_id, basemap_group.id)
+
+        # retrieve the default basemaps and add any missing, non-deprecated ones
+        try:
+            gis_culture = self._gis.properties.user.culture
+        except:
+            gis_culture = "en-US"
+        url = (
+            "https://www.arcgis.com/sharing/rest/portals/self?f=json&culture="
+            + gis_culture
+        )
+        resp = requests.get(url)
+        bm_query = resp.json()["basemapGalleryGroupQuery"]
+        default_group = self._gis.groups.search(bm_query, outside_org=True)[0]
+        bmg_content = basemap_group.content()
+        for bm in default_group.content():
+            if bm not in bmg_content and bm.content_status != "deprecated":
+                new_id = bm.itemid
+                self._gis._portal.share_item_as_group_admin(new_id, basemap_group.id)
+
         return basemap_group
 
     # ----------------------------------------------------------------------
@@ -1988,15 +1686,12 @@ class MapSettings(object):
             if bing_key == "":
                 bing_key = None
             self._gis.update_properties({"bingKey": bing_key})
-        if share_public:
+        if share_public is not None:
             self._gis.update_properties({"canShareBingPublic": share_public})
-        bing_dict = {
-            "key": self._gis.properties["bingKey"]
-            if "bingKey" in self._gis.properties
-            else None,
-            "public": self._gis.properties["canShareBingPublic"],
+        return {
+            "key": self._gis.properties.get("bingKey"),
+            "public": self._gis.properties.get("canShareBingPublic"),
         }
-        return bing_dict
 
     # ----------------------------------------------------------------------
     @property
@@ -2295,11 +1990,13 @@ class SecuritySettings(object):
         # set new params if given
         informational_banner = {
             "text": text if text else current_info_banner["text"],
-            "bgColor": bg_color if bg_color else current_info_banner["bgColor"],
-            "fontColor": font_color if font_color else current_info_banner["fontColor"],
-            "enabled": enabled
-            if enabled is not None
-            else current_info_banner["enabled"],
+            "bgColor": (bg_color if bg_color else current_info_banner["bgColor"]),
+            "fontColor": (
+                font_color if font_color else current_info_banner["fontColor"]
+            ),
+            "enabled": (
+                enabled if enabled is not None else current_info_banner["enabled"]
+            ),
         }
 
         # get all the org settings
@@ -2470,7 +2167,7 @@ class SecuritySettings(object):
 
         policy = {
             "f": "json",
-            "minLength": min_length if min_length else current_policy["minLength"],
+            "minLength": (min_length if min_length else current_policy["minLength"]),
         }
 
         # For all parameters, only need to set if True or value passed in.
@@ -2583,9 +2280,7 @@ class SecuritySettings(object):
         to be able to use enterprise logins to access the secured content
         through web applications hosted on these portals.
         """
-        if "allowedRedirectUris" in self._gis.properties:
-            return self._gis.properties["allowedRedirectUris"]
-        return None
+        return self._gis.properties.get("allowedRedirectUris", [])
 
     # ----------------------------------------------------------------------
     @allowed_redirect_uris.setter
@@ -3213,11 +2908,10 @@ class SecuritySettings(object):
 
         :return: Dictionary json response indicating success and IDP Id
         """
-        url = self._portal.resturl + "portals/self/idp/register"
-        params = {
+        url: str = self._portal.resturl + "portals/self/idp/register"
+        params: dict = {
             "f": "json",
             "name": name,
-            "idpMetadataFile": metadata_file,
             "idpMetadataUrl": metadata_url,
             "bindingUrl": binding_url,
             "postBindingUrl": post_binding_url,
@@ -3231,8 +2925,18 @@ class SecuritySettings(object):
             "updateProfileAtSignin": update_profile_at_signin,
             "updateGroupsAtSignin": update_groups_at_signin,
         }
-
-        return self._gis._con.post(url, params)
+        params = {k: v for k, v in params.items() if v}
+        files: list[tuple] = None
+        if metadata_file:
+            files = []
+            files.append(
+                (
+                    "idpMetadataFile",
+                    metadata_file,
+                    os.path.basename(metadata_file),
+                )
+            )
+        return self._gis._con.post(url, params, files=files)
 
     # ----------------------------------------------------------------------
     def unregister_idp(self, idp: str):
@@ -3278,3 +2982,299 @@ class SecuritySettings(object):
             return self._gis._con.post(url, {"f": "json"})
         else:
             return None
+
+
+##############################################################################
+class UtilityServicesSettings:
+    """Helper class that can be called off of UX class using the 'utility_services_settings' property.
+    Edit org utility service settings such as print service, geoenrichment service, etc.
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, gis):
+        """Creates helper object to manage portal home page, resources, update resources"""
+        self._gis = gis
+        self._portal = gis._portal
+        self._portal_resources = gis.admin.resources
+
+    # ----------------------------------------------------------------------
+    def add_from_online(self, services: list[str], gis: _gis.GIS, folder=None):
+        """
+        Set the Enterprise routing service to that of an ArcGIS Online routing service.
+
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        services                List of services to configure using the given
+                                ArcGIS Online credentials.
+
+                                The list can be any combination of these values:
+                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology", "Orthomapping Elevation", "Network", "Traffic Data"]
+        ------------------      ---------------------------------------
+        gis                     The GIS object that is connected to your
+                                ArcGIS Online organization where the routing
+                                service will come from.
+        ------------------      ---------------------------------------
+        folder                  Optional, the folder in the Enterprise Org
+                                where the routing services will be added.
+                                Can be a string representing the name of the
+                                folder or a folder object.
+                                If folder cannot be found, a new one is created.
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+
+        # Step 1: Check the inputs
+        if self._gis._is_agol:
+            raise ValueError("This operation is only available in ArcGIS Enterprise.")
+        if not gis._is_agol:
+            raise ValueError(
+                "The GIS object provided must be connected to an ArcGIS Online organization."
+            )
+        # Step 2: find the folder in Enterprise
+        if folder:
+            if isinstance(folder, str):
+                folder_item = self._gis.content.folders._get_or_create(
+                    folder, self._gis.users.me.username
+                )
+                folder_name = folder_item.name
+            else:
+                # instance of folder object
+                folder_name = folder.name
+        else:
+            folder_name = None
+
+        # Step 3: Get the routing service from Online
+        helper_services = {
+            "Elevation": ["elevation"],
+            "Geocode": ["geocode"],
+            "GeoEnrichment": ["geoenrichment"],
+            "Hydrology": ["hydrology"],
+            "Network": [
+                "asyncClosestFacility",
+                "asyncLocationAllocation",
+                "asyncODCostMatrix",
+                "asyncRoute",
+                "asyncVRP",
+                "asyncServiceArea",
+                "asyncFleetRouting",
+                "route",
+                "routingUtilities",
+                "serviceArea",
+                "closestFacility",
+                "syncVRP",
+                "traffic",
+                "odCostMatrix",
+                "snapToRoads",
+            ],
+            "Traffic Data": ["trafficData"],
+            "Orthomapping Elevation": ["orthomappingElevation"],
+        }
+        # Service type mapping
+        svc_types = {
+            "GPServer": "Geoprocessing Service",
+            "MapServer": "Map Service",
+            "NAServer": "Network Analysis Service",
+            "GeoenrichmentServer": "Geoenrichment Service",
+            "GeocodeServer": "Geocoding Service",
+        }
+
+        # Get the self call from AGOL
+        agol_helper_svcs = gis.properties["helperServices"]
+
+        # Create service proxy items
+        username = gis._username
+        password = gis._password
+        proxy_urls = {}  # store proxy urls for AGOL services
+        for svc in services:  # replace with config utilityServices
+            for helper_svc in helper_services[svc]:
+                if helper_svc == "geocode":
+                    url = agol_helper_svcs[helper_svc][0]["url"]
+                else:
+                    try:
+                        url = agol_helper_svcs[helper_svc]["url"]
+                    except:
+                        # Not all services available on AGOL at the moment
+                        continue
+                svc_type = "".join(set(url.split("/")).intersection(set(svc_types)))
+
+                item_props = {
+                    "url": url,
+                    "serviceUsername": username,
+                    "servicePassword": password,
+                    "tags": ", ".join(["Tool", "Service", "ArcGIS Server"]),
+                    "title": f"AGO {helper_svc} ({username})",
+                    "type": svc_types.get(svc_type, ""),
+                }
+                # Add item
+                search_result = self._gis.content.search(
+                    item_props["title"],  # False +ve. pylint:disable=no-member
+                    item_type=item_props["type"],
+                )
+                this_item = next(
+                    (x for x in search_result if x.title == item_props["title"]),
+                    "",
+                )
+                if not this_item:
+                    if helper_svc == "orthomappingElevation":
+                        svc_item_url = item_props["url"]
+                    else:
+                        try:
+                            svc_item = self._gis.content.add(
+                                item_props, folder=folder_name
+                            )
+                            # convert from private URL to a public URL for the proxy item
+                            svc_item_url = svc_item.url.replace(
+                                ":7443/arcgis/",
+                                f"/{self._gis.properties.customBaseUrl}/",
+                            )
+                            # pylint: enable=no-member
+                            svc_item.protect(enable=True)
+                            svc_item.sharing.sharing_level = _cm.SharingLevel.ORG.value
+                        except:
+                            # if proxy item fails, continue
+                            continue
+                    if helper_svc == "geocode":
+                        # Set batch geocoder properties
+                        geocoders = [
+                            dict(val)
+                            for val in self._gis.properties.helperServices.geocode
+                        ]  # pylint:disable=no-member
+                        geocoder = dict(geocoders[0])
+                        geocoder["url"] = svc_item_url
+                        geocoder["name"] = "Esri World Batch Geocoder"
+                        geocoder["isEsriBatchGeocoder"] = True
+                        geocoder["zoomScale"] = 10000
+                        geocoder["batch"] = True
+                        geocoder["singleLineFieldName"] = "SingleLine"
+                        geocoder["placeholder"] = "Find address or place"
+                        geocoders.append(geocoder)
+                        proxy_urls[helper_svc + "Service"] = geocoders
+                    elif helper_svc == "route":
+                        proxy_urls[helper_svc + "ServiceLayer"] = {"url": svc_item_url}
+                    else:
+                        proxy_urls[helper_svc + "Service"] = {"url": svc_item_url}
+        proxy_urls["elevationSyncService"] = agol_helper_svcs["elevationSync"]
+        # Update portal properties
+        if "Network" in services:  # replace with config utilityServices
+            agol_user_info = self._gis.users.me
+            proxy_urls["routingServicesSource"] = {
+                "sourceName": "ArcGISOnline",
+                "agoUsername": username,
+                "firstName": agol_user_info.get("firstName", "Unknown"),
+                "lastName": agol_user_info.get("lastName", "Unknown"),
+            }
+        return self._gis.update_properties(proxy_urls)
+
+    def reset_services(self, services: list[str]):
+        """
+        Rest the specified services from the utility services settings to their default.
+
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        services                List of sources to remove from the utility
+                                services settings.
+
+                                The list can be any combination of these values:
+                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network", "Orthomapping Elevation"]
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        helper_services = {
+            "Elevation": ["elevation"],
+            "Geocode": ["geocode"],
+            "GeoEnrichment": ["geoenrichment"],
+            "Hydrology": ["hydrology"],
+            "Network": [
+                "asyncClosestFacility",
+                "asyncLocationAllocation",
+                "asyncODCostMatrix",
+                "asyncRoute",
+                "asyncVRP",
+                "asyncServiceArea",
+                "asyncFleetRouting",
+                "route",
+                "routingUtilities",
+                "serviceArea",
+                "closestFacility",
+                "syncVRP",
+                "traffic",
+                "odCostMatrix",
+                "snapToRoads",
+                "routingServicesSource",
+            ],
+            "Orthomapping Elevation": ["orthomappingElevation"],
+        }
+
+        current_services = self._gis.properties.get("helperServices", {})
+
+        for service in services:
+            if service not in helper_services:
+                continue
+
+            for helper_svc in helper_services[service]:
+                if helper_svc not in current_services:
+                    continue
+
+                # Handling the full_url extraction based on the structure of current_services
+                full_url = None
+                if helper_svc != "orthomappingElevation":
+                    service_info = current_services[helper_svc]
+                if isinstance(service_info, list):
+                    # Assuming we are interested in the first URL in the list
+                    full_url = service_info[0].get("url")
+                else:
+                    full_url = service_info.get("url")
+
+                if helper_svc == "routingServicesSource":
+                    self._gis.update_properties(
+                        {helper_svc: "", "clearEmptyFields": True}
+                    )
+                    continue
+
+                if full_url:
+                    try:
+                        segments = full_url.split("/")
+                        item_id = segments[segments.index("servers") + 1]
+                        item = self._gis.content.get(item_id)
+                        if item:
+                            item.protect(enable=False)
+                            item.delete()
+                    except (ValueError, IndexError) as e:
+                        print(f"Error processing URL for {helper_svc}: {e}")
+
+                if helper_svc == "geocode":
+                    geocode_service_config = [
+                        {
+                            "westLon": "Xmin",
+                            "southLat": "Ymin",
+                            "name": "ArcGIS World Geocoding Service",
+                            "batch": False,
+                            "placefinding": True,
+                            "northLat": "Ymax",
+                            "eastLon": "Xmax",
+                            "suggest": True,
+                            "url": "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer",
+                        }
+                    ]
+                    self._gis.update_properties(
+                        {helper_svc + "Service": geocode_service_config}
+                    )
+                elif helper_svc == "route":
+                    self._gis.update_properties(
+                        {
+                            helper_svc + "ServiceLayer": "",
+                            "clearEmptyFields": True,
+                        }
+                    )
+                else:
+                    self._gis.update_properties(
+                        {
+                            helper_svc + "Service": "",
+                            "clearEmptyFields": True,
+                        }
+                    )
+        return True

@@ -40,3 +40,8 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._SQNSeg import SQNSeg
     from ._psetae import PSETAE
     from ._mmdet3d import MMDetection3D
+    from ._sam_lora import SamLoRA
+    from ._rtdetr import RTDetrV2
+    from ._climax import ClimaX
+    from ._point_transformerv3 import PTv3Seg
+    from ._ptv3_det import PTv3Det

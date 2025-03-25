@@ -11,13 +11,19 @@ from zipfile import ZipFile
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
-from .._utils.tabular_data import TabularDataObject, explain_prediction, add_h3
+from .._utils.tabular_data import (
+    TabularDataObject,
+    explain_prediction,
+    add_h3,
+)
+from .._utils.common import _get_emd_path
 
 try:
     import sklearn
     from sklearn import *
     from sklearn.preprocessing import LabelEncoder
     import pandas as pd
+    import numpy as np
     import warnings
     from .._fairlearn import _fairlearn
     from .._fairlearn import _reweigh
@@ -51,9 +57,11 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
+_FAIRNESS_NOT_SUPPORTED = "Fairness is not supported with this model type"
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
 _DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE = "ValueError: The sensitive feature encountered a degenerate label. A degenerate label typically refers to a label or category within a dataset that has very little variation or diversity, making it less informative for machine learning or statistical analysis."
+_SENSITIVE_FEATURE_ERROR = "Senstive feature should be a categorical feature"
 
 
 def _get_model_type(model_type):
@@ -109,6 +117,24 @@ def _get_model_type(model_type):
 
         model = getattr(catboost, model)
 
+    elif model_type.startswith("tabpfn."):
+        model_type = model_type.replace("tabpfn.", "")
+        if len(model_type.split(".")) > 0:
+            model = model_type.split(".")[0]
+        else:
+            raise Exception("Invalid model_type.")
+        try:
+            import tabpfn
+        except Exception as e:
+            raise Exception(
+                "TabPFN is not installed. Please install TabPFN using the command `conda install -c esri tabpfn`"
+            )
+
+        if not hasattr(tabpfn, model):
+            raise Exception("Invalid model_type.")
+
+        model = getattr(tabpfn, model)
+
     return model
 
 
@@ -149,6 +175,10 @@ class MLModel(object):
                             For gradient boosting:
 
                             `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
+
+                            For TabPFN:
+                            `Built with TabPFN - tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/blob/main/LICENSE>`
+
     ---------------------   -------------------------------------------
     Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
 
@@ -193,6 +223,8 @@ class MLModel(object):
                             `catboostclassifier <https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier>`_
 
                             `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_
+
+                            `tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/tree/v1.0.0>`
 
     =====================   ===========================================
 
@@ -268,7 +300,18 @@ class MLModel(object):
             + self._data._categorical_variables,
         )
 
+        if "tabpfn" in model_type and (
+            len(self._training_data) > 1024
+            or len(np.unique(self._training_labels)) > 10
+        ):
+            raise Exception(
+                f"{model_type} is incompatible with training data > 1024 or label > 10. Adjust validation split or input data or label."
+            )
+
         if fairness_args is not None:
+            if "tabpfn" in model_type:
+                raise ValueError(_FAIRNESS_NOT_SUPPORTED)
+
             self.initialize_fair_model(fairness_args)
 
     def initialize_fair_model(self, fairness_args):
@@ -279,6 +322,9 @@ class MLModel(object):
             raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
 
         self.protected_class = fairness_args["sensitive_feature"]
+
+        if self.protected_class not in self._data._categorical_variables:
+            raise ValueError(_SENSITIVE_FEATURE_ERROR)
 
         if "mitigation_type" not in fairness_args:
             raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
@@ -293,7 +339,10 @@ class MLModel(object):
             else:
                 self.constraint = fairness_args["mitigation_constraint"]
 
-            if self.constraint not in ["demographic_parity", "equalized_odds"]:
+            if self.constraint not in [
+                "demographic_parity",
+                "equalized_odds",
+            ]:
                 raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
 
             self.fairness_label_encoder = LabelEncoder()
@@ -464,17 +513,23 @@ class MLModel(object):
         :return: dataframe
         """
 
+        if sensitive_feature not in self._data._categorical_variables:
+            raise ValueError(_SENSITIVE_FEATURE_ERROR)
+
         self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
         if not self._fairness and self._data._is_classification:
             labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
             y_true = labelEncoder.transform(self._validation_labels)
-            y_pred = self._predict(self._validation_df)
+            y_pred = self._predict(self._data._ml_data[2])
 
             y_pred = labelEncoder.transform(y_pred)
         else:
             y_true = self._validation_labels
-            y_pred = self._predict(self._validation_df, self.group_validation)
+            if self._fairness:
+                y_pred = self._predict(self._validation_df, self.group_validation)
+            else:
+                y_pred = self._predict(self._data._ml_data[2], self.group_validation)
 
         return _fairlearn.calculate_metrics(
             self._data._is_classification,
@@ -513,7 +568,7 @@ class MLModel(object):
         # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
 
-        if self._fairness and self.mitigation_method == "threshold_optimizer":
+        if self._fairness:
             validation_df_batch = self._validation_df.iloc[sample_batch, :]
             sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
             group_df = validation_df_batch.loc[:, self.protected_class]
@@ -763,16 +818,16 @@ class MLModel(object):
                 <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
             )
-
-        item = gis_user.content.add(
+        folder = gis_user.content.folders.get()
+        item = folder.add(
             {
                 "type": "Deep Learning Package",
                 "description": formatted_description,
                 "title": dlpk_path.stem,
                 "overwrite": True if overwrite else False,
             },
-            data=str(dlpk_path.absolute()),
-        )
+            file=str(dlpk_path.absolute()),
+        ).result()
 
         print(f"Published DLPK Item Id: {item.itemid}")
 
@@ -811,6 +866,8 @@ class MLModel(object):
 
         else:
             emd_params["ModelParameters"] = self._model.get_params()
+            if "base_path" in emd_params["ModelParameters"]:
+                emd_params["ModelParameters"].pop("base_path")
             emd_params["fairness"] = False
 
         emd_params["categorical_variables"] = self._data._categorical_variables
@@ -845,21 +902,7 @@ class MLModel(object):
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
 
-        emd_path = str(emd_path)
-
-        if emd_path.endswith(".dlpk"):
-            with ZipFile(emd_path, "r") as zip_obj:
-                temp_dir = tempfile.TemporaryDirectory().name
-                zip_obj.extractall(temp_dir)
-                MLModel.from_model(temp_dir, data)
-
-        if not emd_path.endswith(".emd"):
-            emd_path = os.path.join(
-                emd_path, (str(os.path.basename(emd_path)) + ".emd")
-            )
-
-        if not os.path.exists(emd_path):
-            raise Exception("Invalid data path.")
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path, "r") as f:
             emd = json.loads(f.read())
@@ -928,7 +971,12 @@ class MLModel(object):
         with open(model_file, "rb") as f:
             model = pickle.loads(f.read())
 
-        return cls(data, emd["ModelName"], pretrained_model=model, **model_parameters)
+        return cls(
+            data,
+            emd["ModelName"],
+            pretrained_model=model,
+            **model_parameters,
+        )
 
     def _predict(self, data, group_data=None):
         if self._fairness and self.mitigation_method == "threshold_optimizer":
@@ -1247,7 +1295,7 @@ class MLModel(object):
         rasters=None,
         datefield=None,
         distance_feature_layers=None,
-        output_name="Prediction Layer",
+        output_name=None,
         gis=None,
         match_field_names=None,
         prediction_type="features",
@@ -1258,6 +1306,9 @@ class MLModel(object):
             dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
+
+        if output_name is None:
+            output_name = "Prediction Layer"
 
         fields_needed = (
             self._data._categorical_variables + self._data._continuous_variables
@@ -1370,10 +1421,17 @@ class MLModel(object):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_name + ".xlsx")
                 dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
-                return online_table.publish(overwrite=True)
+                try:
+                    folder = gis.content.folders.get()
+                    online_table = folder.add(
+                        {"type": "Microsoft Excel", "overwrite": True},
+                        file=table_file,
+                    ).result()
+                    return online_table.publish(overwrite=True)
+                except Exception as ex:
+                    raise Exception(
+                        f"Filename {output_name} already exists. Please provide different output filename."
+                    )
 
     def _predict_rasters(
         self,
@@ -1510,7 +1568,10 @@ class MLModel(object):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -1537,7 +1598,10 @@ class MLModel(object):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -1596,7 +1660,8 @@ class MLModel(object):
         predictions = self._predict(processed_numpy)
 
         predictions = np.array(
-            predictions.reshape([max_raster_rows, max_raster_columns]), dtype="float64"
+            predictions.reshape([max_raster_rows, max_raster_columns]),
+            dtype="float64",
         )
 
         processed_raster = arcpy.NumPyArrayToRaster(

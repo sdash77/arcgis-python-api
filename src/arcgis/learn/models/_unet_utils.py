@@ -233,7 +233,9 @@ class ArcGISImageSegment(Image):
                 (torch.tensor([0.0, 0.0, 0.0, 0.0]).view(1, -1), color_mapping), dim=0
             )
             try:
-                color_im = color_mapping[self.data[0]].permute(2, 0, 1)
+                color_im = color_mapping[self.data[0].to(color_mapping.device)].permute(
+                    2, 0, 1
+                )
             except IndexError as e:
                 if HAS_GDAL:
                     message = f"Encountered invalid values in training label values, please check your training data."
@@ -587,7 +589,7 @@ def show_results_multispectral(
             axi = axs[r]
         if r < symbology_x_batch.shape[0]:
             axi[0].imshow(symbology_x_batch[r].cpu().numpy())
-            y_rgb = color_array[y_batch[r][0]]
+            y_rgb = color_array[y_batch[r][0].to(color_array.device)]
             axi[0].imshow(y_rgb, alpha=alpha)
             axi[1].imshow(symbology_x_batch[r].cpu().numpy())
             p_rgb = color_array[predictions[r]]

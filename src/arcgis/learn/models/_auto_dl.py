@@ -3,9 +3,10 @@ import traceback
 import json, time, datetime
 from datetime import datetime as dt
 import pandas as pd
-from IPython.display import clear_output
+
 
 try:
+    from IPython.display import clear_output
     import arcgis as ag
     import torch, sys
     from . import MMSegmentation, MMDetection
@@ -90,7 +91,10 @@ class ImageryModel(ArcGISModel):
             self._modeltype = emd["ModelType"]
             if "ModelFileConfigurationClass" in list(emd.keys()):
                 self._modelconfig = emd["ModelFileConfigurationClass"]
-                if self._modelconfig in ["MMDetectionConfig", "MMSegmentationConfig"]:
+                if self._modelconfig in [
+                    "MMDetectionConfig",
+                    "MMSegmentationConfig",
+                ]:
                     mm_model = emd["Kwargs"]["model"]
                     is_mm = True
         except Exception as e:
@@ -119,7 +123,7 @@ class ImageryModel(ArcGISModel):
         checkpoint=True,
         tensorboard=False,
         monitor="valid_loss",
-        **kwargs
+        **kwargs,
     ):
         """
         Train the model for the specified number of epochs while using the
@@ -184,7 +188,7 @@ class ImageryModel(ArcGISModel):
                 checkpoint,
                 tensorboard,
                 monitor,
-                **kwargs
+                **kwargs,
             )
         except Exception as E:
             print("Load the model first using load()")
@@ -209,7 +213,7 @@ class ImageryModel(ArcGISModel):
         compute_metrics=True,
         save_optimizer=False,
         save_inference_file=True,
-        **kwargs
+        **kwargs,
     ):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
@@ -267,7 +271,7 @@ class ImageryModel(ArcGISModel):
                                 the item on ArcGIS Online/Enterprise, default False.
         =====================   ===========================================
         """
-        getattr(self, "imagery_model").save(
+        saved_path = getattr(self, "imagery_model").save(
             name_or_path,
             framework,
             publish,
@@ -275,8 +279,9 @@ class ImageryModel(ArcGISModel):
             compute_metrics,
             save_optimizer,
             save_inference_file,
-            **kwargs
+            **kwargs,
         )
+        return saved_path
 
     def lr_find(self, allow_plot=True):
         """
@@ -430,16 +435,16 @@ class AutoDL:
                             The list of models that will be used in the training.
                             For eg:
                             Supported Object Detection models:
-                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MaskRCNN", "DETReg" ,"ATSS",
+                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MaskRCNN", "DETReg" ,"RTDetrV2","ATSS",
                             "CARAFE", "CascadeRCNN", "CascadeRPN", "DCN", 'Detectors',
                             'DoubleHeads', 'DynamicRCNN', 'EmpiricalAttention', 'FCOS', 'FoveaBox',
                             'FSAF', 'GHM', 'LibraRCNN', 'PaFPN', 'PISA', 'RegNet','RepPoints',
                             'Res2Net', 'SABL', 'VFNet']
                             Supported Pixel Classification models:
-                            ["DeepLab", "UnetClassifier", "PSPNetClassifier",
-                                "ANN", "APCNet", "CCNet", "CGNet", "HRNet", 'DeepLabV3Plus',
-                                'DMNet', 'DNLNet', 'FastSCNN', 'FCN', 'GCNet', 'MobileNetV2',
-                                'NonLocalNet','OCRNet', 'PSANet', 'SemFPN', 'UperNet']
+                            ["DeepLab", "UnetClassifier", "PSPNetClassifier", "SamLoRA",
+                            "ANN", "APCNet", "CCNet", "CGNet", "HRNet", 'DeepLabV3Plus', "Mask2Former",
+                            'DMNet', 'DNLNet', 'FastSCNN', 'FCN', 'GCNet', 'MobileNetV2',
+                            'NonLocalNet', 'PSANet', 'SemFPN', 'UperNet']
 
     ---------------------   -------------------------------------------
     verbose                 Optional Boolean.
@@ -459,7 +464,7 @@ class AutoDL:
         mode="basic",
         network=None,
         verbose=True,
-        **kwargs
+        **kwargs,
     ):
         if "save_evaluated_models" in kwargs:
             self._save_evaluated_models = kwargs["save_evaluated_models"]
@@ -478,6 +483,7 @@ class AutoDL:
 
         prepare_data_args = data.arcgis_init_kwargs
         prepare_data_args["batch_size"] = None
+        self.prepare_data_args = prepare_data_args
         self._data = prepare_data(**prepare_data_args)
 
         self.verbose = verbose
@@ -492,11 +498,13 @@ class AutoDL:
             "DeepLab",
             "UnetClassifier",
             "PSPNetClassifier",
+            "SamLoRA",
             "ANN",
             "APCNet",
             "CCNet",
             "CGNet",
             "HRNet",
+            "Mask2Former",
             "DeepLabV3Plus",
             "DMNet",
             "DNLNet",
@@ -506,7 +514,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",
@@ -516,6 +523,7 @@ class AutoDL:
             "FasterRCNN",
             "YOLOv3",
             "DETReg",
+            "RTDetrV2",
             "ATSS",
             "CARAFE",
             "CascadeRPN",
@@ -545,6 +553,7 @@ class AutoDL:
             "CCNet",
             "CGNet",
             "HRNet",
+            "Mask2Former",
             "ATSS",
             "CARAFE",
             "CascadeRCNN",
@@ -575,7 +584,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",
@@ -667,8 +675,10 @@ class AutoDL:
             "MaskRCNN",
             "RetinaNet",
             "DETReg",
+            "RTDetrV2",
             "FasterRCNN",
             "PSPNetClassifier",
+            "SamLoRA",
             "UnetClassifier",
             "DeepLab",
         ]
@@ -785,12 +795,6 @@ class AutoDL:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-                callbacks = [
-                    self._train_callback(
-                        getattr(self, model).learn,
-                        self._tiles_required // self._data.batch_size,
-                    )
-                ]
             else:
                 model_with_underscore = [
                     "CascadeRCNN",
@@ -836,28 +840,21 @@ class AutoDL:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-                callbacks = [
-                    self._train_callback(
-                        getattr(self, model).learn,
-                        self._tiles_required // self._data.batch_size,
-                    )
-                ]
-            backbone = getattr(self, model)._backbone.__name__
+            if model in ["SamLoRA"]:
+                backbone = str(getattr(self, model)._backbone)
+            else:
+                backbone = getattr(self, model)._backbone.__name__
         else:
             if not self._model_stats()[model]["is_mm"]:
                 setattr(
-                    self, model, getattr(ag.learn, model)(self._data, backbone=backbone)
+                    self,
+                    model,
+                    getattr(ag.learn, model)(self._data, backbone=backbone),
                 )
                 try:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-                callbacks = [
-                    self._train_callback(
-                        getattr(self, model).learn,
-                        self._tiles_required // self._data.batch_size,
-                    )
-                ]
             else:
                 model_with_underscore = [
                     "CascadeRCNN",
@@ -903,16 +900,12 @@ class AutoDL:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-                callbacks = [
-                    self._train_callback(
-                        getattr(self, model).learn,
-                        self._tiles_required // self._data.batch_size,
-                    )
-                ]
 
         if self.verbose:
             log_msg = "{date}: {network} initialized with {bk} backbone".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, bk=backbone
+                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                network=model,
+                bk=backbone,
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
@@ -941,10 +934,21 @@ class AutoDL:
             print(log_msg)
             self._logger_dict.append(log_msg)
 
+        if (self._tiles_required // estimated_batch_size[0]) > 0:
+            callbacks = [
+                self._train_callback(
+                    getattr(self, model).learn,
+                    self._tiles_required // estimated_batch_size[0],
+                )
+            ]
+        else:
+            callbacks = [self._train_callback(getattr(self, model).learn, 1)]
         lr_val = getattr(self, model).lr_find(allow_plot=False)
         if self.verbose:
             log_msg = "{date}: Best learning rate for {network} with the selected data is {lr}".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, lr=lr_val
+                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                network=model,
+                lr=lr_val,
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
@@ -1164,7 +1168,9 @@ class AutoDL:
 
         if not self._model_stats()[model]["is_mm"]:
             setattr(
-                self, model + "_backbones", getattr(self, model).supported_backbones
+                self,
+                model + "_backbones",
+                getattr(self, model).supported_backbones,
             )
             delattr(self, model)
             gc.collect()
@@ -1235,7 +1241,8 @@ class AutoDL:
             # self._max_epochs = int(self._epoch_obj[model])
             if self.verbose:
                 log_msg = "{date}: Current network - {network}. ".format(
-                    date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
+                    date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                    network=model,
                 )
                 print(log_msg)
                 self._logger_dict.append(log_msg)
@@ -1277,7 +1284,8 @@ class AutoDL:
             if epochs <= 0:
                 if self.verbose:
                     log_msg = """{date}: The time left to train the {network} is not sufficent.""".format(
-                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
+                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                        network=model,
                     )
                     print(log_msg)
                     self._logger_dict.append(log_msg)
@@ -1294,7 +1302,10 @@ class AutoDL:
 
             self.train_basic_model = self._train_model
             tot_sec = self.train_basic_model(
-                model, epochs=epochs, model_type=m_type, model_time=model_time
+                model,
+                epochs=epochs,
+                model_type=m_type,
+                model_time=model_time,
             )
             self.train_basic_model = None
             del self.train_basic_model
@@ -1730,6 +1741,17 @@ class AutoDL:
                     "type_float": {"dice_loss_fraction": (0, 1)},
                 },
             },
+            "SamLoRA": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": ["vit_h", "vit_l", "vit_b"],
+                        "class_balancing": [True, False],
+                    },
+                },
+            },
             "ANN": {
                 "time": 1600,
                 "is_mm": True,
@@ -1750,6 +1772,7 @@ class AutoDL:
                 "time": 4200,
                 "is_mm": True,
             },
+            "Mask2Former": {"time": 4200, "is_mm": True},
             "DeepLabV3Plus": {
                 "time": 4200,
                 "is_mm": True,
@@ -1783,10 +1806,6 @@ class AutoDL:
                 "is_mm": True,
             },
             "NonLocalNet": {
-                "time": 4200,
-                "is_mm": True,
-            },
-            "OCRNet": {
                 "time": 4200,
                 "is_mm": True,
             },
@@ -1886,6 +1905,21 @@ class AutoDL:
                             "resnet50",
                             "resnet101",
                             "resnet152",
+                        ]
+                    }
+                },
+            },
+            "RTDetrV2": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
                         ]
                     }
                 },
@@ -2018,11 +2052,13 @@ class AutoDL:
             "DeepLab",
             "UnetClassifier",
             "PSPNetClassifier",
+            "SamLoRA",
             "ANN",
             "APCNet",
             "CCNet",
             "CGNet",
             "HRNet",
+            "Mask2Former",
             "DeepLabV3Plus",
             "DMNet",
             "DNLNet",
@@ -2032,7 +2068,6 @@ class AutoDL:
             "GCNet",
             "MobileNetV2",
             "NonLocalNet",
-            "OCRNet",
             "PSANet",
             "SemFPN",
             "UperNet",
@@ -2048,6 +2083,7 @@ class AutoDL:
             "FasterRCNN",
             "YOLOv3",
             "DETReg",
+            "RTDetrV2",
             "ATSS",
             "CARAFE",
             "CascadeRCNN",

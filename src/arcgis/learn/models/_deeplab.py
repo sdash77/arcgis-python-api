@@ -4,10 +4,12 @@ from ._codetemplate import image_classifier_prf
 from functools import partial
 from ._arcgis_model import ArcGISModel
 import logging
+import urllib
 
 logger = logging.getLogger()
 
 try:
+    import fastai
     from fastai.basic_train import Learner
     from ._arcgis_model import (
         _resnet_family,
@@ -31,14 +33,17 @@ try:
     from fastai.vision import flatten_model
     from .._utils.segmentation_loss_functions import FocalLoss, MixUpCallback, DiceLoss
 
-    #
+    _segm_model = None
     try:
         from torchvision.models.segmentation.segmentation import _segm_model
     except:
-        from torchvision.models.segmentation.segmentation import (
-            _segm_resnet as _segm_model,
-        )
-    #
+        try:
+            from torchvision.models.segmentation.segmentation import (
+                _segm_resnet as _segm_model,
+            )
+        except:
+            pass
+
     from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
     from torchvision.models.segmentation.fcn import FCNHead
     from ._deeplab_utils import Deeplab, compute_miou
@@ -47,6 +52,7 @@ try:
     from ._PointRend import PointRendSemSegHead, PointRend_target_transform
     from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
+    from ._transformer_backbone import vit_config
 
     HAS_FASTAI = True
 except Exception as e:
@@ -156,14 +162,30 @@ def _create_deeplab(
     """
     Create default torchvision pretrained model with resnet101.
     """
-    # model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
-
-    model = _segm_model("deeplabv3", "resnet101", 21, True, pretrained_backbone=False)
-    if pretrained:
-        state_dict = models.utils.load_state_dict_from_url(
-            models.segmentation.segmentation.model_urls["deeplabv3_resnet101_coco"]
+    model = None
+    if not _segm_model is None:
+        model = _segm_model(
+            "deeplabv3", "resnet101", 21, True, pretrained_backbone=False
         )
-        model.load_state_dict(state_dict)
+        if pretrained:
+            state_dict = models.utils.load_state_dict_from_url(
+                models.segmentation.segmentation.model_urls["deeplabv3_resnet101_coco"]
+            )
+            model.load_state_dict(state_dict)
+    else:
+        from torchvision.models.segmentation import (
+            deeplabv3_resnet101,
+            DeepLabV3_ResNet101_Weights,
+        )
+
+        model = deeplabv3_resnet101(
+            weights=(DeepLabV3_ResNet101_Weights.DEFAULT if pretrained else None),
+            progress=True,
+            num_classes=21,
+            aux_loss=True,
+            weights_backbone=None,
+        )  # vvit Vikash bug fix done
+
     model = _DeepLabOverride(
         chip_size,
         num_class,
@@ -254,6 +276,9 @@ class DeepLab(ArcGISModel):
     keep_dilation           Optional boolean. When PointRend architecture is used,
                             keep_dilation=True can potentially improves accuracy
                             at the cost of memory consumption. Default: False
+    ---------------------   -------------------------------------------
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.DeepLab` Object
@@ -317,27 +342,33 @@ class DeepLab(ArcGISModel):
         self.dice_loss_average = kwargs.get("dice_loss_average", "micro")
 
         self._code = image_classifier_prf
-        if (
-            self._backbone.__name__ == "resnet101"
-            and "timm" not in self._backbone.__module__
-        ):
-            model = _create_deeplab(
-                data.chip_size,
-                data.c,
-                pretrained=pretrained_backbone,
-                pointrend=self._pointrend,
-                keep_dilation=self.keep_dilation,
-            )
-            if self._is_multispectral:
-                model = _change_tail(model, data)
-        else:
-            model = Deeplab(
-                data.c,
-                self._backbone,
-                data.chip_size,
-                self._pointrend,
-                keep_dilation=self.keep_dilation,
-                pretrained=pretrained_backbone,
+
+        try:
+            if (
+                self._backbone.__name__ == "resnet101"
+                and "timm" not in self._backbone.__module__
+            ):
+                model = _create_deeplab(
+                    data.chip_size,
+                    data.c,
+                    pretrained=pretrained_backbone,
+                    pointrend=self._pointrend,
+                    keep_dilation=self.keep_dilation,
+                )
+                if self._is_multispectral:
+                    model = _change_tail(model, data)
+            else:
+                model = Deeplab(
+                    data.c,
+                    self._backbone,
+                    data.chip_size,
+                    self._pointrend,
+                    keep_dilation=self.keep_dilation,
+                    pretrained=pretrained_backbone,
+                )
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
             )
 
         if not _isnotebook():
@@ -417,6 +448,27 @@ class DeepLab(ArcGISModel):
         return DeepLab._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
+        transformer_backbone = list(vit_config.keys())
+        return transformer_backbone
+
+    @staticmethod
+    def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
+        from ._dofa_utils import dofa_backbones_downstream
+
+        return dofa_backbones_downstream
+
+    @staticmethod
+    def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(
             [
@@ -431,7 +483,18 @@ class DeepLab(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family, *_densenet_family, *_vgg_family] + timm_backbones
+
+        transformer_backbone = DeepLab.transformer_backbones()
+        torchgeo_backbone = DeepLab.torchgeo_backbones()
+        dofa_backbone = DeepLab.dofa_backbones()
+
+        return (
+            [*_resnet_family, *_densenet_family, *_vgg_family]
+            + timm_backbones
+            + transformer_backbone
+            + torchgeo_backbone
+            + dofa_backbone
+        )
 
     @property
     def supported_datasets(self):
@@ -472,6 +535,7 @@ class DeepLab(ArcGISModel):
             model_file = emd_path.parent / model_file
 
         model_params = emd["ModelParameters"]
+        backbone = model_params["backbone"]
 
         try:
             class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
@@ -490,9 +554,12 @@ class DeepLab(ArcGISModel):
             empty_data.class_mapping = class_mapping
             empty_data.color_mapping = color_mapping
             empty_data._is_empty = True
+            if backbone is not None and "hf:" in backbone:
+                empty_data._extract_bands = emd.get("ExtractBands")
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd
+            empty_data._band_names = emd.get("Bands")
             return cls(empty_data, **model_params, pretrained_path=str(model_file))
         else:
             return cls(data, **model_params, pretrained_path=str(model_file))
@@ -506,9 +573,9 @@ class DeepLab(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation
@@ -571,9 +638,18 @@ class DeepLab(ArcGISModel):
     def _deeplab_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
 
-        criterion = nn.CrossEntropyLoss(weight=self._final_class_weight).to(
-            self._device
+        criterion = nn.CrossEntropyLoss(
+            weight=self._final_class_weight, reduction="none"
+        ).to(self._device)
+
+        # to find the weighted mean of the loss
+        batch_weight = (
+            targets.numel()
+            if self._final_class_weight == None
+            or self._final_class_weight[targets].sum() < 1.0
+            else self._final_class_weight[targets].sum()
         )
+
         if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]
@@ -583,12 +659,15 @@ class DeepLab(ArcGISModel):
                 pointrend_target = PointRend_target_transform(targets, pointrend_coord)
         else:  # validation
             out = outputs
-        main_loss = criterion(out, targets)
+        # handle divide by zero
+        main_loss = criterion(out, targets).sum() / (batch_weight + 1e-7)
 
         if self.learn.model.training:
-            aux_loss = criterion(aux, targets)
+            aux_loss = criterion(aux, targets).sum() / (batch_weight + 1e-7)
             if self._pointrend:
-                pointrend_loss = criterion(pointrend_out, pointrend_target)
+                pointrend_loss = criterion(pointrend_out, pointrend_target).sum() / (
+                    batch_weight + 1e-7
+                )
                 total_loss = main_loss + 0.4 * aux_loss + pointrend_loss
             else:
                 total_loss = main_loss + 0.4 * aux_loss
@@ -598,8 +677,21 @@ class DeepLab(ArcGISModel):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
-        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (nn.BatchNorm2d)):
+        if self._backbone.__name__ in DeepLab.transformer_backbones():
+            backbone = self.learn.model.backbone[0].backbone
+        else:
+            backbone = self.learn.model.backbone
+        layers = flatten_model(backbone)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for idx, i in enumerate(layers[start_idx:]):
+            if (
+                isinstance(i, (torch.nn.BatchNorm2d))
+                or isinstance(i, (fastai.torch_core.ParameterModule))
+                or isinstance(i, (torch.nn.BatchNorm1d))
+                or isinstance(i, (torch.nn.LayerNorm))
+            ):
                 continue
             if hasattr(i, "dilation"):
                 dilation = i.dilation

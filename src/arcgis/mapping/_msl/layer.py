@@ -5,7 +5,6 @@ import os
 from string import digits
 from functools import lru_cache
 
-from re import search
 from typing import Any, Optional, Union
 
 from arcgis._impl.common import _query
@@ -15,15 +14,20 @@ from arcgis._impl.common._filters import (
     GeometryFilter,
 )
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._utils import _date_handler, chunks
 
 from arcgis.features.feature import FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Item, Layer
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import MapImageLayer
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapFeatureLayer class found in `arcgis.layers.MapFeatureLayer` instead.",
+)
 class MapFeatureLayer(Layer):
     """
     The ``MapFeatureLayer`` class represents Map Feature Layers.
@@ -81,7 +85,7 @@ class MapFeatureLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -168,11 +172,11 @@ class MapFeatureLayer(Layer):
 
         .. note::
             The ``renderer`` property overrides the default symbology when displaying it on a
-            :class:`~arcgis.mapping.WebMap`.
+            :class:`~arcgis.map.Map`.
 
         :return:
             ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -189,7 +193,7 @@ class MapFeatureLayer(Layer):
 
         :return:
             ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -206,27 +210,27 @@ class MapFeatureLayer(Layer):
     @classmethod
     def fromitem(cls, item: Item, layer_id: int = 0):
         """
-        The ``fromitem`` method creates a :class:`~arcgis.mapping.MapFeatureLayer` from a GIS :class:`~arcgis.gis.Item`.
+        The ``fromitem`` method creates a :class:`~arcgis.layers.MapFeatureLayer` from a GIS :class:`~arcgis.gis.Item`.
 
 
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
-                                                 a :class:`~arcgis.mapping.MapServiceLayer` object.
+                                                 a :class:`~arcgis.layers.MapServiceLayer` object.
         ------------------------------------     --------------------------------------------------------------------
         layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.
         ====================================     ====================================================================
 
         :return:
-            A :class:`~arcgis.mapping.MapFeatureLayer` object
+            A :class:`~arcgis.layers.MapFeatureLayer` object
 
         .. code-block:: python
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -236,10 +240,10 @@ class MapFeatureLayer(Layer):
             >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
                                                              layer_id = 2)
             >>> print(f"{map_feature_layer.properties.name:30}{type(map_feature_layer)}")
-            <State Boundaries              <class 'arcgis.mapping._msl.layer.MapFeatureLayer'>>
+            <State Boundaries              <class 'arcgis.layers._msl.layer.MapFeatureLayer'>>
 
         """
-        from arcgis.mapping import MapImageLayer
+        from arcgis.layers import MapImageLayer
 
         return MapImageLayer.fromitem(item).layers[layer_id]
 
@@ -247,7 +251,7 @@ class MapFeatureLayer(Layer):
     @property
     def container(self):
         """
-        The ``container`` property represents the :class:`~arcgis.mapping.MapImageLayer` to which this layer belongs.
+        The ``container`` property represents the :class:`~arcgis.layers.MapImageLayer` to which this layer belongs.
         """
         if self._storage is None:
             self._storage = MapImageLayer(
@@ -518,7 +522,7 @@ class MapFeatureLayer(Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -901,7 +905,7 @@ class MapFeatureLayer(Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -941,9 +945,7 @@ class MapFeatureLayer(Layer):
             >>> query_count
             <149>
         """
-        return _query._common_query(
-            layer=self,
-            is_layer=True,
+        query_params = _query.QueryParameters(
             where=where,
             text=text,
             out_fields=out_fields,
@@ -981,8 +983,13 @@ class MapFeatureLayer(Layer):
             datum_transformation=datum_transformation,
             range_values=range_values,
             parameter_values=parameter_values,
-            kwargs=kwargs,
         )
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            as_df=as_df,
+            is_layer=True,
+        ).execute()
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -1002,7 +1009,7 @@ class MapFeatureLayer(Layer):
         return_true_curve: bool = False,
     ):
         """
-        The ``query_related_records`` operation is performed on a :class:`~arcgis.mapping.MapFeatureLayer`
+        The ``query_related_records`` operation is performed on a :class:`~arcgis.layers.MapFeatureLayer`
         resource. The result of this operation are :class:`~arcgis.features.FeatureSet` objects grouped
         by source layer/table object IDs. Each :class:`~arcgis.features.FeatureSet` contains
         :class:`~arcgis.features.Feature` objects including the values for the fields requested by
@@ -1015,7 +1022,7 @@ class MapFeatureLayer(Layer):
             include geometries.
 
         .. note::
-            See the :attr:`~arcgis.mapping.MapFeatureLayer.query` method for more information.
+            See the :attr:`~arcgis.layers.MapFeatureLayer.query` method for more information.
 
 
         ======================     ====================================================================
@@ -1176,86 +1183,13 @@ class MapFeatureLayer(Layer):
             status = con.get(url, params)
         return status
 
-    # ----------------------------------------------------------------------
-    def _query(self, url, params, raw=False):
-        """returns results of query"""
-        try:
-            result = self._con.post(path=url, postdata=params, token=self._token)
-            if "exceededTransferLimit" in result:
-                while (
-                    "exceededTransferLimit" in result
-                    and result["exceededTransferLimit"] == True
-                ):
-                    params["resultRecordCount"] = params["resultRecordCount"] * 2
-                    result = self._con.post(
-                        path=url, postdata=params, token=self._token
-                    )
-
-        except Exception as queryException:
-            error_list = [
-                "Error performing query operation",
-                "HTTP Error 504: GATEWAY_TIMEOUT",
-            ]
-            if any(ele in queryException.__str__() for ele in error_list):
-                # half the max record count
-                max_record = (
-                    int(params["resultRecordCount"])
-                    if "resultRecordCount" in params
-                    else 1000
-                )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-                # reduce this number to 125 if you still sees 500/504 error
-                if max_record < 250:
-                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                    raise queryException
-                else:
-                    max_rec = int((max_record + 1) / 2)
-                    i = 0
-                    result = None
-                    while max_rec * i < max_record:
-                        params["resultRecordCount"] = (
-                            max_rec
-                            if max_rec * (i + 1) <= max_record
-                            else (max_record - max_rec * i)
-                        )
-                        params["resultOffset"] = offset + max_rec * i
-                        try:
-                            records = self._query(url, params, raw=True)
-                            if result:
-                                for feature in records["features"]:
-                                    result["features"].append(feature)
-                            else:
-                                result = records
-                            i += 1
-                        except Exception as queryException2:
-                            raise queryException2
-
-            else:
-                raise queryException
-
-        def is_true(x):
-            if isinstance(x, bool) and x:
-                return True
-            elif isinstance(x, str) and x.lower() == "true":
-                return True
-            else:
-                return False
-
-        if "error" in result:
-            raise ValueError(result)
-        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
-            return result["count"]
-        elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
-            return result
-        elif "extent" in result:
-            return result
-        elif is_true(raw):
-            return result
-        else:
-            return FeatureSet.from_dict(result)
-
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapRasterLayer class found in `arcgis.layers.MapRasterLayer` instead.",
+)
 class MapRasterLayer(MapFeatureLayer):
     """
     The ``MapRasterLayer`` class represents a geo-referenced image hosted in a ``Map Service``.
@@ -1283,7 +1217,7 @@ class MapRasterLayer(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         if "lods" in self.container.properties:
@@ -1306,6 +1240,11 @@ class MapRasterLayer(MapFeatureLayer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapTable class found in `arcgis.layers.MapTable` instead.",
+)
 class MapTable(MapFeatureLayer):
     """
     The ``MapTable`` class represents entity classes with uniform properties.
@@ -1314,7 +1253,7 @@ class MapTable(MapFeatureLayer):
         In addition to working with entities with ``location`` as
         features, the :class:`~arcgis.gis.GIS` can also work with non-spatial entities as rows in tables.
 
-    Working with tables is similar to working with a :class:`~arcgis.mapping.MapFeatureLayer`, except that the rows
+    Working with tables is similar to working with a :class:`~arcgis.layers.MapFeatureLayer`, except that the rows
     (:class:`~arcgis.features.Feature`) in a table do not have a geometry, and tables ignore any geometry related
     operation.
     """
@@ -1322,27 +1261,27 @@ class MapTable(MapFeatureLayer):
     @classmethod
     def fromitem(cls, item: Item, table_id: int = 0):
         """
-        The ``fromitem`` method creates a :class:`~arcgis.mapping.MapTable` from a GIS :class:`~arcgis.gis.Item`.
+        The ``fromitem`` method creates a :class:`~arcgis.layers.MapTable` from a GIS :class:`~arcgis.gis.Item`.
 
 
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
-                                                 a :class:`~arcgis.mapping.MapImageService` object.
+                                                 a :class:`~arcgis.layers.MapImageService` object.
         ------------------------------------     --------------------------------------------------------------------
         layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.
         ====================================     ====================================================================
 
         :return:
-            A :class:`~arcgis.mapping.MapTable` object
+            A :class:`~arcgis.layers.MapTable` object
 
         .. code-block:: python
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapTable
+            >>> from arcgis.layers import MapImageLayer, MapTable
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -1352,7 +1291,7 @@ class MapTable(MapFeatureLayer):
             >>> map_table = MapFeatureLayer.fromitem(item = map_image_item,
                                                              layer_id = 2)
             >>> print(f"{map_table.properties.name:30}{type(map_table)}")
-            <State Boundaries              <class 'arcgis.mapping.MapTable'>>
+            <State Boundaries              <class 'arcgis.layers.MapTable'>>
         """
         return item.tables[table_id]
 
@@ -1375,7 +1314,7 @@ class MapTable(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -1620,7 +1559,7 @@ class MapTable(MapFeatureLayer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -1660,9 +1599,7 @@ class MapTable(MapFeatureLayer):
             >>> query_count
             <149>
         """
-        return _query._common_query(
-            layer=self,
-            is_layer=False,
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -1681,14 +1618,24 @@ class MapTable(MapFeatureLayer):
             historic_moment=historic_moment,
             sql_format=sql_format,
             return_exceeded_limit_features=return_exceeded_limit_features,
-            as_df=as_df,
             range_values=range_values,
             parameter_values=parameter_values,
-            kwargs=kwargs,
         )
+
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            is_layer=False,
+            as_df=as_df,
+        ).execute()
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the _MSILayerFactory class found in `arcgis.layers._MSILayerFactory` instead.",
+)
 class _MSILayerFactory(type):
     """
     Factory that generates the Map Service Layers
@@ -1706,11 +1653,11 @@ class _MSILayerFactory(type):
 
         # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.mapping._types.MapTable
+        >> arcgis.layers._types.MapTable
 
         print(s_layer.properties.name)
         >> 'pipe_properties'
@@ -1744,6 +1691,11 @@ class _MSILayerFactory(type):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapServiceLayer class found in `arcgis.layers.MapServiceLayer` instead.",
+)
 class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
     """
     The ``MapServiceLayer`` class is a factory that generates the Map Service Layers.
@@ -1761,11 +1713,11 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
 
         # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
 
-        from arcgis.mapping import MapServiceLayer
+        from arcgis.layers import MapServiceLayer
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.mapping._types.MapTable
+        >> arcgis.layers._types.MapTable
 
         print(ms_layer.properties.name)
         >> 'pipe_properties'

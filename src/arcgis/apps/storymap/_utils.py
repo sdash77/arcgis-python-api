@@ -1,4 +1,7 @@
 from __future__ import annotations
+import html
+import tempfile
+from time import sleep
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
@@ -6,10 +9,125 @@ import re
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
+collection = LazyLoader("arcgis.apps.storymap.collection")
 storymap = LazyLoader("arcgis.apps.storymap.story")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
 time = LazyLoader("time")
+sharing = LazyLoader("gis._impl._content_manager_sharing.api")
+_dt = LazyLoader("datetime")
+
+_TEMPLATES = {
+    "storymap_2": {
+        "root": "n-4xkUEe",
+        "nodes": {
+            "n-4xkUEe": {
+                "type": "story",
+                "data": {"storyTheme": "r-vlc4Kp"},
+                "config": {"coverDate": "first-published"},
+                "children": ["n-aTn8ak", "n-1AItUD", "n-cOeTah"],
+            },
+            "n-aTn8ak": {
+                "type": "storycover",
+                "data": {
+                    "type": "minimal",
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "titlePanelPosition": "start",
+                },
+            },
+            "n-1AItUD": {
+                "type": "navigation",
+                "data": {"links": []},
+                "config": {"isHidden": True},
+            },
+            "n-cOeTah": {"type": "credits"},
+        },
+        "resources": {
+            "r-vlc4Kp": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+    "briefing": {
+        "root": "n-k23c2p",
+        "nodes": {
+            "n-XK0GeP": {"type": "briefing-ui", "children": ["n-11SuEF"]},
+            "n-11SuEF": {
+                "type": "briefing-slide",
+                "data": {"layout": "cover"},
+                "children": ["n-3r3mhh"],
+            },
+            "n-3r3mhh": {
+                "type": "storycover",
+                "data": {
+                    "type": "sidebyside",
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "titlePanelPosition": "start",
+                },
+                "children": [],
+            },
+            "n-k23c2p": {
+                "type": "briefing",
+                "data": {"storyTheme": "r-vlc4Kp"},
+                "children": ["n-XK0GeP"],
+            },
+        },
+        "resources": {
+            "r-vlc4Kp": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+    "collection": {
+        "root": "n-vCW523",
+        "nodes": {
+            "n-vCW523": {
+                "type": "collection",
+                "data": {"storyTheme": "r-QvId58"},
+                "children": ["n-eERiZz"],
+            },
+            "n-eERiZz": {
+                "type": "collection-ui",
+                "data": {"items": []},
+                "children": ["n-U3Ou63", "n-JTJJo2"],
+            },
+            "n-U3Ou63": {
+                "type": "collection-cover",
+                "data": {
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "type": "tiles",
+                },
+            },
+            "n-JTJJo2": {
+                "type": "collection-nav",
+                "data": {"type": "compact"},
+            },
+        },
+        "resources": {
+            "r-QvId58": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+}
 
 
 # ----------------------------------------------------------------------
@@ -63,10 +181,16 @@ def cover(
     Changing one part of the briefing cover will not change the rest of the cover. If just the
     image is passed in then only the image will change.
     """
-    if isinstance(story, briefing.Briefing):
+    if isinstance(story, briefing.Briefing) or isinstance(story, collection.Collection):
         ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_cover_slide = story._properties["nodes"][ui]["children"][0]
-        story_cover_node = story._properties["nodes"][story_cover_slide]["children"][0]
+        if isinstance(story, briefing.Briefing):
+            story_cover_node = story._properties["nodes"][story_cover_slide][
+                "children"
+            ][0]
+        else:
+            # for collection, the cover is the first node in ui
+            story_cover_node = story_cover_slide
     else:
         story_cover_node = story._properties["nodes"][story._properties["root"]][
             "children"
@@ -83,9 +207,11 @@ def cover(
             "title": orig_data["title"] if title is None else title,
             "summary": orig_data["summary"] if summary is None else summary,
             "byline": orig_data["byline"] if by_line is None else by_line,
-            "titlePanelPosition": orig_data["titlePanelPosition"]
-            if by_line is None
-            else "start",
+            "titlePanelPosition": (
+                orig_data["titlePanelPosition"]
+                if by_line is None and "titlePanelPosition" in orig_data
+                else "start"
+            ),
         },
     }
 
@@ -101,10 +227,7 @@ def cover(
             )
         if media.node not in story._properties["nodes"]:
             # must be added to story resources
-            if media._type == "image":
-                media._add_image(story=story)
-            else:
-                media._add_video(story=story)
+            media._add_to_story(story=story)
         story._properties["nodes"][story_cover_node]["children"] = [media.node]
     else:
         # get original image
@@ -113,6 +236,79 @@ def cover(
             story._properties["nodes"][story_cover_node]["children"] = [media]
 
     return story._properties["nodes"][story_cover_node]
+
+
+# ----------------------------------------------------------------------
+def set_logo(
+    story,
+    logo: str,
+    link: Optional[str] = None,
+    alt_text: Optional[str] = None,
+):
+    """
+    Set the logo image, link, and/or alt text for the story or briefing.
+    """
+    # If empty string is passed in then remove the logo
+    # This wipes out everything
+    if logo == "":
+        root = story._properties["root"]
+        if "storyLogoResource" in story._properties["nodes"][root]["data"]:
+            del story._properties["nodes"][root]["data"]["storyLogoResource"]
+        if "storyLogoLink" in story._properties["nodes"][root]["data"]:
+            del story._properties["nodes"][root]["data"]["storyLogoLink"]
+        if "storyLogoAltText" in story._properties["nodes"][root]["data"]:
+            del story._properties["nodes"][root]["data"]["storyLogoAltText"]
+    elif logo:
+        # check the logo is a path to an image and not a url
+        if "http" in logo:
+            raise ValueError("Please provide a path to an image not a url.")
+        # create unique resource name
+        name = "logo_" + _dt.datetime.now().strftime("%Y%m%d%H%M%S")
+        # add the image type to end of name
+        if logo.endswith(".png"):
+            name = name + ".png"
+        elif logo.endswith(".jpg"):
+            name = name + ".jpg"
+        elif logo.endswith(".jpeg"):
+            name = name + ".jpeg"
+        else:
+            raise ValueError(
+                "Please provide a path to an image with a valid extension."
+            )
+        # add the logo to the story item resources
+        _add_resource(story, file=logo, resource_name=name)
+        # create resource node id
+        resource_node = "r-" + uuid.uuid4().hex[0:6]
+        # add the resource node to the story properties
+        story._properties["resources"][resource_node] = {
+            "type": "image",
+            "data": {
+                "resourceId": name,
+                "provider": "item-resource",
+                "height": 2304,
+                "width": 1536,
+            },
+        }
+        # set the logo to the story properties
+        story._properties["nodes"][story._properties["root"]]["data"][
+            "storyLogoResource"
+        ] = resource_node
+
+        # if link is empty string then remove
+        if link == "":
+            if "storyLogoLink" in story._properties["nodes"][root]["data"]:
+                del story._properties["nodes"][root]["data"]["storyLogoLink"]
+        elif link:
+            story._properties["nodes"][root]["data"]["storyLogoLink"] = link
+
+        # if alt text is empty string then remove
+        if alt_text == "":
+            if "storyLogoAltText" in story._properties["nodes"][root]["data"]:
+                del story._properties["nodes"][root]["data"]["storyLogoAltText"]
+        elif alt_text:
+            story._properties["nodes"][root]["data"]["storyLogoAltText"] = alt_text
+
+        return True
 
 
 # ----------------------------------------------------------------------
@@ -137,67 +333,124 @@ def theme(story, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
 
 
 # ----------------------------------------------------------------------
-def save(
-    story,
-    title: Optional[str] = None,
-    tags: Optional[list] = None,
-    access: str = None,
-    publish: bool = False,
+def get_theme(story):
+    """
+    Get the theme of the story, briefing, or collection.
+    """
+    # see if there is a resource that is the story-theme
+    for node, node_info in story._properties["resources"].items():
+        for key, val in node_info.items():
+            if key == "type" and val == "story-theme":
+                return story._properties["resources"][node]["data"]["themeId"]
+
+
+# ----------------------------------------------------------------------
+def get_version(story) -> str:
+    """
+    Get the story, briefing, or collection version. All same version.
+    This version is used when saving by adding it to the type keywords.
+    """
+    try:
+        sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")[
+            "version"
+        ]
+    except:
+        # When behind firewall or using enterprise, the version is not available
+        sm_mapping = {
+            "[10, 3]": "22.49",  # Enterprise 11.1
+            "[2023, 2]": "23.32",  # Enterprise 11.2
+            "[2024, 1]": "24.12",  # Enterprise 11.3
+            "[2024, 2]": "24.36",  # Enterprise 11.4
+            "default": "24.12",
+        }
+        gis_version = str(story._gis.version[:2])
+        sm_version = sm_mapping.get(gis_version, sm_mapping["default"])
+    return sm_version
+
+
+def _publish(story, access, item_properties):
+    """
+    Enterprise does not have a publish endpoint. We need to manually update the item properties and resources.
+    """
+    # Remove old publish item
+    for resource in story._resources:
+        if (
+            "publish_data" in resource["resource"]
+            or "published_data" in resource["resource"]
+            or "publish" in resource["resource"]
+        ):
+            _remove_resource(story, file=resource["resource"])
+    # Add new publish
+    _add_resource(
+        story,
+        resource_name="published_data.json",
+        text=json.dumps(story._properties),
+    )
+
+    # add to item properties
+    item_properties["text"] = json.dumps(story._properties)
+    item_properties["url"] = story._url
+    sharing = access or story._item.access
+    item_properties["access"] = sharing
+
+    # Update the item and invoke share to have correct access
+    story._item.update(item_properties=item_properties)
+
+    if sharing == "private":
+        story._item.sharing.sharing_level = "PRIVATE"
+    elif sharing == "org":
+        story._item.sharing.sharing_level = "ORGANIZATION"
+    elif sharing == "public":
+        story._item.sharing.sharing_level = "EVERYONE"
+
+    if story._gis._session.auth and story._gis._session.auth.token is not None:
+        # Make a call to the StoryMaps publish endpoint
+        story._gis._session.post(
+            url=story._url + "/publish",
+            data={
+                "f": "json",
+                "token": story._gis._session.auth.token,
+            },
+        )
+
+
+def _prepare_story_for_save(
+    story, publish, make_copyable, no_seo, title, tags, sm_version
 ):
     """
-    This method will save your StoryMap or Briefing to your active GIS. The story will be saved
-    with unpublished changes unless `publish` parameter is specified to True.
-
-    The title only needs to be specified if a change is wanted, otherwise exisiting title
-    is used.
+    Remove old resource and add new draft resource that is the story._properties.
     """
-    # Remove old draft item
     for resource in story._resources:
         if re.match("draft_[0-9]{13}.json", resource["resource"]) or re.match(
             "draft.json", resource["resource"]
         ):
             _remove_resource(story, file=resource["resource"])
 
-    # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
-    if title:
-        root = story._properties["root"]
-        if "metaSettings" not in story._properties["nodes"][root]["data"]:
-            story._properties["nodes"][root]["data"]["metaSettings"] = {"title": None}
-        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
-        if "config" not in story._properties["nodes"][root]:
-            story._properties["nodes"][root]["config"] = {}
-        story._properties["nodes"][root]["config"][
-            "shouldPushMetaToAGOItemDetails"
-        ] = False
-
     # Add new draft with time in milliseconds
     draft = "draft_" + str(int(time.time() * 1000)) + ".json"
-    json_str = json.dumps(story._properties, ensure_ascii=False)
-    _add_resource(story, resource_name=draft, text=json_str, access="private")
-    # get the story map version from endpoint
-    sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")["version"]
-    # Find type keywords to use based on whether to publish or not
-    if isinstance(story, briefing.Briefing):
-        briefing_keywords = ["alphabriefing", "storymapbriefing"]
 
-    # PUBLISH MODE
-    if publish is True:
-        # Remove old publish item
-        for resource in story._resources:
-            if (
-                "publish_data" in resource["resource"]
-                or "published_data" in resource["resource"]
-                or "publish" in resource["resource"]
-            ):
-                _remove_resource(story, file=resource["resource"])
-        # Add new publish
-        _add_resource(
-            story,
-            resource_name="published_data.json",
-            text=json.dumps(story._properties),
-        )
-        # Set the keywords
-        # Start by getting the existing keywords and remove what will be replaced
+    # Add a new empty json draft
+    _add_resource(story, resource_name=draft, text="{}", access="private")
+
+    # Create a temporary file to write the story._properties
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp:
+        json.dump(story._properties, temp, ensure_ascii=False)
+        temp.seek(0)
+
+        # update the draft with the story._properties
+        story._item.resources.update(file=temp.name, file_name=draft)
+
+    item_properties = _prepare_item_properties_for_save(
+        story, publish, make_copyable, no_seo, title, tags, sm_version, draft
+    )
+    return item_properties
+
+
+def _prepare_item_properties_for_save(
+    story, publish, make_copyable, no_seo, title, tags, sm_version, draft
+):
+    # Find type keywords to use based on whether to publish or not
+    if publish:
         keywords = story._item.typeKeywords
         if "smstatusunpublishedchanges" in keywords:
             # changing to publish after
@@ -224,42 +477,11 @@ def save(
             "smdraftresourceid:" + draft,
             "smpublisheddate:" + str(int(time.time() * 1000)),
         ]
-        if isinstance(story, briefing.Briefing):
-            new_keywords = new_keywords + briefing_keywords
-        # Setting the keywords in a set will remove duplicates
-        p = {
-            "typeKeywords": list(set(keywords + new_keywords)),
-            "text": json.dumps(story._properties),
-            "url": story._url,
-        }
-        if title:
-            p["title"] = title
-        if tags:
-            p["tags"] = tags
-
-        # Find and set access
-        sharing = access if access is not None else story._item.access
-        p["access"] = sharing
-
-        # Update the item and invoke share to have correct access
-        story._item.update(item_properties=p)
-
-        if sharing == "private":
-            story._item.share(everyone=False, org=False, groups=None)
-        elif sharing == "org":
-            story._item.share(org=True)
-        elif sharing == "public":
-            story._item.share(everyone=True)
-
-        if (
-            story._gis._con._session.auth
-            and story._gis._con._session.auth.token is not None
-        ):
-            # Make a call to the StoryMaps publish endpoint
-            story._gis._con.post(
-                path=story._url + "/publish",
-                params={"f": "json", "token": story._gis._con._session.auth.token},
-            )
+        # publish keywords
+        if make_copyable is True:
+            new_keywords.append("Viewer Copyable")
+        if no_seo is False:
+            new_keywords.append("smsharingnoseo")
     else:
         # Set the type keywords
         keywords = story._item.typeKeywords
@@ -298,17 +520,66 @@ def save(
                 "smeditorapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
             ]
-        if isinstance(story, briefing.Briefing):
-            new_keywords = new_keywords + briefing_keywords
-        # Pass through set first to remove duplicates
-        p = {"typeKeywords": list(set(keywords + new_keywords))}
-        if title:
-            p["title"] = title
-        if tags:
-            p["tags"] = tags
+
+    # Add extra keywords
+    if isinstance(story, briefing.Briefing):
+        new_keywords = new_keywords + ["alphabriefing", "storymapbriefing"]
+    elif isinstance(story, collection.Collection):
+        new_keywords = new_keywords + ["storymapcollection"]
+
+    new_keywords = list(set(keywords + new_keywords))
+
+    p = {"typeKeywords": new_keywords}
+    if title:
+        p["title"] = title
+    if tags:
+        p["tags"] = tags
+    return p
+
+
+# ----------------------------------------------------------------------
+def save(
+    story,
+    title: Optional[str] = None,
+    tags: Optional[list] = None,
+    access: str = None,
+    publish: bool = False,
+    make_copyable: bool = None,
+    no_seo: bool = None,
+):
+    """
+    This method will save your StoryMap or Briefing to your active GIS. The story will be saved
+    with unpublished changes unless publish parameter is specified to True.
+
+    The title only needs to be specified if a change is wanted, otherwise exisiting title
+    is used.
+    """
+    # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
+    if title:
+        root = story._properties["root"]
+        if "metaSettings" not in story._properties["nodes"][root]["data"]:
+            story._properties["nodes"][root]["data"]["metaSettings"] = {"title": None}
+        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
+        if "config" not in story._properties["nodes"][root]:
+            story._properties["nodes"][root]["config"] = {}
+        story._properties["nodes"][root]["config"][
+            "shouldPushMetaToAGOItemDetails"
+        ] = False
+
+    # get the story map version from endpoint
+    sm_version = get_version(story)
+
+    # No endpoint, do manually
+    item_properties = _prepare_story_for_save(
+        story, publish, make_copyable, no_seo, title, tags, sm_version
+    )
+
+    if publish:
+        _publish(story, access, item_properties)
+    else:
         # access does not change when only saving
-        p["access"] = story._item.access
-        story._item.update(item_properties=p)
+        item_properties["access"] = story._item.access
+        story._item.update(item_properties=item_properties)
 
     story._item = story._gis.content.get(story._itemid)
     return story._item
@@ -321,7 +592,7 @@ def delete_item(story):
     """
     # Check if item id exists
     item = story._gis.content.get(story._itemid)
-    return item.delete()
+    return item.delete(permanent=True)
 
 
 # ----------------------------------------------------------------------
@@ -332,19 +603,23 @@ def duplicate(story, title: Optional[str] = None):
     """
     # get the item to copy
     item = story._gis.content.get(story._itemid)
+    # set the title
+    title = title if title is not None else item.title + " Copy"
+    # copy the story item
+    copy = item.copy_item(title=title, include_resources=True, include_private=True)
 
-    # enterprise copy_item starting at 10.8.1
-    if item._portal.is_arcgisonline is False and story._gis.version < [8, 2]:
-        clone = story._gis.content.clone_items(items=[item])
-    else:
-        clone = item.copy_item(
-            title="(Copy) " + story._item.title if title is None else title,
-            include_resources=True,
-            include_private=True,
-        )
-    # save to update keywords
-    clone_story = briefing.Briefing(clone.id)
-    return clone_story.save()
+    # remove the type keywords that are not needed
+    keywords = story._item.typeKeywords
+    for keyword in keywords:
+        if "smeditorapp" in keyword or "Copy Item" in keyword:
+            # Remove old keywords and will be replaced in new keywords
+            keywords.remove(keyword)
+
+    copy.update({"typeKeywords": keywords})
+
+    # make a resources call
+    copy.resources.list()
+    return copy
 
 
 # ----------------------------------------------------------------------
@@ -399,7 +674,9 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
 
 # ----------------------------------------------------------------------
 def copy_content(
-    story, target_story: Union[briefing.Briefing, storymap.StoryMap], content: list
+    story,
+    target_story: Union[briefing.Briefing, storymap.StoryMap],
+    content: list,
 ):
     """
     Copy the content from one briefing/story to another. This will copy the content
@@ -499,7 +776,10 @@ def copy_content(
         for node in node_list:
             # add node info for copying
             _add_to_dicts(
-                node, complete_node_list, complete_node_dict, complete_resource_dict
+                node,
+                complete_node_list,
+                complete_node_dict,
+                complete_resource_dict,
             )
             # check type of node to see if need to find children
             node_children = _has_children(story, node)
@@ -637,12 +917,13 @@ def _add_child(story, node_id, position=None):
         # for briefings, the only child is the ui
         # the ui node has the slides
         principal_id = story._properties["nodes"][root_id]["children"][0]
+        last = len(story._properties["nodes"][principal_id]["children"])
     else:
         # for storymap the children are the root
         principal_id = root_id
+        # find the last position. If only one node then the last position is 1
+        last = len(story._properties["nodes"][principal_id]["children"]) - 1
 
-    # find the last position. If only one node then the last position is 1
-    last = len(story._properties["nodes"][principal_id]["children"]) - 1
     if last == 0:
         # briefings only have cover when you start
         last = 1
@@ -711,55 +992,64 @@ def _remove_resource(story, file=None):
 
 # ----------------------------------------------------------------------
 def _assign_node_class(story, node_id):
-    # Find the node type to assign to correct class
-    node_type = story._properties["nodes"][node_id]["type"]
-    # Create an instance of this class using existing node properties
-    if node_type == "separator":
-        node = Content.Separator(story=story, node_id=node_id)
-    elif node_type == "briefing-slide":
-        node = Content.Slide(story=story, node_id=node_id)
-    elif node_type == "code":
-        node = Content.Code(story=story, node_id=node_id)
-    elif node_type == "image":
-        node = Content.Image(story=story, node_id=node_id)
-    elif node_type == "video":
-        node = Content.Video(story=story, node_id=node_id)
-    elif node_type == "audio":
-        node = Content.Audio(story=story, node_id=node_id)
-    elif node_type == "embed":
-        # embed has subtype: video or link
-        subtype = story._properties["nodes"][node_id]["data"]["embedType"]
-        if subtype == "video":
-            node = Content.Video(story=story, node_id=node_id)
+    NODE_TYPE_CLASS_MAP = {
+        "separator": Content.Separator,
+        "briefing-slide": Content.BriefingSlide,
+        "code": Content.Code,
+        "image": Content.Image,
+        "video": Content.Video,
+        "audio": Content.Audio,
+        "embed": {
+            "video": Content.Video,
+            "link": Content.Embed,
+        },
+        "webmap": Content.Map,
+        "text": Content.Text,
+        "button": Content.Button,
+        "swipe": Content.Swipe,
+        "gallery": Content.Gallery,
+        "timeline": Content.Timeline,
+        "tour": Content.MapTour,
+        "table": Content.Table,
+        "immersive": {
+            "sidecar": Content.Sidecar,
+            # Add more subtypes as needed
+        },
+        "action-button": Content.MediaAction,
+        "expressmap": Content.ExpressMap,
+        "navigation": Content.Navigation,
+        "storycover": Content.Cover,
+        "collection-cover": Content.Cover,
+        "collection-nav": Content.CollectionNavigation,
+    }
+
+    node_properties = story._properties["nodes"][node_id]
+    node_type = node_properties["type"]
+
+    if node_type in NODE_TYPE_CLASS_MAP:
+        node_class_or_subtype = NODE_TYPE_CLASS_MAP[node_type]
+
+        if isinstance(node_class_or_subtype, dict):
+            # Handle subtypes
+            if "sidecar" in node_class_or_subtype:
+                # Immersive sidecar has subtypes
+                subtype_key = node_properties["data"].get("type")
+            else:
+                subtype_key = node_properties["data"].get(
+                    "embedType"
+                )  # Adjust based on actual subtype key
+            node_class = node_class_or_subtype.get(subtype_key, node_type.capitalize())
         else:
-            node = Content.Embed(story=story, node_id=node_id)
-    elif node_type == "webmap":
-        node = Content.Map(story=story, node_id=node_id)
-    elif node_type == "text":
-        node = Content.Text(story=story, node_id=node_id)
-    elif node_type == "button":
-        node = Content.Button(story=story, node_id=node_id)
-    elif node_type == "swipe":
-        node = Content.Swipe(story=story, node_id=node_id)
-    elif node_type == "gallery":
-        node = Content.Gallery(story=story, node_id=node_id)
-    elif node_type == "timeline":
-        node = Content.Timeline(story=story, node_id=node_id)
-    elif node_type == "tour":
-        node = Content.MapTour(story=story, node_id=node_id)
-    elif node_type == "immersive":
-        # immersive has subtype sidecar (more to add later)
-        subtype = story._properties["nodes"][node_id]["data"]["type"]
-        if subtype == "sidecar":
-            node = Content.Sidecar(story=story, node_id=node_id)
-        else:
-            node = subtype
-    elif node_type == "action-button":
-        node = Content.MapAction(story=story, node_id=node_id)
+            # No subtypes, use the class directly
+            node_class = node_class_or_subtype
     else:
-        # if not of type story content then just return name of type
-        node = node_type.capitalize()
-    return node
+        # Unknown type, return the type name capitalized
+        node_class = node_type.capitalize()
+
+    if isinstance(node_class, str):
+        return node_class
+    else:
+        return node_class(story=story, node_id=node_id)
 
 
 # ----------------------------------------------------------------------

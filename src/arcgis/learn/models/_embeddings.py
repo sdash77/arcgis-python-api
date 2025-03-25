@@ -112,9 +112,9 @@ class TextModule:
         input_mask_expanded = (
             attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         )
-        token_embeddings[
-            input_mask_expanded == 0
-        ] = -1e9  # Set padding tokens to large negative value
+        token_embeddings[input_mask_expanded == 0] = (
+            -1e9
+        )  # Set padding tokens to large negative value
         max_over_time = torch.max(token_embeddings, 1)[0]
         return max_over_time
 

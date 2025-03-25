@@ -111,14 +111,16 @@ class ServerManager(object):
                 else:
                     try:
                         c = ServicesDirectory(
-                            url=admin_url, portal_connection=self._gis._portal.con
+                            url=admin_url,
+                            portal_connection=self._gis._portal.con,
                         )
                         c.admin.logs
                         self._server_list.append(c.admin)
                         self._catalog_list.append(c)
                     except:
                         c = ServicesDirectory(
-                            url=public_url, portal_connection=self._gis._portal.con
+                            url=public_url,
+                            portal_connection=self._gis._portal.con,
                         )
                         self._server_list.append(c.admin)
                         self._catalog_list.append(c)
@@ -145,7 +147,8 @@ class ServerManager(object):
         ------------------     --------------------------------------------------------------------
         function               Optional string. Limits the returned ArcGIS Servers based on the
                                server's function. Provide a comma-separated list of values. The
-                               allowed values are GeoAnalytics, RasterAnalytics, and ImageHosting.
+                               allowed values are GeoAnalytics, RasterAnalytics, NotebookServer,
+                               and ImageHosting.
         ==================     ====================================================================
 
         :return:
@@ -154,11 +157,31 @@ class ServerManager(object):
         servers = []
         if role is None and function is None:
             raise ValueError("A role or function must be provided")
-        for server in self._federation.servers["servers"]:
-            if str(role).lower() == server["serverRole"].lower():
-                servers.append(Server(url=server["adminUrl"], gis=self._gis))
-            elif str(function).lower() in server["serverFunction"].lower():
-                servers.append(Server(url=server["adminUrl"], gis=self._gis))
+        for server in self._gis.servers["servers"]:
+            if (
+                (str(role).lower() == server["serverRole"].lower() and function is None)
+                or (
+                    str(function).lower() in server["serverFunction"].lower()
+                    and role is None
+                )
+                or (
+                    str(function).lower() in server["serverFunction"].lower()
+                    and str(role).lower() == server["serverRole"].lower()
+                )
+            ):
+                admin_url = server["adminUrl"]
+                public_url = server["url"]
+                try:
+                    c = Server(url=admin_url, gis=self._gis)
+                    c.properties
+                    c.logs.properties
+                    servers.append(c)
+                except:
+                    c = Server(url=public_url, gis=self._gis)
+                    c.properties
+                    c.logs.properties
+                    servers.append(c)
+
         return servers
 
     # ----------------------------------------------------------------------
@@ -254,8 +277,8 @@ class ServerManager(object):
         ------------------     --------------------------------------------------------------------
         function               Optional string. The specific function associated with this server. Provide a
                                comma-separated list of values, but it is not recommend that a single
-                               server have all the server functions. The allowed values are GeoAnalytics,
-                               RasterAnalytics, and ImageHosting.
+                               server have all the server functions. The allowed values are
+                               RasterAnalytics and ImageHosting.
         ==================     ====================================================================
 
 
@@ -270,7 +293,6 @@ class ServerManager(object):
             "HOSTING_SERVER",
         ]
         functions = {
-            "geoanalytics": "GeoAnalytics",
             "rasteranalytics": "RasterAnalytics",
             "imagehosting": "ImageHosting",
             "none": None,

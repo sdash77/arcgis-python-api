@@ -42,6 +42,7 @@ import warnings
 logger = logging.getLogger()
 
 try:
+    import h5py
     from torch.utils.data import (
         DataLoader,
         Dataset,
@@ -56,6 +57,7 @@ try:
     from fastprogress.fastprogress import master_bar, progress_bar
     from scipy.spatial.transform import Rotation as R
     from ..models._rand_lanet_utils import batch_preprocess_dict
+    from IPython.display import display
 except ImportError:
     # To avoid breaking builds.
     class Dataset:
@@ -505,8 +507,9 @@ class PointCloudDataset(Dataset):
                 self.centers = self.centers[indexes]
 
         self.relative_files = files
-        self.filenames = [self.path / self.folder / file.decode() for file in files]
-        self.h5files = [(h5py.File(filename, "r")) for filename in self.filenames]
+        self.filenames = np.array([file.decode() for file in self.relative_files])
+        # self.filenames = [self.path / self.folder / file.decode() for file in files]
+        # self.h5files = [(h5py.File(filename, "r")) for filename in self.filenames]
         self.classes_of_interest = classes_of_interest
 
     def __len__(self):
@@ -519,75 +522,80 @@ class PointCloudDataset(Dataset):
         Args:
             i: index of file
         """
-        assert i < len(self.h5files)
+        assert i < len(self.filenames)
         indexes = np.where(self.tiles[:, 0] == i)
-        read_file = self.h5files[i]
         labels = []
         xyzs = []
         xyzs_scaled = []
-        centers = []
         scale = self.block_size / 2
         block_centers = []
-        for idx in indexes[0]:
-            tile = self.tiles[idx]
-            center = self.centers[idx]
-            xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]]
-            xyz_scaled = xyz * scale + center
-            xyzs.append(xyz)
-            labels.append(read_file["classification"][tile[1] : tile[1] + tile[2]])
-            xyzs_scaled.append(xyz_scaled)
-            block_centers.append(xyz_scaled.mean(axis=0))
+        filename = self.path / self.folder / self.filenames[i]
+        with h5py.File(filename, "r") as read_file:
+            for idx in indexes[0]:
+                tile = self.tiles[idx]
+                center = self.centers[idx]
+                xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]]
+                xyz_scaled = xyz * scale + center
+                xyzs.append(xyz)
+                labels.append(read_file["classification"][tile[1] : tile[1] + tile[2]])
+                xyzs_scaled.append(xyz_scaled)
+                block_centers.append(xyz_scaled.mean(axis=0))
 
         index_mask = get_random_cluster_indexes(block_centers, self.block_size)
-        xyzs = np.concatenate(np.array(xyzs)[index_mask], axis=0)
-        labels = np.concatenate(np.array(labels)[index_mask], axis=0)
-        xyzs_scaled = np.concatenate(np.array(xyzs_scaled)[index_mask], axis=0)
+        xyzs = np.concatenate(np.array(xyzs, dtype="object")[index_mask], axis=0)
+        labels = np.concatenate(np.array(labels, dtype="object")[index_mask], axis=0)
+        xyzs_scaled = np.concatenate(
+            np.array(xyzs_scaled, dtype="object")[index_mask], axis=0
+        )
 
         return xyzs, labels, xyzs_scaled
 
     def __getitem__(self, i, return_scaled=False, add_centers=False):
         tile_index = i
         tile = self.tiles[i]
-        read_file = self.h5files[tile[0]]
-
-        # we need this in show_results of tool.
-        rescaled_xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]].astype(
-            np.float32
-        ) * (self.block_size / 2)
-        if add_centers:
-            rescaled_xyz += self.centers[i]
-        if self.classification_key in read_file.keys():
-            classification, _ = pad_tensor(
-                torch.tensor(
-                    read_file[self.classification_key][
-                        tile[1] : tile[1] + tile[2]
-                    ].astype(int)
-                ),
-                self.max_point,
-                to_float=False,
-            )
-            if not self.remap:
-                retval = [
-                    concatenate_tensors(
-                        read_file, self.input_keys, tile, self.max_point
+        # read_file = self.h5files[tile[0]]
+        filename = self.path / self.folder / self.filenames[tile[0]]
+        with h5py.File(filename, "r") as read_file:
+            # we need this in show_results of tool.
+            rescaled_xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]].astype(
+                np.float32
+            ) * (self.block_size / 2)
+            if add_centers:
+                rescaled_xyz += self.centers[i]
+            if self.classification_key in read_file.keys():
+                classification, _ = pad_tensor(
+                    torch.tensor(
+                        read_file[self.classification_key][
+                            tile[1] : tile[1] + tile[2]
+                        ].astype(int)
                     ),
-                    classification.long(),
-                ]
+                    self.max_point,
+                    to_float=False,
+                )
+                if not self.remap:
+                    retval = [
+                        concatenate_tensors(
+                            read_file, self.input_keys, tile, self.max_point
+                        ),
+                        classification.long(),
+                    ]
+                else:
+                    retval = [
+                        concatenate_tensors(
+                            read_file, self.input_keys, tile, self.max_point
+                        ),
+                        remap_labels(classification, self.class2idx).long(),
+                    ]
+
             else:
+                # removing warning as it is showing up in the tool.
+                # logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
                 retval = [
                     concatenate_tensors(
                         read_file, self.input_keys, tile, self.max_point
                     ),
-                    remap_labels(classification, self.class2idx).long(),
+                    None,
                 ]
-
-        else:
-            # removing warning as it is showing up in the tool.
-            # logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
-            retval = [
-                concatenate_tensors(read_file, self.input_keys, tile, self.max_point),
-                None,
-            ]
 
         if return_scaled:
             # indexed zero because pad tensor returns two things and we only want the first one.
@@ -737,15 +745,11 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
     color_mapping = recompute_color_mapping(color_mapping, self.classes)
     color_mapping = np.array(list(color_mapping.values())) / 255
 
-    h5_files = self.h5files.copy()
-    random.shuffle(h5_files)
-
     idx = 0
     file_idx = self._file_indexes[0]
     f_idx = 1
     while idx < rows:
-        # file = h5_files[file_idx]
-        _pc, labels, pc = self._get_file_blocks(file_idx)
+        _, labels, pc = self._get_file_blocks(file_idx)
         if self.remap:
             labels = remap_labels(labels, self.class2idx)
             unmapped_labels = remap_labels(labels.copy(), self.idx2class)
@@ -818,7 +822,9 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
             ],
             layout=layout,
         )
-        fig.show()
+
+        fig2 = go.FigureWidget(fig)
+        display(fig2)
 
         if idx == rows - 1:
             break
@@ -1142,7 +1148,7 @@ def prepare_las_data(
                     block_size_,
                     2 * (xyz_max[0, -1] - xyz_min[0, -1]),
                 )
-                xyz_blocks = np.floor((xyz - xyz_min) / block_size).astype(np.int)
+                xyz_blocks = np.floor((xyz - xyz_min) / block_size).astype(int)
 
                 blocks, point_block_indices, block_point_counts = np.unique(
                     xyz_blocks, return_inverse=True, return_counts=True, axis=0
@@ -1193,7 +1199,7 @@ def prepare_las_data(
                             ],
                             axis=-1,
                         )
-                        block_point_indices[block_idx] = np.array([], dtype=np.int)
+                        block_point_indices[block_idx] = np.array([], dtype=int)
                         block_merge_count = block_merge_count + 1
                         break
 
@@ -1211,7 +1217,7 @@ def prepare_las_data(
                     block_points = xyz[point_indices]
                     block_min = np.amin(block_points, axis=0, keepdims=True)
                     xyz_grids = np.floor((block_points - block_min) / grid_size).astype(
-                        np.int
+                        int
                     )
                     grids, point_grid_indices, grid_point_counts = np.unique(
                         xyz_grids, return_inverse=True, return_counts=True, axis=0
@@ -1299,15 +1305,15 @@ def prepare_las_data(
                         data[idx_in_batch, 0:point_num, ...] = block_xzyrgbi[
                             start:end, :
                         ]
-                        unnormalized_data[
-                            idx_in_batch, 0:point_num, ...
-                        ] = unnormalized_block_xzyrgbi[start:end, :]
+                        unnormalized_data[idx_in_batch, 0:point_num, ...] = (
+                            unnormalized_block_xzyrgbi[start:end, :]
+                        )
                         data_num[idx_in_batch] = point_num
                         label[idx_in_batch] = dataset_idx  # won't be used...
                         label_seg[idx_in_batch, 0:point_num] = block_labels[start:end]
-                        indices_split_to_full[
-                            idx_in_batch, 0:point_num
-                        ] = point_indices[start:end]
+                        indices_split_to_full[idx_in_batch, 0:point_num] = (
+                            point_indices[start:end]
+                        )
 
                         if ((idx + 1) % batch_size == 0) or (
                             block_idx == idx_last_non_empty_block
@@ -2702,15 +2708,15 @@ def compute_precision_recall(self):
     valid_dl = self._data.valid_dl
     model = self.learn.model.eval()
 
-    false_positives = [0] * self._data.c
-    true_positives = [0] * self._data.c
-    false_negatives = [0] * self._data.c
-    class_count = [0] * self._data.c
+    false_positives = np.zeros(self._data.c)
+    true_positives = np.zeros(self._data.c)
+    false_negatives = np.zeros(self._data.c)
+    class_count = np.zeros(self._data.c)
 
-    all_y = []
-    all_pred = []
-    for x_in, y_in in iter(valid_dl):
-        if not getattr(self, "_is_ModelInputDict", False):
+    for x_in, y_in in progress_bar(valid_dl, display=True):
+        if (not getattr(self, "_is_ModelInputDict", False)) and self.__str__() not in [
+            "<PTv3Seg>"
+        ]:
             x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
             batch, _, num_features = x_in.shape
             indices = torch.tensor(
@@ -2727,24 +2733,35 @@ def compute_precision_recall(self):
                 .view(batch, self.sample_point_num)
                 .contiguous()
                 .cpu()
-                .numpy()
+                .reshape(-1)
             )  ## batch, self.sample_point_num
         else:
-            y_in = y_in.cpu().numpy()
+            y_in = y_in.cpu().reshape(-1)
         with torch.no_grad():
-            preds = model(x_in).detach().cpu().numpy()
-        predicted_labels = preds.argmax(axis=-1)
-        all_y.append(y_in.reshape(-1))
-        all_pred.append(predicted_labels.reshape(-1))
+            preds = model(x_in).detach().cpu()
+        predicted_labels = preds.argmax(axis=-1).reshape(-1)
 
-    all_y = np.concatenate(all_y)
-    all_pred = np.concatenate(all_pred)
-
-    for i in range(len(all_y)):
-        class_count[all_y[i]] += 1
-        false_positives[all_pred[i]] += int(all_y[i] != all_pred[i])
-        true_positives[all_pred[i]] += int(all_y[i] == all_pred[i])
-        false_negatives[all_y[i]] += int(all_y[i] != all_pred[i])
+        class_count += (
+            y_in.float().histc(self._data.c, min=0, max=self._data.c - 1).numpy()
+        )
+        false_positives += (
+            predicted_labels[predicted_labels != y_in]
+            .float()
+            .histc(self._data.c, min=0, max=self._data.c - 1)
+            .numpy()
+        )
+        true_positives += (
+            predicted_labels[predicted_labels == y_in]
+            .float()
+            .histc(self._data.c, min=0, max=self._data.c - 1)
+            .numpy()
+        )
+        false_negatives += (
+            y_in[predicted_labels != y_in]
+            .float()
+            .histc(self._data.c, min=0, max=self._data.c - 1)
+            .numpy()
+        )
 
     precision, recall, f_1 = calculate_metrics(
         false_positives, true_positives, false_negatives
@@ -2755,22 +2772,7 @@ def compute_precision_recall(self):
         inverse_class2idx = self._data.idx2class
     else:
         inverse_class2idx = {v: k for k, v in self._data.class2idx.items()}
-    class_mapping = self._data.class_mapping
-    # columns = [f'{inverse_class2idx[cval]} ({class_mapping[inverse_class2idx[cval]]})' for cval in range(self._data.c)]
-    # # check whether the class mapping was specified by user.
-    # for x, c in class_mapping.items():
-    #     x = int(x)
-    #     try:
-    #         c = int(c)
-    #         if x != c:
-    #             none_cm = False
-    #         else:
-    #             none_cm = True
-    #     except ValueError:
-    #         none_cm = False
 
-    # if none_cm:
-    #     columns = [f'{inverse_class2idx[cval]}' for cval in range(self._data.c)]
     columns = [f"{inverse_class2idx[cval]}" for cval in range(self._data.c)]
     columns = [f"{self._data.class_mapping[int(cval)]}" for cval in columns]
     df = pd.DataFrame(data, columns=columns, index=index)
@@ -2852,7 +2854,6 @@ def augment(points, xforms, range=None):
 
 
 class Transform3d(object):
-
     """
     Create transformations for 3D datasets, that can be used in
     :meth:`~arcgis.learn.prepare_data` to apply data augmentation
@@ -2935,7 +2936,7 @@ class Transform3d(object):
         self.rotation_range = rotation
         self.scaling_range = scaling
         self.order = "XYZ"
-        self.jitter = jitter
+        self.jitter = float(jitter)
 
     def _detection_transforms(self):
         from .pointcloud_od import ODTransform3D
@@ -3039,6 +3040,20 @@ def model_predictions(model, data, point_nums):
                 else:
                     data[key] = data[key].to(model._device)
             probs = model.learn.model(data).softmax(dim=-1).cpu()
+
+        elif model.__str__() in ["<PTv3Seg>"]:
+            from .pointcloud_serialization import transform_data
+
+            if not torch.is_tensor(point_nums):
+                point_nums = torch.tensor([point_nums])
+
+            data = transform_data(
+                [
+                    data.to(model._device).float(),
+                    point_nums.to(model._device),
+                ]
+            )[0]
+            probs = model.learn.model(data).softmax(dim=-1).cpu()
         else:
             probs = (
                 model.learn.model(data.to(model._device).float()).softmax(dim=-1).cpu()
@@ -3124,10 +3139,12 @@ def predict_batch_h5(self, dl, output_path, progressor):
         # add batch_size for spliting prediction till last batch number
         unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
+            ufname = dl.dataset.path / dl.dataset.folder / ufname
             if ufname != current_file_name:
                 current_file_name = ufname
-                h5_file = dl.dataset.h5files[tile[unique_index[i]][0]]
+                h5_file = h5py.File(current_file_name, "r")
                 batch_num, _ = h5_file["xyz"].shape
+                h5_file.close()
                 labels_pred = np.full(batch_num, -1, dtype=np.int8)
                 confidences_pred = np.zeros(batch_num, dtype=np.float32)
                 class_confidence = np.zeros(
@@ -3290,7 +3307,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     ## dataset tiles Get all files from the tiles
     tile_file_indices = data.valid_ds.tiles[:, 0]
     ## iterate: on files
-    for idx, _ in enumerate(data.h5files):
+    for idx, _ in enumerate(data.filenames):
         ## Create subplot
         fig = make_subplots(
             rows=1, cols=2, specs=[[{"type": "scene"}, {"type": "scene"}]]
@@ -3326,8 +3343,13 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         clustered_index_bool_mask = get_random_cluster_indexes(
             block_centers, self._data.block_size
         )
-        labels = np.concatenate(np.array(labels)[clustered_index_bool_mask])
-        pc = np.concatenate(np.array(pc)[clustered_index_bool_mask], axis=0)
+
+        labels = np.concatenate(
+            np.array(labels, dtype="object")[clustered_index_bool_mask]
+        )
+        pc = np.concatenate(
+            np.array(pc, dtype="object")[clustered_index_bool_mask], axis=0
+        )
         blocks = [blocks[i] for i, mask in enumerate(clustered_index_bool_mask) if mask]
 
         # prediction step
@@ -3343,7 +3365,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
                     self.sample_point_num,
                     pred_batch_size,
                     point_num.cpu().item(),
-                )
+                ),
+                dtype="object",
             )
             pred_class.append(predictions[:point_num, 0])
 

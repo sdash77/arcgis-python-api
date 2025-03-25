@@ -244,9 +244,7 @@ class Anchors:
 
         self.__dict__.update(cfg)
 
-        self.anchor_num = (
-            len(self.scales) * len(self.ratios) * (self.anchor_density**2)
-        )
+        self.anchor_num = len(self.scales) * len(self.ratios) * (self.anchor_density**2)
         self.anchors = None
         self.all_anchors = None
         self.generate_anchors()

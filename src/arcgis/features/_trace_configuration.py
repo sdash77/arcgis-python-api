@@ -45,7 +45,7 @@ class TraceConfiguration:
     ----------------------------------------        ----------------------------------------------------------
     tier_name                                       Required string. Specifies the name of the tier where the
                                                     trace is starting. This is required for subnetwork-based
-                                                    traces.
+                                                    traces and is ignored when `use_digitized_direction` is True.
     ----------------------------------------        ----------------------------------------------------------
     shortest_path_network_attribute_name            Required string for a shortest path trace; otherwise,
                                                     it's optional. It specifies the network attribute name
@@ -76,7 +76,8 @@ class TraceConfiguration:
                                                         ]
     ----------------------------------------        ----------------------------------------------------------
     target_tier_name                                Optional string. Specifies the name of the tier where an
-                                                    upstream or downstream trace ends.
+                                                    upstream or downstream trace ends. This is ignored when
+                                                    `use_digitized_direction` is True.
     ----------------------------------------        ----------------------------------------------------------
     subnetwork_name                                 Optional string. Specifies the name of the subnetwork that
                                                     be traced. The starting points of the trace are the controllers
@@ -324,13 +325,27 @@ class TraceConfiguration:
                                                     include_containers property and no-ops if include_containers
                                                     is false. If includeContainers is true and this property
                                                     is true, containment associations up to and including the
-                                                    first spatial container are returned; otherwise, all c
-                                                    ontainment associations are returned. The default is false.
+                                                    first spatial container are returned; otherwise, all
+                                                    containment associations are returned. The default is false.
     ----------------------------------------        ----------------------------------------------------------
     allow_indeterminate_flow                        Optional property specifying whether network features
                                                     with indeterminate flow stop traversability or are included
                                                     in the trace results. This property is only honored when
                                                     running an upstream, downstream, or isolation trace.
+    ----------------------------------------        ----------------------------------------------------------
+    use_digitized_direction                         Optional boolean. Introduced at Enterprise 11.3, this property
+                                                    specifies whether the direction of flow will be based on the
+                                                    digitized direction of the line, from global ID to global ID of
+                                                    the edge object in association, and the Flow direction attribute.
+                                                    Applies when the `trace_type` is 'upstream' or 'downstream', otherwise
+                                                    it is ignored. The default is false.
+    ----------------------------------------        ----------------------------------------------------------
+    synthesize_geometry                             Optional boolean. Introduced at Enterprise 11.3, this property
+                                                    specifies whether the geometries will be inferred and created
+                                                    (synthesized) for associations and edge objects traversed
+                                                    during a trace operation. This property is only applicable when
+                                                    using the 'aggregatedGeometry' type for `result_type`. The default
+                                                    is false.
     ========================================        ==========================================================
     """
 
@@ -363,6 +378,8 @@ class TraceConfiguration:
     ignore_barriers_at_starting_points: bool = False
     include_up_to_first_spatial_container: bool = False
     allow_indeterminate_flow: bool | None = None
+    use_digitized_direction: bool = False
+    synthesize_geometry: bool = False
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -402,6 +419,8 @@ class TraceConfiguration:
             "ignoreBarriersAtStartingPoints": self.ignore_barriers_at_starting_points,
             "includeUpToFirstSpatialContainer": self.include_up_to_first_spatial_container,
             "allowIndeterminateFlow": self.allow_indeterminate_flow,
+            "useDigitizedDirection": self.use_digitized_direction,
+            "synthesizeGeometry": self.synthesize_geometry,
         }
 
     def to_dict(self):
@@ -433,6 +452,8 @@ class TraceConfiguration:
             "ignoreBarriersAtStartingPoints": self.ignore_barriers_at_starting_points,
             "includeUpToFirstSpatialContainer": self.include_up_to_first_spatial_container,
             "allowIndeterminateFlow": self.allow_indeterminate_flow,
+            "useDigitizedDirection": self.use_digitized_direction,
+            "synthesizeGeometry": self.synthesize_geometry,
         }
 
     @classmethod
@@ -472,4 +493,6 @@ class TraceConfiguration:
                 "includeUpToFirstSpatialContainer"
             ],
             allow_indeterminate_flow=config["allowIndeterminateFlow"],
+            use_digitized_direction=config["useDigitizedDirection"],
+            synthesize_geometry=config["synthesizeGeometries"],
         )

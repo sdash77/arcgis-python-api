@@ -4,6 +4,7 @@ Contains an internal GP method used to calculate Credit Usage for Tool
 This is a private method and could change without warning. Do not use.
 
 """
+
 import json
 import arcgis as _arcgis
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData

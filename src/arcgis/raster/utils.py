@@ -1,6 +1,7 @@
 from typing import Any, Optional, Union, Dict
 from arcgis.gis import GIS
 from arcgis.raster import _util
+import requests
 
 
 def generate_direct_access_url(
@@ -268,7 +269,6 @@ def publish_hosted_imagery_layer(
 
                                                     {"outSR": {spatial reference}}
 
-
                                              - Upload Properties (upload_properties): ``upload_properties`` key can be used to control specific upload parameters when trying to create hosted imagery layers in ArcGIS Online from local raster datasets.
 
                                                Available options:
@@ -306,7 +306,12 @@ def publish_hosted_imagery_layer(
                                                 |                        "minRegionSize":100},
                                                 | "defineNodata":True,                                            
                                                 | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
-                                                | "buildOverview":True}
+                                                | "buildOverview":True
+
+
+                                             .. note:: 
+                                                 To define NoData values for ``ONE_IMAGE`` case when the input is a single raster, use the following:
+                                                 {"noData": "1 255;2 0;3 255"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` . The GIS on which this function runs.
                                              If not specified, the active GIS is used.
@@ -357,3 +362,174 @@ def publish_hosted_imagery_layer(
         raise RuntimeError(
             "layer_configuration should be either ONE_IMAGE or IMAGE_COLLECTION"
         )
+
+
+def get_stac_info(stac_url, verbose=False):
+    """
+    Retrieves information from a `STAC (SpatioTemporal Asset Catalog) <https://stacspec.org/en>`__ URL.
+
+    This function fetches and parses information from a given STAC URL.
+    It supports STAC `Catalogs <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__,
+    `Collections <https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md>`__,
+    `Items <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`__, and
+    `ItemCollections <https://github.com/radiantearth/stac-api-spec/blob/release/v1.0.0/fragments/itemcollection/README.md>`__.
+    The information is returned in a dictionary format.
+
+    ====================================     ====================================================================
+    **Parameter**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    stac_url                                 Required string. The URL of the STAC resource to fetch information from.
+    ------------------------------------     --------------------------------------------------------------------
+    verbose                                  Optional boolean. If set to True, detailed information is returned.
+                                             If set to False, only essential information is returned.
+                                             (The default is False)
+    ====================================     ====================================================================
+
+    .. note::
+        This helper method assists users in gathering STAC information,
+        which can then be used to better understand what to pass or query when using the following methods:
+            - :meth:`~arcgis.raster.Raster.from_stac_item`
+            - :meth:`~arcgis.raster.RasterCollection.from_stac_api`
+            - :meth:`~arcgis.raster.RasterCollection.from_stac_catalog`
+
+    :return: Dictionary containing the parsed information from the STAC URL.
+
+    .. code-block:: python
+
+        # Example 1: Fetching detailed information from a STAC API (Planetary Computer)
+        stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1", verbose=True)
+        print(stac_info)
+
+        # Example 2: Fetching essential information from a STAC Collection (Landsat C2-L2 collection on Planetary Computer)
+        stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2", verbose=False)
+        print(stac_info)
+
+        # Example 3: Fetching essential information from a STAC Item (NAIP data on Planetary Computer)
+        stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/wa_m_4712125_sw_10_060_20191029_20191217")
+        print(stac_info)
+
+        # Example 4: Fetching detailed information from an ItemCollection (NAIP data on Earth Search)
+        stac_info = get_stac_info("https://earth-search.aws.element84.com/v1/collections/naip/items", verbose=True)
+        print(stac_info)
+    """
+    info = {}
+
+    try:
+        response = requests.get(stac_url)
+        response.raise_for_status()
+        data = response.json()
+
+        if "stac_version" in data or stac_url.endswith("/collections"):
+            if ("type" in data and data["type"] == "Catalog") or stac_url.endswith(
+                "/collections"
+            ):
+                # It's a STAC Catalog or collections URL
+                info["type"] = "Catalog"
+                info["title"] = data.get("title")
+
+                if stac_url.endswith("/collections"):
+                    collections_url = stac_url
+                else:
+                    collections_url = f"{stac_url}/collections"
+
+                collections_response = requests.get(collections_url)
+                if collections_response.status_code == 200:
+                    collections_data = collections_response.json()
+                    collections = collections_data.get("collections", [])
+                    if verbose:
+                        info["collections"] = []
+                        for collection in collections:
+                            collection_info = collection
+                            # Fetch queryables for each collection
+                            queryables_url = (
+                                f"{stac_url}/collections/{collection['id']}/queryables"
+                            )
+                            query_response = requests.get(queryables_url)
+                            if query_response.status_code == 200:
+                                queryables = query_response.json()
+                                collection_info["queryables"] = queryables
+                            info["collections"].append(collection_info)
+                        info["links"] = collections_data.get("links", [])
+                        info["miscellaneous"] = {
+                            key: val for key, val in data.items() if key not in info
+                        }
+                    else:
+                        info["collections"] = [
+                            collection["id"] for collection in collections
+                        ]
+                        info["links"] = [
+                            link["href"] for link in collections_data.get("links", [])
+                        ]
+                else:
+                    info["collections"] = []
+                    info["links"] = [link["href"] for link in data.get("links", [])]
+                    info["miscellaneous"] = {
+                        key: val for key, val in data.items() if key not in info
+                    }
+            elif "extent" in data:
+                # It's a STAC Collection
+                info["type"] = "Collection"
+                info["id"] = data["id"]
+                info["title"] = data.get("title")
+                if verbose:
+                    info["description"] = data.get("description")
+                    info["properties"] = data.get("properties", {})
+                    info["item_assets"] = data.get("item_assets", {})
+                    info["assets"] = data.get("assets", {})
+                    info["summaries"] = data.get("summaries", {})
+                    info["links"] = data.get("links", [])
+
+                    # Fetch queryables
+                    queryables_url = f"{stac_url}/queryables"
+                    query_response = requests.get(queryables_url)
+                    if query_response.status_code == 200:
+                        info["queryables"] = query_response.json()
+                    info["miscellaneous"] = {
+                        key: val for key, val in data.items() if key not in info
+                    }
+                else:
+                    info["item_assets"] = list(data.get("item_assets", {}).keys())
+                    info["assets"] = list(data.get("assets", {}).keys())
+                    info["links"] = [link["href"] for link in data.get("links", [])]
+
+                    # Fetch queryables
+                    queryables_url = f"{stac_url}/queryables"
+                    query_response = requests.get(queryables_url)
+                    if query_response.status_code == 200:
+                        queryables = query_response.json()
+                        info["queryables"] = list(
+                            queryables.get("properties", {}).keys()
+                        )
+            elif "type" in data and data["type"] == "Feature":
+                # It's a STAC Item
+                info["type"] = "Item"
+                info["id"] = data["id"]
+                info["title"] = data.get("title")
+                info["bbox"] = data.get("bbox", [])
+                if verbose:
+                    info["geometry"] = data.get("geometry", {})
+                    info["properties"] = data.get("properties", {})
+                    info["assets"] = data.get("assets", {})
+                    info["links"] = data.get("links", [])
+                    info["miscellaneous"] = {
+                        key: val for key, val in data.items() if key not in info
+                    }
+                else:
+                    info["properties"] = list(data.get("properties", {}).keys())
+                    info["assets"] = list(data.get("assets", {}).keys())
+                    info["links"] = [link["href"] for link in data.get("links", [])]
+            elif "type" in data and data["type"] == "FeatureCollection":
+                # It's a STAC ItemCollection
+                info = _util._parse_feature_collection(data, verbose)
+            else:
+                info["error"] = "Unknown STAC resource type"
+        else:
+            if "type" in data and data["type"] == "FeatureCollection":
+                info = _util._parse_feature_collection(data, verbose)
+            else:
+                info["error"] = "Not a valid STAC resource"
+
+    except requests.exceptions.RequestException as e:
+        info["error"] = str(e)
+
+    return info

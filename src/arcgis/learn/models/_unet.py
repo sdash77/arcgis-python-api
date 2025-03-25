@@ -6,6 +6,7 @@ from functools import partial
 from .._data import _raise_fastai_import_error
 import traceback
 import logging
+import urllib
 
 logger = logging.getLogger()
 
@@ -34,6 +35,7 @@ try:
     from ._deeplab_utils import compute_miou
     from matplotlib import pyplot as plt
     from .._utils.env import is_arcgispronotebook
+    from torch import nn
 
     HAS_FASTAI = True
 except Exception as e:
@@ -213,23 +215,36 @@ class UnetClassifier(ArcGISModel):
                 ):
                     backbone_cut = None
 
-            if not _isnotebook():
-                _set_ddp_multigpu(self)
-                if self._multigpu_training:
-                    self.learn = unet_learner(
-                        data,
-                        arch=self._backbone,
-                        pretrained=backbone_pretrained,
-                        metrics=accuracy,
-                        wd=1e-2,
-                        bottle=True,
-                        last_cross=True,
-                        cut=backbone_cut,
-                        split_on=backbone_split,
-                    ).to_distributed(self._rank_distributed)
-                    self._map_location = {
-                        "cuda:%d" % 0: "cuda:%d" % self._rank_distributed
-                    }
+            try:
+                if not _isnotebook():
+                    _set_ddp_multigpu(self)
+                    if self._multigpu_training:
+                        self.learn = unet_learner(
+                            data,
+                            arch=self._backbone,
+                            pretrained=backbone_pretrained,
+                            metrics=accuracy,
+                            wd=1e-2,
+                            bottle=True,
+                            last_cross=True,
+                            cut=backbone_cut,
+                            split_on=backbone_split,
+                        ).to_distributed(self._rank_distributed)
+                        self._map_location = {
+                            "cuda:%d" % 0: "cuda:%d" % self._rank_distributed
+                        }
+                    else:
+                        self.learn = unet_learner(
+                            data,
+                            arch=self._backbone,
+                            pretrained=backbone_pretrained,
+                            metrics=accuracy,
+                            wd=1e-2,
+                            bottle=True,
+                            last_cross=True,
+                            cut=backbone_cut,
+                            split_on=backbone_split,
+                        )
                 else:
                     self.learn = unet_learner(
                         data,
@@ -242,17 +257,9 @@ class UnetClassifier(ArcGISModel):
                         cut=backbone_cut,
                         split_on=backbone_split,
                     )
-            else:
-                self.learn = unet_learner(
-                    data,
-                    arch=self._backbone,
-                    pretrained=backbone_pretrained,
-                    metrics=accuracy,
-                    wd=1e-2,
-                    bottle=True,
-                    last_cross=True,
-                    cut=backbone_cut,
-                    split_on=backbone_split,
+            except urllib.error.URLError as e:
+                raise ConnectionError(
+                    f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
                 )
 
             class_weight = None
@@ -288,7 +295,7 @@ class UnetClassifier(ArcGISModel):
                 class_weight[self._ignore_mapped_class] = 0.0
 
             self._final_class_weight = class_weight
-            self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+            self.learn.loss_func = self._unet_loss
 
             if self.focal_loss:
                 self.learn.loss_func = FocalLoss(self.learn.loss_func)
@@ -313,6 +320,23 @@ class UnetClassifier(ArcGISModel):
             if pretrained_path is not None:
                 self.load(pretrained_path)
 
+    def _unet_loss(self, outputs, targets, **kwargs):
+        targets = targets.squeeze(1).detach()
+
+        criterion = nn.CrossEntropyLoss(
+            weight=self._final_class_weight, reduction="none"
+        ).to(self._device)
+
+        batch_weight = (
+            targets.numel()
+            if self._final_class_weight == None
+            or self._final_class_weight[targets].sum() < 1.0
+            else self._final_class_weight[targets].sum()
+        )
+
+        total_loss = criterion(outputs, targets).sum() / (batch_weight + 1e-7)
+        return total_loss
+
     def __str__(self):
         return self.__repr__()
 
@@ -327,6 +351,14 @@ class UnetClassifier(ArcGISModel):
     def supported_backbones(self):
         """Supported list of backbones for this model."""
         return UnetClassifier._supported_backbones()
+
+    @staticmethod
+    def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
 
     @staticmethod
     def backbones():
@@ -347,7 +379,9 @@ class UnetClassifier(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family] + timm_backbones
+        torchgeo_backbone = UnetClassifier.torchgeo_backbones()
+
+        return [*_resnet_family] + timm_backbones + torchgeo_backbone
 
     @property
     def supported_datasets(self):
@@ -410,6 +444,8 @@ class UnetClassifier(ArcGISModel):
 
         model_params = emd["ModelParameters"]
 
+        backbone = emd["ModelParameters"]["backbone"]
+
         try:
             class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
             color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
@@ -428,6 +464,9 @@ class UnetClassifier(ArcGISModel):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
+
             data = get_multispectral_data_params_from_emd(data, emd)
 
             data.emd_path = emd_path
@@ -452,9 +491,9 @@ class UnetClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template["SupportsVariableTileSize"] = True

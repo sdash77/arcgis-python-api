@@ -96,9 +96,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -185,9 +185,11 @@ class ChildImageClassifier:
                     "name": "test_time_augmentation",
                     "dataType": "string",
                     "required": False,
-                    "value": "False"
-                    if "test_time_augmentation" not in self.json_info
-                    else str(self.json_info["test_time_augmentation"]),
+                    "value": (
+                        "False"
+                        if "test_time_augmentation" not in self.json_info
+                        else str(self.json_info["test_time_augmentation"])
+                    ),
                     "displayName": "Perform test time augmentation while predicting",
                     "description": "If True, will merge predictions from flipped and rotated images.",
                 },

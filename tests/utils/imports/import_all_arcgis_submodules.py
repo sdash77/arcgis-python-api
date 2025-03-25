@@ -1,7 +1,7 @@
 from utils.imports.clear_import_cache import clear_arcgis_import_cache
 
 
-def import_all_arcgis_submodules():
+def import_all_arcgis_submodules(import_learn=True):
     clear_arcgis_import_cache()
     import arcgis
     import arcgis.gis
@@ -26,23 +26,18 @@ def import_all_arcgis_submodules():
     import arcgis.raster.orthomapping
     import arcgis.network
     import arcgis.network.analysis
-    import arcgis.geoanalytics.analyze_patterns
-    import arcgis.geoanalytics.data_enrichment
-    import arcgis.geoanalytics.find_locations
-    import arcgis.geoanalytics.manage_data
-    import arcgis.geoanalytics.summarize_data
-    import arcgis.geoanalytics.use_proximity
     import arcgis.geocoding
     import arcgis.geoenrichment
     import arcgis.geometry
     import arcgis.geometry.filters
     import arcgis.geoprocessing
-    import arcgis.mapping
+    import arcgis.layers
     import arcgis.realtime
     import arcgis.schematics
-    import arcgis.widgets
     import arcgis.apps
     import arcgis.apps.hub
-    import arcgis.learn
+
+    if import_learn:
+        import arcgis.learn
 
     clear_arcgis_import_cache()

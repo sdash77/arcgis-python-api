@@ -7,13 +7,16 @@ vehicles, locating facilities using location allocation, calculating an OD cost 
 from ._layer import (
     NetworkLayer,
     NetworkDataset,
+    NetworkDatasetLayer,
     ClosestFacilityLayer,
     ServiceAreaLayer,
     RouteLayer,
     NAJob,
     ODCostMatrixLayer,
+    LocateSettings,
+    ToleranceUnits,
 )
-
+from ._utils import publish_routing_services, SolverType
 from arcgis.auth.tools import LazyLoader
 
 analysis = LazyLoader("arcgis.network.analysis")

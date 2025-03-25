@@ -22,9 +22,20 @@ try:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
-    from mmdet3d.core.points.lidar_points import LiDARPoints
-    from mmdet3d.datasets.pipelines import Compose
+        from mmdet3d.structures import (
+            LiDARInstance3DBoxes,
+            Box3DMode,
+            LiDARPoints,
+            Det3DDataSample,
+        )
+        from mmengine.structures import InstanceData
+    from mmengine.dataset import Compose
+    from mmdet3d.datasets.transforms import (
+        RandomFlip3D,
+        GlobalRotScaleTrans,
+        PointsRangeFilter,
+        ObjectRangeFilter,
+    )
     import plotly
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
@@ -47,26 +58,20 @@ class ODTransform3D(object):
     ):
         # In LIDAR coordinates, y (horizontal) and x (vertical) axis.
         self.tfms = [
-            dict(
-                type="RandomFlip3D",
+            RandomFlip3D(
                 sync_2d=False,
                 flip_ratio_bev_vertical=flip_x_prob,
                 flip_ratio_bev_horizontal=flip_y_prob,
             ),
-            dict(
-                type="GlobalRotScaleTrans",
+            GlobalRotScaleTrans(
                 rot_range=rotation_range,
                 scale_ratio_range=scaling_range,
             ),
         ]
 
     def _create_transforms(self, point_cloud_range):
-        self.tfms.append(
-            dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range)
-        )
-        self.tfms.append(
-            dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range)
-        )
+        self.tfms.append(PointsRangeFilter(point_cloud_range=point_cloud_range))
+        self.tfms.append(ObjectRangeFilter(point_cloud_range=point_cloud_range))
         return Compose(self.tfms)
 
 
@@ -352,6 +357,7 @@ class PointCloudOD(Dataset):
         data["img_metas"] = dict(
             box_type_3d=LiDARInstance3DBoxes, box_mode_3d=Box3DMode.LIDAR
         )
+        data = self._model_pre_process(data)
         return data
 
     def _post_process(self, results):
@@ -360,6 +366,20 @@ class PointCloudOD(Dataset):
         data["gt_bboxes_3d"] = results["gt_bboxes_3d"]
         data["gt_labels_3d"] = results["gt_labels_3d"]
         return data
+
+    def _model_pre_process(self, results):
+        data_samples = Det3DDataSample()
+        gt_instances_3d = InstanceData()
+        if "gt_bboxes_3d" in results.keys():
+            gt_instances_3d["bboxes_3d"] = results["gt_bboxes_3d"]
+            gt_instances_3d["labels_3d"] = results["gt_labels_3d"]
+        data_samples.set_metainfo(results["img_metas"])
+        data_samples.gt_instances_3d = gt_instances_3d
+        packed_data = dict(points=results["points"], data_samples=data_samples)
+        if "tile_index" in results.keys():
+            packed_data["tile_index"] = results["tile_index"]
+
+        return packed_data
 
     def _get_bbox(self, data, read_file, tile):
         bboxs = read_file["orientedBoundingBox"][tile[-2] : tile[-2] + tile[-1]].astype(
@@ -420,13 +440,12 @@ class PointCloudOD(Dataset):
         bbox_mask = bbox_point_perecentage > self._filter_box_point_percentage
         return bbox_mask
 
-    def get_batch(self, batch_size, device=None):
+    def get_batch(self, batch_size, ds_type=None):
         idxs = np.random.randint(0, len(self), batch_size)
         data_batch = []
         for idx in idxs:
             data_batch.append(self.__getitem__(idx))
-
-        return to_device(collate_fn(data_batch), device)
+        return proc_batch(ds_type, collate_fn(data_batch))[0]
 
 
 def collate_fn(batch):
@@ -445,16 +464,20 @@ def to_device(b, device=None):
     )
 
 
-def proc_batch(self, x_batch):
-    x_batch = to_device(x_batch, self.device)
-    for f in listify(self.tfms):
-        x_batch = f(x_batch)
-    y_batch = dict(
-        img_metas=np.array(x_batch["img_metas"]),
-        boxes_3d=x_batch["gt_bboxes_3d"],
-        labels_3d=x_batch["gt_labels_3d"],
-    )
-    return x_batch, y_batch
+def proc_batch(self, batch):
+    x_batch = dict(points=batch["points"])
+    batch = dict(inputs=x_batch, data_samples=batch["data_samples"])
+    if hasattr(self, "data_preprocessor_3d"):
+        if getattr(self, "_add_velocity", False):
+            for b in batch["data_samples"]:
+                bboxs = b.gt_instances_3d.bboxes_3d.tensor
+                bboxs = torch.cat((bboxs, torch.zeros((bboxs.shape[0], 2))), dim=1)
+                b.gt_instances_3d.bboxes_3d = LiDARInstance3DBoxes(
+                    bboxs, box_dim=9, with_yaw=True
+                )
+        batch = self.data_preprocessor_3d(batch)
+    y_batch = np.array(batch["data_samples"])
+    return batch, y_batch
 
 
 def show_batch(self, rows=2, color_mapping=None, **kwargs):
@@ -509,8 +532,8 @@ def show_batch(self, rows=2, color_mapping=None, **kwargs):
         data_id = ids[row_idx]
         datapoint = ds[data_id]
         pc = datapoint["points"][:, :3]
-        bbox = datapoint["gt_bboxes_3d"]
-        bbox_class = datapoint["gt_labels_3d"]
+        bbox = datapoint["data_samples"].gt_instances_3d.bboxes_3d
+        bbox_class = datapoint["data_samples"].gt_instances_3d.labels_3d
         if pc.shape[0] > max_display_point:
             raise_maxpoint_warning(row_idx, kwargs, None, max_display_point)
             mask = torch.from_numpy(
@@ -566,7 +589,8 @@ def show_batch(self, rows=2, color_mapping=None, **kwargs):
             ],
             layout=layout,
         )
-        fig.show()
+        fig2 = go.FigureWidget(fig)
+        display(fig2)
 
 
 def pointcloud_od(
@@ -717,14 +741,17 @@ def confusion_matrix3d(pred, target, n_gts, classes, iou_thresh=0.1):
     tps, p_clas, p_scores = [], [], []
     for idx in range(len(pred)):
         pred_bboxes, pred_labels, pred_scores = (
-            pred[idx]["boxes_3d"],
-            pred[idx]["labels_3d"].detach().cpu(),
-            pred[idx]["scores_3d"].detach().cpu(),
+            pred[idx].pred_instances_3d.bboxes_3d,
+            pred[idx].pred_instances_3d.labels_3d.detach().cpu(),
+            pred[idx].pred_instances_3d.scores_3d.detach().cpu(),
         )
         tgt_bboxes, tgt_lables = (
-            target["boxes_3d"][idx],
-            target["labels_3d"][idx].detach().cpu(),
+            target[idx].gt_instances_3d.bboxes_3d,
+            target[idx].gt_instances_3d.labels_3d.detach().cpu(),
         )
+
+        if not isinstance(tgt_bboxes, LiDARInstance3DBoxes):
+            tgt_bboxes = pred_bboxes.new_box(tgt_bboxes)
 
         if len(pred_labels) != 0 and len(tgt_lables) != 0:
             ious = pred_bboxes.overlaps(pred_bboxes, tgt_bboxes)
@@ -787,7 +814,7 @@ def predict_batch_h5(self, dl, output_path, progressor, **kwargs):
     current_file_name = ""
     for data in progress_bar(dl):
         tile_index = data.pop("tile_index")
-        data = to_device(data)
+        data = proc_batch(self._data, data)[0]
         pred = self._pred_batch(data, detect_thresh, nms_overlap)
 
         tile = dl.dataset.tiles[tile_index]
@@ -815,7 +842,7 @@ def predict_batch_h5(self, dl, output_path, progressor, **kwargs):
             predictions = split_prediction(
                 self,
                 pred[unique_index[i] : unique_index[i + 1]],
-                data["points"][unique_index[i] : unique_index[i + 1]],
+                data["inputs"]["points"][unique_index[i] : unique_index[i + 1]],
                 tile_index[unique_index[i] : unique_index[i + 1]],
             )
 
@@ -863,9 +890,9 @@ def split_prediction(model, preds, points, tile_index):
     batch_box_tiles = []
     no_of_points_in_batch = 0
     for idx, pred in enumerate(preds):
-        boxes = pred["boxes_3d"]
-        labels = pred["labels_3d"]
-        scores = pred["scores_3d"]
+        boxes = pred.pred_instances_3d.bboxes_3d.detach().cpu()
+        labels = pred.pred_instances_3d.labels_3d.detach().cpu()
+        scores = pred.pred_instances_3d.scores_3d.detach().cpu()
         no_of_points_in_batch += points[idx].shape[0]
 
         batch_export_bboxs.extend(export_boxes(boxes.tensor, model._data.scale_factor))

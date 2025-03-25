@@ -167,15 +167,15 @@ class NotebookManager(object):
 
         The Execute Notebook operation allows administrators and users with
         the `Create and Edit Notebooks` privilege to remotely
-        run a notebook that they own.  The notebook pecified in the operation will be run with all
-        cells in order.
+        run a notebook that they own.  The notebook pecified in the operation will
+        be run with all cells in order.
 
         Using this operation, you can schedule the execution of a notebook,
         either once or with a regular occurrence. This allows you to
         automate repeating tasks such as data collection and cleaning,
         content updates, and portal administration. On Linux machines, use
         a cron job to schedule the executeNotebook operation; on Windows
-        machines, you can use the Task Scheduler app.
+        machines, you can use the Task Scheduler.
 
         .. note::
             To run this operation in ArcGIS Enterprise, you must log in with
@@ -185,16 +185,20 @@ class NotebookManager(object):
         You can specify parameters to be used in the notebook at execution
         time. If you've specified one or more parameters, they'll be
         inserted into the notebook as a new cell. This cell will be placed
-        at the beginning of the notebook, unless you have added the tag
-        parameters to a cell.
+        at the beginning of the notebook, unless you have added the
+        *parameters* tag to a cell.
+
+        See `Execute Notebook <https://developers.arcgis.com/rest/enterprise-administration/notebook/execute-notebook/>`_
+        for full administration details.
 
         ====================    ====================================================================
         **Parameter**            **Description**
         --------------------    --------------------------------------------------------------------
-        item                    Required :class:`~arcgis.gis.Item`. Opens an existing portal item.
+        item                    Required notebook :class:`~arcgis.gis.Item`. Opens the existing portal
+                                notebook.
         --------------------    --------------------------------------------------------------------
         update_portal_item      Optional Boolean. Specifies whether you want to update the
-                                notebook's portal item after execution. The default is true. You may
+                                notebook's portal item after execution. The default is *True*. You may
                                 want to specify true when the notebook you're executing contains
                                 information that needs to be updated, such as a workflow that
                                 collects the most recent version of a dataset. It may not be
@@ -202,24 +206,36 @@ class NotebookManager(object):
                                 new information after executing, such as an administrative notebook
                                 that emails reminders to inactive users.
         --------------------    --------------------------------------------------------------------
-        parameters              Optional List. An optional array of parameters to add to the
+        parameters              Optional Dictionary. Defines the parameters to add to the
                                 notebook for this execution. The parameters will be inserted as a
-                                new cell directly after the cell you have tagged ``parameters``.
-                                Separate parameters with a comma. Use the format "x":1 when
-                                defining parameters with numbers, and "y":"text" when defining
-                                parameters with text strings.
+                                new cell directly after the cell you have tagged *parameters*.
+                                Separate parameters with a comma. Use formats:
+
+                                * "x":1 when defining number parameters
+                                * "y":"text" when defining string parameters
+
+                                See `Prepare the Notebook <https://enterprise.arcgis.com/en/notebook/latest/use/windows/prepare-a-notebook-for-automated-execution.htm#GUID-74ECC731-D8D3-4E63-A22C-38027407A209>`_
+                                for detailed explanation.
         --------------------    --------------------------------------------------------------------
         save_parameters         Optional Boolean.  Specifies whether the notebook parameters cell
                                 should be saved in the notebook for future use. The default is
-                                false.
+                                *False*.
         --------------------    --------------------------------------------------------------------
-        future                  Optional boolean. If True, a Job object will be returned and the process
-                                will not wait for the task to complete. The default is False, which means wait for results.
+        future                  Optional boolean.
+
+                                * If *True*, a *future* object will be returned and the process runs
+                                  asynchronously, allowing for other work to be done while
+                                  processing completes.
+                                * If *False*, which is the default, the process waits for results
+                                  before continuing.
         ====================    ====================================================================
 
-        :return: Dict else If ``future = True``, then the result is
-                 a `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object.
-                 Call ``result()`` to get the response
+        :return:
+
+            * If *future=False*, a Python dictionary
+            * If *future = True*, then the result is a
+              `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_
+              object. Call *result()* on the object to get the response
 
         .. code-block:: python
 
@@ -552,6 +568,8 @@ class Runtime(object):
             manifest = ""
         if manifest:
             file = {"manifestFile": manifest}
+        else:
+            file = None
 
         params = {
             "name": name,
@@ -580,15 +598,12 @@ class Runtime(object):
             if isinstance(params[k], bool):
                 params[k] = json.dumps(params[k])
             elif isinstance(params[k], (int, float)):
-                params[k] = float(params[k])
+                params[k] = json.dumps(float(params[k]))
 
         if len(params) == 1:
             return False
-        res = self._con.post(
-            url,
-            params,
-            files={"manifestFile": manifest},
-        )
+        res = self._con.post_multipart(url, params, files=file)
+
         if "status" in res:
             return res["status"] == "success"
         return res

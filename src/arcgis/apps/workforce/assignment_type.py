@@ -1,6 +1,7 @@
 """
 Defines the AssignmentType class.
 """
+
 from .exceptions import ValidationError
 from .feature_model import FeatureModel
 from ._store import *

@@ -2,7 +2,8 @@
 Modified from requests_toolbelt's GuesAuth to handle NTLM and Kerbos
 
 """
-from requests import auth
+
+from requests import auth, Session
 from requests import cookies
 
 try:
@@ -36,6 +37,7 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
         self._try_auth_count = 0
         self.proxies = kwargs.pop("proxies", {})
         self._legacy = kwargs.pop("legacy", True)
+        self._session = kwargs.pop("session", Session())
 
     def _handle_basic_auth_401(self, r, kwargs):
         if self.pos is not None:
@@ -51,7 +53,9 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
         cookies.extract_cookies_to_jar(prep._cookies, r.request, r.raw)
         prep.prepare_cookies(prep._cookies)
 
-        self.auth = EsriBasicAuth(self.username, self.password, "http", False)
+        self.auth = EsriBasicAuth(
+            self.username, self.password, "http", False, session=self._session
+        )
         prep = self.auth(prep)
         _r = r.connection.send(prep, **kwargs)
         _r.history.append(r)
@@ -60,7 +64,9 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
         return _r
 
     def _handle_ntlm_auth_401(self, r, kwargs):
-        self.auth = EsriWindowsAuth(self.username, self.password, legacy=self._legacy)
+        self.auth = EsriWindowsAuth(
+            self.username, self.password, legacy=self._legacy, session=self._session
+        )
         try:
             self.auth.init_per_thread_state()
         except AttributeError:
@@ -78,7 +84,7 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
         return self.auth.response_hook(r, **kwargs)
 
     def _handle_kerb_auth_401(self, r, kwargs):
-        self.auth = EsriKerberosAuth(proxies=self.proxies)
+        self.auth = EsriKerberosAuth(proxies=self.proxies, session=self._session)
         try:
             self.auth.init_per_thread_state()
         except AttributeError:
@@ -137,10 +143,11 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
                     verify_cert=False,
                     legacy=self._legacy,
                     proxies=self.proxies,
+                    session=self._session,
                 )
                 return self._handle_ntlm_auth_401(r, kwargs)
             elif self._try_auth_count == 1 and HAS_KERBEROS:
-                self.auth = EsriKerberosAuth(self.proxies)
+                self.auth = EsriKerberosAuth(self.proxies, session=self._session)
                 self._try_auth_count += 1
                 return self._handle_kerb_auth_401(r, kwargs)
             else:
@@ -153,6 +160,7 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
                     verify_cert=False,
                     legacy=self._legacy,
                     proxies=self.proxies,
+                    session=self._session,
                 )
             else:
                 self.auth = EsriWindowsAuth(
@@ -161,6 +169,7 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
                     verify_cert=False,
                     legacy=self._legacy,
                     proxies=self.proxies,
+                    session=self._session,
                 )
 
     def __call__(self, request):

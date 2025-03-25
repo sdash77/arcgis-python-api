@@ -3,6 +3,10 @@ arcgis.features.analyze_patterns module
 
 .. automodule:: arcgis.features.analyze_patterns
 
+calculate_composite_index
+-------------------------
+.. autofunction:: arcgis.features.analyze_patterns.calculate_composite_index
+
 calculate_density
 --------------
 .. autofunction:: arcgis.features.analyze_patterns.calculate_density
@@ -22,4 +26,3 @@ find_point_clusters
 interpolate_points
 --------------
 .. autofunction:: arcgis.features.analyze_patterns.interpolate_points
-    

@@ -6,11 +6,14 @@ from ._arcgis_model import _EmptyData
 try:
     from fastai.vision import flatten_model
     import torch
+    import fastai
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family, _vgg_family
     from ._timm_utils import filter_timm_models
     from ._hed_utils import DDPCallback
+    from ._transformer_backbone import swin_config
+    from ._dofa_utils import dofa_config
 
     HAS_FASTAI = True
 
@@ -27,6 +30,7 @@ class CustomHED:
         import torch
         from torchvision import models
         from arcgis.learn.models import _hed_utils as hed
+
     except:
         pass
 
@@ -35,23 +39,20 @@ class CustomHED:
         In this fuction you have to define your model with following two arguments!
 
         """
+
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
 
         if backbone is None:
             self._backbone = self.models.vgg19
-        elif type(backbone) is str:
-            if hasattr(self.models, backbone):
-                self._backbone = getattr(self.models, backbone)
-            elif hasattr(self.models.detection, backbone):
-                self._backbone = getattr(self.models.detection, backbone)
-            elif "timm:" in backbone:
-                import timm
-
-                bckbn = backbone.split(":")[1]
-                if hasattr(timm.models, bckbn):
-                    self._backbone = getattr(timm.models, bckbn)
         else:
-            self._backbone = backbone
+            from arcgis.learn.models._arcgis_model import get_backbone_func
+
+            self._backbone = get_backbone_func(backbone, data, is_fpn=True, **kwargs)
+
+        if hasattr(data, "_is_multispectral"):  # multispectral support
+            self._is_multispectral = getattr(data, "_is_multispectral")
+        else:
+            self._is_multispectral = False
 
         model = self.hed._HEDModel(
             self._backbone, data.chip_size, pretrained=pretrained_backbone
@@ -124,6 +125,9 @@ class HEDEdgeDetector(ModelExtension):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.HEDEdgeDetector` Object
@@ -149,10 +153,19 @@ class HEDEdgeDetector(ModelExtension):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
+        layers = flatten_model(self.learn.model.backbone)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
         count = 0
         count_strided_conv = 0
-        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (torch.nn.BatchNorm2d)):
+        for idx, i in enumerate(layers[start_idx:]):
+            if (
+                isinstance(i, (torch.nn.BatchNorm2d))
+                or isinstance(i, (fastai.torch_core.ParameterModule))
+                or isinstance(i, (torch.nn.BatchNorm1d))
+                or isinstance(i, (torch.nn.LayerNorm))
+            ):
                 continue
 
             for p in i.parameters():
@@ -190,6 +203,26 @@ class HEDEdgeDetector(ModelExtension):
         return HEDEdgeDetector._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
+        transformer_backbone = list(swin_config.keys())
+        return transformer_backbone
+
+    @staticmethod
+    def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
+        dofa_backbone = list(dofa_config.keys())
+        return dofa_backbone
+
+    @staticmethod
+    def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(
             [
@@ -207,7 +240,17 @@ class HEDEdgeDetector(ModelExtension):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family, *_vgg_family] + timm_backbones
+        transformer_backbone = HEDEdgeDetector.transformer_backbones()
+        torchgeo_backbone = HEDEdgeDetector.torchgeo_backbones()
+        dofa_backbone = HEDEdgeDetector.dofa_backbones()
+
+        return (
+            [*_resnet_family, *_vgg_family]
+            + transformer_backbone
+            + timm_backbones
+            + torchgeo_backbone
+            + dofa_backbone
+        )
 
     @property
     def supported_datasets(self):
@@ -249,6 +292,8 @@ class HEDEdgeDetector(ModelExtension):
 
         backbone = emd["ModelParameters"]["backbone"]
 
+        model_params = emd["ModelParameters"]
+
         try:
             class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
             color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
@@ -269,12 +314,15 @@ class HEDEdgeDetector(ModelExtension):
             data.emd_path = emd_path
             data.emd = emd
             data.classes = ["background"]
+            data._band_names = emd.get("Bands")
             for k, v in class_mapping.items():
                 data.classes.append(v)
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = emd["DatasetType"]
 
-        return cls(data, backbone, pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
         """
@@ -297,3 +345,27 @@ class HEDEdgeDetector(ModelExtension):
         """
         Displays the results of a trained model on a part of the validation set.
         """
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=False,
+            **kwargs,
+        )

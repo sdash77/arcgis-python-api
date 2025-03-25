@@ -1,8 +1,6 @@
-import sys, os
+import os
 import random
 import tempfile
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10329\src")
 import pandas as pd
 import unittest  # pytest,
 import dask.dataframe as dd
@@ -15,12 +13,12 @@ from arcgis.features.geo._dask import (
     GeoDaskSeriesAccessor,
     GeoDaskSpatialAccessor,
 )
+from utils.decorators import integration_test
 
 import arcgis
 
 try:
     import arcpy
-
     HASARCPY = True
 except:
     HASARCPY = False
@@ -30,6 +28,7 @@ geoms = [
 ]
 
 
+@integration_test
 class TestDaskSeriesAccessor(unittest.TestCase):
     def test_properties(self):
         """tests creating a feature set dictionary"""
@@ -123,33 +122,34 @@ class TestDaskSeriesAccessor(unittest.TestCase):
             pass
 
     ##--------------------------------------------------------------------------
+    @unittest.skipIf(not HASARCPY, "arcpy is not installed")
     def test_boundary(self):
-        if HASARCPY:
-            geoms = [
-                Geometry(
-                    {
-                        "rings": [
-                            [
-                                [-97.06138, 32.837],
-                                [-97.06133, 32.836],
-                                [-97.06124, 32.834],
-                                [-97.06127, 32.832],
-                            ]
-                        ],
-                        "spatialReference": {"wkid": 4326},
-                    }
-                )
-            ]
-            s = pd.Series(_from_geometry(geoms))
-            df = pd.DataFrame({"SHAPE": s, 'a': [1]})
-            ddf = dd.from_pandas(df, 5)
+        geoms = [
+            Geometry(
+                {
+                    "rings": [
+                        [
+                            [-97.06138, 32.837],
+                            [-97.06133, 32.836],
+                            [-97.06124, 32.834],
+                            [-97.06127, 32.832],
+                        ]
+                    ],
+                    "spatialReference": {"wkid": 4326},
+                }
+            )
+        ]
+        s = pd.Series(_from_geometry(geoms))
+        df = pd.DataFrame({"SHAPE": s, 'a': [1]})
+        ddf = dd.from_pandas(df, 5)
 
-            b = ddf.SHAPE.geom.boundary().compute()
-            assert isinstance(b, pd.Series)
-            assert b.geom.geometry_type.unique()[0] == 'polyline'
+        b = ddf.SHAPE.geom.boundary().compute()
+        assert isinstance(b, pd.Series)
+        assert b.geom.geometry_type.unique()[0] == 'polyline'
 
 
 ###########################################################################
+@integration_test
 class TestDaskTestCase(unittest.TestCase):
     """Unit Tests for Dask Spatial Accessor"""
 

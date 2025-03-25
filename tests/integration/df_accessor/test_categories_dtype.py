@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9756\src")
 import logging
 import unittest
 from arcgis.auth.tools import LazyLoader
@@ -37,9 +33,11 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 import os
+from utils.decorators import integration_test
 
 
 @unittest.skipIf(SKIP_NO_ARCPY, "ArcPy not present, skipping this test.")
+@integration_test
 class TestCategoriesSeDF(unittest.TestCase):
     def test_categories_to_featureclass(self):
         fc = QALAB_ROOT_PATH + r"\df_accessor_test\world30.shp"

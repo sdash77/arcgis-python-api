@@ -138,7 +138,7 @@ def from_featureset(fset, sr=None):
 
         if "SHAPE" in df.columns:
             # replace the float NaN with None, otherwise error occurs
-            df["SHAPE"].replace({np.nan: None}, inplace=True)
+            df.loc[df["SHAPE"] == np.nan, "SHAPE"] = None
             df.spatial.set_geometry("SHAPE")
             df.spatial.sr = sr
             for i in range(len(df)):
@@ -180,14 +180,11 @@ def from_layer(layer, query="1=1"):
     """
     if not layer.filter is None:
         query = layer.filter
-    from arcgis.geometry import Geometry, SpatialReference
 
-    fields = []
-    records = []
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
     sdf = layer.query(where=query, as_df=True)
-    sdf.spatial._meta.source = layer
+    sdf.spatial._meta.source = layer.url
     if "drawingInfo" in layer.properties:
         sdf.spatial.renderer = dict(layer.properties.drawingInfo.renderer)
     else:

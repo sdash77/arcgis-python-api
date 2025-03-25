@@ -60,7 +60,7 @@ def scale_batch(
 
 
 def normalize_batch(
-    image_batch, model_info=None, normalization_stats=None, prithivi=False
+    image_batch, model_info=None, normalization_stats=None, prithvi=False
 ):
     if normalization_stats is None:
         normalization_stats = model_info.get("NormalizationStats", None)
@@ -70,7 +70,7 @@ def normalize_batch(
     scaled_std_values = np.array(normalization_stats["scaled_std_values"])[
         model_info["ExtractBands"]
     ].reshape(1, -1, 1, 1)
-    if prithivi:
+    if prithvi:
         img_normed = (image_batch - scaled_mean_values) / scaled_std_values
         return img_normed
     else:
@@ -143,9 +143,10 @@ def load_weights(m, p):
 
 
 def predict_(model, images, device):
-    model = model.to(device)
-    images = tensor(images).to(device).float()
-    clas, bbox = model(images)
+    with torch.no_grad():
+        model = model.to(device)
+        images = tensor(images).to(device).float()
+        clas, bbox = model(images)
     return clas, bbox
 
 
@@ -385,9 +386,10 @@ def detect_objects_image_space(
 
 
 def segment_image(model, images, device, predict_bg, model_info):
-    model = model.to(device)
-    normed_batch_tensor = tensor(images).to(device).float()
-    output = model(normed_batch_tensor)
+    with torch.no_grad():
+        model = model.to(device)
+        normed_batch_tensor = tensor(images).to(device).float()
+        output = model(normed_batch_tensor)
     ignore_mapped_class = model_info.get("ignore_mapped_class", [])
     for k in ignore_mapped_class:
         output[:, k] = output.min() - 1
@@ -406,12 +408,13 @@ def superres_image(model, images, device):
 
 
 def cyclegan_image(model, images, device, direction):
-    model = model.to(device)
-    normed_batch_tensor = tensor(images).to(device).float()
-    if direction == "BtoA":
-        output = model.G_A(normed_batch_tensor)
-    else:
-        output = model.G_B(normed_batch_tensor)
+    with torch.no_grad():
+        model = model.to(device)
+        normed_batch_tensor = tensor(images).to(device).float()
+        if direction == "BtoA":
+            output = model.G_A(normed_batch_tensor)
+        else:
+            output = model.G_B(normed_batch_tensor)
     return output
 
 
@@ -422,7 +425,8 @@ def pix2pix_image(model, images, device, label_nc=0):
     normed_batch_tensor = tensor(images).to(device).float()
     if label_nc:
         normed_batch_tensor, _, _, _ = encode_input(normed_batch_tensor, label_nc)
-    output = model.G(normed_batch_tensor)
+    with torch.no_grad():
+        output = model.G(normed_batch_tensor)
     return output
 
 
@@ -471,7 +475,7 @@ def pixel_classify_superres_image(
 
     tiles, is_multispec = tensor(tiles), model_info.get("is_multispec")
     modarch = model_info.get("ModelArch", "UNet")
-    if modarch == "SR3":
+    if modarch.startswith("SR3"):
         norm_stats_a = model_info.get("image_stats", None)
         norm_stats_b = model_info.get("image_stats2", None)
         model_info["ExtractBands"] = list(range(tiles.shape[1]))
@@ -878,6 +882,47 @@ def pixel_classify_pix2pix_hd_image(model, tiles, device, model_info):
         return pix2pix_predictions
 
 
+def pixel_classify_climax_image(self, model, tiles, device, leadtimes, model_info):
+    normfunc = lambda btch_arr, mean, std: (btch_arr - mean) / std
+    denormfunc = lambda btch_arr, mean, std: (btch_arr * std) + mean
+
+    var_map = {i: n for n, i in enumerate(model_info.get("variables"))}
+    mean_stat = torch.tensor(model_info.get("mean_norm_stats")).to(device)[
+        None, :, None, None
+    ]
+    std_stat = torch.tensor(model_info.get("std_norm_stats")).to(device)[
+        None, :, None, None
+    ]
+
+    denorm_mean_stat = torch.tensor(model_info.get("mean_norm_stats")).to(device)[
+        None, None, var_map[self.variable_name], None, None
+    ]
+    denorm_std_stat = torch.tensor(model_info.get("std_norm_stats")).to(device)[
+        None, None, var_map[self.variable_name], None, None
+    ]
+
+    model = model.to(device)
+    batch_tensor = tensor(tiles).to(device).float()
+
+    leadtimes = torch.tensor([float(leadtimes)] * batch_tensor.shape[0]).to(device)
+
+    normed_batch_tensor = normfunc(batch_tensor, mean_stat, std_stat)
+
+    forecasts = []
+    for i in range(self.numforecasts):
+        model.eval()
+        with torch.no_grad():
+            predictions = model(normed_batch_tensor, leadtimes, 0, 0, 0)
+            forecasts.append(predictions[0][:, None, var_map[self.variable_name], :, :])
+            normed_batch_tensor = predictions[0]
+
+    denormed_batch_tensor = torch.cat(
+        [denormfunc(i, denorm_mean_stat, denorm_std_stat) for i in forecasts], axis=1
+    )
+
+    return denormed_batch_tensor
+
+
 # functions for test time augmentation and smooth blending for pixel classification
 
 
@@ -1086,6 +1131,15 @@ def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
     elif model_name == "WNetcGAN":
         prediction = pixel_classify_wnet_image(
             self.model, patches, self.device, model_info=self.json_info
+        )
+    elif model_name == "ClimaX":
+        prediction = pixel_classify_climax_image(
+            self,
+            self.model,
+            patches,
+            self.device,
+            getattr(self, "leadtimes", None),
+            model_info=self.json_info,
         )
 
     interpolation_mask = create_interpolation_mask(kernel_size, 0, self.device, "hann")

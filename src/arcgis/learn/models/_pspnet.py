@@ -40,7 +40,6 @@ except Exception as e:
 
 
 class PSPNetClassifier(ArcGISModel):
-
     """
     Model architecture from https://arxiv.org/abs/1612.01105.
     Creates a PSPNet Image Segmentation/ Pixel Classification model.
@@ -213,16 +212,6 @@ class PSPNetClassifier(ArcGISModel):
                 vggv2=self._vggv2,
             )
 
-            if self.class_balancing and data.class_weight is not None:
-                class_weight = (
-                    torch.tensor(
-                        [data.class_weight.mean()] + data.class_weight.tolist()
-                    )
-                    .float()
-                    .to(self._device)
-                )
-                self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
-
         else:
             self.learn = _pspnet_learner(
                 data,
@@ -278,11 +267,9 @@ class PSPNetClassifier(ArcGISModel):
                 class_weight = torch.tensor([1] * data.c).float().to(self._device)
             class_weight[self._ignore_mapped_class] = 0.0
 
-        self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
         self._final_class_weight = class_weight
 
-        if unet_aux_loss or not use_unet:
-            self.learn.loss_func = self._psp_loss
+        self.learn.loss_func = self._psp_loss
         if self.focal_loss:
             self.learn.loss_func = FocalLoss(self.learn.loss_func)
         if self.dice_loss_fraction:
@@ -316,6 +303,14 @@ class PSPNetClassifier(ArcGISModel):
         return PSPNetClassifier._supported_backbones()
 
     @staticmethod
+    def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return PSPNetClassifier._supported_backbones()
@@ -337,7 +332,13 @@ class PSPNetClassifier(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family, *_densenet_family, *_vgg_family] + timm_backbones
+        torchgeo_backbone = PSPNetClassifier.torchgeo_backbones()
+
+        return (
+            [*_resnet_family, *_densenet_family, *_vgg_family]
+            + timm_backbones
+            + torchgeo_backbone
+        )
 
     @property
     def supported_datasets(self):
@@ -376,6 +377,7 @@ class PSPNetClassifier(ArcGISModel):
             model_file = emd_path.parent / model_file
 
         model_params = emd["ModelParameters"]
+        backbone = emd["ModelParameters"]["backbone"]
         model_params["vggv2"] = model_params.get("vggv2", False)
 
         try:
@@ -394,6 +396,8 @@ class PSPNetClassifier(ArcGISModel):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd
@@ -404,9 +408,20 @@ class PSPNetClassifier(ArcGISModel):
     def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
 
-        criterion = nn.CrossEntropyLoss(weight=self._final_class_weight).to(
-            self._device
+        criterion = nn.CrossEntropyLoss(
+            weight=self._final_class_weight, reduction="none"
+        ).to(self._device)
+
+        # to find the weighted mean of the loss
+        batch_weight = (
+            targets.numel()
+            if self._final_class_weight == None
+            or self._final_class_weight[targets].sum() < 1.0
+            else self._final_class_weight[targets].sum()
         )
+        if not self._unet_aux_loss and self._use_unet:
+            total_loss = criterion(outputs, targets).sum() / (batch_weight + 1e-7)
+            return total_loss
         if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]
@@ -416,12 +431,14 @@ class PSPNetClassifier(ArcGISModel):
                 pointrend_target = PointRend_target_transform(targets, pointrend_coord)
         else:  # validation
             out = outputs
-        main_loss = criterion(out, targets)
+        main_loss = criterion(out, targets).sum() / (batch_weight + 1e-7)
 
         if self.learn.model.training:
-            aux_loss = criterion(aux, targets)
+            aux_loss = criterion(aux, targets).sum() / (batch_weight + 1e-7)
             if self._pointrend:
-                pointrend_loss = criterion(pointrend_out, pointrend_target)
+                pointrend_loss = criterion(pointrend_out, pointrend_target).sum() / (
+                    batch_weight + 1e-7
+                )
                 total_loss = main_loss + 0.4 * aux_loss + pointrend_loss
             else:
                 total_loss = main_loss + 0.4 * aux_loss
@@ -484,9 +501,9 @@ class PSPNetClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template["SupportsVariableTileSize"] = True

@@ -959,10 +959,7 @@ class _ImageryUploaderAGOL:
         self.single_primary_file = (
             False
             if self.raster_type != "Raster Dataset"
-            or (
-                len(self.file_list) > 1
-                and any(item["is_dir"] for item in self.file_list)
-            )
+            or (any(item["is_dir"] and not item["is_crf"] for item in self.file_list))
             else True
         )
         for i, d in enumerate(file_list):
@@ -1237,6 +1234,7 @@ def _upload_imagery_agol(
             if os.path.isdir(file):
                 all_files = False
                 file_dict["is_dir"] = True
+                file_dict["is_crf"] = True if file.endswith(".crf") else False
                 file_dict["basename_len"] = len(os.path.dirname(file))
                 if not ".gdb" in file:
                     file_dict["files_list"] = [
@@ -1593,7 +1591,7 @@ def _get_stac_api_search_items(
     return all_items
 
 
-def _get_stac_metadata_file(item):
+def _get_stac_metadata_file(item, context=None):
     """
     This method is used to retrieve the metadata file of a valid STAC item.
     :param item: input STAC Item (JSON dictionary)
@@ -1644,6 +1642,26 @@ def _get_stac_metadata_file(item):
                 "noaa-cdr-sea-surface-temperature-whoi",
                 "noaa-cdr-ocean-heat-content",
                 "esa-worldcover",
+                "modis-64A1-061",
+                "modis-17A2H-061",
+                "modis-11A2-061",
+                "modis-17A2HGF-061",
+                "modis-17A3HGF-061",
+                "modis-09A1-061",
+                "modis-16A3GF-061",
+                "modis-21A2-061",
+                "modis-43A4-061",
+                "modis-09Q1-061",
+                "modis-14A1-061",
+                "modis-13Q1-061",
+                "modis-14A2-061",
+                "modis-15A2H-061",
+                "modis-11A1-061",
+                "modis-15A3H-061",
+                "modis-13A1-061",
+                "modis-10A2-061",
+                "modis-10A1-061",
+                "aster-l1t",
             ],
             "All COGs",
         ),
@@ -1719,12 +1737,35 @@ def _get_stac_metadata_file(item):
         **dict.fromkeys(["sentinel-2"], ("data", "productInfo.json")),
         **dict.fromkeys(["sentinel-1"], ("s3", "manifest.safe")),
     }
+    geoportal_azure_map = {
+        "sentinel": ("S2_Level-2A_Product_Metadata", "MTD_MSIL2A.xml")
+    }
 
     product_file_map = {
         "planetarycomputer.microsoft.com/api/stac": planetary_computer_map,
         "earth-search.aws.element84.com": earth_search_map,
         "services.sentinel-hub.com/api": sentinel_hub_map,
+        "landsatlook.usgs.gov/stac-server": "self_href",
+        "gpt.geocloud.com/sentinel/stac": "self_href",
+        "geoportalstac.azurewebsites.net/stac": geoportal_azure_map,
     }
+    processing_template = None
+    if isinstance(context, dict) and context:
+        context_lower = {k.lower(): v for k, v in context.items()}
+        processing_template = context_lower.get("processingtemplate")
+        asset_management = context_lower.get("assetmanagement")
+        if asset_management:
+            hrefs = _find_stac_asset_hrefs(item["assets"], context_lower)
+            href_list = [href for href in hrefs.values() if href is not None]
+            if not href_list:
+                raise RuntimeError(
+                    "No valid asset hrefs found. Please review the assetManagement parameter."
+                )
+            else:
+                href_list = href_list if len(href_list) != 1 else href_list[0]
+                if isinstance(href_list, str) and isinstance(processing_template, str):
+                    href_list += rf"\{processing_template}"
+                return href_list
 
     stacs = list(product_file_map.keys())
 
@@ -1748,24 +1789,32 @@ def _get_stac_metadata_file(item):
         )
     )
 
-    target = product_file_map[item_stac].get(collection_id)
+    target = (
+        product_file_map[item_stac].get(collection_id)
+        if isinstance(product_file_map[item_stac], dict)
+        else product_file_map[item_stac]
+    )
 
     href = None
     if isinstance(target, str):
         href = (
-            [
-                cog["href"]
-                for cog in item["assets"].values()
-                if cog["href"].endswith((".tif", ".tiff"))
-            ]
-            if target == "All COGs"
-            else item["assets"][target]["href"]
+            f"StacItemHref/{self_link}"
+            if target == "self_href"
+            else (
+                [
+                    cog["href"]
+                    for cog in item["assets"].values()
+                    if cog["href"].endswith((".tif", ".tiff"))
+                ]
+                if target == "All COGs"
+                else item["assets"][target]["href"]
+            )
         )
     elif isinstance(target, int):
         href = item["links"][target]["href"]
     elif isinstance(target, tuple):
         directory = os.path.dirname(item["assets"][target[0]]["href"])
-        if collection_id == "sentinel-s2-l2a":
+        if collection_id in ("sentinel", "sentinel-s2-l2a"):
             directory = os.path.dirname(directory)
         href = f"{directory}/{target[1]}"
 
@@ -1774,14 +1823,21 @@ def _get_stac_metadata_file(item):
         if href is not None and isinstance(href, str) and href.startswith("s3")
         else href
     )
+    if processing_template is None and (
+        collection_id.startswith(
+            ("sentinel-2", "sentinel-s2", "landsat-c2l2", "landsat-c2-", "sentinel_v1")
+        )
+        or collection_id == "sentinel"
+    ):
+        processing_template = "Multiband"
 
-    if collection_id.startswith(("sentinel-2", "sentinel-s2", "landsat")):
-        href = rf"{href}\Multiband"
+    if isinstance(href, str) and isinstance(processing_template, str):
+        href += rf"\{processing_template}"
 
     return href
 
 
-def _get_stac_links(stac_json, rel):
+def _get_stac_links(stac_json, cat_filename, rel):
     """
     This method is used to retrieve all the links matching the specified relation type from a STAC Item or Catalog.
     :param stac_json: input STAC Item or Catalog (JSON dictionary).
@@ -1799,39 +1855,911 @@ def _get_stac_links(stac_json, rel):
         if l.startswith("http"):
             link = l
         else:
-            link = urljoin(os.path.dirname(stac_json["links"][0]["href"]) + "/", l)
+            source_href = os.path.dirname(cat_filename) + "/"
+            link = (source_href, l)
         all_links.append(link)
     return all_links
 
 
-def _get_all_stac_catalog_items(stac_json, request_params={}):
+def _get_all_stac_catalog_items(stac_json, filename, request_params={}, context=None):
     """
     This method is used to get all items from a STAC catalog and all its subcatalogs. Will traverse any subcatalogs recursively.
     :param stac_json: input Static STAC (Catalog - JSON dictionary)
     :param request_params: requests.get() method parameters used for the STAC Item and Catalog requests (passed through the RasterCollection.from_stac_catalog() method call).
     :return generator (of all items retrived in the Catalog)
     """
-    for item_link in _get_stac_links(stac_json, "item"):
-        item_res = _requests.get(item_link, **request_params)
-        if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
-            "application/json",
-            "application/geo+json",
-            "application/json;charset=utf-8",
-        ]:
-            raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
-        item_json = item_res.json()
-        yield item_json
+    for item_link in _get_stac_links(stac_json, filename, "item"):
+        request_link = (
+            urljoin(*item_link) if not isinstance(item_link, str) else item_link
+        )
+        item_resources = _get_static_catalog_item_resources(
+            request_link, request_params, context
+        )
+        yield item_resources
 
-    children = _get_stac_links(stac_json, "child")
+    children = _get_stac_links(stac_json, filename, "child")
     for child in children:
-        child_res = _requests.get(child, **request_params)
+        request_link = urljoin(*child) if not isinstance(child, str) else child
+        child_res = _requests.get(request_link, **request_params)
         if child_res.status_code != 200 or child_res.headers.get(
             "content-type"
         ) not in [
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/json; charset=utf-8",
+            "binary/octet-stream",
+            "application/octet-stream",
+            "text/plain; charset=utf-8",
+            "text/plain",
         ]:
             raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
         child_json = child_res.json()
-        yield from _get_all_stac_catalog_items(child_json, request_params)
+        yield from _get_all_stac_catalog_items(
+            child_json, request_link, request_params, context
+        )
+
+
+def _get_static_catalog_item_resources(request_link, request_params={}, context=None):
+    if isinstance(request_link, str):
+        item_res = _requests.get(request_link, **request_params)
+        if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
+            "application/json",
+            "application/geo+json",
+            "application/json;charset=utf-8",
+            "application/json; charset=utf-8",
+            "application/octet-stream",
+            "text/plain; charset=utf-8",
+            "text/plain",
+            "binary/octet-stream",
+        ]:
+            raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
+        item = item_res.json()
+    else:
+        request_link, item = request_link
+
+    assets = item["assets"]
+
+    processing_template = None
+    if isinstance(context, dict) and context:
+        context_lower = {k.lower(): v for k, v in context.items()}
+        processing_template = context_lower.get("processingtemplate")
+        asset_management = context_lower.get("assetmanagement")
+        if asset_management:
+            hrefs = _find_stac_asset_hrefs(assets, context_lower)
+            href_list = [href for href in hrefs.values() if href is not None]
+            if not href_list:
+                raise RuntimeError(
+                    "No valid asset hrefs found. Please review the assetManagement parameter."
+                )
+            else:
+                href_list = href_list if len(href_list) != 1 else href_list[0]
+                if isinstance(href_list, str) and isinstance(processing_template, str):
+                    href_list += rf"\{processing_template}"
+                return item, href_list
+
+    product_file = None
+    self_link_products = [
+        "https://maxar-opendata.s3.amazonaws.com/events",
+        "https://capella-open-data.s3.us-west-2.amazonaws.com/stac",
+        "https://bdc-sentinel-2.s3.us-west-2.amazonaws.com",
+    ]
+    cog_composite_products = [
+        "https://pta.data.lit.fmi.fi/stac",
+        "https://storage.googleapis.com/cfo-public",
+    ]
+
+    if any(link in request_link for link in self_link_products):
+        product_file = f"StacItemHref/{request_link}"
+    elif "https://datacloud.icgc.cat/stac-catalog" in request_link:
+        product_file = f"/vsicurl/{assets['visual']['href']}"
+    elif "https://dop-stac.opengeodata.lgln.niedersachsen.de" in request_link:
+        product_file = f"/vsicurl/{assets['rgbi']['href']}"
+    elif "https://nz-imagery.s3-ap-southeast-2.amazonaws.com" in request_link:
+        product_file = urljoin(request_link, assets["visual"]["href"])
+    elif "https://raw.githubusercontent.com/m-mohr/oam-example/main" in request_link:
+        product_file = assets["data"]["href"]
+    elif any(link in request_link for link in cog_composite_products):
+        product_file = [
+            f"/vsicurl/{cog['href']}"
+            for cog in item["assets"].values()
+            if cog["href"].endswith((".tif", ".tiff"))
+        ]
+
+    if isinstance(product_file, str) and isinstance(processing_template, str):
+        product_file += rf"\{processing_template}"
+    return item, product_file
+
+
+def _find_stac_asset_hrefs(assets, context):
+    hrefs = {}
+    asset_management = context.get("assetmanagement", {})
+    if not isinstance(asset_management, list):
+        asset_management = [asset_management]
+    for asset_info in asset_management:
+        if isinstance(asset_info, str):
+            asset_key = asset_info
+            asset_info = {"key": asset_key}
+        else:
+            asset_key = asset_info["key"]
+        hrefs[asset_key] = _find_stac_asset_href(assets, asset_info)
+    return hrefs
+
+
+def _find_stac_asset_href(assets, asset_info):
+    asset_key = asset_info["key"]
+    href_key = asset_info.get("hrefKey", "href")
+    asset_path = asset_info.get("path")
+
+    if asset_key in assets:
+        value = assets[asset_key]
+        if asset_path:
+            for key in asset_path:
+                if key in value:
+                    value = value[key]
+                else:
+                    return None
+        if href_key in value:
+            href = value[href_key]
+            if href is not None and isinstance(href, str):
+                if href.startswith("s3"):
+                    href = rf"/vsis3{href[4:]}"
+                elif ".blob.core.windows.net" in href or ".amazonaws.com" in href:
+                    pass
+                elif href.lower().startswith(
+                    ("https://", "http://")
+                ) and href.lower().endswith((".tiff", ".tif")):
+                    href = f"/vsicurl/{href}"
+            return href
+    else:
+        for value in assets.values():
+            if isinstance(value, dict):
+                href = _find_stac_asset_href(value, asset_info)
+                if href:
+                    return href
+    return None
+
+
+def _parse_feature_collection(data, verbose):
+    info = {"type": "FeatureCollection", "title": data.get("title")}
+    if verbose:
+        info["features"] = []
+        for feature in data.get("features", []):
+            feature_info = {
+                "id": feature["id"],
+                "geometry": feature.get("geometry", {}),
+                "bbox": feature.get("bbox", []),
+                "assets": feature.get("assets", {}),
+            }
+            feature_info["miscellaneous"] = {
+                key: val for key, val in feature.items() if key not in feature_info
+            }
+            info["features"].append(feature_info)
+        info["links"] = data.get("links", [])
+    else:
+        info["features"] = [
+            {
+                "id": feature["id"],
+                "bbox": feature.get("bbox", []),
+                "assets": list(feature.get("assets", {}).keys()),
+            }
+            for feature in data.get("features", [])
+        ]
+        info["links"] = [link["href"] for link in data.get("links", [])]
+    return info
+
+
+def _lookup_datastore(datastore_type, gis=None):
+    """
+
+    This method returns the list of datastores that are registered with the Raster Analytics Server.
+
+    :param datastore_type: Required string. The type of the datastore to be retrieved (e.g. "rasterStores", "folder", "cloudStores", "egdb", etc.).
+    :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
+    :return list of datastores of the specified type (e.g. "fileShares", "cloudStores", etc.) that are registered with the Raster Analytics Server.
+    """
+
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    hosting_server = gis.admin.servers.get(function="RasterAnalytics")
+    ds = hosting_server[0].datastores.search(types=datastore_type, decrypt=True)
+    dataitems = []
+    if "items" in ds:
+        fsds = ds["items"]
+        if fsds:
+            for ds in fsds:
+                if "info" in ds and "path" in ds:
+                    dataitems.append(ds)
+    return dataitems
+
+
+def _get_datastore_paths(dataitems, type=None, gis=None):
+    """
+
+    This method returns the list of datastores of the specified type (e.g. "folder", "cloudStores", etc.) that are registered with the Raster Analytics Server.
+
+    :param dataitems: Required list. List of datastore items. output from _lookup_datastore
+    :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
+    :return list of datastores of the specified type (e.g. "fileShares", "cloudStores", etc.) that are registered with the Raster Analytics Server.
+    """
+
+    dslist = []
+    import json
+
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    if type == "cloud":
+        for item in dataitems:
+            if "info" in item and "path" in item:
+                if (
+                    "connectionType" in item["info"]
+                    and "connectionString" in item["info"]
+                ):
+                    if item["info"]["connectionType"] == "dataStore":
+                        # Parse connection string
+                        # Note: this is assuming "connectionSting" is always JSON
+                        connectjson = json.loads(item["info"]["connectionString"])
+                        if "path" in connectjson:
+                            if connectjson["path"].find("/cloudStores/") > -1:
+                                # Note: return the raster store path instead
+                                # of the cloud store path for hosted data
+                                dslist.append(connectjson["path"])
+
+    elif type == "fileshare":
+        # File share raster store stores path
+        for item in dataitems:
+            if "info" in item and "path" in item:
+                if (
+                    "connectionType" in item["info"]
+                    and "connectionString" in item["info"]
+                ):
+                    if item["info"]["connectionType"] == "fileShare":
+                        # Parse connection string
+                        # Note: this is assuming "connectionSting" is always JSON
+                        connectjson = json.loads(item["info"]["connectionString"])
+                        if "path" in connectjson:
+                            dslist.append(connectjson["path"])
+
+    return dslist
+
+
+def _generate_data_path(datastore_path, gis=None):
+    """
+
+    This method returns the actual path for a given datastore path.
+
+    :param datastore_path: Required string. datastore path. Example: "/rasterStores/MyRasterStore"
+    :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
+    :return: String. The actual path for the given datastore path. Example: "/cloudStores/cs", "r"\\sha-arcgis-ra\C$\rasterstore"
+    """
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    import pathlib
+    import json
+
+    datastore_path_parts = list(pathlib.PurePath(datastore_path).parts)
+    if datastore_path.startswith("/rasterStores"):
+        dslist = _lookup_datastore("rasterStore", gis)
+        print(dslist)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            print(dspathparts)
+            if (
+                len(dspathparts) > 2
+                and len(datastore_path_parts) > 2
+                and dspathparts[1:3] == datastore_path_parts[1:3]
+            ):
+                dsinfo = ds["info"]
+                print(1)
+                if "connectionType" in dsinfo:
+                    # file share raster store takes priority
+                    if dsinfo["connectionType"] == "fileShare":
+                        if "connectionString" in dsinfo:
+                            connectstr = dsinfo["connectionString"]
+                            connectjson = json.loads(connectstr)
+                            if connectjson and "path" in connectjson:
+                                datapath = datastore_path.replace(
+                                    ds["path"], connectjson["path"]
+                                )
+                    elif dsinfo["connectionType"] == "dataStore":
+                        if "connectionString" in dsinfo:
+                            connectstr = dsinfo["connectionString"]
+                            connectjson = json.loads(connectstr)
+                            if connectjson and "path" in connectjson:
+                                if connectjson["path"].startswith("/cloudStores"):
+                                    datapath = datastore_path.replace(
+                                        ds["path"], connectjson["path"]
+                                    )
+
+    elif datastore_path.startswith("/fileShares"):
+        dslist = _lookup_datastore("folder", gis)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            if (
+                len(dspathparts) > 2
+                and len(datastore_path_parts) > 2
+                and dspathparts[1:3] == datastore_path_parts[1:3]
+            ):
+                dsinfo = ds["info"]
+                if "path" in dsinfo:
+                    datapath = datastore_path.replace(ds["path"], dsinfo["path"])
+
+    elif datastore_path.startswith("/cloudStores"):
+        dslist = _lookup_datastore("cloudStore", gis)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            if (
+                len(dspathparts) > 2
+                and len(datastore_path_parts) > 2
+                and dspathparts[1:3] == datastore_path_parts[1:3]
+            ):
+                cprovider = ds["provider"]
+                dsinfo = ds["info"]
+                if cprovider and "objectStore" in dsinfo:
+                    # TODO: look up Alibaba and GCloud
+                    if cprovider == "azure":
+                        datapath = datastore_path.replace(
+                            ds["path"], "/vsiaz/" + dsinfo["objectStore"]
+                        )
+                    elif cprovider == "amazon":
+                        datapath = datastore_path.replace(
+                            ds["path"], "/vsis3/" + dsinfo["objectStore"]
+                        )
+
+    return datapath
+
+
+def _transfer_data(src, dst, gis=None):
+    """
+    This method is used to transfer data from one location to another.
+    :param src: source location. Example - C:\temp\newop.crf
+    :param dst: destination location Example - \\sha-arcgis-ra\C$\rasterstore\qyfqffwer5ty/imagery/data
+    """
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    final_path = None
+    import shutil
+    import os
+
+    def is_unc_path(path):
+        import re
+
+        pattern = r"^\\\\[^\\]+\\[^\\]+.*$"
+
+        if re.match(pattern, path):
+            return True
+        else:
+            return False
+
+    if not dst.startswith("/cloudStores"):
+        if not is_unc_path(dst):
+            raise RuntimeError("Rasterstore is not a UNC path")
+
+        try:
+            if os.path.isdir(src):
+                dst = os.path.join(dst, os.path.basename(src))
+            final_path = shutil.copytree(src, dst, dirs_exist_ok=True)
+            exists = os.path.exists(final_path)
+            if exists:
+                return final_path
+        except:
+            raise RuntimeError("copy of files to rasterstore failed")
+
+    else:
+        try:
+            from arcpy import AIO
+        except:
+            raise RuntimeError("arcpy not available for cloudstore transfer")
+        try:
+            cds = _lookup_datastore(r"cloudStore", gis)
+        except:
+            raise RuntimeError("Unable to get the cloudStore info")
+
+        cs_info = None
+        for info in cds:
+            if info["path"] in dst:
+                cs_info = info
+                break
+
+        cs_aio = None
+        if cs_info is not None and isinstance(cs_info, dict):
+            cs_aio = AIO(cs_info)
+
+        if cs_aio:
+            try:
+                dst = _generate_data_path(dst)
+                dst = cs_aio.copytree(src, dst)
+                final_path = dst + "/" + os.path.basename(src)
+                exists = cs_aio.exists(final_path)
+                if exists:
+                    return final_path
+            except:
+                raise RuntimeError("Upload to cloudstore failed")
+
+
+def _try_data_transfer(src, dst, gis=None):
+    """
+    This method tries data transfer from local location to rasterstore. With first preference for cloudstore rasterstore.
+    :param src: source location. Example - C:\temp\newop.crf
+    :param dst: destination location. Example -  r"workspace/imagery/data")
+    :return: String. The path to the transferred data. Example '\\\\sha-arcgis-ra\\C$\\rasterstore\\workspace/imagery/data\\newop.crf'
+    """
+    ds_list = _lookup_datastore("rasterStore", gis)
+    dslist_cloud = _get_datastore_paths(ds_list, "cloud", gis)
+    ds_list_file = _get_datastore_paths(ds_list, "fileshare", gis)
+    dslist = dslist_cloud + ds_list_file
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    for ds in dslist:
+        rasterstore_path = ds
+        if rasterstore_path.startswith("/cloudStores/"):
+            dst_new = rasterstore_path + "/" + dst
+        else:
+            dst_new = os.path.join(rasterstore_path, dst)
+        try:
+            final_dst = _transfer_data(src, dst_new)
+            if final_dst is not None:
+                return final_dst
+        except:
+            continue
+
+
+def _construct_point_cloud_gen_params():
+    params = {}
+    params["minAngle"] = 5.0
+    params["maxAngle"] = 90.0
+    params["minOverlap"] = 0.5
+    params["maxOmegaPhiDif"] = 8.0
+    params["maxGSDDif"] = 2.0
+    # these are PointCloudGeneration specific
+    params["method"] = "ETM"
+    params["maxObjectSize"] = "NaN"
+    params["DSMGroundSpacing"] = "NaN"
+    params["numOfImagePairs"] = 8
+    params["adjQualityThreshold"] = 0.2
+
+    return params
+
+
+def _construct_seamline_generation_params(properties_dict):
+    props = {}
+    props["method"] = "VORONOI"
+    props["sortMethod"] = "NORTH_WEST"
+    props["sortAttribute"] = ""
+    props["sortBaseValue"] = ""
+    props["sortViewPointX"] = "NaN"
+    props["sortViewPointY"] = "NaN"
+    props["sortAscending"] = True
+    props["cellsize"] = "NaN"
+    props["minRegionSize"] = 100
+    props["blendWidthUnits"] = "PIXELS"
+    props["blendWidth"] = float(10)
+    props["blendType"] = "BOTH"
+    props["requestSizeType"] = "PIXELS"
+    props["requestSize"] = 1000
+    props["minThinessRatio"] = float(0.5)
+    props["maxSliverSize"] = 20
+    properties_dict["template"]["processingSettings"]["ortho"]["seamline"] = props
+
+
+def _construct_color_balancing_params(properties_dict):
+    props = {}
+    props["method"] = "DODGING"
+    props["surfaceType"] = "SECOND_ORDER"
+    props["targetRaster"] = ""
+    props["recalculateStats"] = True
+    props["numberOfRowsToSkip"] = 10
+    props["numberOfColumnsToSkip"] = 10
+    props["inputDEM"] = ""
+    props["zFactor"] = float(1)
+    props["zOffset"] = float(0)
+    props["applyGeoid"] = True
+    props["inputSolutionPoints"] = ""
+    props["targetRasterOID"] = ""
+    props["refineEstimationByCorrelation"] = True
+    props["reduceCloudInfluence"] = False
+    props["reduceShadowInfluence"] = False
+    properties_dict["template"]["processingSettings"]["ortho"]["colorBalance"] = props
+
+
+def _add_default_compression_params(props_dict):
+    if "compression" not in props_dict:
+        props_dict["compression"] = "NONE"
+    if "compressionQuality" not in props_dict:
+        props_dict["compressionQuality"] = 75
+    if "lERCMaxError" not in props_dict:
+        props_dict["lERCMaxError"] = float(0)
+
+
+def _add_default_cellsize_params(props_dict, is_dem):
+    if "cellsizeFactor" not in props_dict:
+        props_dict["cellsizeFactor"] = 5 if is_dem else 1
+    if "useCellsizeFactor" not in props_dict:
+        props_dict["useCellsizeFactor"] = True
+
+
+def _compute_primary_tie_points_gen_params(sensor_type, properties_dict):
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+    if "locationAccuracy" not in adjust_settings:
+        adjust_settings["locationAccuracy"] = "MEDIUM"
+    adjust_settings["pointSimilarity"] = "MEDIUM"
+    adjust_settings["pointDensity"] = (
+        "MEDIUM" if sensor_type.lower() == "satellite" else "HIGH"
+    )
+    adjust_settings["pointDistribution"] = "RANDOM"
+    if sensor_type.lower() == "aerialdigital":
+        adjust_settings["fullFrameMatch"] = False
+
+
+def _compute_block_adjustment_params(sensor_type, properties_dict):
+    """
+    sensor_type can be one of "Drone", "Satellite", "AerialScanned" or "AerialDigital".
+    """
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+
+    if sensor_type.lower() == "drone" or sensor_type.lower() == "aerialscanned":
+        adjust_settings["initPointResolution"] = 8
+        adjust_settings["locationAccuracy"] = (
+            "LOW" if sensor_type.lower() == "aerialscanned" else "HIGH"
+        )
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["p"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["principalPoint"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
+        adjust_settings["k"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["focalLength"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
+        adjust_settings["cameraCalibration"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
+        adjust_settings["fixImageLocationForHighAccuracyGPS"] = False
+        adjust_settings["transformationType"] = "Frame"
+        adjust_settings["computeImagePosteriorStd"] = True
+        adjust_settings["computeSolutionPointPosteriorStd"] = False
+        if sensor_type.lower() == "drone":
+            adjust_settings["estimateOPK"] = False
+            adjust_settings["rollingShutter"] = False
+            adjust_settings["processAsRigCamera"] = False
+    elif sensor_type.lower() == "aerialdigital":
+        _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["cameraCalibration"] = False
+        adjust_settings["p"] = False
+        adjust_settings["principalPoint"] = False
+        adjust_settings["k"] = False
+        adjust_settings["focalLength"] = False
+        adjust_settings["transformationType"] = "Frame"
+        for key in [
+            "aPrioriAccuracyX",
+            "aPrioriAccuracyY",
+            "aPrioriAccuracyZ",
+            "aPrioriAccuracyXY",
+            "aPrioriAccuracyXYZ",
+            "aPrioriAccuracyOmega",
+            "aPrioriAccuracyPhi",
+            "aPrioriAccuracyKappa",
+        ]:
+            adjust_settings[key] = "NaN"
+        adjust_settings["computeAntennaOffset"] = False
+        adjust_settings["computeShift"] = False
+        adjust_settings["computeImagePosteriorStd"] = True
+        adjust_settings["computeSolutionPointPosteriorStd"] = False
+        adjust_settings["processAsRigCamera"] = False
+    elif sensor_type.lower() == "satellite":
+        _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["transformationType"] = "RPC"
+        adjust_settings["generateTiePoints"] = True
+
+    adjust_settings["adjustTiePoints"] = False
+    adjust_settings["maskPolygons"] = ""
+
+
+def _construct_compute_gcp_params(sensor_type, properties_dict):
+    _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+    adjust_settings["pointSimilarity"] = "HIGH"
+    adjust_settings["referenceImage"] = ""
+    adjust_settings["correctGeoid"] = False
+    adjust_settings["elevationSource"] = ""
+
+
+def _construct_analyze_tie_points_params(properties_dict):
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+    adjust_settings["minOverlapArea"] = float(0.2)
+    adjust_settings["maxOverlapLevel"] = float(2)
+    adjust_settings["maskPolygons"] = ""
+
+
+def _construct_recompute_tie_points_params(sensor_type, properties_dict):
+    _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+    adjust_settings["maskPolygons"] = ""
+    adjust_settings["controlPointsUpdateMode"] = ""
+
+
+def _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=False):
+    key = "trueortho" if is_ortho else "dsm"
+    props = {key: {}}
+    props[key]["outputType"] = "TILED"
+    props[key]["format"] = "TIFF"
+    _add_default_compression_params(props[key])
+    props[key]["resampling"] = "BILINEAR"
+    props[key]["noDataValue"] = "NaN"
+    props[key]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+
+    if key == "trueortho":
+        properties_dict["template"]["processingSettings"][key] = props[key]
+    else:
+        properties_dict["template"]["processingSettings"][key] = props
+
+
+def _construct_orthomosaic_generation_params(properties_dict, is_rm):
+    props = {"ortho": {}}
+
+    if is_rm:
+        properties_dict["template"]["processingSettings"]["ortho"] = {}
+        return
+
+    props["ortho"]["cellsize"] = "NaN"
+    _add_default_cellsize_params(props["ortho"], is_dem=False)
+    props["ortho"]["format"] = "CRF"
+    _add_default_compression_params(props["ortho"])
+    props["ortho"]["resampling"] = "BILINEAR"
+    props["ortho"]["noDataValue"] = "NaN"
+    props["ortho"]["zFactor"] = float(1)
+    props["ortho"]["zOffset"] = float(0)
+    props["ortho"]["applyGeoid"] = False
+    props["ortho"]["DEMMode"] = "RefDEM"
+    props["ortho"]["selectedDEMProduct"] = "UseProductDTM"
+    props["ortho"]["extent"] = ""
+    props["ortho"]["mask"] = ""
+    props["ortho"]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+    props["ortho"]["collectionOrthorectificationDEM"] = ""
+    properties_dict["template"]["processingSettings"]["ortho"] = props
+
+
+def _construct_dem_params(
+    properties_dict,
+    key_name,
+    dtm=True,
+    add_pc_gen_params=False,
+    backward_compatible=True,
+    is_rm=False,
+):
+    props = {key_name: {}}
+    props[key_name]["cellsize"] = "NaN"
+    _add_default_cellsize_params(props[key_name], True)
+    props[key_name]["format"] = "CRF"
+    _add_default_compression_params(props[key_name])
+    props[key_name]["interpolationMethod"] = "IDW" if is_rm else "TRIANGULATION"
+    props[key_name]["smoothingMethod"] = "GAUSS5x5"
+    props[key_name]["fillDEM"] = ""
+    props[key_name]["extent"] = ""
+    props[key_name]["mask"] = ""
+    props[key_name]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+
+    if dtm:
+        props[key_name]["classifyLowNoise"] = True
+        props[key_name]["lowNoise"] = 0.25
+        props[key_name]["classifyHighNoise"] = True
+        props[key_name]["highNoise"] = 100.0
+        props[key_name]["groundDetectionMethod"] = "Standard"
+        props[key_name]["reuseGround"] = False
+        props[key_name]["reuseLowNoise"] = False
+        props[key_name]["reuseHighNoise"] = False
+
+    if backward_compatible:
+        props["key_name"]["surfaceType"] = "DTM" if dtm else "DSM"
+
+    pc_dict = None
+    if add_pc_gen_params:
+        props[key_name]["pointCloudSourceType"] = "STD"
+        pc_dict = _construct_point_cloud_gen_params()
+
+    properties_dict["template"]["processingSettings"][key_name] = props
+
+    if pc_dict:
+        properties_dict["template"]["processingSettings"][key_name][
+            "pointCloud"
+        ] = pc_dict
+
+
+def _construct_interpolation_dict(properties_dict, key_name, is_rm):
+    method = "IDW" if is_rm else "TRIANGULATION"
+    properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {}
+    # when the key_name is "dsm" and is_rm is True, we don't need to set the interpolation method
+    if not (key_name == "dsm" and is_rm):
+        properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {
+            "method": method
+        }
+
+
+def _construct_mesh_params(properties_dict, is_dsm_mesh, textured=True):
+    props = {}
+    props["format"] = "SLPK"
+    if textured:
+        props["textureFormat"] = "JPG & DDS"
+    if is_dsm_mesh:
+        # props["cellsize"] = "NaN"
+        # _add_default_cellsize_params(props, is_dem=False)
+        properties_dict["template"]["processingSettings"]["dsmMesh"] = props
+    else:
+        properties_dict["template"]["processingSettings"]["3dMesh"] = props
+
+
+def _construct_general_settings(properties_dict, quality, auto_cellsize):
+    general_settings = {}
+    general_settings["quality"] = quality
+    general_settings["cellsize"] = "NaN"
+    _add_default_cellsize_params(general_settings, False)
+    general_settings["autoCellsize"] = auto_cellsize
+    properties_dict["template"]["processingSettings"][
+        "generalReconSettings"
+    ] = general_settings
+
+
+def _construct_advanced_settings(properties_dict):
+    advanced_settings = {}
+    advanced_settings["productBoundary"] = ""
+    advanced_settings["correctionFeatures"] = ""
+    advanced_settings["waterbodyFeatures"] = ""
+    advanced_settings["processingFolder"] = ""
+    advanced_settings["exportBinaryMaskImageForNonInterpolatedPixels"] = False
+    advanced_settings["exportDistanceMapToNextNonInterpolatedPixels"] = False
+    advanced_settings["exportMapWithStereoModelCountOfFinalPoint"] = False
+    properties_dict["template"]["processingSettings"][
+        "advancedReconSettings"
+    ] = advanced_settings
+
+
+def _initialize_project(sensor_type, scenario_type, is_rm):
+    project_version = 1 if is_rm else 2
+    properties_dict = {
+        "projectVersion": project_version,
+        "template": {"processingSettings": {}, "adjustSettings": {}},
+    }
+
+    raster_type = "Raster Dataset"
+    if sensor_type.lower() == "drone":
+        raster_type = "UAV/UAS"
+    elif sensor_type.lower() == "satellite":
+        raster_type = "Satellite"
+    elif sensor_type.lower() == "aerialdigital":
+        raster_type = "Frame"
+    elif sensor_type.lower() == "aerialscannned":
+        raster_type = "AerialScanned"
+    else:
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
+        )
+
+    properties_dict["rasterType"] = raster_type
+
+    quality = "HIGH"
+    if sensor_type.lower() == "satellite" or (
+        sensor_type.lower() == "aerialdigital"
+        and (
+            scenario_type.lower() == "aerial_nadir"
+            or scenario_type.lower() == "aerial_oblique"
+        )
+    ):
+        quality = "ULTRA"
+
+    _compute_block_adjustment_params(sensor_type, properties_dict)
+    _construct_orthomosaic_generation_params(properties_dict, is_rm=is_rm)
+
+    if not is_rm:
+        _construct_seamline_generation_params(properties_dict)
+        _construct_color_balancing_params(properties_dict)
+        _construct_dem_params(
+            properties_dict,
+            key_name="dtm",
+            dtm=True,
+            add_pc_gen_params=True,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
+        _construct_dem_params(
+            properties_dict,
+            key_name="dsm",
+            dtm=False,
+            add_pc_gen_params=True,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
+    else:
+        _construct_dem_params(
+            properties_dict,
+            key_name="dtm",
+            dtm=True,
+            add_pc_gen_params=False,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
+        _construct_mesh_params(properties_dict, is_dsm_mesh=True)
+        _construct_mesh_params(properties_dict, is_dsm_mesh=False)
+        _construct_dsm_or_dsm_orthomosaic_params(properties_dict)
+        _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=True)
+        _construct_advanced_settings(properties_dict)
+        _construct_general_settings(properties_dict, quality, True)
+
+    # _construct_compute_gcp_params(sensor_type, properties_dict)
+    # _construct_analyze_tie_points_params(properties_dict)
+    # _construct_recompute_tie_points_params(sensor_type, properties_dict)
+    _construct_interpolation_dict(properties_dict, key_name="dsm", is_rm=is_rm)
+    _construct_interpolation_dict(properties_dict, key_name="dtm", is_rm=is_rm)
+
+    if "flights" not in properties_dict:
+        properties_dict["flights"] = [{"oid": 0}]
+    return properties_dict
+
+
+def _flatten_adjust_settings(adjust_options_list):
+    flat = {}
+    mapping = {
+        "CalibrateF": "focalLength",
+        "CalibrateK": "k",
+        "CalibrateP": "p",
+        "CalibratePP": "principalPoint",
+        "CameraCalibration": "cameraCalibration",
+        "EstimateOPK": "estimateOPK",
+        "ComputeImagePosteriorStd": "computeImagePosteriorStd",
+        "ComputeSolutionPointPosteriorStd": "computeSolutionPointPosteriorStd",
+        "rollingshutter": "rollingShutter",
+        "rigCamera": "processAsRigCamera",
+        "AdjustTiepoints": "adjustTiePoints",
+    }
+
+    for ele in adjust_options_list:
+        key, value = ele.split(" ")
+        match value:
+            case "0":
+                value = False
+            case "1":
+                value = True
+            case _:
+                value = value
+
+        flat[mapping[key]] = value
+
+    return flat
+
+
+def _nestify_context(context):
+    adjust_options_list = []
+    mapping = {
+        "focalLength": "CalibrateF",
+        "k": "CalibrateK",
+        "p": "CalibrateP",
+        "principalPoint": "CalibratePP",
+        "cameraCalibration": "CameraCalibration",
+        "estimateOPK": "EstimateOPK",
+        "computeImagePosteriorStd": "ComputeImagePosteriorStd",
+        "computeSolutionPointPosteriorStd": "ComputeSolutionPointPosteriorStd",
+        "rollingShutter": "rollingshutter",
+        "processAsRigCamera": "rigCamera",
+        "adjustTiePoints": "AdjustTiepoints",
+    }
+
+    for key in mapping:
+        if key in context:
+            value = context.pop(key)
+            match value:
+                case False:
+                    value = "0"
+                case True:
+                    value = "1"
+                case _:
+                    value = value
+
+            adjust_options_list.append(f"{mapping[key]} {value}")
+
+    context["adjustOptions"] = adjust_options_list

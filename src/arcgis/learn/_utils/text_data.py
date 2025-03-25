@@ -27,6 +27,7 @@ try:
         ItemBase,
         Text,
     )
+    from pathlib import Path
     from fastai.data_block import CategoryList, MultiCategoryList
     from ._seq2seq_utils import SequenceToSequenceTextList, teacher_forcing_tfm
     from .text_transforms import (
@@ -34,6 +35,7 @@ try:
         TransformerNERDataBunch,
         process_text,
     )
+    from typing import List
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -42,11 +44,13 @@ except Exception as e:
 
 HAS_BEAUTIFULSOUP = True
 try:
-    from bs4 import BeautifulSoup
+    from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 except:
     HAS_BEAUTIFULSOUP = False
 else:
     warnings.filterwarnings("ignore", category=UserWarning, module="bs4")
+
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 HAS_NUMPY = True
 try:
@@ -55,7 +59,6 @@ try:
     warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 except:
     HAS_NUMPY = False
-
 
 max_len = 100
 
@@ -123,6 +126,36 @@ def read_file(path):
         return pd.read_csv(path, dtype="str")
     else:
         return pd.read_csv(path, sep="\t", dtype="str")
+
+
+def text_input_sanity_check(
+    df_or_path: [pd.DataFrame | Path | str],
+    text_columns: str | List,
+    label_columns: str | List,
+) -> bool:
+    if isinstance(text_columns, str):
+        text_columns = [text_columns]
+    if isinstance(label_columns, str):
+        label_columns = [label_columns]
+    if isinstance(df_or_path, pd.DataFrame):
+        column_names = df_or_path.columns
+        for i in text_columns:
+            if i not in column_names:
+                raise Exception(f"Text column {i} is not present in the input.")
+        for i in label_columns:
+            if i not in column_names:
+                raise Exception(f"Label column {i} is not present in the input.")
+    elif isinstance(df_or_path, (Path, str)):
+        if os.path.exists(df_or_path) and df_or_path.endswith(".csv"):
+            df = pd.DataFrame(df_or_path)
+            column_names = df.columns
+            for i in text_columns:
+                if i not in column_names:
+                    raise Exception(f"Text column {i} is not present in the input.")
+            for i in label_columns:
+                if i not in column_names:
+                    raise Exception(f"Label column {i} is not present in the input.")
+    return True
 
 
 def save_data_in_model_metrics_html(text, path, model_characteristics_folder):
@@ -291,6 +324,7 @@ class TextDataObject:
             )
 
         train_df = read_file(training_file_path)
+        text_input_sanity_check(train_df, text_cols, label_cols)
         train_df = cls._preprocess_df(
             train_df,
             text_cols,
@@ -306,7 +340,6 @@ class TextDataObject:
             validation_file_exists = True
         else:
             validation_file_exists = False
-
         if validation_file_exists:
             valid_df = read_file(os.path.join(data, valid_file))
             valid_df = cls._preprocess_df(
@@ -329,11 +362,11 @@ class TextDataObject:
                     label
                 ) in unique_labels:  # duplicating datapoints with unique classes.
                     idx = y[y == label].index.tolist()[0]
-                    train_df = train_df.append(train_df.iloc[idx])
+                    train_df = train_df._append(train_df.iloc[idx])
                 train_df.reset_index(drop=True, inplace=True)
                 x, y = train_df[text_cols], train_df[label_col]
                 X_train, X_test, y_train, y_test = train_test_split(
-                    x, y, test_size=val_split_pct, stratify=y
+                    x, y, test_size=val_split_pct, stratify=y, random_state=seed
                 )
                 train_df = pd.concat([X_train, y_train], axis=1)
                 valid_df = pd.concat([X_test, y_test], axis=1)
@@ -400,6 +433,7 @@ class TextDataObject:
             )
 
         train_df = read_file(training_file_path)
+        text_input_sanity_check(train_df, text_cols, label_cols)
         train_df = cls._preprocess_df(
             train_df,
             text_cols,

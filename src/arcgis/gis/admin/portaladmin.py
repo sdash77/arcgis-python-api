@@ -1,7 +1,10 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+
 from __future__ import annotations
+import logging
+from functools import lru_cache
 from datetime import datetime
 from typing import Optional
 from ...gis._impl._con import Connection
@@ -9,6 +12,11 @@ from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
+from arcgis.gis.tasks._schedule import Task
+from ._classification import ClassificationManager
+from arcgis.auth import EsriSession
+
+__log__ = logging.getLogger()
 
 
 ########################################################################
@@ -53,6 +61,7 @@ class PortalAdminManager(BasePortalAdmin):
     _livingatlas = None
     _category_schema = None
     _whm = None
+    _classification: ClassificationManager = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
@@ -241,7 +250,9 @@ class PortalAdminManager(BasePortalAdmin):
         }
         if item_type:
             params["types"] = item_type.value
-        url: str = f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
         session = self._gis._con._session
         resp = session.get(url=url, params=params)
         resp.raise_for_status()
@@ -296,13 +307,13 @@ class PortalAdminManager(BasePortalAdmin):
         ================  ===============================================================================
 
 
-        :return: List of Tasks
+        :yields: Task
 
         """
-        _tasks = []
-        num = 100
-        url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
-        params = {"f": "json", "start": 1, "num": num}
+
+        num: int = 100
+        url: str = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
+        params: dict = {"f": "json", "start": 1, "num": num}
         if item:
             params["itemId"] = item.itemid
         if not active is None:
@@ -311,18 +322,23 @@ class PortalAdminManager(BasePortalAdmin):
             params["userFilter"] = user.username
         if types:
             params["types"] = types
-        res = self._con.get(url, params)
-        start = res["nextStart"]
-        _tasks.extend(res["tasks"])
+        start: int = 1
         while start != -1:
             params["start"] = start
             params["num"] = num
             res = self._con.get(url, params)
-            if len(res["tasks"]) == 0:
+            if len(res.get("tasks", [])) == 0:
                 break
-            _tasks.extend(res["tasks"])
+            else:
+                for task in res.get("tasks", []):
+                    owner: str = task["userId"]
+                    task_id: str = task["id"]
+                    task_url: str = (
+                        f"{self._gis._portal.resturl}community/users/{owner}/tasks/{task_id}"
+                    )
+                    yield Task(url=task_url, gis=self._gis)
+
             start = res["nextStart"]
-        return _tasks
 
     # ----------------------------------------------------------------------
     @property
@@ -344,6 +360,25 @@ class PortalAdminManager(BasePortalAdmin):
             url = "%s/portaladmin/machines" % self._gis._portal.url
             self._machines = Machines(url=url, gis=self._gis, portaladmin=self)
         return self._machines
+
+    # ----------------------------------------------------------------------
+    @property
+    def classification(self) -> ClassificationManager:
+        """
+        Provides access to the functionality for managing the ArcGIS Enterprise
+        classification schema if it has been configured.
+
+        :return:
+            An instance of the :class:`~arcgis.gis.admin.ClassificationManager`.
+        """
+        if (
+            self._classification is None
+            and "hasClassificationSchema" in self._gis.properties
+            and self._gis.version >= [2024, 2]
+        ):
+            url: str = f"{self._gis.resturl}portals/self/classification"
+            self._classification = ClassificationManager(url=url, gis=self._gis)
+        return self._classification
 
     # ----------------------------------------------------------------------
     @property
@@ -471,6 +506,23 @@ class PortalAdminManager(BasePortalAdmin):
         return self._license
 
     # ----------------------------------------------------------------------
+    @lru_cache(maxsize=100)
+    def _check_la_status(self) -> bool:
+        """checks if the living atlas is enabled on the system"""
+        grpid: str = "81f4ed89c3c74086a99d168925ce609e"
+        url: str = self._url + "/system/content/livingatlas/status"
+        session: EsriSession = self._gis.session
+        params: dict = {
+            "f": "json",
+            "groupId": grpid,
+            # 'token' : session.auth.token,
+        }
+        resp = session.post(url=url, data=params)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("publicContentEnabled", False)
+
+    # ----------------------------------------------------------------------
     @property
     def living_atlas(self):
         """
@@ -480,11 +532,25 @@ class PortalAdminManager(BasePortalAdmin):
             :class:`~arcgis.gis.admin.LivingAtlas` object
 
         """
+        if self._check_la_status() == False:
+            __log__.info(
+                "Living Atlas is not enabled, please enable it before performing any operations on the manager."
+            )
+
         if self._livingatlas is None:
             from ._livingatlas import LivingAtlas
 
             url = self._url + "/system/content/livingatlas"
-            self._livingatlas = LivingAtlas(url=url, gis=self._gis)
+            try:
+
+                self._livingatlas = LivingAtlas(url=url, gis=self._gis)
+            except:
+                __log__.info(
+                    (
+                        "Could not access the living atlas endpoint, please verify "
+                        "Living Atlas is enabled on the Enterprise system."
+                    )
+                )
         return self._livingatlas
 
     # ----------------------------------------------------------------------
@@ -524,7 +590,7 @@ class PortalAdminManager(BasePortalAdmin):
 
         .. code-block:: python
 
-            >>> gis.admin.mode({'read_only' : False})
+            >>> gis.admin.mode = {'read_only' : False}
             >>> assert gis.admin.mode['isReadOnly'] == False
 
         """
