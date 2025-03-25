@@ -455,7 +455,6 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-
     if hasattr(model, "_is_dofa"):
         return model
     if hasattr(model, "backbone") and (
@@ -795,9 +794,9 @@ class ArcGISModel(object):
         if self._is_multispectral:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
-                next(params_iterator).requires_grad = (
-                    True  # make first conv weights learnable
-                )
+                next(
+                    params_iterator
+                ).requires_grad = True  # make first conv weights learnable
 
                 tail_name, first_layer = _get_tail(self.learn.model)
 
@@ -1106,12 +1105,16 @@ class ArcGISModel(object):
         if getattr(self, "_is_mm3d", False):
             self.learn.model.prediction = False
 
+        import matplotlib
+
+        _stored_matplotlib_backend = matplotlib.get_backend()
+
+        matplotlib.use("Agg")
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()
 
             if lr is None:
-
                 if len(self.learn.data.train_dl) == 0:
                     print(
                         f"Warning: Your training dataloader is empty. Cannot find the optimal learning rate."
@@ -1247,6 +1250,7 @@ class ArcGISModel(object):
                     mixed_precision=mixed_precision,
                     **kwargs,
                 )
+            matplotlib.use(_stored_matplotlib_backend)
 
     def unfreeze(self):
         """
@@ -1391,9 +1395,9 @@ class ArcGISModel(object):
                     "wavelengths"
                 ]
             else:
-                _emd_template["ModelParameters"]["wavelengths"] = (
-                    get_wavelengths_from_bandnames(self._data._band_names)
-                )
+                _emd_template["ModelParameters"][
+                    "wavelengths"
+                ] = get_wavelengths_from_bandnames(self._data._band_names)
 
         if compute_metrics:
             if self._model_metrics_cache == None:
@@ -1476,9 +1480,9 @@ class ArcGISModel(object):
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
                     if compute_metrics:
-                        _emd_template["per_class_metrics"] = (
-                            self.per_class_metrics().to_json()
-                        )
+                        _emd_template[
+                            "per_class_metrics"
+                        ] = self.per_class_metrics().to_json()
         return _emd_template
 
     @staticmethod
