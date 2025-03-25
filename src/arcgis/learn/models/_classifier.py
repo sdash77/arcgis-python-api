@@ -594,12 +594,12 @@ class FeatureClassifier(ArcGISModel):
                                 If False, the model will not work with ArcGIS Pro 2.6
                                 or earlier. Default is set to True.
         ---------------------   -------------------------------------------
-        gradcam                 Optional boolean. Used to save the results with the
-                                Grad-CAM heatmap for the predicted classes, enhancing the
-                                clarity and interpretability of the model's predictions.Setting
-                                this to True for Labeled Tiles will enable the model_argument
-                                parameter as 'explainability_map'.While using the Classify Object tool,
-                                it will display a Grad-CAM visualization in a popup for the predicted class.
+        gradcam                 Optional boolean. Setting this to True for labelled tiles
+                                will enable the 'explainability_map' parameter in the
+                                Classify Object Using Deep Learning tool in ArcGIS Pro/Online.
+                                The explainability_map parameter can be used to visualize
+                                the Grad-CAM from the tool. Setting this to True will
+                                also save Explainability Map in the saved folder
                                 Default is set to False. This feature works only with RGB images.
         ---------------------   -------------------------------------------
         kwargs                  Optional Parameters.
@@ -1987,36 +1987,39 @@ class FeatureClassifier(ArcGISModel):
                 class_label = pred_cat1
                 pred_cat1 = True
             if pred_cat1:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    with hook_output(m[0]) as hook_a:
-                        with hook_output(m[0], grad=True) as hook_g:
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        with hook_output(m[0]) as hook_a:
+                            with hook_output(m[0], grad=True) as hook_g:
 
-                            # to support GPU and CPU for pro inferencing
-                            if kwargs.get("device_") != None:
-                                xb = xb.to(kwargs.get("device_"))
-                                m = m.to(kwargs.get("device_"))
+                                # to support GPU and CPU for pro inferencing
+                                if kwargs.get("device_") != None:
+                                    xb = xb.to(kwargs.get("device_"))
+                                    m = m.to(kwargs.get("device_"))
 
-                            preds = m(xb)
-                            preds[0, class_label].backward()
+                                preds = m(xb)
+                                preds[0, class_label].backward()
 
-                acts = hook_a.stored[0].cpu()  # Activation maps
-                grad = hook_g.stored[0][0].cpu()  # Gradients
+                    acts = hook_a.stored[0].cpu()  # Activation maps
+                    grad = hook_g.stored[0][0].cpu()  # Gradients
 
-                if self._transformer:
-                    acts = reshape_tensor(acts)
-                    grad = reshape_tensor(grad)
+                    if self._transformer:
+                        acts = reshape_tensor(acts)
+                        grad = reshape_tensor(grad)
 
-                # for Grad-CAM
-                if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
-                    grad_chan = grad.mean(1).mean(1)
-                    mult = F.relu((acts * grad_chan[..., None, None]).sum(0))
-                    grad_cam_outputs.append(mult)
-                    pred_class_label.append(class_label)
-                else:
-                    raise ValueError(
-                        "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
-                    )
+                    # for Grad-CAM
+                    if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
+                        grad_chan = grad.mean(1).mean(1)
+                        mult = F.relu((acts * grad_chan[..., None, None]).sum(0))
+                        grad_cam_outputs.append(mult)
+                        pred_class_label.append(class_label)
+                    else:
+                        raise ValueError(
+                            "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
+                        )
+                except:
+                    Print("The backbone does not support the Grad-CAM feature.")
             else:
                 if kwargs.get("multi_all_cam"):
                     # if not predicted the image will be displayed
@@ -2027,23 +2030,22 @@ class FeatureClassifier(ArcGISModel):
 
     def _gradCAM(self, im, cl, image: bool = True, grad_vis=False):
         # If the predictions are all 0, including for None class
+        xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+        xb, _ = self._data.one_item(im, detach=False, denorm=False)
+        xb_im = Image(xb[0])
+        xb_im_denorm = Image(xb_norm[0])
         if isinstance(cl[0], fastai.core.MultiCategory) and not cl[0].raw:
-            xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
-            xb, _ = self._data.one_item(im, detach=False, denorm=False)
-            xb_im = Image(xb[0])
-            xb_im_denorm = Image(xb_norm[0])
             _, ax = plt.subplots(figsize=(6, 6))
             xb_im_denorm.show(ax, title=f"Predicted class: None")
             return
         else:
-            grad_cam_outputs, pred_class_label, xb, xb_norm = self._generate_grad_cam(
-                im, cl, self._data.dataset_type
-            )
+
             if image:
-                xb_im = Image(xb[0])
-                xb_im_denorm = Image(xb_norm[0])
                 sz = list(xb_im.shape[-2:])
                 if grad_vis == True:
+                    grad_cam_outputs, pred_class_label, xb, xb_norm = (
+                        self._generate_grad_cam(im, cl, self._data.dataset_type)
+                    )
                     plotsize = 12 + 2 * (len(grad_cam_outputs) - 1)
                     _, ax = plt.subplots(
                         nrows=1,
@@ -2064,11 +2066,10 @@ class FeatureClassifier(ArcGISModel):
                             interpolation="bilinear",
                             cmap="hot",
                         )
+                    return grad_cam_outputs
                 else:
                     _, ax = plt.subplots(figsize=(6, 6))
                     xb_im_denorm.show(ax, title=f"Predicted class: {cl[0]}")
-
-            return grad_cam_outputs
 
     @deprecated(
         deprecated_in="1.7.1",

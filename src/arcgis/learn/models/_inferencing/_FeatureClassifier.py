@@ -255,78 +255,82 @@ class ChildObjectDetector:
 
         grad_values = []
         if self.exp_map:
-            for index, image in enumerate(
-                pixelBlocks["rasters_pixels"]
-            ):  # batch_images:
-                _, height, width = image.shape
-                from PIL import Image
+            try:
+                for index, image in enumerate(
+                    pixelBlocks["rasters_pixels"]
+                ):  # batch_images:
+                    _, height, width = image.shape
+                    from PIL import Image
 
-                original_image_pil = Image.fromarray(np.moveaxis(image, 0, -1))
+                    original_image_pil = Image.fromarray(np.moveaxis(image, 0, -1))
 
-                # to handle the partial image getting clipped due to extent or feature shape
-                if original_image_pil.size != (
-                    self.emd["ImageWidth"],
-                    self.emd["ImageHeight"],
-                ):
-                    original_image_pil = original_image_pil.resize(
-                        (self.emd["ImageWidth"], self.emd["ImageHeight"])
+                    # to handle the partial image getting clipped due to extent or feature shape
+                    if original_image_pil.size != (
+                        self.emd["ImageWidth"],
+                        self.emd["ImageHeight"],
+                    ):
+                        original_image_pil = original_image_pil.resize(
+                            (self.emd["ImageWidth"], self.emd["ImageHeight"])
+                        )
+
+                    from fastai.vision import Image, pil2tensor
+
+                    fastai_image = Image(
+                        pil2tensor(original_image_pil, dtype=np.float32).div_(255)
                     )
 
-                from fastai.vision import Image, pil2tensor
+                    cl = (None, torch.tensor(class_idxs[index]), predictions[index])
 
-                fastai_image = Image(
-                    pil2tensor(original_image_pil, dtype=np.float32).div_(255)
-                )
-
-                cl = (None, torch.tensor(class_idxs[index]), predictions[index])
-
-                grad_cam_outputs, pred_class_label, xb, xb_norm = (
-                    self.cf._generate_grad_cam(
-                        fastai_image,
-                        cl,
-                        self.emd["MetaDataMode"],
-                        heatmap_thresh=16,
-                        device_=self.device,
+                    grad_cam_outputs, pred_class_label, xb, xb_norm = (
+                        self.cf._generate_grad_cam(
+                            fastai_image,
+                            cl,
+                            self.emd["MetaDataMode"],
+                            heatmap_thresh=16,
+                            device_=self.device,
+                        )
                     )
-                )
 
-                # overlaying the gradcam on the image encoding it in base64
+                    # overlaying the gradcam on the image encoding it in base64
 
-                heatmap_rescaled1 = grad_cam_outputs[0] / grad_cam_outputs[0].max()
-                heatmap = heatmap_rescaled1.cpu().numpy()
-                from PIL import Image
+                    heatmap_rescaled1 = grad_cam_outputs[0] / grad_cam_outputs[0].max()
+                    heatmap = heatmap_rescaled1.cpu().numpy()
+                    from PIL import Image
 
-                heatmap_rescaled = np.array(
-                    Image.fromarray(heatmap).resize(
-                        (self.emd["ImageWidth"], self.emd["ImageHeight"]),
-                        resample=Image.BILINEAR,
+                    heatmap_rescaled = np.array(
+                        Image.fromarray(heatmap).resize(
+                            (self.emd["ImageWidth"], self.emd["ImageHeight"]),
+                            resample=Image.BILINEAR,
+                        )
                     )
-                )
-                from matplotlib import cm
+                    from matplotlib import cm
 
-                colormap = cm.get_cmap("hot")
-                heatmap_colored = colormap(heatmap_rescaled)[
-                    :, :, :3
-                ]  # Apply colormap and discard alpha channel
-                heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
-                heatmap_pil = Image.fromarray(heatmap_colored)
-                alpha = 0.4
-                overlayed_image = Image.blend(
-                    original_image_pil.convert("RGBA"),
-                    heatmap_pil.convert("RGBA"),
-                    alpha=alpha,
-                )
-                byte_io = io.BytesIO()
-                rgb_image = overlayed_image.convert("RGB")
-                rgb_image.save(byte_io, format="JPEG")
-                array_bytes = byte_io.getvalue()
+                    colormap = cm.get_cmap("hot")
+                    heatmap_colored = colormap(heatmap_rescaled)[
+                        :, :, :3
+                    ]  # Apply colormap and discard alpha channel
+                    heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
+                    heatmap_pil = Image.fromarray(heatmap_colored)
+                    alpha = 0.4
+                    overlayed_image = Image.blend(
+                        original_image_pil.convert("RGBA"),
+                        heatmap_pil.convert("RGBA"),
+                        alpha=alpha,
+                    )
+                    byte_io = io.BytesIO()
+                    rgb_image = overlayed_image.convert("RGB")
+                    rgb_image.save(byte_io, format="JPEG")
+                    array_bytes = byte_io.getvalue()
 
-                import base64
+                    import base64
 
-                encoded_data = base64.b64encode(array_bytes).decode("utf-8")
-                grad_values.append(encoded_data)
+                    encoded_data = base64.b64encode(array_bytes).decode("utf-8")
+                    grad_values.append(encoded_data)
 
-            return rings, confidences, labels, grad_values
+                return rings, confidences, labels, grad_values
+            except:
+                # returning the empty grad_values
+                return rings, confidences, labels, grad_values
 
         else:
 
