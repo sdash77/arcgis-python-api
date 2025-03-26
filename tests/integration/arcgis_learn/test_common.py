@@ -513,6 +513,15 @@ def commonTestCases(
     model_object.fit(1, lr=lr_val, checkpoint=False)
     # # Fit for 1 epochs with LR.
 
+    #Test shap feature for textclassifier
+    if model_test == "textclassifier_test":
+        #testing for single text
+        model_object.predict("Thanks for the support", explain=True)
+        #testing for list of texts with and without explain_index argument
+        txt_list = ["awwww, I never noticed this", "Thanks for the support"]
+        model_object.predict(txt_list, explain=True)
+        model_object.predict(txt_list, explain=True, explain_index=[1])
+
     # save model
     d_path = os.path.join(data_folder, data_path, "models", model_test)
     if model_test == "timeseriesmodel_test":
