@@ -794,9 +794,9 @@ class ArcGISModel(object):
         if self._is_multispectral:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
-                next(
-                    params_iterator
-                ).requires_grad = True  # make first conv weights learnable
+                next(params_iterator).requires_grad = (
+                    True  # make first conv weights learnable
+                )
 
                 tail_name, first_layer = _get_tail(self.learn.model)
 
@@ -1395,9 +1395,9 @@ class ArcGISModel(object):
                     "wavelengths"
                 ]
             else:
-                _emd_template["ModelParameters"][
-                    "wavelengths"
-                ] = get_wavelengths_from_bandnames(self._data._band_names)
+                _emd_template["ModelParameters"]["wavelengths"] = (
+                    get_wavelengths_from_bandnames(self._data._band_names)
+                )
 
         if compute_metrics:
             if self._model_metrics_cache == None:
@@ -1480,9 +1480,9 @@ class ArcGISModel(object):
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
                     if compute_metrics:
-                        _emd_template[
-                            "per_class_metrics"
-                        ] = self.per_class_metrics().to_json()
+                        _emd_template["per_class_metrics"] = (
+                            self.per_class_metrics().to_json()
+                        )
         return _emd_template
 
     @staticmethod
