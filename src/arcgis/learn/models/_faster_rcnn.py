@@ -796,7 +796,8 @@ class FasterRCNN(ModelExtension):
             data._band_names = emd.get("Bands")
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
-
+        if "wavelengths" in kwargs.keys():
+            kwargs.pop("wavelengths")
         data.resize_to = resize_to
         frcnn = cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
 
