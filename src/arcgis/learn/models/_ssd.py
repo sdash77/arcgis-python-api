@@ -713,6 +713,7 @@ class SingleShotDetector(ArcGISModel):
             backend=backend,
             backbone=backbone,
             ssd_version=ssd_version,
+            wavelengths=model_params.get("wavelengths", None),
         )
 
         if not data_passed:
