@@ -1588,6 +1588,9 @@ def _gdal_to_sedf(file_path, **kwargs):
         sr = kwargs.get("sr")
         spatial_ref = osr.SpatialReference()
 
+        if isinstance(sr, dict):
+            sr = sr.get("wkid") or sr.get("wkt")  # Extract WKID or WKT if present
+
         if isinstance(sr, int):
             # If sr is an integer EPSG code (e.g., 3857), create SpatialReference from EPSG code
             spatial_ref.ImportFromEPSG(sr)
@@ -1621,6 +1624,13 @@ def _gdal_to_sedf(file_path, **kwargs):
         # Process geometry as WKB, if needed
         geom = feature.geometry()
         if geom is not None:
+            if kwargs.get("sr"):
+                # If a user provided a spatial reference, reproject the geometry
+                out_layer_sr = out_layer.GetSpatialRef()
+                if out_layer_sr and not out_layer_sr.IsSame(spatial_ref):
+                    transform = osr.CoordinateTransformation(out_layer_sr, spatial_ref)
+                    geom.Transform(transform)
+
             # Export geometry to JSON and parse with ujson
             gj = geom.ExportToJson()
             if not gj:
