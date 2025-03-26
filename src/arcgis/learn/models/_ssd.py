@@ -704,27 +704,16 @@ class SingleShotDetector(ArcGISModel):
 
         data.resize_to = resize_to
 
-        if not backbone in dofa_backbones_downstream:
-            ssd = cls(
-                data,
-                emd["Grids"],
-                emd["Zooms"],
-                emd["Ratios"],
-                pretrained_path=str(model_file),
-                backend=backend,
-                backbone=backbone,
-                ssd_version=ssd_version,
-            )
-        else:
-            ssd = cls(
-                data,
-                emd["Grids"],
-                emd["Zooms"],
-                emd["Ratios"],
-                pretrained_path=str(model_file),
-                ssd_version=ssd_version,
-                **model_params,
-            )
+        ssd = cls(
+            data,
+            emd["Grids"],
+            emd["Zooms"],
+            emd["Ratios"],
+            pretrained_path=str(model_file),
+            backend=backend,
+            backbone=backbone,
+            ssd_version=ssd_version,
+        )
 
         if not data_passed:
             ssd.learn.data.single_ds.classes = ssd._data.classes
