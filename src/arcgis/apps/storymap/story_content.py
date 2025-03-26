@@ -5,6 +5,8 @@ from typing import Optional, Union
 import uuid
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
+import warnings
+
 
 arcgis = LazyLoader("arcgis")
 _imports = LazyLoader("arcgis._impl.imports")
@@ -5019,9 +5021,21 @@ class ExpressMap:
             ]
             # check if offline dependent
             if "dependents" in self._story._properties["nodes"][self.node]:
-                self._offline_dependent = self._story._properties["nodes"][self.node][
-                    "dependents"
-                ]["offline"]
+                if (
+                    "offline"
+                    in self._story._properties["nodes"][self.node]["dependents"]
+                ):
+                    self._offline_dependent = self._story._properties["nodes"][
+                        self.node
+                    ]["dependents"]["offline"]
+                else:
+                    self._offline_dependent = None
+                if "media" in self._story._properties["nodes"][self.node]["dependents"]:
+                    self._media_dependents = self._story._properties["nodes"][
+                        self.node
+                    ]["dependents"]["media"]
+                else:
+                    self._media_dependents = []
         else:
             raise ValueError(
                 "You cannot create an ExpressMap from scratch at this time. Please use an existing ExpressMap."
@@ -5077,6 +5091,29 @@ class ExpressMap:
             raise ValueError(
                 "offline_media can only be set for an ExpressMap that has been added to a Briefing."
             )
+
+    # ----------------------------------------------------------------------
+    @property
+    def media(self):
+        """
+        Get/Set the media property for the embed.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        media               Image or Video. The new media for the Embed.
+        ==================  ========================================
+
+        :return:
+            The media that is being used.
+        """
+        if self._existing is True:
+            if self._media_dependents:
+                return [
+                    utils._assign_node_class(story=self._story, node_id=md)
+                    for md in self._media_dependents
+                ]
+        return None
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -5476,7 +5513,7 @@ class BriefingSlide:
         """
         # property only accessed through the cover slide
         if self._layout != "cover":
-            raise Warning(
+            warnings.warn(
                 "This is not a cover slide. The cover class can only be accessed through the cover slide."
             )
             return None
