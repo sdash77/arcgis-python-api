@@ -568,7 +568,7 @@ class MLModel(object):
         # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
 
-        if self._fairness and self.mitigation_method == "threshold_optimizer":
+        if self._fairness:
             validation_df_batch = self._validation_df.iloc[sample_batch, :]
             sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
             group_df = validation_df_batch.loc[:, self.protected_class]
