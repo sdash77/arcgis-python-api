@@ -1249,7 +1249,7 @@ class ArcGISModel(object):
                     epochs,
                     lr,
                     callbacks=callbacks,
-                    # mixed_precision=mixed_precision,
+                    mixed_precision=mixed_precision,
                     **kwargs,
                 )
             else:
@@ -1257,7 +1257,7 @@ class ArcGISModel(object):
                     epochs,
                     lr,
                     callbacks=callbacks,
-                    # mixed_precision=mixed_precision,
+                    mixed_precision=mixed_precision,
                     **kwargs,
                 )
 
