@@ -1190,9 +1190,9 @@ class TimeSeriesModel(ArcGISModel):
                     )
 
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col].head(len(transformed_data)).loc[:] = (
-                np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
-            )
+            processed_dataframe_transform[col].head(len(transformed_data)).loc[
+                :
+            ] = np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
         return processed_dataframe_transform
 
     def score(self):
@@ -1254,8 +1254,9 @@ class TimeSeriesModel(ArcGISModel):
         sample_ticks = False
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
-                index_data_copy
+            if not (
+                pd.api.types.is_datetime64_any_dtype(index_data_copy)
+                or pd.api.types.is_timedelta64_dtype(index_data_copy)
             ):
                 try:
                     index_data_copy = pd.to_datetime(index_data_copy)
