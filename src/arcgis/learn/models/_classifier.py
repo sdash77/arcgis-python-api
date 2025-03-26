@@ -319,8 +319,7 @@ class FeatureClassifier(ArcGISModel):
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
 
-            if not (backbone in FeatureClassifier.foundation_model_backbones()):
-                self._arcgis_init_callback()  # make first conv weights learnable
+            self._arcgis_init_callback()  # make first conv weights learnable
 
             # Add Mixup data augmentation
             if mixup:

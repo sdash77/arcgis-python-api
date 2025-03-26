@@ -799,7 +799,13 @@ class ArcGISModel(object):
                 )
 
     def _arcgis_init_callback(self):
-        if self._is_multispectral:
+        vitdet_model = False
+        if (
+            hasattr(self.learn.model, "backbone")
+            and getattr(self.learn.model.backbone, "_is_vitdet", False)
+        ) or getattr(self.learn.model, "_is_vitdet", False):
+            vitdet_model = True
+        if self._is_multispectral and not vitdet_model:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
                 next(params_iterator).requires_grad = (
@@ -1243,7 +1249,7 @@ class ArcGISModel(object):
                     epochs,
                     lr,
                     callbacks=callbacks,
-                    mixed_precision=mixed_precision,
+                    # mixed_precision=mixed_precision,
                     **kwargs,
                 )
             else:
@@ -1251,7 +1257,7 @@ class ArcGISModel(object):
                     epochs,
                     lr,
                     callbacks=callbacks,
-                    mixed_precision=mixed_precision,
+                    # mixed_precision=mixed_precision,
                     **kwargs,
                 )
 
