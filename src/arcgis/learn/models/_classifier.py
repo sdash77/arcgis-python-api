@@ -337,6 +337,7 @@ class FeatureClassifier(ArcGISModel):
 
             self.learn.model = self.learn.model.to(self._device)
 
+            self._arcgis_init_callback()  # make first conv weights learnable
             _set_multigpu_callback(self)
             if pretrained_path is not None:
                 self.load(pretrained_path)
