@@ -2713,10 +2713,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 continue
 
             properties = layers[layer_id].properties
-            if "globalIdField" not in properties:
-                continue
 
             global_id_field = properties["globalIdField"]
+            if not global_id_field:
+                use_gids = False
+            else:
+                use_gids = self._copy_global_ids
             object_id_field = properties["objectIdField"]
             relates = [
                 relate
@@ -2740,7 +2742,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 for i in range(0, len(layer_features), chunk_size)
             ]:
                 edits = layer.edit_features(
-                    adds=features_chunk, use_global_ids=self._copy_global_ids
+                    adds=features_chunk, use_global_ids=use_gids
                 )
                 if self._logger:
                     self._logger.debug(edits)
@@ -2829,6 +2831,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         for layer_id in layer_ids:
             pre_fields = copy.deepcopy(layers[layer_id].properties["fields"])
             new_fields = copy.deepcopy(layers[layer_id].properties["fields"])
+            if (
+                not "globalIdField" in layers[layer_id].properties
+                or not layers[layer_id].properties["globalIdField"]
+            ):
+                use_gids = False
+            else:
+                use_gids = self._copy_global_ids
             read_only_update = False
             for field in new_fields:
                 if field["type"] != "esriFieldTypeOID" and field["editable"] == False:
@@ -2857,7 +2866,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 try:
                     edits = layers[layer_id].edit_features(
                         adds=features_chunk,
-                        use_global_ids=self._copy_global_ids,
+                        use_global_ids=use_gids,
                     )
 
                     if self._logger:
@@ -2874,7 +2883,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         for i in range(0, len(features_chunk), temp_chunk)
                     ]:
                         edits = layers[layer_id].edit_features(
-                            adds=chunk, use_global_ids=self._copy_global_ids
+                            adds=chunk, use_global_ids=use_gids
                         )
                         add_results += edits["addResults"]
             object_id_field = layers[layer_id].properties["objectIdField"]
