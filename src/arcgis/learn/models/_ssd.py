@@ -556,6 +556,7 @@ class SingleShotDetector(ArcGISModel):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         transformer_backbone = list(vit_config.keys())
         return transformer_backbone
 
@@ -567,6 +568,7 @@ class SingleShotDetector(ArcGISModel):
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
@@ -1337,7 +1339,7 @@ class SingleShotDetector(ArcGISModel):
                                 trained on).
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
-                                during tiled inferencing. Deafult value 1.
+                                during tiled inferencing. Default value 1.
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image

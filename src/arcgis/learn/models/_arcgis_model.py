@@ -1095,6 +1095,7 @@ class ArcGISModel(object):
         mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
                                 training. If set to `True`, model training will be done in
                                 mixed precision mode. Only `Pytorch` based models are supported.
+                                This feature is experimental.
                                 The default value is 'False'.
         =====================   ===========================================
         """
