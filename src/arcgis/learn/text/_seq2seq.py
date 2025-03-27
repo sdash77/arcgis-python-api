@@ -803,20 +803,20 @@ class SequenceToSequence(ArcGISModel):
         ---------------------   -------------------------------------------
         num_beams               Optional integer.
                                 Number of beams for beam search. 1 means no beam search.
-                                Default value is set to 1
+                                Default value is set to 1.
         ---------------------   -------------------------------------------
         max_length              Optional integer.
                                 The maximum length of the sequence to be generated.
-                                Default value is set to 20
+                                Default value is set to 20.
         ---------------------   -------------------------------------------
         min_length              Optional integer.
                                 The minimum length of the sequence to be generated.
-                                Default value is set to 10
+                                Default value is set to 10.
         ---------------------   -------------------------------------------
         input_field             Optional string.
-                                input field name in the feature set. Supported
-                                in model extension
-                                Deafult value: input_str
+                                Input field name in the feature set. Supported
+                                in model extension.
+                                Default value: input_str
         =====================   ===========================================
 
         :return: list of tuples(input , predicted output strings) or FeatureSet.
