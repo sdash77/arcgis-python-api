@@ -138,7 +138,7 @@ def from_featureset(fset, sr=None):
 
         if "SHAPE" in df.columns:
             # replace the float NaN with None, otherwise error occurs
-            df["SHAPE"].replace({np.nan: None}, inplace=True)
+            df.loc[df["SHAPE"] == np.nan, "SHAPE"] = None
             df.spatial.set_geometry("SHAPE")
             df.spatial.sr = sr
             for i in range(len(df)):
