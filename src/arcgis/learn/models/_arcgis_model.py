@@ -455,7 +455,6 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-
     if hasattr(model, "_is_dofa"):
         return model
     if hasattr(model, "backbone") and (
@@ -1107,12 +1106,16 @@ class ArcGISModel(object):
         if getattr(self, "_is_mm3d", False):
             self.learn.model.prediction = False
 
+        import matplotlib
+
+        _stored_matplotlib_backend = matplotlib.get_backend()
+
+        matplotlib.use("Agg")
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()
 
             if lr is None:
-
                 if len(self.learn.data.train_dl) == 0:
                     print(
                         f"Warning: Your training dataloader is empty. Cannot find the optimal learning rate."
@@ -1248,6 +1251,7 @@ class ArcGISModel(object):
                     mixed_precision=mixed_precision,
                     **kwargs,
                 )
+            matplotlib.use(_stored_matplotlib_backend)
 
     def unfreeze(self):
         """
