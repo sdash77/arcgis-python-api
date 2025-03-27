@@ -79,7 +79,7 @@ class DecoderBlock(nn.Module):
             x = self.up(x)
         x = self.relu3(x)
         if self.hook:
-            x = x + self.hook.stored
+            x = x + self.hook.stored.to(x.device)
         return x
 
 
