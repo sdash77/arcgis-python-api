@@ -42,7 +42,7 @@ class MSDeformAttnFunction(Function):
         attention_weights,
         im2col_step,
     ):
-        with torch.autocast(device_type="cuda", enabled=False):
+        with torch.autocast(device_type=value.device.type, enabled=False):
             ctx.im2col_step = im2col_step
             output = MSDA.ms_deform_attn_forward(
                 value.float(),
