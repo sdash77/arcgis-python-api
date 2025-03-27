@@ -1339,7 +1339,7 @@ class SingleShotDetector(ArcGISModel):
                                 trained on).
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
-                                during tiled inferencing. Deafult value 1.
+                                during tiled inferencing. Default value 1.
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
