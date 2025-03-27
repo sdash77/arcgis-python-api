@@ -4338,7 +4338,7 @@ class UserManager(object):
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes
             and provider != "enterprise"
-            and self._gis._portal._version != "10.3"
+            and self._gis.version < [10, 3]
         ):
             if (
                 credits == -1
@@ -4412,7 +4412,7 @@ class UserManager(object):
                         return new_user
         # If kubernets is 11.1 then need to use the second method, even if provider is arcgis
         elif self._gis._portal.is_kubernetes and (
-            provider == "enterprise" or self._gis._portal._version == "10.3"
+            provider == "enterprise" or self._gis.version >= [10, 3]
         ):
             createuser_url = (
                 self._portal.url
