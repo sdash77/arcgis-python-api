@@ -33,6 +33,11 @@ on:
         description: Run unit tests on Python 3.11?
         required: false
         default: true
+      py312:
+        type: boolean
+        description: Run unit tests on Python 3.12?
+        required: false
+        default: false
 
 jobs:
   preflight:
@@ -67,6 +72,7 @@ jobs:
           echo "windows=${{ github.event_name == 'schedule' || github.event.inputs.windows }}" >> $GITHUB_OUTPUT
           echo "py310=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py310 }}" >> $GITHUB_OUTPUT
           echo "py311=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.py311 }}" >> $GITHUB_OUTPUT
+          echo "py312=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py312 }}" >> $GITHUB_OUTPUT
       - name: Construct matrix
         id: set-matrix
         run: |
@@ -90,6 +96,10 @@ jobs:
           if [ "${{ steps.get-parameters.outputs.py311 }}" = 'true' ]; then
             echo "Running on Python 3.11"
             matrix=$(echo $matrix | jq '.python_version += ["3.11"]' | jq -r tostring)
+          fi
+          if [ "${{ steps.get-parameters.outputs.py312 }}" = 'true' ]; then
+            echo "Running on Python 3.12"
+            matrix=$(echo $matrix | jq '.python_version += ["3.12"]' | jq -r tostring)
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
   unit-test:
@@ -123,13 +133,10 @@ jobs:
       - name: Get arcgis release info
         id: arcgis-info
         run: |
-          if [ "${{ runner.os }}" == "macOS" ]; then
-            # osx-arm64 is currently only available on prerelease label
-            echo "latest-version=$(conda search -c esri -c esri/label/prerelease arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-          else
-            echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-          fi
-          
+          # due to https://github.com/conda/conda/issues/14569 we can't use conda search
+          # hardcoding the latest version for now
+          # echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          echo "latest-version=2.4.0.1" >> $GITHUB_OUTPUT
       - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3
@@ -138,13 +145,22 @@ jobs:
           key: conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
       - name: Install shared dependencies
         run: |
-          conda install -c main nose2 --yes
-          conda install conda-forge::requests-mock --yes
-          if [ "${{ runner.os }}" == "macOS" ]; then
-            conda install -c esri -c esri/label/prerelease arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
-          else
-            conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
-          fi
+          # testing dependencies
+          conda install -c main nose2 --yes --quiet
+          pip install requests-mock
+          conda install -c main protobuf --yes --quiet
+
+          # new dependencies
+          conda install -c main "websocket-client>=1.2.3,<2" --yes --quiet
+          conda install -c main "networkx>=3.3,<4" --yes --quiet
+
+          # core dependencies
+          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes --quiet
+          
+          # updated dependencies
+          conda install -c esri "pyarrow>=16,<17" --yes --quiet
+          conda install "pydantic>=2.8.2,<3" --yes --quiet
+          conda install -c main "dask>=2024.12.1,<2025.1.0" --yes --quiet
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
         id: save-cache

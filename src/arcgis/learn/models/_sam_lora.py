@@ -176,6 +176,13 @@ class SamLoRA(ModelExtension):
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
+    backbone                Optional string. Default: `vit_b`
+                            Backbone model architecture.
+                            Supported backbones: Vision Transformers
+                            (huge, large, and base) pretrained by Meta.
+                            Use `supported_backbones` property to get the
+                            list of all the supported backbones.
+    ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
@@ -274,14 +281,14 @@ class SamLoRA(ModelExtension):
     def _supported_datasets():
         return ["Classified_Tiles"]
 
+    @staticmethod
+    def _supported_backbones():
+        return ["vit_h", "vit_l", "vit_b"]
+
     @property
     def supported_backbones(self):
         """Supported list of backbones for this model."""
         return SamLoRA._supported_backbones()
-
-    @staticmethod
-    def _supported_backbones():
-        return ["vit_h", "vit_l", "vit_b"]
 
     @staticmethod
     def _available_metrics():
@@ -348,13 +355,16 @@ class SamLoRA(ModelExtension):
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer. Number of rows of results
                                 to be displayed.
         =====================   ===========================================
+
         **kwargs**
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------

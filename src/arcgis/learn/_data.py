@@ -265,7 +265,7 @@ def _get_bbox_classes(
             obs_angle.append(float(lst[2]))  # onservation angle
             occluded.append(float(lst[3]))  # if the object is occluded
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin) * 1.25, (ymax - ymin) * 1.25))
+            height_width.append(((xmax - xmin), (ymax - ymin)))
             hwl.append([hieght, width, length])
             d_xyz.append([x, y, z])
             rot_yaxis.append(float(lst[14]))  # angle of rotation along y axis
@@ -307,7 +307,7 @@ def _get_bbox_classes(
 
             classes.append(data_class_mapping)
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin) * 1.25, (ymax - ymin) * 1.25))
+            height_width.append(((xmax - xmin), (ymax - ymin)))
 
     if len(bboxes) == 0:
         return [[[0.0, 0.0, 0.0, 0.0]], [list(class_mapping.values())[0]]]
@@ -596,7 +596,12 @@ _models_dir = "models"
 
 
 def _prepare_working_dir(path):
-    _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+    try:
+        _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+    except Exception as e:
+        raise Exception(
+            "Failed to create the specified working directory. Create it manually and retry."
+        )
 
 
 def merge_emd_and_stats(data_folders):
@@ -841,16 +846,12 @@ def prepare_textdata(
                             For `csv` dataset type. If an entity has multiple values. It should be
                             separated by `,`.
     ---------------------   -------------------------------------------
-    class_mapping           Optional dictionary. Mapping from id to
-                            its string label.
-                            For dataset_type=IOB, BILUO or ner_json:
-                            Provide address field as class mapping
-                            in below format:
-                            class_mapping={'address_tag':'address_field'}.
-                            Field defined as 'address_tag' will be treated
-                            as a location. In cases where trained model extracts
-                            multiple locations from a single document, that
-                            document will be replicated for each location.
+    class_mapping           Optional dictionary. This parameter is optional and can only be used when the
+                            task is entity recognition. The dictionary specifies the location entity. Use the format:
+                            class_mapping={'address_tag': 'location'}.
+                            The value linked to the 'address_tag' key will be identified as a location entity.
+                            If the model extracts multiple location entities from a single document,
+                            each location will be listed separately in the results.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -1290,7 +1291,7 @@ def prepare_data(
     path                    Required string. Path to data directory or a list of paths.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
-                            its string label.
+                            its string label. Not supported for MaskRCNN model.
     ---------------------   -------------------------------------------
     chip_size               Optional integer, default 224. Size of the image to train
                             the model. Images are cropped to the specified chip_size.
@@ -1623,6 +1624,12 @@ def prepare_data(
             else:
                 stats = eas
             dataset_type = stats["MetaDataMode"]
+            if dataset_type == "RCNN_Masks":
+                emdfile = path / "esri_model_definition.emd"
+                with open(emdfile) as f:
+                    emdstats = json.load(f)
+                if emdstats.get("IsMultidimensional", False):
+                    dataset_type = "PSETAE"
         # elif os.path.exists(path/'images_before') and os.path.exists(path/'images_after'):
         #     dataset_type = 'ChangeDetection'
         elif _check_esri_files(path / "A") and _check_esri_files(path / "B"):
@@ -1641,8 +1648,13 @@ def prepare_data(
                 )
                 with open(emd_file) as f:
                     emd = json.load(f)
-                if emd.get("IsMultidimensional"):
+                if (
+                    emd.get("IsMultidimensional", False)
+                    and emd.get("MetaDataMode") == "Export_Tiles"
+                ):
                     dataset_type = "ClimaX"
+                else:
+                    dataset_type = "PSETAE"
             except:
                 raise Exception(
                     "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."
@@ -1904,19 +1916,11 @@ def prepare_data(
         and "InputRastersProps" in emd
         and kwargs.get("imagery_type", None) is None
     ):
-        # Check by band names
-        band_mapping = {
-            i: b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])
-        }
-        for b in emd[
-            "WellKnownBandNames (FYI, these band names can be used in ExtractBands)"
-        ]:
-            if b.lower() in ["red", "green", "blue"]:
-                continue
-            if b.lower() in band_mapping:
-                imagery_type = sensor_name
-                _infered = True
-                break
+        # check if traing band is coming from other that RGB band
+        band_mapping = set(emd["InputRastersProps"]["BandNames"])
+        if not band_mapping.issubset(["red", "green", "blue", "r", "g", "b", ""]):
+            imagery_type = sensor_name
+            _infered = True
 
         if not _infered:
             # Check by values
@@ -3452,7 +3456,7 @@ def prepare_data(
         )
     data.orig_path = path
     data.resize_to = kwargs_transforms.get("size", None)
-    data.height_width = height_width
+    data.height_width = np.array(height_width)
     data.downsample_factor = kwargs.get("downsample_factor")
     data.dataset_type = dataset_type
 

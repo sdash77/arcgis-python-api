@@ -258,7 +258,12 @@ def nc2np(
         for year, i in zip(years, range(lenallyear)):
             np_vars = {}
             for var in variables:
-                ds = gdal.Open(img.replace(img.split("\\")[-4], var))
+                img_path = Path(img)
+                parts = list(img_path.parts)
+                parts[-4] = var
+                new_img_path = Path(*parts)
+                ds = gdal.Open(str(new_img_path))
+
                 img_arr = ds.ReadAsArray()
 
                 width = ds.RasterXSize
@@ -312,7 +317,7 @@ def nc2np(
         )
 
         if partition == "train":
-            norm_lats[img.split("\\")[-1][:12]] = lat_chips["lattitude"]
+            norm_lats[os.path.basename(img)[:12]] = lat_chips["lattitude"]
 
     if partition == "train":
         normalize_mean["lattitude"] = np.array([j for i, j in norm_lats.items()]).mean(
@@ -424,7 +429,7 @@ def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs
     imagespace = emd_stats.get("ImageSpaceUsed")
 
     realdates = [datetime.datetime.fromordinal(i + 693593) for i in serialDates]
-    years = list(set(year for year in (date.year for date in realdates)))
+    years = sorted(set([date.year for date in realdates]))
 
     ts_type = check_timeseries_type(realdates)
 
@@ -517,12 +522,12 @@ def prepare_climax_data(
 def show_results(self, rows, variable, **kwargs):
     variable = self._data._out_variables[0] if variable == "" else variable
     if len(self._data._out_variables) != 1:
-        variable_no_x = {i: n for n, i in enumerate(self._data._out_variables)}[
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._data._out_variables)}[
             variable.lower()
         ]
         variable_no_y = variable_no_x
     else:
-        variable_no_x = {i: n for n, i in enumerate(self._data._variables)}[
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._data._variables)}[
             variable.lower()
         ]
         variable_no_y = 0
@@ -611,12 +616,14 @@ def show_batch(self, rows=4, variable="", **kwargs):
     xs, ys, years = [], [], []
     variable = self._out_variables[0] if variable == "" else variable
     if not len(self._out_variables) == 1:
-        variable_no_x = {i: n for n, i in enumerate(self._out_variables)}[
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._out_variables)}[
             variable.lower()
         ]
         variable_no_y = variable_no_x
     else:
-        variable_no_x = {i: n for n, i in enumerate(self._variables)}[variable.lower()]
+        variable_no_x = {i.lower(): n for n, i in enumerate(self._variables)}[
+            variable.lower()
+        ]
         variable_no_y = 0
     for n, imgs in enumerate(self.train_dl):
         if n != rows:

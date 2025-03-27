@@ -6,6 +6,7 @@ import warnings
 import sys, importlib
 from functools import partial
 import logging
+import urllib
 
 logger = logging.getLogger()
 
@@ -121,7 +122,13 @@ class ModelExtension(ArcGISModel):
         self._model_conf_class = model_conf
         self._backend = "pytorch"
         self._kwargs = kwargs
-        model = self._model_conf.get_model(data, backbone, **kwargs)
+        try:
+            model = self._model_conf.get_model(data, backbone, **kwargs)
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+            )
+
         if backbone is not None:
             backbone_name = backbone if type(backbone) is str else backbone.__name__
             if model_conf.__name__ == "MyFasterRCNN" and backbone_name not in [
@@ -132,8 +139,10 @@ class ModelExtension(ArcGISModel):
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
                 )
-        if self._is_multispectral:
-            model = _change_tail(model, data)
+        if self._is_multispectral or (
+            not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
+        ):
+            model = _change_tail(model, data, backbone=self._backbone)
         if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
@@ -356,6 +365,8 @@ class ModelExtension(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
             if dataset_type == "Panoptic_Segmentation":
@@ -608,9 +619,18 @@ class ModelExtension(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
 
-        self._show_results_modified(
-            rows=rows, thresh=thresh, model=self, thinning=thinning, **kwargs
-        )
+        if not self._is_multispectral:
+            self._show_results_modified(
+                rows=rows, thresh=thresh, model=self, thinning=thinning, **kwargs
+            )
+        else:
+            return_fig = kwargs.get("return_fig", False)
+            ret_val = show_results_multispectral_segmentation(
+                self, nrows=rows, thresh=thresh, thinning=thinning, model=self, **kwargs
+            )
+            if return_fig:
+                fig, ax = ret_val
+                return fig
 
     def _show_results_multispectral(
         self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs
@@ -930,7 +950,7 @@ class ModelExtension(ArcGISModel):
                                 model was trained on).
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
-                                during tiled inferencing. Deafult value 1.
+                                during tiled inferencing. Default value 1.
         ---------------------   -------------------------------------------
         =====================   ===========================================
 
@@ -1151,7 +1171,8 @@ class ModelExtension(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path
-                                input_video_path appended with _prediction.
+                                input_video_path appended with _prediction.avi.
+                                Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

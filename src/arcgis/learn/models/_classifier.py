@@ -5,6 +5,9 @@ from .._data import _check_esri_files, _raise_fastai_import_error
 import random
 import math
 import traceback
+from itertools import compress
+import urllib
+
 
 try:
     import pandas
@@ -72,6 +75,7 @@ try:
         complete_transformer_backbone_name,
     )
     from fastai.vision import learner
+    from ._dofa_utils import dofa_config
 
     learner._test_cnn = test_cnn_trnsfrmr
     ClassificationInterpretation.GradCAM = gradcam_trnsfrmr
@@ -160,6 +164,9 @@ class FeatureClassifier(ArcGISModel):
                             for this model, which is 'pytorch' by default.
 
                             valid options are "``pytorch``", "``tensorflow``"
+    ---------------------   -------------------------------------------
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.FeatureClassifier` Object
@@ -182,7 +189,8 @@ class FeatureClassifier(ArcGISModel):
             data = adapt_fastai_databunch(data)
 
         self._free_memory()
-        backbone = complete_transformer_backbone_name(backbone, data.chip_size)
+        if str(type(backbone)) != "<class 'function'>":
+            backbone = complete_transformer_backbone_name(backbone, data.chip_size)
         self._check_dataset_support(data)
 
         self._backend = backend
@@ -257,40 +265,79 @@ class FeatureClassifier(ArcGISModel):
                 and backbone in FeatureClassifier._transformer_backbone_original_names()
             )
 
-            if self._transformer:
-                from ._timm_utils import create_transformer_FeatureClassifier
+            self._dofa = (
+                type(backbone) is str and backbone in FeatureClassifier.dofa_backbones()
+            )
+            try:
+                if self._transformer:
+                    from ._timm_utils import create_transformer_FeatureClassifier
 
-                trnsfrmr_model = create_transformer_FeatureClassifier(
-                    self._backbone.__name__,
-                    num_classes=data.c,
-                    img_size=self._data.chip_size,
-                    pretrained=True,
-                )
-                if self._is_multispectral:
-                    trnsfrmr_model = _change_tail(trnsfrmr_model, data)
+                    trnsfrmr_model = create_transformer_FeatureClassifier(
+                        self._backbone.__name__,
+                        num_classes=data.c,
+                        img_size=self._data.chip_size,
+                        pretrained=True,
+                    )
+                    if self._is_multispectral:
+                        trnsfrmr_model = _change_tail(trnsfrmr_model, data)
 
-                self.learn = Learner(
-                    data,
-                    model=trnsfrmr_model,
-                    metrics=metrics,
+                    self.learn = Learner(
+                        data,
+                        model=trnsfrmr_model,
+                        metrics=metrics,
+                    )
+                    idx = self._freeze()
+                    if trnsfrmr_model[0].__class__.__name__ == "CoaT":
+                        idx = 8
+                    self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                    self.learn.create_opt(lr=3e-3)
+                elif self._dofa:
+                    from arcgis.learn.models._arcgis_model import get_backbone_func
+
+                    backbone_func = get_backbone_func(
+                        backbone,
+                        data,
+                        is_clf=True,
+                        num_classes=data.c,
+                        **kwargs,
+                    )
+                    backbone_dofa_clf = fastai.vision.learner.create_body(
+                        backbone_func, True, None
+                    )
+
+                    backbone_dofa_clf._is_dofa = True
+
+                    if self._is_multispectral:
+                        backbone_dofa_clf = _change_tail(backbone_dofa_clf, data)
+
+                    self.learn = Learner(
+                        data,
+                        model=backbone_dofa_clf,
+                        metrics=metrics,
+                    )
+
+                    idx = self._freeze()
+                    self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                    self.learn.create_opt(lr=3e-3)
+                else:
+                    self.learn = cnn_learner(
+                        data,
+                        self._backbone,
+                        metrics=metrics,
+                        cut=backbone_cut,
+                        split_on=backbone_split,
+                        custom_head=head,
+                    )
+            except urllib.error.URLError as e:
+                raise ConnectionError(
+                    f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
                 )
-                idx = self._freeze()
-                if trnsfrmr_model[0].__class__.__name__ == "CoaT":
-                    idx = 8
-                self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
-                self.learn.create_opt(lr=3e-3)
-            else:
-                self.learn = cnn_learner(
-                    data,
-                    self._backbone,
-                    metrics=metrics,
-                    cut=backbone_cut,
-                    split_on=backbone_split,
-                    custom_head=head,
-                )
+
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
-            self._arcgis_init_callback()  # make first conv weights learnable
+
+            if not self._dofa:
+                self._arcgis_init_callback()  # make first conv weights learnable
 
             # Add Mixup data augmentation
             if mixup:
@@ -348,12 +395,17 @@ class FeatureClassifier(ArcGISModel):
         return ["valid_loss", "accuracy"]
 
     @property
-    def supported_backbones(self):
-        """Supported list of backbones for this model."""
-        return FeatureClassifier._supported_backbones()
+    def supported_datasets(self):
+        """Supported dataset types for this model."""
+        return FeatureClassifier._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         from ._timm_utils import shortened_transformer_backbone
 
         transformer_model = shortened_transformer_backbone()
@@ -397,26 +449,35 @@ class FeatureClassifier(ArcGISModel):
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
+    def dofa_backbones():
+        """Supported list of dofa backbones for this model."""
+        dofa_backbone = list(dofa_config.keys())
+        return dofa_backbone
+
+    @staticmethod
+    def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbones = FeatureClassifier.transformer_backbones()
-        from ._hf_weightutils import hf_resnet_cfgs
+        torchgeo_backbone = FeatureClassifier.torchgeo_backbones()
+        dofa_backbone = FeatureClassifier.dofa_backbones()
 
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
-            timm_backbones
-            + transformer_backbones
-            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+            timm_backbones + transformer_backbones + torchgeo_backbone + dofa_backbone
         )
 
     @property
-    def supported_datasets(self):
-        """Supported dataset types for this model."""
-        return FeatureClassifier._supported_datasets()
-
-    @staticmethod
-    def _supported_datasets():
-        return ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]
+    def supported_backbones(self):
+        """Supported list of backbones for this model."""
+        return FeatureClassifier._supported_backbones()
 
     def show_results(self, rows=5, **kwargs):
         """
@@ -435,7 +496,7 @@ class FeatureClassifier(ArcGISModel):
         if is_arcgispronotebook():
             plt.show()
 
-    def _show_results_multispectral(self, rows=5, **kwargs):
+    def _show_results_multispectral(self, rows=5, gradcam=False, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -444,16 +505,120 @@ class FeatureClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
+        ---------------------   -------------------------------------------
+        gradcam                 Optional boolean. Set this parameter to True to
+                                get gradcam visualization to help with
+                                explanability of the prediction.Default is set to False
+                                Works with RGB images only.
+
         =====================   ===========================================
 
         """
         from .._utils.image_classification import IC_show_results
 
+        if self._is_multispectral and gradcam:
+            raise Exception("This method is not supported for multispectral dataset.")
+
         return_fig = kwargs.get("return_fig", False)
-        fig = IC_show_results(self, nrows=rows, **kwargs)
+        fig = IC_show_results(self, nrows=rows, gradcam_show_result=gradcam, **kwargs)
         if return_fig:
             fig1, axs = fig
             return fig1
+
+    def save(
+        self,
+        name_or_path,
+        framework="PyTorch",
+        publish=False,
+        gis=None,
+        compute_metrics=True,
+        save_optimizer=False,
+        save_inference_file=True,
+        gradcam=False,
+        **kwargs,
+    ):
+        """
+        Saves the model weights, creates an Esri Model Definition and Deep
+        Learning Package zip for deployment to Image Server or ArcGIS Pro.
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name of the model to save. It
+                                stores it at the pre-defined location. If path
+                                is passed then it stores at the specified path
+                                with model name as directory name and creates
+                                all the intermediate directories.
+        ---------------------   -------------------------------------------
+        framework               Optional string. Exports the model in the
+                                specified framework format ('PyTorch', 'tflite'
+                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                Only models saved with the default framework
+                                (PyTorch) can be loaded using `from_model`.
+                                ``tflite`` framework (experimental support) is
+                                supported by :class:`~arcgis.learn.SingleShotDetector`
+                                - tensorflow backend only,
+                                :class:`~arcgis.learn.FeatureClassifier`and
+                                :class:`~arcgis.learn.RetinaNet` - tensorflow
+                                backend only.``torchscript`` format is supported by
+                                :class:`~arcgis.learn.SiamMask`,
+                                :class:`~arcgis.learn.MaskRCNN`,
+                                :class:`~arcgis.learn.SingleShotDetector`,
+                                :class:`~arcgis.learn.YOLOv3` and
+                                :class:`~arcgis.learn.RetinaNet`.
+                                For usage of SiamMask model in ArcGIS Pro >= 2.8,
+                                load the ``PyTorch`` framework saved model
+                                and export it with ``torchscript`` framework
+                                using ArcGIS API for Python >= v1.8.5.
+                                For usage of SiamMask model in ArcGIS Pro 2.9,
+                                set framework to ``torchscript`` and use the
+                                model files additionally generated inside
+                                'torch_scripts' folder.
+                                If framework is ``TF-ONNX`` (Only supported for
+                                :class:`~arcgis.learn.SingleShotDetector`),
+                                ``batch_size`` can be passed as an optional
+                                keyword argument.
+        ---------------------   -------------------------------------------
+        publish                 Optional boolean. Publishes the DLPK as an item.
+        ---------------------   -------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object.
+                                Used for publishing the item. If not specified
+                                then active gis user is taken.
+        ---------------------   -------------------------------------------
+        compute_metrics         Optional boolean. Used for computing model
+                                metrics.
+        ---------------------   -------------------------------------------
+        save_optimizer          Optional boolean. Used for saving the model-optimizer
+                                state along with the model. Default is set to False
+        ---------------------   -------------------------------------------
+        save_inference_file     Optional boolean. Used for saving the inference file
+                                along with the model.
+                                If False, the model will not work with ArcGIS Pro 2.6
+                                or earlier. Default is set to True.
+        ---------------------   -------------------------------------------
+        gradcam                 Optional boolean. Used to save the results with the
+                                Grad-CAM heatmap for the predicted classes, enhancing the
+                                clarity and interpretability of the model's predictions.
+                                Default is set to False. This feature works only with RGB images.
+        ---------------------   -------------------------------------------
+        kwargs                  Optional Parameters.
+        =====================   ===========================================
+        """
+
+        if int(os.environ.get("RANK", 0)):
+            return
+
+        return super()._save(
+            name_or_path,
+            framework=framework,
+            publish=publish,
+            gis=gis,
+            compute_metrics=compute_metrics,
+            save_optimizer=save_optimizer,
+            save_inference_file=save_inference_file,
+            gradcam=gradcam,
+            **kwargs,
+        )
 
     def predict(self, img_path, visualize=False, gradcam=False):
         """
@@ -483,7 +648,7 @@ class FeatureClassifier(ArcGISModel):
         img = open_image(img_path)
         pred = self.learn.predict(img)
         if visualize == True:
-            gradCam = self._gradCAM(img, pred[0], grad_vis=gradcam)
+            gradCam = self._gradCAM(img, pred, grad_vis=gradcam)
         return pred
 
     def _predict_batch(self, imagetensor_batch):
@@ -654,6 +819,7 @@ class FeatureClassifier(ArcGISModel):
             model_file = emd_path.parent / model_file
 
         model_params = emd["ModelParameters"]
+        backbone = model_params["backbone"]
         chip_size = emd["ImageWidth"]
 
         try:
@@ -710,6 +876,9 @@ class FeatureClassifier(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            data._band_names = emd.get("Bands")
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.device = _get_device()
 
@@ -1779,62 +1948,117 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
-    def _gradCAM(
-        self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
-    ):
-        if isinstance(cl, fastai.core.MultiCategory):
-            if not cl.raw:  # If the predictions are all 0, including for None class
-                xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
-                xb, _ = self._data.one_item(im, detach=False, denorm=False)
-                xb_im = Image(xb[0])
-                xb_im_denorm = Image(xb_norm[0])
-                _, ax = plt.subplots(figsize=(6, 6))
-                xb_im_denorm.show(ax, title=f"Predicted class: None")
-                return
-            else:
-                cat = cl.raw  # Handles MuliCategory types
-                cat1 = cat[0]
+    def _generate_grad_cam(self, im, cl, heatmap_thresh: int = 16, **kwargs):
+        """
+        Generate Grad-CAM heatmaps for the given image and model predictions.
+
+        Args:
+            im: The input image.
+            cl: List containing the information for the predicted classes and category labels.
+
+        Returns:
+            grad_cam_outputs: List of Grad-CAM heatmaps for the predicted classes.
+            pred_class_label: List of predicted class labels corresponding to the heatmaps.
+        """
+        if self._data.dataset_type == "MultiLabeled_Tiles":
+            # Handles MuliCategory types
+            cat_pred = cl[1]
         else:
-            cat1 = int(cl)
-        m = self.learn.model.eval()
-        xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+            # gives dimension- 1 to the scalar tensor of SingleCategory types
+            cat_pred = cl[1].unsqueeze(0)
+        m = self.learn.model.eval()  # Set the model to evaluation mode
+        xb_norm, _ = self._data.one_item(
+            im, detach=False, denorm=True
+        )  # Normalized batch
         xb, _ = self._data.one_item(
             im, detach=False, denorm=False
-        )  # put into a minibatch of batch size = 1
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            with hook_output(m[0]) as hook_a:
-                with hook_output(m[0], grad=True) as hook_g:
-                    preds = m(xb)
-                    preds[0, cat1].backward()
-        acts = hook_a.stored[0].cpu()  # activation maps
-        grad = hook_g.stored[0][0].cpu()
-        if self._transformer:
-            acts = reshape_tensor(acts)
-            grad = reshape_tensor(grad)
+        )  # Batch without normalization
+        grad_cam_outputs = []
+        pred_class_label = []
+        for class_label, pred_cat1 in enumerate(cat_pred.cpu().numpy()):
+            if (
+                self._data.dataset_type == "Labeled_Tiles"
+                or self._data.dataset_type == "Imagenet"
+            ):
+                class_label = pred_cat1
+                pred_cat1 = True
+            if pred_cat1:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    with hook_output(m[0]) as hook_a:
+                        with hook_output(m[0], grad=True) as hook_g:
+                            preds = m(xb)
+                            preds[0, class_label].backward()
 
-        if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
-            grad_chan = grad.mean(1).mean(1)
-            mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
+                acts = hook_a.stored[0].cpu()  # Activation maps
+                grad = hook_g.stored[0][0].cpu()  # Gradients
+
+                if self._transformer:
+                    acts = reshape_tensor(acts)
+                    grad = reshape_tensor(grad)
+
+                # for Grad-CAM
+                if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
+                    grad_chan = grad.mean(1).mean(1)
+                    mult = F.relu((acts * grad_chan[..., None, None]).sum(0))
+                    grad_cam_outputs.append(mult)
+                    pred_class_label.append(class_label)
+                else:
+                    raise ValueError(
+                        "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
+                    )
+            else:
+                if kwargs.get("multi_all_cam"):
+                    # if not predicted the image will be displayed
+                    mult = torch.zeros(4, 4)
+                    grad_cam_outputs.append(mult)
+
+        return grad_cam_outputs, pred_class_label, xb, xb_norm
+
+    def _gradCAM(self, im, cl, image: bool = True, grad_vis=False):
+        # If the predictions are all 0, including for None class
+        if isinstance(cl[0], fastai.core.MultiCategory) and not cl[0].raw:
+            xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+            xb, _ = self._data.one_item(im, detach=False, denorm=False)
+            xb_im = Image(xb[0])
+            xb_im_denorm = Image(xb_norm[0])
+            _, ax = plt.subplots(figsize=(6, 6))
+            xb_im_denorm.show(ax, title=f"Predicted class: None")
+            return
+        else:
+            grad_cam_outputs, pred_class_label, xb, xb_norm = self._generate_grad_cam(
+                im, cl
+            )
             if image:
                 xb_im = Image(xb[0])
                 xb_im_denorm = Image(xb_norm[0])
                 sz = list(xb_im.shape[-2:])
                 if grad_vis == True:
-                    _, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 12))
-                    xb_im_denorm.show(ax[0], title=f"Predicted class: {cl}")
-                    xb_im_denorm.show(ax[1], title=f"Predicted class: {cl}")
-                    ax[1].imshow(
-                        mult,
-                        alpha=0.4,
-                        extent=(0, *sz[::-1], 0),
-                        interpolation="bilinear",
-                        cmap="hot",
+                    plotsize = 12 + 2 * (len(grad_cam_outputs) - 1)
+                    _, ax = plt.subplots(
+                        nrows=1,
+                        ncols=len(grad_cam_outputs) + 1,
+                        figsize=(plotsize, plotsize),
                     )
+                    xb_im_denorm.show(ax[0], title=f"Predicted class: {cl[0]}")
+                    xb_im_denorm.show(ax[1], title=f"Predicted class: {cl[0]}")
+                    for i in range(len(grad_cam_outputs)):
+                        xb_im_denorm.show(
+                            ax[i + 1],
+                            title=f"{self._data.classes[pred_class_label[i]]}",
+                        )
+                        ax[i + 1].imshow(
+                            grad_cam_outputs[i],
+                            alpha=0.4,
+                            extent=(0, *sz[::-1], 0),
+                            interpolation="bilinear",
+                            cmap="hot",
+                        )
                 else:
                     _, ax = plt.subplots(figsize=(6, 6))
-                    xb_im_denorm.show(ax, title=f"Predicted class: {cl}")
-            return mult
+                    xb_im_denorm.show(ax, title=f"Predicted class: {cl[0]}")
+
+            return grad_cam_outputs
 
     @deprecated(
         deprecated_in="1.7.1",

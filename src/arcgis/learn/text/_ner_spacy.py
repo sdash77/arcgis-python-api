@@ -90,7 +90,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             pretrained_path = str(_get_emd_path(pretrained_path))
             self.load(pretrained_path)
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
         Helps in choosing the optimum learning rate for training the model.
@@ -745,7 +745,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         else:
             return logging.error("Model needs to be fitted, before extraction.")
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, ds_type="valid", rows=5):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 

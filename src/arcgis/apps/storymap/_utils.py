@@ -1,5 +1,5 @@
 from __future__ import annotations
-import html
+import warnings
 import tempfile
 from time import sleep
 from typing import Optional, Union
@@ -368,39 +368,63 @@ def get_version(story) -> str:
     return sm_version
 
 
-# ----------------------------------------------------------------------
-def save(
-    story,
-    title: Optional[str] = None,
-    tags: Optional[list] = None,
-    access: str = None,
-    publish: bool = False,
+def _publish(story, access, item_properties):
+    """
+    Enterprise does not have a publish endpoint. We need to manually update the item properties and resources.
+    """
+    # Remove old publish item
+    for resource in story._resources:
+        if (
+            "publish_data" in resource["resource"]
+            or "published_data" in resource["resource"]
+            or "publish" in resource["resource"]
+        ):
+            _remove_resource(story, file=resource["resource"])
+    # Add new publish
+    _add_resource(
+        story,
+        resource_name="published_data.json",
+        text=json.dumps(story._properties),
+    )
+
+    # add to item properties
+    item_properties["text"] = json.dumps(story._properties)
+    item_properties["url"] = story._url
+    sharing = access or story._item.access
+    item_properties["access"] = sharing
+
+    # Update the item and invoke share to have correct access
+    story._item.update(item_properties=item_properties)
+
+    if sharing == "private":
+        story._item.sharing.sharing_level = "PRIVATE"
+    elif sharing == "org":
+        story._item.sharing.sharing_level = "ORGANIZATION"
+    elif sharing == "public":
+        story._item.sharing.sharing_level = "EVERYONE"
+
+    if story._gis._session.auth and story._gis._session.auth.token is not None:
+        # Make a call to the StoryMaps publish endpoint
+        story._gis._session.post(
+            url=story._url + "/publish",
+            data={
+                "f": "json",
+                "token": story._gis._session.auth.token,
+            },
+        )
+
+
+def _prepare_story_for_save(
+    story, publish, make_copyable, no_seo, title, tags, sm_version
 ):
     """
-    This method will save your StoryMap or Briefing to your active GIS. The story will be saved
-    with unpublished changes unless `publish` parameter is specified to True.
-
-    The title only needs to be specified if a change is wanted, otherwise exisiting title
-    is used.
+    Remove old resource and add new draft resource that is the story._properties.
     """
-    # Remove old draft item
     for resource in story._resources:
         if re.match("draft_[0-9]{13}.json", resource["resource"]) or re.match(
             "draft.json", resource["resource"]
         ):
             _remove_resource(story, file=resource["resource"])
-
-    # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
-    if title:
-        root = story._properties["root"]
-        if "metaSettings" not in story._properties["nodes"][root]["data"]:
-            story._properties["nodes"][root]["data"]["metaSettings"] = {"title": None}
-        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
-        if "config" not in story._properties["nodes"][root]:
-            story._properties["nodes"][root]["config"] = {}
-        story._properties["nodes"][root]["config"][
-            "shouldPushMetaToAGOItemDetails"
-        ] = False
 
     # Add new draft with time in milliseconds
     draft = "draft_" + str(int(time.time() * 1000)) + ".json"
@@ -409,39 +433,26 @@ def save(
     _add_resource(story, resource_name=draft, text="{}", access="private")
 
     # Create a temporary file to write the story._properties
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp:
+    with tempfile.NamedTemporaryFile(
+        mode="w+", suffix=".json", delete=False, encoding="utf-8"
+    ) as temp:
         json.dump(story._properties, temp, ensure_ascii=False)
         temp.seek(0)
 
         # update the draft with the story._properties
         story._item.resources.update(file=temp.name, file_name=draft)
 
-    # get the story map version from endpoint
-    sm_version = get_version(story)
-    # Find type keywords to use based on whether to publish or not
-    if isinstance(story, briefing.Briefing):
-        briefing_keywords = ["alphabriefing", "storymapbriefing"]
-    elif isinstance(story, collection.Collection):
-        collection_keywords = ["storymapcollection"]
+    item_properties = _prepare_item_properties_for_save(
+        story, publish, make_copyable, no_seo, title, tags, sm_version, draft
+    )
+    return item_properties
 
-    # PUBLISH MODE
-    if publish is True:
-        # Remove old publish item
-        for resource in story._resources:
-            if (
-                "publish_data" in resource["resource"]
-                or "published_data" in resource["resource"]
-                or "publish" in resource["resource"]
-            ):
-                _remove_resource(story, file=resource["resource"])
-        # Add new publish
-        _add_resource(
-            story,
-            resource_name="published_data.json",
-            text=json.dumps(story._properties),
-        )
-        # Set the keywords
-        # Start by getting the existing keywords and remove what will be replaced
+
+def _prepare_item_properties_for_save(
+    story, publish, make_copyable, no_seo, title, tags, sm_version, draft
+):
+    # Find type keywords to use based on whether to publish or not
+    if publish:
         keywords = story._item.typeKeywords
         if "smstatusunpublishedchanges" in keywords:
             # changing to publish after
@@ -468,47 +479,11 @@ def save(
             "smdraftresourceid:" + draft,
             "smpublisheddate:" + str(int(time.time() * 1000)),
         ]
-        if isinstance(story, briefing.Briefing):
-            new_keywords = new_keywords + briefing_keywords
-        elif isinstance(story, collection.Collection):
-            new_keywords = new_keywords + collection_keywords
-        # Setting the keywords in a set will remove duplicates
-        p = {
-            "typeKeywords": list(set(keywords + new_keywords)),
-            "text": json.dumps(story._properties),
-            "url": story._url,
-        }
-        if title:
-            p["title"] = title
-        if tags:
-            p["tags"] = tags
-
-        # Find and set access
-        sharing = access if access is not None else story._item.access
-        p["access"] = sharing
-
-        # Update the item and invoke share to have correct access
-        story._item.update(item_properties=p)
-
-        if sharing == "private":
-            story._item.sharing.sharing_level = "PRIVATE"
-        elif sharing == "org":
-            story._item.sharing.sharing_level = "ORGANIZATION"
-        elif sharing == "public":
-            story._item.sharing.sharing_level = "EVERYONE"
-
-        if (
-            story._gis._con._session.auth
-            and story._gis._con._session.auth.token is not None
-        ):
-            # Make a call to the StoryMaps publish endpoint
-            story._gis._con.post(
-                path=story._url + "/publish",
-                params={
-                    "f": "json",
-                    "token": story._gis._con._session.auth.token,
-                },
-            )
+        # publish keywords
+        if make_copyable is True:
+            new_keywords.append("Viewer Copyable")
+        if no_seo is False:
+            new_keywords.append("smsharingnoseo")
     else:
         # Set the type keywords
         keywords = story._item.typeKeywords
@@ -547,19 +522,66 @@ def save(
                 "smeditorapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
             ]
-        if isinstance(story, briefing.Briefing):
-            new_keywords = new_keywords + briefing_keywords
-        elif isinstance(story, collection.Collection):
-            new_keywords = new_keywords + collection_keywords
-        # Pass through set first to remove duplicates
-        p = {"typeKeywords": list(set(keywords + new_keywords))}
-        if title:
-            p["title"] = title
-        if tags:
-            p["tags"] = tags
+
+    # Add extra keywords
+    if isinstance(story, briefing.Briefing):
+        new_keywords = new_keywords + ["alphabriefing", "storymapbriefing"]
+    elif isinstance(story, collection.Collection):
+        new_keywords = new_keywords + ["storymapcollection"]
+
+    new_keywords = list(set(keywords + new_keywords))
+
+    p = {"typeKeywords": new_keywords}
+    if title:
+        p["title"] = title
+    if tags:
+        p["tags"] = tags
+    return p
+
+
+# ----------------------------------------------------------------------
+def save(
+    story,
+    title: Optional[str] = None,
+    tags: Optional[list] = None,
+    access: str = None,
+    publish: bool = False,
+    make_copyable: bool = None,
+    no_seo: bool = None,
+):
+    """
+    This method will save your StoryMap or Briefing to your active GIS. The story will be saved
+    with unpublished changes unless publish parameter is specified to True.
+
+    The title only needs to be specified if a change is wanted, otherwise exisiting title
+    is used.
+    """
+    # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
+    if title:
+        root = story._properties["root"]
+        if "metaSettings" not in story._properties["nodes"][root]["data"]:
+            story._properties["nodes"][root]["data"]["metaSettings"] = {"title": None}
+        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
+        if "config" not in story._properties["nodes"][root]:
+            story._properties["nodes"][root]["config"] = {}
+        story._properties["nodes"][root]["config"][
+            "shouldPushMetaToAGOItemDetails"
+        ] = False
+
+    # get the story map version from endpoint
+    sm_version = get_version(story)
+
+    # No endpoint, do manually
+    item_properties = _prepare_story_for_save(
+        story, publish, make_copyable, no_seo, title, tags, sm_version
+    )
+
+    if publish:
+        _publish(story, access, item_properties)
+    else:
         # access does not change when only saving
-        p["access"] = story._item.access
-        story._item.update(item_properties=p)
+        item_properties["access"] = story._item.access
+        story._item.update(item_properties=item_properties)
 
     story._item = story._gis.content.get(story._itemid)
     return story._item
@@ -572,7 +594,7 @@ def delete_item(story):
     """
     # Check if item id exists
     item = story._gis.content.get(story._itemid)
-    return item.delete()
+    return item.delete(permanent=True)
 
 
 # ----------------------------------------------------------------------
@@ -646,120 +668,119 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
                     spec_type.append(node)
             else:
                 # Find all story content instances (i.e. Text)
-                # Map types are upercase and have spaces so handle
+                # Map types are uppercase and have spaces so handle
                 if type.lower() in keyword._type.lower().replace(" ", ""):
                     spec_type.append(node)
         return spec_type
 
 
 # ----------------------------------------------------------------------
+def populate_resource_dict(story, resource, complete_resource_dict, resource_files):
+    if isinstance(resource, str):
+        # check if value is a resource
+        if "r-" in resource:
+            # get the resource dict
+            resource_dict = story._properties["resources"][resource]
+            complete_resource_dict[resource] = resource_dict
+            if "resourceId" in resource_dict["data"]:
+                # some nodes keep the resource under resourceId key
+                name = resource_dict["data"]["resourceId"]
+                # get the resource file to add to new story
+                resource_file = story._item.resources.get(name)
+                resource_files[name] = resource_file
+            elif "itemId" in resource_dict["data"]:
+                name = resource_dict["data"]["itemId"]
+                # express map keeps resource under itemId key
+                if name.endswith(".json"):
+                    # need to add draft_ in front to be one-to-one with builder
+                    name = "draft_" + resource_dict["data"]["itemId"]
+                    # get the json file draft
+                    resource_file = story._item.resources.get(name)
+                    if resource_file and "error" in resource_file:
+                        # if resource returns 403, skip and add warning
+                        warnings.warn(
+                            f"{name}: Resource is not accessible, the content placeholder will be copied but resource will have to be added manually."
+                        )
+                        return complete_resource_dict, resource_files
+                    resource_files[name] = resource_file
+    return complete_resource_dict, resource_files
+
+
+# ----------------------------------------------------------------------
+def populate_dicts(
+    story,
+    content: str,
+    complete_node_dict: dict,
+    complete_resource_dict: dict,
+    resource_files: dict,
+):
+    content_dict = story._properties["nodes"][content]
+    complete_node_dict[content] = content_dict
+    # find the resource node to add associated with node. Text nodes have data but no resources
+    if "data" in content_dict and content_dict["type"] != "text":
+        for _, value in content_dict["data"].items():
+            if not isinstance(value, list):
+                value = [value]
+            for val in value:
+                # express maps keep their images in a list
+                complete_resource_dict, resource_files = populate_resource_dict(
+                    story, val, complete_resource_dict, resource_files
+                )
+    return complete_node_dict, complete_resource_dict, resource_files
+
+
+# ----------------------------------------------------------------------
 def copy_content(
     story,
     target_story: Union[briefing.Briefing, storymap.StoryMap],
-    content: list,
+    contents: list,
 ):
     """
-    Copy the content from one briefing/story to another. This will copy the content
-    indicated to the target briefing/story in the order they are provided.
+    Copy content from one story to another. This will copy the nodes and resources
+    from the source story to the target story. The content can be a list of node ids
+    or a list of content objects. The content must be part of the source story.
 
+    Copy slides from one briefing to another.
     """
-    if isinstance(content, list) and not isinstance(content[0], str):
+    if isinstance(contents, list) and not isinstance(contents[0], str):
         # get the node ids of the content
-        node_list = []
-        for item in content:
-            node_list.append(item.node)
-    elif isinstance(content, list) and isinstance(content[0], str):
-        node_list = content
+        contents = [item.node for item in contents]
 
     # Step 1: Do Checks
-    # Check that nodes exist in original story (children of source story contain all of node_list)
+    # Check that nodes exist in original story (children of source story contain all of content)
     if isinstance(target_story, briefing.Briefing):
         # children are in the children of the the root node. In the ui node
-        ui = story._properties["nodes"][target_story._properties["root"]]["children"][0]
+        ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_children = story._properties["nodes"][ui]["children"]
     else:
         story_children = story._properties["nodes"][story._properties["root"]][
             "children"
         ]
-
-    check = all(node in story_children for node in node_list)
+    check = all(node in story_children for node in contents)
     # Return an error if not all nodes are in the source story.
     if check is False:
-        not_in_story = []
-        for node in node_list:
-            if node not in story_children:
-                not_in_story.append(node)
         raise ValueError(
-            "These nodes are not in the story: "
-            + str(not_in_story)
-            + ". Please check that the correct node ids are provided."
+            "The content needs to be part of the story. Please check that the correct contents are provided."
         )
 
     # Step 2: Create dictionaries for copying
 
     # Create node dict of all nodes to add, resource dict, and complete node list
     # Depending on node type, need to take different route to find all children
-    original_nodes = node_list
+    original_nodes = contents
     complete_node_list = []
     complete_node_dict = {}
     complete_resource_dict = {}
     resource_files = {}
     has_children = True
 
-    # internal method to add to correct places
-    def _add_to_dicts(node_add, comp_list, comp_node_dict, comp_res_dict):
-        # add to complete list of nodes
-        comp_list.append(node_add)
-        # get the dictionary
-        node_dict = story._properties["nodes"][node_add]
-        comp_node_dict[node_add] = node_dict
-
-        # find the resource node to add associated with node
-        if "data" in node_dict:
-            # iterate through values of dict to find any resources
-            for _, value in node_dict["data"].items():
-                if isinstance(value, list):
-                    for im in value:
-                        # express maps keep their images in a list
-                        _add_to_resources(im, comp_res_dict)
-                else:
-                    _add_to_resources(value, comp_res_dict)
-
-    def _add_to_resources(value, comp_res_dict):
-        if isinstance(value, str):
-            # check if value is a resource
-            if "r-" in value:
-                resource_node = value
-                # get the resource dict
-                resource_dict = story._properties["resources"][resource_node]
-                comp_res_dict[resource_node] = resource_dict
-                if "resourceId" in resource_dict["data"]:
-                    # some nodes keep the resource under resourceId key
-                    name = resource_dict["data"]["resourceId"]
-                    # get the resource file to add to new story
-                    resource_file = story._item.resources.get(name)
-                    resource_files[name] = resource_file
-                elif "itemId" in resource_dict["data"]:
-                    name = resource_dict["data"]["itemId"]
-                    # express map keeps resource under itemId key
-                    if name.endswith(".json"):
-                        # need to add draft_ in front to be one-to-one with builder
-                        name = "draft_" + resource_dict["data"]["itemId"]
-                        # get the json file draft
-                        resource_file = story._item.resources.get(name)
-                        resource_files[name] = resource_file
-
     # Begin populating dicts and list, assume there are children to begin with.
     while has_children is True:
         # new list of nodes to check at next iteration
         new_nodes = []
-        for node in node_list:
-            # add node info for copying
-            _add_to_dicts(
-                node,
-                complete_node_list,
-                complete_node_dict,
-                complete_resource_dict,
+        for node in contents:
+            complete_node_dict, complete_resource_dict, resource_files = populate_dicts(
+                story, node, complete_node_dict, complete_resource_dict, resource_files
             )
             # check type of node to see if need to find children
             node_children = _has_children(story, node)
@@ -770,7 +791,7 @@ def copy_content(
         # if list is not empty, keep going
         if new_nodes:
             has_children = True
-            node_list = new_nodes
+            contents = new_nodes
         # once list is empty, all children have been accounted for
         else:
             has_children = False
@@ -788,7 +809,9 @@ def copy_content(
                 # in the list passed in, if present
                 original_nodes = [s.replace(node, new_node) for s in original_nodes]
                 # in the dictionary of all nodes to copy
-                for key, value in complete_node_dict.items():
+                # make a copy since we will edit the dict as we iterate through
+                iterate_dict = complete_node_dict.copy()
+                for key, value in iterate_dict.items():
                     if key == node:
                         # replace old node id with new node id in keys
                         complete_node_dict[new_node] = complete_node_dict.pop(key)
@@ -815,11 +838,14 @@ def copy_content(
     # Step 5: Add the node list to the story children
     for main_node in original_nodes:
         _add_child(target_story, main_node)
+
+    # Step 6: Save
+    target_story.save()
     return True
 
 
 # ----------------------------------------------------------------------
-def _has_children(story, node):
+def _has_children(story, node) -> list | str | bool | None:
     """
     Check if node has children and return list of children else None.
     """
@@ -832,9 +858,23 @@ def _has_children(story, node):
         return story._properties["nodes"][node]["children"]
     elif isinstance(node_class, Content.Swipe):
         return list(story._properties["nodes"][node]["data"]["contents"].values())
+    elif isinstance(node_class, Content.BriefingSlide):
+        contents = []
+        for block in node_class.blocks:
+            block_content = (
+                block._content if isinstance(block._content, list) else [block._content]
+            )
+            for node in block_content:
+                contents.append(node)
+        if node_class._title:
+            contents.append(node_class._title.node)
+        return contents
     elif isinstance(node_class, Content.MapTour):
         mt = get(story, node)
         return mt._children
+    elif isinstance(node_class, Content.ExpressMap):
+        if node_class._media_dependents:
+            return story._properties["nodes"][node]["dependents"]["media"]
     elif isinstance(node_class, str):
         if (
             "immersive" in node_class.lower()

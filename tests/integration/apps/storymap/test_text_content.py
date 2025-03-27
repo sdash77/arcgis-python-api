@@ -14,7 +14,7 @@ class TestTextContent(unittest.TestCase):
         """Test adding a Button and seeing the properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         btn = Button(
             link="https://www.nps.gov/subjects/forests/leaf-peeping.htm",
             text="Autumn Colors",
@@ -25,13 +25,13 @@ class TestTextContent(unittest.TestCase):
         assert btn.properties
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_add_text(self):
         """Test adding Text of different styles and seeing properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         welcome = Text(
             text="Welcome to a New Story About Some National Park Information",
             style=TextStyles.HEADING,
@@ -56,13 +56,13 @@ class TestTextContent(unittest.TestCase):
         assert story.add(paragraph)
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_get(self):
         """Test the get method for getting nodes by type and from an id"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         welcome = Text(
             text="Welcome to a New Story About Some National Park Information",
             style=TextStyles.HEADING,
@@ -81,7 +81,7 @@ class TestTextContent(unittest.TestCase):
         assert story.get(node=text_id)
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":

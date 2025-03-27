@@ -15,7 +15,7 @@ class TestImageContent(unittest.TestCase):
 
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         img = Image(
             "https://www.nps.gov/npgallery/GetAsset/69680c29-caa3-42da-93d9-32925e9ed409/proxy/hires"
         )
@@ -26,15 +26,22 @@ class TestImageContent(unittest.TestCase):
         assert img.properties
         assert img.caption
         assert img.alt_text
-
+        
+        # set link
+        img.link = "www.google.com"
+        assert img.link == "www.google.com"
+        
+        img.full_view = True
+        assert img.full_view == True
+        
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_create_gallery(self):
         """Test creating a gallery and adding images to it"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         gallery = Gallery()
         assert gallery
 
@@ -60,7 +67,7 @@ class TestImageContent(unittest.TestCase):
         assert gallery.images
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":

@@ -147,7 +147,8 @@ class ServerManager(object):
         ------------------     --------------------------------------------------------------------
         function               Optional string. Limits the returned ArcGIS Servers based on the
                                server's function. Provide a comma-separated list of values. The
-                               allowed values are GeoAnalytics, RasterAnalytics, and ImageHosting.
+                               allowed values are GeoAnalytics, RasterAnalytics, NotebookServer,
+                               and ImageHosting.
         ==================     ====================================================================
 
         :return:
@@ -156,7 +157,7 @@ class ServerManager(object):
         servers = []
         if role is None and function is None:
             raise ValueError("A role or function must be provided")
-        for server in self._federation.servers["servers"]:
+        for server in self._gis.servers["servers"]:
             if (
                 (str(role).lower() == server["serverRole"].lower() and function is None)
                 or (

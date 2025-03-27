@@ -37,6 +37,8 @@ from .managers import (
 from .feature import Feature, FeatureSet
 from arcgis.gis import Item, Layer, _GISResource
 from arcgis.geometry import Geometry, SpatialReference
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 
 _arcgis = LazyLoader("arcgis")
 
@@ -299,7 +301,7 @@ class FeatureLayer(Layer):
         part2 = url[res[1] :]
         admin_url = "%s%s%s" % (part1, add_text, part2)
 
-        res = FeatureLayerManager(admin_url, self._gis)
+        res = FeatureLayerManager(admin_url, self._gis, fl=self)
         return res
 
     @property
@@ -1011,7 +1013,7 @@ class FeatureLayer(Layer):
         return_exceeded_limit_features     Optional Boolean. When set to ``True``, features are returned even
                                            when the results include ``"exceededTransferLimit": true``. This
                                            allows a client to find the resolution in which the transfer limit
-                                           is no longer exceeded withou making multiple calls. The default
+                                           is no longer exceeded without making multiple calls. The default
                                            value is ``False``.
         ==============================     ====================================================================
 
@@ -1192,10 +1194,10 @@ class FeatureLayer(Layer):
         The ``top_filter`` parameter is used to set the group by, order by, and count criteria used in
         generating the result. The operation also has many of the same parameters (for example, where
         and geometry) as the layer query operation. However, unlike the layer query operation,
-        ``query_top_feaures`` does not support parameters such as outStatistics and its related parameters
+        ``query_top_features`` does not support parameters such as outStatistics and its related parameters
         or return distinct values. Consult the ``advancedQueryCapabilities`` layer property for more details.
 
-        If the feature layer collection supports the `query_top_feaures` operation, it will include
+        If the feature layer collection supports the `query_top_features` operation, it will include
         `"supportsTopFeaturesQuery": True`, in the ``advancedQueryCapabilities`` layer property.
 
         .. note::
@@ -2052,6 +2054,7 @@ class FeatureLayer(Layer):
                                             by skipping the specified number of records and starting from the
                                             next record (that is, resultOffset + 1th). This option is ignored
                                             if return_all_records is True (i.e. by default).
+                                            This parameter cannot be specified if the service does not support pagination.
         -------------------------------     --------------------------------------------------------------------
         result_record_count                 Optional integer. This option can be used for fetching query results
                                             up to the result_record_count specified. When result_offset is
@@ -2073,7 +2076,8 @@ class FeatureLayer(Layer):
                                             returned. Note: result_offset and result_record_count will be
                                             ignored if return_all_records is True. Also, if return_count_only,
                                             return_ids_only, or return_extent_only are True, this parameter
-                                            will be ignored.
+                                            will be ignored. If this parameter is set to False but no other limit is
+                                            specified, the default is True.
         -------------------------------     --------------------------------------------------------------------
         result_type                         Optional string. The result_type parameter can be used to control
                                             the number of features returned by the query operation.
@@ -2193,7 +2197,7 @@ class FeatureLayer(Layer):
                     'outStatisticFieldName': "total",
                     'statisticType': "count"
                 }]
-            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containting total count
+            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containing total count
 
         .. code-block:: python
 
@@ -2207,10 +2211,8 @@ class FeatureLayer(Layer):
 
 
         """
-
-        return _query._common_query(
-            layer=self,
-            is_layer=True,
+        # validate parameters
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -2244,11 +2246,15 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             return_true_curves=return_true_curves,
             return_exceeded_limit_features=return_exceeded_limit_features,
-            as_df=as_df,
             datum_transformation=datum_transformation,
             time_reference_unknown_client=time_reference_unknown_client,
-            **kwargs,
         )
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            is_layer=True,
+            as_df=as_df,
+        ).execute()
 
     # ----------------------------------------------------------------------
     def validate_sql(self, sql: str, sql_type: str = "where"):
@@ -2519,6 +2525,13 @@ class FeatureLayer(Layer):
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
+        .. note::
+            Please reference specific deployment documentation for important information on criteria that
+            must be met before appending data will work:
+
+            * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#APPEND>`_
+            * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#APPEND>`_
+
         ========================   ====================================================================
         **Parameter**               **Description**
         ------------------------   --------------------------------------------------------------------
@@ -2526,14 +2539,27 @@ class FeatureLayer(Layer):
                                    file.
                                    Used in conjunction with editsUploadFormat.
         ------------------------   --------------------------------------------------------------------
-        upload_format              Required string. The source append data format. The default is
-                                   featureCollection.
-                                   Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
-                                   'geojson' | 'csv' | 'excel'
+        upload_format              Required string. The source append data format. Supported formats
+                                   vary by deployment and layer. See documentation for details:
+
+                                   * `ArcGIS Enterprise append <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#APPEND>`_
+                                   * `ArcGIS Online append <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#APPEND>`_
 
                                    .. note::
-                                        You can find the Feature Layer's supported formats by checking
-                                        the `featureLayer.properties.supportedAppendFormats` property.
+                                        You can find whether append is supported on a Feature Layer,
+                                        and the specific formats the layer supports by checking the
+                                        properties:
+
+                                        .. code-block:: python
+
+                                            >>> featurelayer.properties.supportsAppend
+
+                                            True
+
+                                            >>> featureLayer.properties.supportedAppendFormats
+
+                                            'sqlite,geoPackage,shapefile,filegdb,featureCollection'
+                                            'geojson,csv,excel,jsonl,featureService,pbf'
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
@@ -2600,7 +2626,9 @@ class FeatureLayer(Layer):
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ------------------------   --------------------------------------------------------------------
-        layer_mappings             Optional list of dictionaries. This is needed if the source is featureService. It is used to map a source layer to a destination layer. Only one source can be mapped to a layer.
+        layer_mappings             Optional list of dictionaries. This is needed if the source is a
+                                   feature service. It is used to map a source layer to a destination
+                                   layer. Only one source can be mapped to a layer.
 
                                     Syntax: layerMappings=[{"id": <layerID>, "sourceId": <layer id>}]
         ------------------------   --------------------------------------------------------------------
@@ -2609,14 +2637,21 @@ class FeatureLayer(Layer):
                                    not be returned.  This alters the output to be a tuple consisting of
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
-        future                     Optional boolean. If True, a future object will be returned and the process
-                                   will not wait for the task to complete. The default is False, which means wait for results.
+        future                     Optional boolean.
+
+                                   * If *True*, method runs asynchronously and a future object will be
+                                     returned. The process will return control to the user.
+                                   * If *False*, method runs synchronously and process waits until the
+                                     operation completes before returning control back to user. This is
+                                     the default value.
         ========================   ====================================================================
 
         :return:
-            A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
-            response messages will be return in addition to the boolean as a `tuple`.
-            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+            * If *future=False*, A boolean indicating success (True), or failure (False). When
+              *return_messages* is *True*, the response will return a tuple with a boolean indicating
+              success or failure, and dictionary with the return messages.
+            * If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object.
+              Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2629,10 +2664,6 @@ class FeatureLayer(Layer):
                                     append_fields = ["fieldName1", "fieldName2",...., fieldname22],
                                     return_messages = False)
             <True>
-
-
-
-
         """
         import copy
 
@@ -2926,9 +2957,9 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def edit_features(
         self,
-        adds: Optional[list[FeatureSet]] = None,
-        updates: Optional[list[FeatureSet]] = None,
-        deletes: Optional[list[FeatureSet]] = None,
+        adds: Optional[Union[FeatureSet, list[dict]]] = None,
+        updates: Optional[Union[FeatureSet, list[dict]]] = None,
+        deletes: Optional[Union[FeatureSet, list[dict]]] = None,
         gdb_version: Optional[str] = None,
         use_global_ids: bool = False,
         rollback_on_failure: bool = True,
@@ -2994,7 +3025,7 @@ class FeatureLayer(Layer):
                                     --------     --------------------------------
                                     adds         List of attachments to add.
                                     --------     --------------------------------
-                                    updates      List of attachements to update
+                                    updates      List of attachments to update
                                     --------     --------------------------------
                                     deletes      List of attachments to delete
                                     ========     ================================
@@ -3009,7 +3040,7 @@ class FeatureLayer(Layer):
                                 to the server that the client is not true curves capable. The default value is false.
         ---------------------   --------------------------------------------------------------------------------------
         session_id              Optional String. Introduced at 10.6. The `session_id` is a GUID value that clients
-                                establish at the beginning and use throughout the edit session. The sessonID ensures
+                                establish at the beginning and use throughout the edit session. The sessionID ensures
                                 isolation during the edit session. The `session_id` parameter is set by a client
                                 during long transaction editing on a branch version.
         ---------------------   --------------------------------------------------------------------------------------
@@ -3053,6 +3084,7 @@ class FeatureLayer(Layer):
 
         :return:
             A dictionary by default, or If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+            The dictionary will contain keys "addResults", "updateResults", "deleteResults", and "attachments" with the results of the operation.
 
         .. code-block:: python
 
@@ -3067,6 +3099,12 @@ class FeatureLayer(Layer):
             }]
             lyr.edit_features(updates=feature)
 
+            >>> {
+                'addResults': [],
+                'updateResults': [{'objectId': 1, 'success': True}]},
+                'deleteResults': [],
+            }
+
         .. code-block:: python
 
             # Usage Example 2:
@@ -3077,11 +3115,23 @@ class FeatureLayer(Layer):
                     }
             lyr.edit_features(adds=[adds])
 
+            >>> {
+                'addResults': [{'objectId': 2542, 'success': True}],
+                'updateResults': [],
+                'deleteResults': [],
+            }
+
         .. code-block:: python
 
             # Usage Example 3:
 
             lyr.edit_features(deletes=[2542])
+
+            >>> {
+                'addResults': [],
+                'updateResults': [],
+                'deleteResults': [{'objectId': 2542, 'success': True}],
+            }
 
         """
 
@@ -3129,7 +3179,7 @@ class FeatureLayer(Layer):
             and isinstance(adds, pd.DataFrame)
             and _is_geoenabled(adds) == False
         ):
-            # we have a regular panadas dataframe
+            # we have a regular pandas dataframe
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
@@ -3375,7 +3425,7 @@ class FeatureLayer(Layer):
                                 version. The sessionid is a GUID value that clients
                                 establish at the beginning and use throughout the
                                 edit session.
-                                The sessonid ensures isolation during the edit
+                                The sessionid ensures isolation during the edit
                                 session. This parameter applies only if the
                                 `isDataBranchVersioned` property of the layer is
                                 true.
@@ -3466,250 +3516,6 @@ class FeatureLayer(Layer):
             path=url,
             postdata=params,
         )
-
-    # ----------------------------------------------------------------------
-    def _query(self, url, params, raw=False, **kwargs):
-        """returns results of query"""
-        try:
-            result = self._con.post(
-                path=url,
-                postdata=params,
-            )
-        except Exception as queryException:
-            error_list = [
-                "Error performing query operation",
-                "HTTP Error 504: GATEWAY_TIMEOUT",
-            ]
-            if queryException.args[0].lower().find("invalid token") > -1:
-                params.pop("token", None)
-                return self._query(url, params, raw=False)
-            elif any(ele in queryException.__str__() for ele in error_list):
-                # half the max record count
-                max_record = (
-                    int(params["resultRecordCount"])
-                    if "resultRecordCount" in params
-                    else 1000
-                )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-                # reduce this number to 125 if you still sees 500/504 error
-                if max_record < 250:
-                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                    raise queryException
-                else:
-                    max_rec = int((max_record + 1) / 2)
-                    i = 0
-                    result = None
-                    while max_rec * i < max_record:
-                        params["resultRecordCount"] = (
-                            max_rec
-                            if max_rec * (i + 1) <= max_record
-                            else (max_record - max_rec * i)
-                        )
-                        params["resultOffset"] = offset + max_rec * i
-                        try:
-                            records = self._query(url, params, raw=True)
-                            if result:
-                                for feature in records["features"]:
-                                    result["features"].append(feature)
-                            else:
-                                result = records
-                            i += 1
-                        except Exception as queryException2:
-                            raise queryException2
-
-            else:
-                raise queryException
-
-        def is_true(x):
-            if isinstance(x, bool) and x:
-                return True
-            elif isinstance(x, str) and x.lower() == "true":
-                return True
-            else:
-                return False
-
-        if "error" in result:
-            raise ValueError(result)
-        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
-            return result["count"]
-        elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
-            return result
-        elif "extent" in result:
-            return result
-        elif is_true(raw):
-            return result
-        else:
-            return FeatureSet.from_dict(result)
-
-    # ----------------------------------------------------------------------
-    def _query_df(self, url, params, **kwargs):
-        """returns results of a query as a pd.DataFrame"""
-        import pandas as pd
-        import numpy as np
-
-        if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
-                "esriFieldTypeDate": pd.datetime,
-                "esriFieldTypeOID": np.int64,
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": pd.datetime,
-                "esriFieldTypeDateOnly": pd.datetime,
-                "esriFieldTypeTimestampOffset": pd.datetime,
-            }
-        else:
-            from datetime import datetime as _datetime
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-                "esriFieldTypeInteger": pd.Int32Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
-                "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": object,
-                "esriFieldTypeOID": pd.Int64Dtype(),
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": pd.StringDtype(),
-                "esriFieldTypeGlobalID": pd.StringDtype(),
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": pd.StringDtype(),
-                "esriFieldTypeDateOnly": object,
-                "esriFieldTypeTimestampOffset": object,
-                "esriFieldTypeBigInteger": pd.Int64Dtype(),
-            }
-
-        def feature_to_row(feature, sr):
-            """:return: a feature from a dict"""
-            geom = feature["geometry"] if "geometry" in feature else None
-            attribs = feature["attributes"] if "attributes" in feature else {}
-            if "centroid" in feature:
-                if attribs is None:
-                    attribs = {"centroid": feature["centroid"]}
-                elif "centroid" in attribs:
-                    import uuid
-
-                    fld = "centroid_" + uuid.uuid4().hex[:2]
-                    attribs[fld] = feature["centroid"]
-                else:
-                    attribs["centroid"] = feature["centroid"]
-            if geom:
-                if "spatialReference" not in geom:
-                    geom["spatialReference"] = sr
-                attribs["SHAPE"] = Geometry(geom)
-            return attribs
-
-        # ------------------------------------------------------------------
-        try:
-            featureset_dict = self._con.post(url, params)
-        except Exception as queryException:
-            error_list = [
-                "Error performing query operation",
-                "HTTP Error 504: GATEWAY_TIMEOUT",
-            ]
-            if queryException.args[0].lower().find("invalid token") > -1:
-                params.pop("token", None)
-                return self._query_df(url, params, raw=False)
-            if any(ele in queryException.__str__() for ele in error_list):
-                # half the max record count
-                max_record = (
-                    int(params["resultRecordCount"])
-                    if "resultRecordCount" in params
-                    else 1000
-                )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-                # reduce this number to 125 if you still sees 500/504 error
-                if max_record < 250:
-                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                    raise queryException
-                else:
-                    max_rec = int((max_record + 1) / 2)
-                    i = 0
-                    featureset_dict = None
-                    while max_rec * i < max_record:
-                        params["resultRecordCount"] = (
-                            max_rec
-                            if max_rec * (i + 1) <= max_record
-                            else (max_record - max_rec * i)
-                        )
-                        params["resultOffset"] = offset + max_rec * i
-                        try:
-                            records = self._query(url, params, raw=True)
-                            if featureset_dict is not None:
-                                for feature in records["features"]:
-                                    featureset_dict["features"].append(feature)
-                            else:
-                                featureset_dict = records
-                            i += 1
-                        except Exception as queryException2:
-                            raise queryException2
-
-            else:
-                raise queryException
-
-        if len(featureset_dict["features"]) == 0:
-            return pd.DataFrame([])
-        sr = None
-        if "spatialReference" in featureset_dict:
-            sr = featureset_dict["spatialReference"]
-
-        df = None
-        dtypes = None
-        geom = None
-        names = None
-        dfields = []
-        rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
-        if len(rows) == 0:
-            return None
-        df = pd.DataFrame.from_records(data=rows)
-        if "SHAPE" in df.columns:
-            df.loc[df.SHAPE.isna(), "SHAPE"] = None
-        if "fields" in featureset_dict:
-            dtypes = {}
-            names = []
-            fields = featureset_dict["fields"]
-            for fld in fields:
-                if fld["type"] != "esriFieldTypeGeometry":
-                    dtypes[fld["name"]] = _fld_lu[fld["type"]]
-                    names.append(fld["name"])
-                if fld["type"] in [
-                    "esriFieldTypeDate",
-                    #
-                    "esriFieldTypeDateOnly",
-                    "esriFieldTypeTimestampOffset",
-                ]:
-                    dfields.append(fld["name"])
-        if dtypes:
-            df = df.astype(dtypes)
-
-        if "SHAPE" in featureset_dict:
-            df.spatial.set_geometry("SHAPE")
-        if len(dfields) > 0:
-            for fld in [fld for fld in dfields if fld in df.columns]:
-                try:
-                    df[fld] = pd.to_datetime(
-                        df[fld] / 1000,
-                        errors="coerce",
-                        unit="s",
-                    )
-                except:
-                    df[fld] = pd.to_datetime(
-                        df[fld],
-                        errors="coerce",
-                    )
-        return df
 
     # ----------------------------------------------------------------------
     def query_3d(
@@ -3924,16 +3730,10 @@ class FeatureLayer(Layer):
             result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
             print(result)
         """
-        if not where:
-            if geometry_filter:
-                where = None
-            elif result_offset:
-                where = "1=1"
-            else:
-                where = "1=1"
-        return _query._common_query(
-            layer=self,
-            is_layer=True,
+        if geometry_filter:
+            where = None
+
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -3952,8 +3752,13 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             format_3d_objects=format_3d_objects,
             time_reference_unknown_client=time_reference_unknown_client,
-            query_3d=True,
         )
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            is_layer=True,
+            query_3d=True,
+        ).execute()
 
 
 ###########################################################################
@@ -4013,10 +3818,14 @@ class OrientedImageryLayer(FeatureLayer):
         if index in [
             lyr["id"] for lyr in layers if lyr["type"] == "Oriented Imagery Layer"
         ]:
-            return cls(url=f"{item.url}/{index}", gis=item._gis)
+            if item._gis._use_private_url_only:
+                url: str = _get_item_url(item=item)
+            else:
+                url: str = _validate_url(item.url, item._gis)
+            return cls(url=f"{url}/{index}", gis=item._gis)
         else:
             raise Exception(
-                "The layer index is not an Oriented Imagergy Layer, please verify the index and try again."
+                "The layer index is not an Oriented Imagery Layer, please verify the index and try again."
             )
 
 
@@ -4249,9 +4058,7 @@ class Table(FeatureLayer):
             <149>
 
         """
-        return _query._common_query(
-            layer=self,
-            is_layer=False,
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -4270,10 +4077,14 @@ class Table(FeatureLayer):
             historic_moment=historic_moment,
             sql_format=sql_format,
             return_exceeded_limit_features=return_exceeded_limit_features,
-            as_df=as_df,
             time_reference_unknown_client=time_reference_unknown_client,
-            **kwargs,
         )
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            is_layer=False,
+            as_df=as_df,
+        ).execute()
 
 
 class FeatureLayerCollection(_GISResource):
@@ -4297,7 +4108,7 @@ class FeatureLayerCollection(_GISResource):
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_organization_profile")
 
-        >>> flyr_item = gis.content.search("storm damage", "Feature Layer)[0]
+        >>> flyr_item = gis.content.search("storm damage", "Feature Layer")[0]
         >>> flc = flyr_item.layers[0].container
         >>> flc
 
@@ -5496,15 +5307,18 @@ class FeatureLayerCollection(_GISResource):
                 dl_url = res["resultUrl"]
             elif "responseUrl" in res:
                 dl_url = res["responseUrl"]
+            elif "URL" in res:
+                dl_url = res["URL"]
 
             if dl_url is not None:
-                return self._con.get(
+                download_url = self._con.get(
                     path=dl_url,
                     file_name=dl_url.split("/")[-1],
                     out_folder=out_path,
                     try_json=False,
                 )
-
+                res["download_url"] = download_url
+                return res
             else:
                 return res
         elif res is not None:

@@ -32,6 +32,11 @@ from .story_content import (
     Cover,
     CollectionNavigation,
     Separator,
+    CoverType,
+    VerticalPosition,
+    HorizontalPosition,
+    CoverStyle,
+    CoverSize,
 )
 
 __all__ = ["StoryMap", "Briefing", "Collection"]

@@ -1,9 +1,11 @@
 from __future__ import annotations
+import json
 from arcgis.auth.tools._lazy import LazyLoader
 
 from typing import Any
 from dataclasses import dataclass, field
 from enum import Enum
+import datetime as _dt
 
 arcgis = LazyLoader("arcgis")
 
@@ -66,6 +68,8 @@ class ItemTypeEnum(Enum):
     EXPERIENCE_BUILDER_WIDGET = "Experience Builder Widget"
     EXPERIENCE_BUILDER_WIDGET_PACKAGE = "Experience Builder Widget Package"
     FORM = "Form"
+    APPLICATION = "Application"
+    API_KEY_CREDENTIALS = "Application"
     GEOBIM_APPLICATION = "GeoBIM Application"
     GEOBIM_PROJECT = "GeoBIM Project"
     HUB_EVENT = "Hub Event"
@@ -209,7 +213,7 @@ class ItemProperties:
     access_information: str | None = None
     license_info: str | None = None
     culture: str | None = None
-    properties: dict | None = None
+    properties: dict | str | None = None
     app_categories: list[str] | None = None
     industries: list[str] | None = None
     listing_properties: dict | None = None
@@ -220,7 +224,13 @@ class ItemProperties:
     text: dict | str | None = None
     extension: str | None = None
     overwrite: bool | None = None
+    """Support for this parameter will be removed in 2.4.3+."""
     file_name: str | None = None
+    classification: dict | None = None
+    api_token1_expiration: _dt.datetime | None = None
+    api_token2_expiration: _dt.datetime | None = None
+    is_personal_api_token: bool | None = None
+    subscription_type: str | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -251,7 +261,6 @@ class ItemProperties:
             "accessInformation": self.access_information,
             "licenseInfo": self.license_info,
             "culture": self.culture,
-            "properties": self.properties,
             "appCategories": ",".join(self.app_categories or []),
             "industries": ",".join(self.industries or []),
             "listingProperties": self.listing_properties,
@@ -262,10 +271,29 @@ class ItemProperties:
             "text": self.text or None,
             "extension": self.extension or None,
             "fileName": self.file_name or None,
+            "classification": self.classification or None,
         }
+        if isinstance(self.properties, dict):
+            self._dict_data["properties"] = json.dumps(self.properties)
+        elif isinstance(self.properties, str):
+            self._dict_data["properties"] = self.properties
+        else:
+            self._dict_data["properties"] = None
+        if isinstance(self.api_token1_expiration, _dt.datetime):
+            self._dict_data["apiToken1ExpirationDate"] = int(
+                self.api_token1_expiration.timestamp() * 1000
+            )
+        if isinstance(self.api_token2_expiration, _dt.datetime):
+            self._dict_data["apiToken2ExpirationDate"] = int(
+                self.api_token2_expiration.timestamp() * 1000
+            )
+        if isinstance(self.is_personal_api_token, bool):
+            self._dict_data["isPersonalAPIToken"] = self.is_personal_api_token
+        if isinstance(self.subscription_type, str):
+            self._dict_data["subscriptionType"] = self.subscription_type
 
     def to_dict(self):
-        return {
+        data: dict[str, Any] = {
             "title": self.title,
             "type": _parse_enum(self.item_type),
             "tags": ",".join(self.tags or []),
@@ -282,7 +310,6 @@ class ItemProperties:
             "accessInformation": self.access_information,
             "licenseInfo": self.license_info,
             "culture": self.culture,
-            "properties": self.properties,
             "appCategories": ",".join(self.app_categories or []),
             "industries": ",".join(self.industries or []),
             "listingProperties": self.listing_properties,
@@ -294,7 +321,26 @@ class ItemProperties:
             "extension": self.extension or None,
             "overwrite": self.overwrite or None,
             "fileName": self.file_name or None,
+            "classification": self.classification or None,
         }
+        if isinstance(self.properties, dict):
+            data["properties"] = json.dumps(self.properties)
+        elif isinstance(self.properties, str):
+            data["properties"] = self.properties
+        if isinstance(self.api_token1_expiration, _dt.datetime):
+            data["apiToken1ExpirationDate"] = int(
+                self.api_token1_expiration.timestamp() * 1000
+            )
+        if isinstance(self.api_token2_expiration, _dt.datetime):
+            data["apiToken2ExpirationDate"] = int(
+                self.api_token2_expiration.timestamp() * 1000
+            )
+        if isinstance(self.is_personal_api_token, bool):
+            data["isPersonalAPIToken"] = self.is_personal_api_token
+        if isinstance(self.subscription_type, str):
+            data["subscriptionType"] = self.subscription_type
+
+        return data
 
     @classmethod
     def fromitem(cls, item: arcgis.gis.Item) -> ItemProperties:
@@ -316,6 +362,7 @@ class ItemProperties:
             service_proxy=item.proxyFilter,
             industries=item.industries,
             categories=item.categories,
+            classification=getattr(item, "classification", None),
         )
 
 

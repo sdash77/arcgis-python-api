@@ -52,11 +52,17 @@ class AGOLUsageReports(BasePortalAdmin):
         start_time: Optional[datetime.datetime] = None,
         notify: bool = False,
         future: bool = True,
+        time_aggregate: Optional[str] = None,
     ):
         """
-        Generates the reports of the overall usage of the organizations.
-        Reports define organization usage metrics for either a weekly or
-        monthly time frame.
+        The reports operation generates reports, in CSV format, on the overall
+        usage of the organizations. Reports define organization usage metrics in
+        one place for a set time period (either a day, week, or month). Administrators
+        can generate reports that monitor which organization member is using certain
+        services, as well as how many credits and storage are used within a
+        certain time period. Reports also include the current state of the organization,
+        which includes the number of items, groups, users,
+        user types, app license assignments, and public items.
 
 
         ===============     ====================================================
@@ -65,7 +71,7 @@ class AGOLUsageReports(BasePortalAdmin):
         focus               Optional String. The report type. Currently, only
                             the organization (`org`) report type is supported.
         ---------------     ----------------------------------------------------
-        report_type         Required String. The type of report to generate.
+        report_type         Required String. The type of report to generate for the org.
 
                             Values:
                                 - 'content'
@@ -100,26 +106,48 @@ class AGOLUsageReports(BasePortalAdmin):
                             value must be a time on Sunday or Monday GMT.
                             If `duration = 'monthly`, the start_time value must
                             be on the first day of the month.
+
+                            This parameter is required when `report_type` is set to
+                            'activity', 'credits', 'serviceUsages', or 'itemUsages'.
         ---------------     ----------------------------------------------------
         notify              Optional Boolean. The Job will print a message upon
                             task completion.
         ---------------     ----------------------------------------------------
         future              Optional Boolean. Returns an asynchronous Job when
                             `True`, when `False`, returns an :class:`~arcgis.gis.Item`.
+        ---------------     ----------------------------------------------------
+        time_aggregate      Optional String. This displays the time usage aggregated
+                            by a specified value. This applies only when the
+                            report type is set to `itemUsages`.
+
+                            Values:
+                                - 'day'
+                                - 'week'
+                                - 'month'
+
+                            .. note::
+                                The `time_aggregate` parameter must be one level
+                                lower than the `duration` parameter. For example,
+                                if the `duration` parameter is set to `monthly`,
+                                the `time_aggregate` parameter must be set to `day` or `week`.
         ===============     ====================================================
 
 
-        :return: Async Job Object or :class:`~arcgis.gis.Item`
+        :return: Async Job Object or an :class:`~arcgis.gis.Item`.
 
         """
+        # Set url and default parameters
         url = f"{self._gis._portal.resturl}community/users/{self._gis.users.me.username}/report"
+        focus = (
+            "org"  # this is only available option so hardcoding it to avoid user error
+        )
         params = {
             "f": "json",
             "reportType": focus,
             "reportSubType": report_type,
         }
 
-        # Perform Checks
+        # Section to check duration and report type
         if duration and duration.lower() not in [
             "daily",
             "weekly",
@@ -128,6 +156,15 @@ class AGOLUsageReports(BasePortalAdmin):
             "yearly",
         ]:
             raise ValueError("Invalid `duration` value %s" % duration)
+        if not duration and report_type in [
+            "credits",
+            "activity",
+            "serviceUsages",
+            "itemUsages",
+        ]:
+            raise ValueError(
+                "For the report type specified, a duration must also be specified."
+            )
         if duration:
             duration = duration.lower()
             if duration == "daily" and report_type != "activity":
@@ -138,20 +175,35 @@ class AGOLUsageReports(BasePortalAdmin):
                 raise ValueError(
                     "Duration set to 'yearly' can only be used with report type 'itemUsages'."
                 )
+            # set time duration in parameters
             params["timeDuration"] = duration
-        if (
-            report_type in ["credits", "activity", "serviceUsages", "itemUsages"]
-            and duration is None
-        ):
-            raise ValueError(
-                "For the report type specified, a duration must also be specified."
-            )
 
-        # Assign parameters
-        if not start_time is None and isinstance(start_time, datetime.datetime):
+        # Section to handle start_time
+        if not start_time and report_type in [
+            "activity",
+            "credits",
+            "serviceUsages",
+            "itemUsages",
+        ]:
+            raise ValueError(
+                "For the report type specified, a start_time must also be specified. Ensure the start_time is a datetime object."
+            )
+        if start_time and isinstance(start_time, datetime.datetime):
             params["startTime"] = local_time_to_online(start_time)
-        elif not start_time is None and isinstance(start_time, int):
+        elif start_time and isinstance(start_time, int):
             params["startTime"] = start_time
+
+        # Section to handle time_aggregate
+        if time_aggregate and time_aggregate.lower() not in ["day", "week", "month"]:
+            raise ValueError("Invalid `time_aggregate` value %s" % time_aggregate)
+        if not time_aggregate and report_type == "itemUsages":
+            raise ValueError(
+                "For the report type 'itemUsages', a time_aggregate must also be specified."
+            )
+        if time_aggregate:
+            params["timeAggregate"] = time_aggregate.lower()
+
+        # Create the report
         count = 0
         resp = self._con.post(url, params)
         if "itemId" in resp and future:

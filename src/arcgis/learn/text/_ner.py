@@ -73,7 +73,7 @@ class EntityRecognizer:
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
-    data                    Optional data object returned from :meth:`~arcgis.learn.prepare_data` function.
+    data                    Optional data object returned from :meth:`~arcgis.learn.prepare_textdata` function.
                             data object can be `None`, in case where someone wants to use a
                             Hugging Face Transformer model fine-tuned on entity-recognition
                             task. In this case the model should be used directly for inference.
@@ -283,7 +283,7 @@ class EntityRecognizer:
         else:
             return _TransformerEntityRecognizer.available_backbone_models(architecture)
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -304,7 +304,7 @@ class EntityRecognizer:
                 f"This method is not supported when using the model extensibility feature, as model extensibility "
                 f"only supports inference."
             )
-        return self._model.lr_find(allow_plot=allow_plot)
+        return self._model.lr_find(allow_plot=allow_plot, **kwargs)
 
     def unfreeze(self):
         """
@@ -472,11 +472,12 @@ class EntityRecognizer:
 
     def load(self, name_or_path):
         """
-        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
         Loads a saved EntityRecognizer model from disk.
 
         This method is not supported when the backbone is configured as llm/mistral.
+
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -502,6 +503,7 @@ class EntityRecognizer:
         This method is not supported when the backbone is configured as llm/mistral.
 
         To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -597,17 +599,26 @@ class EntityRecognizer:
         with open(emd_path) as f:
             emd_json = json.load(f)
         backbone = emd_json.get("ModelType", "spacy").lower()
+        # backward compatibility
+        IS_INFERENCE_FUNCTION_SUPPORTED = False
+        version = emd_json.get("ArcGISLearnVersion", None)
+        if version is not None:
+            major_version = int(version.split(".")[0])
+            minor_version = int(version.split(".")[1])
+            if minor_version >= 4 and major_version >= 2:
+                IS_INFERENCE_FUNCTION_SUPPORTED = True
 
-        extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
-        if extensible_model.model_loaded:
-            cls_object = cls(
-                data,
-                backbone,
-                pretrained_path=str(emd_path),
-                model_extension=True,
-                extensible_model=extensible_model,
-            )
-            return cls_object
+        if "InferenceFunction" in emd_json and IS_INFERENCE_FUNCTION_SUPPORTED:
+            extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
+            if extensible_model.model_loaded:
+                cls_object = cls(
+                    data,
+                    backbone,
+                    pretrained_path=str(emd_path),
+                    model_extension=True,
+                    extensible_model=extensible_model,
+                )
+                return cls_object
 
         backup_backbone = backbone
         if backbone in backbone_models_reverse_map:
@@ -653,12 +664,12 @@ class EntityRecognizer:
         return clas_object
 
     def extract_entities(
-        self, text_list, drop=True, batch_size=4, show_progress=True
+        self, text_list, drop=True, batch_size=4, show_progress=True, **kwargs
     ) -> pd.DataFrame | FeatureSet:
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
-        Field defined as 'address_tag' in :meth:`~arcgis.learn.prepare_data`  function's class mapping
+        Field defined as 'address_tag' in :meth:`~arcgis.learn.prepare_data` function's class mapping
         attribute will be treated as a location. In cases where trained model extracts
         multiple locations from a single document, that document will be replicated
         for each location in the resulting dataframe.
@@ -679,9 +690,20 @@ class EntityRecognizer:
                                 Errors). Default is set to 4.
                                 Not applicable for models with `spaCy` backbone.
         ---------------------   -------------------------------------------
-        show_progress           optional Bool. If set to True, will display a
+        show_progress           Optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
-                                Applicable only when a list of text is passed
+                                Applicable only when a list of text is passed.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        input_field             Optional string.
+                                Input field name in the feature set. Supported
+                                in model extension.
+                                Default value: input_str
         =====================   ===========================================
 
         :return: Pandas DataFrame
@@ -729,20 +751,21 @@ class EntityRecognizer:
                     text_list = [text_list]
             # To make it more flexible. We will add the Featureset for further processing
             feature_set = []
+            input_field = kwargs.get("input_field", "input_str")
             for i in text_list:
-                feature_set.append({"attributes": {"input_str": i}})
+                feature_set.append({"attributes": {input_field: i}})
 
             feature_set_final = FeatureSet.from_dict(
                 {
                     "fields": [
-                        {"name": "input_str", "type": "esriFieldTypeString"},
+                        {"name": input_field, "type": "esriFieldTypeString"},
                     ],
                     "geometryType": "",
                     "features": feature_set,
                 }
             )
             results = self.inference_model.predict(
-                feature_set_final, **{"input_field": "input_str"}
+                feature_set_final, **{"input_field": input_field}
             )
             if not isinstance(results, FeatureSet):
                 raise Exception(
@@ -755,7 +778,7 @@ class EntityRecognizer:
             text_list, drop=drop, batch_size=batch_size, show_progress=show_progress
         )
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, rows=5, ds_type="valid"):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 
@@ -763,6 +786,9 @@ class EntityRecognizer:
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         ds_type                 Optional string, defaults to valid.
+        ---------------------   -------------------------------------------
+        rows                    Optional integer, defaults to 5.
+                                Number of rows to print.
         =====================   ===========================================
 
         :return: Pandas DataFrame
@@ -772,7 +798,7 @@ class EntityRecognizer:
                 f"This method is not supported when using the model extensibility feature, as model extensibility "
                 f"only supports inference."
             )
-        return self._model.show_results(ds_type=ds_type)
+        return self._model.show_results(ds_type=ds_type, rows=rows)
 
     def precision_score(self):
         """

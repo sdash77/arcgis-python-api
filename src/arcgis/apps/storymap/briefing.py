@@ -427,9 +427,9 @@ class Briefing(object):
         ===================     ====================================================================
         **Parameter**           **Description**
         -------------------     --------------------------------------------------------------------
-        layout                  Required LayoutType or string, the layout type of the slide.
+        layout                  Required SlideLayout or string, the layout type of the slide.
         -------------------     --------------------------------------------------------------------
-        sublayout               Optional SubLayoutType or string, the sublayout type of the slide.
+        sublayout               Optional SlideSubLayout or string, the sublayout type of the slide.
                                 Only applicable when the layout is "double" or "titleless-double".
         -------------------     --------------------------------------------------------------------
         title                   Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
@@ -526,6 +526,8 @@ class Briefing(object):
         tags: Optional[list] = None,
         access: str = None,
         publish: bool = False,
+        make_copyable: bool = None,
+        no_seo: bool = None,
     ):
         """
         This method will save your Story Map to your active GIS. The story will be saved
@@ -559,6 +561,10 @@ class Briefing(object):
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
+        ---------------     --------------------------------------------------------------------
+        make_copyable       Optional boolean. If True, the story is saved as copyable for users.
+        ---------------     --------------------------------------------------------------------
+        no_seo              Optional boolean. If True, the story is saved without SEO metadata.
         ===============     ====================================================================
 
 
@@ -566,7 +572,7 @@ class Briefing(object):
 
         """
         # call the save method in common utils module
-        return utils.save(self, title, tags, access, publish)
+        return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
     def delete_briefing(self):

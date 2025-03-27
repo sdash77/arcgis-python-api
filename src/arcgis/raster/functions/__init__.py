@@ -30,6 +30,7 @@ from .utility import (
     _get_raster_url,
     _get_raster_ra,
     _pixel_type_string_to_long,
+    _get_geometry_from_feature_layer,
 )
 from arcgis.gis import GIS, Item
 import copy
@@ -51,6 +52,7 @@ from .utility import (
     _set_multidimensional_rules,
 )
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
+from arcgis.geometry import Envelope, Geometry
 from .._RasterInfo import RasterInfo
 import logging
 
@@ -1954,7 +1956,7 @@ def clip(
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
-    goemetry                                 Optional dictionary. Specifies the geometry for clipping.
+    geometry                                 Optional dictionary. Specifies the geometry for clipping.
     --------------------------------     --------------------------------------------------------------------
     clip_outside                             Optional boolean, If True, the imagery outside the extents will be removed, else the imagery within the clipping geometry will be removed.
     --------------------------------     --------------------------------------------------------------------
@@ -8620,7 +8622,7 @@ def speckle(
     reduction filtering algorithms are provided through this function. For more
     information including required and optional parameters for each filter and
     the default parameter values, see
-    `Speckle function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/speckle-function.htm>`_
+    `Speckle function <https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/speckle-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8629,7 +8631,7 @@ def speckle(
     --------------------------------     --------------------------------------------------------------------
     raster                                  Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
-    filter_type                             Optional string, one of "Lee", "EnhancedLee" "Frost", "Kaun". Default is "Lee".
+    filter_type                             Optional string, one of "Lee", "EnhancedLee" "Frost", "Kaun", "GammaMAP", "RefinedLee". Default is "Lee".
     --------------------------------     --------------------------------------------------------------------
     filter_size                             Optional string, kernel size. One of "3x3", "5x5", "7x7", "9x9", "11x11". Default is "3x3".
     --------------------------------     --------------------------------------------------------------------
@@ -8651,7 +8653,14 @@ def speckle(
 
     layer, raster, raster_ra = _raster_input(raster)
 
-    filter_types = {"Lee": 0, "EnhancedLee": 1, "Frost": 2, "Kuan": 3}
+    filter_types = {
+        "Lee": 0,
+        "EnhancedLee": 1,
+        "Frost": 2,
+        "Kuan": 3,
+        "GammaMAP": 4,
+        "RefinedLee": 5,
+    }
 
     filter_sizes = {"3x3": 0, "5x5": 1, "7x7": 2, "9x9": 3, "11x11": 4}
 
@@ -9097,6 +9106,9 @@ def raster_collection_function(
     interval_value: Optional[str] = None,
     interval_unit: Optional[str] = None,
     interval_ranges: Optional[list[dict]] = None,
+    where_clause: Optional[str] = None,
+    query_geometry: Optional[Union[Geometry, Envelope]] = None,
+    use_input_geometry: Optional[bool] = False,
 ):
     """
     Creates a new raster by applying item, aggregation and processing function
@@ -9217,6 +9229,18 @@ def raster_collection_function(
 
                                                 [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
                                                 {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
+    --------------------------------     --------------------------------------------------------------------
+    where_clause                           Optional String. An expression that filters the records returned.
+                                           The value is a string that follows SQL expression, such as
+                                           Cloud Cover < 0.2. See SQL reference for query expressions used in
+                                           ArcGIS for more information.
+    --------------------------------     --------------------------------------------------------------------
+    query_geometry                         Optional dictionary or Geometry object. Used to filter the images in an
+                                           area of interest. Only items that intersect with the extent of the
+                                           dataset will be returned.
+    --------------------------------     --------------------------------------------------------------------
+    use_input_geometry                     Optional boolean. If True, the function uses the clip geometry defined by the geometry parameter. This is the default.
+                                           If False, the function uses the extent of the clip geometry defined by the geometry parameter.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -9354,10 +9378,32 @@ def raster_collection_function(
             aggregation_definition
         )
 
-    # if where_clause is not None:
-    #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
+    if where_clause is not None:
+        template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if query_geometry is not None:
+        if isinstance(query_geometry, _FeatureLayer):
+            full_geometry_val = _get_geometry_from_feature_layer(query_geometry)
+            if isinstance(full_geometry_val, dict):
+                query_geometry = Geometry(full_geometry_val)
+            else:
+                raise RuntimeError(
+                    "Error setting the argument '{}'. Try passing a Geometry or dictionary object".format(
+                        query_geometry
+                    )
+                )
+        if not isinstance(query_geometry, Geometry):
+            query_geometry = Geometry(query_geometry)
+
+        if not use_input_geometry:
+            extent_envelope = _json.loads(query_geometry.envelope.JSON)
+            template_dict["rasterFunctionArguments"]["QueryGeometry"] = extent_envelope
+        else:
+            template_dict["rasterFunctionArguments"]["QueryGeometry"] = query_geometry
+
+    return _clone_layer(
+        layer, template_dict, raster_ra, variable_name="RasterCollection"
+    )
 
 
 def monitor_vegetation(
@@ -13756,6 +13802,7 @@ def subset_bands(
     method: str = "BY_IDS",
     bands: str = None,
     missing_band_action: str = "BestMatch",
+    exclude_bad_bands: bool = False,
 ):
     """
     The subset_bands function allows you to extract a subset of bands using ranges or lists. This function supports both multispectral and hyperspectral images, and maintains the same band order as the input.
@@ -13792,6 +13839,14 @@ def subset_bands(
 
                                          - BestMatch : Finds the best available band to use in place of the missing band based on wavelength.
                                          - Fail : If the input dataset is missing any band specified in the Combination parameter, the function will fail.
+    --------------------------------     --------------------------------------------------------------------
+    exclude_bad_bands                    Optional boolean. Specify whether bad bands will be excluded or not.
+
+                                         Possible options are:
+
+                                         - True : Exclude bad bands
+                                         - False : Include bad bands. This is default.
+
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -13829,34 +13884,37 @@ def subset_bands(
 
         template_dict["rasterFunctionArguments"]["Method"] = in_method
 
-        if isinstance(bands, list):
-            bands = ";".join(str(band) for band in bands)
-            template_dict["rasterFunctionArguments"]["Bands"] = bands
-        elif isinstance(bands, str):
-            if "," in bands:
-                raise ValueError("Invalid separator. Only space and ';' are allowed.")
-            template_dict["rasterFunctionArguments"]["Bands"] = bands
-        elif isinstance(bands, int):
-            template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
-        else:
-            raise TypeError("bands should be  either a single string or a list")
-
-        bands = template_dict["rasterFunctionArguments"]["Bands"]
-        if isinstance(bands, str):
-            if method.upper() == "BY_IDS":
-                separator = ";" if ";" in bands else " "
-                parts = bands.split(separator)
-
-                new_parts = []
-                for part in parts:
-                    if "-" in part:
-                        start, end = map(int, part.split("-"))
-                        new_parts.append(f"{start-1}-{end-1}")
-                    else:
-                        new_parts.append(str(int(part) - 1))
-
-                bands = separator.join(new_parts).replace(" ;", ";")
+        if bands is not None:
+            if isinstance(bands, list):
+                bands = ";".join(str(band) for band in bands)
                 template_dict["rasterFunctionArguments"]["Bands"] = bands
+            elif isinstance(bands, str):
+                if "," in bands:
+                    raise ValueError(
+                        "Invalid separator. Only space and ';' are allowed."
+                    )
+                template_dict["rasterFunctionArguments"]["Bands"] = bands
+            elif isinstance(bands, int):
+                template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
+            else:
+                raise TypeError("bands should be  either a single string or a list")
+
+            bands = template_dict["rasterFunctionArguments"]["Bands"]
+            if isinstance(bands, str):
+                if method.upper() == "BY_IDS":
+                    separator = ";" if ";" in bands else " "
+                    parts = bands.split(separator)
+
+                    new_parts = []
+                    for part in parts:
+                        if "-" in part:
+                            start, end = map(int, part.split("-"))
+                            new_parts.append(f"{start-1}-{end-1}")
+                        else:
+                            new_parts.append(str(int(part) - 1))
+
+                    bands = separator.join(new_parts).replace(" ;", ";")
+                    template_dict["rasterFunctionArguments"]["Bands"] = bands
 
     missing_band_actions = {"BESTMATCH": 0, "FAIL": 1}
 
@@ -13869,6 +13927,14 @@ def subset_bands(
         template_dict["rasterFunctionArguments"]["MissingBandAction"] = (
             missing_band_actions[missing_band_action.upper()]
         )
+
+    if exclude_bad_bands is not None:
+        if isinstance(exclude_bad_bands, bool):
+            template_dict["rasterFunctionArguments"][
+                "ExcludeBadBands"
+            ] = exclude_bad_bands
+        else:
+            raise RuntimeError("exclude_bad_bands should be of type: boolean")
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -14120,10 +14186,16 @@ class RFT:
                                         value["value"] = v
                                         break
                                 else:
-                                    value["value"] = v
+                                    if key == "Rasters" and "value" not in value.keys():
+                                        raster = _raster_input_rft(v)
+                                        v = _input_rft(raster)
+                                        if isinstance(raster, list):
+                                            value["value"] = v
+                                            flag_rasters = 1
+                                            break
                                     if ((key == "RasterInfo")) and isinstance(v, dict):
                                         v.update({"type": "RasterInfo"})
-                                    if (
+                                    if ("value" in value.keys()) and (
                                         isinstance(value["value"], numbers.Number)
                                         and value["isDataset"] == True
                                     ):
@@ -14169,7 +14241,10 @@ class RFT:
                                     ):
                                         value["value"] = {"type": "Scalar", "value": v}
                                         break
-                    if (flag_rasters == -1) and "Rasters" in input_dict.keys():
+                    if (flag_rasters == -1) and (
+                        ("Rasters" in input_dict.keys())
+                        and "value" in input_dict["Rasters"].keys()
+                    ):
                         elements_structure = []
                         if (
                             isinstance(input_dict["Rasters"]["value"], dict)
@@ -14763,6 +14838,18 @@ class RFT:
                         break
             if lyr is not None:
                 break
+
+        for key, value in arg_dict.items():
+            if isinstance(value, _FeatureLayer):
+                geometry_val = _get_geometry_from_feature_layer(value)
+                if geometry_val is None:
+                    raise RuntimeError(
+                        "Error setting the argument '{}'. Try passing a Geometry or dictionary object".format(
+                            key
+                        )
+                    )
+                arg_dict[key] = geometry_val
+
         rft_dict = copy.deepcopy(self._rft_json)
         arg_dict_copy = copy.copy(arg_dict)
         if arg_dict_copy is not None:

@@ -1798,7 +1798,9 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
         try:
             gis = self.gis
             sdf = pd.DataFrame(data)
-            item = gis.content.import_data(sdf)
+            item = gis.content.import_data(
+                sdf, title="delete_features_sync", tags="ntgrtn-tst"
+            )
             flyr = item.layers[0]
             where = "FID=2"
             d = flyr.delete_features(
@@ -1838,9 +1840,9 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
             raise e
         finally:
             if item.related_items("Service2Data", "forward"):
-                item.related_items("Service2Data", "forward")[0].delete()
+                item.related_items("Service2Data", "forward")[0].delete(permanent=True)
             if item:
-                assert item.delete()
+                item.delete(permanent=True)
 
     def test_delete_features_async(self):
         """Tests the deletes_features operation with future=True"""
@@ -1848,7 +1850,9 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
         try:
             gis = self.gis
             sdf = pd.DataFrame(data)
-            item = gis.content.import_data(sdf)
+            item = gis.content.import_data(
+                sdf, title="delete_features_async", tags="ntgrtn-tst"
+            )
             flyr = item.layers[0]
             where = "FID=2"
             d = flyr.delete_features(
@@ -1888,9 +1892,9 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
             raise e
         finally:
             if item.related_items("Service2Data", "forward"):
-                item.related_items("Service2Data", "forward")[0].delete()
+                item.related_items("Service2Data", "forward")[0].delete(permanent=True)
             if item:
-                assert item.delete()
+                assert item.delete(permanent=True)
 
 
 if __name__ == "__main__":
