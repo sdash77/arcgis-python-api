@@ -345,12 +345,13 @@ class PatchEmbed(nn.Module):
 
     def forward(self, x):
         x = self.proj(x)
+        path_height, path_width = x.shape[-2:]
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
         else:
             x = x.permute(0, 2, 3, 1)  # BCHW -> BHWC
 
-        return x
+        return x, path_height, path_width
 
 
 class ViT(nn.Module):
@@ -553,14 +554,9 @@ class ViT(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def forward(self, x):
-        path_height, path_width = x.shape[-2:]
-        path_height, path_width = (
-            path_height // self.patch_size,
-            path_width // self.patch_size,
-        )
         if self.qa_idx is not None:
             x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
-        x = self.patch_embed(x)
+        x, path_height, path_width = self.patch_embed(x)
 
         if self.pos_embed is not None:
             x = x + get_abs_pos(
