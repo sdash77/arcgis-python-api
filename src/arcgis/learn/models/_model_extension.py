@@ -373,7 +373,11 @@ class ModelExtension(ArcGISModel):
                 data.K = emd["Kwargs"]["n_masks"]
                 data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
-
+        if (
+            "wavelengths" not in kwargs.keys()
+            and "wavelengths" in emd["ModelParameters"].keys()
+        ):
+            kwargs["wavelengths"] = emd["ModelParameters"]["wavelengths"]
         mextnsn = cls(
             data,
             model_configuration,
