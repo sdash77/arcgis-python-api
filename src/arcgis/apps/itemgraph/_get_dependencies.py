@@ -357,10 +357,13 @@ def _parse_exb(item):
                 itemids.append(ds["itemId"])
 
         widgets = data.get("widgets", [])
-        for widg_dict in widgets.values():
-            config = widg_dict.get("config", {})
-            if "surveyItemId" in config and config["surveyItemId"] not in itemids:
-                itemids.append(config["surveyItemId"])
+        try:
+            for widg_dict in widgets.values():
+                config = widg_dict.get("config", {})
+                if "surveyItemId" in config and config["surveyItemId"] not in itemids:
+                    itemids.append(config["surveyItemId"])
+        except:
+            pass
 
     return itemids
 
