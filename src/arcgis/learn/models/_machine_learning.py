@@ -922,7 +922,7 @@ class MLModel(object):
 
         _model_name = emd.get("ModelName", None)
         if _model_name and not _model_name.lower().startswith(
-            ("lightgbm", "catboost", "xgboost")
+            ("lightgbm", "catboost", "xgboost", "tabpfn")
         ):
             if version.parse(emd["version"]) < version.parse(
                 str(sklearn.__version__)
