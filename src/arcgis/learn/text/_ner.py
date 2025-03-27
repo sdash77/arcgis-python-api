@@ -690,9 +690,9 @@ class EntityRecognizer:
                                 Errors). Default is set to 4.
                                 Not applicable for models with `spaCy` backbone.
         ---------------------   -------------------------------------------
-        show_progress           optional Bool. If set to True, will display a
+        show_progress           Optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
-                                Applicable only when a list of text is passed
+                                Applicable only when a list of text is passed.
         =====================   ===========================================
 
         **kwargs**
@@ -701,8 +701,8 @@ class EntityRecognizer:
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_field             Optional string.
-                                input field name in the feature set. Supported
-                                in model extension
+                                Input field name in the feature set. Supported
+                                in model extension.
                                 Default value: input_str
         =====================   ===========================================
 

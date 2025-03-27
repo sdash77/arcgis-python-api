@@ -1052,7 +1052,7 @@ class TextClassifier(ArcGISModel):
                                 This parameter use to describe the task and guardrails for the task.
 
         ---------------------   -------------------------------------------
-        show_progress           optional Bool. If set to True, will display a
+        show_progress           Optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
                                 Applicable only when a list of text is passed
         ---------------------   -------------------------------------------
@@ -1083,8 +1083,8 @@ class TextClassifier(ArcGISModel):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_field             Optional string.
-                                input field name in the feature set. Supported
-                                in model extension
+                                Input field name in the feature set. Supported
+                                in model extension.
                                 Default value: input_str
         =====================   ===========================================
 
