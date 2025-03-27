@@ -67,7 +67,7 @@ class ItemNode:
         # if returning items instead of just id's...
         items = []
         for n in node_list:
-            node = self.graph.get_item(n)
+            node = self.graph.get_node(n)
             # if node format, append node
             if out_format == "node":
                 items.append(node)
