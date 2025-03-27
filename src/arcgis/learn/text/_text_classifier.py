@@ -1085,7 +1085,7 @@ class TextClassifier(ArcGISModel):
         input_field             Optional string.
                                 input field name in the feature set. Supported
                                 in model extension
-                                Deafult value: input_str
+                                Default value: input_str
         =====================   ===========================================
 
         :return: * In case of single label classification problem, a tuple containing the text, its predicted class label and the confidence score.

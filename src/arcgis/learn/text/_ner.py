@@ -703,7 +703,7 @@ class EntityRecognizer:
         input_field             Optional string.
                                 input field name in the feature set. Supported
                                 in model extension
-                                Deafult value: input_str
+                                Default value: input_str
         =====================   ===========================================
 
         :return: Pandas DataFrame
