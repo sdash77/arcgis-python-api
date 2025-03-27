@@ -614,7 +614,6 @@ def create_dataloaders(datasets, batch_size, dataloader_kwargs):
             dataloader_kwargs["shuffle"] = True
         else:
             dataloader_kwargs["shuffle"] = True
-        dataloader_kwargs["drop_last"] = False
         dl = DataLoader(d, batch_size, **dataloader_kwargs)
         dl_list.append(dl)
     return dl_list
@@ -679,6 +678,7 @@ def prepare_psetae_data(
     data._convertmap = train_val_dataset[11]
     data._timestep_infer = train_val_dataset[12]
     data._channels_infer = train_val_dataset[13]
+    data.classes = [j for i, j in data._class_map_dict.items()]
 
     return data
 
