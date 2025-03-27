@@ -317,8 +317,10 @@ class ItemGraph(nx.DiGraph):
             return self.nodes[itemid]["node"]
         except:
             return None
-        
-    def add_dependencies(self, item_list: list[Item, str], outside_org: bool = True, **kwargs):
+
+    def add_dependencies(
+        self, item_list: list[Item, str], outside_org: bool = True, **kwargs
+    ):
         """
         Adds a list of items to the graph and their dependencies. The function recursively explores
         the dependencies of each item that is part of the organization, encompassing the full dependency
