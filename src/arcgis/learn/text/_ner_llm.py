@@ -1,6 +1,6 @@
 import os
 import json
-
+import random
 import numpy as np
 import pandas as pd
 from copy import deepcopy
@@ -361,13 +361,17 @@ class _LlmEntityRecognizer(ArcGISModel):
     def recall_score(self):
         return self._calculate_model_metrics()["recall_score"]
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, ds_type="valid", rows=5):
         if self._data._is_empty:
             raise Exception("Data object is empty or supplied as None")
         else:
             valid_token = deepcopy(self._data._valid_tokens)
+            # sample the records
+            random_index = random.sample(range(0, len(valid_token)), rows)
             # Convert valid token to sentences
-            valid_sentence = [" ".join(x) for x in valid_token]
+            valid_sentence = [
+                " ".join(x) for idx, x in enumerate(valid_token) if idx in random_index
+            ]
             validation_response = self.extract_entities(valid_sentence)
             # validation_response.insert(0, "TEXT", value=valid_sentence)
             if "Filename" in validation_response.columns:
@@ -394,7 +398,7 @@ class _LlmEntityRecognizer(ArcGISModel):
             f"This method is not supported when the backbone is configured as {self._submodel}."
         )
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         raise Exception(
             f"This method is not supported when the backbone is configured as {self._submodel}."
         )

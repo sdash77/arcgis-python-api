@@ -5,6 +5,8 @@ from typing import Optional, Union
 import uuid
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
+import warnings
+
 
 arcgis = LazyLoader("arcgis")
 _imports = LazyLoader("arcgis._impl.imports")
@@ -123,6 +125,71 @@ class SlideSubLayout(Enum):
     THREE_SEVEN = "3-7"
     SEVEN_THREE = "7-3"
     ONE_ONE = "1-1"
+
+
+class GalleryDisplay(Enum):
+    JIGSAW = "jigsaw"
+    SQUAREDYNAMIC = "square-dynamic"
+
+
+class CoverType(Enum):
+    """
+    The different cover types for the StoryMap, briefings, and collections.
+
+    Storymap and Briefing can be: FULL | SIDEBYSIDE | MINIMAL
+    Collection can be: GRID | MAGAZINE | JOURNAL
+    """
+
+    FULL = "full"
+    SIDEBYSIDE = "sidebyside"
+    MINIMAL = "minimal"
+    GRID = "grid"
+    MAGAZINE = "magazine"
+    JOURNAL = "journal"
+    CARD = "card"
+    SPLIT = "split"
+    TOP = "top"
+
+
+class VerticalPosition(Enum):
+    """
+    The vertical position of the cover.
+    """
+
+    TOP = "top"
+    MIDDLE = "middle"
+    BOTTOM = "bottom"
+
+
+class HorizontalPosition(Enum):
+    """
+    The horizontal position of the cover.
+    """
+
+    START = "start"
+    CENTER = "center"
+    END = "end"
+
+
+class CoverStyle(Enum):
+    """
+    The style of the cover
+    """
+
+    GRADIENT = "gradient"
+    THEMED = "themed"
+    TRANSPARENTWITHLIGHTCOLOR = "transparent-with-light-color"
+    TRANSPARENTWITHDARKCOLOR = "transparent-with-dark-color"
+
+
+class CoverSize(Enum):
+    """
+    The size of the cover
+    """
+
+    SMALL = "small"
+    MEDIUM = "medium"
+    LARGE = "large"
 
 
 ###############################################################################################################
@@ -290,6 +357,68 @@ class Image:
         if self._existing is True:
             self._update_image(path)
             return self.image
+
+    # ----------------------------------------------------------------------
+    @property
+    def link(self):
+        """
+        Get/Set a URL that will open in a new tab when readers click the image.
+        An image with a link cannot be expanded.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        link                String. The new link for the Image. To
+                            remove the link, set to None.
+        ==================  ========================================
+
+        :return:
+            A string representing the link that is being used.
+        """
+        if self._existing is True:
+            if "link" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["link"]
+
+    # ----------------------------------------------------------------------
+    @link.setter
+    def link(self, link):
+        if self._existing is True:
+            if link is None:
+                if "link" in self._story._properties["nodes"][self.node]["data"]:
+                    del self._story._properties["nodes"][self.node]["data"]["link"]
+            else:
+                self._story._properties["nodes"][self.node]["data"]["link"] = link
+            return self.link
+
+    # ----------------------------------------------------------------------
+    @property
+    def full_view(self):
+        """
+        This property, if True, will set the image to fit to screen. Enable this option
+        for portrait images you would like readers to see in their entirety without
+        scrolling. This constraint does not apply when the story is viewed on a small
+        screen, and other image sizing options may have no effect when it is enabled.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        enable              Boolean. Set to True to enable full view.
+        ==================  ========================================
+
+        :return:
+            A boolean representing if full view is enabled.
+        """
+        if self._existing is True:
+            if "isInFullView" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "isInFullView"
+                ]
+
+    # ----------------------------------------------------------------------
+    @full_view.setter
+    def full_view(self, enable: bool):
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["isInFullView"] = enable
 
     # ----------------------------------------------------------------------
     @property
@@ -1669,7 +1798,19 @@ class Map:
     def map(self, map):
         if self._existing is True:
             self._update_map(map)
-            return self.map
+
+    # ----------------------------------------------------------------------
+    @property
+    def map_layers(self):
+        """
+        Get the map layers present.
+
+        :return:
+            The map layers that are being used.
+        """
+        if self._existing is True:
+            return self._map_layers
+        return []
 
     # ----------------------------------------------------------------------
     def _calculate_z_value(self, scale: int = None):
@@ -1862,8 +2003,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "isShowingLegend"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @show_legend.setter
@@ -1885,8 +2025,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "legendPinned"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @legend_pinned.setter
@@ -1900,8 +2039,7 @@ class Map:
         if self._existing is True:
             if "search" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["search"]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @show_search.setter
@@ -1913,15 +2051,62 @@ class Map:
     def time_slider(self):
         """Get/Set the time slider toggle. True if enabled and False if disabled"""
         if self._existing is True:
-            if "time_slider" in self._story._properties["nodes"][self.node]["data"]:
+            if "timeSlider" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @time_slider.setter
     def time_slider(self, value: bool):
         self._story._properties["nodes"][self.node]["data"]["timeSlider"] = value
+
+    # ----------------------------------------------------------------------
+    @property
+    def pinned_popup(self):
+        """
+        Get/Set the pinned popup. You must know the layer id and the featureId name and value that represents
+        the popup you want to pin. You can find the layer id by looking at the `map_layers` property.
+
+        This is considered a more advance workflow as you must know the layer data to pin the popup.
+
+        ==================  ================================================
+        **Parameter**        **Description**
+        ------------------  ------------------------------------------------
+        pinned_popup_info   The new pinned popup info for the Map. This is a
+                            dictionary containing the following keys:
+                            - `layerId`: String. The layer id of the feature layer. You can find this value in the `map_layers` property.
+                            - `idFieldName`: String. The field name that represents the id of the feature.
+                            - `idFieldValue`: Integer. The id of the feature you want to show.
+
+                            Example:
+                                | {
+                                |   "layerId": "0",
+                                |   "idFieldName": "OBJECTID",
+                                |   "idFieldValue": 1
+                                | }
+
+                            If you want to remove the pinned popup, set this to None.
+        ==================  ================================================
+        """
+        if self._existing is True:
+            if "pinnedPopupInfo" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "pinnedPopupInfo"
+                ]
+        return None
+
+    # ----------------------------------------------------------------------
+    @pinned_popup.setter
+    def pinned_popup(self, value: dict | None):
+        # Check if the dictionary has the correct keys
+        if value is None:
+            self._story._properties["nodes"][self.node]["data"].pop(
+                "pinnedPopupInfo", None
+            )
+        elif all(k in value for k in ("layerId", "idFieldName", "idFieldValue")):
+            self._story._properties["nodes"][self.node]["data"][
+                "pinnedPopupInfo"
+            ] = value
 
     # ----------------------------------------------------------------------
     @property
@@ -1941,8 +2126,7 @@ class Map:
         if self._existing is True:
             if "caption" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["caption"]
-        else:
-            return None
+        return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -1950,7 +2134,6 @@ class Map:
         if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-            return self.caption
 
     # ----------------------------------------------------------------------
     @property
@@ -1970,15 +2153,13 @@ class Map:
         if self._existing is True:
             if "alt" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["alt"]
-        else:
-            return None
+        return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
         if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
-            return self.alt_text
 
     # ----------------------------------------------------------------------
     @property
@@ -1991,8 +2172,7 @@ class Map:
         if self._existing is True:
             if "config" in self._story._properties["nodes"][self.node]:
                 return self._story._properties["nodes"][self.node]["config"]["size"]
-            else:
-                return None
+        return None
 
     # ----------------------------------------------------------------------
     @display.setter
@@ -2028,8 +2208,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "popupDocked"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @popup_docked.setter
@@ -3013,6 +3192,8 @@ class Gallery:
     @display.setter
     def display(self, display):
         if self._existing is True:
+            if isinstance(display, GalleryDisplay):
+                display = display.value
             self._story._properties["nodes"][self.node]["config"]["size"] = display
             return self.display
 
@@ -4840,9 +5021,21 @@ class ExpressMap:
             ]
             # check if offline dependent
             if "dependents" in self._story._properties["nodes"][self.node]:
-                self._offline_dependent = self._story._properties["nodes"][self.node][
-                    "dependents"
-                ]["offline"]
+                if (
+                    "offline"
+                    in self._story._properties["nodes"][self.node]["dependents"]
+                ):
+                    self._offline_dependent = self._story._properties["nodes"][
+                        self.node
+                    ]["dependents"]["offline"]
+                else:
+                    self._offline_dependent = None
+                if "media" in self._story._properties["nodes"][self.node]["dependents"]:
+                    self._media_dependents = self._story._properties["nodes"][
+                        self.node
+                    ]["dependents"]["media"]
+                else:
+                    self._media_dependents = []
         else:
             raise ValueError(
                 "You cannot create an ExpressMap from scratch at this time. Please use an existing ExpressMap."
@@ -4898,6 +5091,29 @@ class ExpressMap:
             raise ValueError(
                 "offline_media can only be set for an ExpressMap that has been added to a Briefing."
             )
+
+    # ----------------------------------------------------------------------
+    @property
+    def media(self):
+        """
+        Get/Set the media property for the embed.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        media               Image or Video. The new media for the Embed.
+        ==================  ========================================
+
+        :return:
+            The media that is being used.
+        """
+        if self._existing is True:
+            if self._media_dependents:
+                return [
+                    utils._assign_node_class(story=self._story, node_id=md)
+                    for md in self._media_dependents
+                ]
+        return None
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -5297,7 +5513,7 @@ class BriefingSlide:
         """
         # property only accessed through the cover slide
         if self._layout != "cover":
-            raise Warning(
+            warnings.warn(
                 "This is not a cover slide. The cover class can only be accessed through the cover slide."
             )
             return None
@@ -5808,7 +6024,9 @@ class Table:
                     # Check if the cell value is a dictionary and has the key "value"
                     if isinstance(cell_value, dict) and "value" in cell_value:
                         # Update the value key to be an instance of the text class
-                        df.at[str(index), column]["value"] = Text(cell_value["value"])
+                        df.at[str(index), column]["value"] = Text(
+                            cell_value["value"]
+                        )._text
             return df
 
     # ----------------------------------------------------------------------
@@ -5846,6 +6064,12 @@ class Table:
                         content.at[str(index), column]["value"] = cell_value[
                             "value"
                         ]._text
+                    elif isinstance(cell_value["value"], str):
+                        content.at[str(index), column]["value"] = cell_value["value"]
+                    else:
+                        raise ValueError(
+                            "The value of the cell must be a string or a Text instance."
+                        )
             # convert the dataframe to a dictionary
             self._cells = content.to_dict(orient="index")
             self._story._properties["nodes"][self.node]["data"]["cells"] = self._cells
@@ -5900,16 +6124,16 @@ class Cover:
 
     def __init__(self, **kwargs):
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
         self._existing = self._check_node()
         if self._existing:
-            self._title = self._story._properties["nodes"][self._node]["data"].get(
+            self._title = self._story._properties["nodes"][self.node]["data"].get(
                 "title", None
             )
-            self._summary = self._story._properties["nodes"][self._node]["data"].get(
+            self._summary = self._story._properties["nodes"][self.node]["data"].get(
                 "summary", None
             )
-            self._byline = self._story._properties["nodes"][self._node]["data"].get(
+            self._byline = self._story._properties["nodes"][self.node]["data"].get(
                 "byline", None
             )
 
@@ -5943,7 +6167,7 @@ class Cover:
             if isinstance(title, Text):
                 title = title.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["title"] = title
+            self._story._properties["nodes"][self.node]["data"]["title"] = title
         self._title = title
 
     # ----------------------------------------------------------------------
@@ -5968,7 +6192,7 @@ class Cover:
             if isinstance(summary, Text):
                 summary = summary.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["summary"] = summary
+            self._story._properties["nodes"][self.node]["data"]["summary"] = summary
         self._summary = summary
 
     # ----------------------------------------------------------------------
@@ -5993,7 +6217,7 @@ class Cover:
             if isinstance(byline, Text):
                 byline = byline.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["byline"] = byline
+            self._story._properties["nodes"][self.node]["data"]["byline"] = byline
         self._byline = byline
 
     # ----------------------------------------------------------------------
@@ -6005,42 +6229,56 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        type                Optional string. The type of story cover to be used in the story.
+        type                Optional string or CoverType enum. The type of story cover to be used in the story.
 
-                            ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal"``
+                            ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal" | "card" | "split" | "top"``
                             ``Values for Collection: "grid" | "magazine" | "journal"``
+
+                            .. note::
+                                As of Enterprise 11.4 only "full", "sidebyside", and "minimal" are supported for Storymap and Briefing.
         ===============     ====================================================================
 
         :return:
             A string of the cover type.
         """
         if self._existing:
-            return self._story._properties["nodes"][self._node]["data"]["type"]
+            return self._story._properties["nodes"][self.node]["data"]["type"]
         return None
 
     # ----------------------------------------------------------------------
     @type.setter
-    def type(self, cover_type: str):
+    def type(self, cover_type: str | CoverType):
+        # get value
+        if isinstance(cover_type, CoverType):
+            cover_type = cover_type.value
+
+        # check value
+        if (
+            isinstance(self._story, briefing.Briefing)
+            or isinstance(self._story, story.StoryMap)
+            and cover_type
+            not in [
+                "full",
+                "sidebyside",
+                "minimal",
+                "card",
+                "split",
+                "top",
+            ]
+        ):
+            raise ValueError(
+                "Invalid cover type. Please provide 'full', 'sidebyside', 'minimal', 'card', 'split', or 'top'."
+            )
+        elif isinstance(self._story, collection.Collection) and cover_type not in [
+            "grid",
+            "magazine",
+            "journal",
+        ]:
+            raise ValueError(
+                "Invalid cover type. Please provide 'grid', 'magazine', or 'journal'."
+            )
         if self._existing:
-            if (
-                isinstance(self._story, story.StoryMap)
-                or isinstance(self._story, briefing.Briefing)
-            ) and cover_type in ["full", "sidebyside", "minimal"]:
-                self._story._properties["nodes"][self._node]["data"][
-                    "type"
-                ] = cover_type
-            elif isinstance(self._story, collection.Collection) and cover_type in [
-                "grid",
-                "magazine",
-                "journal",
-            ]:
-                self._story._properties["nodes"][self._node]["data"][
-                    "type"
-                ] = cover_type
-            else:
-                raise ValueError(
-                    "Invalid cover type. Please provide 'full', 'sidebyside', or 'minimal'."
-                )
+            self._story._properties["nodes"][self.node]["data"]["type"] = cover_type
 
     # ----------------------------------------------------------------------
     @property
@@ -6051,13 +6289,13 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        media               Optional string. The media of the cover slide. This can be an instance of
+        media               The media of the cover slide. This can be an instance of
                             Image or Video.
         ===============     ====================================================================
         """
         if self._existing:
-            if "children" in self._story._properties["nodes"][self._node]:
-                media_node = self._story._properties["nodes"][self._node]["children"][0]
+            if "children" in self._story._properties["nodes"][self.node]:
+                media_node = self._story._properties["nodes"][self.node]["children"][0]
                 return utils._assign_node_class(self._story, media_node)
         return None
 
@@ -6074,12 +6312,12 @@ class Cover:
             )
         if media is None:
             # remove media
-            self._story._properties["nodes"][self._node]["children"] = []
+            self._story._properties["nodes"][self.node]["children"] = []
             return
         if media.node not in self._story._properties["nodes"]:
             # must be added to story resources
             media._add_to_story(story=self._story)
-        self._story._properties["nodes"][self._node]["children"] = [media.node]
+        self._story._properties["nodes"][self.node]["children"] = [media.node]
 
     # ----------------------------------------------------------------------
     @property
@@ -6118,8 +6356,167 @@ class Cover:
         ] = date
 
     # ----------------------------------------------------------------------
+    @property
+    def vertical_position(self) -> str:
+        """
+        Get/Set the vertical position of the cover panel.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        vertical_position   Optional string or instance of VerticalPosition Enum. The vertical position of the cover slide.
+                            This is available when the cover type is 'full'.
+
+                            ``Values: "top" | "middle" | "bottom"``
+        ===============     ====================================================================
+        """
+        return (
+            self._story._properties["nodes"][self.node]["data"][
+                "titlePanelVerticalPosition"
+            ]
+            if "titlePanelVerticalPosition"
+            in self._story._properties["nodes"][self.node]["data"]
+            else None
+        )
+
+    # ----------------------------------------------------------------------
+    @vertical_position.setter
+    def vertical_position(self, position: str):
+        if self.type != "full":
+            raise Exception(
+                "This property is only available when the cover type is 'full'."
+            )
+        position = (
+            position.value if isinstance(position, VerticalPosition) else position
+        )
+        if position not in ["top", "middle", "bottom"]:
+            raise ValueError(
+                "Invalid vertical position value. Please provide 'top', 'middle', or 'bottom'."
+            )
+        self._story._properties["nodes"][self.node]["data"][
+            "titlePanelVerticalPosition"
+        ] = position
+
+    # ----------------------------------------------------------------------
+    @property
+    def horizontal_position(self) -> str:
+        """
+        Get/Set the horizontal position of the cover panel.
+
+        ===================     ====================================================================
+        **Parameter**           **Description**
+        -------------------     --------------------------------------------------------------------
+        horizontal_position     Optional string or instance of HorizontalPosition Enum. The horizontal position of the cover slide.
+                                This is available when the cover type is "minimal", "top", or "full".
+
+                                ``Values: "start" | "center" | "end"``
+        ===================     ====================================================================
+        """
+        return (
+            self._story._properties["nodes"][self.node]["data"][
+                "titlePanelHorizontalPosition"
+            ]
+            if "titlePanelHorizontalPosition"
+            in self._story._properties["nodes"][self.node]["data"]
+            else None
+        )
+
+    # ----------------------------------------------------------------------
+    @horizontal_position.setter
+    def horizontal_position(self, position: str):
+        if self.type not in ["minimal", "top", "full"]:
+            raise Exception(
+                "This property is only available when the cover type is 'minimal', 'top', or 'full'."
+            )
+        position = (
+            position.value if isinstance(position, HorizontalPosition) else position
+        )
+        if position not in ["start", "center", "end"]:
+            raise ValueError(
+                "Invalid horizontal position value. Please provide 'start', 'center', or 'end'."
+            )
+        self._story._properties["nodes"][self.node]["data"][
+            "titlePanelHorizontalPosition"
+        ] = position
+
+    # ----------------------------------------------------------------------
+    @property
+    def style(self) -> str:
+        """
+        Get/Set the style of the cover panel.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        style               Optional string or instance of CoverStyle Enum. The style of the cover slide.
+                            This is available when the type is 'full'.
+
+                            ``Values: "gradient" | "themed" | "transparent-with-light-color" | "transparent-with-dark-color"``
+        ===============     ====================================================================
+        """
+        return (
+            self._story._properties["nodes"][self.node]["data"]["titlePanelStyle"]
+            if "titlePanelStyle" in self._story._properties["nodes"][self.node]["data"]
+            else None
+        )
+
+    # ----------------------------------------------------------------------
+    @style.setter
+    def style(self, style: str):
+        if self.type != "full":
+            raise Exception(
+                "This property is only available when the cover type is 'full'."
+            )
+        style = style.value if isinstance(style, CoverStyle) else style
+        if style not in [
+            "gradient",
+            "themed",
+            "transparent-with-light-color",
+            "transparent-with-dark-color",
+        ]:
+            raise ValueError(
+                "Invalid style value. Please provide 'gradient', 'themed', 'transparent-with-light-color' or 'transparent-with-dark-color'."
+            )
+        self._story._properties["nodes"][self.node]["data"]["titlePanelStyle"] = style
+
+    # ----------------------------------------------------------------------
+    @property
+    def size(self) -> str:
+        """
+        Get/Set the size of the cover panel.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        size                Optional string. The size of the cover slide.
+                            This is available when the type is 'full', "card", or "sidebyside".
+
+                            ``Values: "small" | "medium" | "large"``
+        ===============     ====================================================================
+        """
+        return (
+            self._story._properties["nodes"][self.node]["data"]["titlePanelSize"]
+            if "titlePanelSize" in self._story._properties["nodes"][self.node]["data"]
+            else None
+        )
+
+    # ----------------------------------------------------------------------
+    @size.setter
+    def size(self, size: str):
+        if self.type not in ["full", "card", "sidebyside"]:
+            raise Exception(
+                "This property is only available when the cover type is 'full', 'card', or 'sidebyside'."
+            )
+        size = size.value if isinstance(size, CoverSize) else size
+        if size not in ["small", "medium", "large"]:
+            raise ValueError(
+                "Invalid size value. Please provide 'small', 'medium', or 'large'."
+            )
+        self._story._properties["nodes"][self.node]["data"]["titlePanelSize"] = size
+
+    # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None or self._node is None:
+        if self._story is None or self.node is None:
             return False
         return True
 
@@ -6132,14 +6529,10 @@ class Navigation:
 
     def __init__(self, **kwargs) -> None:
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
 
-        self._hidden = self._story._properties["nodes"][self._node]["config"][
-            "isHidden"
-        ]
-        self._links = (
-            self._story._properties["nodes"][self._node]["data"]["links"] or []
-        )
+        self._hidden = self._story._properties["nodes"][self.node]["config"]["isHidden"]
+        self._links = self._story._properties["nodes"][self.node]["data"]["links"] or []
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -6177,7 +6570,7 @@ class Navigation:
             for link in link_list
             if isinstance(link, Text) and link._style in ["h2", "h3", "h4"]
         ]
-        self._story._properties["nodes"][self._node]["data"]["links"] = self._links
+        self._story._properties["nodes"][self.node]["data"]["links"] = self._links
 
     # ----------------------------------------------------------------------
     @property
@@ -6195,9 +6588,7 @@ class Navigation:
 
         # update the hidden property
         self._hidden = hidden
-        self._story._properties["nodes"][self._node]["config"][
-            "isHidden"
-        ] = self._hidden
+        self._story._properties["nodes"][self.node]["config"]["isHidden"] = self._hidden
 
 
 ###############################################################################################################
@@ -6208,7 +6599,7 @@ class CollectionNavigation:
 
     def __init__(self, **kwargs) -> None:
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -6234,7 +6625,7 @@ class CollectionNavigation:
         :return:
             A string of the navigation type.
         """
-        return self._story._properties["nodes"][self._node]["data"]["type"]
+        return self._story._properties["nodes"][self.node]["data"]["type"]
 
     @type.setter
     def type(self, nav_type: str):
@@ -6242,4 +6633,4 @@ class CollectionNavigation:
             raise ValueError(
                 "Invalid navigation type. Please provide 'compact', 'tab', or 'bullet'."
             )
-        self._story._properties["nodes"][self._node]["data"]["type"] = nav_type
+        self._story._properties["nodes"][self.node]["data"]["type"] = nav_type

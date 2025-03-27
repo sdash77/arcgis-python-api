@@ -1,9 +1,11 @@
 from __future__ import annotations
 import json
 import requests
+import re
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
+
 
 _layers = LazyLoader("arcgis.layers")
 
@@ -708,24 +710,22 @@ class Object3DLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url: str, gis=None):
+    def __init__(self, url: str, gis=None, parent_url=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
         super(Object3DLayer, self).__init__(url, gis)
         self._admin = None
+        self._parent_url = parent_url
 
     @property
     def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "SceneLayer", "url": url}
-        if self._token is not None:
+        lyr_dict = {"type": "SceneLayer", "url": self.url}
+        if hasattr(self, "_token") and self._token:
             lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
+        if hasattr(self, "filter") and self.filter:
             lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
+        if hasattr(self, "_time_filter") and self._time_filter:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
@@ -753,18 +753,20 @@ class Object3DLayer(Layer):
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
-            if self._gis._portal.is_arcgisonline:
-                rd = {"/rest/services/": "/rest/admin/services/"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = SceneLayerManager(adminURL, self._gis, self)
-            else:
-                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            url = self._parent_url or self._url  # prioritize parent_url if available
+            rd = (
+                {"/rest/services/": "/rest/admin/services/"}
+                if self._gis._portal.is_arcgisonline
+                else {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            )
+            adminURL = self._str_replace(url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = "/".join(adminURL.split("/")[:-1])
+            self._admin = (
+                SceneLayerManager(adminURL, self._gis, self)
+                if self._gis._portal.is_arcgisonline
+                else EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            )
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -775,7 +777,6 @@ class Object3DLayer(Layer):
         The find/replace is case insensitive.
 
         """
-        import re
 
         patternDict = {}
         for key, value in rd.items():
@@ -819,24 +820,22 @@ class IntegratedMeshLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url: str, gis=None):
+    def __init__(self, url: str, gis=None, parent_url=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
         super(IntegratedMeshLayer, self).__init__(url, gis)
         self._admin = None
+        self._parent_url = parent_url
 
     @property
     def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
-        if self._token is not None:
+        lyr_dict = {"type": "IntegratedMeshLayer", "url": self.url}
+        if hasattr(self, "_token") and self._token:
             lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
+        if hasattr(self, "filter") and self.filter:
             lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
+        if hasattr(self, "_time_filter") and self._time_filter:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
@@ -864,18 +863,20 @@ class IntegratedMeshLayer(Layer):
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
-            if self._gis._portal.is_arcgisonline:
-                rd = {"/rest/services/": "/rest/admin/services/"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = SceneLayerManager(adminURL, self._gis, self)
-            else:
-                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            url = self._parent_url or self._url  # prioritize parent_url if available
+            rd = (
+                {"/rest/services/": "/rest/admin/services/"}
+                if self._gis._portal.is_arcgisonline
+                else {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            )
+            adminURL = self._str_replace(url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = "/".join(adminURL.split("/")[:-1])
+            self._admin = (
+                SceneLayerManager(adminURL, self._gis, self)
+                if self._gis._portal.is_arcgisonline
+                else EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            )
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -886,7 +887,6 @@ class IntegratedMeshLayer(Layer):
         The find/replace is case insensitive.
 
         """
-        import re
 
         patternDict = {}
         for key, value in rd.items():
@@ -936,24 +936,22 @@ class Tiles3DLayer(Layer):
     ==================     ====================================================================
     """
 
-    def __init__(self, url: str, gis=None):
+    def __init__(self, url: str, gis=None, parent_url=None):
         """
         Constructs a Tiles3D Layer given a web scene layer URL
         """
         super(Tiles3DLayer, self).__init__(url, gis)
         self._admin = None
+        self._parent_url = parent_url
 
     @property
     def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "3DTiles Service", "url": url}
-        if self._token is not None:
+        lyr_dict = {"type": "3DTiles Service", "url": self.url}
+        if hasattr(self, "_token") and self._token:
             lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
+        if hasattr(self, "filter") and self.filter:
             lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
+        if hasattr(self, "_time_filter") and self._time_filter:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
@@ -992,7 +990,7 @@ class Tiles3DLayer(Layer):
                 }
                 adminURL = self._str_replace(self._url, rd)
                 if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                    adminURL = "/".join(adminURL.split("/")[:-1])
             self._admin = Tiles3DLayerManager(adminURL, self._gis, self)
         return self._admin
 
@@ -1004,7 +1002,6 @@ class Tiles3DLayer(Layer):
         The find/replace is case insensitive.
 
         """
-        import re
 
         patternDict = {}
         for key, value in rd.items():
@@ -1051,24 +1048,22 @@ class VoxelLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url: str, gis=None):
+    def __init__(self, url: str, gis=None, parent_url=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
         super(VoxelLayer, self).__init__(url, gis)
         self._admin = None
+        self._parent_url = parent_url
 
     @property
     def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "VoxelLayer", "url": url}
-        if self._token is not None:
+        lyr_dict = {"type": "VoxelLayer", "url": self.url}
+        if hasattr(self, "_token") and self._token:
             lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
+        if hasattr(self, "filter") and self.filter:
             lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
+        if hasattr(self, "_time_filter") and self._time_filter:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
@@ -1091,24 +1086,25 @@ class VoxelLayer(Layer):
     @property
     def manager(self) -> SceneLayerManager | EnterpriseSceneLayerManager:
         """
-        The ``manager`` property returns an instance of
-        :class:`~arcgis.layers.SceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
         or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
-            if self._gis._portal.is_arcgisonline:
-                rd = {"/rest/services/": "/rest/admin/services/"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = SceneLayerManager(adminURL, self._gis, self)
-            else:
-                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            url = self._parent_url or self._url  # prioritize parent_url if available
+            rd = (
+                {"/rest/services/": "/rest/admin/services/"}
+                if self._gis._portal.is_arcgisonline
+                else {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            )
+            adminURL = self._str_replace(url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = "/".join(adminURL.split("/")[:-1])
+            self._admin = (
+                SceneLayerManager(adminURL, self._gis, self)
+                if self._gis._portal.is_arcgisonline
+                else EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            )
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -1119,7 +1115,6 @@ class VoxelLayer(Layer):
         The find/replace is case insensitive.
 
         """
-        import re
 
         patternDict = {}
         for key, value in rd.items():
@@ -1163,25 +1158,23 @@ class Point3DLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url: str, gis=None):
+    def __init__(self, url: str, gis=None, parent_url=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
         super(Point3DLayer, self).__init__(url, gis)
         self._admin = None
+        self._parent_url = parent_url
 
     # ----------------------------------------------------------------------
     @property
     def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "SceneLayer", "url": url}
-        if self._token is not None:
+        lyr_dict = {"type": "SceneLayer", "url": self.url}
+        if hasattr(self, "_token") and self._token:
             lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
+        if hasattr(self, "filter") and self.filter:
             lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
+        if hasattr(self, "_time_filter") and self._time_filter:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
@@ -1209,19 +1202,20 @@ class Point3DLayer(Layer):
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
-            if self._gis._portal.is_arcgisonline:
-                url = self._url.split("/layers")[0]
-                rd = {"/rest/services/": "/rest/admin/services/"}
-                adminURL = self._str_replace(url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = SceneLayerManager(adminURL, self._gis, self)
-            else:
-                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            url = self._parent_url or self._url  # prioritize parent_url if available
+            rd = (
+                {"/rest/services/": "/rest/admin/services/"}
+                if self._gis._portal.is_arcgisonline
+                else {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            )
+            adminURL = self._str_replace(url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = "/".join(adminURL.split("/")[:-1])
+            self._admin = (
+                SceneLayerManager(adminURL, self._gis, self)
+                if self._gis._portal.is_arcgisonline
+                else EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            )
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -1232,7 +1226,6 @@ class Point3DLayer(Layer):
         The find/replace is case insensitive.
 
         """
-        import re
 
         patternDict = {}
         for key, value in rd.items():
@@ -1276,24 +1269,22 @@ class PointCloudLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url: str, gis=None):
+    def __init__(self, url: str, gis=None, parent_url=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
         super(PointCloudLayer, self).__init__(url, gis)
         self._admin = None
+        self._parent_url = parent_url
 
     @property
     def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "PointCloudLayer", "url": url}
-        if self._token is not None:
+        lyr_dict = {"type": "PointCloudLayer", "url": self.url}
+        if hasattr(self, "_token") and self._token:
             lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
+        if hasattr(self, "filter") and self.filter:
             lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
+        if hasattr(self, "_time_filter") and self._time_filter:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
@@ -1321,18 +1312,20 @@ class PointCloudLayer(Layer):
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
-            if self._gis._portal.is_arcgisonline:
-                rd = {"/rest/services/": "/rest/admin/services/"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = SceneLayerManager(adminURL, self._gis, self)
-            else:
-                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            url = self._parent_url or self._url  # prioritize parent_url if available
+            rd = (
+                {"/rest/services/": "/rest/admin/services/"}
+                if self._gis._portal.is_arcgisonline
+                else {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            )
+            adminURL = self._str_replace(url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = "/".join(adminURL.split("/")[:-1])
+            self._admin = (
+                SceneLayerManager(adminURL, self._gis, self)
+                if self._gis._portal.is_arcgisonline
+                else EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            )
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -1343,7 +1336,6 @@ class PointCloudLayer(Layer):
         The find/replace is case insensitive.
 
         """
-        import re
 
         patternDict = {}
         for key, value in rd.items():
@@ -1387,24 +1379,22 @@ class BuildingLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url: str, gis=None):
+    def __init__(self, url: str, gis=None, parent_url=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
         super(BuildingLayer, self).__init__(url, gis)
         self._admin = None
+        self._parent_url = parent_url
 
     @property
     def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "BuildingSceneLayer", "url": url}
-        if self._token is not None:
+        lyr_dict = {"type": "BuildingSceneLayer", "url": self.url}
+        if hasattr(self, "_token") and self._token:
             lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
+        if hasattr(self, "filter") and self.filter:
             lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
+        if hasattr(self, "_time_filter") and self._time_filter:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
 
@@ -1432,18 +1422,20 @@ class BuildingLayer(Layer):
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
-            if self._gis._portal.is_arcgisonline:
-                rd = {"/rest/services/": "/rest/admin/services/"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = SceneLayerManager(adminURL, self._gis, self)
-            else:
-                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-                adminURL = self._str_replace(self._url, rd)
-                if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            url = self._parent_url or self._url  # prioritize parent_url if available
+            rd = (
+                {"/rest/services/": "/rest/admin/services/"}
+                if self._gis._portal.is_arcgisonline
+                else {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            )
+            adminURL = self._str_replace(url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = "/".join(adminURL.split("/")[:-1])
+            self._admin = (
+                SceneLayerManager(adminURL, self._gis, self)
+                if self._gis._portal.is_arcgisonline
+                else EnterpriseSceneLayerManager(adminURL, self._gis, self)
+            )
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -1454,7 +1446,6 @@ class BuildingLayer(Layer):
         The find/replace is case-insensitive.
 
         """
-        import re
 
         patternDict = {}
         for key, value in rd.items():
@@ -1478,6 +1469,8 @@ class _SceneLayerFactory(type):
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
+    ------------------     --------------------------------------------------------------------
+    parent_url             Optional string, specify the parent url of the service.
     ==================     ====================================================================
 
     .. code-block:: python
@@ -1494,28 +1487,26 @@ class _SceneLayerFactory(type):
         >> 'your layer name'
     """
 
-    def __call__(cls, url, gis=None):
+    def __call__(cls, url, gis=None, parent_url=None):
         lyr = Layer(url=url, gis=gis)
         props = lyr.properties
+        layer_type_map = {
+            "pointcloud": PointCloudLayer,
+            "point": Point3DLayer,
+            "3dobject": Object3DLayer,
+            "building": BuildingLayer,
+            "integratedmesh": IntegratedMeshLayer,
+            "voxel": VoxelLayer,
+        }
         if "sublayers" in props:
-            return BuildingLayer(url=url, gis=gis)
+            return BuildingLayer(url=url, gis=gis, parent_url=parent_url)
         elif "layerType" in props:
             lt = props.layerType
         else:
             lt = props.layers[0].layerType
-        if str(lt).lower() == "pointcloud":
-            return PointCloudLayer(url=url, gis=gis)
-        elif str(lt).lower() == "point":
-            return Point3DLayer(url=url, gis=gis)
-        elif str(lt).lower() == "3dobject":
-            return Object3DLayer(url=url, gis=gis)
-        elif str(lt).lower() == "building":
-            return BuildingLayer(url=url, gis=gis)
-        elif str(lt).lower() == "IntegratedMesh".lower():
-            return IntegratedMeshLayer(url=url, gis=gis)
-        elif str(lt).lower() == "voxel":
-            return VoxelLayer(url=url, gis=gis)
-        return lyr
+        return layer_type_map.get(str(lt).lower(), Layer)(
+            url=url, gis=gis, parent_url=parent_url
+        )
 
 
 ###########################################################################
@@ -1553,8 +1544,9 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         >> 'your layer name'
     """
 
-    def __init__(self, url: str, gis=None):
+    def __init__(self, url: str, gis=None, parent_url=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
-        super(SceneLayer, self).__init__(url, gis)
+        super(SceneLayer, self).__init__(url, gis, parent_url)
+        self._parent_url = parent_url

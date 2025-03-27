@@ -197,7 +197,7 @@ class ArcGISObjectDetector:
             "y",
             "yes",
         ]
-        self.tta_scales = scalars.get("tta_scales", 1)
+        self.tta_scales = scalars.get("tta_scales", "1")
         self.nms_overlap = float(scalars.get("nms_overlap", 0.1))
         return configuration
 
@@ -560,32 +560,13 @@ def get_available_device(max_memory=0.8):
 features = {
     'displayFieldName': '',
     'fieldAliases': {
-        'FID': 'FID',
+        'OID': 'OID',
         'Class': 'Class',
-        'Confidence': 'Confidence'
+        'Confidence': 'Confidence',
+        'Shape':'Shape',
+        'Label':'Label',
     },
     'geometryType': 'esriGeometryPolygon',
-    'fields': [
-        {
-            'name': 'FID',
-            'type': 'esriFieldTypeOID',
-            'alias': 'FID'
-        },
-        {
-            'name': 'Class',
-            'type': 'esriFieldTypeString',
-            'alias': 'Class'
-        },
-        {
-            'name': 'Confidence',
-            'type': 'esriFieldTypeDouble',
-            'alias': 'Confidence'
-        }
-    ],
-    'features': []
-}
-
-fields = {
     'fields': [
         {
             'name': 'OID',
@@ -606,9 +587,16 @@ fields = {
             'name': 'Shape',
             'type': 'esriFieldTypeGeometry',
             'alias': 'Shape'
-        }
-    ]
+        },
+        {
+            'name': 'Label',
+            'type': 'esriFieldTypeString',
+            'alias': 'Label'
+        },
+    ],
+    'features': []
 }
+
 
 class GeometryType:
     Point = 1
@@ -747,44 +735,12 @@ class ArcGISObjectClassifier:
 
     def getFields(self):
 
-        fields = {
-                'fields': [
-                    {
-                        'name': 'OID',
-                        'type': 'esriFieldTypeOID',
-                        'alias': 'OID'
-                    },
-                    {
-                        'name': 'Class',
-                        'type': 'esriFieldTypeString',
-                        'alias': 'Class'
-                    },
-                    {
-                        'name': 'Confidence',
-                        'type': 'esriFieldTypeDouble',
-                        'alias': 'Confidence'
-                    },
-                    {
-                        'name': 'Shape',
-                        'type': 'esriFieldTypeGeometry',
-                        'alias': 'Shape'
-                    }
-                ]
-            }
-        fields['fields'].append(
-            {
-                'name': 'Label',
-                'type': 'esriFieldTypeString',
-                'alias': 'Label'
-            }
-        )
-
         if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
-            for item in fields['fields']:
+            for item in features['fields']:
                 if item['name'] == 'Confidence':
                     item['type'] = 'esriFieldTypeString'
 
-        return json.dumps(fields)
+        return json.dumps({"fields":features["fields"]})
 
     def getGeometryType(self):
         return GeometryType.Polygon
@@ -800,7 +756,17 @@ class ArcGISObjectClassifier:
 
         pixelBlocks['rasters_pixels'] = rasters_pixels
 
-        polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
+        try:
+            polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
+        except RuntimeError as e:
+            if 'out of memory' in str(e):
+                # arcpy.AddError('Runtime Error: ran out of GPU memory, please try a smaller batch size')
+                raise RuntimeError("Ran out of GPU memory, please try a smaller batch size")
+                return None
+            else:
+                # arcpy.AddError('Runtime Error:" + str(e) + "Inferencing was not successful.')
+                raise RuntimeError("Runtime Error: " + str(e) + " Inferencing was not successful.")
+                return None
 
         features['features'] = []
 
@@ -808,13 +774,15 @@ class ArcGISObjectClassifier:
             'Label':'Label'
         })
 
-        features['fields'].append(
-            {
+        Labelfield = {
                 'name': 'Label',
                 'type': 'esriFieldTypeString',
                 'alias': 'Label'
-            }
-        )
+        }
+
+        if not Labelfield in features['fields']:
+            features['fields'].append(Labelfield)
+
 
         if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
             for item in features['fields']:
@@ -837,7 +805,6 @@ class ArcGISObjectClassifier:
                     'OID': i + 1,
                     'Confidence': str(scores[i]),
                     'Label': labels[i],
-                    'Classname': labels[i]
                 },
                 'geometry': {
                     'rings': rings

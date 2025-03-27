@@ -510,7 +510,7 @@ class TextClassifier(ArcGISModel):
             )
         self.learn.freeze()
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -533,7 +533,7 @@ class TextClassifier(ArcGISModel):
                 f"only supports inference."
             )
         if self._backbone != "llm":
-            return super().lr_find(allow_plot=allow_plot)
+            return super().lr_find(allow_plot=allow_plot, **kwargs)
         else:
             raise Exception(
                 f"This method is not supported when the backbone is configured as {self._submodel}."
@@ -594,6 +594,7 @@ class TextClassifier(ArcGISModel):
         Package(DLPK) or Esri Model Definition (EMD) file.
 
         To load a custom DLPK using the model extensibility support, instantiate an object of the class using this method.
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -615,9 +616,6 @@ class TextClassifier(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        # To check if loading needs to be performed from the inference file
-        extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
-
         pretrained_model = emd.get("PretrainedModel", "")
         text_cols = emd.get("TextColumns", "")
         label_cols = emd.get("LabelColumns", [])
@@ -627,27 +625,29 @@ class TextClassifier(ArcGISModel):
             class_labels = list(emd["Label2Id"].keys())
         except KeyError:
             class_labels = emd["Label"]
+        if "InferenceFunction" in emd:
+            # To check if loading needs to be performed from the inference file
+            extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
+            if extensible_model.model_loaded:
+                # ToDo refactor this part
+                data_is_none = False
+                if data is None:
+                    data_is_none = True
+                    data = TextDataObject(task="classification")
+                    data._backbone = pretrained_model
+                    data.create_empty_object_for_classification(
+                        text_cols, label_cols, class_labels, is_multilabel_problem
+                    )
+                    data.emd, data.emd_path = emd, emd_path.parent
 
-        if extensible_model.model_loaded:
-            # ToDo refactor this part
-            data_is_none = False
-            if data is None:
-                data_is_none = True
-                data = TextDataObject(task="classification")
-                data._backbone = pretrained_model
-                data.create_empty_object_for_classification(
-                    text_cols, label_cols, class_labels, is_multilabel_problem
+                cls_object = cls(
+                    data,
+                    pretrained_model,
+                    pretrained_path=str(emd_path),
+                    model_extension=True,
+                    extensible_model=extensible_model,
                 )
-                data.emd, data.emd_path = emd, emd_path.parent
-
-            cls_object = cls(
-                data,
-                pretrained_model,
-                pretrained_path=str(emd_path),
-                model_extension=True,
-                extensible_model=extensible_model,
-            )
-            return cls_object
+                return cls_object
 
         # check if it is normal processing or it will need automated processing
         backbone = emd["ModelParameters"].get("backbone", None)
@@ -697,20 +697,6 @@ class TextClassifier(ArcGISModel):
             )
             data.emd, data.emd_path = emd, emd_path.parent
 
-        if extensible_model.model_loaded:
-            cls_object = cls(
-                data,
-                pretrained_model,
-                pretrained_path=str(emd_path),
-                mixed_precision=mixed_precision,
-                thresh=thresh,
-                seq_len=seq_len,
-                model_extension=True,
-                extensible_model=extensible_model,
-            )
-
-            return cls_object
-
         cls_object = cls(
             data,
             pretrained_model,
@@ -725,12 +711,12 @@ class TextClassifier(ArcGISModel):
 
     def load(self, name_or_path):
         """
-        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
         Loads a saved TextClassifier model from disk.
 
         This method is not supported when the backbone is configured as llm/mistral and model extension.
 
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -920,7 +906,7 @@ class TextClassifier(ArcGISModel):
                         "Validation set is empty. Data object must not be empty or None."
                     )
 
-                validation_dataframe = self._data._valid_df
+                validation_dataframe = self._data._valid_df.sample(n=rows)
                 predictions = [
                     x[1]
                     for x in self.predict(
@@ -1049,6 +1035,7 @@ class TextClassifier(ArcGISModel):
         explain=False,
         explain_index=None,
         batch_size=64,
+        **kwargs,
     ) -> List[Tuple] | FeatureSet:
         """
         Predicts the class label(s) for the input text
@@ -1065,7 +1052,7 @@ class TextClassifier(ArcGISModel):
                                 This parameter use to describe the task and guardrails for the task.
 
         ---------------------   -------------------------------------------
-        show_progress           optional Bool. If set to True, will display a
+        show_progress           Optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
                                 Applicable only when a list of text is passed
         ---------------------   -------------------------------------------
@@ -1088,6 +1075,17 @@ class TextClassifier(ArcGISModel):
                                 Try reducing the batch size in case of out of
                                 memory errors.
                                 Default value : 64
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        input_field             Optional string.
+                                Input field name in the feature set. Supported
+                                in model extension.
+                                Default value: input_str
         =====================   ===========================================
 
         :return: * In case of single label classification problem, a tuple containing the text, its predicted class label and the confidence score.
@@ -1131,10 +1129,9 @@ class TextClassifier(ArcGISModel):
 
                     # There are some instances where extra information are not generated with \n as separator.
                     for value in i:
-                        for j in re.split("[- ]", value):
-                            if j in classes:
-                                temp_val.append(j)
-
+                        for j in re.split("[-]", value):
+                            if j.strip() in classes:
+                                temp_val.append(j.strip())
                     # check if any value is there. if there is no match put empty string
                     if not len(temp_val):
                         temp_val = [""]
@@ -1149,21 +1146,22 @@ class TextClassifier(ArcGISModel):
             if isinstance(text_or_list, str):
                 text_or_list = [text_or_list]
             # To make it more flexible. We will add the Featureset for further processing
+            input_field = kwargs.get("input_field", "input_str")
             feature_set = []
             for i in text_or_list:
-                feature_set.append({"attributes": {"input_str": i}})
+                feature_set.append({"attributes": {input_field: i}})
 
             feature_set_final = FeatureSet.from_dict(
                 {
                     "fields": [
-                        {"name": "input_str", "type": "esriFieldTypeString"},
+                        {"name": input_field, "type": "esriFieldTypeString"},
                     ],
                     "geometryType": "",
                     "features": feature_set,
                 }
             )
             results = self.inference_model.predict(
-                feature_set_final, **{"input_field": "input_str"}
+                feature_set_final, **{"input_field": input_field}
             )
 
             if not isinstance(results, FeatureSet):

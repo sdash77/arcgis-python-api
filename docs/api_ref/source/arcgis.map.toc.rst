@@ -92,14 +92,14 @@ GroupLayer
     :undoc-members:
 
 SmartMappingManager
---------------
+-------------------
 .. autoclass:: arcgis.map.SmartMappingManager
     :members:
     :undoc-members:
 
-PopupManager
---------------
-.. autoclass:: arcgis.map.popups.PopupManager
+TimeSlider
+----------
+.. autoclass:: arcgis.map.map_widget.TimeSlider
     :members:
     :undoc-members:
 
@@ -121,6 +121,12 @@ Dataclasses
 Popups
 ------
 
+PopupManager
+------------
+.. autoclass:: arcgis.map.popups.PopupManager
+    :members:
+    :undoc-members:
+    
 ArcadeReturnType
 ^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.map.popups.ArcadeReturnType

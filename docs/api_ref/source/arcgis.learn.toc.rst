@@ -97,6 +97,13 @@ SingleShotDetector
     :inherited-members:
     :undoc-members:
 
+RTDetrV2
+^^^^^^^^^^
+.. autoclass:: arcgis.learn.RTDetrV2
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 MaskRCNN
 ^^^^^^^^
 .. autoclass:: arcgis.learn.MaskRCNN
@@ -271,9 +278,23 @@ SQNSeg
     :inherited-members:
     :undoc-members:
 
+PTv3Seg
+^^^^^^^^
+.. autoclass:: arcgis.learn.PTv3Seg
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 MMDetection3D
 ^^^^^^^^
 .. autoclass:: arcgis.learn.MMDetection3D
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+PTv3Det
+^^^^^^^^
+.. autoclass:: arcgis.learn.PTv3Det
     :members:
     :inherited-members:
     :undoc-members:
@@ -335,6 +356,8 @@ TimeSeriesModel
     :inherited-members:
     :undoc-members:
 
+Raster Time Series Models
+-------------------------
 PSETAE
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.PSETAE
@@ -411,6 +434,9 @@ train_model
 ^^^^^^^^^^^
 .. autofunction:: arcgis.learn.train_model
 
-
-
-
+AIServiceConnection
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AIServiceConnection
+    :members:
+    :inherited-members:
+    :undoc-members:

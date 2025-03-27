@@ -125,8 +125,9 @@ class TestApplyEditsAsync(unittest.TestCase):
     def test_async_edits(self):
 
         df = pd.DataFrame(data)
-        df.spatial.name
-        item = self.gis.content.import_data(df)
+        item = self.gis.content.import_data(
+            df, title="test_async_edits", tags="ntgrtn-tst"
+        )
         edit_data = [
             {
                 "geometry": {
@@ -153,13 +154,51 @@ class TestApplyEditsAsync(unittest.TestCase):
         ]
         fl = item.layers[0]
         try:
+            feat_count = fl.query(return_count_only=True)
             res = fl.edit_features(adds=edit_data, future=True)
             assert isinstance(res, concurrent.futures.Future)
             result = res.result()
             assert result
+            assert bool(result[0]["addResults"])
+            assert fl.query(return_count_only=True) == feat_count + 1
         finally:
-            if item:
-                item.delete()
+            for itm in item.related_items("Service2Data", "forward"):
+                itm.delete(permanent=True)
+            item.delete(permanent=True)
+
+    def test_async_updates(self):
+
+        df = pd.DataFrame(data)
+        item = self.gis.content.import_data(
+            df, title="test_async_edits", tags="ntgrtn-tst"
+        )
+        fl = item.layers[0]
+        try:
+            features = fl.query(
+                where="1=1",
+                out_fields=["fid", "areahectar"],
+            ).sdf.copy(deep=True)
+
+            features.columns = features.columns.str.lower()
+            features.loc[features["fid"] > 0, "areahectar"] = (
+                features["areahectar"] * 107639.1042
+            )
+            feature_set = features.spatial.to_featureset()
+            updates = fl.edit_features(updates=feature_set, future=True).result()
+            self.assertEqual(
+                2,
+                len(updates[0].get("updateResults")),
+                "Incorrect number of updated features",
+            )
+            result_feature_set = fl.query(
+                where="areahectar > 617859",
+                out_fields=["fid", "areahectar"],
+            ).sdf.spatial.to_featureset()
+            self.assertEqual(1, len(result_feature_set), "Incorrect updated features")
+        finally:
+            for itm in item.related_items("Service2Data", "forward"):
+                itm.delete(permanent=True)
+            item.delete(permanent=True)
 
 
 if __name__ == "__main__":

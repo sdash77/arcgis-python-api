@@ -136,6 +136,9 @@ class PSATAEDataset(data.Dataset):
             with open(os.path.join(folder, "META", "dates.json"), "r") as file:
                 d = json.loads(file.read())
             self.dates = [d[str(i)] for i in range(len(d))]
+            if use_time_index:
+                timeidx = np.array(use_time_index) - 1
+                self.dates = sorted(list(np.array(self.dates)[timeidx]))
             self.date_positions = date_positions(self.dates)
         else:
             self.date_positions = None
@@ -292,8 +295,7 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         i for i in label_folds if len(os.listdir(os.path.join(labels, i))) == 0
     ]
     if empty_folds:
-        warnings.warn("Warning: Empty folder of label %s" % empty_folds)
-        raise Exception()
+        raise Exception("Failed due to Empty folders in labels: %s" % empty_folds)
 
     label_lst = get_files(labels, extensions=image_extensions, recurse=True)
 
@@ -492,9 +494,6 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         with open(os.path.join(save_path, "META", "labels.json"), "w") as file:
             file.write(json.dumps(labels_dic, indent=4))
         if ntempdates:
-            if use_time_index:
-                timeidx = np.array(ntempdates) - 1
-                ntempdates = ntempdates[timeidx]
             datelist = [x.replace("-", "") for x in ntempdates]
             dates_dict = {}
             for i in range(len(datelist)):
@@ -507,11 +506,10 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         for i in os.listdir(os.path.join(save_path, "META"))
         if i in ["labels.json", "mean_std.pickle", "train_arrs_with_label.pickle"]
     ]:
-        warnings.warn(
+        raise Exception(
             "required files missing, remove DATA and META folders at %s"
             % os.path.join(save_path)
         )
-        raise Exception()
 
     mean_std = list(
         pickle.load(open(os.path.join(save_path, "META", "mean_std.pickle"), "rb"))
@@ -629,6 +627,9 @@ def prepare_psetae_data(
     class_mapping,
     **kwargs,
 ):
+    old = False if "images" in os.listdir(path) else True
+    if old:
+        path = [i for i in os.walk(path)][2][0]
     train_val_dataset = create_train_val_sets(
         path, val_split_pct, working_dir, **kwargs
     )
@@ -654,6 +655,9 @@ def prepare_psetae_data(
     data._num_class_map_dict = train_val_dataset[1].copy() if class_mapping else None
 
     if class_mapping:
+        label_folds = [file for file in os.listdir(os.path.join(path, "labels"))]
+        for i in label_folds:
+            class_mapping.setdefault(int(i), str(i))
         for r in data._class_map_dict.keys():
             data._class_map_dict[r] = class_mapping[data._class_map_dict[r]]
 
@@ -674,6 +678,7 @@ def prepare_psetae_data(
     data._convertmap = train_val_dataset[11]
     data._timestep_infer = train_val_dataset[12]
     data._channels_infer = train_val_dataset[13]
+    data.classes = [j for i, j in data._class_map_dict.items()]
 
     return data
 

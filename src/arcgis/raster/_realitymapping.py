@@ -12,7 +12,7 @@ import arcgis
 import json
 from arcgis.gis import GIS, Item
 import collections
-from ._util import _set_context
+from ._util import _initialize_project, _flatten_adjust_settings, _nestify_context
 import string as _string
 import random as _random
 
@@ -140,6 +140,8 @@ def _update_flight_info(
 def _create_project(
     name: str,
     definition: Optional[dict[str, Any]] = None,
+    sensor_type: str = "Drone",
+    scenario_type: str = "Drone",
     *,
     gis: Optional[GIS] = None,
     **kwargs,
@@ -176,6 +178,39 @@ def _create_project(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+
+    if sensor_type and sensor_type.lower() not in [
+        "drone",
+        "satellite",
+        "aerialdigital",
+        "aerialscanned",
+    ]:
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
+        )
+    if scenario_type and scenario_type.lower() not in [
+        "drone",
+        "aerial_nadir",
+        "aerial_oblique",
+    ]:
+        raise RuntimeError(
+            "Invalid scenario type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
+        )
+    if (
+        sensor_type
+        and sensor_type.lower() == "aerialdigital"
+        and scenario_type.lower()
+        not in [
+            "aerial_nadir",
+            "aerial_oblique",
+        ]
+    ):
+        raise RuntimeError(
+            "Invalid scenario type for Aerial Digital sensor. Supported values are 'Aerial_Nadir', 'Aerial_Oblique'"
+        )
+    if sensor_type and sensor_type.lower() == "satellite":
+        scenario_type = ""
+
     folder = None
     folderId = None
 
@@ -194,7 +229,7 @@ def _create_project(
 
     item_properties = {
         "title": name,
-        "type": "Reality Mapping Project",  # "Reality Mapping Project",
+        "type": "Reality Mapping Project",
         "properties": {"flightCount": 0, "status": "inProgress"},
     }
     if definition is None:
@@ -202,6 +237,14 @@ def _create_project(
 
     item_properties["text"] = json.dumps(definition)
     item = gis.content.add(item_properties, folder=folder)
+    item_data = None
+    try:
+        item_data = _initialize_project(sensor_type, scenario_type, is_rm=True)
+    except:
+        pass
+    if item_data:
+        props = item.properties
+        item.update(item_properties=props, data=json.dumps(item_data))
     return item
 
 
@@ -362,8 +405,8 @@ def _add_mission(
     oid = project.mission_count
 
     for f in gis.users.me.folders:
-        if f["id"] == project_item.ownerFolder:
-            folder = f
+        if f._fid == project_item.ownerFolder:
+            folder = f.properties
             break
 
     from datetime import datetime
@@ -726,11 +769,13 @@ def compute_sensor_model(
 
                            By default, 'Quick' mode is applied to compute the sensor model.
     ------------------     --------------------------------------------------------------------
-    location_acuracy       Optional string. this option allows users to specify the GPS location accuracy level of the
+    location_accuracy      Optional string. this option allows users to specify the GPS location accuracy level of the
                            source image. It determines how far the underline tool will search for neighboring
                            matching images, then calculate tie points and compute adjustments.
 
                            Possible values for location_accuracy are:
+
+                           - 'VeryHigh'    : Imagery was collected with a high-accuracy, differential GPS, such as RTK or PPK. This option will hold image locations fixed during block adjustment
 
                            - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images
 
@@ -771,31 +816,74 @@ def compute_sensor_model(
     if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
+        settings = {}
 
-        adj_dict = {}
-        if isinstance(context, dict):
-            context_new = {k.lower(): v for k, v in context.items()}
-            adj_keys = [
-                "computeCandidate",
-                "maxOverlap",
-                "maxLoss",
-                "maxResidual",
-                "initPointResolution",
-                "k",
-                "p",
-                "principalPoint",
-                "focalLength",
-            ]
-            adj_dict = {
-                k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
-            }
-            adj_dict.update({"locationAccuracy": location_accuracy})
-        adj_dict.update({"mode": mode})
+        try:
+            project = mission._project
+            project_adj_settings = project.settings
+            if (
+                isinstance(project_adj_settings, dict)
+                and ("template" in project_adj_settings.keys())
+                and "adjustSettings" in project_adj_settings["template"].keys()
+            ):
+                project_adj_settings = project_adj_settings["template"][
+                    "adjustSettings"
+                ]
+            keys_to_pop = ["parallelProcessingFactor"]
+
+            if isinstance(context, dict):
+                adjust_options = context.pop("adjustOptions", [])
+                adjust_options = _flatten_adjust_settings(adjust_options)
+                # context is flattened
+                context.update(adjust_options)
+                # update adj dict with all the params from context
+                project_adj_settings.update(context)
+                # pop the keys that are not relevant to the adj settings
+                for key in keys_to_pop:
+                    project_adj_settings.pop(key, None)
+                # update context with default values from project_adj_settings if they are not present in context
+                context.update(project_adj_settings)
+                _nestify_context(context)
+
+                if (
+                    project_adj_settings["locationAccuracy"].lower()
+                    != location_accuracy.lower()
+                ):
+                    project_adj_settings.update({"locationAccuracy": location_accuracy})
+            elif context is None:
+                context = dict(project_adj_settings)
+                _nestify_context(context)
+            # update the settings to update flight json
+            settings = project_adj_settings
+        except:
+            adj_dict = {}
+            if isinstance(context, dict):
+                context_new = {k.lower(): v for k, v in context.items()}
+                adj_keys = [
+                    "computeCandidate",
+                    "maxOverlap",
+                    "maxLoss",
+                    "maxResidual",
+                    "initPointResolution",
+                    "k",
+                    "p",
+                    "principalPoint",
+                    "focalLength",
+                ]
+                adj_dict = {
+                    k: context_new[k.lower()]
+                    for k in adj_keys
+                    if k.lower() in context_new
+                }
+                adj_dict.update({"locationAccuracy": location_accuracy})
+                settings = adj_dict
+
+        settings.update({"mode": mode})
         flight_json_details = {
             "update_flight_json": update_flight_json,
             "mission": mission,
             "item_name": "adjustment",
-            "adjust_settings": adj_dict,
+            "adjust_settings": settings,
         }
 
     return gis._tools.realitymapping.compute_sensor_model(
@@ -1444,8 +1532,8 @@ def generate_orthomosaic(
                 folder = kwargs["folder"]
             else:
                 for f in gis.users.me.folders:
-                    if f["id"] == image_collection.ownerFolder:
-                        folder = f
+                    if f._fid == image_collection.ownerFolder:
+                        folder = f.properties
                         break
             kwargs.update({"folder": folder})
 
@@ -2017,7 +2105,7 @@ def reconstruct_surface(
 
                                                                                     Syntax example with a specified number of processing instances:
 
-                                                                                        {"dsm": {"outputType": "Tiled", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
+                                                                                        {key: {"outputType": "Tiled", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
 
                                                                                 - Output True Ortho product settings: controls
                                                                                 the environment variables for creating the DSM product.
@@ -2063,8 +2151,8 @@ def reconstruct_surface(
                 folder = kwargs["folder"]
             else:
                 for f in gis.users.me.folders:
-                    if f["id"] == image_collection.ownerFolder:
-                        folder = f
+                    if f._fid == image_collection.ownerFolder:
+                        folder = f.properties
                         break
             kwargs.update({"folder": folder})
 
@@ -2131,11 +2219,24 @@ class RMProject:
     _spatial_reference = None
 
     def __init__(
-        self, project=None, definition=None, *, gis: Optional[GIS] = None, **kwargs
+        self,
+        project=None,
+        definition=None,
+        sensor_type="Drone",
+        scenario_type="Drone",
+        *,
+        gis: Optional[GIS] = None,
+        **kwargs,
     ):
         if not isinstance(project, Item):
             try:
-                project = _create_project(name=project, definition=definition)
+                project = _create_project(
+                    name=project,
+                    definition=definition,
+                    sensor_type=sensor_type,
+                    scenario_type=scenario_type,
+                    gis=gis,
+                )
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
@@ -2219,6 +2320,28 @@ class RMProject:
         """
         deleted = self._folder.delete()
         return deleted
+
+    @property
+    def settings(self):
+        settings = {}
+        try:
+            settings = self._project_item.get_data()
+        except:
+            pass
+        return settings
+
+    @settings.setter
+    def settings(self, properties_dict):
+        """
+        The ``settings`` method updates the properties of the project item.
+
+        """
+        if properties_dict is None:
+            raise ValueError("properties_dict cannot be None")
+        item = self._project_item
+        props = item.properties
+        updated_item = item.update(item_properties=props, data=properties_dict)
+        return updated_item
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:

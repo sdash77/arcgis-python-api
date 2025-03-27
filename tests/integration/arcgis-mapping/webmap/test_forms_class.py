@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, r"C:\workspace\geosaurus\tests")
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
 from arcgis.map import Map
@@ -15,7 +17,7 @@ from arcgis.map.forms import (
     FormTimeInput,
     FormTimestampOffsetPickerInput,
     FormAttachmentElement,
-    FormAttachmentInput,
+    FormImageInput,
     FormGroupElement,
 )
 import unittest
@@ -27,9 +29,9 @@ from utils.decorators import integration_test, profiles
 class TestFormInfo(unittest.TestCase):
     """Test the renderers module"""
 
-    def setUpClass(cls):
-        cls.wm = Map(gis=cls.gis)
-        assert cls.wm
+    def setUp(self):
+        self.wm = Map(gis=self.gis)
+        assert self.wm
 
     def test_update_form(self):
         fl = FeatureLayer(
@@ -237,7 +239,8 @@ class TestFormInfo(unittest.TestCase):
         attachment_element = FormAttachmentElement(
             attachment_keyword="Testing Attachment",
             description="Testing",
-            input_type=FormAttachmentInput(),
+            input_type=FormImageInput(),
+            label="Test"
         )
         assert attachment_element
 

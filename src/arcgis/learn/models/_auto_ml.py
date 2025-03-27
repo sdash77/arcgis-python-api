@@ -751,6 +751,7 @@ class AutoML(object):
         _create_zip(Path(save_model_path).name, str(save_model_path))
 
         print("Model has been saved in the path", save_model_path)
+        self._model._results_path = str(save_model_path)
         return save_model_path
 
     def _save_explainer(self, path):

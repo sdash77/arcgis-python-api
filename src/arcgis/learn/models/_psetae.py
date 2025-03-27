@@ -3,12 +3,13 @@ import json
 import traceback
 import numpy as np
 import pandas as pd
-from IPython.display import display
+
 
 from .._data import _raise_fastai_import_error
 from ._arcgis_model import ArcGISModel, _EmptyData
 
 try:
+    from IPython.display import display
     from ._psetae_utils import FocalLoss, miou
     from ._psetae_utils import PseTae, weight_init, model_eval
     from .._data_utils.psetae_data import show_results
@@ -104,6 +105,7 @@ class PSETAE(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
         self._code = imagets_classifier_prf
+        self._backbone = None
 
         def __str__(self):
             return self.__repr__()
@@ -191,12 +193,16 @@ class PSETAE(ArcGISModel):
         chip_size = emd["ImageHeight"]
         kwargs = emd.get("Kwargs", {})
 
-        if "backbone" in kwargs.keys():
+        if "backbone" in kwargs or "backend" in kwargs:
             kwargs.pop("backbone")
+            kwargs.pop("backend")
 
         if data is None:
             data = _EmptyData(
-                path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
+                path=emd_path.parent,
+                loss_func=None,
+                c=2,
+                chip_size=chip_size,
             )
             data._n_channel = emd.get("n_channel", None)
             data._n_temp = emd.get("n_temporal", None)
@@ -232,7 +238,7 @@ class PSETAE(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
-        =====================   ===========================================
+        ---------------------   -------------------------------------------
         total_sample_size       Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================

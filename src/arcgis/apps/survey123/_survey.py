@@ -218,7 +218,6 @@ class SurveyManager:
                 "name": f"survey123_{uid}",
                 "serviceDescription": f"Feature Service for survey {form_item.id}",
                 "hasStaticData": False,
-                "maxRecordCount": 2000,
                 "sourceSchemaChangesAllowed": True,
                 "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
                 "description": "",
@@ -249,7 +248,11 @@ class SurveyManager:
         service.update(
             {
                 "title": title,
-                "typeKeywords": f"Survey123,Survey123 Hub,OwnerView,Source,{uid}",
+                "typeKeywords": (
+                    f"Survey123,Survey123 Hub,OwnerView,Source,{uid},providerSDS"
+                    if self._gis.properties.isPortal
+                    else f"Survey123,Survey123 Hub,OwnerView,Source,{uid}"
+                ),
             },
             thumbnail=thumbnail,
         )
@@ -539,7 +542,7 @@ class Survey:
 
             >>> user_folder_id = [f["id"]
                                  for f in gis.users.me.folders
-                                 if f["title"] == "folder_title"][0]
+                                 if f.name == "folder_title"][0]
 
             >>> report_item = svy_obj.generate_report(report_template=report_templ,
                                                       report_title="Title of Report item",
@@ -815,23 +818,11 @@ class Survey:
                 "typeKeywords": "Survey123,Survey123 Hub,Print Template,Feature Report Template",
                 "snippet": "Report template",
             }
-            survey_folder_id = self._si.ownerFolder
-            gis = self._si._gis
-            user = gis.users.get(gis.properties.user.username)
-            user_folders = user.folders
-            survey_folder = next(
-                (f for f in user_folders if f["id"] == survey_folder_id), 0
-            )
-            folder = survey_folder["title"]
-            # folder = "Survey-" + self._si.title
-            if folder:
-                folder = gis.content.folders.get(folder)
-            else:
-                folder = gis.content.folders.get()
+            folder = self._gis.content.folders.get(folder=self._si.ownerFolder)
             template_item = folder.add(
                 item_properties=properties, file=template_file
             ).result()
-            add_relationship = self._si.add_relationship(template_item, "Survey2Data")
+            self._si.add_relationship(template_item, "Survey2Data")
         else:
             return check["details"][0]["description"]
 

@@ -1,9 +1,10 @@
 import unittest
 from arcgis.features._topographic import TopographicProductionManager
-from arcgis.gis.server.catalog import ServicesDirectory
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
+from utils.data_utils import get_feature_layer_url, ServerTypeEnum
 
 
+@profiles.enterprise
 @integration_test
 class TestTopographicProductionManager(unittest.TestCase):
     """Tests the Topographic Production Service"""
@@ -15,19 +16,17 @@ class TestTopographicProductionManager(unittest.TestCase):
         Get class test asset location
         :return:
         """
-        sd = ServicesDirectory(
-            url="https://rextapilnxsvr01.esri.com/server",
-            username="siteadmin",
-            password="esri.agp2",
-            verify_cert=False,
-        )
 
         # If data missing in server: \\qalab_server\pydata\v109\geosaurus\topographic_data
         # Go to folder and use server manager to publish the SD file
+
         # Create Topographic Service
+        topo_url = get_feature_layer_url(
+            cls.gis, "TMServer_Fortlewis", ServerTypeEnum.TOPOGRAPHIC
+        )
         topo = TopographicProductionManager(
-            "https://rextapilnxsvr01.esri.com/server/rest/services/TMServer_Fortlewis/TopographicProductionServer",
-            sd,
+            topo_url,
+            cls.gis,
         )
         if len(topo.products()["products"]) == 0:
             # Add a prodcut if none exists already
@@ -147,7 +146,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         product["name"] = "Python API Test"
         new_product = self.topo.add_product(product)
 
-        assert new_product["success"] == True
+        assert new_product["success"]
         assert new_product["productName"] == "Python API Test"
 
         # Get all the products again to compare
@@ -161,7 +160,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         number_products = len(products["products"])
         # Remove the product added in the add_product test
         removed_product = self.topo.remove_product("Python API Test")
-        assert removed_product["success"] == True
+        assert removed_product["success"]
         assert removed_product["productName"] == "Python API Test"
 
         # Get all the products again to compare
@@ -171,19 +170,25 @@ class TestTopographicProductionManager(unittest.TestCase):
     def test_generate_product(self):
         """Test generate product"""
         # Get all the products
+        map_server_url = get_feature_layer_url(
+            self.gis, "TMServer_Fortlewis", ServerTypeEnum.MAP_SERVER, layer_id=39
+        )
         products = self.topo.products(include_def=True)
         product = products["products"][0]
         generated = self.topo.generate_product(
-            product["name"],
-            "TRD_4_5",
-            "https://rextapilnxsvr01.esri.com/server/rest/services/TMServer_Fortlewis/MapServer/0",
-            "234",
-            "aprx",
+            name=product["name"],
+            version="TRD_4_5",
+            area_interest_layer=map_server_url,
+            area_interest_feature_id="72",
+            output_type={
+                "outputType": "APRX",
+                "outputFiles": ["Geodatabase", "Project"],
+            },
         )
 
         assert generated["jobId"]
         assert generated["statusUrl"]
-        assert generated["success"] == True
+        assert generated["success"]
 
 
 if __name__ == "__main__":

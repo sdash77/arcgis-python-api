@@ -3,61 +3,18 @@
 # Purpose:     Tests for checking the save function of the feature class works properly.
 # -------------------------------------------------------------------------------
 import unittest
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_precondition_checks import PortalUtils
-from integration.dino_utils.dino_configs import DinoConfigs
+from arcgis import features
 from integration.config import QALAB_ROOT_PATH
-from configparser import ConfigParser
 import datetime
 import os
 import tempfile
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from arcgis.auth.tools import LazyLoader
 
 arcgismapping = LazyLoader("arcgis.map")
 
-# region PreCondition check
-test_skip = False
-class_skip = False
-module_skip = False
 
-r1 = PreconditionChecks.check_API_import()
-r2 = PreconditionChecks.check_Python_version()
-
-if r1 & r2:
-    print("## Precondition checks passed ##")
-    module_skip = False
-else:
-    module_skip = True
-    print("Pre condition checks failed. Quitting tests")
-    raise (exit())
-
-# Import the module after Precondition checks pass
-try:
-    import arcgis
-    from arcgis.gis import GIS
-    from arcgis import features
-except ImportError:
-    print("API import error. Quitting test")
-    raise (exit())
-# endregion PreCondition Check
-
-
-# TestModule
-@unittest.skipIf(
-    module_skip, "Precondition check failed. Skipping tests in Features module"
-)
-def setUpModule():
-    """
-    Set up code for full arcgis.features module Featurelayer class tests
-    :return:
-    """
-    # Get environment status
-    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
-    print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
-    print("Host OS: " + PreconditionChecks.get_OS())
-
-
+@profiles.enterprise_and_agol
 @integration_test
 class Test_Feature_class(unittest.TestCase):
     """
@@ -72,47 +29,14 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
 
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
-
         cls.qalab_base_path = QALAB_ROOT_PATH
-        cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureSet_cls"]
+        cls.qalab_cls_path = os.path.join(
+            cls.qalab_base_path, "features_mod_FeatureSet_cls"
         )
-        # endregion
-
-        # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(
-            GIS(profile="your_ent_admin_profile").url
-        )
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(profile="your_ent_admin_profile", verify_cert=False)
-        if cls.gis is None:
-            cls.class_skip = True
 
         print("==================================================================")
         print("Beginning tests in Test_Feature_class")
         # endregion
-
-    def setUp(self):
-        test_skip = False  # reset the skip flag
-        print("Test: " + self._testMethodName)
-        self.namePrefix = "dino_NetworkAnalysis_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
 
     def test_save_featureSet_withFeatures_to_csv_method(self):
         """
@@ -121,27 +45,22 @@ class Test_Feature_class(unittest.TestCase):
         """
         try:
             temp = None
-            gis = GIS()
             # using Living Atlas curated content Transportation item
-            content = gis.content.get("f42ecc08a3634182b8678514af35fac3") 
+            item_id = "c68d7c5e350c47cb9ad7ac491c327115"
+            content = self.gis.content.get(item_id)
 
             layer = content.layers[0]
-            features_req = layer.query(where="BASENAME = '20'")
+            features_req = layer.query(where="Nombre = 'Espana'")
 
-            csv_file = r"generatedCSVfile.csv"
+            csv_file = r"generatedCSVfile_ferroviaria.csv"
             path = tempfile.gettempdir()
             temp = features_req.save(path, csv_file)
 
             print(temp)
 
-            self.assertEqual(temp, os.path.join(path, csv_file), "CSV file not created successfully")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
+            self.assertEqual(
+                temp, os.path.join(path, csv_file), "CSV file not created successfully"
+            )
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -152,11 +71,9 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
         try:
-            temp = None
-
-            gis = GIS()
             # using Living Atlas curated content Transportation item
-            content = gis.content.get("f42ecc08a3634182b8678514af35fac3")
+            item_id = "c68d7c5e350c47cb9ad7ac491c327115"
+            content = self.gis.content.get(item_id)
 
             layer = content.layers[0]
             features_req = layer.query(where="OBJECTID = -1")
@@ -165,16 +82,9 @@ class Test_Feature_class(unittest.TestCase):
             path = tempfile.gettempdir()
             temp = features_req.save(path, csv_file)
 
-            print(temp)
-
-            self.assertEqual(temp, os.path.join(path, csv_file), "CSV file not created successfully")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
+            self.assertEqual(
+                temp, os.path.join(path, csv_file), "CSV file not created successfully"
+            )
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -337,13 +247,13 @@ class Test_Feature_class(unittest.TestCase):
                 else:  # Polygon
                     df_sel = df[df["OBJECTID"] == ea.attributes["OBJECTID"]]
                     # create the simple renderer dataclass
-                    simple_renderer = arcgismapping.SimpleRenderer(
-                        symbol=arcgismapping.SimpleMarkerSymbolEsriSMS(
-                            style=arcgismapping.SimpleMarkerSymbolStyle.esriSMSCircle,
+                    simple_renderer = arcgismapping.renderers.SimpleRenderer(
+                        symbol=arcgismapping.symbols.SimpleMarkerSymbolEsriSMS(
+                            style=arcgismapping.symbols.SimpleMarkerSymbolStyle.esriSMSCircle,
                             color=[255, 0, 0, 255],
                             size=12,
-                            outline=arcgismapping.SimpleLineSymbolEsriSLS(
-                                style=arcgismapping.SimpleLineSymbolStyle.esriSLSSolid,
+                            outline=arcgismapping.symbols.SimpleLineSymbolEsriSLS(
+                                style=arcgismapping.symbols.SimpleLineSymbolStyle.esriSLSSolid,
                                 color=[0, 0, 0, 255],
                                 width=1,
                             ),
@@ -352,7 +262,7 @@ class Test_Feature_class(unittest.TestCase):
                     df_sel.spatial.plot(
                         map_widget=map_g,
                         name=ea.get_value("title"),
-                        renderer = simple_renderer
+                        renderer=simple_renderer,
                     )
 
             wm_title = "Unit Test Natural Disasters (FC only) Collection"
@@ -368,13 +278,6 @@ class Test_Feature_class(unittest.TestCase):
             wm_item = map_g.save(item_properties=web_map_properties)
             self.assertIsNotNone(wm_item, "save failed!")
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -384,12 +287,20 @@ class Test_Feature_class(unittest.TestCase):
                 "features": [
                     {
                         "geometry": {"paths": [[[-80.7, 35.1], [-80.8, 35.2]]]},
-                        "attributes": {"ObjectID": 1}}
+                        "attributes": {"ObjectID": 1},
+                    }
                 ],
                 "objectIdFieldName": "ObjectID",
                 "spatialReference": {"wkid": 4326},
-        #         "geometryType": "esriGeometryPolyline",
-                "fields": [{"name": "ObjectID", "alias": "ObjectID", "type": "esriFieldTypeOID", "sqlType": "sqlTypeOther"}]
+                #         "geometryType": "esriGeometryPolyline",
+                "fields": [
+                    {
+                        "name": "ObjectID",
+                        "alias": "ObjectID",
+                        "type": "esriFieldTypeOID",
+                        "sqlType": "sqlTypeOther",
+                    }
+                ],
             }
         )
         assert line_fs.geometry_type

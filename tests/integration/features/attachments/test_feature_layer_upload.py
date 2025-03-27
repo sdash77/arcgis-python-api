@@ -1,16 +1,23 @@
+import json
 import os.path
+import time
 import unittest
-from arcgis.gis import GIS, ContentManager
 from io import StringIO
-import json, uuid
-from arcgis.features._uploads.upload import UploadManager, Upload
-from utils.decorators import integration_test, profiles
-from utils._logging import enable_verbose_logging
-from integration.config import QALAB_ROOT_PATH
 
+from utils.data_utils import publish_test_item, cleanup_published_items
+from integration.config import QALAB_ROOT_PATH, get_resource_path
+from utils._logging import enable_verbose_logging
+from utils.decorators import integration_test, profiles
+
+from arcgis.features._uploads.upload import UploadManager, Upload
+from arcgis.gis._impl import ItemTypeEnum
 
 enable_verbose_logging()
-FEATURE_CLASS = os.path.join(QALAB_ROOT_PATH, r"esri_requests\issue_9705\USA_Major_Cities.zip")
+
+file_path = get_resource_path(
+    "staging_data/USA_Major_Cities.zip",
+    unique_copy=True,
+)
 
 
 @profiles.enterprise_and_agol
@@ -18,62 +25,103 @@ FEATURE_CLASS = os.path.join(QALAB_ROOT_PATH, r"esri_requests\issue_9705\USA_Maj
 class TestUploadManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        content: ContentManager = cls.gis.content
-        item = content.add(
-            item_properties={"title": "test_data_abc", "type": "Shapefile"},
-            data=FEATURE_CLASS,
+        uid = int(time.time())
+        layer_name = f"test_upload_fl_{uid}"
+        item_type = ItemTypeEnum.SHAPEFILE
+        cls.published_item = publish_test_item(
+            gis=cls.gis,
+            layer_name=layer_name,
+            source_data_path=file_path,
+            item_type=item_type,
+            prep_for_editing=False,
         )
-        name = f"mjr{uuid.uuid4().hex[:4]}cty"
-        cls.item = item.publish(publish_parameters={"name": name})
-        cls.item_source = item
+        cls.item_source = cls.published_item
 
     @classmethod
     def tearDownClass(cls):
-        cls.item.delete()
-        cls.item_source.delete()
+        cleanup_published_items([cls.published_item])
 
     def test_upload_io_obj(self):
+        upload_item = None
         data = {"hello": "world"}
         io_obj = StringIO()
         io_obj.write(json.dumps(data))
-        fl = self.item.layers[0]
-        um = UploadManager(layer=fl)
-        upload_item = um.upload(path=io_obj, file_name="data.json")
-        assert upload_item
-        assert upload_item.delete()
+
+        fl = self.published_item.layers[0]
+        try:
+            um = UploadManager(layer=fl)
+            upload_item = um.upload(path=io_obj, file_name="data.json")
+            self.assertTrue(
+                isinstance(upload_item, Upload), "Upload item is not Upload type"
+            )
+            upload_properties = upload_item.properties
+            item_name = upload_properties.get("itemName")
+            self.assertTrue(
+                "data.json" == item_name, f"Incorrect itemName prop: {item_name}"
+            )
+            is_committed = upload_properties.get("committed")
+            self.assertTrue(is_committed, "Upload not committed")
+        finally:
+            if upload_item:
+                upload_item.delete()
 
     def test_upload_file(self):
+        upload_item = None
         data = {"hello": "world"}
-        import os, tempfile
+        import os
+        import tempfile
 
-        data = os.path.join(tempfile.gettempdir(), "dataset.json")
-        with open(data, 'w') as writer:
-            writer.write(json.dumps(data))
-        fl = self.item.layers[0]
-        um = UploadManager(layer=fl)
-        upload_item = um.upload(path=data)
-        assert upload_item
-        assert upload_item.delete()
+        try:
+            data_file = os.path.join(tempfile.gettempdir(), "dataset.json")
+            with open(data_file, "w") as writer:
+                writer.write(json.dumps(data))
+            fl = self.published_item.layers[0]
+            um = UploadManager(layer=fl)
+            upload_item = um.upload(path=data_file)
+            self.assertTrue(
+                isinstance(upload_item, Upload), "Upload item is not Upload type"
+            )
+            upload_properties = upload_item.properties
+            item_name = upload_properties.get("itemName")
+            self.assertTrue(
+                "dataset.json" == item_name, f"Incorrect itemName prop: {item_name}"
+            )
+            is_committed = upload_properties.get("committed")
+            self.assertTrue(is_committed, "Upload not committed")
+        finally:
+            if upload_item:
+                upload_item.delete()
 
     def test_upload_by_parts(self):
+        upload_item = None
         data = {"hello": "world"}
-        import os, tempfile
+        import os
+        import tempfile
 
-        data = os.path.join(tempfile.gettempdir(), "datasetparts.json")
-        with open(data, 'w') as writer:
-            writer.write(json.dumps(data))
-        fl = self.item.layers[0]
-        um = UploadManager(layer=fl)
-        upload_item = um.register("amazingtest.json")
-        assert upload_item
-        assert isinstance(upload_item, Upload)
-        uploaded = upload_item.upload_by_part(
-            part_number=1, part=data, part_name="part1.json"
-        )
-        assert uploaded
-        commits = upload_item.commit()
-        assert commits
-        assert upload_item.delete()
+        try:
+            data_file = os.path.join(tempfile.gettempdir(), "datasetparts.json")
+            with open(data_file, "w") as writer:
+                writer.write(json.dumps(data))
+            fl = self.published_item.layers[0]
+            um = UploadManager(layer=fl)
+            upload_item = um.register("upload_test.json")
+            self.assertIsNotNone(upload_item, "Upload item is None")
+            self.assertTrue(
+                isinstance(upload_item, Upload), "Upload item is not Upload type"
+            )
+            uploaded = upload_item.upload_by_part(
+                part_number=1, part=data_file, part_name="part1.json"
+            )
+            if isinstance(uploaded, dict) and uploaded.get("error"):
+                raise Exception(f"Upload by Part failed: {uploaded}")
+            self.assertTrue(uploaded, "Item did not upload")
+            commits = upload_item.commit()
+            self.assertTrue(isinstance(commits, bool), "Unexpected type for commit")
+            if isinstance(commits, dict):
+                self.assertIsNone(commits.get("error"))
+        finally:
+            if isinstance(upload_item, Upload):
+                upload_item.delete()
 
 
 if __name__ == "__main__":

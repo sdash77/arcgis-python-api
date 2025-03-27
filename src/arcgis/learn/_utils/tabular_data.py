@@ -1284,7 +1284,10 @@ class TabularDataObject(object):
         # Check whether the index is timestamp
         sample_ticks = False
         index_data_copy = self._index_data
-        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
+        if not (
+            pd.api.types.is_datetime64_any_dtype(index_data_copy)
+            or pd.api.types.is_timedelta64_dtype(index_data_copy)
+        ):
             # Try to convert the datatype to timestamp
             warnings.warn("Index field is not timestamp. Converting it to timestamp.")
             try:
@@ -1437,7 +1440,7 @@ class TabularDataObject(object):
                         bands.append(raster[1])
                         band_count = len(raster[1])
                         if band_count > raster[0].band_count:
-                            raise (
+                            raise Exception(
                                 "Incorrect band ids passed. The input raster has only "
                                 + str(band_count)
                                 + " bands"
@@ -2407,7 +2410,7 @@ def show_local_interpretation(
         )
         return
     if method == "Tree":
-        explainer = shap.TreeExplainer(model._model, algorithm="Tree")
+        explainer = shap.TreeExplainer(model._model)
     elif method == "KernelRegressor":
         if hasattr(model._data, "_training_indexes"):
             explainer = shap.KernelExplainer(
@@ -2510,9 +2513,17 @@ def show_local_interpretation(
                 matplotlib=True,
             )
         else:
-            shap.force_plot(
-                explainer.expected_value, shap_values, processed_df, matplotlib=True
-            )
+            if isinstance(explainer.expected_value, float):
+                shap.force_plot(
+                    explainer.expected_value, shap_values, processed_df, matplotlib=True
+                )
+            else:
+                shap.plots.force(
+                    explainer.expected_value[0],
+                    shap_values[0][:, 0],
+                    processed_df,
+                    matplotlib=True,
+                )
     elif method == "KernelRegressor":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)

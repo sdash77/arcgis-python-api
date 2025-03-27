@@ -382,6 +382,7 @@ class AveragePrecision(Callback):
         if (
             getattr(self.model, "_is_fasterrcnn", False)
             or "MMDetection" in self.model.__str__()
+            or "PTv3Det" in self.model.__str__()
         ):
             last_output = last_output[0]
 

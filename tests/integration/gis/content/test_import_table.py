@@ -1,34 +1,14 @@
-import sys
-import logging
 import unittest
+from unittest.case import SkipTest
 import os
 import uuid
 import tempfile
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
 import pandas as pd
-from utils.decorators import integration_test
-
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
 
-profiles = [
-    'your_enterprise_profile',
-    'your_online_profile',
-]
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-
+enable_verbose_logging()
 test_data = [
     {
         'id': 1,
@@ -243,6 +223,7 @@ test_data = [
 ]
 
 
+@profiles.enterprise_and_agol
 @integration_test
 class TestImportTable(unittest.TestCase):
     """Tests the import_table logic"""
@@ -250,84 +231,99 @@ class TestImportTable(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.df = pd.DataFrame(data=test_data)
-        cls.gis_objs = [
-            GIS(profile=profile, proxy=PROXIES, verify_cert=False)
-            for profile in profiles
-        ]
 
     def test_assert_error(self):
         """tests that the assertion error is raised"""
-        gis: GIS = None
-
-        for gis in self.gis_objs:
-            content = gis.content
-            with self.assertRaises(Exception) as context:
-                content.import_table("figgypudding", "streetcars")
+        content = self.gis.content
+        with self.assertRaises(Exception) as context:
+            content.import_table("figgypudding", "streetcars")
 
     def test_import_table_with_defaults(self):
         """import table task with all defaults"""
-        for gis in self.gis_objs:
-            content = gis.content
-            pitem = content.import_table(df=self.df)
-            source_items = pitem.related_items(
-                rel_type="Service2Data", direction='forward'
-            )
-            assert len(source_items) > 0
-            assert pitem.title
-            assert len(pitem.tables) > 0
-            assert pitem.delete()
-            [item.delete() for item in source_items]
+        content = self.gis.content
+        pitem = content.import_table(df=self.df)
+        source_items = pitem.related_items(
+            rel_type="Service2Data", direction='forward'
+        )
+        assert len(source_items) > 0
+        assert "Import Table created on" in pitem.title
+        assert "import_table_" in pitem.url
+        assert len(pitem.tables) > 0
+        assert pitem.delete(permanent=True)
+        [item.delete(permanent=True) for item in source_items]
 
     def test_import_table_with_service_name(self):
-        """simple import table task"""
-        for gis in self.gis_objs:
-            content = gis.content
-            pitem = content.import_table(
-                df=self.df, service_name=f"a{uuid.uuid4().hex[:5]}b"
-            )
-            source_items = pitem.related_items(
-                rel_type="Service2Data", direction='forward'
-            )
-            assert len(source_items) > 0
-            assert pitem.title
-            assert len(pitem.tables) > 0
-            assert pitem.delete()
-            [item.delete() for item in source_items]
+        """simple import table task with service name"""
+        content = self.gis.content
+        pitem = content.import_table(
+            df=self.df, service_name=f"test_import_table_service_name_{uuid.uuid4().hex[:5]}"
+        )
+        source_items = pitem.related_items(
+            rel_type="Service2Data", direction='forward'
+        )
+        assert source_items[0].type == "CSV"
+        assert len(source_items) > 0
+        assert "Import Table created on" in pitem.title
+        assert "test_import_table_service_name" in pitem.url
+        assert len(pitem.tables) > 0
+        assert pitem.delete(permanent=True)
+        [item.delete(permanent=True) for item in source_items]
 
-    def test_import_table_pp(self):
-        """simple import table task with publish parms"""
-        for gis in self.gis_objs:
-            content = gis.content
-            fname = os.path.join(
-                tempfile.gettempdir(), uuid.uuid4().hex[:4] + ".csv"
-            )
-            self.df.to_csv(fname)
-            aitem = content.add(
-                data=fname,
-                item_properties={
-                    "type": "CSV",
-                    "title": uuid.uuid4().hex[:7],
-                },
-            )
-            analyzed = content.analyze(item=aitem, file_type='csv')
-            pp = analyzed['publishParameters']
-            pp['locationType'] = "none"
-            pp['name'] = f"A{uuid.uuid4().hex[:5]}Z".upper()
+    def test_import_table_publish_params(self):
+        """simple import table task with publish params"""
+        content = self.gis.content
+        folder = self.gis.content.folders._get_or_create(
+            folder="integration_testing_import_table",
+            owner=self.gis._username,
+        )
+        fname = os.path.join(
+            tempfile.gettempdir(), uuid.uuid4().hex[:4] + ".csv"
+        )
+        self.df.to_csv(fname)
+        aitem = folder.add(
+            file=fname,
+            item_properties={
+                "type": "CSV",
+                "title": "test_import_table_publish_params_csv",
+            },
+        ).result()
+        analyzed = content.analyze(item=aitem, file_type='csv')
+        pp = analyzed['publishParameters']
+        pp['locationType'] = "none"
+        pp['name'] = f"A{uuid.uuid4().hex[:5]}Z".upper()
 
-            pitem = content.import_table(
-                df=self.df,
-                service_name=f"a{uuid.uuid4().hex[:5]}b",
-                publish_parameters=pp,
-                title='(--CSV_TEST--)',
-            )
-            source_items = pitem.related_items(
-                rel_type="Service2Data", direction='forward'
-            )
-            assert len(source_items) > 0
-            assert len(pitem.tables) > 0
-            assert pitem.delete()
-            [item.delete() for item in source_items]
+        pitem = content.import_table(
+            df=self.df,
+            service_name=f"test_import_table_publish_params_{uuid.uuid4().hex[:5]}",
+            publish_parameters=pp,
+            title='test_import_table_publish_params',
+        )
+        source_items = pitem.related_items(
+            rel_type="Service2Data", direction='forward'
+        )
+        assert len(source_items) > 0
+        assert len(pitem.tables) > 0
+        assert "test_import_table_publish_params" in pitem.title
+        assert aitem.delete(permanent=True)
+        assert pitem.delete(permanent=True)
+        [item.delete(permanent=True) for item in source_items]
 
-
+    @SkipTest("Run manually in gdal env")
+    def test_import_table_gdal(self):
+        """If gdal is present in the environment, it will be used to publish a filegeodatabase rather than a csv"""
+        content = self.gis.content
+        pitem = content.import_table(
+            df=self.df, service_name=f"test_import_table_service_name_{uuid.uuid4().hex[:5]}"
+        )
+        source_items = pitem.related_items(
+            rel_type="Service2Data", direction='forward'
+        )
+        assert source_items[0].type == "File Geodatabase"
+        assert len(source_items) > 0
+        assert "Import Table created on" in pitem.title
+        assert "test_import_table_service_name" in pitem.url
+        assert len(pitem.tables) > 0
+        assert pitem.delete(permanent=True)
+        [item.delete(permanent=True) for item in source_items]
 if __name__ == "__main__":
     unittest.main()

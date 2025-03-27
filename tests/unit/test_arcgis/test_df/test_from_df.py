@@ -1,3 +1,4 @@
+import sys
 import unittest
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
@@ -7,7 +8,13 @@ polygon_data = [
     {  # GeoJSON
         "type": "Polygon",
         "coordinates": [
-            [[100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0]]
+            [
+                [100.0, 0.0],
+                [101.0, 0.0],
+                [101.0, 1.0],
+                [100.0, 1.0],
+                [100.0, 0.0],
+            ]
         ],
     },
     {
@@ -164,6 +171,7 @@ class TestFromDF(unittest.TestCase):
         df = pd.DataFrame(data={"geom": polygon_data, "oid": [1, 2, 3]})
         sdf = pd.DataFrame.spatial.from_df(df, geometry_column="geom")
         assert sdf.spatial.name
+
         assert sdf.spatial.sr["wkid"] == 4326
 
     def test_from_df_no_sr(self):
@@ -197,7 +205,9 @@ class TestFromDF(unittest.TestCase):
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
 
         df = pd.DataFrame(data={"geom": polygon_data, "oid": [1, 2, 3]})
-        sdf = pd.DataFrame.spatial.from_df(df, geometry_column="geom", sr=4326)
+        sdf = pd.DataFrame.spatial.from_df(
+            df, geometry_column="geom", sr=4326
+        )
         assert sdf.spatial.name
         assert sdf.spatial.sr["wkid"] == 4326
 

@@ -21,7 +21,7 @@ class TestStoryMapsCopyContent(unittest.TestCase):
             sm = StoryMap("bbca7674b8bc4fa9ab12d8b66e4a7467")
             # get the Text, Map, Image, and Swipe nodes that will be copied
             nodes_to_copy = ["n-VPFcjj", "n-Cyskj8", "n-HzZGw2", "n-4ih3Ig"]
-        assert sm.nodes
+        assert sm.content_list
 
         # create new story
         target_story = StoryMap(gis=gis)
@@ -31,14 +31,13 @@ class TestStoryMapsCopyContent(unittest.TestCase):
         sm.copy_content(target_story=target_story, node_list=nodes_to_copy)
 
         # make sure copy occurred:
-        assert len(target_story.nodes) == 7
+        assert len(target_story.content_list) == 7
 
         # put a breakpoint after this if you want to see the story printed
         target_story.save()
 
         # delete target story
-        item = gis.content.get(target_story._itemid)
-        item.delete()
+        target_story.delete_story()
 
 
 if __name__ == "__main__":

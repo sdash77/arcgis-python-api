@@ -5,6 +5,7 @@ from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
 from typing import Union, Any
 import requests
+from arcgis.gis._impl._search import _search
 
 arcgis = LazyLoader("arcgis")
 
@@ -44,7 +45,7 @@ class SharingGroupManager:
                       object for a specific :class:`~arcgis.gis.Item`.
     ================  ===============================================================
 
-    Objects of this class are not meant to be intialized
+    Objects of this class are not meant to be initialized
     directly, but rather accessed through the
     :attr:`~arcgis.gis._impl._content_manager.SharingManager.groups`
     property of an *item's* *SharingManager*.
@@ -140,7 +141,10 @@ class SharingGroupManager:
                 import time
 
                 time.sleep(1)
-                return group.id in [g.id for g in self.list()]
+                if isinstance(group, str):
+                    return group in [g.id for g in self.list()]
+                else:
+                    return group.id in [g.id for g in self.list()]
             elif "error" in resp:
                 raise Exception(resp)
             elif "results" in resp and "error" in resp["results"][0]:
@@ -183,19 +187,56 @@ class SharingGroupManager:
         return False
 
     # ---------------------------------------------------------------------
+    def _group_ids(self) -> list[list[str]]:
+        """returns a list of group strings"""
+        groups: list[list[str]] = []
+        search_result = [
+            grp.get("id", None)
+            for grp in _search(
+                gis=self._gis,
+                query=f'orgid:{self._gis.properties["id"]}',
+                stype="groups",
+                max_items=-1,
+                as_dict=True,
+            )["results"]
+            if grp.get("id", None)
+        ]
+
+        def chunks(l: list, n: int = 25):
+            for i in range(0, len(l), n):
+                yield l[i : i + n]
+
+        for chunk in chunks(search_result, 50):
+            groups.append(chunk)
+        return groups
+
+    # ---------------------------------------------------------------------
     @property
     def _groups(self) -> list[str]:
         """private method to get the groups shared with a given item."""
         itemid: str = self._item.id
+        url: str = f"{self._gis._portal.resturl}content/itemsgroups"
         params: dict[str, Any] = {
             "f": "json",
             "items": itemid,
+            "groups": "",
         }
-        url: str = f"{self._gis._portal.resturl}content/itemsgroups"
-        resp: requests.Response = self._session.get(url=url, params=params)
-        resp.raise_for_status()
-        data: dict[str, Any] = resp.json()
-        return list(data.keys())
+        groups_list: list[list[str]] = self._group_ids()
+        if len(groups_list) == 0:
+            del params["groups"]
+            resp: requests.Response = self._session.get(url=url, params=params)
+            resp.raise_for_status()
+            data: dict[str, Any] = resp.json()
+            return list(data.keys())
+        else:
+            data: dict[str, Any] = {}
+            for gid in groups_list:
+                params["groups"] = ",".join(gid)
+
+                resp: requests.Response = self._session.get(url=url, params=params)
+                resp.raise_for_status()
+                data.update(resp.json())
+            return list(data.keys())
 
     # ---------------------------------------------------------------------
     def list(self) -> list[arcgis.gis.Group]:
@@ -430,8 +471,7 @@ class SharingManager:
         .. code-block:: python
 
             # Usage example: Setting the sharing level to organization
-            >>> from arcgis.gis import GIS
-            >>> from arcgis.gis._impl._content_manager import SharingLevel
+            >>> from arcgis.gis import GIS, SharingLevel
 
             >>> data_item = gis.content.search(query="Hurricanes 2022")
             >>> sharing_mgr = data_item.sharing

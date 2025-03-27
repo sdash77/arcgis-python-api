@@ -152,9 +152,8 @@ class NpyReader(IterableDataset):
         for idx in range(iter_start, iter_end):
             path = fle_list[idx]
             data = np.load(path)
-            year = int(path.split("\\")[-1][:4])
-
-            tile_num = path.split("\\")[-1][5]
+            year = int(os.path.basename(path)[:4])
+            tile_num = os.path.basename(path)[5]
             clim_path = os.path.join(
                 os.path.dirname(path), f"climatology_{tile_num}.npz"
             )

@@ -395,8 +395,8 @@ def _add_mission(
     oid = project.mission_count
 
     for f in gis.users.me.folders:
-        if f["id"] == project_item.ownerFolder:
-            folder = f
+        if f._fid == project_item.ownerFolder:
+            folder = f.properties
             break
 
     from arcgis.raster.analytics import create_image_collection
@@ -725,11 +725,13 @@ def compute_sensor_model(
 
                            By default, 'Quick' mode is applied to compute the sensor model.
     ------------------     --------------------------------------------------------------------
-    location_acuracy       Optional string. this option allows users to specify the GPS location accuracy level of the
+    location_accuracy      Optional string. this option allows users to specify the GPS location accuracy level of the
                            source image. It determines how far the underline tool will search for neighboring
                            matching images, then calculate tie points and compute adjustments.
 
                            Possible values for location_accuracy are:
+
+                           - 'VeryHigh'    : Imagery was collected with a high-accuracy, differential GPS, such as RTK or PPK. This option will hold image locations fixed during block adjustment
 
                            - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images
 
@@ -1631,6 +1633,7 @@ def generate_dem(
     surface_type: str,
     matching_method: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
+    classify_ground_options: Optional[dict[str, Any]] = None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -1641,90 +1644,169 @@ def generate_dem(
     GP tool for more documentation
 
     
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    image_collection       Required. The input image collection that will be used
-                           to generate the DEM from.
-                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
+    =======================     ====================================================================
+    **Parameter**               **Description**
+    -----------------------     --------------------------------------------------------------------
+    image_collection            Required. The input image collection that will be used
+                                to generate the DEM from.
+                                The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           The image_collection must exist.
-    ------------------     --------------------------------------------------------------------
-    out_dem                This is the output digital elevation model.
-                           It can be a url, uri, portal item, or string representing the name of output dem 
-                           (either existing or to be created.)
-                           Like Raster Analysis services, the service can be an existing multi-tenant service URL.
-    ------------------     --------------------------------------------------------------------
-    cell_size              Required, The cell size of the output raster dataset. This is a single numeric input. 
-                           Rectangular cell size such as {"x": 10, "y": 10} is not supported. 
-                           The cell size unit will be the unit used by the image collection's spatial reference.
-    ------------------     --------------------------------------------------------------------
-    surface_type           Required string. Create a digital terrain model or a digital surface model. Refer
-                           to "surface_type" parameter of the GP tool.
-                           
-                           The available choices are:
+                                The image_collection must exist.
+    -----------------------     --------------------------------------------------------------------
+    out_dem                     This is the output digital elevation model.
+                                It can be a url, uri, portal item, or string representing the name of output dem 
+                                (either existing or to be created.)
+                                Like Raster Analysis services, the service can be an existing multi-tenant service URL.
+    -----------------------     --------------------------------------------------------------------
+    cell_size                   Required, The cell size of the output raster dataset. This is a single numeric input. 
+                                Rectangular cell size such as {"x": 10, "y": 10} is not supported. 
+                                The cell size unit will be the unit used by the image collection's spatial reference.
+    -----------------------     --------------------------------------------------------------------
+    surface_type                Required string. Create a digital terrain model or a digital surface model. Refer
+                                to "surface_type" parameter of the GP tool.
+                                
+                                The available choices are:
 
-                           - DTM - Digital Terrain Model, the elevation is only the elevation of the bare earth, not including structures above the surface.
+                                - DTM - Digital Terrain Model, the elevation is only the elevation of the bare earth, not including structures above the surface.
 
-                           - DSM - Digital Surface Model, the elevation includes the structures above the surface, for example, buildings, trees, bridges.
-    ------------------     --------------------------------------------------------------------
-    matching_method        Optional string. The method used to generate 3D points. 
+                                - DSM - Digital Surface Model, the elevation includes the structures above the surface, for example, buildings, trees, bridges.
+    -----------------------     --------------------------------------------------------------------
+    matching_method             Optional string. The method used to generate 3D points. 
 
-                           - ETM-A feature-based stereo matching that uses the Harris operator to \
-                           detect feature points. It is recommended for DTM generation.  
+                                - ETM-A feature-based stereo matching that uses the Harris operator to \
+                                detect feature points. It is recommended for DTM generation.  
 
-                           - SGM- Produces more points and more detail than the ETM method. It is \
-                           suitable for generating a DSM for urban areas. This is more \
-                           computationally intensive than the ETM method1.  
+                                - SGM- Produces more points and more detail than the ETM method. It is \
+                                suitable for generating a DSM for urban areas. This is more \
+                                computationally intensive than the ETM method1.  
 
-                           - MVM (Multi-view image matching (MVM) - is based on the SGM matching method followed by a fusion step in which \
-                           the redundant depth estimations across single stereo model are merged. \
-                           It produces dense 3D points and is computationally efficient
+                                - MVM (Multi-view image matching (MVM) - is based on the SGM matching method followed by a fusion step in which \
+                                the redundant depth estimations across single stereo model are merged. \
+                                It produces dense 3D points and is computationally efficient
 
-                           References:  
-                           Heiko Hirschmuller et al., "Memory Efficient Semi-Global Matching," 
-                           ISPRS Annals of the Photogrammetry, Remote Sensing and Spatial 
-                           Information Sciences, Volume 1-3, (2012): 371-376. 
+                                References:  
+                                Heiko Hirschmuller et al., "Memory Efficient Semi-Global Matching," 
+                                ISPRS Annals of the Photogrammetry, Remote Sensing and Spatial 
+                                Information Sciences, Volume 1-3, (2012): 371-376. 
 
-                           Refer to the documentation
-                           of "matching_method" parameter of the `Generate Point Cloud <http://pro.arcgis.com/en/pro-app/tool-reference/data-management/generate-point-cloud.htm>`_
-                           GP tool
-    ------------------     --------------------------------------------------------------------
-    context                Optional dictionary. Additional allowed point cloud generation parameter and DEM 
-                           interpolation parameter can be assigned here.  
-                           
-                           For Example:
+                                Refer to the documentation
+                                of "matching_method" parameter of the `Generate Point Cloud <http://pro.arcgis.com/en/pro-app/tool-reference/data-management/generate-point-cloud.htm>`_
+                                GP tool
+    -----------------------     --------------------------------------------------------------------
+    context                     Optional dictionary. Additional allowed point cloud generation parameter and DEM 
+                                interpolation parameter can be assigned here.  
+                                
+                                This dictionary can contain the following keys:
 
-                                | Point cloud generation parameters -  
-                                | {"maxObjectSize": 50, 
-                                | "groundSpacing": None, 
-                                | "minAngle": 10, 
-                                | "maxAngle": 70, 
-                                | "minOverlap": 0.6, 
-                                | "maxOmegaPhiDif": 8, 
-                                | "maxGSDDif": 2, 
-                                | "numImagePairs": 2, 
-                                | "adjQualityThreshold": 0.2, 
-                                | "regenPointCloud": False 
-                                | } 
-                                | 
-                                | DEM interpolation parameters -  
-                                | {"method": "TRIANGULATION", 
-                                | "smoothingMethod": "GAUSS5x5", 
-                                | "applyToOrtho": True, 
-                                | "fillDEM": "``https://....``"
-                                | } 
- 
-                           Note:  
-                           The "applyToOrtho" flag can apply the generated DEM back into the 
-                           mosaic dataset's geometric function to achieve more accurate 
-                           orthorectification result.  
-                           The "fillDEM" flag allows the user to specify an elevation service URL as 
-                           background elevation to fill the area when elevation model pixels cannot be 
-                           interpolated from the point cloud.  
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
+                                - parallelProcessingFactor : Specifies the number or percentage of
+                                    processes will be used for the analysis. The default value is 50% .
+                                
+                                - maxObjectSize : A search radium within surface objects, such as
+                                    buildings and trees, will be identified. It's the linear size in map units.
+                                
+                                - groundSpacing : The ground spacing, in meters, at which the 3D points are generated.
+                                
+                                - minAngle : The value, in degrees, that defines the minimum
+                                    intersection angle the stereo pair must meet.
+                                
+                                - maxAngle : The value, in degrees, that defines the maximum
+                                    intersection angle the stereo pair must meet.
+                                
+                                - minOverlap : Specifies a minimum overlap threshold that is acceptable,
+                                    which is a percentage of overlap between a pair of images. Image pairs
+                                    with overlap areas smaller than this threshold will receive a score of 0
+                                    for this criteria and will descend in the ordered list.
+                                    The range of values is from 0 to 1.
+                                
+                                - maxOmegaPhiDif : Specifies the maximum threshold for the Omega/Phi
+                                difference between the image pair. The Omega and Phi values for the image
+                                pair are compared, and a difference greater than this threshold will receive
+                                a score of 0 and will descend in the ordered list.
+                                
+                                - maxGSDDif : Specifies the maximum allowable threshold for the ground sample
+                                distance (GSD) between two images in a pair. The resolution ration between the
+                                two images will be compared with the threshold value. Image pairs with a GSD
+                                greater than this threshold will receive a score of 0 and will descend in the ordered list.
+                                
+                                - numImagePairs : The number of pairs used to generate 3D points.
+                                
+                                - adjQualityThreshold : Specifies the minimum acceptable adjustment quality.
+                                The threshold value will be compared to the quality value stored within the
+                                stereo model. Image pairs with an adjustment quality less than the specified
+                                threshold will receive a score of 0 and will descend in the ordered list.
+                                The range of values for the threshold is between 0 and 1.
+                                
+                                - regenPointCloud : Regenerates the 3D point cloud when set to True.   
+                                
+                                - pointCloudFolder : The point cloud folder to use. This can be one of "DSM", "DTM", "LAS".
+                                
+                                For Example:
+
+                                        | Point cloud generation parameters -  
+                                        | {"maxObjectSize": 50, 
+                                        | "groundSpacing": None, 
+                                        | "minAngle": 10, 
+                                        | "maxAngle": 70, 
+                                        | "minOverlap": 0.6, 
+                                        | "maxOmegaPhiDif": 8, 
+                                        | "maxGSDDif": 2, 
+                                        | "numImagePairs": 2, 
+                                        | "adjQualityThreshold": 0.2, 
+                                        | "regenPointCloud": False,
+                                        | } 
+                                        | 
+                                        | DEM interpolation parameters -  
+                                        | {"method": "TRIANGULATION", 
+                                        | "smoothingMethod": "GAUSS5x5", 
+                                        | "applyToOrtho": True, 
+                                        | "fillDEM": "``https://....``"
+                                        | "pointCloudFolder": "DSM"
+                                        | } 
+        
+                                Note:  
+                                The "applyToOrtho" flag can apply the generated DEM back into the 
+                                mosaic dataset's geometric function to achieve more accurate 
+                                orthorectification result.  
+                                The "fillDEM" flag allows the user to specify an elevation service URL as 
+                                background elevation to fill the area when elevation model pixels cannot be 
+                                interpolated from the point cloud.  
+    -----------------------     --------------------------------------------------------------------
+    classify_ground_options     Optional dict. Classify ground points from the input LAS data. This can be used when the surface type is DTM.
+                                
+                                The dictionary can contain the following keys:
+
+                                - Classify : the method to use to detect ground points. This value can be one of "standard", "conservative" or "aggressive".
+                                  
+                                  - standard: This method has a tolerance for slope variation that allows it to capture gradual undulations in the ground's
+                                    topography that would typically be missed by the conservative option but not capture the type of sharp reliefs that
+                                    would be captured by the aggressive option. This is the default.
+                                  
+                                  - conservative: When compared to other options, this method uses a tighter restriction on the variation of the ground's
+                                    slope that allows it to differentiate the ground from low-lying vegetation such as grass and shrubbery. It is best suited
+                                    for topography with minimal curvature.
+                                  
+                                  - aggressive: This method detects ground areas with sharper reliefs, such as ridges and hill tops, that may be ignored by
+                                    the standard option. This method is best used in a second iteration of this tool with the ReuseGround option set to
+                                    1. Avoid using this method in urban areas or flat, rural areas, as it may result in the misclassification of taller
+                                    objects — such as utility towers, vegetation, and portions of buildings — as ground.
+
+                                - LowNoise : the distance below the ground that will be used to classify the point to be low-noise points. The unit is meter.
+                                  The default value is 0.25 meter.
+
+                                - HighNoise : the distance above the ground that will be used to classify the point to be high-noise points. The unit is meter.
+                                  The default value is 100 meter.
+
+                                - ReuseGround : specifies whether existing ground points will be reclassified or reused. 0 mean reclassify and 1 indicating reuse.
+                                  The default value is 0.
+
+                                - ReuseLowNoise : specifies whether existing low-noise points will be reused or reclassified. 0 mean reclassify and 1 mean reuse.
+                                  The default value is 0.
+                                
+                                - ReuseHighNoise : specifies whether existing high-noise points will be reused or reclassified. 0 mean reclassify and 1 mean reuse.
+                                  The default value is 0.
+    -----------------------     --------------------------------------------------------------------
+    gis                         Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    =======================     ====================================================================
 
     :return:
         The DEM layer item
@@ -1746,8 +1828,8 @@ def generate_dem(
                 folder = kwargs["folder"]
             else:
                 for f in gis.users.me.folders:
-                    if f["id"] == image_collection.ownerFolder:
-                        folder = f
+                    if f._fid == image_collection.ownerFolder:
+                        folder = f.properties
                         break
             kwargs.update({"folder": folder})
 
@@ -1808,6 +1890,7 @@ def generate_dem(
         context=context,
         future=future,
         flight_json_details=flight_json_details,
+        classify_ground_options=classify_ground_options,
         **kwargs,
     )
 
@@ -1964,8 +2047,8 @@ def generate_orthomosaic(
                 folder = kwargs["folder"]
             else:
                 for f in gis.users.me.folders:
-                    if f["id"] == image_collection.ownerFolder:
-                        folder = f
+                    if f._fid == image_collection.ownerFolder:
+                        folder = f.properties
                         break
             kwargs.update({"folder": folder})
 
@@ -2453,7 +2536,7 @@ class Project:
     ):
         if not isinstance(project, Item):
             try:
-                project = _create_project(name=project, definition=definition)
+                project = _create_project(name=project, definition=definition, gis=gis)
             except:
                 raise RuntimeError("Creation of orthomapping project failed.")
 

@@ -1,14 +1,9 @@
-import sys
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
-from config import QALAB_ROOT_PATH
+from config import get_web_resource_path
 
 
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging()
 
 
@@ -17,24 +12,28 @@ enable_verbose_logging()
 class TestCanReassignItems(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fp = QALAB_ROOT_PATH + r"\gis_mod_Item_cls\issue_10434.zip"
-        cls.item = cls.gis.content.add(
+        fp = get_web_resource_path("major_cities_shp.zip", unique_copy=True)
+        cls.folder = cls.gis.content.folders._get_or_create("integration_test_gis_item_reassign")
+        cls.item = cls.folder.add(
             item_properties={
                 "title": "reassign_item_test",
                 "type": "Shapefile",
+                "tags": "integration_testing",
             },
-            data=fp,
-        )
+            file=fp,
+        ).result()
         cls.pitem = cls.item.publish(
             {
-                "name": "reassign_item_test",
+                "name": "reassign_item_test_publish",
+                "tags": "integration_testing",
             }
         )
 
     @classmethod
     def tearDownClass(cls):
-        cls.pitem.delete()
-        cls.item.delete()
+        cls.pitem.delete(permanent=True)
+        cls.item.delete(permanent=True)
+        cls.folder.delete(permanent=True)
 
     def test_can_reassign(self):
         """tests the new reassign operation"""

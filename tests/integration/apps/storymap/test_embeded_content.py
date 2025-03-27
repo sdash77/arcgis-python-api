@@ -14,7 +14,7 @@ class TestEmbedContent(unittest.TestCase):
         """Test adding Embed and seeing properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         emb = Embed(
             "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
         )
@@ -24,14 +24,14 @@ class TestEmbedContent(unittest.TestCase):
         assert emb.link
         assert emb.properties
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_delete(self):
         """Test delete method on an Audio node. Each content has this delete method"""
         # Audio through URL
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
 
         emb = Embed(
             "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
@@ -41,14 +41,14 @@ class TestEmbedContent(unittest.TestCase):
         deleted = emb.delete()
         assert deleted
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 def test_replace_media_item(self):
     """Test replacing the webpage link. This can be done through a property for each content"""
     # establish gis connection
     gis = self.gis
-    story = StoryMap()
+    story = StoryMap(gis=gis)
     emd = Embed(
         "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
     )
@@ -65,7 +65,7 @@ def test_replace_media_item(self):
 
     assert emd.link
     item = gis.content.get(story._itemid)
-    assert item.delete()
+    assert story.delete_story()
 
 
 if __name__ == "__main__":

@@ -303,6 +303,14 @@ class PSPNetClassifier(ArcGISModel):
         return PSPNetClassifier._supported_backbones()
 
     @staticmethod
+    def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return PSPNetClassifier._supported_backbones()
@@ -324,12 +332,12 @@ class PSPNetClassifier(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        from ._hf_weightutils import hf_resnet_cfgs
+        torchgeo_backbone = PSPNetClassifier.torchgeo_backbones()
 
         return (
             [*_resnet_family, *_densenet_family, *_vgg_family]
             + timm_backbones
-            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+            + torchgeo_backbone
         )
 
     @property
@@ -369,6 +377,7 @@ class PSPNetClassifier(ArcGISModel):
             model_file = emd_path.parent / model_file
 
         model_params = emd["ModelParameters"]
+        backbone = emd["ModelParameters"]["backbone"]
         model_params["vggv2"] = model_params.get("vggv2", False)
 
         try:
@@ -387,6 +396,8 @@ class PSPNetClassifier(ArcGISModel):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd

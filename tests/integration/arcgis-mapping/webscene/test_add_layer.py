@@ -1,5 +1,7 @@
 import unittest
-from arcgis.map import Scene, GroupLayer
+from arcgis.map import Scene
+from arcgis.map.renderers import SimpleRenderer
+from arcgis.map.symbols import PolygonSymbol3D, Material, SolidEdges
 from arcgis.features import FeatureLayer
 from arcgis.layers import (
     VectorTileLayer,
@@ -26,25 +28,20 @@ class TestAddLayersToMap(unittest.TestCase):
         assert self.wm
 
         self.drawing_info = {
-            "renderer": {
-                "type": "simple",
-                "symbol": {
-                    "type": "PolygonSymbol3D",
-                    "symbolLayers": [
-                        {
-                            "type": "ExtrudeSymbol3DLayer",
-                            "material": {"color": [255, 0, 0, 0.5]},
-                            "size": 100,
-                            "edges": {
-                                "type": "Solid",
-                                "color": [50, 50, 50, 0.5],
-                            },
-                        }
-                    ],
-                },
-            }
+            "renderer": SimpleRenderer(
+                symbol=PolygonSymbol3D(**{
+                            "type": "PolygonSymbol3D",
+                            "symbolLayers": [
+                                {
+                                    "type": "Extrude",
+                                    "material": Material(color= [255, 0, 0, 0.5]),
+                                    "size": 100,
+                                    "edges": SolidEdges(color= [50, 50, 50, 0.5]),
+                                }
+                            ],
+                        },)
+            )
         }
-
     def test_feature_layer(self):
         """Test adding a feature layer"""
         # add layer
@@ -60,6 +57,16 @@ class TestAddLayersToMap(unittest.TestCase):
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureLayer)
 
+    def test_add_by_url(self):
+        """Test adding a layer by url"""
+
+        # add layer
+        url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
+        self.wm.content.add(url)
+        assert self.wm.content.layers
+        assert len(self.wm.content.layers) == 1
+        assert isinstance(self.wm.content.layers[0], MapFeatureLayer)
+        
     def test_vector_tile_layer(self):
         """Test adding a vector tile layer"""
         # add layer

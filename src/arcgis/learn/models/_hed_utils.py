@@ -35,7 +35,7 @@ from fastai.vision import flatten_model
 from ._timm_utils import get_backbone
 from fastai.basic_train import LearnerCallback
 from torch.nn.parallel import DistributedDataParallel
-from ._transformer_backbone import swin_config
+from ._transformer_backbone import swin_config, vit_config
 
 
 def modify_layers(backbone, backbone_fn):
@@ -111,22 +111,26 @@ def get_hooks(backbone, chip_size):
 
 
 class _HEDModel(nn.Module):
-    def __init__(self, backbone_fn, chip_size=224, pretrained=True):
+    def __init__(self, backbone_fn, data, pretrained=True):
         super().__init__()
-        if backbone_fn.__name__ in swin_config.keys():
+        chip_size = data.chip_size
+        in_channels = len(getattr(data, "_extract_bands", [0, 1, 2]))
+        transformer_backbone_list = list(swin_config.keys()) + list(vit_config.keys())
+        if backbone_fn.__name__ in transformer_backbone_list:
             self.backbone = backbone_fn(pretrained=pretrained)
             backbone_out = self.backbone(
                 torch.randn(
-                    (
-                        1,
-                        self.backbone.patch_embed.proj.in_channels,
-                        chip_size,
-                        chip_size,
-                    )
+                    1,
+                    in_channels,
+                    chip_size,
+                    chip_size,
                 )
             )
+            if isinstance(backbone_out, dict):
+                backbone_out = list(backbone_out.values())
+
             layer_num_channels = [layer_shape.shape[1] for layer_shape in backbone_out]
-            layer_num_channels.insert(0, self.backbone.patch_embed.proj.in_channels)
+            layer_num_channels.insert(0, in_channels)
             self._transformer = True
             self._stride = 2
         else:
@@ -152,6 +156,8 @@ class _HEDModel(nn.Module):
         img_H, img_W = x.shape[2], x.shape[3]
         device = x.device
         features = self.backbone(x)
+        if isinstance(features, dict):
+            features = list(features.values())
         if self._transformer:
             features.insert(0, x)
         else:

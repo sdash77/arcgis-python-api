@@ -249,7 +249,7 @@ class StoryMap(object):
             )
         else:
             # Enterprise
-            self._url = "{portal}/apps/storymaps/stories/{storyid}".format(
+            self._url = "{portal}apps/storymaps/stories/{storyid}".format(
                 portal=self._gis.url, storyid=self._itemid
             )
         return self._url
@@ -960,6 +960,8 @@ class StoryMap(object):
         tags: Optional[list] = None,
         access: str = None,
         publish: bool = False,
+        make_copyable: bool = None,
+        no_seo: bool = None,
     ):
         """
         This method will save your Story Map to your active GIS. The story will be saved
@@ -993,6 +995,10 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
+        ---------------     --------------------------------------------------------------------
+        make_copyable       Optional boolean. If True, the story is saved as copyable for users.
+        ---------------     --------------------------------------------------------------------
+        no_seo              Optional boolean. If True, the story is saved without SEO metadata.
         ===============     ====================================================================
 
 
@@ -1000,7 +1006,7 @@ class StoryMap(object):
 
         """
         # call the save method in common utils module
-        return utils.save(self, title, tags, access, publish)
+        return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
     def delete_story(self):
@@ -1068,12 +1074,13 @@ class StoryMap(object):
         target_story        Required StoryMap instance. The target story that the content will be
                             copied to.
         ---------------     --------------------------------------------------------------------
-        node_list           Required list of strings. The list of node ids indicating the content
-                            that will be copied to the target story.
+        node_list           Required list of content. The list of content
+                            that will be copied to the target story.You can get the list of contents
+                            for the story using the `content_list` property.
         ===============     ====================================================================
 
         :return:
-            True if all nodes have been successfully copied over.
+            True if all content have been successfully copied over.
 
         """
         return utils.copy_content(self, target_story, node_list)

@@ -14,7 +14,7 @@ class TestVideoContent(unittest.TestCase):
         """Test adding a Video and seeing properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         vid = Video("https://www.youtube.com/embed/8wY14zHDmEs")
         video = story.add(vid)
 
@@ -22,12 +22,12 @@ class TestVideoContent(unittest.TestCase):
         assert vid.video
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_replace_url(self):
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         vid = Video("https://www.youtube.com/embed/8wY14zHDmEs")
         video = story.add(vid)
 
@@ -43,7 +43,7 @@ class TestVideoContent(unittest.TestCase):
         assert vid._is_url
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":

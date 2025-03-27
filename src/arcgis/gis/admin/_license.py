@@ -150,7 +150,12 @@ class LicenseManager(BasePortalAdmin):
 
                     licenses.append(License(gis=self._gis, info=purchase))
                 except Exception as ex:
-                    _LOG.warning(str(ex))
+                    _LOG.warning(
+                        str(ex)
+                        + "\nError for license: "
+                        + str(purchase["listing"]["title"])
+                        + ". License may be expired or is inaccessible."
+                    )
         if "trials" in self.properties:
             purchases = self.properties["trials"]
             for purchase in purchases:
@@ -158,7 +163,12 @@ class LicenseManager(BasePortalAdmin):
 
                     licenses.append(License(gis=self._gis, info=purchase))
                 except Exception as ex:
-                    _LOG.warning(str(ex))
+                    _LOG.warning(
+                        str(ex)
+                        + "\nError for license: "
+                        + str(purchase["listing"]["title"])
+                        + ". License may be expired or is inaccessible."
+                    )
         return licenses
 
     # ----------------------------------------------------------------------
@@ -577,6 +587,8 @@ class License(object):
         """
         returns a list of all usernames and their entitlements for this license
         """
+        self._entitlements = None
+        self._get_entitlements()
         return self._entitlements
 
     # ----------------------------------------------------------------------
@@ -599,8 +611,6 @@ class License(object):
             item_id = self.properties["listing"]["itemId"]
         else:
             return []
-        # elif 'provision' in self.properties and 'itemId' in self.properties['provision']:
-        #    item_id = self.properties['provision']['itemId']
 
         url = "%scontent/listings/%s/userEntitlements/%s" % (
             self._gis._portal.resturl,
@@ -618,7 +628,43 @@ class License(object):
         return []
 
     # ----------------------------------------------------------------------
-    def user_entitlement(self, username: str):
+    def _get_user_entitlement(self, user: str) -> dict:
+        """
+        Gets the user entitlements for a given user.
+
+        ===============     ====================================================
+        **Parameter**        **Description**
+        ---------------     ----------------------------------------------------
+        user                Required string, the name of the user you want to
+                            examine the entitlements for.
+        ===============     ====================================================
+
+        :return: dict
+        """
+        if hasattr(user, "username"):
+            user = user.username
+        if "listing" in self.properties:
+            item_id = self.properties["listing"]["itemId"]
+        else:
+            return []
+
+        url = "%scontent/listings/%s/userEntitlements/%s" % (
+            self._gis._portal.resturl,
+            item_id,
+            user,
+        )
+        params = {"f": "json"}
+        resp = self._con.get(url, params)
+        if (
+            "userEntitlements" in resp
+            and resp["userEntitlements"]
+            and "entitlements" in resp["userEntitlements"]
+        ):
+            return resp
+        return {}
+
+    # ----------------------------------------------------------------------
+    def user_entitlement(self, username: str) -> dict:
         """
         Checks if a user has the entitlement assigned to them
 
@@ -632,9 +678,12 @@ class License(object):
         :return:
            dictionary
         """
+        if hasattr(username, "username"):
+            username: str = username.username
+        self._get_entitlements()
         for u in self._entitlements:
             if u["username"].lower() == username.lower():
-                return u
+                return self._get_user_entitlement(username).get("userEntitlements", {})
         return {}
 
     # ----------------------------------------------------------------------
