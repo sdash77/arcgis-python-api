@@ -1576,7 +1576,7 @@ data = {
         "model_test": "ptv3seg_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "randlanet_data", "GCS_plain.pctd"),
-            "batch_size": None,
+            "batch_size": 2,
             "dataset_type": "PointCloud",
         },
         "prepare_data_ms": False,
@@ -1598,7 +1598,7 @@ data = {
         "model_test": "ptv3det_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mm3d_data", "Chairs001.pctd"),
-            "batch_size": None,
+            "batch_size": 2,
             "dataset_type": "PointCloudOD",
         },
         "prepare_data_ms": False,
