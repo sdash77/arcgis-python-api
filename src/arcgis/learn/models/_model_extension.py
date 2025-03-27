@@ -950,7 +950,7 @@ class ModelExtension(ArcGISModel):
                                 model was trained on).
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
-                                during tiled inferencing. Deafult value 1.
+                                during tiled inferencing. Default value 1.
         ---------------------   -------------------------------------------
         =====================   ===========================================
 
