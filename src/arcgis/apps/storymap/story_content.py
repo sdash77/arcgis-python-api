@@ -5,6 +5,8 @@ from typing import Optional, Union
 import uuid
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
+import warnings
+
 
 arcgis = LazyLoader("arcgis")
 _imports = LazyLoader("arcgis._impl.imports")
@@ -2095,7 +2097,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     @pinned_popup.setter
-    def pinned_popup_info(self, value: dict | None):
+    def pinned_popup(self, value: dict | None):
         # Check if the dictionary has the correct keys
         if value is None:
             self._story._properties["nodes"][self.node]["data"].pop(
@@ -5019,9 +5021,21 @@ class ExpressMap:
             ]
             # check if offline dependent
             if "dependents" in self._story._properties["nodes"][self.node]:
-                self._offline_dependent = self._story._properties["nodes"][self.node][
-                    "dependents"
-                ]["offline"]
+                if (
+                    "offline"
+                    in self._story._properties["nodes"][self.node]["dependents"]
+                ):
+                    self._offline_dependent = self._story._properties["nodes"][
+                        self.node
+                    ]["dependents"]["offline"]
+                else:
+                    self._offline_dependent = None
+                if "media" in self._story._properties["nodes"][self.node]["dependents"]:
+                    self._media_dependents = self._story._properties["nodes"][
+                        self.node
+                    ]["dependents"]["media"]
+                else:
+                    self._media_dependents = []
         else:
             raise ValueError(
                 "You cannot create an ExpressMap from scratch at this time. Please use an existing ExpressMap."
@@ -5077,6 +5091,29 @@ class ExpressMap:
             raise ValueError(
                 "offline_media can only be set for an ExpressMap that has been added to a Briefing."
             )
+
+    # ----------------------------------------------------------------------
+    @property
+    def media(self):
+        """
+        Get/Set the media property for the embed.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        media               Image or Video. The new media for the Embed.
+        ==================  ========================================
+
+        :return:
+            The media that is being used.
+        """
+        if self._existing is True:
+            if self._media_dependents:
+                return [
+                    utils._assign_node_class(story=self._story, node_id=md)
+                    for md in self._media_dependents
+                ]
+        return None
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -5476,7 +5513,7 @@ class BriefingSlide:
         """
         # property only accessed through the cover slide
         if self._layout != "cover":
-            raise Warning(
+            warnings.warn(
                 "This is not a cover slide. The cover class can only be accessed through the cover slide."
             )
             return None
@@ -6087,16 +6124,16 @@ class Cover:
 
     def __init__(self, **kwargs):
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
         self._existing = self._check_node()
         if self._existing:
-            self._title = self._story._properties["nodes"][self._node]["data"].get(
+            self._title = self._story._properties["nodes"][self.node]["data"].get(
                 "title", None
             )
-            self._summary = self._story._properties["nodes"][self._node]["data"].get(
+            self._summary = self._story._properties["nodes"][self.node]["data"].get(
                 "summary", None
             )
-            self._byline = self._story._properties["nodes"][self._node]["data"].get(
+            self._byline = self._story._properties["nodes"][self.node]["data"].get(
                 "byline", None
             )
 
@@ -6130,7 +6167,7 @@ class Cover:
             if isinstance(title, Text):
                 title = title.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["title"] = title
+            self._story._properties["nodes"][self.node]["data"]["title"] = title
         self._title = title
 
     # ----------------------------------------------------------------------
@@ -6155,7 +6192,7 @@ class Cover:
             if isinstance(summary, Text):
                 summary = summary.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["summary"] = summary
+            self._story._properties["nodes"][self.node]["data"]["summary"] = summary
         self._summary = summary
 
     # ----------------------------------------------------------------------
@@ -6180,7 +6217,7 @@ class Cover:
             if isinstance(byline, Text):
                 byline = byline.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["byline"] = byline
+            self._story._properties["nodes"][self.node]["data"]["byline"] = byline
         self._byline = byline
 
     # ----------------------------------------------------------------------
@@ -6205,7 +6242,7 @@ class Cover:
             A string of the cover type.
         """
         if self._existing:
-            return self._story._properties["nodes"][self._node]["data"]["type"]
+            return self._story._properties["nodes"][self.node]["data"]["type"]
         return None
 
     # ----------------------------------------------------------------------
@@ -6241,7 +6278,7 @@ class Cover:
                 "Invalid cover type. Please provide 'grid', 'magazine', or 'journal'."
             )
         if self._existing:
-            self._story._properties["nodes"][self._node]["data"]["type"] = cover_type
+            self._story._properties["nodes"][self.node]["data"]["type"] = cover_type
 
     # ----------------------------------------------------------------------
     @property
@@ -6252,13 +6289,13 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        media               Optional string. The media of the cover slide. This can be an instance of
+        media               The media of the cover slide. This can be an instance of
                             Image or Video.
         ===============     ====================================================================
         """
         if self._existing:
-            if "children" in self._story._properties["nodes"][self._node]:
-                media_node = self._story._properties["nodes"][self._node]["children"][0]
+            if "children" in self._story._properties["nodes"][self.node]:
+                media_node = self._story._properties["nodes"][self.node]["children"][0]
                 return utils._assign_node_class(self._story, media_node)
         return None
 
@@ -6275,12 +6312,12 @@ class Cover:
             )
         if media is None:
             # remove media
-            self._story._properties["nodes"][self._node]["children"] = []
+            self._story._properties["nodes"][self.node]["children"] = []
             return
         if media.node not in self._story._properties["nodes"]:
             # must be added to story resources
             media._add_to_story(story=self._story)
-        self._story._properties["nodes"][self._node]["children"] = [media.node]
+        self._story._properties["nodes"][self.node]["children"] = [media.node]
 
     # ----------------------------------------------------------------------
     @property
@@ -6334,11 +6371,11 @@ class Cover:
         ===============     ====================================================================
         """
         return (
-            self._story._properties["nodes"][self._node]["data"][
+            self._story._properties["nodes"][self.node]["data"][
                 "titlePanelVerticalPosition"
             ]
             if "titlePanelVerticalPosition"
-            in self._story._properties["nodes"][self._node]["data"]
+            in self._story._properties["nodes"][self.node]["data"]
             else None
         )
 
@@ -6356,7 +6393,7 @@ class Cover:
             raise ValueError(
                 "Invalid vertical position value. Please provide 'top', 'middle', or 'bottom'."
             )
-        self._story._properties["nodes"][self._node]["data"][
+        self._story._properties["nodes"][self.node]["data"][
             "titlePanelVerticalPosition"
         ] = position
 
@@ -6376,11 +6413,11 @@ class Cover:
         ===================     ====================================================================
         """
         return (
-            self._story._properties["nodes"][self._node]["data"][
+            self._story._properties["nodes"][self.node]["data"][
                 "titlePanelHorizontalPosition"
             ]
             if "titlePanelHorizontalPosition"
-            in self._story._properties["nodes"][self._node]["data"]
+            in self._story._properties["nodes"][self.node]["data"]
             else None
         )
 
@@ -6398,7 +6435,7 @@ class Cover:
             raise ValueError(
                 "Invalid horizontal position value. Please provide 'start', 'center', or 'end'."
             )
-        self._story._properties["nodes"][self._node]["data"][
+        self._story._properties["nodes"][self.node]["data"][
             "titlePanelHorizontalPosition"
         ] = position
 
@@ -6418,8 +6455,8 @@ class Cover:
         ===============     ====================================================================
         """
         return (
-            self._story._properties["nodes"][self._node]["data"]["titlePanelStyle"]
-            if "titlePanelStyle" in self._story._properties["nodes"][self._node]["data"]
+            self._story._properties["nodes"][self.node]["data"]["titlePanelStyle"]
+            if "titlePanelStyle" in self._story._properties["nodes"][self.node]["data"]
             else None
         )
 
@@ -6440,7 +6477,7 @@ class Cover:
             raise ValueError(
                 "Invalid style value. Please provide 'gradient', 'themed', 'transparent-with-light-color' or 'transparent-with-dark-color'."
             )
-        self._story._properties["nodes"][self._node]["data"]["titlePanelStyle"] = style
+        self._story._properties["nodes"][self.node]["data"]["titlePanelStyle"] = style
 
     # ----------------------------------------------------------------------
     @property
@@ -6458,8 +6495,8 @@ class Cover:
         ===============     ====================================================================
         """
         return (
-            self._story._properties["nodes"][self._node]["data"]["titlePanelSize"]
-            if "titlePanelSize" in self._story._properties["nodes"][self._node]["data"]
+            self._story._properties["nodes"][self.node]["data"]["titlePanelSize"]
+            if "titlePanelSize" in self._story._properties["nodes"][self.node]["data"]
             else None
         )
 
@@ -6475,11 +6512,11 @@ class Cover:
             raise ValueError(
                 "Invalid size value. Please provide 'small', 'medium', or 'large'."
             )
-        self._story._properties["nodes"][self._node]["data"]["titlePanelSize"] = size
+        self._story._properties["nodes"][self.node]["data"]["titlePanelSize"] = size
 
     # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None or self._node is None:
+        if self._story is None or self.node is None:
             return False
         return True
 
@@ -6492,14 +6529,10 @@ class Navigation:
 
     def __init__(self, **kwargs) -> None:
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
 
-        self._hidden = self._story._properties["nodes"][self._node]["config"][
-            "isHidden"
-        ]
-        self._links = (
-            self._story._properties["nodes"][self._node]["data"]["links"] or []
-        )
+        self._hidden = self._story._properties["nodes"][self.node]["config"]["isHidden"]
+        self._links = self._story._properties["nodes"][self.node]["data"]["links"] or []
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -6537,7 +6570,7 @@ class Navigation:
             for link in link_list
             if isinstance(link, Text) and link._style in ["h2", "h3", "h4"]
         ]
-        self._story._properties["nodes"][self._node]["data"]["links"] = self._links
+        self._story._properties["nodes"][self.node]["data"]["links"] = self._links
 
     # ----------------------------------------------------------------------
     @property
@@ -6555,9 +6588,7 @@ class Navigation:
 
         # update the hidden property
         self._hidden = hidden
-        self._story._properties["nodes"][self._node]["config"][
-            "isHidden"
-        ] = self._hidden
+        self._story._properties["nodes"][self.node]["config"]["isHidden"] = self._hidden
 
 
 ###############################################################################################################
@@ -6568,7 +6599,7 @@ class CollectionNavigation:
 
     def __init__(self, **kwargs) -> None:
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -6594,7 +6625,7 @@ class CollectionNavigation:
         :return:
             A string of the navigation type.
         """
-        return self._story._properties["nodes"][self._node]["data"]["type"]
+        return self._story._properties["nodes"][self.node]["data"]["type"]
 
     @type.setter
     def type(self, nav_type: str):
@@ -6602,4 +6633,4 @@ class CollectionNavigation:
             raise ValueError(
                 "Invalid navigation type. Please provide 'compact', 'tab', or 'bullet'."
             )
-        self._story._properties["nodes"][self._node]["data"]["type"] = nav_type
+        self._story._properties["nodes"][self.node]["data"]["type"] = nav_type

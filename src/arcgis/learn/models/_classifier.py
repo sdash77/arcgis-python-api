@@ -42,7 +42,12 @@ try:
         ClassificationInterpretation,
         cnn_config,
     )
-    from ._arcgis_model import _set_multigpu_callback, _resnet_family, _get_device
+    from ._arcgis_model import (
+        _set_multigpu_callback,
+        _resnet_family,
+        _get_device,
+        get_backbone_func,
+    )
     from fastai.vision.transform import (
         crop,
         rotate,
@@ -73,9 +78,10 @@ try:
         gradcam_trnsfrmr,
         reshape_tensor,
         complete_transformer_backbone_name,
+        create_transformer_FeatureClassifier,
     )
     from fastai.vision import learner
-    from ._dofa_utils import dofa_config
+    from ._transformer_backbone import vit_foundation_model_config
 
     learner._test_cnn = test_cnn_trnsfrmr
     ClassificationInterpretation.GradCAM = gradcam_trnsfrmr
@@ -260,24 +266,29 @@ class FeatureClassifier(ArcGISModel):
             else:
                 head = None
 
-            self._transformer = (
-                type(backbone) is str
-                and backbone in FeatureClassifier._transformer_backbone_original_names()
-            )
-
-            self._dofa = (
-                type(backbone) is str and backbone in FeatureClassifier.dofa_backbones()
+            self._transformer = type(backbone) is str and (
+                backbone in FeatureClassifier._transformer_backbone_original_names()
+                or backbone in FeatureClassifier.foundation_model_backbones()
             )
             try:
                 if self._transformer:
-                    from ._timm_utils import create_transformer_FeatureClassifier
-
-                    trnsfrmr_model = create_transformer_FeatureClassifier(
-                        self._backbone.__name__,
-                        num_classes=data.c,
-                        img_size=self._data.chip_size,
-                        pretrained=True,
-                    )
+                    if backbone in FeatureClassifier.foundation_model_backbones():
+                        backbone_func = get_backbone_func(
+                            backbone,
+                            data,
+                            is_clf=True,
+                            num_classes=data.c,
+                            is_plain_vit=True,
+                            **kwargs,
+                        )
+                        trnsfrmr_model = backbone_func()
+                    else:
+                        trnsfrmr_model = create_transformer_FeatureClassifier(
+                            self._backbone.__name__,
+                            num_classes=data.c,
+                            img_size=self._data.chip_size,
+                            pretrained=True,
+                        )
                     if self._is_multispectral:
                         trnsfrmr_model = _change_tail(trnsfrmr_model, data)
 
@@ -289,34 +300,6 @@ class FeatureClassifier(ArcGISModel):
                     idx = self._freeze()
                     if trnsfrmr_model[0].__class__.__name__ == "CoaT":
                         idx = 8
-                    self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
-                    self.learn.create_opt(lr=3e-3)
-                elif self._dofa:
-                    from arcgis.learn.models._arcgis_model import get_backbone_func
-
-                    backbone_func = get_backbone_func(
-                        backbone,
-                        data,
-                        is_clf=True,
-                        num_classes=data.c,
-                        **kwargs,
-                    )
-                    backbone_dofa_clf = fastai.vision.learner.create_body(
-                        backbone_func, True, None
-                    )
-
-                    backbone_dofa_clf._is_dofa = True
-
-                    if self._is_multispectral:
-                        backbone_dofa_clf = _change_tail(backbone_dofa_clf, data)
-
-                    self.learn = Learner(
-                        data,
-                        model=backbone_dofa_clf,
-                        metrics=metrics,
-                    )
-
-                    idx = self._freeze()
                     self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
                     self.learn.create_opt(lr=3e-3)
                 else:
@@ -336,8 +319,7 @@ class FeatureClassifier(ArcGISModel):
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
 
-            if not self._dofa:
-                self._arcgis_init_callback()  # make first conv weights learnable
+            self._arcgis_init_callback()  # make first conv weights learnable
 
             # Add Mixup data augmentation
             if mixup:
@@ -405,6 +387,7 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         from ._timm_utils import shortened_transformer_backbone
 
         transformer_model = shortened_transformer_backbone()
@@ -448,13 +431,14 @@ class FeatureClassifier(ArcGISModel):
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
-    def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
-        dofa_backbone = list(dofa_config.keys())
-        return dofa_backbone
+    def foundation_model_backbones():
+        """Supported list of foundation model backbones for this model."""
+        foundation_model = list(vit_foundation_model_config.keys())
+        return foundation_model
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
@@ -466,10 +450,13 @@ class FeatureClassifier(ArcGISModel):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbones = FeatureClassifier.transformer_backbones()
         torchgeo_backbone = FeatureClassifier.torchgeo_backbones()
-        dofa_backbone = FeatureClassifier.dofa_backbones()
+        foundation_model = FeatureClassifier.foundation_model_backbones()
 
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
-            timm_backbones + transformer_backbones + torchgeo_backbone + dofa_backbone
+            timm_backbones
+            + transformer_backbones
+            + torchgeo_backbone
+            + foundation_model
         )
 
     @property

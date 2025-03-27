@@ -27,10 +27,13 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `JournalStoryMap` - deprecated in **2.0.0** removed in **2.4.0**.  Template was removed from the ArcGIS platform.
 - `Hub.initiatives` - deprecated in **2.4.0** removed in a future release. Use `Hub.sites` instead.
 
+### `arcgis.features` Module
+- `UtilityNetworkManager.export_subnetwork` - deprecated the "result_type" parameter. Please use "result_types" instead.
+- `UtilityNetworkManager.trace` - deprecated the "result_type" parameter. Please use "result_types" instead.
 
 ### `arcgis.learn` Module
 
-- `categorize_features` - depreacted in **1.7.1** and will be removed in a future major release (example: 2.x to 3.x).  Please use `arcgis.learn.classify_objects` instead.
+- `categorize_features` - deprecated in **1.7.1** and will be removed in a future major release (example: 2.x to 3.x).  Please use `arcgis.learn.classify_objects` instead.
 
 ### `arcgis.gis.agonb` Module 
 
