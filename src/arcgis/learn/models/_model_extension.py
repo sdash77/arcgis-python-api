@@ -619,9 +619,18 @@ class ModelExtension(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
 
-        self._show_results_modified(
-            rows=rows, thresh=thresh, model=self, thinning=thinning, **kwargs
-        )
+        if not self._is_multispectral:
+            self._show_results_modified(
+                rows=rows, thresh=thresh, model=self, thinning=thinning, **kwargs
+            )
+        else:
+            return_fig = kwargs.get("return_fig", False)
+            ret_val = show_results_multispectral_segmentation(
+                self, nrows=rows, thresh=thresh, thinning=thinning, model=self, **kwargs
+            )
+            if return_fig:
+                fig, ax = ret_val
+                return fig
 
     def _show_results_multispectral(
         self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs
