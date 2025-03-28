@@ -223,9 +223,9 @@ class DOFAEmbedding(nn.Module):
         x = F.conv2d(
             x, weights, bias=bias, stride=self.kernel_size, padding=1, dilation=1
         )
-
+        patch_height, patch_width = x.shape[-2:]
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
         else:
             x = x.permute(0, 2, 3, 1)  # BCHW -> BHWC
-        return x
+        return x, patch_height, patch_width

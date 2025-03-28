@@ -345,12 +345,13 @@ class PatchEmbed(nn.Module):
 
     def forward(self, x):
         x = self.proj(x)
+        patch_height, patch_width = x.shape[-2:]
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
         else:
             x = x.permute(0, 2, 3, 1)  # BCHW -> BHWC
 
-        return x
+        return x, patch_height, patch_width
 
 
 class ViT(nn.Module):
@@ -411,6 +412,7 @@ class ViT(nn.Module):
         self.pretrain_use_cls_token = pretrain_use_cls_token
         self.is_plain_vit = kwargs.get("is_plain_vit", None)
         self.is_clf = kwargs.get("is_clf", None)
+        self.patch_size = patch_size
         if window_block_indexes is None:
             # 2, 5, 8 11 for global attention
             window_block_indexes = [0, 1, 3, 4, 6, 7, 9, 10]
@@ -516,7 +518,9 @@ class ViT(nn.Module):
 
     def _init_plain_pretrained(self, pretrained_path):
         state_dict = load_checkpoint_custom(
-            pretrained_path, map_location=torch.device("cpu")
+            pretrained_path,
+            map_location=torch.device("cpu"),
+            logger=logging.getLogger(),
         )
         for k, v in state_dict.items():
             if k == "pos_embed" and v.shape != self.pos_embed.shape:
@@ -554,17 +558,17 @@ class ViT(nn.Module):
     def forward(self, x):
         if self.qa_idx is not None:
             x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
-        x = self.patch_embed(x)
-        if x.ndim == 4:
-            h, w = x.shape[1], x.shape[2]
-        else:
-            h = w = int(math.sqrt(x.shape[1]))
+        if x.shape[-2] < self.patch_size or x.shape[-1] < self.patch_size:
+            h = max(x.shape[-2], self.patch_size * 2)
+            w = max(x.shape[-1], self.patch_size * 2)
+            x = F.interpolate(x, (h, w), mode="bilinear", align_corners=False)
+        x, patch_height, patch_width = self.patch_embed(x)
 
         if self.pos_embed is not None:
             x = x + get_abs_pos(
                 self.pos_embed,
                 self.pretrain_use_cls_token,
-                (h, w),
+                (patch_height, patch_width),
                 self.is_plain_vit,
             )
 
@@ -584,10 +588,9 @@ class ViT(nn.Module):
             return x_grad_cam, x[:, 0]
 
         if self.is_plain_vit:
-            batch_size, num_patches, hidden_dim = x.shape
-            patch_size = int(num_patches**0.5)
+            batch_size, _, hidden_dim = x.shape
             x = x.permute(0, 2, 1).reshape(
-                batch_size, hidden_dim, patch_size, patch_size
+                batch_size, hidden_dim, patch_height, patch_width
             )
         else:
             x = x.permute(0, 3, 1, 2)
