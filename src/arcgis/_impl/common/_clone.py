@@ -2714,7 +2714,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
             properties = layers[layer_id].properties
 
-            global_id_field = properties.get("globalIdField", '')
+            global_id_field = properties.get("globalIdField", "")
             if not global_id_field:
                 use_gids = False
             else:
