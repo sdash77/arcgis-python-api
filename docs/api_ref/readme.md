@@ -185,4 +185,104 @@ and so on
 -----------------
 ```
 
-Note, here I left out the 'rot13' function or any other utility method we have in source code that we dont want the autodoc to pick up. Also note, you can control the order of the doc. Here I have placed `Item` class next to `ContentManager`.
+Note, here I left out the 'rot13' function or any other utility method we have in source code that we don't want the autodoc to pick up. Also note, you can control the order of the doc. Here I have placed `Item` class next to `ContentManager`.
+
+## Configurations for documenting Pydantic Dataclasses in Sphinx
+
+To properly document Pydantic dataclasses using Sphinx, some additional dependencies and configurations are required. Below are the necessary steps and settings to ensure proper integration.
+
+### Required Dependencies
+
+Ensure the following extensions are installed:
+
+```sh
+pip install sphinx sphinx-rtd-theme sphinxcontrib-autodoc-pydantic
+```
+
+- `sphinx`: The documentation generator.
+- `sphinx-autoapi`: Automatically generates API documentation from Python code.
+- `pydantic`: Provides the dataclasses to be documented.
+
+### Sphinx Configuration
+
+Modify your `conf.py` file with the following settings:
+
+```python
+# Enable extensions
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
+    "sphinx_rtd_theme",
+    'sphinxcontrib.autodoc_pydantic'
+]
+
+autodoc_pydantic_model_show_json = False
+autodoc_pydantic_settings_show_json = False
+autodoc_pydantic_field_list_validators = False  # Hides validators for fields
+autodoc_pydantic_model_show_config_summary = False  # Hides model_config
+autodoc_pydantic_model_show_validator_summary = False  # Hide list of validators in class signature
+autodoc_pydantic_model_show_validator_members = False
+autodoc_pydantic_model_show_field_summary = False   # Hides fields, potentially computed fields
+autodoc_pydantic_model_show_field_members = False   # Hides detailed field information
+autodoc_pydantic_field_show_alias = False  # Hides field aliases that are used for internal methods
+autodoc_pydantic_field_show_type = True  # Show type hints for fields
+```
+
+### Explanation of Configurations
+
+Below are the configuration settings related to `autodoc_pydantic`, with explanations of their effects.
+
+```python
+autodoc_pydantic_model_show_json = False
+```
+> **Effect:** Disables automatic inclusion of the model's JSON representation in the documentation.
+
+```python
+autodoc_pydantic_settings_show_json = False
+```
+> **Effect:** Disables automatic inclusion of JSON representations for Pydantic settings models.
+
+```python
+autodoc_pydantic_field_list_validators = False 
+```
+> **Effect:** Prevents validators from appearing in the field list, keeping documentation concise.
+
+```python
+autodoc_pydantic_model_show_config_summary = False
+```
+> **Effect:** Excludes `model_config` from being documented, reducing unnecessary details.
+
+```python
+autodoc_pydantic_model_show_validator_summary = False
+```
+> **Effect:** Prevents the validator summary from appearing in the class signature, making it cleaner.
+
+```python
+autodoc_pydantic_model_show_validator_members = False
+```
+> **Effect:** Excludes validator methods from the model's documentation.
+
+```python
+autodoc_pydantic_model_show_field_summary = False 
+```
+> **Effect:** Hides the summary of fields, which might include computed fields, from the model documentation.
+
+```python
+autodoc_pydantic_model_show_field_members = False
+```
+> **Effect:** Prevents detailed field descriptions from appearing in the documentation.
+
+```python
+autodoc_pydantic_field_show_alias = False 
+```
+> **Effect:** Excludes field aliases, keeping the documentation focused on primary field names.
+
+```python
+autodoc_pydantic_field_show_type = True 
+```
+> **Effect:** Ensures that type hints are displayed for each field, improving readability and clarity.
+
+### Summary
+
+These settings allow fine-grained control over how Pydantic models and their attributes are documented in Sphinx. Adjust them based on your documentation needs to balance clarity and detail.
+

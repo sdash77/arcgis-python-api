@@ -1338,6 +1338,12 @@ class GIS(object):
     def properties(self):
         """
         ``properties`` manages the actual properties of the GIS object.
+
+        To see all the properties that can be found in the GIS object, refer to the
+        portal properties documentation at `Portal Properties
+        <https://developers.arcgis.com/rest/users-groups-and-items/common-parameters/#portal-parameters>`_.
+
+        :return: A dictionary-like object called a PropertyMap of the properties of the GIS object.
         """
         if self._properties is None:
             self._properties = _mixins.PropertyMap(self._get_properties(force=True))
@@ -7870,7 +7876,7 @@ class ContentManager(object):
                             - title
                             - typeKeywords
                             - owner
-                            Example: filter=owner:"jsmith"
+                            Example: filter="owner:'jsmith'"
         ================    ===============================================================
 
         :return:
