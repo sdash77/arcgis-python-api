@@ -8,6 +8,7 @@ import math
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
+from packaging import version
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
@@ -16,6 +17,7 @@ from .._utils.tabular_data import (
     explain_prediction,
     add_h3,
 )
+from .._utils.common import _get_emd_path
 
 try:
     import sklearn
@@ -567,7 +569,7 @@ class MLModel(object):
         # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
 
-        if self._fairness and self.mitigation_method == "threshold_optimizer":
+        if self._fairness:
             validation_df_batch = self._validation_df.iloc[sample_batch, :]
             sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
             group_df = validation_df_batch.loc[:, self.protected_class]
@@ -901,21 +903,7 @@ class MLModel(object):
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
 
-        emd_path = str(emd_path)
-
-        if emd_path.endswith(".dlpk"):
-            with ZipFile(emd_path, "r") as zip_obj:
-                temp_dir = tempfile.TemporaryDirectory().name
-                zip_obj.extractall(temp_dir)
-                MLModel.from_model(temp_dir, data)
-
-        if not emd_path.endswith(".emd"):
-            emd_path = os.path.join(
-                emd_path, (str(os.path.basename(emd_path)) + ".emd")
-            )
-
-        if not os.path.exists(emd_path):
-            raise Exception("Invalid data path.")
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path, "r") as f:
             emd = json.loads(f.read())
@@ -932,17 +920,16 @@ class MLModel(object):
 
         cell_sizes = emd.get("cell_sizes", None)
 
-        if (
-            emd["version"] == str(sklearn.__version__)
-            or emd["version"] == str(xgboost.__version__)
-            or emd["version"] == str(lightgbm.__version__)
-            or emd["version"] == str(catboost.__version__)
+        _model_name = emd.get("ModelName", None)
+        if _model_name and not _model_name.lower().startswith(
+            ("lightgbm", "catboost", "xgboost", "tabpfn")
         ):
-            pass
-        else:
-            warnings.warn(
-                f"Sklearn/xgboost/lightgbm/catboost version has changed. Model Trained using version {emd['version']}"
-            )
+            if version.parse(emd["version"]) < version.parse(
+                str(sklearn.__version__)
+            ) and version.parse(str(sklearn.__version__)) >= version.parse("1.4.0"):
+                raise Exception(
+                    "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
+                )
 
         _is_classification = True
         if emd["_is_classification"] != "classification":
