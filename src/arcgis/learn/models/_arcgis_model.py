@@ -1284,7 +1284,7 @@ class ArcGISModel(object):
             raise Exception("You need to train your model to compute losses")
 
     def _create_emd_template(
-        self, path, compute_metrics=True, save_inference_file=True
+        self, path, compute_metrics=True, save_inference_file=True, **kwargs
     ):
         _emd_template = {}
 
@@ -1490,6 +1490,14 @@ class ArcGISModel(object):
                         _emd_template["per_class_metrics"] = (
                             self.per_class_metrics().to_json()
                         )
+
+        if (
+            getattr(self._data, "_dataset_type", None) == "Labeled_Tiles"
+            or getattr(self._data, "_dataset_type", None) == "Imagenet"
+        ):
+            if hasattr(self, "_gradCAM") and not (self._data._is_multispectral):
+                _emd_template["ExpMap"] = kwargs.get("gradcam", False)
+
         return _emd_template
 
     @staticmethod
@@ -1850,6 +1858,7 @@ class ArcGISModel(object):
                 saved_path.with_suffix(".pth"),
                 compute_metrics,
                 save_inference_file,
+                **kwargs,
             )
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
