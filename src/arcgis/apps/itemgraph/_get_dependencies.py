@@ -208,16 +208,17 @@ def _get_related_items(item, forward=True, reverse=True):
 
     forward_deps = []
     reverse_deps = []
+    # leaving out Listed2ImplicitlyListed for now due to issues
     f_rel_types = [
         "Item2Attachment",
         "Item2Report",
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "SurveyAddIn2Data",
         "Solution2Item",
         "APIKey2Item",
