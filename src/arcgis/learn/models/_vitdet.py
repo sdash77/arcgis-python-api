@@ -518,7 +518,9 @@ class ViT(nn.Module):
 
     def _init_plain_pretrained(self, pretrained_path):
         state_dict = load_checkpoint_custom(
-            pretrained_path, map_location=torch.device("cpu")
+            pretrained_path,
+            map_location=torch.device("cpu"),
+            logger=logging.getLogger(),
         )
         for k, v in state_dict.items():
             if k == "pos_embed" and v.shape != self.pos_embed.shape:
