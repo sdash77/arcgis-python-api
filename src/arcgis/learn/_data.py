@@ -1288,7 +1288,8 @@ def prepare_data(
     =====================   ===========================================
     **Parameter**           **Description**
     ---------------------   -------------------------------------------
-    path                    Required string. Path to data directory or a list of paths.
+    path                    Required string. Path to data directory or a list of paths
+                            in case of multi-folder training.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label. Not supported for MaskRCNN model.
