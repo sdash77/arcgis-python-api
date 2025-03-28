@@ -558,6 +558,10 @@ class ViT(nn.Module):
     def forward(self, x):
         if self.qa_idx is not None:
             x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
+        if x.shape[-2] < self.patch_size or x.shape[-1] < self.patch_size:
+            h = max(x.shape[-2], self.patch_size * 2)
+            w = max(x.shape[-1], self.patch_size * 2)
+            x = F.interpolate(x, (h, w), mode="bilinear", align_corners=False)
         x, patch_height, patch_width = self.patch_embed(x)
 
         if self.pos_embed is not None:
