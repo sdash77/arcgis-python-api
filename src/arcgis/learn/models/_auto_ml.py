@@ -863,7 +863,7 @@ class AutoML(object):
 
         if emd["version"] != str(sklearn.__version__):
             warnings.warn(
-                f"Sklearn version has changed. Model Trained using version {emd['version']}"
+                "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
             )
 
         _is_classification = True
