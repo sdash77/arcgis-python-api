@@ -248,16 +248,17 @@ def _get_related_item_dict(item, forward=True, reverse=True):
         raise ValueError("At least one direction must be specified.")
 
     rel_item_dict = {}
+    # leaving out Listed2ImplicitlyListed for now due to issues
     f_rel_types = [
         "Item2Attachment",
         "Item2Report",
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "SurveyAddIn2Data",
         "Solution2Item",
         "APIKey2Item",
