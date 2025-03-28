@@ -513,6 +513,15 @@ def commonTestCases(
     model_object.fit(1, lr=lr_val, checkpoint=False)
     # # Fit for 1 epochs with LR.
 
+    #Test shap feature for textclassifier
+    if model_test == "textclassifier_test":
+        #testing for single text
+        model_object.predict("Thanks for the support", explain=True)
+        #testing for list of texts with and without explain_index argument
+        txt_list = ["awwww, I never noticed this", "Thanks for the support"]
+        model_object.predict(txt_list, explain=True)
+        model_object.predict(txt_list, explain=True, explain_index=[1])
+
     # save model
     d_path = os.path.join(data_folder, data_path, "models", model_test)
     if model_test == "timeseriesmodel_test":
@@ -833,6 +842,7 @@ def CommonTestTextModels(model_name, model, data, labels):
 
 
 def update_parameter():
+    parameter = []
     check_ms = False
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"]:
@@ -858,6 +868,7 @@ def update_parameter():
 
 def update_parameter_ms():
     check_ms = True
+    parameter = []
     for key, val in data.items():
         if (
             val["should_test"]
@@ -885,6 +896,7 @@ def update_parameter_ms():
 
 
 def update_parameter_fl():
+    parameter_fl = []
     for key, val in data.items():
         if (
             val["should_test"]
@@ -910,6 +922,7 @@ def update_parameter_fl():
 
 
 def update_parameter_df():
+    parameter_df = []
     for key, val in data.items():
         if val["should_test"] and val["model_name"] in ["automl", "mlmodel"]:
             parameter_df.append(
@@ -933,6 +946,7 @@ def update_parameter_df():
 
 
 def text_models():
+    parameter_text = []
     for key, val in data_inference_only.items():
         parameter_text.append(
             [key, val["model_name"], val["model"], val["data"], val["labels"]]
@@ -1114,11 +1128,12 @@ class TestTraining(unittest.TestCase):
             ms_flag,
             data_folder_path,
             num_epochs,
+            self
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_ms, skip_on_empty=True)
-    def test(
+    def test_ms(
         self,
         name,
         model_test,
@@ -1151,6 +1166,7 @@ class TestTraining(unittest.TestCase):
             self,
         )
         else:
+            print("ignoring nightly training for ms data")
             pass
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
