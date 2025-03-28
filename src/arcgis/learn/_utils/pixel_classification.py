@@ -48,6 +48,9 @@ def analyze_pred_pixel_classification(self, activations):
         if type(activations) == list:
             activations = torch.cat(activations)
 
+        if getattr(self, "_is_edge_detection", False):
+            return activations.squeeze(1).cpu().numpy().astype(int)
+
         if not getattr(self, "_is_model_extension", False):
             if self._ignore_mapped_class != []:
                 for k in self._ignore_mapped_class:
