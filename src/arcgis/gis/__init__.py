@@ -18834,7 +18834,7 @@ class Item(dict):
         graph = create_dependency_graph(self._gis, [self], outside_org=outside_org)
         if out_format.lower() == "graph":
             return graph
-        node = graph.get_item(self.id)
+        node = graph.get_node(self.id)
         if deep:
             return node.requires(out_format=out_format)
         return node.contains(out_format=out_format)
