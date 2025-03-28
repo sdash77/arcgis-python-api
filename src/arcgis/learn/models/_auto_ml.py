@@ -861,11 +861,6 @@ class AutoML(object):
         image_variables = emd.get("image_variables", None)
         embedding_variables = emd.get("embedding_variables", None)
 
-        if emd["version"] != str(sklearn.__version__):
-            warnings.warn(
-                "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
-            )
-
         _is_classification = True
         if emd["_is_classification"] != "classification":
             _is_classification = False
