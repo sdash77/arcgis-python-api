@@ -69,7 +69,7 @@ class ChildObjectDetector:
         ):
             required_parameters.append(
                 {
-                    "name": "score_threshold",
+                    "name": "threshold",
                     "dataType": "numeric",
                     "value": 0.5,
                     "required": False,
@@ -113,9 +113,7 @@ class ChildObjectDetector:
         else:
             self.batch_size = int(self.emd["BatchSize"])
 
-        self.thresh = float(
-            scalars.get("score_threshold", 0.5)
-        )  # Default 0.5 threshold
+        self.thresh = float(scalars.get("threshold", 0.5))  # Default 0.5 threshold
 
         self.use_tta = scalars.get("test_time_augmentation", "false").lower() in [
             "true",
