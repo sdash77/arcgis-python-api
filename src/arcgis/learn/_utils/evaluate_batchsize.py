@@ -10,7 +10,13 @@ try:
 except Exception as e:
     print(e)
 
-object_detection_models = ["FasterRCNN", "MMDetection", "MMSegmentation", "DETReg"]
+object_detection_models = [
+    "FasterRCNN",
+    "MMDetection",
+    "MMSegmentation",
+    "DETReg",
+    "RTDetrV2",
+]
 pixel_classification_models = ["MaskRCNN"]
 image_translation_models = [
     "Pix2Pix",
