@@ -1205,10 +1205,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         else:
             from geomet import wkt
 
-            geojson_item = self.__geo_interface__
-            if geojson_item["type"] == "MultiPolygon":
-                # the coordinates need to be nested an extra level
-                geojson_item["coordinates"] = [geojson_item["coordinates"]]
+            geojson_item = self.__geo_interface__  # extra nesting done in property call
             return wkt.dumps(geojson_item)
 
     # ----------------------------------------------------------------------
@@ -1242,10 +1239,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             # geomet conversion
             from geomet import wkb
 
-            geojson_item = self.__geo_interface__
-            if geojson_item["type"] == "MultiPolygon":
-                # the coordinates need to be nested an extra level
-                geojson_item["coordinates"] = [geojson_item["coordinates"]]
+            geojson_item = self.__geo_interface__  # extra nesting done in property call
             return wkb.dumps(geojson_item, big_endian=False)
 
     # ----------------------------------------------------------------------
