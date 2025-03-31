@@ -59,6 +59,7 @@ from typing import Tuple, List
 from fastai.basic_train import Callback
 from fastai.torch_core import add_metrics
 from ._timm_utils import _get_feature_size
+from ._transformer_backbone import vit_config
 
 from fastprogress.fastprogress import progress_bar
 
@@ -111,6 +112,8 @@ class RetinaNetModel(nn.Module):
             backbone,
             cut=backbone_cut,
             chip_size=self.chip_size,
+            channel_in=n_bands,
+            use_custom=backbone.__name__ in vit_config.keys(),
         )
 
         hooks = hook_outputs(nn.Sequential(*encoder.children()))
