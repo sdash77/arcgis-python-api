@@ -460,13 +460,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(self, Point):
                 return {"type": "Point", "coordinates": (self.x, self.y)}
             elif isinstance(self, Polygon):
+                col = []
                 rings = self["rings"]
-                col = [[tuple(pt) for pt in ring] for ring in rings]
+                for part in rings:
+                    col.append([tuple(pt) for pt in part])
                 if len(rings) > 1:
                     return {
                         "type": "MultiPolygon",
-                        "coordinates": [[col]],
-                    }  # Extra list for MultiPolygon
+                        "coordinates": [col],
+                    }
                 else:
                     return {"type": "Polygon", "coordinates": col}
             elif isinstance(self, Polyline):
