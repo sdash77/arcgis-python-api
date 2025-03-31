@@ -460,10 +460,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(self, Point):
                 return {"type": "Point", "coordinates": (self.x, self.y)}
             elif isinstance(self, Polygon):
-                col = []
-                for part in self["rings"]:
-                    col.append([tuple(pt) for pt in part])
-                return {"coordinates": [col], "type": "MultiPolygon"}
+                rings = self["rings"]
+                col = [[tuple(pt) for pt in ring] for ring in rings]
+                if len(rings) > 1:
+                    return {
+                        "type": "MultiPolygon",
+                        "coordinates": [[col]],
+                    }  # Extra list for MultiPolygon
+                else:
+                    return {"type": "Polygon", "coordinates": col}
             elif isinstance(self, Polyline):
                 return {
                     "type": "MultiLineString",
@@ -3609,11 +3614,17 @@ class Polygon(Geometry):
 
     @property
     def __geo_interface__(self) -> dict:
-        """returns the Polygon as a MultiPolygon GeoJSON"""
-        col = []
-        for part in self["rings"]:
-            col.append([tuple(pt) for pt in part])
-        return {"coordinates": col, "type": "MultiPolygon"}
+        """Returns the geometry in valid GeoJSON format as either Polygon or MultiPolygon."""
+        rings = self["rings"]
+
+        # Ensure the structure is correct (list of lists of coordinates)
+        col = [[tuple(pt) for pt in ring] for ring in rings]
+
+        # Check if it's a MultiPolygon
+        if len(rings) > 1:
+            return {"type": "MultiPolygon", "coordinates": [col]}  # Wrap in extra list
+        else:
+            return {"type": "Polygon", "coordinates": col}
 
 
 ########################################################################
