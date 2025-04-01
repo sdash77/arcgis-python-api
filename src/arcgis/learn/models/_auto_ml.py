@@ -861,11 +861,6 @@ class AutoML(object):
         image_variables = emd.get("image_variables", None)
         embedding_variables = emd.get("embedding_variables", None)
 
-        if emd["version"] != str(sklearn.__version__):
-            warnings.warn(
-                f"Sklearn version has changed. Model Trained using version {emd['version']}"
-            )
-
         _is_classification = True
         if emd["_is_classification"] != "classification":
             _is_classification = False
