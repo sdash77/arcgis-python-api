@@ -8,7 +8,7 @@ import uuid
 from arcgis.gis import Item
 
 
-@profiles.k8s
+@profiles.all
 @integration_test
 class TestContentManager(unittest.TestCase):
     """Test ContentManager import_data and create_service"""
