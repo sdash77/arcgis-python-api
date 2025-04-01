@@ -301,9 +301,12 @@ class GeometryFactory(type):
                     (
                         "POINT",
                         "LINESTRING",
+                        "LINESTRING Z",
                         "POLYGON",
                         "MULTIPOINT",
+                        "MULTIPOINT Z",
                         "MULTIPOLYGON",
+                        "MULTIPOLYGON Z",
                         "MULTILINESTRING",
                         "POINT ZM",
                         "POINT M",
