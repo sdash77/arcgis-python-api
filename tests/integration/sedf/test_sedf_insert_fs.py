@@ -1,7 +1,11 @@
-from arcgis.gis import GIS
+import uuid
+
 import pandas as pd
 import unittest
 import tempfile
+
+from arcgis.gis._impl import ItemTypeEnum
+from utils.data_utils import cleanup_published_items, publish_test_item
 from utils.decorators import integration_test, profiles
 
 point_data = [
@@ -2185,86 +2189,86 @@ tbl_data = [
     },
 ]
 
-@profiles.enterprise_and_agol
+
+@profiles.agol
 @integration_test
 class TestSeDFInsert(unittest.TestCase):
     """tests the insert_layer on the SeDF when creating a feature layer"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.items = []
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.items)
 
     def test_insert_layer(self):
         """tests creating a feature layer and inserting it into an existing feature service"""
         gis = self.gis
         print("User: ", gis.users.me.username)
-        polygon_item = None
-        point_item = None
+
         try:
             # add point layer to portal
             sdf = pd.DataFrame(point_data)
             point_item = gis.content.import_data(sdf)
+            self.items.append(point_item)
 
             # add polygon layer to portal
             sdf2 = pd.DataFrame(polygon_features)
             polygon_item = gis.content.import_data(sdf2)
+            self.items.append(polygon_item)
 
             # Basis Assertions
             assert point_item.layers[0]
-            assert (
-                point_item.layers[0].properties.geometryType == "esriGeometryPoint"
-            )
+            assert point_item.layers[0].properties.geometryType == "esriGeometryPoint"
             num_layers = len(point_item.layers)
             num_features = point_item.layers[0].query(return_count_only=True)
-
+            self.assertEqual(1, num_layers, f"Unexpected number of layers {num_layers}")
+            self.assertEqual(
+                74, num_features, f"Unexpected number of features {num_features}"
+            )
             # Insert
             sdf = pd.DataFrame.spatial.from_layer(polygon_item.layers[0])
-            updated_item = sdf.spatial.insert_layer(feature_service=point_item.id)
+            updated_item = sdf.spatial.insert_layer(
+                feature_service=point_item, sanitize_columns=True
+            )
 
             # Check to see if different layer but same service
             assert point_item.id == updated_item.id
             assert num_layers + 1 == len(updated_item.layers)
             assert len(updated_item.layers[1].query().features) == 7
         except Exception as e:
-            print(str(e))
-        finally:
-            # clean up
-            if polygon_item:
-                poly_rel_items = polygon_item.related_items("Service2Data")
-                for item in poly_rel_items:
-                    item.delete()
-                polygon_item.delete()
-            if point_item:
-                pnt_rel_items = point_item.related_items("Service2Data")
-                for item in pnt_rel_items:
-                    item.delete()
-                point_item.delete()
+            self.fail(str(e))
 
     def test_insert_table(self):
         gis = self.gis
-        if gis._is_agol is False:
-            return
+        uid: str = uuid.uuid4().hex[:6]
+
         print("User: ", gis.users.me.username)
         # add point tbl to portal
         df = pd.DataFrame(tbl_data)
         xlsx_file_path = tempfile.mkstemp(suffix=".xlsx")[1]
         df.to_excel(xlsx_file_path, index=False)
         try:
-            # add the csv to the org
-            csv_item = gis.content.add({}, data=xlsx_file_path)
-            assert csv_item
             # publish as a table
-            table_item = csv_item.publish()
+            table_item = publish_test_item(
+                self.gis,
+                f"sedf_insert_{uid}",
+                item_type=ItemTypeEnum.CSV,
+                source_data_path=xlsx_file_path,
+            )
+            self.items.append(table_item)
             tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
             tbl_df["NOTES"][0] = "This is a python api test"
             tbl_df["NOTES"][1] = "This file will have extra notes"
             updated_item = tbl_df.spatial.insert_layer(table_item.id)
             assert len(table_item.tables) < len(updated_item.tables)
-            assert len(updated_item.tables[0].query().features) == len(updated_item.tables[1].query().features)
+            assert len(updated_item.tables[0].query().features) == len(
+                updated_item.tables[1].query().features
+            )
         except Exception as e:
             print(str(e))
-            pass
-        finally:
-            related = table_item.related_items("Service2Data")
-            for item in related:
-                item.delete()
-            table_item.delete()
 
 
 if __name__ == "__main__":
