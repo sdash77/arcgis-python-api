@@ -47,26 +47,12 @@ class TestPublish3DFile(unittest.TestCase):
         cls.items.append(cls.philly_textured_package)
 
     def test_publish_3dtile_3dobject(self):
-
-        if not self.gis._is_agol:
-            if self.gis.version < [2024, 2]:
-                self.skipTest(
-                    "Publishing hosted tile layer functionality is available in enterprise is 11.4+"
-                )
-
         new_item = self.philly_textured_package.publish()
         self.assertIsNotNone(new_item)
         self.items.append(new_item)
         self.assertEqual(new_item.type, "3DTiles Service")
 
     def test_publish_3dtile_integrated_mesh(self):
-
-        if not self.gis._is_agol:
-            if self.gis.version < [2024, 2]:
-                self.skipTest(
-                    "Publishing hosted tile layer functionality is available in enterprise is 11.4+"
-                )
-
         new_item = self.philly_package.publish()
         self.assertIsNotNone(new_item)
         self.items.append(new_item)
