@@ -79,7 +79,6 @@ class AGOLServicesDirectory:
         [< AGOLServicesDirectory @ https://servicesX.arcgis.com/<org_id>/arcgis/rest/services >,
          < AGOLServicesDirectory @ https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/services >]
 
-
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -118,7 +117,12 @@ class AGOLServicesDirectory:
     @property
     def properties(self) -> _isd.InsensitiveDict:
         """
-        Returns the server's properties
+        Returns the server's version property and a list of services
+        in the organization on that server.
+        
+        .. note::
+            Return times for this property will vary based on number of services
+            hosted by the organization.
 
         :returns:
             A dictionary-like InsensitiveDict object containing the
