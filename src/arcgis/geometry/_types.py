@@ -253,6 +253,9 @@ class GeometryFactory(type):
 
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
+                # geomet doesn't support Z or ZM or M yet, so we need to handle that
+                if "Z" in iterable or "ZM" in iterable:
+                    iterable = iterable.replace("Z", "").replace("ZM", "")
                 geom = _esri_dumps(_wkt_loads(iterable))
                 geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
                 return geom
