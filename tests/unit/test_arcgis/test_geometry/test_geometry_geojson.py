@@ -1,6 +1,4 @@
 #######################################################################
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import unittest
 
 
@@ -28,7 +26,7 @@ class TestGeoJSONWithShapely(unittest.TestCase):
         ###
         ###   POLYLINE TEST
         ###
-        LINESTRING_3D = "LINESTRING Z (517947.10 6368795.07 61.07, 517947.11 6368795.1 161.07)"
+        LINESTRING_3D = "LINESTRING (517947.10 6368795.07 61.07, 517947.11 6368795.1 161.07)"
         for w in [LINESTRING_3D]:
             shape = shapely.from_wkt(w)
             arcgis_geom = arcgis.geometry.Geometry.from_shapely(
