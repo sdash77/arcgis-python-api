@@ -251,14 +251,17 @@ class GeometryFactory(type):
             from geomet.wkt import loads as _wkt_loads
             from geomet.esri import dumps as _esri_dumps
 
+            # geomet doesn't support Z or ZM or M yet, so we need to handle that
+            if "Z" in iterable or "ZM" in iterable:
+                iterable = iterable.replace("Z", "").replace("ZM", "")
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
-                # geomet doesn't support Z or ZM or M yet, so we need to handle that
-                if "Z" in iterable or "ZM" in iterable:
-                    iterable = iterable.replace("Z", "").replace("ZM", "")
                 geom = _esri_dumps(_wkt_loads(iterable))
                 geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
                 return geom
+            elif iterable and iterable.startswith("POINT"):
+                # For some reason the case below will not catch 3D points, however this does.
+                return Geometry(_wkt_loads(iterable))
             elif iterable:
                 return _esri_dumps(_wkt_loads(iterable))
         return {}
