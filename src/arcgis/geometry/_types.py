@@ -1090,53 +1090,68 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             )
 
         """
+        # Check that shapely is installed
         if not HAS_SHAPELY:
             raise ValueError("Shapely is required to execute from_shapely.")
 
+        # Get classes from shapely
         from shapely.geometry import mapping, Polygon, MultiPolygon
         from shapely.geometry.polygon import orient
 
+        # internal function to ensure lists are used for coordinates
+        def _deep_convert_tuples_to_lists(coordinates: Any) -> Any:
+            """Recursively converts all tuples to lists for compatibility with ArcGIS API and Shapely."""
+            if isinstance(coordinates, (list, tuple)):  # Handle both cases
+                return [
+                    (
+                        list(coord)
+                        if isinstance(coord, tuple)
+                        else _deep_convert_tuples_to_lists(coord)
+                    )
+                    for coord in coordinates
+                ]
+            return coordinates
+
         # Validate spatial reference
-        if spatial_reference is not None:
-            if not isinstance(spatial_reference, dict):
-                raise TypeError(
-                    "spatial_reference must be a dictionary with 'wkid' or 'wkt'."
-                )
-            if "wkid" not in spatial_reference and "wkt" not in spatial_reference:
-                raise ValueError("spatial_reference must contain 'wkid' or 'wkt'.")
-
-        # Ensure correct polygon orientation
-        if shapely_geometry.geom_type == "Polygon":
-            shapely_geometry = orient(shapely_geometry, sign=1.0)  # Fix orientation
-
-        elif shapely_geometry.geom_type == "MultiPolygon":
-            shapely_geometry = MultiPolygon(
-                [
-                    orient(poly, sign=1.0) for poly in shapely_geometry.geoms
-                ]  # Fix each polygon
+        if spatial_reference and not isinstance(spatial_reference, dict):
+            raise TypeError(
+                "spatial_reference must be a dictionary containing 'wkid' or 'wkt'."
             )
 
+        if spatial_reference and not (
+            "wkid" in spatial_reference or "wkt" in spatial_reference
+        ):
+            raise ValueError("spatial_reference must contain either 'wkid' or 'wkt'.")
+
+        # Ensure correct polygon orientation
+        if isinstance(shapely_geometry, Polygon):
+            shapely_geometry = orient(shapely_geometry, sign=1.0)
+        elif isinstance(shapely_geometry, MultiPolygon):
+            shapely_geometry = MultiPolygon(
+                [orient(poly, sign=1.0) for poly in shapely_geometry.geoms]
+            )
+
+        # get the geometry type from the shapely geometry
+        geom_cls = _geojson_type_to_esri_type(shapely_geometry.geom_type)
+
+        # Use wkt if possible, this solves issues occurring with polygons and multipolygons
+        if hasattr(shapely_geometry, "wkt"):
+            return geom_cls(
+                shapely_geometry.wkt,
+                spatial_reference=spatial_reference or {"wkid": 4326},
+            )
+
+        # If no wkt is available, use the mapping function to convert to GeoJSON
+        # Convert Shapely geometry to GeoJSON
         geojson_geom = mapping(shapely_geometry)
-
-        # Convert coordinates to tuples (ensure consistency)
-        if geojson_geom["type"] == "MultiPolygon":
-            geojson_geom["coordinates"] = [
-                [list(map(tuple, ring)) for ring in polygon]
-                for polygon in geojson_geom["coordinates"]
-            ]
-        elif geojson_geom["type"] == "Polygon":
-            geojson_geom["coordinates"] = [
-                list(map(tuple, ring)) for ring in geojson_geom["coordinates"]
-            ]
-
-        geom_cls = _geojson_type_to_esri_type(geojson_geom["type"])
-
-        # Convert using `_from_geojson`
-        geometry = geom_cls._from_geojson(
+        # Ensure coordinate consistency (keep list, no tuple conversion)
+        geojson_geom["coordinates"] = _deep_convert_tuples_to_lists(
+            geojson_geom["coordinates"]
+        )
+        # Convert to ArcGIS geometry type
+        return geom_cls._from_geojson(
             geojson_geom, sr=spatial_reference or {"wkid": 4326}
         )
-
-        return geometry
 
     # ----------------------------------------------------------------------
     @property
