@@ -43,8 +43,9 @@ class AGOLServerManager:
 
         >>> online_servers_mgr = gis.admin.servers
         >>> hosted_feature_svc_mgr = online_servers_mgr.feature_server[0]
-
-
+        >>> hosted_feature_svc_mgr
+        
+        < AGOLServerManager @ https://services7.arcgis.com/<org_id>/ArcGIS/admin/services >
     """
 
     _gis = None
@@ -91,8 +92,8 @@ class AGOLServerManager:
             >>> gis = GIS(profile="your_online_admin_profile")
 
             >>> online_servers_mgr = gis.admin.servers
-            >>> feature_server_mgr = online_servers_mgr
-            >>> service_info = feature_server_mgr.properties["servers"][0]
+            >>> feature_server_mgr = online_servers_mgr.feature_server[0]
+            >>> service_info = feature_server_mgr.properties["services"][0]
             >>> service_info
 
             {
