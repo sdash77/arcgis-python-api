@@ -1338,6 +1338,12 @@ class GIS(object):
     def properties(self):
         """
         ``properties`` manages the actual properties of the GIS object.
+
+        To see all the properties that can be found in the GIS object, refer to the
+        portal properties documentation at `Portal Properties
+        <https://developers.arcgis.com/rest/users-groups-and-items/common-parameters/#portal-parameters>`_.
+
+        :return: A dictionary-like object called a PropertyMap of the properties of the GIS object.
         """
         if self._properties is None:
             self._properties = _mixins.PropertyMap(self._get_properties(force=True))
@@ -4365,7 +4371,7 @@ class UserManager(object):
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes
             and provider != "enterprise"
-            and self._gis._portal._version != "10.3"
+            and self._gis.version < [10, 3]
         ):
             if (
                 credits == -1
@@ -4439,7 +4445,7 @@ class UserManager(object):
                         return new_user
         # If kubernets is 11.1 then need to use the second method, even if provider is arcgis
         elif self._gis._portal.is_kubernetes and (
-            provider == "enterprise" or self._gis._portal._version == "10.3"
+            provider == "enterprise" or self._gis.version >= [10, 3]
         ):
             createuser_url = (
                 self._portal.url
@@ -6026,11 +6032,20 @@ class Role(object):
 class GroupManager(object):
     """
     The ``GroupManager`` class is a helper class for managing GIS groups.
-    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available
-    as a property of the :class:`~arcgis.gis.GIS` object.
+    This class is not meant to be initialized directly, but rather an instance
+    is accessible as the :attr:`~arcgis.gis.GIS.groups` property of the
+    :class:`~arcgis.gis.GIS` object.
 
-    .. note::
-       This class is not created by users directly.
+    .. code-block:: python
+
+        # Usage Example: Initialize a GroupManager
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_organization_admin_profile")
+
+        >>> group_mgr = gis.groups
+        >>> group_mgr
+
+        <arcgis.gis.GroupManager object at 0x<mem_addr>>
     """
 
     def __init__(self, gis):
@@ -7888,7 +7903,7 @@ class ContentManager(object):
                             - title
                             - typeKeywords
                             - owner
-                            Example: filter=owner:"jsmith"
+                            Example: filter="owner:'jsmith'"
         ================    ===============================================================
 
         :return:
@@ -9034,7 +9049,7 @@ class ContentManager(object):
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
             # Feature Collection Workflow
-            return df.spatial.to_feature_collection(**kwargs)
+            return _cm_helper.import_as_fc(self._gis, df, **kwargs)
 
     # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
@@ -11121,6 +11136,7 @@ class Group(dict):
         hidden_members: bool = False,
         membership_access: Optional[str] = None,
         autojoin: bool = False,
+        **kwargs,
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -11196,7 +11212,11 @@ class Group(dict):
                             will have access. `None` is the default.
 
                             Values: `org`, `collaboration`, or `None`
-        ------------------  ---------------------------------------------------------
+        ==================  =========================================================
+
+        Keyword Arguments:
+
+        ==================  =========================================================
         autojoin            Optional Boolean. The default is `False`. Only applies to
                             org accounts. If `True`, this group will allow joined
                             without requesting membership approval.
@@ -11237,6 +11257,8 @@ class Group(dict):
             display_settings = display_settings_lu[display_settings]
         else:
             raise ValueError("Display settings must be set to a valid value.")
+        if not autojoin:
+            autojoin = kwargs.pop("auto_join", False)
         resp = self._portal.update_group(
             self.groupid,
             title,
@@ -11257,7 +11279,7 @@ class Group(dict):
             leaving_disallowed=leaving_disallowed,
             hidden_members=hidden_members,
             membership_access=membership_access,
-            auto_join=autojoin,
+            autojoin=autojoin,
         )
         if resp:
             self._hydrate()
@@ -18845,7 +18867,7 @@ class Item(dict):
         graph = create_dependency_graph(self._gis, [self], outside_org=outside_org)
         if out_format.lower() == "graph":
             return graph
-        node = graph.get_item(self.id)
+        node = graph.get_node(self.id)
         if deep:
             return node.requires(out_format=out_format)
         return node.contains(out_format=out_format)

@@ -114,7 +114,7 @@ class MMDetection3D(ArcGISModel):
     List of models supported by this class.
     """
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -128,7 +128,7 @@ class MMDetection3D(ArcGISModel):
                                 The default value is 'True'.
         =====================   ===========================================
         """
-        lr = super().lr_find(allow_plot)
+        lr = super().lr_find(allow_plot, **kwargs)
         lr = min(max(lr, 5e-05), 3e-03)
         return lr
 

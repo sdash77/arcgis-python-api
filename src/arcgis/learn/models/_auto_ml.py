@@ -861,11 +861,6 @@ class AutoML(object):
         image_variables = emd.get("image_variables", None)
         embedding_variables = emd.get("embedding_variables", None)
 
-        if emd["version"] != str(sklearn.__version__):
-            warnings.warn(
-                f"Sklearn version has changed. Model Trained using version {emd['version']}"
-            )
-
         _is_classification = True
         if emd["_is_classification"] != "classification":
             _is_classification = False
@@ -925,7 +920,20 @@ class AutoML(object):
             + self._data._embedding_variables,
         )
         data_df = self._impute_missing_values(data=data_df)
-        return self._model.predict(data_df)
+        try:
+            pred = self._model.predict(data_df)
+        except Exception as e:
+            if "pickle has an incompatible dtype" in str(
+                e
+            ) or "object has no attribute" in str(e):
+                raise Exception(
+                    "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
+                )
+            else:
+                raise Exception(
+                    "An error occured while getting the predictions from the trained model."
+                )
+        return pred
 
     def _shap_predict(self, data):
         data_df = pd.DataFrame(
