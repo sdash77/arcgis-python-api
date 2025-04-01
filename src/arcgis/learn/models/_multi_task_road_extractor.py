@@ -445,7 +445,6 @@ class MultiTaskRoadExtractor(ArcGISModel):
         if hasattr(self._data, "path"):
             self.learn.path = self._data.path
         self.learn.model = self.learn.model.to(self._device)
-        _set_multigpu_callback(self)
         if pretrained_path is not None:
             super().load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable

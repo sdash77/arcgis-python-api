@@ -208,16 +208,17 @@ def _get_related_items(item, forward=True, reverse=True):
 
     forward_deps = []
     reverse_deps = []
+    # leaving out Listed2ImplicitlyListed for now due to issues
     f_rel_types = [
         "Item2Attachment",
         "Item2Report",
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "SurveyAddIn2Data",
         "Solution2Item",
         "APIKey2Item",
@@ -247,16 +248,17 @@ def _get_related_item_dict(item, forward=True, reverse=True):
         raise ValueError("At least one direction must be specified.")
 
     rel_item_dict = {}
+    # leaving out Listed2ImplicitlyListed for now due to issues
     f_rel_types = [
         "Item2Attachment",
         "Item2Report",
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "SurveyAddIn2Data",
         "Solution2Item",
         "APIKey2Item",
@@ -355,6 +357,15 @@ def _parse_exb(item):
         for ds in data_sources.values():
             if "itemId" in ds and ds["itemId"] not in itemids:
                 itemids.append(ds["itemId"])
+
+        widgets = data.get("widgets", [])
+        try:
+            for widg_dict in widgets.values():
+                config = widg_dict.get("config", {})
+                if "surveyItemId" in config and config["surveyItemId"] not in itemids:
+                    itemids.append(config["surveyItemId"])
+        except:
+            pass
 
     return itemids
 
