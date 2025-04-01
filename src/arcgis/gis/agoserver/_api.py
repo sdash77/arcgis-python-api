@@ -119,7 +119,7 @@ class AGOLServicesDirectory:
         """
         Returns the server's version property and a list of services
         in the organization on that server.
-        
+
         .. note::
             Return times for this property will vary based on number of services
             hosted by the organization.
