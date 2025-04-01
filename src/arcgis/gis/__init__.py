@@ -9022,7 +9022,7 @@ class ContentManager(object):
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
             # Feature Collection Workflow
-            return df.spatial.to_feature_collection(**kwargs)
+            return _cm_helper.import_as_fc(self._gis, df, **kwargs)
 
     # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
@@ -18840,7 +18840,7 @@ class Item(dict):
         graph = create_dependency_graph(self._gis, [self], outside_org=outside_org)
         if out_format.lower() == "graph":
             return graph
-        node = graph.get_item(self.id)
+        node = graph.get_node(self.id)
         if deep:
             return node.requires(out_format=out_format)
         return node.contains(out_format=out_format)

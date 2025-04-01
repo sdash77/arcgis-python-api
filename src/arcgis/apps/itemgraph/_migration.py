@@ -492,7 +492,7 @@ class _ImportPackage:
                             view_def["viewDefinitionQuery"] = query
                         view_layers[idx] = view_def
 
-            reqs = self.graph.get_item(item_id).requires("id")
+            reqs = self.graph.get_node(item_id).requires("id")
             if len(reqs) == 0:
                 raise RuntimeError("View Service does not have a valid data item.")
             elif len(reqs) == 1:
@@ -518,7 +518,7 @@ class _ImportPackage:
 
         elif item_properties["type"] in JSON_BASED_WITH_DATA_TYPES:
             # check if dependent file already was uploaded
-            reqs = self.graph.get_item(item_id).requires("id")
+            reqs = self.graph.get_node(item_id).requires("id")
             service_item = None
             if len(reqs) > 0:
                 # find the dependent file
@@ -603,7 +603,7 @@ class _ImportPackage:
                 new_item = _add_data_item(fp, item_properties["type"], props)
 
         elif item_properties["type"] in JSON_BASED_TYPES:
-            reqs = self.graph.get_item(item_id).requires("node")
+            reqs = self.graph.get_node(item_id).requires("node")
             for req in reqs:
                 if (
                     req.id in self.created_item_mapping
@@ -700,7 +700,7 @@ class _ImportPackage:
                     raise ValueError(f"Item with id {itemid} not found in the package")
 
                 # if deep, make sure required items are also getting cloned
-                node = self.graph.get_item(itemid)
+                node = self.graph.get_node(itemid)
                 nodes.add(node)
                 if deep:
                     for req in node.requires():
