@@ -923,7 +923,9 @@ class AutoML(object):
         try:
             pred = self._model.predict(data_df)
         except Exception as e:
-            if "pickle has an incompatible dtype" in str(e):
+            if "pickle has an incompatible dtype" in str(
+                e
+            ) or "object has no attribute" in str(e):
                 raise Exception(
                     "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
                 )

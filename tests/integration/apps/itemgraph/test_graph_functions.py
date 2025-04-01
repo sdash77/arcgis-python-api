@@ -32,8 +32,8 @@ class TestCreateGraph(unittest.TestCase):
         # graph with forward and reverse dependencies
         rev_graph = create_dependency_graph(gis, [surv], include_reverse=True)
         assert len(rev_graph.all_items()) > len(fwd_graph.all_items())
-        fwd_node = fwd_graph.get_item("d78a3338d1cc485bb61342d00dc65e07")
-        rev_node = rev_graph.get_item("d78a3338d1cc485bb61342d00dc65e07")
+        fwd_node = fwd_graph.get_node("d78a3338d1cc485bb61342d00dc65e07")
+        rev_node = rev_graph.get_node("d78a3338d1cc485bb61342d00dc65e07")
         assert len(fwd_node.contains()) == len(rev_node.contains()) > 0
         assert len(fwd_node.contained_by()) == 0
         assert len(rev_node.contained_by()) > 0
@@ -46,8 +46,8 @@ class TestCreateGraph(unittest.TestCase):
         no_item_graph = load_from_file(path, gis, False)
         yes_item_graph = load_from_file(path, gis, True)
         assert len(no_item_graph.all_items()) == len(yes_item_graph.all_items()) == 12
-        no_node = no_item_graph.get_item("4e373608ba444a639bfaa0c893d3d99d")
-        yes_node = yes_item_graph.get_item("4e373608ba444a639bfaa0c893d3d99d")
+        no_node = no_item_graph.get_node("4e373608ba444a639bfaa0c893d3d99d")
+        yes_node = yes_item_graph.get_node("4e373608ba444a639bfaa0c893d3d99d")
         assert not no_node.item
         assert isinstance(yes_node.item, Item)
 
@@ -78,9 +78,9 @@ class TestGraphFunctions(unittest.TestCase):
             # add relationships between existing nodes
             graph.add_relationship("ce7d9d54fd1249c28809bf00923a19c7", "eefd222765814206ab825c22cfecb13c")
             graph.add_relationship("eefd222765814206ab825c22cfecb13c", "88539e531a3d45fd93e6c6b32bb93572")
-            node1 = graph.get_item("ce7d9d54fd1249c28809bf00923a19c7")
-            node2 = graph.get_item("eefd222765814206ab825c22cfecb13c")
-            node3 = graph.get_item("88539e531a3d45fd93e6c6b32bb93572")
+            node1 = graph.get_node("ce7d9d54fd1249c28809bf00923a19c7")
+            node2 = graph.get_node("eefd222765814206ab825c22cfecb13c")
+            node3 = graph.get_node("88539e531a3d45fd93e6c6b32bb93572")
             for out_list in [node1.contains("id"), node1.requires("id"), node3.required_by("id")]:
                 assert "eefd222765814206ab825c22cfecb13c" in out_list
             for out_list in [node1.requires("id"), node2.contains("id")]:
@@ -103,8 +103,8 @@ class TestGraphFunctions(unittest.TestCase):
             # add relationships between nonexistent nodes
             graph.add_relationship("123", "456")
             assert len(graph.all_items()) == 14
-            node1 = graph.get_item("123")
-            node2 = graph.get_item("456")
+            node1 = graph.get_node("123")
+            node2 = graph.get_node("456")
             for out_list in [node1.contains("id"), node1.requires("id")]:
                 assert "456" in out_list
             for out_list in [node2.contained_by("id"), node2.required_by("id")]:
@@ -130,9 +130,9 @@ class TestNodeFunctions(unittest.TestCase):
         path = os.path.join(path_root, "demo_graph.gml")
         graph = load_from_file(path, gis)
         # node 1 contains node 2, which contains node 3
-        node1 = graph.get_item("26411900b96e445ca96745bfb4459d12")
-        node2 = graph.get_item("1a914a64a648453ebc3d6e58078f1a40")
-        node3 = graph.get_item("e859bcbc593840858872ecfaac5bd3aa")
+        node1 = graph.get_node("26411900b96e445ca96745bfb4459d12")
+        node2 = graph.get_node("1a914a64a648453ebc3d6e58078f1a40")
+        node3 = graph.get_node("e859bcbc593840858872ecfaac5bd3aa")
 
         with self.subTest(msg="contains"):
             assert isinstance(node1.contains("id"), list)
