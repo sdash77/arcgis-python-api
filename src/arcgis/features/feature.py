@@ -32,10 +32,12 @@ from arcgis.geometry import (
 )
 from arcgis.gis import Layer
 
-from arcgis._impl._geometry_engine import HAS_ARCPY
+from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_SHAPELY
 
 if HAS_ARCPY:
     arcpy = LazyLoader("arcpy", strict=True)
+if HAS_SHAPELY:
+    shapely = LazyLoader("shapely", strict=True)
 
 
 class Feature(object):
@@ -1110,10 +1112,13 @@ class FeatureSet(object):
             geom = feature["geometry"]
             if HAS_ARCPY:
                 geom = arcpy.AsShape(geom)
-                geometry = Geometry(geom)
-            else:
-                geometry = Geometry(geomet.esri.dumps(geom))
-            return geometry
+                return Geometry(geom)
+            if HAS_SHAPELY:
+                from shapely.geometry import shape
+
+                return Geometry.from_shapely(shape(geom))
+
+            return Geometry(geomet.esri.dumps(geom))
 
         return FeatureSet.from_dict(geo_to_esri(geojson))
 
