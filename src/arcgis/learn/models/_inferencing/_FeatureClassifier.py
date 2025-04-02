@@ -13,6 +13,8 @@ try:
     from fastai.vision import *
     import torch
     from fastai.vision.transform import dihedral
+    import io
+    import base64
 
     HAS_PYTORCH_FA = True
 
@@ -67,12 +69,23 @@ class ChildObjectDetector:
         ):
             required_parameters.append(
                 {
-                    "name": "score_threshold",
+                    "name": "threshold",
                     "dataType": "numeric",
                     "value": 0.5,
                     "required": False,
                     "displayName": "Confidence Score Threshold [0.0, 1.0]",
                     "description": "Confidence score threshold value [0.0, 1.0]",
+                }
+            )
+        if "ExpMap" in self.emd and self.emd["ExpMap"] == True:
+            required_parameters.append(
+                {
+                    "name": "explainability_map",
+                    "dataType": "string",
+                    "value": str(self.emd["ExpMap"]),
+                    "required": False,
+                    "displayName": "Display the heatmaps.",
+                    "description": "Display the heatmaps.",
                 }
             )
         # add tta in the parameters
@@ -100,9 +113,7 @@ class ChildObjectDetector:
         else:
             self.batch_size = int(self.emd["BatchSize"])
 
-        self.thresh = float(
-            scalars.get("score_threshold", 0.5)
-        )  # Default 0.5 threshold
+        self.thresh = float(scalars.get("threshold", 0.5))  # Default 0.5 threshold
 
         self.use_tta = scalars.get("test_time_augmentation", "false").lower() in [
             "true",
@@ -111,6 +122,14 @@ class ChildObjectDetector:
             "y",
             "yes",
         ]  # Default value True
+
+        self.exp_map = scalars.get("explainability_map", "false").lower() in [
+            "true",
+            "1",
+            "t",
+            "y",
+            "yes",
+        ]
 
         return {
             # CropSizeFixed is a boolean value parameter (1 or 0) in the emd file, representing whether the size of
@@ -132,6 +151,7 @@ class ChildObjectDetector:
             "ty": self.emd["ImageHeight"],
             "batch_size": self.batch_size,
             "test_time_augmentation": self.use_tta,
+            "explainability_map": self.exp_map,
         }
 
     def tta_predict(self, normalized_image_tensor):
@@ -231,4 +251,85 @@ class ChildObjectDetector:
             for i in range(batch)
         ]
 
-        return rings, confidences, labels
+        grad_values = []
+        if self.exp_map:
+            try:
+                for index, image in enumerate(
+                    pixelBlocks["rasters_pixels"]
+                ):  # batch_images:
+                    _, height, width = image.shape
+                    from PIL import Image
+
+                    original_image_pil = Image.fromarray(np.moveaxis(image, 0, -1))
+
+                    # to handle the partial image getting clipped due to extent or feature shape
+                    if original_image_pil.size != (
+                        self.emd["ImageWidth"],
+                        self.emd["ImageHeight"],
+                    ):
+                        original_image_pil = original_image_pil.resize(
+                            (self.emd["ImageWidth"], self.emd["ImageHeight"])
+                        )
+
+                    from fastai.vision import Image, pil2tensor
+
+                    fastai_image = Image(
+                        pil2tensor(original_image_pil, dtype=np.float32).div_(255)
+                    )
+
+                    cl = (None, torch.tensor(class_idxs[index]), predictions[index])
+
+                    grad_cam_outputs, pred_class_label, xb, xb_norm = (
+                        self.cf._generate_grad_cam(
+                            fastai_image,
+                            cl,
+                            self.emd["MetaDataMode"],
+                            heatmap_thresh=16,
+                            device_=self.device,
+                        )
+                    )
+
+                    # overlaying the gradcam on the image encoding it in base64
+
+                    heatmap_rescaled1 = grad_cam_outputs[0] / grad_cam_outputs[0].max()
+                    heatmap = heatmap_rescaled1.cpu().numpy()
+                    from PIL import Image
+
+                    heatmap_rescaled = np.array(
+                        Image.fromarray(heatmap).resize(
+                            (self.emd["ImageWidth"], self.emd["ImageHeight"]),
+                            resample=Image.BILINEAR,
+                        )
+                    )
+                    from matplotlib import cm
+
+                    colormap = cm.get_cmap("hot")
+                    heatmap_colored = colormap(heatmap_rescaled)[
+                        :, :, :3
+                    ]  # Apply colormap and discard alpha channel
+                    heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
+                    heatmap_pil = Image.fromarray(heatmap_colored)
+                    alpha = 0.4
+                    overlayed_image = Image.blend(
+                        original_image_pil.convert("RGBA"),
+                        heatmap_pil.convert("RGBA"),
+                        alpha=alpha,
+                    )
+                    byte_io = io.BytesIO()
+                    rgb_image = overlayed_image.convert("RGB")
+                    rgb_image.save(byte_io, format="JPEG")
+                    array_bytes = byte_io.getvalue()
+
+                    import base64
+
+                    encoded_data = base64.b64encode(array_bytes).decode("utf-8")
+                    grad_values.append(encoded_data)
+
+                return rings, confidences, labels, grad_values
+            except:
+                # returning the empty grad_values
+                return rings, confidences, labels, grad_values
+
+        else:
+
+            return rings, confidences, labels

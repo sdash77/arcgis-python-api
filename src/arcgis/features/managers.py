@@ -275,8 +275,16 @@ class AttachmentManager(object):
         res = self._layer._con._session.get(url=url, params=params)
         res.raise_for_status()
         data: dict[str, Any] = res.json()
-        if "attachmentGroups" in data:
-            return sum([grp["count"] for grp in res.json()["attachmentGroups"]])
+        if data.get("attachmentGroups"):
+            count_values = [
+                d.get("count") for d in data.get("attachmentGroups") if d.get("count")
+            ]
+            if not count_values:
+                attachment_groups = [
+                    d.get("attachmentInfos") for d in data.get("attachmentGroups")
+                ]
+                return sum([len(grp) for grp in attachment_groups])
+            return sum([grp["count"] for grp in data["attachmentGroups"]])
         elif "error" in data:
             raise Exception(data["error"])
         else:
@@ -469,6 +477,8 @@ class AttachmentManager(object):
         if (
             self._layer._gis._portal.is_arcgisonline == False
             and self._layer.properties.hasAttachments
+            and self._layer._gis
+            and self._layer._gis.version <= [8, 2]
         ):
             rows = []
 
@@ -3064,6 +3074,9 @@ class FeatureLayerCollectionManager(_GISResource):
                             can be derived from the `properties` property.
                             For layer level modifications, run updates on each individual feature
                             service layer object.
+
+                            Find more information on what this dictionary can contain at:
+                            https://developers.arcgis.com/rest/services-reference/enterprise/feature-service/#json-response-syntax
         ---------------     --------------------------------------------------------------------
         future              Optional, If True, a future object will be returns and the process
                             will not wait for the task to complete.
@@ -3659,6 +3672,9 @@ class FeatureLayerManager(_GISResource):
                             can be derived from the `properties` property. For layer level
                             modifications, run updates on each individual feature layer of the
                             service.
+
+                            Find more information on what this dictionary can contain at:
+                            https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/#json-response-syntax
         ---------------     --------------------------------------------------------------------
         future              Optional boolean. The default is *False*, which means to run the
                             method synchronously and wait for results. If *True*, the method runs

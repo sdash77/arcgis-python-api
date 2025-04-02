@@ -7,6 +7,7 @@ import sys
 import warnings
 import re
 import timm
+import urllib, requests
 
 _logger = logging.getLogger(__name__)
 
@@ -186,43 +187,51 @@ def load_timm_bckbn_pretrained(
         return
 
     model_url = hosted_weights.get(default_cfg["architecture"], False)
-    if model_url:
-        model_dir = os.path.join(get_dir(), "checkpoints")
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
-        cached_file = os.path.join(model_dir, pretrained_url.split("/")[-1])
-        if not os.path.exists(cached_file):
-            sys.stderr.write(
-                'Downloading: "{}" pretrained weights to {}\n'.format(
-                    default_cfg["architecture"], cached_file
+    try:
+        if model_url:
+            model_dir = os.path.join(get_dir(), "checkpoints")
+            if not os.path.exists(model_dir):
+                os.makedirs(model_dir)
+            cached_file = os.path.join(model_dir, pretrained_url.split("/")[-1])
+            if not os.path.exists(cached_file):
+                sys.stderr.write(
+                    'Downloading: "{}" pretrained weights to {}\n'.format(
+                        default_cfg["architecture"], cached_file
+                    )
                 )
+                from arcgis.gis import GIS
+
+                gis = GIS(set_active=False)
+                item = gis.content.get(model_url)
+                item.download(model_dir)
+                zipped_file = os.path.join(
+                    model_dir, pretrained_url.split("/")[-1][:-3] + "zip"
+                )
+                with zipfile.ZipFile(zipped_file) as f:
+                    f.extractall(model_dir)
+                os.remove(zipped_file)
+
+            state_dict = torch.load(cached_file, map_location="cpu")
+
+        elif hf_hub_id and has_hf_hub(necessary=not pretrained_url):
+            _logger.info(
+                f"Loading pretrained weights from Hugging Face hub ({hf_hub_id})"
             )
-            from arcgis.gis import GIS
-
-            gis = GIS(set_active=False)
-            item = gis.content.get(model_url)
-            item.download(model_dir)
-            zipped_file = os.path.join(
-                model_dir, pretrained_url.split("/")[-1][:-3] + "zip"
-            )
-            with zipfile.ZipFile(zipped_file) as f:
-                f.extractall(model_dir)
-            os.remove(zipped_file)
-
-        state_dict = torch.load(cached_file, map_location="cpu")
-
-    elif hf_hub_id and has_hf_hub(necessary=not pretrained_url):
-        _logger.info(f"Loading pretrained weights from Hugging Face hub ({hf_hub_id})")
-        hf_filename = default_cfg.get("filename", None)
-        if hf_filename is not None:
-            state_dict = load_state_dict_from_hf(hf_hub_id, hf_filename)
+            hf_filename = default_cfg.get("filename", None)
+            if hf_filename is not None:
+                state_dict = load_state_dict_from_hf(hf_hub_id, hf_filename)
+            else:
+                state_dict = load_state_dict_from_hf(hf_hub_id)
         else:
-            state_dict = load_state_dict_from_hf(hf_hub_id)
-    else:
-        _logger.info(f"Loading pretrained weights from url ({pretrained_url})")
-        state_dict = load_state_dict_from_url(
-            pretrained_url, progress=progress, map_location="cpu"
+            _logger.info(f"Loading pretrained weights from url ({pretrained_url})")
+            state_dict = load_state_dict_from_url(
+                pretrained_url, progress=progress, map_location="cpu"
+            )
+    except requests.exceptions.ConnectionError as e:
+        raise ConnectionError(
+            f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
         )
+
     if filter_fn is not None:
         # for backwards compat with filter fn that take one arg, try one first, the two
         try:
@@ -411,9 +420,14 @@ def filter_timm_models(flt=[]):
     return sorted(set(models) - set(flt_models))
 
 
-def _get_feature_size(arch, cut, chip_size=(64, 64), channel_in=3):
-    m = nn.Sequential(*create_body(arch, False, cut).children())
-    if "tresnet" in arch.__module__:
+def _get_feature_size(arch, cut, chip_size=(64, 64), channel_in=3, use_custom=False):
+    try:
+        m = nn.Sequential(*create_body(arch, False, cut).children())
+    except urllib.error.URLError as e:
+        raise ConnectionError(
+            f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+        )
+    if "tresnet" in arch.__module__ or use_custom:
         with hook_outputs(m) as hooks:
             dummy_batch = (
                 one_param(m)
@@ -434,8 +448,12 @@ def get_backbone(backbone_fn, pretrained):
         backbone_cut = _get_backbone_meta(backbone_fn.__name__)["cut"]
     else:
         backbone_cut = None
-
-    return create_body(backbone_fn, pretrained, backbone_cut)
+    try:
+        return create_body(backbone_fn, pretrained, backbone_cut)
+    except urllib.error.URLError as e:
+        raise ConnectionError(
+            f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+        )
 
 
 def forward_VisionTransformer(self, x):

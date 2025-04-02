@@ -1,5 +1,6 @@
 from ._arcgis_model import ArcGISModel
 from ._arcgis_model import _EmptyData, _change_tail
+import urllib
 
 HAS_OPENCV = True
 try:
@@ -58,7 +59,7 @@ try:
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
     from .._utils.env import is_arcgispronotebook
-    from ._transformer_backbone import vit_config, custom_backbone
+    from ._transformer_backbone import vit_config
 
     HAS_FASTAI = True
 except Exception as e:
@@ -174,6 +175,12 @@ class MaskRCNNTracer(torch.nn.Module):
 
 
 class MaskRCNN(ArcGISModel):
+
+    try:
+        import fastai
+    except:
+        pass
+
     """
     Model architecture from https://arxiv.org/abs/1703.06870.
     Creates a :class:`~arcgis.learn.MaskRCNN` Instance segmentation model,
@@ -272,7 +279,10 @@ class MaskRCNN(ArcGISModel):
     box_positive_fraction           Optional float. Proportion of positive proposals in a
                                     mini-batch during training of the classification head.
                                     Default: 0.25
-    =============================   =============================================
+    -----------------------------   -------------------------------------------
+    wavelengths                     Optional list. A list of central wavelengths
+                                    corresponding to each data band (in micrometers).
+    =============================   ===========================================
 
     :return:
         :class:`~arcgis.learn.MaskRCNN` Object
@@ -287,6 +297,7 @@ class MaskRCNN(ArcGISModel):
         *args,
         **kwargs,
     ):
+
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
@@ -317,131 +328,136 @@ class MaskRCNN(ArcGISModel):
             kwargs, models.detection.MaskRCNN.__init__
         )
 
-        if (
-            self._backbone.__name__ == "resnet50"
-            and "timm" not in self._backbone.__module__
-        ):
-            model = models.detection.maskrcnn_resnet50_fpn(
-                weights=(
-                    models.detection.MaskRCNN_ResNet50_FPN_Weights.DEFAULT
-                    if pretrained_backbone
-                    else None
-                ),
-                weights_backbone=None,
-                min_size=1.5 * data.chip_size,
-                max_size=2 * data.chip_size,
-                **self.maskrcnn_kwargs,
-            )
-
-            if self._is_multispectral:
-                model.backbone = _change_tail(model.backbone, data)
-                model.transform.image_mean = scaled_mean_values
-                model.transform.image_std = scaled_std_values
-        elif (
-            self._backbone.__name__ in ["resnet18", "resnet34"]
-            and not pointrend
-            and "timm" not in self._backbone.__module__
-        ):
-            if self._is_multispectral:
-                backbone_small = create_body(
-                    self._backbone_ms,
-                    pretrained=pretrained_backbone,
-                    cut=_get_backbone_meta(self._backbone.__name__)["cut"],
-                )
-                backbone_small.out_channels = 512
-                model = models.detection.MaskRCNN(
-                    backbone_small,
-                    91,
-                    min_size=1.5 * data.chip_size,
-                    max_size=2 * data.chip_size,
-                    image_mean=scaled_mean_values,
-                    image_std=scaled_std_values,
-                    **self.maskrcnn_kwargs,
-                )
-            else:
-                backbone_small = create_body(
-                    self._backbone, pretrained=pretrained_backbone
-                )
-                backbone_small.out_channels = 512
-                model = models.detection.MaskRCNN(
-                    backbone_small,
-                    91,
-                    min_size=1.5 * data.chip_size,
-                    max_size=2 * data.chip_size,
-                    **self.maskrcnn_kwargs,
-                )
-            model.rpn.anchor_generator.grid_anchors = types.MethodType(
-                grid_anchors, model.rpn.anchor_generator
-            )
-        else:
+        try:
             if (
-                "timm" in self._backbone.__module__
-                or "_hf_" in self._backbone.__module__
+                self._backbone.__name__ == "resnet50"
+                and "timm" not in self._backbone.__module__
             ):
-                backbone_cut = timm_config(self._backbone)["cut"]
-                backbone_fpn = create_body(
-                    self._backbone, pretrained_backbone, backbone_cut
-                )
-                try:
-                    backbone_fpn = TimmFPNBackbone(backbone_fpn, data.chip_size)
-                except:
-                    if "tresnet" in self._backbone.__module__:
-                        backbone_fpn.out_channels = _get_feature_size(
-                            self._backbone, backbone_cut
-                        )[-1][1]
-                    else:
-                        backbone_fpn.out_channels = num_features_model(
-                            torch.nn.Sequential(*backbone_fpn.children())
-                        )
-            elif backbone in MaskRCNN.transformer_backbones():
-                backbone_fpn = custom_backbone(
-                    backbone_name=backbone,
-                    pretrained=pretrained_backbone,
-                    is_fpn=True,
-                    img_size=int(1.5 * data.chip_size),
-                    in_chans=len(data._extract_bands),
-                ).backbone_fpn
-                backbone_fpn._is_transformer = True
-            else:
-                ## warning_fix 'pretrained' replaced with 'weights'
-                backbone_fpn = resnet_fpn_backbone(
-                    backbone_name=self._backbone.__name__,
+                model = models.detection.maskrcnn_resnet50_fpn(
                     weights=(
-                        getattr(
-                            models,
-                            [
-                                i
-                                for i in dir(models)
-                                if i.lower() == self._backbone.__name__ + "_weights"
-                            ][0],
-                        ).DEFAULT
+                        models.detection.MaskRCNN_ResNet50_FPN_Weights.DEFAULT
                         if pretrained_backbone
                         else None
                     ),
-                )
-            if self._is_multispectral:
-                backbone_fpn = _change_tail(backbone_fpn, data, backbone=self._backbone)
-                model = models.detection.MaskRCNN(
-                    backbone_fpn,
-                    91,
-                    min_size=1.5 * data.chip_size,
-                    max_size=2 * data.chip_size,
-                    image_mean=scaled_mean_values,
-                    image_std=scaled_std_values,
-                    **self.maskrcnn_kwargs,
-                )
-            else:
-                model = models.detection.MaskRCNN(
-                    backbone_fpn,
-                    91,
+                    weights_backbone=None,
                     min_size=1.5 * data.chip_size,
                     max_size=2 * data.chip_size,
                     **self.maskrcnn_kwargs,
                 )
-            if "timm" in self._backbone.__module__:
+
+                if self._is_multispectral:
+                    model.backbone = _change_tail(model.backbone, data)
+                    model.transform.image_mean = scaled_mean_values
+                    model.transform.image_std = scaled_std_values
+            elif (
+                self._backbone.__name__ in ["resnet18", "resnet34"]
+                and not pointrend
+                and "timm" not in self._backbone.__module__
+            ):
+                if self._is_multispectral:
+                    backbone_small = create_body(
+                        self._backbone_ms,
+                        pretrained=pretrained_backbone,
+                        cut=_get_backbone_meta(self._backbone.__name__)["cut"],
+                    )
+                    backbone_small.out_channels = 512
+                    model = models.detection.MaskRCNN(
+                        backbone_small,
+                        91,
+                        min_size=1.5 * data.chip_size,
+                        max_size=2 * data.chip_size,
+                        image_mean=scaled_mean_values,
+                        image_std=scaled_std_values,
+                        **self.maskrcnn_kwargs,
+                    )
+                else:
+                    backbone_small = create_body(
+                        self._backbone, pretrained=pretrained_backbone
+                    )
+                    backbone_small.out_channels = 512
+                    model = models.detection.MaskRCNN(
+                        backbone_small,
+                        91,
+                        min_size=1.5 * data.chip_size,
+                        max_size=2 * data.chip_size,
+                        **self.maskrcnn_kwargs,
+                    )
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
                 )
+            else:
+                if (
+                    "timm" in self._backbone.__module__
+                    or "_hf_" in self._backbone.__module__
+                ):
+                    backbone_cut = timm_config(self._backbone)["cut"]
+                    backbone_fpn = create_body(
+                        self._backbone, pretrained_backbone, backbone_cut
+                    )
+                    try:
+                        backbone_fpn = TimmFPNBackbone(backbone_fpn, data.chip_size)
+                    except:
+                        if "tresnet" in self._backbone.__module__:
+                            backbone_fpn.out_channels = _get_feature_size(
+                                self._backbone, backbone_cut
+                            )[-1][1]
+                        else:
+                            backbone_fpn.out_channels = num_features_model(
+                                torch.nn.Sequential(*backbone_fpn.children())
+                            )
+                elif backbone in MaskRCNN.transformer_backbones():
+                    backbone_fpn = self._backbone(
+                        pretrained=pretrained_backbone,
+                        is_fpn=True,
+                        img_size=int(1.5 * data.chip_size),
+                    ).backbone_fpn
+                    backbone_fpn._is_transformer = True
+                else:
+                    ## warning_fix 'pretrained' replaced with 'weights'
+                    backbone_fpn = resnet_fpn_backbone(
+                        backbone_name=self._backbone.__name__,
+                        weights=(
+                            getattr(
+                                models,
+                                [
+                                    i
+                                    for i in dir(models)
+                                    if i.lower() == self._backbone.__name__ + "_weights"
+                                ][0],
+                            ).DEFAULT
+                            if pretrained_backbone
+                            else None
+                        ),
+                    )
+                if self._is_multispectral:
+                    backbone_fpn = _change_tail(
+                        backbone_fpn, data, backbone=self._backbone
+                    )
+                    model = models.detection.MaskRCNN(
+                        backbone_fpn,
+                        91,
+                        min_size=1.5 * data.chip_size,
+                        max_size=2 * data.chip_size,
+                        image_mean=scaled_mean_values,
+                        image_std=scaled_std_values,
+                        **self.maskrcnn_kwargs,
+                    )
+                else:
+                    model = models.detection.MaskRCNN(
+                        backbone_fpn,
+                        91,
+                        min_size=1.5 * data.chip_size,
+                        max_size=2 * data.chip_size,
+                        **self.maskrcnn_kwargs,
+                    )
+                if "timm" in self._backbone.__module__:
+                    model.rpn.anchor_generator.grid_anchors = types.MethodType(
+                        grid_anchors, model.rpn.anchor_generator
+                    )
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
+            )
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
@@ -552,11 +568,13 @@ class MaskRCNN(ArcGISModel):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         transformer_backbone = list(vit_config.keys())
         return transformer_backbone
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
@@ -643,6 +661,7 @@ class MaskRCNN(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            data._band_names = emd.get("Bands")
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)

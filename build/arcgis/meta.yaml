@@ -18,9 +18,7 @@ requirements:
   - cachetools
   - certifi
   - cryptography
-  - dask >=2023.3.2
-  - gdal >=3.9.2,<4 [win]
-  - gdal >=3.6.2,<4 [not win]
+  - dask >=2024.12.1,<2025.1.0
   - geomet
   - keyring >=23.3.0
   - lxml
@@ -30,7 +28,7 @@ requirements:
   - pandas >=2.0.0,<2.3.0
   - pillow
   - puremagic >=1.15,<2
-  - pyarrow >=16,<17
+  - pyarrow >=14,<17
   - pylerc
   - pyspnego >=0.8.0
   - pywin32-security [win]
@@ -39,9 +37,9 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests-toolbelt
-  - truststore
+  - truststore >=0.10.0
   - ujson >=3
-  - urllib3 >=2,<3
+  - urllib3 >=2.1.0,<3
   - pydantic >=2.8.2, <3
   - networkx >=3.3, <4
   - websocket-client >=1.2.3, <2.0.0

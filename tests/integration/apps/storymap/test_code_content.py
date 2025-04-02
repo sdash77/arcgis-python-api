@@ -14,7 +14,7 @@ class TestEmbedContent(unittest.TestCase):
         """Test adding Embed and seeing properties"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         code = Code("from arcgis.gis imoprt GIS\ngis = GIS()", "py")
         code_block = story.add(code)
 
@@ -28,7 +28,7 @@ class TestEmbedContent(unittest.TestCase):
         # Audio through URL
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
 
         code = Code("from arcgis.gis imoprt GIS\ngis = GIS()", "py")
         code_block = story.add(code)
@@ -41,7 +41,7 @@ class TestEmbedContent(unittest.TestCase):
         """Test replacing the webpage link. This can be done through a property for each content"""
         # establish gis connection
         gis = self.gis
-        story = StoryMap()
+        story = StoryMap(gis=gis)
         code = Code("from arcgis.gis imoprt GIS\ngis = GIS()", "py")
         code_block = story.add(code)
 

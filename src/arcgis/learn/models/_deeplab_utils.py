@@ -137,6 +137,7 @@ class Deeplab(nn.Module):
         backbone_name = backbone_fn.__name__
         self._is_transformer = False
         self.vgg = False
+
         if not backbone_name in vit_config.keys():
             modify_dilation_index, self.vgg = get_dilation_index(
                 backbone_name, pointrend, keep_dilation

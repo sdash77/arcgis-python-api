@@ -292,6 +292,13 @@ MMDetection3D
     :inherited-members:
     :undoc-members:
 
+PTv3Det
+^^^^^^^^
+.. autoclass:: arcgis.learn.PTv3Det
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Tracking Models
 ------------------------
 SiamMask
@@ -427,6 +434,9 @@ train_model
 ^^^^^^^^^^^
 .. autofunction:: arcgis.learn.train_model
 
-
-
-
+AIServiceConnection
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AIServiceConnection
+    :members:
+    :inherited-members:
+    :undoc-members:

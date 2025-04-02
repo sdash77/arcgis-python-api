@@ -15,6 +15,7 @@ HAS_FASTAI = True
 
 try:
     import torch
+    from torch import nn
     from torch import tensor, Tensor
     import numpy as np
     import fastai
@@ -294,11 +295,16 @@ class SingleShotDetector(ArcGISModel):
                             for this model, which is 'pytorch' by default.
 
                             valid options are 'pytorch', 'tensorflow'
+    ---------------------   -------------------------------------------
+    wavelengths             Optional list. A list of central wavelengths
+                            corresponding to each data band (in micrometers).
     =====================   ===========================================
 
     :return:
         :class:`~arcgis.learn.SingleShotDetector` Object
     """
+
+    MIN_BATCH_VAL_AMP = 8
 
     def __init__(
         self,
@@ -445,6 +451,8 @@ class SingleShotDetector(ArcGISModel):
                     ),
                     cut=backbone_cut,
                     chip_size=(data.chip_size, data.chip_size),
+                    channel_in=len(getattr(data, "_extract_bands", [0, 1, 2])),
+                    use_custom=self._backbone.__name__ in vit_config.keys(),
                 )
 
                 num_features = feature_sizes[-1][-1]
@@ -540,11 +548,13 @@ class SingleShotDetector(ArcGISModel):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         transformer_backbone = list(vit_config.keys())
         return transformer_backbone
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
@@ -639,6 +649,8 @@ class SingleShotDetector(ArcGISModel):
         ssd_version = int(emd.get("SSDVersion", 1))
         chip_size = emd["ImageWidth"]
 
+        model_params = emd["ModelParameters"]
+
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
@@ -684,6 +696,7 @@ class SingleShotDetector(ArcGISModel):
             data.c += 1
             data.emd_path = emd_path
             data.emd = emd
+            data._band_names = emd.get("Bands")
             if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
 
@@ -700,6 +713,7 @@ class SingleShotDetector(ArcGISModel):
             backend=backend,
             backbone=backbone,
             ssd_version=ssd_version,
+            wavelengths=model_params.get("wavelengths", None),
         )
 
         if not data_passed:
@@ -1299,7 +1313,7 @@ class SingleShotDetector(ArcGISModel):
                                 trained on).
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
-                                during tiled inferencing. Deafult value 1.
+                                during tiled inferencing. Default value 1.
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
@@ -1711,3 +1725,31 @@ class SingleShotDetector(ArcGISModel):
             )
 
     ## Tensorflow specific functions end ##
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        # unstable pytorch AMP scaler if batch size less than the given value
+        if self.learn.data.batch_size <= self.MIN_BATCH_VAL_AMP:
+            mixed_precision = False
+
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=mixed_precision,
+            **kwargs,
+        )

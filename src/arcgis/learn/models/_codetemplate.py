@@ -560,42 +560,17 @@ def get_available_device(max_memory=0.8):
 features = {
     'displayFieldName': '',
     'fieldAliases': {
-        'FID': 'FID',
-        'Class': 'Class',
-        'Confidence': 'Confidence'
+        'OID': 'OID',
+        'Confidence': 'Confidence',
+        'Shape':'Shape',
+        'Label':'Label',
     },
     'geometryType': 'esriGeometryPolygon',
-    'fields': [
-        {
-            'name': 'FID',
-            'type': 'esriFieldTypeOID',
-            'alias': 'FID'
-        },
-        {
-            'name': 'Class',
-            'type': 'esriFieldTypeString',
-            'alias': 'Class'
-        },
-        {
-            'name': 'Confidence',
-            'type': 'esriFieldTypeDouble',
-            'alias': 'Confidence'
-        }
-    ],
-    'features': []
-}
-
-fields = {
     'fields': [
         {
             'name': 'OID',
             'type': 'esriFieldTypeOID',
             'alias': 'OID'
-        },
-        {
-            'name': 'Class',
-            'type': 'esriFieldTypeString',
-            'alias': 'Class'
         },
         {
             'name': 'Confidence',
@@ -606,9 +581,16 @@ fields = {
             'name': 'Shape',
             'type': 'esriFieldTypeGeometry',
             'alias': 'Shape'
-        }
-    ]
+        },
+        {
+            'name': 'Label',
+            'type': 'esriFieldTypeString',
+            'alias': 'Label'
+        },
+    ],
+    'features': []
 }
+
 
 class GeometryType:
     Point = 1
@@ -739,6 +721,10 @@ class ArcGISObjectClassifier:
         if 'DataRange' in self.json_info:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
 
+        self.exp_map = False
+        if 'explainability_map' in configuration:
+            self.exp_map = configuration['explainability_map']
+
         configuration['inheritProperties'] = 2|4|8
         configuration['inputMask'] = True
 
@@ -747,44 +733,12 @@ class ArcGISObjectClassifier:
 
     def getFields(self):
 
-        fields = {
-                'fields': [
-                    {
-                        'name': 'OID',
-                        'type': 'esriFieldTypeOID',
-                        'alias': 'OID'
-                    },
-                    {
-                        'name': 'Class',
-                        'type': 'esriFieldTypeString',
-                        'alias': 'Class'
-                    },
-                    {
-                        'name': 'Confidence',
-                        'type': 'esriFieldTypeDouble',
-                        'alias': 'Confidence'
-                    },
-                    {
-                        'name': 'Shape',
-                        'type': 'esriFieldTypeGeometry',
-                        'alias': 'Shape'
-                    }
-                ]
-            }
-        fields['fields'].append(
-            {
-                'name': 'Label',
-                'type': 'esriFieldTypeString',
-                'alias': 'Label'
-            }
-        )
-
         if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
-            for item in fields['fields']:
+            for item in features['fields']:
                 if item['name'] == 'Confidence':
                     item['type'] = 'esriFieldTypeString'
 
-        return json.dumps(fields)
+        return json.dumps({"fields":features["fields"]})
 
     def getGeometryType(self):
         return GeometryType.Polygon
@@ -800,7 +754,20 @@ class ArcGISObjectClassifier:
 
         pixelBlocks['rasters_pixels'] = rasters_pixels
 
-        polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
+        try:
+            if self.exp_map:
+                polygon_list, scores, labels, exp_map_blob = self.child_object_detector.vectorize(**pixelBlocks)
+            else:
+                polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
+        except RuntimeError as e:
+            if 'out of memory' in str(e):
+                # arcpy.AddError('Runtime Error: ran out of GPU memory, please try a smaller batch size')
+                raise RuntimeError("Ran out of GPU memory, please try a smaller batch size")
+                return None
+            else:
+                # arcpy.AddError('Runtime Error:" + str(e) + "Inferencing was not successful.')
+                raise RuntimeError("Runtime Error: " + str(e) + " Inferencing was not successful.")
+                return None
 
         features['features'] = []
 
@@ -808,18 +775,30 @@ class ArcGISObjectClassifier:
             'Label':'Label'
         })
 
-        features['fields'].append(
-            {
+        Labelfield = {
                 'name': 'Label',
                 'type': 'esriFieldTypeString',
                 'alias': 'Label'
-            }
-        )
+        }
+
+        if not Labelfield in features['fields']:
+            features['fields'].append(Labelfield)
+
 
         if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
             for item in features['fields']:
                 if item['name'] == 'Confidence':
                     item['type'] = 'esriFieldTypeString'
+        
+        if self.exp_map:
+            expMapField = {
+                    'name': 'ExpMap',
+                    'type': 'esriFieldTypeBlob',
+                    'alias': 'ExpMap'
+                }
+            if not expMapField in features['fields']:
+               features['fields'].append(expMapField)
+               features['fieldAliases'].update({'ExpMap':'ExpMap'})
 
         for i in range(len(polygon_list)):
 
@@ -832,13 +811,17 @@ class ArcGISObjectClassifier:
                     ]
                 )
 
+            attributes = {
+               'OID': i + 1,
+               'Confidence': str(scores[i]),
+               'Label': labels[i]
+               }
+
+            if self.exp_map:
+                attributes['ExpMap'] = exp_map_blob[i]
+
             features['features'].append({
-                'attributes': {
-                    'OID': i + 1,
-                    'Confidence': str(scores[i]),
-                    'Label': labels[i],
-                    'Classname': labels[i]
-                },
+                'attributes': attributes,
                 'geometry': {
                     'rings': rings
                 }

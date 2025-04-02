@@ -1288,7 +1288,8 @@ def prepare_data(
     =====================   ===========================================
     **Parameter**           **Description**
     ---------------------   -------------------------------------------
-    path                    Required string. Path to data directory or a list of paths.
+    path                    Required string. Path to data directory or a list of paths
+                            in case of multi-folder training.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label. Not supported for MaskRCNN model.
@@ -1916,19 +1917,11 @@ def prepare_data(
         and "InputRastersProps" in emd
         and kwargs.get("imagery_type", None) is None
     ):
-        # Check by band names
-        band_mapping = {
-            i: b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])
-        }
-        for b in emd[
-            "WellKnownBandNames (FYI, these band names can be used in ExtractBands)"
-        ]:
-            if b.lower() in ["red", "green", "blue"]:
-                continue
-            if b.lower() in band_mapping:
-                imagery_type = sensor_name
-                _infered = True
-                break
+        # check if traing band is coming from other that RGB band
+        band_mapping = set(emd["InputRastersProps"]["BandNames"])
+        if not band_mapping.issubset(["red", "green", "blue", "r", "g", "b", ""]):
+            imagery_type = sensor_name
+            _infered = True
 
         if not _infered:
             # Check by values

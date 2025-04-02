@@ -1,5 +1,6 @@
 import unittest
 import pandas as pd
+import uuid
 from arcgis.gis.server import ServicesDirectory
 from arcgis.gis.server import ServerManager
 from arcgis.gis.server import Server
@@ -20,7 +21,7 @@ from arcgis.gis.server.admin._uploads import Uploads
 from arcgis.gis.server.admin._usagereports import Report, ReportManager
 from arcgis.features import FeatureLayerCollection
 from arcgis._impl.common._isd import InsensitiveDict
-from utils.decorators import integration_test, profiles
+from utils.decorators import server_credentials, integration_test, profiles
 
 
 @profiles.agol
@@ -408,8 +409,7 @@ class TestServerReport(unittest.TestCase):
         self.assertIsInstance(res, dict)
 
 
-@profiles.admin_enterprise
-# TODO: add standalone server
+@server_credentials.standalone_enterprise
 @integration_test
 class TestServerUser(unittest.TestCase):
     """
@@ -419,9 +419,9 @@ class TestServerUser(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.server_manager = ServicesDirectory(
-            url=cls.gis.url.replace("portal", "server/rest/"),
-            username=cls.gis._username,
-            password=cls.gis._password,
+            url=cls.url,
+            username=cls.username,
+            password=cls.password,
         ).admin
 
     def test_users(self):
@@ -433,38 +433,40 @@ class TestServerUser(unittest.TestCase):
         """tests creating user"""
         users = self.server_manager.users
 
-        if len(users.search("PyAPIServerTest123")) > 0:
-            users.search("PyAPIServerTest123")[0].delete()
+        username = uuid.uuid4().hex
         user = users.create(
-            username="PyAPIServerTest123",
+            username=username,
             password="lovetheapi1",
-            fullname="b d",
-            email="d@esri.com",
-            description="account",
+            fullname=f"{username[:10]} user",
+            email=f"{username[:10]}@esri.com",
+            description="ntgrtn-tst",
         )
 
         self.assertIsInstance(user, User)
 
-    def test_get(self):
+    def test_get_by_username_delete(self):
         """tests getting user"""
         users = self.server_manager.users
 
         # create user
+        username = uuid.uuid4().hex
         user = users.create(
-            username="PyAPIServerTest123",
+            username=username,
             password="lovetheapi1",
-            fullname="b d",
-            email="d@esri.com",
-            description="account",
+            fullname=f"{username[:10]} user",
+            email=f"{username[:10]}@esri.com",
+            description="ntgrtn-tst",
         )
 
         # get user
-        user = users.get(username="PyAPIServerTest123")
+        user = users.get(username=username)
         self.assertIsInstance(user, (list, User))
 
         # delete user
-        if len(users.search("PyAPIServerTest123")) > 0:
-            users.search("PyAPIServerTest123")[0].delete()
+        if len(users.search(username)) > 0:
+            assert users.search(username)[0].delete(), 'User deletion failed'
+        else:
+            assert False, 'User not found, delete failed'
 
     def test_me(self):
         """tests getting current authenticated user"""
@@ -529,26 +531,27 @@ class TestServerUser(unittest.TestCase):
         users = self.server_manager.users
 
         # create user
+        username = uuid.uuid4().hex
         user = users.create(
-            username="PyAPIServerTest123",
+            username=username,
             password="lovetheapi1",
-            fullname="b d",
-            email="d@esri.com",
-            description="account",
+            fullname=f"{username[:10]} user",
+            email=f"{username[:10]}@esri.com",
+            description="ntgrtn-tst",
         )
 
         # update user
         res = user.update(
             password="pw12356",
             full_name="Jane Doe",
-            description="description new",
+            description="ntgrtn-tst_description new",
             email=None,
         )
         self.assertTrue(res)
 
         # delete user
-        if len(users.search("PyAPIServerTest123")) > 0:
-            users.search("PyAPIServerTest123")[0].delete()
+        if len(users.search(username)) > 0:
+            users.search(username)[0].delete()
 
     def test_user_assign_role(self):
         """tests assigning a role to a user"""
@@ -556,24 +559,18 @@ class TestServerUser(unittest.TestCase):
         roles = users.roles
 
         # create user
+        username = uuid.uuid4().hex
         user = users.create(
-            username="PyAPIServerTest123",
+            username=username,
             password="lovetheapi1",
-            fullname="b d",
-            email="d@esri.com",
-            description="account",
+            fullname=f"{username[:10]} user",
+            email=f"{username[:10]}@esri.com",
+            description="ntgrtn-tst",
         )
 
         role = roles.get_role("role1")[0]
         res = user.add_role(role.rolename)
         self.assertTrue(res)
-
-    def test_user_delete(self):
-        """tests deleting a user"""
-        users = self.server_manager.users
-        if len(users.search("PyAPIServerTest123")) > 0:
-            resp = users.search("PyAPIServerTest123")[0].delete()
-            self.assertTrue(resp)
 
 
 if __name__ == "__main__":

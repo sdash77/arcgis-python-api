@@ -37,7 +37,7 @@ class TestContingentValues(unittest.TestCase):
         self.assertIsInstance(fl.field_groups, dict, "Incorrect type for FG result")
 
     def test_contingent_values_fl_manager(self):
-        if not self.gis._is_kubernetes:
+        if not self.gis._is_agol:
             self.skipTest("Cannot add field definition via FeatureLayerManager")
         fl: FeatureLayer = self.published_item.layers[0]
         mgr = fl.manager

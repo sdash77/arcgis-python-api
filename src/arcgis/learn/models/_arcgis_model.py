@@ -57,7 +57,12 @@ try:
     from .._utils.evaluate_batchsize import estimate_batch_size
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
-    from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
+    from ._transformer_backbone import (
+        custom_backbone,
+        transformer_backbone_downstream,
+        wavelengths_required_models,
+    )
+    from ._wavelengths import wavelength_dict
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -453,7 +458,13 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-    if hasattr(model, "backbone") and getattr(model.backbone, "_is_prithvi", False):
+    if (
+        hasattr(model, "backbone")
+        and (
+            getattr(model.backbone, "_is_prithvi", False)
+            or getattr(model.backbone, "_is_vitdet", False)
+        )
+    ) or getattr(model, "_is_vitdet", False):
         return model
 
     tail_name, tail = _get_tail(model)
@@ -556,6 +567,55 @@ def _device_check():
     return move_to_cpu
 
 
+def get_wavelengths_from_bandnames(band_names):
+    """
+    This function returns the wavelengths (in micrometers) corresponding to the given band names.
+    """
+    wavelengths = []
+    cleaned_bandnames = [
+        band_name.lower().replace("_", "").replace(" ", "") for band_name in band_names
+    ]
+    cleaned2original_bandname_map = {
+        k.lower().replace("_", "").replace(" ", ""): k for k in band_names
+    }
+    cleaned_wavelength_dict = {
+        k.lower().replace("_", "").replace(" ", ""): v
+        for k, v in wavelength_dict.items()
+    }
+    for bandname in cleaned_bandnames:
+        try:
+            wavelengths.append(float(cleaned_wavelength_dict[bandname]))
+        except KeyError:
+            raise Exception(
+                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. This models require a list of central wavelengths corresponding to each data band (in micrometers).Please provide a value (list of floats) for the "wavelengths" keyword argument.'
+            )
+    return wavelengths
+
+
+def get_wavelenths_bandnames(data, in_channels, **kwargs):
+    wavelengths = kwargs.get("wavelengths", None)
+    band_names = None
+    if wavelengths is None:
+        if data._emd.get("InputRastersProps", None) is not None:
+            band_names = data._emd.get("InputRastersProps").get("BandNames")
+        elif data._emd.get("AllTilesStats", None) is not None:
+            band_names = [x.get("BandName") for x in data._emd.get("AllTilesStats")]
+        else:
+            raise Exception(
+                '\nThis backbone require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
+            )
+        wavelengths = get_wavelengths_from_bandnames(band_names)
+        assert len(wavelengths) == in_channels
+        band_names = band_names
+    else:
+        if len(wavelengths) != in_channels:
+            raise Exception(
+                'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
+            )
+
+    return wavelengths, band_names
+
+
 def get_backbone_func(backbone, data, **kwargs):
     if backbone is None:
         backbone = models.resnet34
@@ -581,14 +641,28 @@ def get_backbone_func(backbone, data, **kwargs):
             in_channels = (
                 len(data._extract_bands) if hasattr(data, "_extract_bands") else 3
             )
+
+            wavelengths = None
+            band_names = None
+            if backbone in wavelengths_required_models:
+                wavelengths, band_names = get_wavelenths_bandnames(
+                    data, in_channels, **kwargs
+                )
+
             backbone = partial(
                 custom_backbone,
                 backbone_name=backbone,
                 img_size=int(kwargs.get("chip_size", data.chip_size)),
                 in_chans=in_channels,
                 is_fpn=kwargs.get("is_fpn", False),
+                wavelengths=wavelengths,
+                band_names=band_names,
+                is_clf=kwargs.get("is_clf", False),
+                is_plain_vit=kwargs.get("is_plain_vit", False),
+                num_classes=kwargs.get("num_classes", data.c),
             )
             backbone.__name__ = backbone_name
+            backbone._wavelengths = wavelengths
     else:
         backbone = backbone
     return backbone
@@ -608,7 +682,7 @@ class ArcGISModel(object):
 
         self._device = _get_device()
 
-        self._backbone = get_backbone_func(backbone, data)
+        self._backbone = get_backbone_func(backbone, data, **kwargs)
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -618,7 +692,6 @@ class ArcGISModel(object):
         if self._is_multispectral or (
             not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
         ):
-
             self._orig_backbone = self._backbone
 
             @wraps(self._orig_backbone)
@@ -667,6 +740,8 @@ class ArcGISModel(object):
         self._pretrained_path = kwargs.get("pretrained_path", None)
         if hasattr(self._data, "arcgis_init_kwargs"):
             self._check_data_support_with_pretrained_path()
+        if getattr(self._backbone, "_wavelengths", False):
+            kwargs["wavelengths"] = self._backbone._wavelengths
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
             if not getattr(data, "_is_empty", False) and hasattr(
@@ -724,7 +799,13 @@ class ArcGISModel(object):
                 )
 
     def _arcgis_init_callback(self):
-        if self._is_multispectral:
+        vitdet_model = False
+        if (
+            hasattr(self.learn.model, "backbone")
+            and getattr(self.learn.model.backbone, "_is_vitdet", False)
+        ) or getattr(self.learn.model, "_is_vitdet", False):
+            vitdet_model = True
+        if self._is_multispectral and not vitdet_model:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
                 next(params_iterator).requires_grad = (
@@ -793,7 +874,7 @@ class ArcGISModel(object):
         self._device = torch.device("cpu")
         self._data = data
 
-    def lr_find(self, allow_plot=True, **kwargs):
+    def lr_find(self, allow_plot=True, mixed_precision=False, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -805,6 +886,11 @@ class ArcGISModel(object):
                                 against the learning rates and mark the optimal
                                 value of the learning rate on the plot.
                                 The default value is 'True'.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision.
+                                If set to `True`, optimum learning rate will be derived in mixed precision mode.
+                                Only `Pytorch` based models are supported.
+                                The default value is 'False'.
         =====================   ===========================================
         """
 
@@ -820,7 +906,11 @@ class ArcGISModel(object):
                 self.learn.metrics = []
                 # ddp training
                 if getattr(self, "_multigpu_training", False):
-                    self.learn.lr_find(start_lr=start_lr, end_lr=end_lr)
+                    self.learn.lr_find(
+                        start_lr=start_lr,
+                        end_lr=end_lr,
+                        mixed_precision=mixed_precision,
+                    )
                     distrib_barrier()
                     # remove tmp.pth created during lr_find in parent process
                     if not int(os.environ.get("RANK", 0)):
@@ -832,7 +922,11 @@ class ArcGISModel(object):
                         prefix="arcgisTemp_"
                     ) as _tempfolder:
                         self.learn.path = Path(_tempfolder)
-                        self.learn.lr_find(start_lr=start_lr, end_lr=end_lr)
+                        self.learn.lr_find(
+                            start_lr=start_lr,
+                            end_lr=end_lr,
+                            mixed_precision=mixed_precision,
+                        )
             except Exception as e:
                 # if some error comes in lr_find
                 raise e
@@ -958,6 +1052,7 @@ class ArcGISModel(object):
         checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
         tensorboard=False,
         monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
         **kwargs,
     ):
         """
@@ -1010,6 +1105,12 @@ class ArcGISModel(object):
                                 should be one of the metric that is displayed in
                                 the training table. Use `{model_name}.available_metrics`
                                 to list the available metrics to set here.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
+                                training. If set to `True`, model training will be done in
+                                mixed precision mode. Only `Pytorch` based models are supported.
+                                This feature is experimental.
+                                The default value is 'False'.
         =====================   ===========================================
         """
 
@@ -1019,14 +1120,30 @@ class ArcGISModel(object):
         if getattr(self, "_is_mm3d", False):
             self.learn.model.prediction = False
 
+        import matplotlib
+
+        _stored_matplotlib_backend = matplotlib.get_backend()
+
+        matplotlib.use("Agg")
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()
 
             if lr is None:
+                if len(self.learn.data.train_dl) == 0:
+                    print(
+                        f"Warning: Your training dataloader is empty. Cannot find the optimal learning rate."
+                    )
+                    print(
+                        f"Try using a smaller batch size (provided: batch size={self.learn.data.train_dl.batch_size} for {len(self.learn.data.train_dl.dataset)} elements)."
+                    )
+                    raise ValueError(
+                        "Training dataloader is empty. Adjust batch size or check that you have sufficient number of training samples."
+                    )
+
                 print("Finding optimum learning rate.")
 
-                lr = self.lr_find(allow_plot=False)
+                lr = self.lr_find(allow_plot=False, mixed_precision=mixed_precision)
                 if self._slice_lr is True and len(self.learn.layer_groups) > 1:
                     lr = slice(lr / 10, lr)
 
@@ -1133,9 +1250,22 @@ class ArcGISModel(object):
 
             self._fit_callbacks = callbacks
             if one_cycle:
-                self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
+                self.learn.fit_one_cycle(
+                    epochs,
+                    lr,
+                    callbacks=callbacks,
+                    mixed_precision=mixed_precision,
+                    **kwargs,
+                )
             else:
-                self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
+                self.learn.fit(
+                    epochs,
+                    lr,
+                    callbacks=callbacks,
+                    mixed_precision=mixed_precision,
+                    **kwargs,
+                )
+            matplotlib.use(_stored_matplotlib_backend)
 
     def unfreeze(self):
         """
@@ -1154,7 +1284,7 @@ class ArcGISModel(object):
             raise Exception("You need to train your model to compute losses")
 
     def _create_emd_template(
-        self, path, compute_metrics=True, save_inference_file=True
+        self, path, compute_metrics=True, save_inference_file=True, **kwargs
     ):
         _emd_template = {}
 
@@ -1271,6 +1401,11 @@ class ArcGISModel(object):
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
 
+        if self._model_kwargs.get("wavelengths", False):
+            _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[
+                "wavelengths"
+            ]
+
         if compute_metrics:
             if self._model_metrics_cache == None:
                 print("Computing model metrics...")
@@ -1355,6 +1490,14 @@ class ArcGISModel(object):
                         _emd_template["per_class_metrics"] = (
                             self.per_class_metrics().to_json()
                         )
+
+        if (
+            getattr(self._data, "_dataset_type", None) == "Labeled_Tiles"
+            or getattr(self._data, "_dataset_type", None) == "Imagenet"
+        ):
+            if hasattr(self, "_gradCAM") and not (self._data._is_multispectral):
+                _emd_template["ExpMap"] = kwargs.get("gradcam", False)
+
         return _emd_template
 
     @staticmethod
@@ -1715,6 +1858,7 @@ class ArcGISModel(object):
                 saved_path.with_suffix(".pth"),
                 compute_metrics,
                 save_inference_file,
+                **kwargs,
             )
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
@@ -1893,7 +2037,8 @@ class ArcGISModel(object):
                 arcgis.learn._utils.env._IS_ARCGISPRONOTEBOOK = False
                 #
                 self._save_model_characteristics(
-                    saved_path.parent.absolute() / model_characteristics_folder
+                    saved_path.parent.absolute() / model_characteristics_folder,
+                    **kwargs,
                 )
                 ArcGISModel._create_html(saved_path)
             except:
@@ -2000,7 +2145,7 @@ class ArcGISModel(object):
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
-    def _save_model_characteristics(self, model_characteristics_dir):
+    def _save_model_characteristics(self, model_characteristics_dir, **kwargs):
         import shutil
         import matplotlib.pyplot as plt
 
@@ -2050,6 +2195,7 @@ class ArcGISModel(object):
             "<SQNSeg>",
             "<MMDetection3D>",
             "<PTv3Seg>",
+            "<PTv3Det>",
         ]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
@@ -2060,7 +2206,10 @@ class ArcGISModel(object):
         ]:
             pass
         elif hasattr(self, "show_results"):
-            self.show_results()
+            if hasattr(self, "_gradCAM"):
+                self.show_results(gradcam=kwargs.get("gradcam", False))
+            else:
+                self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, "show_results.png"))
             plt.close()
 

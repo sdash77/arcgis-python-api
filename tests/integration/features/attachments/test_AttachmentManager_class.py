@@ -1,8 +1,12 @@
 import os
+import time
 import unittest
 from arcgis.features.managers import AttachmentManager
-from integration.config import QALAB_ROOT_PATH
+from arcgis.gis import Item
+from arcgis.gis._impl import ItemTypeEnum
+from utils.data_utils import publish_test_item, cleanup_published_items
 from utils.decorators import integration_test, profiles
+from integration.config import get_resource_path
 
 
 @profiles.enterprise_and_agol
@@ -15,18 +19,24 @@ class TestAttachmentManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Set up QALAB path and test_item
+        Set up data path and test_item
         """
-        cls.qalab_base_path = QALAB_ROOT_PATH
-        cls.qalab_cls_path = os.path.join(
-            cls.qalab_base_path, "features_mod_AttachmentManager_cls"
+        uid = int(time.time())
+        staging_data_path = "staging_data/attachments"
+        sd_file_path = get_resource_path(
+            f"{staging_data_path}/ntgrtn_tst_AttachmentManager.zip",
+            unique_copy=True,
         )
-        cls.new_attachment = os.path.join(cls.qalab_cls_path, "cows3.jpg")
-        cls.update_attachment = os.path.join(cls.qalab_cls_path, "cows4.jpg")
+        cls.new_attachment = get_resource_path(f"{staging_data_path}/cows3.jpg")
+        cls.update_attachment = get_resource_path(f"{staging_data_path}/cows4.jpg")
 
-        cls.test_item = cls.gis.content.search(
-            "dino_AttachmentManager_basic", "Feature Layer"
-        )[0]
+        cls.test_item = publish_test_item(
+            cls.gis,
+            layer_name=f"ntgrtn_tst_AttachmentManager_{uid}",
+            source_data_path=sd_file_path,
+            item_type=ItemTypeEnum.FILE_GEODATABASE,
+        )
+        assert isinstance(cls.test_item, Item), "Published item is not an Item"
 
     def test_create_AttachmentManager_object(self):
         """
@@ -48,32 +58,60 @@ class TestAttachmentManager(unittest.TestCase):
         """
         fl = self.test_item.layers[0]
         fl_am = fl.attachments
-        attachment_list = fl_am.get_list(1)
-        assert len(attachment_list) >= 1, "At least 1 attchment should be found"
-        assert attachment_list[0]["id"] == 1, "attachment id mismatch"
-        assert attachment_list[0]["name"] == "cows.jpg", "attachment name mismatch"
+        attachment_list = fl_am.get_list(2)
+        self.assertTrue(
+            len(attachment_list) >= 1, "At least 1 attchment should be found"
+        )
+        attachment_id = attachment_list[0]["id"]
+        self.assertEqual(2, attachment_id, f"attachment id mismatch: {attachment_id}")
+        self.assertEqual(
+            "cows2.jpg", attachment_list[0]["name"], "attachment name mismatch"
+        )
 
         # download png
-        png_id = fl_am.get_list(1)[2]["id"]
-        download_result_png = fl.attachments.download(1, png_id)
-        assert isinstance(download_result_png[0], str)
+        png_list = fl_am.get_list(2)
+        png_id = png_list[0]["id"]
+        download_result_png = fl.attachments.download(2, png_id)
+        self.assertIsInstance(
+            download_result_png[0], str, "Download result is not a string."
+        )
 
         # download pdf
-        pdf_id = fl_am.get_list(1)[1]["id"]
-        download_result_pdf = fl.attachments.download(1, pdf_id)
-        assert isinstance(download_result_pdf[0], str)
+        pdf_list = fl_am.get_list(2)
+        pdf_item = [i for i in pdf_list if i.get("name", "att_name") == "crime_pdf.pdf"]
+        pdf_id = pdf_item[0]["id"]
+        download_result_pdf = fl.attachments.download(2, pdf_id)
+        download_pdf_path = download_result_pdf[0]
+        self.assertTrue(
+            ".pdf" in download_pdf_path,
+            f"Incorrect attachment file extension: {download_pdf_path}",
+        )
 
         # download all
         download_result_all = fl.attachments.download()
-        assert isinstance(download_result_all, list)
+        self.assertEqual(
+            3,
+            len(download_result_all),
+            f"Incorrect attachment count via all. Got {len(download_result_all)}",
+        )
 
         # download a list of feature oid
         download_result_listoid = fl.attachments.download([1, 2])
-        assert isinstance(download_result_listoid, list)
+        download_count = len(download_result_listoid)
+        self.assertEqual(
+            3,
+            download_count,
+            f"Incorrect attachment count via OID list. Got {download_count}",
+        )
 
         # download multiple attachment from one feature
-        download_result_multi = fl.attachments.download(1)
-        assert isinstance(download_result_multi, list)
+        download_result_multi = fl.attachments.download(2)
+        download_one_feature = len(download_result_multi)
+        self.assertEqual(
+            2,
+            download_one_feature,
+            f"Incorrect attachment count via one feature. Got {download_one_feature}",
+        )
 
     def test_add_update_delete_attachment(self):
         """
@@ -81,19 +119,54 @@ class TestAttachmentManager(unittest.TestCase):
         """
         fl = self.test_item.layers[0]
         fl_am = fl.attachments
+        initial_attachment_count = fl_am.count()
+        self.assertEqual(
+            3,
+            initial_attachment_count,
+            f"Incorrect initial attachment count: {initial_attachment_count}",
+        )
 
         # add
-        add_res = fl_am.add(2, self.new_attachment)
-        assert add_res["addAttachmentResult"]["success"]
+        add_res = fl_am.add(1, self.new_attachment)
+        self.assertTrue(
+            add_res["addAttachmentResult"]["success"], "Add attachment failed"
+        )
+        added_attachment_count = fl_am.count()
+        self.assertEqual(
+            4,
+            added_attachment_count,
+            f"Incorrect attachment count after add: {added_attachment_count}",
+        )
 
         # update
-        attachment_id = fl_am.get_list(2)[1]["id"]
-        update_res = fl_am.update(2, attachment_id, self.update_attachment)
-        assert update_res["updateAttachmentResult"]["success"]
+        attachment_id = fl_am.get_list(1)[0]["id"]
+        update_res = fl_am.update(1, attachment_id, self.update_attachment)
+
+        self.assertTrue(
+            update_res.get("updateAttachmentResult").get("success"),
+            "Update attachment failed",
+        )
+        self.assertIsNotNone(
+            update_res.get("updateAttachmentResult"),
+            "Updated attachment result is None.",
+        )
 
         # delete
-        delete_res = fl_am.delete(2, attachment_id)
-        assert delete_res["deleteAttachmentResults"][0]["success"]
+        delete_res = fl_am.delete(1, attachment_id)
+        self.assertTrue(
+            delete_res["deleteAttachmentResults"][0]["success"],
+            "Delete attachment failed",
+        )
+        deleted_attachment_count = fl_am.count()
+        self.assertEqual(
+            3,
+            deleted_attachment_count,
+            f"Incorrect attachment count after add: {deleted_attachment_count}",
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items([cls.test_item])
 
 
 if __name__ == "__main__":

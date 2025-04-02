@@ -37,7 +37,13 @@ try:
     import numpy as np
     import matplotlib.pyplot as plt
     from fastai.vision import imagenet_stats
-    import fastai
+    from fastai.callbacks.hooks import hook_outputs, hook_output
+    from fastai.vision import Image
+    from fastai.vision.image import open_image
+    from fastai.data_block import MultiCategoryList
+    from fastai.vision.data import ImageDataBunch, ImageList
+    import warnings
+    import torch.nn.functional as F
     from .._data import _extract_bands_tfm, _tensor_scaler, _tensor_scaler_tfm
     from .._data import _get_batch_stats, sniff_rgb_bands
     from .._utils.env import is_arcgispronotebook
@@ -49,7 +55,7 @@ except:
 ## Common section starts
 
 
-def IC_show_results(self, nrows=5, **kwargs):
+def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
     type_data_loader = kwargs.get(
         "data_loader", "validation"
     )  # options : traininig, validation, testing
@@ -178,21 +184,49 @@ def IC_show_results(self, nrows=5, **kwargs):
         y_batch = y_batch.max(-1)[1]
 
     # Plotting Ground Truth and Prediction side by side
+
     ncols = 2
     title_font_size = 16
+    if (self._data.dataset_type == "MultiLabeled_Tiles") and gradcam_show_result:
+        ncols = len(self._data.classes) + 2
+        title_font_size = 16
+    if (
+        self._data.dataset_type == "Labeled_Tiles"
+        or self._data.dataset_type == "Imagenet"
+    ) and gradcam_show_result:
+        ncols = 3
+        title_font_size = 16
+
     _top = 1 - (math.sqrt(title_font_size) / math.sqrt(100 * n_items * imsize))
     top = kwargs.get("top", _top)
     fig, axs = plt.subplots(
         nrows=n_items, ncols=ncols, figsize=(ncols * imsize, n_items * imsize)
     )
-    fig.suptitle("Ground truth/Predictions", fontsize=title_font_size, weight="bold")
+    if gradcam_show_result:
+        fig.suptitle(
+            "Ground truth/Predictions/Explainability Map",
+            fontsize=title_font_size,
+            weight="bold",
+        )
+    else:
+        fig.suptitle(
+            "Ground truth/Predictions", fontsize=title_font_size, weight="bold"
+        )
     plt.subplots_adjust(top=top)
+    dataloader_image_path = [item for item in self._data.valid_dl.items]
     idx = 0
     for r in range(n_items):
         if n_items == 1:
             ax_i = axs
         else:
             ax_i = axs[r]
+        if gradcam_show_result:
+            im = open_image(dataloader_image_path[r])
+            pred = self.learn.predict(im)
+            # multi_all_cam setting it to True will return gradcam zero for the class not predicted
+            grad_cam_outputs, _, xb, _ = self._generate_grad_cam(
+                im, pred, self._data.dataset_type, multi_all_cam=True
+            )
 
         # Get ground truth and prediction class names
         if self._data.dataset_type == "MultiLabeled_Tiles":
@@ -216,6 +250,34 @@ def IC_show_results(self, nrows=5, **kwargs):
         ax_prediction.axis("off")
         ax_prediction.imshow(symbology_x_batch[idx].cpu().numpy())
         ax_prediction.set_title(prediction)
+        if gradcam_show_result:
+            pred_class_expmap = len(self._data.classes)
+            xb_im = Image(symbology_x_batch[idx].cpu().numpy())
+            sz = list(xb_im.shape[:-1])
+            if (
+                self._data.dataset_type == "Labeled_Tiles"
+                or self._data.dataset_type == "Imagenet"
+            ):
+                # there will be only one predicted class gradcam for single label
+                pred_class_expmap = 1
+            for i in range(pred_class_expmap):
+                ax_gradCAM = ax_i[2 + i]
+                ax_gradCAM.axis("off")
+                ax_gradCAM.imshow(symbology_x_batch[idx].cpu().numpy())
+                ax_gradCAM.imshow(
+                    grad_cam_outputs[i],
+                    alpha=0.4,
+                    extent=(0, *sz[::-1], 0),
+                    interpolation="bilinear",
+                    cmap="hot",
+                )
+                if self._data.dataset_type == "MultiLabeled_Tiles":
+                    ax_gradCAM.set_title(f"{self._data.classes[i]}")
+                if (
+                    self._data.dataset_type == "Labeled_Tiles"
+                    or self._data.dataset_type == "Imagenet"
+                ):
+                    ax_gradCAM.set_title(prediction)
 
         idx += 1
     if is_arcgispronotebook():

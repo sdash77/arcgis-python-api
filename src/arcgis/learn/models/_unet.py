@@ -6,6 +6,7 @@ from functools import partial
 from .._data import _raise_fastai_import_error
 import traceback
 import logging
+import urllib
 
 logger = logging.getLogger()
 
@@ -214,23 +215,36 @@ class UnetClassifier(ArcGISModel):
                 ):
                     backbone_cut = None
 
-            if not _isnotebook():
-                _set_ddp_multigpu(self)
-                if self._multigpu_training:
-                    self.learn = unet_learner(
-                        data,
-                        arch=self._backbone,
-                        pretrained=backbone_pretrained,
-                        metrics=accuracy,
-                        wd=1e-2,
-                        bottle=True,
-                        last_cross=True,
-                        cut=backbone_cut,
-                        split_on=backbone_split,
-                    ).to_distributed(self._rank_distributed)
-                    self._map_location = {
-                        "cuda:%d" % 0: "cuda:%d" % self._rank_distributed
-                    }
+            try:
+                if not _isnotebook():
+                    _set_ddp_multigpu(self)
+                    if self._multigpu_training:
+                        self.learn = unet_learner(
+                            data,
+                            arch=self._backbone,
+                            pretrained=backbone_pretrained,
+                            metrics=accuracy,
+                            wd=1e-2,
+                            bottle=True,
+                            last_cross=True,
+                            cut=backbone_cut,
+                            split_on=backbone_split,
+                        ).to_distributed(self._rank_distributed)
+                        self._map_location = {
+                            "cuda:%d" % 0: "cuda:%d" % self._rank_distributed
+                        }
+                    else:
+                        self.learn = unet_learner(
+                            data,
+                            arch=self._backbone,
+                            pretrained=backbone_pretrained,
+                            metrics=accuracy,
+                            wd=1e-2,
+                            bottle=True,
+                            last_cross=True,
+                            cut=backbone_cut,
+                            split_on=backbone_split,
+                        )
                 else:
                     self.learn = unet_learner(
                         data,
@@ -243,17 +257,9 @@ class UnetClassifier(ArcGISModel):
                         cut=backbone_cut,
                         split_on=backbone_split,
                     )
-            else:
-                self.learn = unet_learner(
-                    data,
-                    arch=self._backbone,
-                    pretrained=backbone_pretrained,
-                    metrics=accuracy,
-                    wd=1e-2,
-                    bottle=True,
-                    last_cross=True,
-                    cut=backbone_cut,
-                    split_on=backbone_split,
+            except urllib.error.URLError as e:
+                raise ConnectionError(
+                    f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
                 )
 
             class_weight = None
@@ -348,6 +354,7 @@ class UnetClassifier(ArcGISModel):
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))

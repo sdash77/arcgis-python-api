@@ -8,6 +8,7 @@ import math
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
+from packaging import version
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
@@ -16,12 +17,14 @@ from .._utils.tabular_data import (
     explain_prediction,
     add_h3,
 )
+from .._utils.common import _get_emd_path
 
 try:
     import sklearn
     from sklearn import *
     from sklearn.preprocessing import LabelEncoder
     import pandas as pd
+    import numpy as np
     import warnings
     from .._fairlearn import _fairlearn
     from .._fairlearn import _reweigh
@@ -55,6 +58,7 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
+_FAIRNESS_NOT_SUPPORTED = "Fairness is not supported with this model type"
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
 _DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE = "ValueError: The sensitive feature encountered a degenerate label. A degenerate label typically refers to a label or category within a dataset that has very little variation or diversity, making it less informative for machine learning or statistical analysis."
@@ -114,6 +118,24 @@ def _get_model_type(model_type):
 
         model = getattr(catboost, model)
 
+    elif model_type.startswith("tabpfn."):
+        model_type = model_type.replace("tabpfn.", "")
+        if len(model_type.split(".")) > 0:
+            model = model_type.split(".")[0]
+        else:
+            raise Exception("Invalid model_type.")
+        try:
+            import tabpfn
+        except Exception as e:
+            raise Exception(
+                "TabPFN is not installed. Please install TabPFN using the command `conda install -c esri tabpfn`"
+            )
+
+        if not hasattr(tabpfn, model):
+            raise Exception("Invalid model_type.")
+
+        model = getattr(tabpfn, model)
+
     return model
 
 
@@ -154,6 +176,10 @@ class MLModel(object):
                             For gradient boosting:
 
                             `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
+
+                            For TabPFN:
+                            `Built with TabPFN - tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/blob/main/LICENSE>`
+
     ---------------------   -------------------------------------------
     Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
 
@@ -198,6 +224,8 @@ class MLModel(object):
                             `catboostclassifier <https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier>`_
 
                             `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_
+
+                            `tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/tree/v1.0.0>`
 
     =====================   ===========================================
 
@@ -273,7 +301,18 @@ class MLModel(object):
             + self._data._categorical_variables,
         )
 
+        if "tabpfn" in model_type and (
+            len(self._training_data) > 1024
+            or len(np.unique(self._training_labels)) > 10
+        ):
+            raise Exception(
+                f"{model_type} is incompatible with training data > 1024 or label > 10. Adjust validation split or input data or label."
+            )
+
         if fairness_args is not None:
+            if "tabpfn" in model_type:
+                raise ValueError(_FAIRNESS_NOT_SUPPORTED)
+
             self.initialize_fair_model(fairness_args)
 
     def initialize_fair_model(self, fairness_args):
@@ -530,7 +569,7 @@ class MLModel(object):
         # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
 
-        if self._fairness and self.mitigation_method == "threshold_optimizer":
+        if self._fairness:
             validation_df_batch = self._validation_df.iloc[sample_batch, :]
             sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
             group_df = validation_df_batch.loc[:, self.protected_class]
@@ -828,6 +867,8 @@ class MLModel(object):
 
         else:
             emd_params["ModelParameters"] = self._model.get_params()
+            if "base_path" in emd_params["ModelParameters"]:
+                emd_params["ModelParameters"].pop("base_path")
             emd_params["fairness"] = False
 
         emd_params["categorical_variables"] = self._data._categorical_variables
@@ -862,21 +903,7 @@ class MLModel(object):
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
 
-        emd_path = str(emd_path)
-
-        if emd_path.endswith(".dlpk"):
-            with ZipFile(emd_path, "r") as zip_obj:
-                temp_dir = tempfile.TemporaryDirectory().name
-                zip_obj.extractall(temp_dir)
-                MLModel.from_model(temp_dir, data)
-
-        if not emd_path.endswith(".emd"):
-            emd_path = os.path.join(
-                emd_path, (str(os.path.basename(emd_path)) + ".emd")
-            )
-
-        if not os.path.exists(emd_path):
-            raise Exception("Invalid data path.")
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path, "r") as f:
             emd = json.loads(f.read())
@@ -893,17 +920,16 @@ class MLModel(object):
 
         cell_sizes = emd.get("cell_sizes", None)
 
-        if (
-            emd["version"] == str(sklearn.__version__)
-            or emd["version"] == str(xgboost.__version__)
-            or emd["version"] == str(lightgbm.__version__)
-            or emd["version"] == str(catboost.__version__)
+        _model_name = emd.get("ModelName", None)
+        if _model_name and not _model_name.lower().startswith(
+            ("lightgbm", "catboost", "xgboost", "tabpfn")
         ):
-            pass
-        else:
-            warnings.warn(
-                f"Sklearn/xgboost/lightgbm/catboost version has changed. Model Trained using version {emd['version']}"
-            )
+            if version.parse(emd["version"]) < version.parse(
+                str(sklearn.__version__)
+            ) and version.parse(str(sklearn.__version__)) >= version.parse("1.4.0"):
+                raise Exception(
+                    "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
+                )
 
         _is_classification = True
         if emd["_is_classification"] != "classification":

@@ -19,6 +19,12 @@ from ._io.fileops import (
     _gdal_to_fc,
 )
 
+json_dumps = (
+    pd.io.json.ujson_dumps if hasattr(pd.io.json, "ujson_dumps") else pd.io.json.dumps
+)
+json_loads = (
+    pd.io.json.ujson_loads if hasattr(pd.io.json, "ujson_loads") else pd.io.json.loads
+)
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
@@ -36,7 +42,7 @@ _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
 _pa = LazyLoader("pyarrow")
-_tools_utils = LazyLoader("arcgis._impl.common._tools._utils")
+_tools_utils = LazyLoader("arcgis.features.geo._tools._utils")
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -1197,6 +1203,10 @@ class GeoAccessor(object):
 
             import os
             os.environ["ARCGIS_GEOMETRY_ENGINE"] = "<engine of choice>"
+
+    .. note::
+        If you are using shapely in conjunction with shapefiles instead of arcpy or gdal, you will have to
+        do all reprojections manually. Shapely does not support projections.
 
     """
 
@@ -2723,7 +2733,7 @@ class GeoAccessor(object):
         fields                          list of strings specifying the field names.
         ---------------------------     --------------------------------------------------------------------
         spatial_filter                  A `Geometry` object that will filter the results.  This requires
-                                        `arcpy` to work.
+                                        `arcpy` or `gdal` to work.
         ---------------------------     --------------------------------------------------------------------
         sr                              A Spatial reference to project (or transform) output GeoDataFrame
                                         to. This requires `arcpy` to work.
@@ -2896,11 +2906,11 @@ class GeoAccessor(object):
             geom = row[self.name]
             del row[self.name]
             gj = copy.copy(geom.__geo_interface__)
-            gj["attributes"] = pd.io.json.loads(
-                pd.io.json.dumps(row)
+            gj["attributes"] = json_loads(
+                json_dumps(row)
             )  # ensures the values are converted correctly
             template["features"].append(gj)
-        return pd.io.json.dumps(template)
+        return json_dumps(template)
 
     # ----------------------------------------------------------------------
     @property
@@ -3164,7 +3174,8 @@ class GeoAccessor(object):
     @property
     def sr(self):
         """
-        The ``sr`` property gets and sets the :class:`~arcgis.geometry.SpatialReference` of the dataframe
+        The ``sr`` property gets and sets the :class:`~arcgis.geometry.SpatialReference` of the dataframe.
+        Can only be done with the ArcPy Geometry Engine.
 
         ==================      ====================================================================
         **Parameter**            **Description**

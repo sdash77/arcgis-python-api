@@ -67,7 +67,7 @@ class ItemNode:
         # if returning items instead of just id's...
         items = []
         for n in node_list:
-            node = self.graph.get_item(n)
+            node = self.graph.get_node(n)
             # if node format, append node
             if out_format == "node":
                 items.append(node)
@@ -273,13 +273,14 @@ class ItemGraph(nx.DiGraph):
         """
         Adds an item to the graph. The item ID is required, but the item itself is optional.
         Creates an ItemNode with the item ID and item. Will usually be called by other functions
-        and not by users.
+        and not by users. Note that this does not add any relationships to the graph.
+
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         itemid              Required string. The item ID of the item to add.
         ---------------     --------------------------------------------------------------------
-        item                Optional Item. An instance of the item to add.
+        item                Optional :class:`~arcgis.gis.Item`. An instance of the item to add.
         ===============     ====================================================================
         """
         node = ItemNode(self, itemid, item)
@@ -288,6 +289,7 @@ class ItemGraph(nx.DiGraph):
     def delete_item(self, itemid: str):
         """
         Deletes an item from the graph. Associated relationships will also be removed.
+
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -296,24 +298,88 @@ class ItemGraph(nx.DiGraph):
         """
         self.remove_node(itemid)
 
-    def get_item(self, itemid: str):
+    def get_node(self, itemid: str):
         """
-        Returns an ItemNode of the item in the graph with the given item ID. If the item is not
-        in the graph, None will be returned.
+        Method gets an :class:`~arcgis.apps.itemgraph.ItemNode` instance for the item contained
+        in the graph with the given item ID. *None* will be returned if the item is not
+        in the graph.
+
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        itemid              Required string. The item ID of the item to retrieve.
+        itemid              Required string. The item ID of the item node to retrieve.
         ===============     ====================================================================
+
+        :return:
+            An :class:`~arcgis.apps.itemgraph.ItemNode` instance.
         """
         try:
             return self.nodes[itemid]["node"]
         except:
             return None
 
+    def add_dependencies(
+        self, item_list: list[Item, str], outside_org: bool = True, **kwargs
+    ):
+        """
+        Adds a list of items to the graph and their dependencies. The function recursively explores
+        the dependencies of each item that is part of the organization, encompassing the full dependency
+        tree of each source item.
+
+        .. note::
+            If the *outside_org* argument is set to *True*, items external to the organization
+            are incuded in the results, but are not explored for dependencies.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_list           Required list of :class:`items <arcgis.gis.Item>` or *Item ID*
+                            values to include in the graph.
+        ---------------     --------------------------------------------------------------------
+        outside_org         Optional boolean.
+
+                            * When *True*, items outside of the organization will
+                            be included in the graph (but still not explored for their
+                            dependencies). Default is *True*.
+                            * When *False*, only items owned by users in the org will
+                            be included in the graph.
+        ===============     ====================================================================
+
+        In addition to explicitly named parameters, this function supports optional key word
+        arguments:
+
+        ===============     ========================================================================
+        **kwargs**          **Description**
+        ---------------     ------------------------------------------------------------------------
+        include_reverse     Optional boolean.
+
+                            * When *True*, the graph will include reverse relationships found
+                            found when calling the :meth:`~arcgis.gis.Item.related_items`
+                            method on an *item* with the *item.related_items(direction="reverse")*
+                            argument
+                            * When *False*, only includes *item.related_items(direction="forward")*
+                            relationships
+        ===============     ========================================================================
+        """
+        create_dependency_graph(self.gis, item_list, outside_org, graph=self, **kwargs)
+
     def all_items(self, out_format: str = "node"):
         """
         Returns a list of the item ID's of all items in the graph.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        out_format          Required string. The format of items in the list. Default is *node*.
+                            Options:
+
+                            * *node*
+                            * *item*
+        ===============     ====================================================================
+
+        :return:
+            * List of :class:`item <arcgis.gis.Item>` if *out_format="item"*
+            * List of :class:`itemnode <arcgis.apps.itemgraph.ItemNode>` objects if *out_format="node"*
         """
         out_format = out_format.lower()
         if out_format == "node":
@@ -332,12 +398,16 @@ class ItemGraph(nx.DiGraph):
 
     def write_to_file(self, location: str):
         """
-        Writes the graph to a file in GML format. Note that this strictly writes the ID's and
-        edges of the graph, no information about the items themselves is included.
+        Writes the graph to a file in GML format.
+
+        ..note::
+            Method strictly writes the ID's and edges of the graph.
+            No information about the items themselves is included.
+
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        path                Required string. The path to write the file to.
+        location            Required string. The path to write the file to.
         ===============     ====================================================================
         """
         # assert the path is valid and ends with gml
@@ -358,24 +428,30 @@ def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
     """
     Loads a graph from a file in GML format. The graph should have been written to the file
     using the write_to_file method.
+
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     path                Required string. The path to the GML file to load the graph from.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The GIS instance that the graph is associated with.
-                        If not provided, the active GIS will be used, if available. Must be
-                        the same GIS as the one used to create the graph in order for
-                        everything to work properly.
+    gis                 Required :class:`~arcgis.gis.GIS` object. The GIS instance that the
+                        graph is associated with. If not provided, the active GIS will be
+                        used, if available. *Must* be the same GIS as the one used to create
+                        the graph.
     ---------------     --------------------------------------------------------------------
-    include_items       Optional boolean. When True, the ItemNode instances will include the
-                        item instances as well. Otherwise, they will be retrieved later, as
-                        needed. Default is True, but recommended to be set to False on
-                        very large graphs.
+    include_items       Optional boolean.
+
+                        * When *True*, the :class:`~arcgis.apps.itemgraph.ItemNode` instances
+                          will include the :class:`item <arcgis.gis.Item>` instances as well.
+                          Otherwise, *items* are retrieved as needed. Default is *True*.
+                        * When *False*, item instances are not included.
+
+                        .. note::
+                            Best practice is to set to False on very large graphs.
     ===============     ====================================================================
 
     :return:
-        An ItemGraph instance.
+        An :class:`~arcgis.apps.itemgraph.ItemGraph` instance.
     """
     if not gis:
         gis = arcgis.env.active_gis
@@ -407,40 +483,57 @@ def create_dependency_graph(
     gis: GIS, item_list: list[Item, str], outside_org: bool = True, **kwargs
 ):
     """
-    Creates an ItemGraph from a list of items. The function recursively explores the dependencies
-    of each item involved that's part of the organization, encompassing the full dependency tree
-    of each source item. Contains an option to include items from outside the organization;
-    if they are included, they are not explored for dependencies, but are still part of the
-    graph.
+    Creates an :class:`~arcgis.apps.itemgraph.ItemGraph` from a list of
+    :class:`items <arcgis.gis.Item>`. The function recursively explores the dependencies
+    of each item that is part of the organization, encompassing the full dependency tree
+    of each source item.
+
+    .. note::
+        If the *outside_org* argument is set to *True*, items external to the organization
+        are incuded in the results, but are not explored for dependencies.
+
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The GIS instance that the graph is associated with.
+    gis                 Required :class:`~arcgis.gis.GIS` object. The GIS instance that the
+                        graph is associated with.
     ---------------     --------------------------------------------------------------------
-    item_list           Required list. A list of items to include in the graph. Items can be
-                        either Item instances or item ID's.
+    item_list           Required list of :class:`items <arcgis.gis.Item>` or *Item ID*
+                        values to include in the graph.
     ---------------     --------------------------------------------------------------------
-    outside_org         Optional boolean. When True, items outside of the organization will
-                        be included in the graph (but still not explored for their
-                        dependencies). When False, only items owned by users in the org will
-                        be included in the graph. Default is True.
+    outside_org         Optional boolean.
+
+                        * When *True*, items outside of the organization will
+                          be included in the graph (but still not explored for their
+                          dependencies). Default is *True*.
+                        * When *False*, only items owned by users in the org will
+                          be included in the graph.
     ===============     ====================================================================
 
     In addition to explicitly named parameters, this function supports optional key word
     arguments:
 
-    ===============     ====================================================================
+    ===============     ========================================================================
     **kwargs**          **Description**
-    ---------------     --------------------------------------------------------------------
-    include_reverse     Optional boolean. When True, the graph will include reverse
-                        relationships found from an item's related_items property.
-    ===============     ====================================================================
+    ---------------     ------------------------------------------------------------------------
+    include_reverse     Optional boolean.
+
+                        * When *True*, the graph will include reverse relationships found
+                          found when calling the :meth:`~arcgis.gis.Item.related_items`
+                          method on an *item* with the *item.related_items(direction="reverse")*
+                          argument
+                        * When *False*, only includes *item.related_items(direction="forward")*
+                          relationships
+    ===============     ========================================================================
 
     :return:
-            An ItemGraph with all of the relevant items and relationships.
+        An :class:`~arcgis.apps.itemgraph.ItemGraph` with all of the relevant items
+        and relationships.
     """
 
-    graph = ItemGraph(gis)
+    graph = kwargs.get("graph", None)
+    if not isinstance(graph, ItemGraph):
+        graph = ItemGraph(gis)
     rev = kwargs.get("include_reverse", False)
 
     def _add_deps(item: Item):

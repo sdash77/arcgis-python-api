@@ -31,6 +31,7 @@ try:
     from .._utils.TSData import To3dTensor, ToTensor
     from .._utils.common import _get_emd_path
     from ._tsmodel_archs._TST import TST
+    from ..text._model_extension_text import TextModelExtension
 
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
@@ -140,37 +141,46 @@ class TimeSeriesModel(ArcGISModel):
         if self.multistep and len(list(fields_needed)) != 1:
             self.step = seq_len // 2
 
-        if not data_bunch:
-            self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
-        elif kwargs.get("pretrained_path"):
-            self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
-            self.learn.data = data_bunch
+        self.model_extension = False
+        self.inference_model = None
+
+        if kwargs.get("model_extension", False):
+            self.inference_model = kwargs.get("extensible_model", None)
+            assert self.inference_model is not None
+            self.inference_model = self.inference_model.model
+            self.model_extension = True
         else:
-            if not _model_arch.get(model_arch.lower()):
-                raise Exception("Invalid model architecture")
-
-            model_arch_ob = _model_arch.get(model_arch.lower())
-            if model_arch.lower() == "lstm":
-                model = model_arch_ob(
-                    data_bunch.features, data_bunch.c, self._device, **kwargs
-                ).to(self._device)
-            elif model_arch.lower() == "timeseriestransformer":
-                model = model_arch_ob(
-                    data_bunch.features, data_bunch.c, seq_len, **kwargs
-                ).to(self._device)
+            if not data_bunch:
+                self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
+            elif kwargs.get("pretrained_path"):
+                self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
+                self.learn.data = data_bunch
             else:
-                if model_arch.lower() in ["resnet", "fcn"]:
-                    kwargs["device"] = self._device
-                model = model_arch_ob(data_bunch.features, data_bunch.c, **kwargs).to(
-                    self._device
-                )
-                if model_arch.lower() in ["resnet", "fcn"]:
-                    del kwargs["device"]
-            self.learn = Learner(data_bunch, model, path=data.path)
-            self.learn.data = data_bunch
+                if not _model_arch.get(model_arch.lower()):
+                    raise Exception("Invalid model architecture")
 
-        self.learn.layer_groups = split_model_idx(self.learn.model, [1])
-        self._model_arch = model_arch.lower()
+                model_arch_ob = _model_arch.get(model_arch.lower())
+                if model_arch.lower() == "lstm":
+                    model = model_arch_ob(
+                        data_bunch.features, data_bunch.c, self._device, **kwargs
+                    ).to(self._device)
+                elif model_arch.lower() == "timeseriestransformer":
+                    model = model_arch_ob(
+                        data_bunch.features, data_bunch.c, seq_len, **kwargs
+                    ).to(self._device)
+                else:
+                    if model_arch.lower() in ["resnet", "fcn"]:
+                        kwargs["device"] = self._device
+                    model = model_arch_ob(
+                        data_bunch.features, data_bunch.c, **kwargs
+                    ).to(self._device)
+                    if model_arch.lower() in ["resnet", "fcn"]:
+                        del kwargs["device"]
+                self.learn = Learner(data_bunch, model, path=data.path)
+                self.learn.data = data_bunch
+
+            self.learn.layer_groups = split_model_idx(self.learn.model, [1])
+            self._model_arch = model_arch.lower()
         if kwargs.get("pretrained_path"):
             del kwargs["pretrained_path"]
         self._kwargs = kwargs
@@ -187,7 +197,7 @@ class TimeSeriesModel(ArcGISModel):
         return ["valid_loss"]
 
     @classmethod
-    def from_model(cls, emd_path, data=None):
+    def from_model(cls, emd_path, data=None, **kwargs):
         """
         Creates a :class:`~arcgis.learn.TimeSeriesModel` Object from an Esri Model Definition (EMD) file.
 
@@ -211,20 +221,23 @@ class TimeSeriesModel(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        dependent_variable = emd["dependent_variable"]
+        _is_classification = False
+        dependent_variable = emd.get("dependent_variable", [])
+        categorical_variables = emd.get("categorical_variables", [])
+        continuous_variables = emd.get("continuous_variables", [])
+        seq_len = emd.get("seq_len", None)
+
+        if "InferenceFunction" in emd:
+            extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
+        else:
+            if emd["_is_classification"] == "classification":
+                _is_classification = True
+            model_params = emd["model_params"]
+            model_arch = emd["model_arch"]
         # added reverse support to the EMD params.
         if isinstance(dependent_variable, str):
             dependent_variable = [dependent_variable]
-        categorical_variables = emd["categorical_variables"]
-        continuous_variables = emd["continuous_variables"]
 
-        _is_classification = False
-        if emd["_is_classification"] == "classification":
-            _is_classification = True
-
-        model_params = emd["model_params"]
-        model_arch = emd["model_arch"]
-        seq_len = emd["seq_len"]
         index_field = emd.get("index_field", None)
         test_size = emd.get("test_size", None)
         step = emd.get("step", 1)
@@ -262,15 +275,29 @@ class TimeSeriesModel(ArcGISModel):
             data._index_field = index_field
             data._test_size = test_size
 
-            class_object = cls(
-                data,
-                seq_len,
-                model_arch=model_arch,
-                pretrained_path=emd_path,
-                step=step,
-                multistep=multistep,
-                **model_params,
-            )
+            if "InferenceFunction" in emd:
+                try:
+                    if extensible_model.model_loaded:
+                        class_object = cls(
+                            data,
+                            seq_len,
+                            model_arch="inference_model",
+                            pretrained_path=emd_path,
+                            model_extension=True,
+                            extensible_model=extensible_model,
+                        )
+                except:
+                    raise Exception("Could not load the inference model")
+            else:
+                class_object = cls(
+                    data,
+                    seq_len,
+                    model_arch=model_arch,
+                    pretrained_path=emd_path,
+                    step=step,
+                    multistep=multistep,
+                    **model_params,
+                )
             class_object._data.emd = emd
             class_object._data.emd_path = emd_path
             return class_object
@@ -1227,8 +1254,9 @@ class TimeSeriesModel(ArcGISModel):
         sample_ticks = False
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
-                index_data_copy
+            if not (
+                pd.api.types.is_datetime64_any_dtype(index_data_copy)
+                or pd.api.types.is_timedelta64_dtype(index_data_copy)
             ):
                 try:
                     index_data_copy = pd.to_datetime(index_data_copy)

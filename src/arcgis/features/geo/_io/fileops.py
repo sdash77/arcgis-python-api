@@ -50,6 +50,13 @@ elif SELECTED_ENGINE == GeometryEngine.ARCPY:
 
     USE_ARCPY = True
 
+json_dumps = (
+    pd.io.json.ujson_dumps if hasattr(pd.io.json, "ujson_dumps") else pd.io.json.dumps
+)
+json_loads = (
+    pd.io.json.ujson_loads if hasattr(pd.io.json, "ujson_loads") else pd.io.json.loads
+)
+
 _logging = logging.getLogger(__name__)
 
 
@@ -714,7 +721,7 @@ def from_featureclass(filename, **kwargs):
     :return: pandas.core.frame.DataFrame
 
     """
-    if "http://" in filename or "https://" in filename:
+    if isinstance(filename, str) and ("http://" in filename or "https://" in filename):
         return _http_workflow(filename)
 
     filename = _ensure_path_string(filename)
@@ -722,7 +729,7 @@ def from_featureclass(filename, **kwargs):
     if USE_ARCPY:
         return _arcpy_workflow(filename, **kwargs)
     if USE_GDAL:
-        return _gdal_workflow(filename)
+        return _gdal_workflow(filename, **kwargs)
     if USE_PYSHP and filename.lower().endswith(".shp"):
         return _shapefile_workflow(filename)
     if USE_FIONA and (
@@ -749,8 +756,8 @@ def _http_workflow(filename):
     return df
 
 
-def _gdal_workflow(filename):
-    df = _gdal_to_sedf(file_path=filename)
+def _gdal_workflow(filename, **kwargs):
+    df = _gdal_to_sedf(file_path=filename, **kwargs)
     df.spatial._meta.source = filename
     return df
 
@@ -769,6 +776,10 @@ def _arcpy_workflow(filename, **kwargs):
     area_field = desc.get("areaFieldName", None)
     length_field = desc.get("lengthFieldName", None)
     pandas_dtypes = _fc2pandas_dtypes(desc)
+    if fields:
+        pandas_dtypes = {
+            key: value for key, value in pandas_dtypes.items() if key in fields
+        }
 
     if spatial_filter:
         spatial_relation = {
@@ -842,7 +853,7 @@ def _arcpy_workflow(filename, **kwargs):
     df.SHAPE = df.SHAPE[q].apply(_ujson.loads).apply(arcpy_geom_type)
     df.loc[none_q, "SHAPE"] = None
     df.spatial.set_geometry("SHAPE")
-    df.spatial._meta.source = filename
+    df.spatial._meta.source = getattr(filename, "dataSource", str(filename))
 
     for key, data_type in pandas_dtypes.items():
         try:
@@ -1064,12 +1075,10 @@ def to_featureclass(
                 gt = df[df.spatial.name][idx].geometry_type.upper()
 
             null_geom = {
-                "point": pd.io.json.dumps(
-                    {"x": None, "y": None, "spatialReference": sr}
-                ),
-                "polyline": pd.io.json.dumps({"paths": [], "spatialReference": sr}),
-                "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
-                "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
+                "point": json_dumps({"x": None, "y": None, "spatialReference": sr}),
+                "polyline": json_dumps({"paths": [], "spatialReference": sr}),
+                "polygon": json_dumps({"rings": [], "spatialReference": sr}),
+                "multipoint": json_dumps({"points": [], "spatialReference": sr}),
             }
 
             null_geom = null_geom[gt.lower()]
@@ -1213,7 +1222,7 @@ def to_featureclass(
                     df = df.replace({pd.NaT: None})
 
                 def _insert_row(row):
-                    row[-1] = pd.io.json.dumps(row[-1])
+                    row[-1] = json_dumps(row[-1])
                     for idx in bool_fld_idx:
                         if isinstance(row[idx], (int, bool)):
                             row[idx] = int(row[idx])
@@ -1258,24 +1267,31 @@ def to_featureclass(
         return fc
 
     elif USE_GDAL:
+        is_gdb = False
         if fc_name.endswith(".gdb"):
             out_type = "OpenFileGDB"
+            save_location: str = os.path.join(out_location, fc_name)
             layer_name = fc_name[:-4]
+            is_gdb = True
+        elif out_location.lower().endswith(".gdb"):
+            out_type = "OpenFileGDB"
+            save_location: str = out_location
+            layer_name = fc_name
+            is_gdb = True
         elif fc_name.endswith(".shp"):
             out_type = "Esri Shapefile"
-            fc_name = fc_name[:-4]
+            save_location: str = out_location
             layer_name = fc_name
         elif fc_name.endswith(".dbf"):
             out_type = "DBF"
+            save_location = out_location
             layer_name = fc_name
-        else:
-            layer_name = fc_name
-            fc_name = "%s.gdb" % fc_name
-            out_type = "OpenFileGDB"
+
         return _gdal_to_fc(
-            df,
-            os.path.join(out_location, fc_name),
-            out_type,
+            df=df,
+            out_path=save_location,
+            out_type=out_type,
+            gdb_table=is_gdb,
             layer_name=layer_name,
             overwrite=overwrite,
         )
@@ -1327,19 +1343,24 @@ def _gdal_to_fc(
         raise ValueError("overwrite set to False, cannot overwrite existent location.")
 
     out_driver = ogr.GetDriverByName(out_type)
+    table_name: str = os.path.join(out_path, layer_name)
     if gdb_table:
         if os.path.basename(out_path).find(".gdb") > -1:
             gdb_dir = out_path
         else:
             gdb_dir = os.path.dirname(out_path)
-
+        # create or get the fgdb
         out_file = out_driver.Open(gdb_dir, 1)
         if out_file is None:
             out_file = out_driver.CreateDataSource(gdb_dir)
+            out_file.SyncToDisk()
+
     else:
-        if os.path.exists(out_path):
-            shutil.rmtree(out_path)
-        out_file = out_driver.CreateDataSource(out_path)
+        if os.path.exists(table_name):
+            out_driver.DeleteDataSource(out_path)  # Overwrite if exists
+        os.makedirs(out_path, exist_ok=True)
+
+        out_file = out_driver.CreateDataSource(table_name)
 
     spatial_field = df.spatial.name if hasattr(df.spatial, "name") else None
     if spatial_field:
@@ -1392,8 +1413,8 @@ def _gdal_to_fc(
                     out_layer.CreateField(field_def)
                 elif isinstance(df[c].loc[idx], (float, np.float64)):
                     field_def = ogr.FieldDefn(c, ogr.OFTReal)
-                    field_def.SetPrecision(50)
-                    field_def.SetWidth(50)
+                    field_def.SetPrecision(150)
+                    field_def.SetWidth(150)
                     out_layer.CreateField(field_def)
                 elif (
                     isinstance(
@@ -1439,11 +1460,11 @@ def _gdal_to_fc(
             for field_name, value in row.items():
                 if spatial_field is None or field_name != spatial_field:
                     # always run for table, but only run for feature class if not geom field
-                    if field_name in dfields:
-                        value = value.strftime("%Y-%m-%d %H:%M:%S")
-                    if isinstance(value, type(pd.NA)):
+                    if isinstance(value, (type(pd.NA), type(pd.NaT))):
                         # gdal is not a fan of pandas NA
                         value = None
+                    elif field_name in dfields:
+                        value = value.strftime("%Y-%m-%d %H:%M:%S")
                     feature.SetField(field_mapping[field_name], value)
 
             out_layer.CreateFeature(feature)
@@ -1458,7 +1479,7 @@ def _gdal_to_fc(
     out_layer.SyncToDisk()  # Ensure the layer changes are written to disk
     out_file = None  # Closing the dataset, saving everything to disk
 
-    return out_path
+    return table_name
 
 
 # --------------------------------------------------------------------------
@@ -1477,7 +1498,7 @@ def _zip_dir(path, dir_name):
 
 
 # --------------------------------------------------------------------------
-def _gdal_to_sedf(file_path):
+def _gdal_to_sedf(file_path, **kwargs):
     def parse_datetime(value):
         """Attempt to parse a datetime string into a Python datetime object."""
         try:
@@ -1563,7 +1584,25 @@ def _gdal_to_sedf(file_path):
         for field in out_layer.schema
         if field.type in [ogr.OFTDate, ogr.OFTDateTime]
     ]
-    spatial_ref = out_layer.GetSpatialRef()
+    if kwargs.get("sr"):
+        sr = kwargs.get("sr")
+        spatial_ref = osr.SpatialReference()
+
+        if isinstance(sr, dict):
+            sr = sr.get("wkid") or sr.get("wkt")  # Extract WKID or WKT if present
+
+        if isinstance(sr, int):
+            # If sr is an integer EPSG code (e.g., 3857), create SpatialReference from EPSG code
+            spatial_ref.ImportFromEPSG(sr)
+        elif isinstance(sr, str) and sr.startswith("EPSG:"):
+            # If sr is a string and starts with "EPSG:", extract EPSG code and create SpatialReference
+            epsg_code = int(sr.split(":")[1])
+            spatial_ref.ImportFromEPSG(epsg_code)
+        elif isinstance(sr, str):
+            # If sr is a WKT string, use ImportFromWkt
+            spatial_ref.ImportFromWkt(sr)
+    else:
+        spatial_ref = out_layer.GetSpatialRef()
     sr_code = int(spatial_ref.GetAuthorityCode(None)) if spatial_ref else 4326
 
     # Precompute field indices to avoid repeated calls to GetFieldIndex
@@ -1585,8 +1624,20 @@ def _gdal_to_sedf(file_path):
         # Process geometry as WKB, if needed
         geom = feature.geometry()
         if geom is not None:
+            if kwargs.get("sr"):
+                # If a user provided a spatial reference, reproject the geometry
+                out_layer_sr = out_layer.GetSpatialRef()
+                if out_layer_sr and not out_layer_sr.IsSame(spatial_ref):
+                    transform = osr.CoordinateTransformation(out_layer_sr, spatial_ref)
+                    geom.Transform(transform)
+
             # Export geometry to JSON and parse with ujson
-            geom_json = _ujson.loads(geom.ExportToJson())
+            gj = geom.ExportToJson()
+            if not gj:
+                raise RuntimeError(
+                    f"Unable to read geometry of type {geom.GetGeometryName()} with gdal."
+                )
+            geom_json = _ujson.loads(gj)
             esri_geom = Geometry(geom_json)
             esri_geom.spatialReference = Geometry({"wkid": sr_code})
             row.append(esri_geom)
