@@ -1,5 +1,4 @@
 #######################################################################
-import sys
 import unittest
 
 
@@ -13,6 +12,7 @@ try:
     found = shapely_found is not None
     if found:
         import shapely
+        from shapely.wkt import loads
 except:
     found = False
 
@@ -26,7 +26,7 @@ class TestGeoJSONWithShapely(unittest.TestCase):
         ###
         ###   POLYLINE TEST
         ###
-        LINESTRING_3D = "LINESTRING Z (517947.10 6368795.07 61.07, 517947.11 6368795.1 161.07)"
+        LINESTRING_3D = "LINESTRING (517947.10 6368795.07 61.07, 517947.11 6368795.1 161.07)"
         for w in [LINESTRING_3D]:
             shape = shapely.from_wkt(w)
             arcgis_geom = arcgis.geometry.Geometry.from_shapely(
@@ -39,20 +39,31 @@ class TestGeoJSONWithShapely(unittest.TestCase):
     def test_polygon_2D(self):
         ###
         ###   POLYGON TEST
-        ###
-        POLYGONWKT_2D = "MULTIPOLYGON (((30 20, 45 40, 10 40, 30 20)), ((15 5, 40 10, 10 20, 5 10, 15 5)))"
+        ###   First is polygon with hole, second is simple polygon
+        POLYGONWKT_2D = ["POLYGON ((35 10, 45 45, 15 40, 10 20, 35 10),(20 30, 35 35, 30 20, 20 30))", "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))"]
 
-        for POLY in [POLYGONWKT_2D]:
+        for POLY in POLYGONWKT_2D:
             shape = shapely.from_wkt(POLY)
             arcgis_geom = arcgis.geometry.Geometry.from_shapely(
                 shapely_geometry=shape, spatial_reference={'wkid': 4326}
             )
-
             assert arcgis_geom.__geo_interface__
             assert arcgis_geom.has_z == False
 
+    def test_multipolygon_2D(self):
+        MULTIPOLYGONWKT_2D = "MULTIPOLYGON (((30 20, 45 40, 10 40, 30 20)), ((15 5, 40 10, 10 20, 5 10, 15 5)))"
+
+        for POLY in [MULTIPOLYGONWKT_2D]:
+            shape = shapely.from_wkt(POLY)
+            arcgis_geom = arcgis.geometry.Geometry.from_shapely(
+                shapely_geometry=shape, spatial_reference={'wkid': 4326}
+            )
+            assert arcgis_geom.__geo_interface__
+            assert arcgis_geom.has_z == False
+            
     def test_polygon_3D(self):
-        POLYGONWKT_3D = "MULTIPOLYGON (((30 20 1, 45 40 1, 10 40 1, 30 20 1)), ((15 5 2, 40 10 2, 10 20 0, 5 10 1, 15 5 9)))"
+        POLYGONWKT_3D = "MULTIPOLYGON (((30 20 1, 45 40 1, 10 40 1, 30 20 1)), ((15 5 2, 40 10 2, 10 20 0, 5 10 1, 15 5 2)))"
+
         for POLY in [POLYGONWKT_3D]:
             shape = shapely.from_wkt(POLY)
             arcgis_geom = arcgis.geometry.Geometry.from_shapely(
@@ -61,6 +72,7 @@ class TestGeoJSONWithShapely(unittest.TestCase):
 
             assert arcgis_geom.__geo_interface__
             assert arcgis_geom.has_z == True
+
 
     def test_point_3D(self):
 
