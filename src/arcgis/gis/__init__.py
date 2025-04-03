@@ -1996,7 +1996,6 @@ class OfflineContentManager(object):
         preserve_ids: bool = False,
         folder: Folder | str = None,
         failure_rollback: bool = False,
-        item_mapping: dict = None,
     ) -> list:
         """
         Reads a `.contentexport` file (see
@@ -2037,13 +2036,6 @@ class OfflineContentManager(object):
                                be deleted if any error occurs during the process.
                              * If *False*, any item that fails to import will be skipped and the
                                process will continue. Default is *False*.
-        ----------------     ----------------------------------------------------------------------
-        item_mapping         Optional dictionary. A dictionary of item ids to be remapped to
-                             item ids already existent in the import org. The keys are the item ids
-                             of the dependencies in the offline package and the values are item
-                             ids of the intended replacements in the import org. This is useful
-                             when a specific dependency has already been uploaded and there is no
-                             need for duplication.
         ================     ======================================================================
 
         :return:
@@ -2071,7 +2063,6 @@ class OfflineContentManager(object):
         return ip.import_items(
             items=item_ids,
             preserve_ids=preserve_ids,
-            item_mapping=item_mapping,
             folder=folder,
             failure_rollback=failure_rollback,
         )
