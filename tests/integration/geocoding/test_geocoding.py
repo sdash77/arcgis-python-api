@@ -17,7 +17,7 @@ from arcgis.geocoding import (
     suggest,
 )  #
 
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from utils.decorators import profiles as user_profiles
 
 
@@ -32,16 +32,10 @@ geocode - missing 4 parameters
 
 
 """
-#
-profiles = [
-    "your_enterprise_profile",
-    "your_online_profile",
-    None,
-    "your_kubernetes_profile",
-]
 
 
 ###########################################################################
+@profiles.all
 @integration_test
 class TestAnalyzeGeocodingInput(unittest.TestCase):
     def test_analyze_table_item(self):
@@ -52,49 +46,49 @@ class TestAnalyzeGeocodingInput(unittest.TestCase):
             os.remove(fp)
         df.to_csv(os.path.join(tempfile.gettempdir(), "data.csv"))
 
-        for p in ["your_enterprise_profile", "your_kubernetes_profile"]:
-            gis = GIS(profile=p, verify_cert=False)
-            for i in gis.content.search("dummy_data_1234"):
-                i.delete()
-                del i
-            item = gis.content.add(
-                data=fp,
-                item_properties={
-                    "title": "dummy_data_1234",
-                    "tags": "A",
-                    "type": "CSV",
-                },
-            )
-            if gis._portal.is_arcgisonline:
-                pass
-            else:
-                gc = None
-                l = get_geocoders(gis=gis)
-                for gc in get_geocoders(gis=gis):
-                    net_loc = urlparse(gis._url.lower()).netloc.lower()
-                    if gc.url.lower().find(net_loc) > -1:
-                        break
-                    else:
-                        gc = None
-                if gc:
-                    res = analyze_geocode_input(
-                        geocode_service_url=gc,
-                        input_table_or_item={"itemid": item.itemid},
-                        input_file_parameters={
-                            "fileType": "csv",
-                            "headerRowExists": "true",
-                            "columnDelimiter": "",
-                            "textQualifier": "",
-                        },
-                    )
-                    assert res
-                    assert isinstance(res, dict)
-                item.delete()
+        gis = self.gis
+        for i in gis.content.search("dummy_data_1234"):
+            i.delete()
+            del i
+        item = gis.content.add(
+            data=fp,
+            item_properties={
+                "title": "dummy_data_1234",
+                "tags": "A",
+                "type": "CSV",
+            },
+        )
+        if gis._portal.is_arcgisonline:
+            pass
+        else:
+            gc = None
+            l = get_geocoders(gis=gis)
+            for gc in get_geocoders(gis=gis):
+                net_loc = urlparse(gis._url.lower()).netloc.lower()
+                if gc.url.lower().find(net_loc) > -1:
+                    break
+                else:
+                    gc = None
+            if gc:
+                res = analyze_geocode_input(
+                    geocode_service_url=gc,
+                    input_table_or_item={"itemid": item.itemid},
+                    input_file_parameters={
+                        "fileType": "csv",
+                        "headerRowExists": "true",
+                        "columnDelimiter": "",
+                        "textQualifier": "",
+                    },
+                )
+                assert res
+                assert isinstance(res, dict)
+            item.delete()
 
 
 ###########################################################################
 
 
+@profiles.all
 @integration_test
 class TestGeocoder(unittest.TestCase):
     """test the geocoder operations"""
@@ -104,31 +98,9 @@ class TestGeocoder(unittest.TestCase):
     def test_create_geocoder_url(self):
         """tests creation of a geocoder from a URL"""
         url = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer"
-        for p in profiles:
-            g = Geocoder(location=url, gis=GIS(profile=p))
-            assert g
-            assert g.properties
-
-    #######################################################################
-    @unittest.skip("not a valid test anymore.")
-    def test_create_geocoder_item(self):
-        """tests creation of a geocoder from an item"""
-        lu = {
-            "your_enterprise_profile": "00a0a5cbef274e2cbbbdbb47eb1452e7",  # Python API Playground
-            "your_online_profile": "305f2e55e67f4389bef269669fc2e284",
-            "None": "305f2e55e67f4389bef269669fc2e284",
-        }
-        q = """type:("Geocoding Service")"""
-        for p in profiles:
-            gis = GIS(profile=p)
-            items = gis.content.search(q, outside_org=True)
-            if len(items) > 0:
-                item = items[0]
-                g = Geocoder.fromitem(item)
-                assert g
-                assert g.properties
-            else:
-                print(f"{p} has no geocoders")
+        g = Geocoder(location=url, gis=self.gis)
+        assert g
+        assert g.properties
 
     ########################################################################
 
@@ -143,12 +115,11 @@ class TestGeocoder(unittest.TestCase):
 
     def test_get_geocoders(self):
         """test the operation get_geocoders method"""
-        for p in profiles:
-            gis = GIS(profile=p)
-            results = get_geocoders(gis)
-            assert isinstance(results, list)
-            assert len(results) >= 0
-            assert all([isinstance(r, Geocoder) for r in results])
+        gis = self.gis
+        results = get_geocoders(gis)
+        assert isinstance(results, list)
+        assert len(results) >= 0
+        assert all([isinstance(r, Geocoder) for r in results])
 
     #######################################################################
 
@@ -159,66 +130,72 @@ class TestGeocoder(unittest.TestCase):
             "x": -75.12646269301656,
             "y": 39.955348161474326,
         }
-        for p in profiles:
-            gis = GIS(profile=p, verify_cert=False)
-            l = get_geocoders(gis)
-            assert reverse_geocode(location=geom)
-            data = reverse_geocode(location=geom, distance=1000, out_sr=4326)
-            assert data["location"]["spatialReference"]["wkid"] == 4326
-            data = reverse_geocode(
-                location=geom,
-                out_sr=4326,
-                lang_code="en",
-                return_intersection=True,
-            )
-            assert data
-            data = reverse_geocode(
-                location=geom,
-                out_sr=4326,
-                lang_code="en",
-                return_intersection=True,
-                distance=1000,
-            )
-            assert data
-            data = reverse_geocode(
-                location=geom,
-                out_sr=4326,
-                lang_code="en",
-                distance=1000,
-                return_intersection=True,
-                feature_types="PointAddress,Postal",
-            )
-            assert data
-            data = reverse_geocode(
-                location=geom,
-                out_sr=4326,
-                lang_code="en",
-                distance=1000,
-                return_intersection=True,
-                feature_types=["PointAddress", "Postal"],
-            )
-            assert data
-            data = reverse_geocode(
-                location=geom,
-                out_sr=4326,
-                lang_code="en",
-                distance=1000,
-                return_intersection=True,
-                feature_types=["PointAddress", "Postal"],
-                location_top="rooftop",
-                geocoder=l[0],
-            )
-            assert data
+        gis = self.gis
+        geocoders = get_geocoders(gis)
+        assert reverse_geocode(location=geom)
+        data = reverse_geocode(location=geom, distance=1000, out_sr=4326)
+        assert data["location"]["spatialReference"]["wkid"] == 4326
+        data = reverse_geocode(
+            location=geom,
+            out_sr=4326,
+            lang_code="en",
+            return_intersection=True,
+        )
+        assert data
+        data = reverse_geocode(
+            location=geom,
+            out_sr=4326,
+            lang_code="en",
+            return_intersection=True,
+            distance=1000,
+        )
+        assert data
+        data = reverse_geocode(
+            location=geom,
+            out_sr=4326,
+            lang_code="en",
+            distance=1000,
+            return_intersection=True,
+            feature_types="PointAddress,Postal",
+        )
+        assert data
+        data = reverse_geocode(
+            location=geom,
+            out_sr=4326,
+            lang_code="en",
+            distance=1000,
+            return_intersection=True,
+            feature_types=["PointAddress", "Postal"],
+        )
+        assert data
+        data = reverse_geocode(
+            location=geom,
+            out_sr=4326,
+            lang_code="en",
+            distance=1000,
+            return_intersection=True,
+            feature_types=["PointAddress", "Postal"],
+            location_top="rooftop",
+            geocoder=geocoders[0],
+        )
+        assert data
 
     #######################################################################
 
     def test_reverse_geocode_list(self):
         """tests the service's reverse geocode method using a list of X/Y coordinates"""
         geom = [-75.12646269301656, 39.955348161474326]
-        for p in profiles:
-            gis = GIS(profile=p, verify_cert=False)
-            l = get_geocoders(gis)
-            assert reverse_geocode(location=geom)
+        reverse_gc = reverse_geocode(location=geom)
+
+        self.assertIsNotNone(reverse_gc.get("address"))
+        match_addr = reverse_gc.get("address").get("Match_addr")
+        self.assertEqual(
+            match_addr,
+            "6 York St, Camden, New Jersey, 08102",
+            f"Incorrect address found: Got {match_addr}",
+        )
+        city = reverse_gc.get("address").get("City")
+        self.assertEqual(city, "Camden", f"Incorrect city found: Got {city}")
 
     #######################################################################
 
@@ -233,76 +210,80 @@ class TestGeocoder(unittest.TestCase):
                 "y": 39.955348161474326,
             }
         )
-        for p in profiles:
-            gis = GIS(profile=p, verify_cert=False)
-            assert reverse_geocode(location=geom)
+        reverse_gc = reverse_geocode(location=geom)
+        self.assertIsNotNone(reverse_gc.get("address"))
+        match_addr = reverse_gc.get("address").get("Match_addr")
+        self.assertEqual(
+            match_addr,
+            "6 York St, Camden, New Jersey, 08102",
+            f"Incorrect address found: Got {match_addr}",
+        )
+        city = reverse_gc.get("address").get("City")
+        self.assertEqual(city, "Camden", f"Incorrect city found: Got {city}")
 
     #######################################################################
 
     def test_geocode(self):
         """tests the service's reverse geocode method using a Point Geometry"""
-        for p in profiles:
-            gis = GIS(profile=p, verify_cert=False)
-            address = "380 New York Street, Redlands, CA 92373"
-            g = geocode(address=address)
-            address = "12 York Street, Camden, NJ"
-            g1 = geocode(
-                address=address,
-                search_extent="-75.41936574828934,39.89338669631747,-74.8237007702628,39.998669961287526",
-                location=[-75.12153325927608, 39.9460283288025],
-                distance=100,
-                out_sr=3857,
-                category="Address",
-                out_fields="*",
-                max_locations=20,
-                magic_key=None,
-                for_storage=False,
-                geocoder=None,
-                as_featureset=False,
-            )
-            g2 = geocode(
-                address=address,
-                search_extent="-75.41936574828934,39.89338669631747,-74.8237007702628,39.998669961287526",
-                location=[-75.12153325927608, 39.9460283288025],
-                distance=100,
-                out_sr=3857,
-                category="Address",
-                out_fields="Rank",
-                max_locations=5,
-                magic_key=None,
-                for_storage=False,
-                geocoder=None,
-                as_featureset=False,
-            )
-            g3 = geocode(
-                address=address,
-                search_extent="-75.41936574828934,39.89338669631747,-74.8237007702628,39.998669961287526",
-                location=[-75.12153325927608, 39.9460283288025],
-                distance=100,
-                out_sr=3857,
-                category="Address",
-                out_fields="*",
-                max_locations=5,
-                magic_key=None,
-                for_storage=False,
-                geocoder=get_geocoders(gis)[0],
-                as_featureset=False,
-            )
-            g_fs = geocode(address=address, as_featureset=True)
-            suggestion = suggest(
-                text="Cedar ", location="-82.971625,39.965386"
-            )
-            g_magic_key = geocode(
-                address=suggestion["suggestions"][0]["text"],
-                magic_key=suggestion["suggestions"][0]["magicKey"],
-            )
-            assert g_magic_key
-            assert g1
-            assert g
-            assert g3
-            assert g2
-            assert g_fs
-            assert "Rank" in g2[0]["attributes"]
+        gis = self.gis
+        address = "380 New York Street, Redlands, CA 92373"
+        g = geocode(address=address)
+        address = "12 York Street, Camden, NJ"
+        g1 = geocode(
+            address=address,
+            search_extent="-75.41936574828934,39.89338669631747,-74.8237007702628,39.998669961287526",
+            location=[-75.12153325927608, 39.9460283288025],
+            distance=100,
+            out_sr=3857,
+            category="Address",
+            out_fields="*",
+            max_locations=20,
+            magic_key=None,
+            for_storage=False,
+            geocoder=None,
+            as_featureset=False,
+        )
+        g2 = geocode(
+            address=address,
+            search_extent="-75.41936574828934,39.89338669631747,-74.8237007702628,39.998669961287526",
+            location=[-75.12153325927608, 39.9460283288025],
+            distance=100,
+            out_sr=3857,
+            category="Address",
+            out_fields="Rank",
+            max_locations=5,
+            magic_key=None,
+            for_storage=False,
+            geocoder=None,
+            as_featureset=False,
+        )
+        g3 = geocode(
+            address=address,
+            search_extent="-75.41936574828934,39.89338669631747,-74.8237007702628,39.998669961287526",
+            location=[-75.12153325927608, 39.9460283288025],
+            distance=100,
+            out_sr=3857,
+            category="Address",
+            out_fields="*",
+            max_locations=5,
+            magic_key=None,
+            for_storage=False,
+            geocoder=get_geocoders(gis)[0],
+            as_featureset=False,
+        )
+        g_fs = geocode(address=address, as_featureset=True)
+        suggestion = suggest(text="Cedar ", location="-82.971625,39.965386")
+        g_magic_key = geocode(
+            address=suggestion["suggestions"][0]["text"],
+            magic_key=suggestion["suggestions"][0]["magicKey"],
+        )
+        assert g_magic_key
+        assert g1
+        assert g
+        assert g3
+        assert g2
+        assert g_fs
+        assert "Rank" in g2[0]["attributes"]
 
     #######################################################################
 
@@ -322,15 +303,106 @@ class TestGeocoder(unittest.TestCase):
                 "Postal": "90045",
             },
         ]
-        for p in ["your_enterprise_profile", "your_online_profile"]:
-            gis = GIS(profile=p, verify_cert=False)
-            if gis._portal.is_arcgisonline:
-                bc = batch_geocode(
+        gis = self.gis
+        if gis._portal.is_arcgisonline:
+            bc = batch_geocode(
+                addresses=addresses_dict,
+                source_country=None,
+                category=None,
+                out_sr=None,
+                geocoder=None,
+                as_featureset=False,
+                match_out_of_range=True,
+                location_type="street",
+                search_extent=None,
+                lang_code="EN",
+                preferred_label_values=None,
+            )
+            assert isinstance(bc, list)
+            assert len(bc) >= 0
+            assert bc
+            bc1 = batch_geocode(
+                addresses=addresses_dict,
+                source_country="EN",
+                category=None,
+                out_sr=None,
+                geocoder=None,
+                as_featureset=False,
+                match_out_of_range=True,
+                location_type="street",
+                search_extent=None,
+                lang_code="EN",
+                preferred_label_values=None,
+            )
+            assert isinstance(bc1, list)
+            assert len(bc1) >= 0
+            assert bc1
+            bc2 = batch_geocode(
+                addresses=addresses_dict,
+                source_country="EN",
+                category=None,
+                out_sr=4326,
+                geocoder=None,
+                as_featureset=False,
+                match_out_of_range=True,
+                location_type="street",
+                search_extent=None,
+                lang_code="EN",
+                preferred_label_values=None,
+            )
+            assert isinstance(bc2, list)
+            assert len(bc2) >= 0
+            assert bc2
+            bc3 = batch_geocode(
+                addresses=addresses_dict,
+                source_country="EN",
+                category=None,
+                out_sr=4326,
+                geocoder=None,
+                as_featureset=True,
+                match_out_of_range=True,
+                location_type="street",
+                search_extent=None,
+                lang_code="EN",
+                preferred_label_values=None,
+            )
+            from arcgis.features import FeatureSet
+
+            assert isinstance(bc3, FeatureSet)
+            assert len(bc3) >= 0
+            assert bc3
+            bc4 = batch_geocode(
+                addresses=addresses_dict,
+                source_country="EN",
+                category=None,
+                out_sr=4326,
+                geocoder=None,
+                as_featureset=True,
+                match_out_of_range=False,
+                location_type="street",
+                search_extent=None,
+                lang_code="EN",
+                preferred_label_values=None,
+            )
+            assert isinstance(bc4, FeatureSet)
+            assert len(bc4) >= 0
+            assert bc4
+        else:
+            gc = None
+            l = get_geocoders(gis=gis)
+            for gc in get_geocoders(gis=gis):
+                net_loc = urlparse(gis._url.lower()).netloc.lower()
+                if gc.url.lower().find(net_loc) > -1:
+                    break
+                else:
+                    gc = None
+            if gc:
+                bc_ent = batch_geocode(
                     addresses=addresses_dict,
                     source_country=None,
                     category=None,
                     out_sr=None,
-                    geocoder=None,
+                    geocoder=gc,
                     as_featureset=False,
                     match_out_of_range=True,
                     location_type="street",
@@ -338,100 +410,8 @@ class TestGeocoder(unittest.TestCase):
                     lang_code="EN",
                     preferred_label_values=None,
                 )
-                assert isinstance(bc, list)
-                assert len(bc) >= 0
-                assert bc
-                bc1 = batch_geocode(
-                    addresses=addresses_dict,
-                    source_country="EN",
-                    category=None,
-                    out_sr=None,
-                    geocoder=None,
-                    as_featureset=False,
-                    match_out_of_range=True,
-                    location_type="street",
-                    search_extent=None,
-                    lang_code="EN",
-                    preferred_label_values=None,
-                )
-                assert isinstance(bc1, list)
-                assert len(bc1) >= 0
-                assert bc1
-                bc2 = batch_geocode(
-                    addresses=addresses_dict,
-                    source_country="EN",
-                    category=None,
-                    out_sr=4326,
-                    geocoder=None,
-                    as_featureset=False,
-                    match_out_of_range=True,
-                    location_type="street",
-                    search_extent=None,
-                    lang_code="EN",
-                    preferred_label_values=None,
-                )
-                assert isinstance(bc2, list)
-                assert len(bc2) >= 0
-                assert bc2
-                bc3 = batch_geocode(
-                    addresses=addresses_dict,
-                    source_country="EN",
-                    category=None,
-                    out_sr=4326,
-                    geocoder=None,
-                    as_featureset=True,
-                    match_out_of_range=True,
-                    location_type="street",
-                    search_extent=None,
-                    lang_code="EN",
-                    preferred_label_values=None,
-                )
-                from arcgis.features import FeatureSet
-
-                assert isinstance(bc3, FeatureSet)
-                assert len(bc3) >= 0
-                assert bc3
-                bc4 = batch_geocode(
-                    addresses=addresses_dict,
-                    source_country="EN",
-                    category=None,
-                    out_sr=4326,
-                    geocoder=None,
-                    as_featureset=True,
-                    match_out_of_range=False,
-                    location_type="street",
-                    search_extent=None,
-                    lang_code="EN",
-                    preferred_label_values=None,
-                )
-                assert isinstance(bc4, FeatureSet)
-                assert len(bc4) >= 0
-                assert bc4
-            else:
-                gc = None
-                l = get_geocoders(gis=gis)
-                for gc in get_geocoders(gis=gis):
-                    net_loc = urlparse(gis._url.lower()).netloc.lower()
-                    if gc.url.lower().find(net_loc) > -1:
-                        break
-                    else:
-                        gc = None
-                if gc:
-                    bc_ent = batch_geocode(
-                        addresses=addresses_dict,
-                        source_country=None,
-                        category=None,
-                        out_sr=None,
-                        geocoder=gc,
-                        as_featureset=False,
-                        match_out_of_range=True,
-                        location_type="street",
-                        search_extent=None,
-                        lang_code="EN",
-                        preferred_label_values=None,
-                    )
-                    assert bc_ent
-                    assert len(bc_ent) > 0
+                assert bc_ent
+                assert len(bc_ent) > 0
 
     ########################################################################
 
@@ -445,15 +425,40 @@ class TestGeocoder(unittest.TestCase):
             "100 Universal City Plaza, Universal City, CA 91608",
             "4800 Oak Grove Dr, Pasadena, CA 91109",
         ]
-        for p in ["your_enterprise_profile", "your_online_profile"]:
-            gis = GIS(profile=p, verify_cert=False)
-            if gis._portal.is_arcgisonline:
-                bc = batch_geocode(
+        gis = self.gis
+        if gis._portal.is_arcgisonline:
+            bc = batch_geocode(
+                addresses=addresses_dict,
+                source_country=None,
+                category=None,
+                out_sr=None,
+                geocoder=None,
+                as_featureset=False,
+                match_out_of_range=True,
+                location_type="street",
+                search_extent=None,
+                lang_code="EN",
+                preferred_label_values=None,
+            )
+            assert isinstance(bc, list)
+            assert len(bc) >= 5
+            assert bc
+        else:
+            gc = None
+            l = get_geocoders(gis=gis)
+            for gc in get_geocoders(gis=gis):
+                net_loc = urlparse(gis._url.lower()).netloc.lower()
+                if gc.url.lower().find(net_loc) > -1:
+                    break
+                else:
+                    gc = None
+            if gc:
+                bc_ent = batch_geocode(
                     addresses=addresses_dict,
                     source_country=None,
                     category=None,
                     out_sr=None,
-                    geocoder=None,
+                    geocoder=gc,
                     as_featureset=False,
                     match_out_of_range=True,
                     location_type="street",
@@ -461,34 +466,8 @@ class TestGeocoder(unittest.TestCase):
                     lang_code="EN",
                     preferred_label_values=None,
                 )
-                assert isinstance(bc, list)
-                assert len(bc) >= 5
-                assert bc
-            else:
-                gc = None
-                l = get_geocoders(gis=gis)
-                for gc in get_geocoders(gis=gis):
-                    net_loc = urlparse(gis._url.lower()).netloc.lower()
-                    if gc.url.lower().find(net_loc) > -1:
-                        break
-                    else:
-                        gc = None
-                if gc:
-                    bc_ent = batch_geocode(
-                        addresses=addresses_dict,
-                        source_country=None,
-                        category=None,
-                        out_sr=None,
-                        geocoder=gc,
-                        as_featureset=False,
-                        match_out_of_range=True,
-                        location_type="street",
-                        search_extent=None,
-                        lang_code="EN",
-                        preferred_label_values=None,
-                    )
-                    assert bc_ent
-                    assert len(bc_ent) > 5
+                assert bc_ent
+                assert len(bc_ent) > 5
 
 
 @user_profiles.agol
@@ -499,28 +478,24 @@ class TestSuggestion(unittest.TestCase):
         gis = self.gis
         s1a = suggest(text="starbucks", max_suggestions=1)
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
     #######################################################################
     def test_suggest_location_xy(self):
         gis = self.gis
-        s1a = suggest(
-            text="starbucks", max_suggestions=1, location=[-117.196, 34.056]
-        )
+        s1a = suggest(text="starbucks", max_suggestions=1, location=[-117.196, 34.056])
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
     #######################################################################
     def test_suggest_location_xy(self):
         gis = self.gis
-        s1a = suggest(
-            text="starbucks", max_suggestions=1, location=(-117.196, 34.056)
-        )
+        s1a = suggest(text="starbucks", max_suggestions=1, location=(-117.196, 34.056))
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
     #######################################################################
     def test_suggest_location_dict(self):
@@ -535,8 +510,8 @@ class TestSuggestion(unittest.TestCase):
             },
         )
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
     #######################################################################
     def test_suggest_category(self):
@@ -547,8 +522,8 @@ class TestSuggestion(unittest.TestCase):
             max_suggestions=1,
         )
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
     def test_use_a_geocoder(self):
         gis = self.gis
@@ -559,8 +534,8 @@ class TestSuggestion(unittest.TestCase):
             geocoder=get_geocoders(gis=gis)[0],
         )
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
     def test_country_code(self):
         gis = self.gis
@@ -571,8 +546,8 @@ class TestSuggestion(unittest.TestCase):
             max_suggestions=1,
         )
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
     def test_max_suggestions(self):
         gis = self.gis
@@ -583,8 +558,8 @@ class TestSuggestion(unittest.TestCase):
             max_suggestions=10,
         )
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 10
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 10
 
     def test_extent1(self):
         s1a = suggest(
@@ -593,8 +568,8 @@ class TestSuggestion(unittest.TestCase):
             max_suggestions=1,
         )
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
     def test_extent2(self):
         s1a = suggest(
@@ -610,8 +585,8 @@ class TestSuggestion(unittest.TestCase):
             max_suggestions=1,
         )
         assert s1a
-        assert 'suggestions' in s1a
-        assert len(s1a['suggestions']) == 1
+        assert "suggestions" in s1a
+        assert len(s1a["suggestions"]) == 1
 
 
 if __name__ == "__main__":
