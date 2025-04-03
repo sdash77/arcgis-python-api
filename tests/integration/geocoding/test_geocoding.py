@@ -1,21 +1,18 @@
-import sys
 import os
-import sys
 import json
 import unittest
 import pandas as pd
-from arcgis.gis import GIS
+
 from urllib.parse import urlparse
 from arcgis.geocoding import (
-    Geocoder,  #
+    Geocoder,
     analyze_geocode_input,
-    batch_geocode,  #
-    geocode,  #
-    geocode_from_items,
-    get_geocoders,  #
-    reverse_geocode,  #
+    batch_geocode,
+    geocode,
+    get_geocoders,
+    reverse_geocode,
     suggest,
-)  #
+)
 
 from utils.decorators import integration_test, profiles
 from utils.decorators import profiles as user_profiles
