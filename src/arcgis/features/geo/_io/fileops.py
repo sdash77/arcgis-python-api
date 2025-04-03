@@ -344,6 +344,10 @@ def from_url(url: str) -> list:
                 readers.append(shapefile.Reader(shp=shp, shx=shx, dbf=dbf))
         # construct SeDF from URL based datasets
         sdfs = []
+        if readers == []:
+            raise ValueError(
+                "No valid shapefile datasets found in the zip file. Please check the URL."
+            )
         for reader in readers:
             records = []
             fields = [field[0] for field in reader.fields if field[0] != "DeletionFlag"]
