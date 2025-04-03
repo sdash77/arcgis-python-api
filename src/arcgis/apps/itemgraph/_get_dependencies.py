@@ -340,7 +340,7 @@ def _parse_dashboard(item):
                         deps.update(_find_regex(script, _REGEX_GUID, []))
         except:
             pass
-    
+
     deps.update(_find_regex(structure, _REGEX_GUID, []))
     return list(deps)
 
@@ -365,7 +365,7 @@ def _parse_exb(item):
                     itemids.add(config["surveyItemId"])
         except:
             pass
-        
+
         itemids.update(_find_regex(data, _REGEX_GUID, []))
 
     return list(itemids)
