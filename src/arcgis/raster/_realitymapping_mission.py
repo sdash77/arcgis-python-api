@@ -1,12 +1,13 @@
 from __future__ import annotations
 import logging
 from typing import Any, Optional
+
+import requests
 from arcgis.gis import GIS, Item
-
-
 from arcgis.raster._realitymapping import RMProject
 
 _LOGGER = logging.getLogger(__name__)
+REALITY_URL = "https://baymax.esri.com:6443/arcgis/reality"
 
 
 class RMMission:
@@ -51,8 +52,9 @@ class RMMission:
 
     """
 
-    def __init__(self, mission_name, project):
+    def __init__(self, mission_name, mission_id, project):
         self._mission_name = mission_name
+        self._mission_id = mission_id
         if isinstance(project, RMProject):
             self._project = project
         elif isinstance(project, Item):
@@ -67,7 +69,11 @@ class RMMission:
 
     @property
     def _mission_json(self):
-        return self._get_mission_json(self._mission_name)
+        return self._get_mission_json(self._mission_id)
+    
+    @property
+    def mission_id(self):
+        return self._mission_id
 
     @property
     def products(self):
@@ -76,20 +82,32 @@ class RMMission:
 
         :return: A list of products of the mission
         """
-        items_prods = self._mission_json.get("items", None)
-        import copy
+        mission_products = []
+        dataprod_mapping = {
+            "orthoDEM": "dem",
+            "qualityReport": "report",
+            "mesh": "mesh",
+            "DTM": "dtm",
+            "mosaicDataset": "image_collection",
+            "DSM": "dsm",
+            "trueOrtho": "true_ortho",
+            "DSMMesh": "dsm_mesh",
+            "orthoMosaic": "ortho"
+        }
 
-        mission_product = copy.deepcopy(items_prods)
-        for key, val in items_prods.items():
-            if val is not None and isinstance(val, dict):
-                if "itemId" in val.keys():
-                    if key == "imageCollection":
-                        key = "image_collection"
-                        mission_product[key] = self._gis.content.get(val["itemId"])
-                        del mission_product["imageCollection"]
-                    else:
-                        mission_product[key] = self._gis.content.get(val["itemId"])
-        return mission_product
+        url = f"{REALITY_URL}/api/v2/missions/{self._mission_id}/dataproducts"
+        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        products = requests.get(url, headers=headers, verify=False).json()
+        for product in products:
+            prod_type = product["interpretation"]
+            if prod_type in dataprod_mapping:
+                mission_products.append(
+                    {
+                        dataprod_mapping[prod_type]: product["arcgisItem"]
+                    }
+                )
+
+        return mission_products
 
     @property
     def image_count(self):
@@ -98,31 +116,22 @@ class RMMission:
 
         :return: An integer representing the number of images
         """
-        if "sourceData" in self._mission_json.keys():
-            source_data = self._mission_json["sourceData"]
-            if "imageCount" in source_data.keys():
-                return source_data["imageCount"]
-            else:
-                return 0
-        return 0
+        ic = self.image_collection
+        lyr = ic.layers[0]
+        image_count = lyr.query(return_count_only=True)
+        return image_count
 
     @property
     def mission_date(self):
         """
-        The ``mission_date`` property returns the date of the mission.
+        The ``mission_date`` property returns the creation date & time of the mission.
 
-        :return: A datetime object representing the mission date
+        :return: A datetime object representing the mission date & time
         """
-        if "sourceData" in self._mission_json.keys():
-            source_data = self._mission_json["sourceData"]
-            if "flightDate" in source_data.keys():
-                from datetime import datetime
-
-                datetime_obj = datetime.strptime(source_data["flightDate"], "%Y-%m-%d")
-                return datetime_obj
-            else:
-                return None
-        return None
+        from datetime import datetime
+        ts = self._mission_json["created"]
+        dt_obj = datetime.fromisoformat(ts.rstrip("Z"))
+        return dt_obj
 
     @property
     def image_collection(self):
@@ -134,13 +143,16 @@ class RMMission:
         if self._collection is not None:
             return self._collection
         else:
-            mission_product = self._mission_json.get("items", None)
-            for key, val in mission_product.items():
-                if key == "imageCollection":
-                    item_id = val["itemId"]
-                image_collection_item = self._gis.content.get(item_id)
-                self._collection = image_collection_item
-                return image_collection_item
+            url = f"{REALITY_URL}/api/v2/missions/{self._mission_id}/dataproducts"
+            headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+            products = requests.get(url, headers=headers, verify=False).json()
+            for product in products:
+                prod_type = product["interpretation"]
+                if prod_type == "mosaicDataset":
+                    item = product["arcgisItem"]
+                    if "itemId" in item:
+                        self._collection = self._gis.content.get(item["itemId"])
+        return self._collection
 
     @property
     def workspace(self):
@@ -156,6 +168,29 @@ class RMMission:
         except:
             pass
         return self._workspace
+    
+    @property
+    def settings(self):
+        return self._mission_json.get("processingSettings", {})
+
+    @settings.setter
+    def settings(self, properties_dict):
+        """
+        The ``settings`` method updates the properties of the project item.
+
+        """
+        if properties_dict is None:
+            raise ValueError("properties_dict cannot be None")
+        item = self._project_item
+        props = item.properties
+        updated_item = item.update(item_properties=props, data=properties_dict)
+        return updated_item
+
+    def _get_mission_json(self, mission_id):
+        url = f"{REALITY_URL}/api/v2/missions/{mission_id}"
+        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        resp = requests.get(url, headers=headers, verify=False).json()
+        return resp
 
     def _update_mission_json(self, mission_json):
         rm = self._project_item.resources
@@ -807,20 +842,6 @@ class RMMission:
             ]
             if name == res_name:
                 return resource
-
-        return {}
-
-    def _get_mission_json(self, name):
-        res_manager = self._project._project_item.resources
-        res_list = res_manager.list()
-        for resource in res_list:
-            full_res_name = resource["resource"]
-            res_name = full_res_name[
-                full_res_name.find("/") + 1 : full_res_name.find(".")
-            ]
-            if name == res_name:
-                mission_json = res_manager.get(full_res_name)
-                return mission_json
 
         return {}
 

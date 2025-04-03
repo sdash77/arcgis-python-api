@@ -23,6 +23,9 @@ from arcgis.geoprocessing._support import (
     _layer_input,
 )
 from arcgis.features.layer import FeatureLayer
+import requests
+
+REALITY_URL = "https://baymax.esri.com:6443/arcgis/reality"
 
 
 ###################################################################################################
@@ -2233,6 +2236,16 @@ class RMProject:
                 self._folder = folder
                 break
 
+    def _get_project_json(self):
+        url = f"{REALITY_URL}/api/v2/projects/{self._project_item.itemid}"
+        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        resp = requests.get(url, headers=headers, verify=False).json()
+        return resp
+    
+    @property
+    def _project_json(self):
+        return self._get_project_json()
+    
     @property
     def missions(self):
         """
@@ -2242,14 +2255,14 @@ class RMProject:
         """
         from ._realitymapping_mission import RMMission
 
-        res_list = self._project_item.resources.list()
+        url = f"{REALITY_URL}/api/v2/projects/{self._project_item.itemid}/missions"
+        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        res_list = requests.get(url, headers=headers, verify=False).json()
         self._mission_list = []
-        for resource in res_list:
-            full_res_name = resource["resource"]
-            res_name = full_res_name[
-                full_res_name.find("/") + 1 : full_res_name.find(".")
-            ]
-            self._mission_list.append(RMMission(mission_name=res_name, project=self))
+        for mission in res_list:
+            name = mission["name"]
+            mid = mission["id"]
+            self._mission_list.append(RMMission(mission_name=name, mission_id=mid, project=self))
 
         return self._mission_list
 
@@ -2260,15 +2273,20 @@ class RMProject:
 
         :return: An integer representing the number of missions
         """
-        res_list = self._project_item.resources.list()
-        return len(res_list)
+        if not self._mission_list:
+            self.missions()
+        return len(self._mission_list)
 
     @property
     def spatial_reference(self):
         if self._spatial_reference is None:
             try:
-                item_data = self._project_item.get_data()
-                self._spatial_reference = item_data.get("spatialReference", None)
+                if self._project_json:
+                    if "outputSpatialReference" in self._project_json:
+                        self._spatial_reference = self._project_json["outputSpatialReference"]
+                else:
+                    self._project_json = self._get_project_json()
+                    self._spatial_reference = self._project_json.get("outputSpatialReference", None)
             except:
                 self._spatial_reference = None
 
@@ -2304,16 +2322,11 @@ class RMProject:
             (isinstance(self, Item) and self.type != "Reality Mapping Project")
         ):
             raise ValueError("Invalid project. Project must be a Reality Mapping Project Item or RMProject object.")    
-        return gis._tools.realitymapping.delete_project(self, future=True)
+        return gis._tools.realitymapping.delete_project(self, future=False)
 
     @property
     def settings(self):
-        settings = {}
-        try:
-            settings = self._project_item.get_data()
-        except:
-            pass
-        return settings
+        return self._project_json.get("processingSettings", {})
 
     @settings.setter
     def settings(self, properties_dict):
@@ -2516,6 +2529,7 @@ class RMProject:
         )
 
         mission_def = {"name": mission_name}
+        context = {"workspace": mission_name}
 
         return gis._tools.realitymapping.create_mission(
             project_item=project_item,
@@ -2524,7 +2538,7 @@ class RMProject:
             image_collection=image_collection,
             raster_type=raster_type,
             context=context,
-            future=True,
+            future=future,
             **kwargs,
         )
 
@@ -2544,14 +2558,16 @@ class RMProject:
         """
         from ._realitymapping_mission import RMMission
 
-        res_list = self._project_item.resources.list()
-        for resource in res_list:
-            full_res_name = resource["resource"]
-            res_name = full_res_name[
-                full_res_name.find("/") + 1 : full_res_name.find(".")
-            ]
-            if name == res_name:
-                return RMMission(mission_name=name, project=self)
+        res_list = self.missions
+        missions_list = []
+        for mission in res_list:
+            mission_name = mission._mission_name
+            if name == mission_name:
+                missions_list.append(mission)
+
+        if len(missions_list) == 1:
+            return missions_list[0]
+        return missions_list
 
     def __repr__(self):
         return "<%s - %s>" % (type(self).__name__, self._project_name)
