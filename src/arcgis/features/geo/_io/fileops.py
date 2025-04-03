@@ -301,11 +301,17 @@ def from_url(url: str) -> list:
     :return: List[pd.DataFrame]
 
     """
-    if not HAS_GDAL and not HAS_PYSHP == False:
+    if not HAS_GDAL and not HAS_PYSHP:
         raise Exception("GDAL or pyshp is required to read hosted shapefiles.")
 
-    if HAS_GDAL:
-        return from_featureclass(url)
+    # unless we specify pyshp, default to GDAL
+    if not USE_PYSHP and HAS_GDAL:
+        return _http_workflow(url)
+
+    # this is the case where a user picks gdal or arcpy but they're not available
+    # have to import shapefile here since it hasn't been done yet
+    if not USE_PYSHP:
+        import shapefile
 
     r = requests.get(url)
     with closing(r), zipfile.ZipFile(io.BytesIO(r.content)) as archive:
@@ -324,7 +330,8 @@ def from_url(url: str) -> list:
         # build readers
         readers = []
         for key in datasets.keys():
-            if list(datasets[key].keys()) >= ["shp", "dbf"]:
+            shp_keys = list(datasets[key].keys())
+            if "shp" in shp_keys and "dbf" in shp_keys:
                 shx = None
                 if datasets[key].get("shx", None):
                     shx = io.BytesIO()
@@ -722,7 +729,7 @@ def from_featureclass(filename, **kwargs):
 
     """
     if isinstance(filename, str) and ("http://" in filename or "https://" in filename):
-        return _http_workflow(filename)
+        return from_url(filename)
 
     filename = _ensure_path_string(filename)
 
@@ -758,6 +765,9 @@ def _http_workflow(filename):
                     break
             if shp_path:
                 break
+        if not shp_path:
+            raise ValueError("No accessible shapefile found at the input URL.")
+
         df = _gdal_to_sedf(file_path=shp_path)
     df.spatial._meta.source = filename
     return df
