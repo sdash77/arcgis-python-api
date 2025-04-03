@@ -710,9 +710,7 @@ class _ImportPackage:
                 with open(os.path.join(og_folder, "properties.json"), "r") as prop_file:
                     og_props = json.load(prop_file)
                 self._name_mapping[og_id] = (og_props["title"], new_item.title)
-                self._service_mapping[og_id] = (
-                    og_props["url"], new_item.url
-                )
+                self._service_mapping[og_id] = (og_props["url"], new_item.url)
 
         if len(items) == 0:
             nodes = set(self.graph.all_items())
