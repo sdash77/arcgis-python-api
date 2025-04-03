@@ -30,7 +30,7 @@ class TestDependencyFunctions(unittest.TestCase):
         out_list = gd._get_item_dependencies(exp, gis, False, False)
         assert isinstance(out_list, list)
         assert isinstance(out_list[0], str)
-        assert len(out_list) == 4
+        assert len(out_list) == 11
 
     def test_related_items_function(self):
         surv = self.gis.content.get("d78a3338d1cc485bb61342d00dc65e07")
