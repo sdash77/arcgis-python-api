@@ -59,11 +59,11 @@ class TestDependencyFunctions(unittest.TestCase):
         gis = self.gis
 
         with self.subTest(msg="webmap"):
-            wm = gis.content.get("faa67b0af7914a2f9f4d96c561816c6e")
+            wm = gis.content.get("677768105491402cb9a3834bed4365d0")
             deps = gd._parse_webmap(wm)
             assert isinstance(deps, list)
             assert isinstance(deps[0], str)
-            for itemid in ["2113d04eade0432784e8edd336193e68"]:
+            for itemid in ["a4bf9f7f46b24ab49727772a9a3e8229"]:
                 assert itemid in deps
 
         with self.subTest(msg="dashboard"):
