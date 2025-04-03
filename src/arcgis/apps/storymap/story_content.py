@@ -6233,16 +6233,16 @@ class Cover:
                             enumeration. The type of story cover to be used in the story.
 
                             * Values for :class:`~arcgis.apps.storymap.story.StoryMap`
-                              and :class:`~arcgis.apps.storymap.briefing.Briefing`:  
+                              and :class:`~arcgis.apps.storymap.briefing.Briefing`:
                              * *full*
                              * *sidebyside*
                              * *minimal*
                              * *card*
                              * *split*
                              * *top*
-                                 
+
                             * Values for :class:`~arcgis.apps.storymap.collection.Collection`:
-                            
+
                              * *grid*
                              * *magazine*
                              * *journal*
