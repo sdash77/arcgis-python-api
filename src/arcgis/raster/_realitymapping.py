@@ -2531,7 +2531,7 @@ class RMProject:
         mission_def = {"name": mission_name}
         context = {"workspace": mission_name}
 
-        return gis._tools.realitymapping.create_mission(
+        mission = gis._tools.realitymapping.create_mission(
             project_item=project_item,
             mission_definition=mission_def,
             input_rasters=input_rasters,
@@ -2541,6 +2541,9 @@ class RMProject:
             future=future,
             **kwargs,
         )
+
+        from ._realitymapping_mission import RMMission
+        return RMMission(mission_name=mission_name, mission_id=mission["mission"]["itemId"] ,project=self)
 
     def get_mission(self, name):
         """
