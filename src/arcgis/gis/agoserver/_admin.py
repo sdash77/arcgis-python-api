@@ -44,7 +44,7 @@ class AGOLServerManager:
         >>> online_servers_mgr = gis.admin.servers
         >>> hosted_feature_svc_mgr = online_servers_mgr.feature_server[0]
         >>> hosted_feature_svc_mgr
-        
+
         < AGOLServerManager @ https://services7.arcgis.com/<org_id>/ArcGIS/admin/services >
     """
 
