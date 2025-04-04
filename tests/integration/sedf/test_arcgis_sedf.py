@@ -1,6 +1,7 @@
 """
 Tests Related to Spatially Enabled Data Frame
 """
+
 import ssl
 from arcgis.geometry import _types, Geometry
 from arcgis.features.geo import _is_geoenabled
@@ -24,18 +25,16 @@ try:
 except:
     HAS_ARCPY = False
 
-DATA_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "spatial"
-)
+DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spatial")
 print(DATA_PATH)
 
 fs_urls = [
     # "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/amazingtimes/FeatureServer/0",  # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point
     # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0",  # Polyline
     # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0",
-    "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/MapServer/0",
+    "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/FeatureServer/0",
 ]  # polygon
-table_url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/MapServer/1"  # table
+table_url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/FeatureServer/1"  # table
 
 geoms = [
     Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}}),
@@ -103,9 +102,9 @@ if HAS_ARCPY:
             for url in fs_urls:
                 fl = Service(url_or_item=url)
                 oidname = [
-                    fld['name']
-                    for fld in fl.properties['fields']
-                    if fld['type'].lower() == "esrifieldtypeoid"
+                    fld["name"]
+                    for fld in fl.properties["fields"]
+                    if fld["type"].lower() == "esrifieldtypeoid"
                 ][0]
                 res = fl.query(where="%s < 10" % oidname)
                 res = res.sdf
@@ -173,7 +172,8 @@ if HAS_ARCPY:
             """test io.from_layer"""
 
             url = fs_urls[0]
-            sdf = pd.DataFrame.spatial.from_layer(layer=Service(url_or_item=url))
+            fl = Service(url_or_item=url)
+            sdf = pd.DataFrame.spatial.from_layer(fl)
             self.assertIsInstance(sdf, pd.DataFrame)
             self.assertTrue(_is_geoenabled(sdf))
 
@@ -189,9 +189,7 @@ if HAS_ARCPY:
                 shutil.rmtree(wrksp, ignore_errors=True)
                 os.makedirs(wrksp)
 
-            fc = sdf.spatial.to_featureclass(
-                os.path.join(wrksp, "mydataset.shp")
-            )
+            fc = sdf.spatial.to_featureclass(os.path.join(wrksp, "mydataset.shp"))
             self.assertTrue(os.path.isfile(fc))
             shutil.rmtree(wrksp, ignore_errors=True)
 
@@ -248,7 +246,7 @@ if HAS_ARCPY:
 
     ########################################################################
     # @unittest.SkipTest
-    @integration_test    
+    @integration_test
     class TestCaseGeoAccessor(unittest.TestCase):
         """
         Tests the GeoAccessor Methods and Properties
@@ -480,9 +478,7 @@ if HAS_ARCPY:
             from arcgis.geometry import Geometry
 
             self._sdf = pd.read_pickle(os.path.join(DATA_PATH, "sample.pkl"))
-            self._pt = Geometry(
-                {"x": 1, "y": 1, "spatialReference": {"wkid": 4326}}
-            )
+            self._pt = Geometry({"x": 1, "y": 1, "spatialReference": {"wkid": 4326}})
             self._pt2 = Geometry(
                 {"x": 2.22, "y": -1.5, "spatialReference": {"wkid": 4326}}
             )
@@ -515,9 +511,7 @@ if HAS_ARCPY:
             """tests that the namespace exists"""
             assert self._sdf.spatial.name
             assert hasattr(self._sdf[self._sdf.spatial.name], "geom")
-            assert isinstance(
-                self._sdf[self._sdf.spatial.name].geom, GeoSeriesAccessor
-            )
+            assert isinstance(self._sdf[self._sdf.spatial.name].geom, GeoSeriesAccessor)
 
         # ------------------------------------------------------------------
         # @unittest.SkipTest
@@ -565,18 +559,12 @@ if HAS_ARCPY:
             """tests the angle distance to method off of the geom namespace"""
             geom = self._sdf[self._sdf.spatial.name].geom
             isinstance(geom, GeoSeriesAccessor)
-            r1 = geom.angle_distance_to(
-                second_geometry=self._pt2, method="PLANAR"
-            )
-            r2 = geom.angle_distance_to(
-                second_geometry=self._pt2, method="GEODESIC"
-            )
+            r1 = geom.angle_distance_to(second_geometry=self._pt2, method="PLANAR")
+            r2 = geom.angle_distance_to(second_geometry=self._pt2, method="GEODESIC")
             r3 = geom.angle_distance_to(
                 second_geometry=self._pt2, method="GREAT_ELLIPTIC"
             )
-            r4 = geom.angle_distance_to(
-                second_geometry=self._pt2, method="LOXODROME"
-            )
+            r4 = geom.angle_distance_to(second_geometry=self._pt2, method="LOXODROME")
             assert r1.isnull().all() == False
             assert r2.isnull().all() == False
             assert r3.isnull().all() == False
@@ -647,12 +635,8 @@ if HAS_ARCPY:
             )
             sdf.spatial.name
 
-            r1 = geom.crosses(
-                second_geometry=cross_line
-            )  # SHOULD be ALL True
-            r2 = geom.crosses(
-                second_geometry=no_cross_line
-            )  # SHOULD be ALL False
+            r1 = geom.crosses(second_geometry=cross_line)  # SHOULD be ALL True
+            r2 = geom.crosses(second_geometry=no_cross_line)  # SHOULD be ALL False
             assert isinstance(r1, pd.Series)
             assert isinstance(r2, pd.Series)
 
@@ -688,9 +672,7 @@ if HAS_ARCPY:
             sdf = self._sdf.copy()
             geom = sdf[sdf.spatial.name].geom
             isinstance(geom, GeoSeriesAccessor)
-            r1 = geom.densify(
-                method="DISTANCE", distance=0.001, deviation=0.000001
-            )
+            r1 = geom.densify(method="DISTANCE", distance=0.001, deviation=0.000001)
             assert r1.isnull().all() == False
             assert r1.dtype.name == "geometry"
 
@@ -991,9 +973,7 @@ if HAS_ARCPY:
             sdf = self._sdf.copy()
             geom = sdf[sdf.spatial.name].geom
             isinstance(geom, GeoSeriesAccessor)
-            r1 = geom.symmetric_difference(
-                second_geometry=sdf.SHAPE[0].buffer(0.25)
-            )
+            r1 = geom.symmetric_difference(second_geometry=sdf.SHAPE[0].buffer(0.25))
             assert isinstance(r1, pd.Series)
             assert r1.isnull().all() == False
 
