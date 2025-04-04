@@ -7,6 +7,8 @@ import logging
 import sys
 import threading
 import urllib.parse
+import shutil
+import os
 from enum import Enum
 from typing import Optional, Callable
 from abc import ABC, abstractmethod
@@ -286,6 +288,8 @@ class WorkflowManagerAdmin:
         diagram_ids: Optional[str] = None,
         include_other_configs: bool = True,
         passphrase: Optional[str] = None,
+        run_async: Optional[bool] = False,
+        download_location: Optional[str] = None
     ):
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
@@ -311,10 +315,17 @@ class WorkflowManagerAdmin:
         passphrase             Optional. If exporting encrypted user defined settings, define a passphrase.
                                If no passphrase is specified, the keys for encrypted user defined settings will be
                                exported without their values.
+        ---------------------  ---------------------------------------------------------
+        run_async              Optional. A boolean indicating whether to run export item asynchronously. If set to true,
+                               export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution` The download
+                               location can then be found by prompting for the export_location.
+        ---------------------  ---------------------------------------------------------
+        download_location      Optional. The location to download the wmc file after finish exporting. If not set, the
+                               file will download to the default location.
         =====================  =========================================================
 
         :return:
-            success object
+            success object or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
 
         """
         params = {"includeOtherConfiguration": include_other_configs}
@@ -325,15 +336,18 @@ class WorkflowManagerAdmin:
         if passphrase is not None:
             params["passphrase"] = passphrase
 
-        url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
-        return_obj = self._gis._con.post(
-            url, params=params, try_json=False, json_encode=False, post_json=True
-        )
+        if run_async:
+            return self._export_item_async(item, params, download_location)
+        else:
+            url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
+            return_obj = self._gis._con.post(
+                url, params=params, try_json=False, json_encode=False, post_json=True
+            )
 
-        if "error" in return_obj:
-            return_obj = json.loads(return_obj)
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        return return_obj
+            if "error" in return_obj:
+                return_obj = json.loads(return_obj)
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            return return_obj
 
     def import_item(
         self, item, config_file, passphrase: Optional[str] = None
@@ -385,50 +399,12 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def export_item_async(
+    def _export_item_async(
         self,
         item,
-        job_template_ids: Optional[str] = None,
-        diagram_ids: Optional[str] = None,
-        include_other_configs: bool = True,
-        passphrase: Optional[str] = None,
+        params,
+        download_location: Optional[str] = None
     ):
-        """
-        Starts exporting a new Workflow Manager configuration (.wmc) file based on the indicated item. This file can be
-        used with the import endpoint to update other item configurations. Configurations from Workflow items with a
-        server that is on a more recent version will not import due to incompatability. If includeOtherConfiguration is
-        set to false, the exported file only includes the individual configuration. If includeOtherConfiguration is
-        undefined, it defaults to true. If includeOtherConfiguration is set to true, the configuration file includes
-        the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and queries,
-        templates, and user settings of the indicated item. Encrypted settings must have a passphrase defined.
-        If no passphrase is specified, encrypted keys will be exported without the values. The adminAdvanced privilege
-        is required. An export ID is returned to retrieve the configuration file. Use the exportId endpoint to retrieve
-        the file.
-
-        =====================  =========================================================
-        **Argument**           **Description**
-        ---------------------  ---------------------------------------------------------
-        item                   Required Item. The Workflow Manager Item to be exported
-        ---------------------  ---------------------------------------------------------
-        job_template_ids       Optional. The job template(s) to be exported. If job template is exported,
-                               the associated diagram must be included to be exported.
-        ---------------------  ---------------------------------------------------------
-        diagram_ids            Optional. The diagram(s) to be exported. If not defined, all diagrams are exported.
-                               If defined as empty, no diagram is exported
-        ---------------------  ---------------------------------------------------------
-        include_other_configs  Optional. If false other configurations are not exported including templates,
-                               User defined settings, shared searches, shared queries, email settings etc.
-        ---------------------  ---------------------------------------------------------
-        passphrase             Optional. If exporting encrypted user defined settings, define a passphrase.
-                               If no passphrase is specified, the keys for encrypted user defined settings will be
-                               exported without their values.
-        =====================  =========================================================
-
-        :return:
-            success object
-
-        """
-
         # Create a ItemExecution object
         ie = ItemExecution(item, ExecutionType.EXPORT)
         # Subscribe to this job
@@ -437,14 +413,6 @@ class WorkflowManagerAdmin:
         nm.connect()
 
         # Call the actual endpoint
-        params = {"includeOtherConfiguration": include_other_configs}
-        if job_template_ids is not None:
-            params["jobTemplateIds"] = job_template_ids
-        if diagram_ids is not None:
-            params["diagramIds"] = diagram_ids
-        if passphrase is not None:
-            params["passphrase"] = passphrase
-
         url = "{base}/admin/{id}/exportAsync".format(base=self._url, id=item.id)
 
         try:
@@ -457,6 +425,25 @@ class WorkflowManagerAdmin:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj)
+
+            # get result after websocket handling and then download file
+            res = ie.result()
+            filepath = self._get_exported_configuration(item, ie.export_id)
+            try:
+                if not os.path.isdir(download_location):
+                    print(f"Error: {download_location} is not a valid directory.")
+                    return
+
+                    # Construct the full destination path
+                filename = os.path.basename(filepath)
+                destination_path = os.path.join(download_location, filename)
+
+                # Copy the file from the temp location to the destination
+                shutil.copy(filepath,  destination_path)
+                ie._export_location =  destination_path
+                logger.debug(f"File successfully saved to { destination_path}")
+            except Exception as e:
+                logger.error(f"Error while copying file to desired location: {e}")
         except:
             nm.disconnect()
             raise
@@ -465,23 +452,7 @@ class WorkflowManagerAdmin:
         ie._started()
         return ie
 
-    def get_exported_configuration(self, item, export_id: str):
-        """
-        TODO
-        Retrieves a Workflow Manager configuration (.wmc) file using the export ID provided by the export_item_async
-
-        =====================  =========================================================
-        **Argument**           **Description**
-        ---------------------  ---------------------------------------------------------
-        item                   Required Item. The Workflow Manager Item to be exported
-        ---------------------  ---------------------------------------------------------
-        export_id              Required.  TODO
-        =====================  =========================================================
-
-        :return:
-            success object
-
-        """
+    def _get_exported_configuration(self, item, export_id: str):
         url = "{base}/admin/{id}/exportAsync/{exportId}".format(base=self._url, id=item.id, exportId=export_id)
         return_obj = self._gis._con.get(
             url, try_json=False, json_encode=False, post_json=True
@@ -4071,6 +4042,7 @@ class ItemExecution(WorkflowManagerExecution):
         super().__init__()
         self._item = item
         self._execution_type = execution_type
+        self._export_location = None
 
     def _callback(self, msg: Notification, nm: NotificationManager):
         if (
@@ -4093,6 +4065,12 @@ class ItemExecution(WorkflowManagerExecution):
     def export_id(self):
         if not self.running() and self._execution_type is ExecutionType.EXPORT:
             return self._export_id
+        return None
+
+    @property
+    def export_location(self):
+        if not self.running() and self._execution_type is ExecutionType.EXPORT:
+            return self._export_location
         return None
 
 
