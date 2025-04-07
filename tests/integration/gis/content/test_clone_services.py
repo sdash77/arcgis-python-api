@@ -311,5 +311,30 @@ class TestCloneEditorTracking(unittest.TestCase):
                 cleanup_published_items([layer_item])
 
 
+@integration_test
+class TestCloneApps(unittest.TestCase):
+    def test_clone_quick_capture(self):
+        """Uses a permanent QuickCapture app owned by api_data_owner.
+        ItemID: 50789f80a7f74009889cd4d3971b12ce"""
+        from arcgis.gis import GIS
+
+        clone_list = None
+        try:
+            gis = GIS(profile="your_online_api_data_owner_profile")
+            gis2 = GIS(profile="your_ent_admin_profile", verify_cert=False)
+            qc = gis.content.get("50789f80a7f74009889cd4d3971b12ce")
+            clone_list = gis2.content.clone_items(
+                [qc], search_existing_items=False, preserve_item_id=True
+            )
+            cloned_item = gis2.content.get("50789f80a7f74009889cd4d3971b12ce")
+            self.assertIsNotNone(
+                cloned_item,
+                "No item with that item id",
+            )
+        finally:
+            if clone_list:
+                cleanup_published_items(clone_list)
+
+
 if __name__ == "__main__":
     unittest.main()
