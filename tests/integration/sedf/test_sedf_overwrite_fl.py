@@ -1,11 +1,15 @@
 import os
+import uuid
 import warnings
 from arcgis.gis import GIS
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
 import unittest
 import tempfile
-from utils.decorators import integration_test
+
+from arcgis.gis._impl import ItemTypeEnum
+from utils.data_utils import cleanup_published_items, publish_test_item
+from utils.decorators import integration_test, profiles
 
 point_data = [
     {
@@ -2188,107 +2192,97 @@ tbl_data = [
     },
 ]
 
-profiles = ["your_online_profile", "your_enterprise_profile"]
+# profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
+@profiles.enterprise_and_agol
 @integration_test
 class TestSeDFOverwrite(unittest.TestCase):
     """tests the overwrite on the SeDF when creating a feature layer"""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.items = []
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.items)
+
     def test_to_feature_layer(self):
         """tests creating a feature layer and overwriting it"""
-        for profile in profiles:
-            # establish gis connection
-            gis = GIS(profile=profile, verify_cert=False)
-            print("User: ", gis.users.me.username)
-            polygon_item = None
-            point_item = None
-            try:
-                # add point layer to portal
-                sdf = pd.DataFrame(point_data)
-                point_item = gis.content.import_data(sdf)
+        # establish gis connection
+        gis = self.gis
 
-                # add polygon layer to portal
-                sdf2 = pd.DataFrame(polygon_features)
-                polygon_item = gis.content.import_data(sdf2)
+        try:
+            # add point layer to portal
+            sdf = pd.DataFrame(point_data)
+            point_item = gis.content.import_data(sdf)
+            self.items.append(point_item)
 
-                # Basis Assertions
-                assert point_item.layers[0]
-                assert (
-                    point_item.layers[0].properties.geometryType == "esriGeometryPoint"
-                )
-                num_layers = len(point_item.layers)
-                num_features = point_item.layers[0].query(return_count_only=True)
+            # add polygon layer to portal
+            sdf2 = pd.DataFrame(polygon_features)
+            polygon_item = gis.content.import_data(sdf2)
+            self.items.append(polygon_item)
 
-                # Overwrite
-                sdf = pd.DataFrame.spatial.from_layer(polygon_item.layers[0])
-                updated_item = sdf.spatial.to_featurelayer(
-                    overwrite="True",
-                    service={"featureServiceId": point_item.id, "layer": 0},
-                )
+            # Basis Assertions
+            assert point_item.layers[0]
+            assert point_item.layers[0].properties.geometryType == "esriGeometryPoint"
+            num_layers = len(point_item.layers)
+            num_features = point_item.layers[0].query(return_count_only=True)
 
-                # Check to see if different layer but same service
-                assert point_item.id == updated_item.id
-                assert num_layers == len(updated_item.layers)
-                assert (
-                    updated_item.layers[0].query(return_count_only=True) != num_features
-                )
-                assert (
-                    updated_item.layers[0].properties.geometryType
-                    == "esriGeometryPolygon"
-                )
-            except:
-                warnings.warn(
-                "This test failed for user: {}. Please check the data and try again.".format(gis.users.me.username)
+            # Overwrite
+            sdf = pd.DataFrame.spatial.from_layer(polygon_item.layers[0])
+            updated_item = sdf.spatial.to_featurelayer(
+                overwrite="True",
+                service={"featureServiceId": point_item.id, "layer": 0},
             )
-            finally:
-                # clean up
-                if polygon_item:
-                    poly_rel_items = polygon_item.related_items("Service2Data")
-                    for item in poly_rel_items:
-                        item.delete()
-                    polygon_item.delete()
-                if point_item:
-                    pnt_rel_items = point_item.related_items("Service2Data")
-                    for item in pnt_rel_items:
-                        item.delete()
-                    point_item.delete()
+
+            # Check to see if different layer but same service
+            assert point_item.id == updated_item.id
+            assert num_layers == len(updated_item.layers)
+            assert updated_item.layers[0].query(return_count_only=True) != num_features
+            assert (
+                updated_item.layers[0].properties.geometryType == "esriGeometryPolygon"
+            )
+        except:
+            warnings.warn(
+                "This test failed for user: {}. Please check the data and try again.".format(
+                    gis.users.me.username
+                )
+            )
 
     def test_overwrite_table(self):
-        for profile in profiles:
-            # establish connection
-            gis = GIS(profile=profile, verify_cert=False)
-            if gis._is_agol is False:
-                return
-            print("User: ", gis.users.me.username)
-            # add point tbl to portal
-            df = pd.DataFrame(tbl_data)
-            xlsx_file_path = tempfile.mkstemp(suffix=".xlsx")[1]
-            df.to_excel(xlsx_file_path, index=False)
-            try:
-                # add the csv to the org
-                csv_item = gis.content.add({}, data=xlsx_file_path)
-                assert csv_item
-                # publish as a table
-                publish_parameters = gis.content.analyze(item=csv_item, file_type="csv")
-                table_item = csv_item.publish(publish_parameters=publish_parameters)
-                tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
-                tbl_df["NOTES"][0] = "This is a python api test"
-                tbl_df["NOTES"][1] = "This file will have extra notes"
-                updated_item = tbl_df.spatial.to_featurelayer(
-                    overwrite=True,
-                    service={"featureServiceId": table_item.id, "layer": 0},
-                )
-                assert len(table_item.tables) == len(updated_item.tables)
-            except:
-                warnings.warn(
-                "This test failed for user: {}. Please check the data and try again.".format(gis.users.me.username)
+        # establish connection
+        gis = self.gis
+
+        print("User: ", gis.users.me.username)
+        # add point tbl to portal
+        uid: str = uuid.uuid4().hex[:6]
+        df = pd.DataFrame(tbl_data)
+        xlsx_file_path = tempfile.mkstemp(suffix=".xlsx")[1]
+        df.to_excel(xlsx_file_path, index=False)
+        try:
+            table_item = publish_test_item(
+                self.gis,
+                f"sedf_overwrite_{uid}",
+                item_type=ItemTypeEnum.CSV,
+                source_data_path=xlsx_file_path,
             )
-            finally:
-                related = table_item.related_items("Service2Data")
-                for item in related:
-                    item.delete()
-                table_item.delete()
+            self.assertIsNotNone(table_item, "Could not publish table item")
+            self.items.append(table_item)
+
+            tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
+            tbl_df["NOTES"][0] = "This is a python api test"
+            tbl_df["NOTES"][1] = "This file will have extra notes"
+            updated_item = tbl_df.spatial.to_featurelayer(
+                overwrite=True,
+                service={"featureServiceId": table_item.id, "layer": 0},
+            )
+            assert len(table_item.tables) == len(updated_item.tables)
+        except Exception as ex:
+            warnings.warn(
+                f"This test failed for user: {gis.users.me.username}. Please check the data and try again. {ex}"
+            )
 
 
 if __name__ == "__main__":

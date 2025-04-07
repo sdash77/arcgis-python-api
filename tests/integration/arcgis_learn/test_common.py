@@ -1263,7 +1263,7 @@ def tearDownModule():
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
-        updateFailureModels()
+        #updateFailureModels()
     for key, val in data.items():
         try:
             os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')

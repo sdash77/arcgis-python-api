@@ -1120,11 +1120,19 @@ class ArcGISModel(object):
         if getattr(self, "_is_mm3d", False):
             self.learn.model.prediction = False
 
+        import platform
+
+        _is_linux = lambda: platform.system() == "Linux"
+        _is_notebook_server = lambda: os.getenv("NB_AUTH_FILE") is not None
+
         import matplotlib
 
         _stored_matplotlib_backend = matplotlib.get_backend()
 
-        matplotlib.use("Agg")
+        if not _is_notebook_server and _is_linux:
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()
@@ -1265,7 +1273,9 @@ class ArcGISModel(object):
                     mixed_precision=mixed_precision,
                     **kwargs,
                 )
-            matplotlib.use(_stored_matplotlib_backend)
+            if not _is_notebook_server and _is_linux:
+                matplotlib.use(_stored_matplotlib_backend)
+                import matplotlib.pyplot as plt
 
     def unfreeze(self):
         """
@@ -1284,7 +1294,7 @@ class ArcGISModel(object):
             raise Exception("You need to train your model to compute losses")
 
     def _create_emd_template(
-        self, path, compute_metrics=True, save_inference_file=True
+        self, path, compute_metrics=True, save_inference_file=True, **kwargs
     ):
         _emd_template = {}
 
@@ -1490,6 +1500,14 @@ class ArcGISModel(object):
                         _emd_template["per_class_metrics"] = (
                             self.per_class_metrics().to_json()
                         )
+
+        if (
+            getattr(self._data, "_dataset_type", None) == "Labeled_Tiles"
+            or getattr(self._data, "_dataset_type", None) == "Imagenet"
+        ):
+            if hasattr(self, "_gradCAM") and not (self._data._is_multispectral):
+                _emd_template["ExpMap"] = kwargs.get("gradcam", False)
+
         return _emd_template
 
     @staticmethod
@@ -1850,6 +1868,7 @@ class ArcGISModel(object):
                 saved_path.with_suffix(".pth"),
                 compute_metrics,
                 save_inference_file,
+                **kwargs,
             )
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
