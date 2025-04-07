@@ -163,8 +163,13 @@ class RMMission:
         """
         if self._workspace is not None:
             return self._workspace
+        
+        import json
+        metadata = {}
         try:
-            self._workspace = self._mission_json["workspace"]
+            if "metadata" in self._mission_json:
+                metadata = json.loads(self._mission_json["metadata"])
+                self._workspace = metadata.get("workspace", None)
         except:
             pass
         return self._workspace
