@@ -77,6 +77,10 @@ class TestAnalyzeGeocodingInput(unittest.TestCase):
             assert res
             assert isinstance(res, dict)
 
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.items_to_delete)
+
 
 ###########################################################################
 
