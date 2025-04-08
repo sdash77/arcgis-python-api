@@ -2537,14 +2537,12 @@ class MapImageLayer(_gis.Layer):
         if out_path is None:
             out_path = tempfile.gettempdir()
         url = "{url}/info/thumbnail".format(url=self._url)
-        params = {"f": "json"}
         if out_path is None:
             out_path = tempfile.gettempdir()
-        resp: requests.Response = self._session.post(
-            url=url, out_folder=out_path, file_name="thumbnail.png"
+        resp: requests.Response = self._session.post(url, {"f": "json"})
+        return handle_response(
+            out_path=out_path, file_name="thumbnail.png", try_json=True, resp=resp
         )
-        resp.raise_for_status()
-        return resp.json()
 
     # ----------------------------------------------------------------------
     def identify(
@@ -3257,11 +3255,10 @@ class MapImageLayer(_gis.Layer):
                 resp: requests.Response = self._session.post(
                     url=url,
                     data=params,
-                    out_folder=save_folder,
-                    file_name=save_file,
                 )
-                resp.raise_for_status()
-                return resp.json()
+                return handle_response(
+                    resp=resp, out_path=save_folder, file_name=save_file, try_json=True
+                )
             else:
                 resp: requests.Response = self._session.post(
                     url=url, data=params, force_bytes=True
@@ -3272,11 +3269,10 @@ class MapImageLayer(_gis.Layer):
             resp: requests.Response = self._session.post(
                 url=url,
                 data=params,
-                out_folder=save_folder,
-                file_name=save_file,
             )
-            resp.raise_for_status()
-            return resp.json()
+            return handle_response(
+                resp=resp, out_path=save_folder, file_name=save_file, try_json=True
+            )
         else:
             print("Unsupported output format")
 
