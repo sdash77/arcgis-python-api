@@ -3,6 +3,7 @@ from ._get_dependencies import _get_related_item_dict
 from arcgis.gis import GIS
 from arcgis.gis._impl._content_manager.folder import Folder
 from arcgis._impl.common._utils import _text_replace, _get_unique_name
+from arcgis._impl.common._clone import _search_org_for_existing_item
 import os
 import shutil
 import tempfile
@@ -333,19 +334,36 @@ class _ImportPackage:
         item_folder,
         preserve_id: bool = False,
         folder: Folder | str = None,
+        search_existing: bool = False,
     ):
         # read the properties.json file
         with open(os.path.join(item_folder, "properties.json"), "r") as prop_file:
             item_properties = json.load(prop_file)
 
+        item_id = item_properties["id"]
+
+         # read the relationships.json file
+        with open(os.path.join(item_folder, "relationships.json"), "r") as rel_file:
+            relationships = json.load(rel_file)
+
+        if search_existing:
+            # check if item already exists in the org
+            mini_dict = {"id": item_id, "type": item_properties["type"]}
+            existing_item = _search_org_for_existing_item(
+                self.gis, mini_dict,
+            )
+            if existing_item:
+                self.created_item_mapping[item_id] = existing_item.id
+                self._name_mapping[item_id] = (item_properties["title"], new_item.title)
+                self._service_mapping[item_id] = (item_properties["url"], new_item.url)
+                # add the related_items relationships to dict for reconstruction
+                self._item_relationships[item_id] = relationships["related_items"]
+                return [existing_item]
+
         if item_properties["type"] in DISALLOWED_TYPES:
             raise RuntimeError(
                 f"Item type '{item_properties['type']}' is not yet compatible with this functionality."
             )
-
-        # read the relationships.json file
-        with open(os.path.join(item_folder, "relationships.json"), "r") as rel_file:
-            relationships = json.load(rel_file)
 
         # read the resources.json file
         with open(
@@ -390,7 +408,7 @@ class _ImportPackage:
             props["thumbnail"] = os.path.join(item_folder, "files", thumbnail_name)
         if "Metadata" in item_properties["typeKeywords"]:
             props["metadata"] = os.path.join(item_folder, "files/metadata.xml")
-        item_id = item_properties["id"]
+        props["typeKeywords"].append("source-%s" % item_id)
         new_item_id = None
         if (
             preserve_id
@@ -689,6 +707,7 @@ class _ImportPackage:
         item_mapping: dict = {},
         folder: Folder | str = None,
         failure_rollback: bool = False,
+        search_existing_items: bool = False,
     ):
         if len(items) == 0:
             nodes = set(self.graph.all_items())
@@ -722,7 +741,7 @@ class _ImportPackage:
                 continue
             try:
                 new_items = self._import_item(
-                    item_folder, preserve_id=preserve_ids, folder=folder
+                    item_folder, preserve_id=preserve_ids, folder=folder, search_existing=search_existing_items,
                 )
                 if new_items:
                     created_items.extend(new_items)
