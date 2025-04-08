@@ -10,6 +10,7 @@ from typing import Any
 import os
 import pathlib
 import tempfile
+from arcgis._impl.common._output_to_file import handle_response
 from arcgis.gis import Item
 
 ###########################################################################
@@ -920,6 +921,7 @@ def create_symbol(
         raise Exception("Invalid symbol and geometry type")
     return symbol
 
+
 ###########################################################################
 class SymbolService:
     """
@@ -1050,8 +1052,10 @@ class SymbolService:
         resp: requests.Response = self._session.get(
             url=url,
             params=params,
-            file_name=save_file_name,
-            out_folder=save_folder,
         )
-        resp.raise_for_status()
-        return resp.json()
+        return handle_response(
+            resp=resp,
+            file_name=save_file_name,
+            out_path=save_folder,
+            try_json=True,
+        )

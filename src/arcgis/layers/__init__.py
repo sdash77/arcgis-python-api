@@ -77,5 +77,5 @@ __all__ = [
     "ServiceFactory",
     "BasemapServices",
     "BasemapService",
-    "SymbolService"
+    "SymbolService",
 ]
