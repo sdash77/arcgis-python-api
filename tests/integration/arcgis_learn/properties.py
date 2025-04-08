@@ -133,7 +133,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -195,7 +194,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -257,7 +255,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -315,7 +312,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -374,7 +370,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -438,7 +433,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -496,7 +490,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "maskrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -665,7 +658,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -727,7 +719,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -1032,7 +1023,6 @@ data = {
             "batch_size": None,
             "n_masks": 38,
             "resize_to": 256,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -1059,7 +1049,6 @@ data = {
             "path": os.path.join(data_folder_ms, "ms_small"),
             "batch_size": None,
             "chip_size": 256,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
