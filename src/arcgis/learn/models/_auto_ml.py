@@ -339,6 +339,7 @@ class AutoML(object):
                 fairness_threshold=self._fairness_threshold,
                 privileged_groups=self._privileged_groups,
                 underprivileged_groups=self._underprivileged_groups,
+                stack_models=False,
             )
         else:
             result_path = self._data.path
@@ -861,11 +862,6 @@ class AutoML(object):
         image_variables = emd.get("image_variables", None)
         embedding_variables = emd.get("embedding_variables", None)
 
-        if emd["version"] != str(sklearn.__version__):
-            warnings.warn(
-                f"Sklearn version has changed. Model Trained using version {emd['version']}"
-            )
-
         _is_classification = True
         if emd["_is_classification"] != "classification":
             _is_classification = False
@@ -925,7 +921,20 @@ class AutoML(object):
             + self._data._embedding_variables,
         )
         data_df = self._impute_missing_values(data=data_df)
-        return self._model.predict(data_df)
+        try:
+            pred = self._model.predict(data_df)
+        except Exception as e:
+            if "pickle has an incompatible dtype" in str(
+                e
+            ) or "object has no attribute" in str(e):
+                raise Exception(
+                    "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
+                )
+            else:
+                raise Exception(
+                    "An error occured while getting the predictions from the trained model."
+                )
+        return pred
 
     def _shap_predict(self, data):
         data_df = pd.DataFrame(
@@ -968,7 +977,7 @@ class AutoML(object):
         prediction_type="features",
         output_raster_path=None,
         match_field_names=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         confidence=True,
         get_local_explanations=False,
         **kwargs,
@@ -1041,6 +1050,9 @@ class AutoML(object):
             :class:`~arcgis.features.FeatureLayer` if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
+        if cell_sizes:
+            if 7 in cell_sizes:
+                cell_sizes.remove(7)
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if prediction_type in ["features", "dataframe"]:
@@ -1096,7 +1108,7 @@ class AutoML(object):
         input_features,
         rasters=None,
         datefield=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         output_name="Prediction Layer",
         gis=None,

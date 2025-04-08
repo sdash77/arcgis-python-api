@@ -1367,7 +1367,7 @@ class Role(dict):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        privilage              Required string. The capability to assign to the role. Choices are
+        privilege              Required string. The capability to assign to the role. Choices are
                                ADMINISTER, PUBLISH, ACCESS
         ==================     ====================================================================
 
@@ -1379,7 +1379,7 @@ class Role(dict):
         if privilege.lower() in allowed:
             privilege = privilege.upper()
         else:
-            raise ValueError("Invalid privilage.")
+            raise ValueError("Invalid privilege.")
         return self._security._assign_privilege(
             rolename=self.rolename, privilege=privilege
         )

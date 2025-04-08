@@ -2143,7 +2143,7 @@ class _ItemDefinition(CloneNode):
             return "url"
         return "text"
 
-    def _add_new_item(self, item_properties, data=None):
+    def _add_new_item(self, item_properties, data=None, **kwargs):
         """Add the new item to the portal"""
         thumbnail = self.thumbnail
         if not thumbnail and self.portal_item:
@@ -2163,12 +2163,14 @@ class _ItemDefinition(CloneNode):
         if thumbnail:
             item_properties["thumbnail"] = thumbnail
 
+        stream = kwargs.pop("stream", True)
         if data:
             job = folder.add(
                 **{
                     "item_properties": item_properties,
                     "item_id": item_id,
                     self._data_type_lu(data): data,
+                    "stream": stream,
                 }
             )
         else:
@@ -2176,6 +2178,7 @@ class _ItemDefinition(CloneNode):
                 **{
                     "item_properties": item_properties,
                     "item_id": item_id,
+                    "stream": stream,
                 }
             )
         new_item = job.result()
@@ -2713,10 +2716,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 continue
 
             properties = layers[layer_id].properties
-            if "globalIdField" not in properties:
-                continue
 
-            global_id_field = properties["globalIdField"]
+            global_id_field = properties.get("globalIdField", "")
+            if not global_id_field:
+                use_gids = False
+            else:
+                use_gids = self._copy_global_ids
             object_id_field = properties["objectIdField"]
             relates = [
                 relate
@@ -2740,7 +2745,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 for i in range(0, len(layer_features), chunk_size)
             ]:
                 edits = layer.edit_features(
-                    adds=features_chunk, use_global_ids=self._copy_global_ids
+                    adds=features_chunk, use_global_ids=use_gids
                 )
                 if self._logger:
                     self._logger.debug(edits)
@@ -2829,6 +2834,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         for layer_id in layer_ids:
             pre_fields = copy.deepcopy(layers[layer_id].properties["fields"])
             new_fields = copy.deepcopy(layers[layer_id].properties["fields"])
+            if (
+                not "globalIdField" in layers[layer_id].properties
+                or not layers[layer_id].properties["globalIdField"]
+            ):
+                use_gids = False
+            else:
+                use_gids = self._copy_global_ids
             read_only_update = False
             for field in new_fields:
                 if field["type"] != "esriFieldTypeOID" and field["editable"] == False:
@@ -2857,7 +2869,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 try:
                     edits = layers[layer_id].edit_features(
                         adds=features_chunk,
-                        use_global_ids=self._copy_global_ids,
+                        use_global_ids=use_gids,
                     )
 
                     if self._logger:
@@ -2874,7 +2886,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         for i in range(0, len(features_chunk), temp_chunk)
                     ]:
                         edits = layers[layer_id].edit_features(
-                            adds=chunk, use_global_ids=self._copy_global_ids
+                            adds=chunk, use_global_ids=use_gids
                         )
                         add_results += edits["addResults"]
             object_id_field = layers[layer_id].properties["objectIdField"]
@@ -5802,7 +5814,7 @@ class _QuickCaptureDefinition(_ItemDefinition):
                 data = self._get_item_data()
 
                 # Add the new item
-                new_item = self._add_new_item(item_properties, data)
+                new_item = self._add_new_item(item_properties, data, stream=False)
 
                 # Get the Quick Capture json resource
                 qc_json = new_item.resources.get("qc.project.json", try_json=True)
