@@ -711,6 +711,11 @@ class _ImportPackage:
                     og_props = json.load(prop_file)
                 self._name_mapping[og_id] = (og_props["title"], new_item.title)
                 self._service_mapping[og_id] = (og_props["url"], new_item.url)
+                with open(
+                    os.path.join(og_folder, "relationships.json"), "r"
+                ) as rel_file:
+                    relationships = json.load(rel_file)
+                self._item_relationships[og_id] = relationships["related_items"]
 
         if len(items) == 0:
             nodes = set(self.graph.all_items())
