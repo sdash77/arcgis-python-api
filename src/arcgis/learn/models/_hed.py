@@ -12,8 +12,7 @@ try:
     from ._arcgis_model import _resnet_family, _vgg_family
     from ._timm_utils import filter_timm_models
     from ._hed_utils import DDPCallback
-    from ._transformer_backbone import swin_config
-    from ._dofa_utils import dofa_config
+    from ._transformer_backbone import swin_config, vit_config
 
     HAS_FASTAI = True
 
@@ -54,9 +53,7 @@ class CustomHED:
         else:
             self._is_multispectral = False
 
-        model = self.hed._HEDModel(
-            self._backbone, data.chip_size, pretrained=pretrained_backbone
-        )
+        model = self.hed._HEDModel(self._backbone, data, pretrained=pretrained_backbone)
 
         return model
 
@@ -205,14 +202,8 @@ class HEDEdgeDetector(ModelExtension):
     @staticmethod
     def transformer_backbones():
         """Supported list of transformer backbones for this model."""
-        transformer_backbone = list(swin_config.keys())
+        transformer_backbone = list(swin_config.keys()) + list(vit_config.keys())
         return transformer_backbone
-
-    @staticmethod
-    def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
-        dofa_backbone = list(dofa_config.keys())
-        return dofa_backbone
 
     @staticmethod
     def torchgeo_backbones():
@@ -242,14 +233,12 @@ class HEDEdgeDetector(ModelExtension):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = HEDEdgeDetector.transformer_backbones()
         torchgeo_backbone = HEDEdgeDetector.torchgeo_backbones()
-        dofa_backbone = HEDEdgeDetector.dofa_backbones()
 
         return (
             [*_resnet_family, *_vgg_family]
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
-            + dofa_backbone
         )
 
     @property

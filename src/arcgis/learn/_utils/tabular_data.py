@@ -82,7 +82,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         procs=None,
         val_split_pct=0.1,
@@ -1284,7 +1284,10 @@ class TabularDataObject(object):
         # Check whether the index is timestamp
         sample_ticks = False
         index_data_copy = self._index_data
-        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
+        if not (
+            pd.api.types.is_datetime64_any_dtype(index_data_copy)
+            or pd.api.types.is_timedelta64_dtype(index_data_copy)
+        ):
             # Try to convert the datatype to timestamp
             warnings.warn("Index field is not timestamp. Converting it to timestamp.")
             try:
@@ -1391,7 +1394,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         index_field=None,
         **kwargs,
