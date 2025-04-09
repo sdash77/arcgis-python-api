@@ -858,7 +858,7 @@ class Folder:
                 params["async"] = False
                 if text and not isinstance(text, str):
                     text: str = json.dumps(text)
-                    params["text"] = text
+                params["text"] = text
                 params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
