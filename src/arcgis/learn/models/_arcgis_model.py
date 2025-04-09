@@ -1129,7 +1129,7 @@ class ArcGISModel(object):
 
         _stored_matplotlib_backend = matplotlib.get_backend()
 
-        if not _is_notebook_server and _is_linux:
+        if not _is_notebook_server() and _is_linux():
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
 
@@ -1273,7 +1273,7 @@ class ArcGISModel(object):
                     mixed_precision=mixed_precision,
                     **kwargs,
                 )
-            if not _is_notebook_server and _is_linux:
+            if not _is_notebook_server() and _is_linux():
                 matplotlib.use(_stored_matplotlib_backend)
                 import matplotlib.pyplot as plt
 
