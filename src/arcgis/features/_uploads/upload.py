@@ -67,7 +67,7 @@ class Upload:
 
         """
         url: str = f"{self._url}/uploadPart"
-        params: dict[str, Any] = {"f": "json", "partNumber": part_number}
+        params: dict[str, Any] = {"f": "json", "partId": part_number}
         files: dict[str, Any] = {}
         if isinstance(part, str):
             with open(part, "rb") as reader:
@@ -125,6 +125,8 @@ class Upload:
         url = f"{self._url}/commit"
         if parts:
             params["parts"] = parts
+        elif parts is None:
+            params["parts"] = ",".join(self.parts)
         resp: requests.Response = self.session.post(url=url, data=params)
         resp.raise_for_status()
         res: dict[str, Any] = resp.json()
