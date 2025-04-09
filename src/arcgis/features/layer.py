@@ -1556,7 +1556,7 @@ class FeatureLayer(Layer):
         out_fields: Union[str, list[str]] = "*",  #
         analytic_where: Optional[str] = None,  #
         geometry_filter: Optional[GeometryFilter] = None,  #
-        out_sr: Optional[Union[dict[str, int], str]] = None,  #
+        out_sr: Optional[Union[dict[str, Any], str]] = None,  #
         return_geometry: bool = True,
         order_by: Optional[str] = None,
         result_type: Optional[str] = None,
@@ -1864,7 +1864,7 @@ class FeatureLayer(Layer):
         distance: Optional[int] = None,
         units: Optional[str] = None,
         max_allowable_offset: Optional[int] = None,
-        out_sr: Optional[Union[dict[str, int], str]] = None,
+        out_sr: Optional[Union[dict[str, Any], str]] = None,
         geometry_precision: Optional[int] = None,
         gdb_version: Optional[str] = None,
         order_by_fields: Optional[str] = None,
