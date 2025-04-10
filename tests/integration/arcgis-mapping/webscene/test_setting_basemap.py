@@ -6,7 +6,7 @@ from arcgis.gis import GIS
 from utils.decorators import integration_test, profiles
 
 
-@profiles.agol
+@profiles.all
 @integration_test
 class TestAddLayersToMap(unittest.TestCase):
 
