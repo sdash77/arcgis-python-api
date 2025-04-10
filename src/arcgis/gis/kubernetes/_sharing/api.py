@@ -704,8 +704,7 @@ class KbertnetesPy(object):
         """
 
         return self.con.post(
-            f"{self.resturl}community/groups/{group_id}/users",
-            self._postdata(),
+            f"{self.resturl}community/groups/{group_id}/users", self._postdata(),
         )
 
     # ----------------------------------------------------------------------
@@ -965,13 +964,7 @@ class KbertnetesPy(object):
         # Execute the search and get back the results
         count = 0
         resp = self._groups_page(
-            q,
-            1,
-            min(max_groups, 100),
-            sort_field,
-            sort_order,
-            categories,
-            filter,
+            q, 1, min(max_groups, 100), sort_field, sort_order, categories, filter,
         )
         results = resp.get("results")
         count += int(resp["num"])
@@ -995,10 +988,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def share_item_as_group_admin(
-        self,
-        item_id: str,
-        groups: str = "",
-        allow_members_to_edit: bool = False,
+        self, item_id: str, groups: str = "", allow_members_to_edit: bool = False,
     ):
         """Shares public item with the specified list of groups belonging to caller
 
@@ -1746,8 +1736,7 @@ class KbertnetesPy(object):
             return False
         else:
             resp = self.con.post(
-                "content/users/" + owner + "/" + folder_id + "/delete",
-                postdata,
+                "content/users/" + owner + "/" + folder_id + "/delete", postdata,
             )
             if resp:
                 return resp.get("success")
@@ -2024,7 +2013,9 @@ class KbertnetesPy(object):
                 metadata = request.urlretrieve(metadata)[0]
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
-            if _is_http_url(thumbnail):
+            if isinstance(thumbnail, io.BytesIO):
+                files.append(("thumbnail", thumbnail, "thumbnail.png"))
+            elif _is_http_url(thumbnail):
                 # find file ext from url
                 file_ext = find_puremagic_ext(thumbnail)
                 # download file
@@ -2034,7 +2025,9 @@ class KbertnetesPy(object):
                     new_thumbnail = thumbnail + "." + file_ext
                     os.rename(thumbnail, new_thumbnail)
                     thumbnail = new_thumbnail
-            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+                files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+            else:
+                files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
                 # find file ext from url
@@ -2047,11 +2040,7 @@ class KbertnetesPy(object):
                     os.rename(large_thumbnail, new_large_thumbnail)
                     large_thumbnail = new_large_thumbnail
             files.append(
-                (
-                    "largeThumbnail",
-                    large_thumbnail,
-                    os.path.basename(large_thumbnail),
-                )
+                ("largeThumbnail", large_thumbnail, os.path.basename(large_thumbnail),)
             )
         # If owner isn't specified, use the logged in user
         if not owner:
@@ -2331,11 +2320,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def unshare_item(
-        self,
-        item_id: str,
-        owner: str,
-        folder: Optional[str] = None,
-        groups: str = "",
+        self, item_id: str, owner: str, folder: Optional[str] = None, groups: str = "",
     ):
         """Stops sharing the item with the specified list of groups
 
@@ -2565,31 +2550,18 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_item_data(
-        self,
-        itemid: str,
-        try_json: bool = True,
-        folder: Optional[str] = None,
+        self, itemid: str, try_json: bool = True, folder: Optional[str] = None,
     ):
         # print('content/items/' + itemid + '/data')
         return self.con.get(
-            "content/items/" + itemid + "/data",
-            try_json=try_json,
-            out_folder=folder,
+            "content/items/" + itemid + "/data", try_json=try_json, out_folder=folder,
         )
         # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
         # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
 
     # ----------------------------------------------------------------------
     def usage(
-        self,
-        startTime,
-        endTime,
-        period,
-        vars,
-        etype,
-        stype,
-        groupby,
-        appId=None,
+        self, startTime, endTime, period, vars, etype, stype, groupby, appId=None,
     ):
         postdata = self._postdata()
         postdata["startTime"] = startTime * 1000
@@ -2693,10 +2665,7 @@ class KbertnetesPy(object):
 
         # Send the POST request, and return the id from the response
         resp = self.con.post(
-            "community/users/" + username + "/update",
-            postdata,
-            files,
-            ssl=True,
+            "community/users/" + username + "/update", postdata, files, ssl=True,
         )
 
         if resp:
