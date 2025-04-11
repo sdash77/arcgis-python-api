@@ -24,7 +24,7 @@ from arcgis.gis._impl._con import (
 from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 
 _log = logging.getLogger(__name__)
 
