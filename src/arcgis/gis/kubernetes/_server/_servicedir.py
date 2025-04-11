@@ -92,7 +92,7 @@ class KubeServiceDirectory(_BaseKube):
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():
                     return Service(
-                        url="%s/%s/%s" % (url, s["name"], s["type"]),
+                        url_or_item="%s/%s/%s" % (url, s["name"], s["type"]),
                         server=self._con,
                     )
                 del s
@@ -117,7 +117,7 @@ class KubeServiceDirectory(_BaseKube):
                 try:
                     services.append(
                         Service(
-                            url="%s/%s/%s" % (url, s["name"], s["type"]),
+                            url_or_item="%s/%s/%s" % (url, s["name"], s["type"]),
                             server=self._con,
                         )
                     )
