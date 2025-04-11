@@ -24,11 +24,11 @@ requirements:
   - lxml
   - matplotlib
   - matplotlib-inline
-  - numpy >=1.21.6,<2
+  - numpy >=2.2.0,<3
   - pandas >=2.0.0,<2.3.0
   - pillow
   - puremagic >=1.15,<2
-  - pyarrow >=14,<17
+  - pyarrow >=16,<20
   - pylerc
   - pyspnego >=0.8.0
   - pywin32-security [win]
