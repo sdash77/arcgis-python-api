@@ -242,7 +242,7 @@ print
 
 SymbolService
 ^^^^^^^^^
-.. autoclass:: arcgis.layers._vtl._vector_tile_layers.SymbolService
+.. autoclass:: arcgis.layers._symbol.SymbolService
     :members:
     :undoc-members:
     :show-inheritance:
