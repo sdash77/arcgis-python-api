@@ -194,6 +194,7 @@ kwargs = {
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
@@ -208,7 +209,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
-    "python_requires": ">=3.11, <3.14",
+    "python_requires": ">=3.10, <3.14",
     "include_package_data": True,
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
