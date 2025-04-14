@@ -10962,7 +10962,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.1")
+    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.2")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -23317,7 +23317,7 @@ class _Tools(object):
                 )
             else:
                 svcurl = self._gis.properties["helperServices"]["symbols"]["url"]
-            from arcgis.layers._vtl._vector_tile_layers import SymbolService
+            from arcgis.layers import SymbolService
 
             self._symbolservice = SymbolService(svcurl, self._gis)
             return self._symbolservice
