@@ -2014,30 +2014,42 @@ class FeatureLayer(Layer):
         out_statistics                      Optional list of dictionaries. The definitions for one or more field-based
                                             statistics to be calculated.
 
-                                            Syntax:
-
-                                            [
-                                                {
-                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
-                                                  "onStatisticField": "Field1",
-                                                  "outStatisticFieldName": "Out_Field_Name1"
-                                                },
-                                                {
-                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
-                                                  "onStatisticField": "Field2",
-                                                  "outStatisticFieldName": "Out_Field_Name2"
-                                                }
-                                            ]
+                                            .. code-block:: python
+                                                                             
+                                                out_statistics = [
+                                                   {
+                                                       "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                       "onStatisticField": "Field1",
+                                                       "outStatisticFieldName": "Out_Field_Name1"
+                                                     },
+                                                     {
+                                                       "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                       "onStatisticField": "Field2",
+                                                       "outStatisticFieldName": "Out_Field_Name2"
+                                                     }
+                                                 ]                         
         -------------------------------     --------------------------------------------------------------------
-        statistic_filter                    Optional ``StatisticFilter`` instance. The definitions for one or more field-based
-                                            statistics can be added, e.g. statisticType, onStatisticField, or
-                                            outStatisticFieldName.
+        statistic_filter                    Optional :class:`~arcgis._impl.common._filters.StatisticFilter`
+                                            object. A dataclass to assist in formatting requests for field-based
+                                            statistics.
 
-                                            Syntax:
-
-                                            sf = StatisticFilter()
-                                            sf.add(statisticType="count", onStatisticField="1", outStatisticFieldName="total")
-                                            sf.filter
+                                            .. code-block:: python
+                                            
+                                                # Usage example: StatisticFilter object for calculating statistics
+                                                
+                                                >>> from arcgis.gis import StatisticFilter
+                                                >>> stats_filter = StatisticFilter()
+                                                >>> stats_filter.add(
+                                                >>>       statisticType="avg",
+                                                >>>       onStatisticField="Length",
+                                                >>>       outStatisticFieldName="avg_length"
+                                                >>> )
+                                                
+                                                >>> query_res = flyr_obj.query(
+                                                >>>                ...
+                                                >>>                statistic_filter=stats_filter
+                                                >>>                ...
+                                                >>> )         
         -------------------------------     --------------------------------------------------------------------
         return_z                            Optional boolean. If true, Z values are included in the results if
                                             the features have Z values. Otherwise, Z values are not returned.
@@ -2203,12 +2215,11 @@ class FeatureLayer(Layer):
 
             # Usage Example with "StatisticFilter" parameter
 
-            >>> from arcgis._impl.common._filters import StatisticFilter
+            >>> from arcgis.gis import StatisticFilter
             >>> sf1 = StatisticFilter()
             >>> sf1.add(statisticType="count", onStatisticField="1", outStatisticFieldName="total")
             >>> sf1.filter # This is to print the filter content
             >>> feature_layer.query(statistic_filter=sf1, as_df=True) # returns a DataFrame containing total count
-
 
         """
         if statistic_filter:
