@@ -11,6 +11,7 @@ import json
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.auth.tools import LazyLoader
+from cachetools import cached, TTLCache
 
 arcgis_features = LazyLoader("arcgis.features")
 pd = LazyLoader("pandas")
@@ -764,6 +765,7 @@ class Query:
 
         return features
 
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def _fetch_total_records_count(self):
         count_params = copy.deepcopy(self.parameters)
         count_params["returnCountOnly"] = True
