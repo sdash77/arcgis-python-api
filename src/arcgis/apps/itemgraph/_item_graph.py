@@ -537,10 +537,14 @@ def create_dependency_graph(
     rev = kwargs.get("include_reverse", False)
 
     def _add_deps(item: Item):
-        if rev is True:
-            deps, rev_deps = _get_item_dependencies(item, gis, True, True)
-        else:
-            deps = _get_item_dependencies(item, gis)
+        try:
+            if rev is True:
+                deps, rev_deps = _get_item_dependencies(item, gis, True, True)
+            else:
+                deps = _get_item_dependencies(item, gis)
+                rev_deps = None
+        except:
+            deps = []
             rev_deps = None
 
         def _handle_deps(item, deps, forward):
