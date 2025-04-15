@@ -136,7 +136,7 @@ jobs:
           # due to https://github.com/conda/conda/issues/14569 we can't use conda search
           # hardcoding the latest version for now
           # echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-          echo "latest-version=2.4.0.1" >> $GITHUB_OUTPUT
+          echo "latest-version=2.4.1" >> $GITHUB_OUTPUT
       - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3

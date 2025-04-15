@@ -2211,6 +2211,8 @@ class FeatureLayer(Layer):
 
 
         """
+        if statistic_filter:
+            statistic_filter: list[dict] | dict = statistic_filter.filter
         # validate parameters
         query_params = _query.QueryParameters(
             where=where,
