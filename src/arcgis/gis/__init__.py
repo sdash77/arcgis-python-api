@@ -17300,7 +17300,7 @@ class Item(dict):
         min_scale: float,
         max_scale: float,
         cache_info: Optional[dict[str, Any]] = None,
-        build_cache: bool = True,
+        build_cache: bool = False,
     ):
         """
         The ``create_tile_service`` method allows publishers and administrators to publish hosted feature
