@@ -16795,6 +16795,8 @@ class Item(dict):
             in the ArcGIS REST API for more details.
         """
 
+        if self.type == "Vector Tile Package" and build_initial_cache == False:
+            build_initial_cache = True
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
             "address_fields": address_fields,
@@ -16805,6 +16807,7 @@ class Item(dict):
             "item_id": item_id,
             "geocode_service": geocode_service,
         }
+
         if future:
             executor: concurrent.futures.ThreadPoolExecutor = (
                 concurrent.futures.ThreadPoolExecutor(1)
@@ -17566,6 +17569,44 @@ class Item(dict):
                 return ret[0]["serviceItemId"]
             else:
                 raise Exception("No job results.")
+        elif ret[0]["type"] == "Vector Tile Service":
+            service_item_id = ret[0]["serviceItemId"]
+            # https://tilesdevext.arcgis.com/tiles/01ClFLufh9nZafWR/arcgis/rest/admin/services/set2_vtpk_worldgreen/VectorTileServer
+            # https://tilesdevext.arcgis.com/tiles/01ClFLufh9nZafWR/arcgis/rest/services/vtpk_worldgreen/VectorTileServer
+            # replace /rest/services/ with /rest/admin/services/
+            # check if "status" is in properties and if "status" == failed or completed
+            # or if "status" doesn't exist.
+            status_url: str = ret[0]["serviceurl"].replace(
+                "/rest/services/", "/rest/admin/services/"
+            )
+            resp: requests.Response = self._gis.session.get(
+                status_url, params={"f": "json"}
+            )
+            wait: int = 1
+            while "status" in resp.json():
+                time.sleep(wait)
+                resp: requests.Response = self._gis.session.get(
+                    status_url, params={"f": "json"}
+                )
+                if wait <= 4:
+                    wait += 1
+                data = resp.json()
+                status: str = data.get("status", "").lower()
+                cache_execution_status: str = data.get(
+                    "cacheExecutionStatus", ""
+                ).lower()
+
+                if cache_execution_status == "none":
+                    return service_item_id
+                elif status in ["failed"] or cache_execution_status in [
+                    "failed",
+                    "error",
+                ]:
+                    raise Exception(data)
+                elif "error" in data:
+                    raise Exception(data)
+
+            return service_item_id
         else:
             raise Exception("No job id")
 
