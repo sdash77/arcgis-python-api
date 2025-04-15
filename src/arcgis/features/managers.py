@@ -3714,7 +3714,7 @@ class FeatureLayerManager(_GISResource):
                                 ]
                              }
            >>> res = fl.manager.add_to_definition(
-                                json_dict=add_field
+                                json_dict=new_field
                     )
            >>> res
 
@@ -3740,7 +3740,7 @@ class FeatureLayerManager(_GISResource):
                              }
 
           >>> future = fl.manager.add_to_definition(
-                                            json_dict=add_field,
+                                            json_dict=new_field,
                                             future=True
                        )
           >>> res = future.result()
