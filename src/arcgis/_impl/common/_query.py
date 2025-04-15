@@ -725,15 +725,22 @@ class Query:
 
     def _needs_more_features(self, result, features):
         """
-        Checks if more features need to be fetched.
-        This can be because exceededTransferLimit is True
-        or resultRecordCount is set and the number of
-        features fetched is less than the resultRecordCount.
+        Determines if additional query requests are needed to retrieve more features.
         """
-        return result.get("exceededTransferLimit") or (
-            self.parameters.get("resultRecordCount")
-            and self.parameters.get("resultRecordCount") != len(features)
-        )
+        fetched = len(features)
+        requested_feature_count = self.parameters.get("resultRecordCount")
+        total_available = self._fetch_total_records_count()
+
+        # If we've already fetched everything available, don't fetch more
+        if fetched >= total_available:
+            return False
+
+        # If user defined a cap, and we haven't hit it, continue
+        if requested_feature_count is not None:
+            return fetched < requested_feature_count
+
+        # Default case: no user cap, fetch until we've got everything
+        return fetched < total_available
 
     def _fetch_all_features_single_thread(self, features, result):
         """Fetches all features by handling pagination."""
