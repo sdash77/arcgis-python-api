@@ -3,8 +3,8 @@ import warnings
 warnings.filterwarnings('ignore')
 from arcgis.learn import FeatureClassifier
 
-data_folder = r"C:\files_sanoj\backbone_testing_data\rgb"
-data_folder_ms = r"C:\files_sanoj\backbone_testing_data\ms"
+data_folder = r"D:\files_sanoj\bacbone_data\rgb"
+data_folder_ms = r"D:\files_sanoj\bacbone_data\ms"
 
 data = {
     "fc_singleLabel": {
@@ -16,7 +16,6 @@ data = {
         "prepare_data": {
             "path": os.path.join(data_folder, "fc_singleLabel"),
             "batch_size": None,
-            "dataset_type": "Imagenet",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_singleLabel"),
@@ -37,7 +36,6 @@ data = {
         "prepare_data": {
             "path": os.path.join(data_folder, "fc_multiLabel"),
             "batch_size": None,
-            "dataset_type": "Imagenet",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_multiLabel"),
