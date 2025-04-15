@@ -16728,13 +16728,13 @@ class Item(dict):
                                necessary for geocoding.
         -------------------    ---------------------------------------------------------------
         output_type            Optional string.
-        
+
                                .. note::
                                    Only used when a Feature Layer :class:`~arcgis.gis.Item` is
                                    published as a Tile Layer *item*.
-        
+
                                Options:
-                               
+
                                * *tiles* - For Tile Layer :class:`items <arcgis.gis.Item>`
                                  sourced by *Map Service*
                                * *vectorTiles* - For Tile Layer :class:`items <arcgis.gis.Item>` sourced
@@ -16746,7 +16746,7 @@ class Item(dict):
         file_type              Optional string.  Some formats are not automatically detected,
                                when this occurs, the file_type can be specified as one of the
                                below:
-                               
+
                                * *serviceDefinition*
                                * *shapefile*
                                * *csv*
@@ -16760,18 +16760,18 @@ class Item(dict):
                                * *vectortilepackage*
                                * *imageCollection*
                                * *mapService*
-                               * *sqliteGeodatabase* 
+                               * *sqliteGeodatabase*
         -------------------    ---------------------------------------------------------------
         build_initial_cache    Optional boolean.  The boolean value.
-                               
+
                                * Default value is *False*, unless *output_type* argument is
                                  *tiles* or *vectorTiles*
                                * If *True* and applicable for the *file_type*, the cache
                                  will be built at time of publishing.
-                               
+
                                  .. note::
-                                     Cache will always be build to Tile Layers.
-                               
+                                     Cache will always be built for Tile Layers.
+
                                See `Map caching <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-map-caching-.htm>`_
                                for full details on caching.
         -------------------    ---------------------------------------------------------------
@@ -16779,11 +16779,11 @@ class Item(dict):
                                specified during creation which can be useful for cloning and
                                automated content creation scenarios. The specified id must be a
                                32 character GUID string without any special characters.
-                               
+
                                .. note::
                                    Available starting at ArcGIS Enterprise 10.8.1. Not available
                                    in ArcGIS Online.
-                                   
+
                                If the `item_id` is already being used, an error will be raised
                                during the process.
         -------------------    ---------------------------------------------------------------
@@ -16810,11 +16810,11 @@ class Item(dict):
 
             >>> csv_item = gis.content.get('<csv item id>')
             >>> analyzed = gis.content.analyze(item=csv_item, file_type='csv')
-            
+
             >>> publish_parameters = analyzed['publishParameters']
             >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
             >>> publish_parameters['locationType'] = "none" # this makes it a hosted table
-            
+
             >>> published_item = csv_item.publish(publish_parameters)
 
         .. code-block:: python
@@ -17312,12 +17312,12 @@ class Item(dict):
         title             Required string. The name of the new service.
         ----------------  ---------------------------------------------------------------
         min_scale         Required float. The smallest scale at which to view data.
-                          
+
                           .. note::
                               Value must be less than *max_scale* argument.
         ----------------  ---------------------------------------------------------------
         max_scale         Required float. The largest scale at which to view data.
-        
+
                           .. note::
                               Value must be larger than *min_scale* argument.
         ----------------  ---------------------------------------------------------------
@@ -17325,16 +17325,16 @@ class Item(dict):
                           `tiling scheme <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/caching-terminology.htm#ESRI_SECTION1_9FF9489173C741DD95472F21B5AD8374>`_.
                           See `Map caching <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-map-caching-.htm>`_
                           for full details, including information on defining a scheme.
-        
+
                           * If none provided, the cache defaults to the *the ArcGIS Online
-                            tiling scheme.               
+                            tiling scheme.
         ----------------  ---------------------------------------------------------------
         build_cache       Required boolean. If not provided, *True* will be used.
-                          
+
                           .. note::
                               The only option for creating a valid Tile Layer
                               :class:`item <arcgis.gis.Item>` with the API is
-                              *True*. 
+                              *True*.
         ================  ===============================================================
 
         :return:
@@ -17344,11 +17344,11 @@ class Item(dict):
         .. code-block:: python
 
             # Usage Example
-            
+
             >>> from arcgis.gis import GIS
-            
+
             >>> gis = GIS(profile="your_organization_profile")
-            
+
             >>> flyr_item = gis.content.get("<item id of feature layer>")
             >>> tile_lyr_item = flyr_item.create_tile_service(
             >>>                                 title="SeasideHeightsNJTiles",
