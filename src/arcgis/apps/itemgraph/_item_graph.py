@@ -370,6 +370,8 @@ class ItemGraph(nx.DiGraph):
             )
         elif isinstance(item_list, ItemGraph):
             self.update(item_list)
+            for node in self.all_items():
+                node.graph = self
         else:
             raise ValueError(
                 "item_list must be a list of items/item ID's or an ItemGraph."
