@@ -191,7 +191,7 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @property
     def delimiter(self) -> str:
-        """
+        r"""
         Gets/Sets the delimiter for the CSV Layer.  The default is `,`
 
         ===========   ==========================================
