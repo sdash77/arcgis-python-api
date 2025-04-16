@@ -349,56 +349,6 @@ class WorkflowManagerAdmin:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             return return_obj
 
-    def import_item(
-        self, item, config_file, passphrase: Optional[str] = None
-    ):  # TODO TypeHint removed in order to avoid import
-        """
-        Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
-        items with a server that is on a more recent version will not import due to incompatibility. This will
-        completely replace the version, job templates, diagrams, roles, role-group associations, lookup tables,
-        charts and queries, templates, and user settings of the indicated item, and it is recommended to back
-        up configurations before importing. Any encrypted settings included will only have their key imported
-        and will need the value updated. Importing will fail if any jobs exist in the destination item.
-        Excess scheduled tasks will be dropped based on the portal limit.
-
-        ==================  =========================================================
-        **Argument**        **Description**
-        ------------------  ---------------------------------------------------------
-        item                Required Item. The Workflow Manager Item that to import the configuration to.
-        ------------------  ---------------------------------------------------------
-        config_file         Required. The file path to the workflow manager configuration file.
-        ------------------  ---------------------------------------------------------
-        passphrase          Optional. If importing encrypted user defined settings, specify the same passphrase
-                            used when exporting the configuration file. If no passphrase is specified, the keys for
-                            encrypted user defined settings will be imported without their values.
-        ==================  =========================================================
-
-        :return:
-            success object
-
-        """
-
-        url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
-        data = {}
-        if passphrase is not None:
-            data["passphrase"] = passphrase
-
-        return_obj = self._gis._con.post(
-            url,
-            files={"file": config_file},
-            params=data,
-            try_json=False,
-            json_encode=False,
-            post_json=False,
-        )
-        return_obj = json.loads(return_obj)
-
-        if "error" in return_obj:
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        return return_obj
-
     def _export_item_async(
         self,
         item,
@@ -463,9 +413,10 @@ class WorkflowManagerAdmin:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj
 
-    def import_item_async(
-        self, item, config_file, passphrase: Optional[str] = None
-    ):  # TODO
+    def import_item(
+        self, item, config_file, passphrase: Optional[str] = None,
+        run_async: Optional[bool] = False,
+    ):  # TODO TypeHint removed in order to avoid import
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatibility. This will
@@ -485,27 +436,22 @@ class WorkflowManagerAdmin:
         passphrase          Optional. If importing encrypted user defined settings, specify the same passphrase
                             used when exporting the configuration file. If no passphrase is specified, the keys for
                             encrypted user defined settings will be imported without their values.
+        ------------------  ---------------------------------------------------------
+        run_async           Optional. A boolean indicating whether to run export item asynchronously. If set to true,
+                            export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution` The download
+                            location can then be found by prompting for the export_location.
         ==================  =========================================================
 
         :return:
-            success object
+            success object or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
 
         """
 
-        # Create a ItemExecution object
-        ie = ItemExecution(item, ExecutionType.IMPORT)
-        # Subscribe to this job
-        nm = NotificationManager(item, self, ie._callback)
-
-        nm.connect()
-
-        # Call the actual endpoint
-        url = "{base}/admin/{id}/importAsync".format(base=self._url, id=item.id)
         data = {}
         if passphrase is not None:
             data["passphrase"] = passphrase
 
-        try:
+        def call_post(url, config_file, data):
             return_obj = self._gis._con.post(
                 url,
                 files={"file": config_file},
@@ -516,18 +462,36 @@ class WorkflowManagerAdmin:
             )
             return_obj = json.loads(return_obj)
 
-            # If it fails, unsubscribe then throw
             if "error" in return_obj:
-                self._gis._con._handle_json_error(return_obj["error"], 0)
-            elif "success" in return_obj and return_obj["success"] is False:
-                raise Exception(return_obj)
-        except:
-            nm.disconnect()
-            raise
+                raise Exception(return_obj["error"].get("message"))
+            elif "success" in return_obj:
+                return return_obj["success"]
+            return return_obj
 
-        # If it succeeds, return the JobExecution
-        ie._started()
-        return ie
+        if run_async:
+            # Create a ItemExecution object
+            ie = ItemExecution(item, ExecutionType.IMPORT)
+            # Subscribe to this job
+            nm = NotificationManager(item, self, ie._callback)
+
+            nm.connect()
+
+            # Call the actual endpoint
+            url = "{base}/admin/{id}/importAsync".format(base=self._url, id=item.id)
+            try:
+                return_obj = call_post(url, config_file, data)
+                if return_obj is False:
+                    raise Exception(return_obj)
+            except:
+                nm.disconnect()
+                raise
+
+            # If it succeeds, return the JobExecution
+            ie._started()
+            return ie
+        else:
+            url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+            return call_post(url, config_file, data)
 
 
 class JobManager:
