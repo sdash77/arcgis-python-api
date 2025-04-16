@@ -5,6 +5,8 @@
 
 
 import os
+import warnings
+warnings.filterwarnings('ignore')
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import unittest
@@ -111,6 +113,13 @@ accuracy_values = {
         "sqnseg":0,
         "randlanet":0,
         "psetae":0,
+        "wnet_cgan":0,
+        "pix2pixhd":0,
+        "ptv3seg":0,
+        "ptv3det":0,
+        "mmdetection_dino":0,
+        "rtdetrv2": 0,
+        "climax": 0,
     }
 }
 
@@ -120,15 +129,15 @@ success_stat = {
         "total": 0,
         "pass": 0,
         "fail": 0,
-        "od_total": 6,
+        "od_total": 7,
         "od": 0,
         "pc_total": 11,
         "pc": 0,
         "co_total": 1,
         "co": 0,
-        "text_total": 10,
+        "text_total": 9,
         "text": 0,
-        "others_total": 14,
+        "others_total": 15,
         "others": 0,
     }
 }
@@ -175,8 +184,8 @@ def updateModelStats():
 def updateFailureModels():
     gis = GIS(
         "https://deldev.maps.arcgis.com",
-        "demos_deldev",
-        "DelDevs.1234",
+        authorization_data["for_update_accuracy_results"]["username"],
+        authorization_data["for_update_accuracy_results"]["password"],
     )
     item = gis.content.get("cd08c8edfb2f401bb0df1aafa6ce36af")
     data = item.tables[0]
@@ -323,25 +332,6 @@ def CommonTestUsingDF(
     model_object = model_type.from_model(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
-
-
-def CommonTestAutoDL(prepare_data_rgb, model, network, time, datapath):
-    data = prepare_data(**prepare_data_rgb)
-    model_object = model(data, total_time_limit=time, network=network)
-    model_object.fit()
-    best_model_path = os.path.join(
-        data_folder,
-        datapath,
-        "models",
-        "*AutoDL_" + model_object.best_model + "*",
-        "*emd",
-    )
-    emd_path = glob.glob(best_model_path)[0]
-    img_model = ImageryModel()
-    img_model.load(emd_path, data)
-    img_model.fit()
-    fine_tuned_model = os.path.join(data_folder, datapath, "models", "fine_tuned_model")
-    img_model.save(fine_tuned_model)
 
 
 # def CommonTestAutoDLMS(
@@ -523,6 +513,15 @@ def commonTestCases(
     model_object.fit(1, lr=lr_val, checkpoint=False)
     # # Fit for 1 epochs with LR.
 
+    #Test shap feature for textclassifier
+    if model_test == "textclassifier_test":
+        #testing for single text
+        model_object.predict("Thanks for the support", explain=True)
+        #testing for list of texts with and without explain_index argument
+        txt_list = ["awwww, I never noticed this", "Thanks for the support"]
+        model_object.predict(txt_list, explain=True)
+        model_object.predict(txt_list, explain=True, explain_index=[1])
+
     # save model
     d_path = os.path.join(data_folder, data_path, "models", model_test)
     if model_test == "timeseriesmodel_test":
@@ -580,6 +579,8 @@ def commonTestCases(
                     result = float(model_object.compute_metrics()["mean_IOU"])
                 elif model_test == "cyclegan_test":
                     result = float(model_object.compute_metrics()["FID_A"])
+                elif model_test == "climax_test":
+                    result = float(model_object.compute_metrics()["SSIM_msl"])
                 else:
                     result = float(model_object.compute_metrics()["SSIM"])
             elif regression_parameter == "bleu_score":
@@ -793,7 +794,6 @@ def commonTestCases(
     model_object = model_type.from_model(
         str(model_save_path) + os.sep + f"{model_test}.emd", data
     )
-
     del model_object
     gc.collect()
     torch.cuda.empty_cache()
@@ -842,6 +842,7 @@ def CommonTestTextModels(model_name, model, data, labels):
 
 
 def update_parameter():
+    parameter = []
     check_ms = False
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"]:
@@ -867,6 +868,7 @@ def update_parameter():
 
 def update_parameter_ms():
     check_ms = True
+    parameter = []
     for key, val in data.items():
         if (
             val["should_test"]
@@ -894,6 +896,7 @@ def update_parameter_ms():
 
 
 def update_parameter_fl():
+    parameter_fl = []
     for key, val in data.items():
         if (
             val["should_test"]
@@ -919,6 +922,7 @@ def update_parameter_fl():
 
 
 def update_parameter_df():
+    parameter_df = []
     for key, val in data.items():
         if val["should_test"] and val["model_name"] in ["automl", "mlmodel"]:
             parameter_df.append(
@@ -942,6 +946,7 @@ def update_parameter_df():
 
 
 def text_models():
+    parameter_text = []
     for key, val in data_inference_only.items():
         parameter_text.append(
             [key, val["model_name"], val["model"], val["data"], val["labels"]]
@@ -1024,6 +1029,7 @@ class TestTraining(unittest.TestCase):
                 "yolov3",
                 "maskrcnn",
                 "detreg",
+                "rtdetrv2",
             ]:
                 success_stat["attributes"]["od"] = success_stat["attributes"]["od"] + 1
             elif test_name in [
@@ -1045,7 +1051,7 @@ class TestTraining(unittest.TestCase):
             elif test_name in [
                 "ner",
                 "sequencetosequence",
-                "textclassifer",
+                "textclassifier",
                 "zeroshotclassifier",
                 "questionanswering",
                 "textsummarizer",
@@ -1065,6 +1071,7 @@ class TestTraining(unittest.TestCase):
                 "deepsort",
                 "mmsegmentation",
                 "mmdetection",
+                "mmdetection_dino",
                 "automl",
                 "mlmodel",
             ]:
@@ -1121,11 +1128,12 @@ class TestTraining(unittest.TestCase):
             ms_flag,
             data_folder_path,
             num_epochs,
+            self
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_ms, skip_on_empty=True)
-    def test(
+    def test_ms(
         self,
         name,
         model_test,
@@ -1141,7 +1149,8 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
         num_epochs,
     ):
-        commonTestCases(
+        if os.environ.get("run_nightly") != "1":
+            commonTestCases(
             model,
             model_test,
             datapath,
@@ -1156,6 +1165,9 @@ class TestTraining(unittest.TestCase):
             num_epochs,
             self,
         )
+        else:
+            print("ignoring nightly training for ms data")
+            pass
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_fl, skip_on_empty=True)
@@ -1219,7 +1231,10 @@ class TestTraining(unittest.TestCase):
         )
 
     def test_autodl(self):
-        autodl_main()
+        if os.environ.get("run_nightly") != "1":
+            autodl_main()
+        else:
+            pass
 
     @classmethod
     def tearDownClass(cls):
@@ -1248,7 +1263,7 @@ def tearDownModule():
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
-        # updateFailureModels()
+        #updateFailureModels()
     for key, val in data.items():
         try:
             os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')

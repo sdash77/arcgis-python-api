@@ -49,7 +49,7 @@ class PTv3Det(ArcGISModel):
 
     =====================   ===========================================
     **Parameter**            **Description**
-    -----------------------------   ---------------------------------------------
+    ---------------------   -------------------------------------------
     voxel_parms                     Optional dictionary. The keys of the dictionary are
                                     `voxel_size`, `voxel_points`, and `max_voxels`. The
                                     default value of `voxel_size`,`voxel_points`, and
@@ -76,12 +76,9 @@ class PTv3Det(ArcGISModel):
     ---------------------   -------------------------------------------
     seq_len                 Optional int. Sequence length for transformer.
                             Default: 1024.
-    ---------------------   -------------------------------------------
-    focal_loss              Optional boolean. If True, it will use focal loss.
-                            Default: False.
     =====================   ===========================================
 
-    :return: `PTv3Seg` Object
+    :return: `PTv3Det` Object
     """
 
     def __init__(self, data, pretrained_path=None, **kwargs):
@@ -109,7 +106,7 @@ class PTv3Det(ArcGISModel):
     def __repr__(self):
         return "<%s>" % (type(self).__name__)
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -123,7 +120,7 @@ class PTv3Det(ArcGISModel):
                                 The default value is 'True'.
         =====================   ===========================================
         """
-        lr = super().lr_find(allow_plot)
+        lr = super().lr_find(allow_plot, **kwargs)
         lr = min(max(lr, 5e-05), 3e-03)
         return lr
 

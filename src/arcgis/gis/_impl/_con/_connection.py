@@ -71,7 +71,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -575,7 +575,10 @@ class Connection(object):
             if self._check_product() == "SERVER":
                 pauth = None
                 if self._portal_connection:
-                    pauth = self._portal_connection._con._auth
+                    try:
+                        pauth = self._portal_connection._con._auth
+                    except AttributeError as ae:
+                        pauth = self._portal_connection._session.auth
                 if self._token_url is None:
                     self._check_product()
                 self._session.auth = EsriGenTokenAuth(

@@ -12,6 +12,7 @@ from arcgis._impl.common._filters import (
 )
 from arcgis._impl.common._mixins import PropertyMap
 
+from arcgis._impl.common._output_to_file import handle_response
 from arcgis.gis import Item, Layer
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis._impl._util import _get_item_url
@@ -1004,17 +1005,11 @@ class MapFeatureLayer(Layer):
             range_values=range_values,
             parameter_values=parameter_values,
         )
-        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
-            "supportsPagination", False
-        )
-        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             as_df=as_df,
             is_layer=True,
-            supports_pagination=supports_pagination,
-            max_record_count=max_record_count,
         ).execute()
 
     # ----------------------------------------------------------------------
@@ -1608,17 +1603,11 @@ class MapTable(MapFeatureLayer):
             range_values=range_values,
             parameter_values=parameter_values,
         )
-        supports_pagination = self.properties.get("advancedQueryCapabilities", {}).get(
-            "supportsPagination", False
-        )
-        max_record_count = self.properties.get("maxRecordCount", 2000)
         return _query.Query(
             layer=self,
             parameters=query_params,
             is_layer=False,
             as_df=as_df,
-            supports_pagination=supports_pagination,
-            max_record_count=max_record_count,
         ).execute()
 
 
@@ -2475,11 +2464,13 @@ class MapImageLayer(_gis.Layer):
         resp: requests.Response = self._session.get(
             url=url,
             params=params,
-            file_name="mapImage.kmz",
-            out_folder=tempfile.gettempdir(),
         )
-        resp.raise_for_status()
-        return resp.json()
+        return handle_response(
+            resp=resp,
+            file_name="mapImage.kmz",
+            out_path=tempfile.gettempdir(),
+            try_json=True,
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -2546,14 +2537,12 @@ class MapImageLayer(_gis.Layer):
         if out_path is None:
             out_path = tempfile.gettempdir()
         url = "{url}/info/thumbnail".format(url=self._url)
-        params = {"f": "json"}
         if out_path is None:
             out_path = tempfile.gettempdir()
-        resp: requests.Response = self._session.post(
-            url=url, out_folder=out_path, file_name="thumbnail.png"
+        resp: requests.Response = self._session.post(url, {"f": "json"})
+        return handle_response(
+            out_path=out_path, file_name="thumbnail.png", try_json=True, resp=resp
         )
-        resp.raise_for_status()
-        return resp.json()
 
     # ----------------------------------------------------------------------
     def identify(
@@ -3266,11 +3255,10 @@ class MapImageLayer(_gis.Layer):
                 resp: requests.Response = self._session.post(
                     url=url,
                     data=params,
-                    out_folder=save_folder,
-                    file_name=save_file,
                 )
-                resp.raise_for_status()
-                return resp.json()
+                return handle_response(
+                    resp=resp, out_path=save_folder, file_name=save_file, try_json=True
+                )
             else:
                 resp: requests.Response = self._session.post(
                     url=url, data=params, force_bytes=True
@@ -3281,11 +3269,10 @@ class MapImageLayer(_gis.Layer):
             resp: requests.Response = self._session.post(
                 url=url,
                 data=params,
-                out_folder=save_folder,
-                file_name=save_file,
             )
-            resp.raise_for_status()
-            return resp.json()
+            return handle_response(
+                resp=resp, out_path=save_folder, file_name=save_file, try_json=True
+            )
         else:
             print("Unsupported output format")
 
@@ -3635,12 +3622,14 @@ class MapImageLayer(_gis.Layer):
                                 name = f["name"]
                                 dlURL = f["url"]
                                 files.append(
-                                    self._session.get(
-                                        url=dlURL,
-                                        params=params,
-                                        out_folder=tempfile.gettempdir(),
+                                    handle_response(
+                                        resp=self._session.get(
+                                            url=dlURL, params=params
+                                        ),
+                                        out_path=tempfile.gettempdir(),
                                         file_name=name,
-                                    ).json()
+                                        try_json=True,
+                                    )
                                 )
                             return files
                         else:

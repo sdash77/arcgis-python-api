@@ -7,7 +7,7 @@ build:
   number: {{ environ.get('BUILD_NUMBER', '0') }}
 package:
   name: arcgis
-  version: 2.4.1
+  version: 2.4.2
 requirements:
   build:
   - python
@@ -19,8 +19,6 @@ requirements:
   - certifi
   - cryptography
   - dask >=2024.12.1,<2025.1.0
-  - gdal >=3.9.2,<4 [win]
-  - gdal >=3.6.2,<4 [not win]
   - geomet
   - keyring >=23.3.0
   - lxml

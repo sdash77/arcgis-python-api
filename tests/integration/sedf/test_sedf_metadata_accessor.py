@@ -3,14 +3,13 @@ Tests for the private GeoAccessor `_Metadata` Class.
 
 This class holds the source information inside a spatially enabled dataframe. 
 """
+
 import os
-import sys
-import json
-import unittest
 import tempfile
-from arcgis.features.geo._tools._metadata import _Metadata
-from arcgis._impl.common._mixins import PropertyMap
+import unittest
+
 from arcgis._impl.common._isd import InsensitiveDict
+from arcgis.features.geo._tools._metadata import _Metadata
 from utils.decorators import integration_test
 
 

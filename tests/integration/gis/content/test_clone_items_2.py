@@ -2,18 +2,17 @@
 # Name:        clone items tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
+import time
 import unittest
-import os
-from pathlib import Path
 from random import uniform
-import json
-import datetime, time
-from arcgis.gis import GIS
-from arcgis.gis import ContentManager
-from arcgis.features import Feature
+
 from arcgis.auth.tools import LazyLoader
+from arcgis.features import Feature
+from arcgis.gis import ContentManager
+from arcgis.gis import GIS
 from utils.decorators import integration_test
-arcgismapping=LazyLoader("arcgis.map")
+
+arcgismapping = LazyLoader("arcgis.map")
 
 profiles = ["your_online_profile", "your_enterprise_profile", "your_ent_admin_profile"]
 

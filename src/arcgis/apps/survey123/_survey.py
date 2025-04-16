@@ -408,7 +408,7 @@ class Survey:
         locale: str = "en",
         save_folder: Optional[str] = None,
     ) -> str:
-        """
+        r"""
         The `generate_report` method allows users to create Microsoft Word and PDF reports
         for survey results based on a reporting template. Reports are saved as an :class:`~arcgis.gis.Item`
         in an ArcGIS content folder or saved locally on disk. For additional information on parameters,

@@ -25,12 +25,13 @@ from datetime import datetime
 copyright = f"2016-{datetime.now().year}, Esri"
 
 # Bump both versions. The short X.Y version.
-version = "2.4.1"
+version = "2.4.2"
 # The full version, including alpha/beta/rc tags.
-release = "2.4.1"
+release = "2.4.2"
 
 # Add currently public version to this list - this is needed for the picker UI
 versions = [
+    "2.4.1", 
     "2.4.0",
     "2.3.1",
     "2.3.0",
@@ -94,13 +95,16 @@ extensions = [
     'sphinxcontrib.autodoc_pydantic'
 ]
 
-autodoc_pydantic_model_show_json = True
+autodoc_pydantic_model_show_json = False
 autodoc_pydantic_settings_show_json = False
+autodoc_pydantic_field_list_validators = False  # Hides validators for fields
 autodoc_pydantic_model_show_config_summary = False  # Hides model_config
-autodoc_pydantic_model_show_validator_summary = False
+autodoc_pydantic_model_show_validator_summary = False  # Hide list of validators in class signature
 autodoc_pydantic_model_show_validator_members = False
 autodoc_pydantic_model_show_field_summary = False   # Hides fields, potentially computed fields
 autodoc_pydantic_model_show_field_members = False   # Hides detailed field information
+autodoc_pydantic_field_show_alias = False  # Hides field aliases that are used for internal methods
+autodoc_pydantic_field_show_type = True  # Show type hints for fields
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -133,7 +137,8 @@ language = None
 
 
 # This value controls how to represent typehints.
-autodoc_typehints = "none"
+# Includes type hints in function signatures
+autodoc_typehints = "signature"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
