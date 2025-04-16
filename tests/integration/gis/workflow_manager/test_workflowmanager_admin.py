@@ -3,10 +3,11 @@ import os
 import tempfile
 import unittest
 
-from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
+from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin, Notification, ItemExecution
 from arcgis.gis import GIS
 import datetime
 import re
+import uuid
 
 from utils.decorators import integration_test
 from . import workflowmanager_setup
@@ -185,6 +186,65 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertTrue(
             "workflow_configuration" in actual, "Did not return a temporary file path"
         )
+        self.connection.workflow_manager_admin.delete_item(item)
+
+    def test_export_item_with_download_location_returns_successfully(self):
+        # Act
+        item_id = self.connection.workflow_manager_admin.create_item(
+            "Testing_Export_Item_" + str(datetime.datetime.now())
+        )
+
+        item = self.connection._gis.content.get(item_id)
+        filepath = self.connection.workflow_manager_admin.export_item(item)
+        directory = os.path.dirname(filepath)
+        actual = self.connection.workflow_manager_admin.export_item(item, download_location=directory)
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertTrue(
+            directory in actual, "Did not return a temporary file path"
+        )
+        self.connection.workflow_manager_admin.delete_item(item)
+
+    def test_export_item_async_returns_successfully(self):
+        # Act
+        item_id = self.connection.workflow_manager_admin.create_item(
+            "Testing_Export_Item_" + str(datetime.datetime.now())
+        )
+
+        item = self.connection._gis.content.get(item_id)
+        actual = self.connection.workflow_manager_admin.export_item(item, run_async=True)
+        res = actual.result()
+        # Assert
+        self.assertIsInstance(actual, ItemExecution, "Incorrect return type")
+        self.assertIsInstance(res, Notification, "Incorrect return type")
+        self.assertTrue(os.path.isfile(actual.export_location),  "Did not download wmc correctly.")
+
+        self.connection.workflow_manager_admin.delete_item(item)
+
+    def test_export_item_async_with_download_location_returns_successfully(self):
+        # Act
+        # item_id = self.connection.workflow_manager_admin.create_item(
+        #     "Testing_Export_Item_" + str(datetime.datetime.now())
+        # )
+        item_id = '04f8a718744244eba365e31268583cf3'
+
+        item = self.connection._gis.content.get(item_id)
+        filepath = self.connection.workflow_manager_admin.export_item(item)
+        directory = os.path.dirname(filepath)
+        new_path = os.path.join(directory, uuid.uuid4().hex)
+        # Rename the file for testing
+        os.rename(filepath, new_path)
+        actual = self.connection.workflow_manager_admin.export_item(item, run_async=True, download_location=directory)
+        res = actual.result()
+        # Assert
+        self.assertIsInstance(actual, ItemExecution, "Incorrect return type")
+        self.assertIsInstance(res, Notification, "Incorrect return type")
+        self.assertTrue(os.path.isfile(actual.export_location),  "Did not download wmc correctly.")
+        self.assertTrue(
+            directory in actual.export_location, "Did not return a temporary file path"
+        )
+
         self.connection.workflow_manager_admin.delete_item(item)
 
     def test_export_item_with_passphrase_returns_successfully(self):
