@@ -1926,21 +1926,48 @@ class FeatureLayer(Layer):
                                             distance is 100, the query geometry is a point, units is set to
                                             meters, and all points within 100 meters of the point are returned.
         -------------------------------     --------------------------------------------------------------------
-        units                               Optional string. The unit for calculating the buffer distance. If
-                                            unit is not specified, the unit is derived from the geometry spatial
-                                            reference. If the geometry spatial reference is not specified, the
-                                            unit is derived from the feature service data spatial reference.
-                                            This parameter only applies if `supportsQueryWithDistance` is true.
+        units                               Optional string. The unit for calculating the buffer distance.
 
-                                            Values: `esriSRUnit_Meter | esriSRUnit_StatuteMile |
-                                                    esriSRUnit_Foot | esriSRUnit_Kilometer |
-                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile`
+                                            * If unit is not specified, the unit is derived from the geometry's
+                                              spatial reference.
+                                            * If the geometry spatial reference is not specified, the unit is
+                                              derived from the feature service data spatial reference.
+
+                                            .. note::
+                                                This parameter only applies if the Feature Layer is set with the
+                                                query capability of *supportsQueryWithDistance* to true. To check:
+
+                                                .. code-block:: python
+
+                                                    # Check FeatureLayer object properties
+
+                                                    >>> flyr_item = gis.content.get(<Feature Layer item id>)
+                                                    >>> flyr_obj = flyr_item.layers[0]
+
+                                                    >>> flyr_obj.properties.advancedQueryCapabilities
+                                                    {   ...
+                                                        "supportsQueryWithDistance": true,
+                                                        ...
+                                                    }
+
+                                            Values options:
+
+                                            * *esriSRUnit_Meter*
+                                            * *esriSRUnit_StatuteMile*
+                                            * *esriSRUnit_Foot*
+                                            * *esriSRUnit_Kilometer*
+                                            * *esriSRUnit_NauticalMile*
+                                            * *esriSRUnit_USNauticalMile*
         -------------------------------     --------------------------------------------------------------------
-        time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
-                                            datetime.date, datetime.datetime or timestamp in milliseconds.
-                                            Syntax: time_filter=[<startTime>, <endTime>] ; specified as
-                                                    datetime.date, datetime.datetime or timestamp in
-                                                    milliseconds
+        time_filter                         Optional list specifying start and end times in one of these formats:
+
+                                            * datetime.date
+                                            * datetime.datetime
+                                            * integer specifying the timestamp in Unix Epoch milliseconds
+
+                                            .. code-block:: python
+
+                                                time_filter=[<startTime>, <endTime>]
         -------------------------------     --------------------------------------------------------------------
         geometry_filter                     Optional from :attr:`~arcgis.geometry.filters`. Allows for the information to
                                             be filtered on spatial relationship with another geometry.
@@ -2015,7 +2042,7 @@ class FeatureLayer(Layer):
                                             statistics to be calculated.
 
                                             .. code-block:: python
-                                                                             
+
                                                 out_statistics = [
                                                    {
                                                        "statisticType": "<count | sum | min | max | avg | stddev | var>",
@@ -2027,16 +2054,16 @@ class FeatureLayer(Layer):
                                                        "onStatisticField": "Field2",
                                                        "outStatisticFieldName": "Out_Field_Name2"
                                                      }
-                                                 ]                         
+                                                 ]
         -------------------------------     --------------------------------------------------------------------
         statistic_filter                    Optional :class:`~arcgis._impl.common._filters.StatisticFilter`
                                             object. A dataclass to assist in formatting requests for field-based
                                             statistics.
 
                                             .. code-block:: python
-                                            
+
                                                 # Usage example: StatisticFilter object for calculating statistics
-                                                
+
                                                 >>> from arcgis.gis import StatisticFilter
                                                 >>> stats_filter = StatisticFilter()
                                                 >>> stats_filter.add(
@@ -2044,12 +2071,12 @@ class FeatureLayer(Layer):
                                                 >>>       onStatisticField="Length",
                                                 >>>       outStatisticFieldName="avg_length"
                                                 >>> )
-                                                
+
                                                 >>> query_res = flyr_obj.query(
                                                 >>>                ...
                                                 >>>                statistic_filter=stats_filter
                                                 >>>                ...
-                                                >>> )         
+                                                >>> )
         -------------------------------     --------------------------------------------------------------------
         return_z                            Optional boolean. If true, Z values are included in the results if
                                             the features have Z values. Otherwise, Z values are not returned.
@@ -2148,7 +2175,6 @@ class FeatureLayer(Layer):
                                                 Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                                 ===========     ===================================
 
-
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
@@ -2162,65 +2188,103 @@ class FeatureLayer(Layer):
 
         .. code-block:: python
 
+            # Retrieve Feature Layer
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> flyr_item = gis.content.search(
+            >>>                 query="Local Hospitals",
+            >>>                 item_type="Feature Layer"
+            >>> )[0]
+            >>> flyr = flyr_item.layers[0]
+
+        .. code-block:: python
+
             # Usage Example with only a "where" sql statement
 
-            >>> feat_set = feature_layer.query(where = "OBJECTID= 1")
+            >>> feat_set = flyr.query(where="OBJECTID=1")
             >>> type(feat_set)
-            <arcgis.Features.FeatureSet>
-            >>> feat_set[0]
-            <Feature 1>
+            <class 'arcgis.features.feature.FeatureSet'>
+
+            >>> feat_set.features[0]
+            {"geometry": {"x"...},
+             "attributes": {"FID": 1, "ADDRESS":...}
 
         .. code-block:: python
 
             # Usage Example of an advanced query returning the object IDs instead of Features
 
-            >>> id_set = feature_layer.query(where = "OBJECTID1",
-                                               out_fields = ["FieldName1, FieldName2"],
-                                               distance = 100,
-                                               units = 'esriSRUnit_Meter',
-                                               return_ids_only = True)
+            >>> id_set = flyr.query(
+            >>>              where="FACILITY_TYPE = 'GENERAL HOSPITAL'",
+            >>>              return_ids_only = True
+            >>> )
 
             >>> type(id_set)
-            <Array>
-            >>> id_set[0]
-            <"Item_id1">
+            <class 'dict'>
+
+            >>> id_set
+            {'objectIdFieldName': 'OBJECTID',
+             'objectIds': [7,
+                           12,
+                           15]}
 
         .. code-block:: python
 
-            # Usage Example of an advanced query returning the number of features in the query
+            # Usage Example of an advanced query returning the number of features in the result
 
-            >>> search_count = feature_layer.query(where = "OBJECTID1",
-                                               out_fields = ["FieldName1, FieldName2"],
-                                               distance = 100,
-                                               units = 'esriSRUnit_Meter',
-                                               return_count_only = True)
+            >>> search_count = flyr.query(
+            >>>                     where = "LICENSEDBE > 150",
+            >>>                     return_count_only = True
+            >>> )
 
             >>> type(search_count)
-            <Integer>
+            <class 'int'>
             >>> search_count
-            <149>
+            38
 
         .. code-block:: python
 
-            # Usage Example with "out_statistics" parameter
+            # Usage Example: Return a Pandas DataFrame using out_statistics argument
 
-            >>> stats = [{
-                    'onStatisticField': "1",
-                    'outStatisticFieldName': "total",
-                    'statisticType': "count"
-                }]
-            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containing total count
+            >>> stats_res = flyr.query(
+            >>>                 out_statistics = [
+            >>>                   {"statisticType": "avg",
+            >>>                    "onStatisticField": "LICENSEDBE",
+            >>>                    "outStatisticFieldName": "avg_HospitalBeds"},
+            >>>                   {"statisticType": "sum",
+            >>>                    "onStatisticField": "MEDICAREBE",
+            >>>                    "outStatisticFieldName": "total_MedicareBeds"}],
+            >>>                 as_df=True)
+
+            >>> stats_res
+
+               avg_HospitalBeds  total_MedicareBeds
+            0        112.527273             14201.0
 
         .. code-block:: python
 
-            # Usage Example with "StatisticFilter" parameter
+            # Usage Example: Using a geometry filter with distance and unit arguments
 
-            >>> from arcgis.gis import StatisticFilter
-            >>> sf1 = StatisticFilter()
-            >>> sf1.add(statisticType="count", onStatisticField="1", outStatisticFieldName="total")
-            >>> sf1.filter # This is to print the filter content
-            >>> feature_layer.query(statistic_filter=sf1, as_df=True) # returns a DataFrame containing total count
+            >>> from arcgis.geometry.filters import intersects
 
+            # Get the geometry of a specific feature using a DataFrame's SHAPE column
+            >>> f17geom = flyr.query(where="FID=17", as_df=True).loc[0].SHAPE
+
+            >>> type(f17geom)
+            <class 'arcgis.geometry._types.Point'>
+
+            # Initialize an intersects filter for the geodesic buffer used in query
+            >>> int_filter = intersects(f17geom)
+
+            >>> fres = flyr_obj.query(
+            >>>                 geometry_filter=int_filter,
+            >>>                 distance=5,
+            >>>                 units="esriSRUnit_StatuteMile",
+            >>>                 return_ids_only=True
+            >>> )
+
+            >>> fres
+            {'objectIdFieldName': 'FID', 'objectIds': [17, 18, 19, 20, 21]}
         """
         if statistic_filter:
             statistic_filter: list[dict] | dict = statistic_filter.filter

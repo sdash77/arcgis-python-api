@@ -31,7 +31,7 @@ class StatisticFilter(object):
         -----------------------     --------------------------------------------
         statisticType               Required String. The stastic to calculate.
                                     Options:
-                                    
+
                                     * *count*
                                     * *sum*
                                     * *min*
@@ -39,26 +39,26 @@ class StatisticFilter(object):
                                     * *avg*
                                     * *stddev*
                                     * *var*
-        -----------------------     --------------------------------------------  
+        -----------------------     --------------------------------------------
         onStatisticField            Required String. The name of the attribute
                                     field whose values will be used to calculate
                                     statistics.
-        -----------------------     --------------------------------------------          
+        -----------------------     --------------------------------------------
         outStatisticFieldName       Optional String. The name of the field in the
                                     output table that will contain the result
                                     value.
         =======================     ============================================
-        
+
         .. code-block:: python
-        
+
             # Usage example
-            
+
             >>> from arcgis.gis import GIS, StatisticFilter
             >>> gis = GIS(profile='your_organization_profile')
-            
+
             >>> hospitals_item = gis.content.get("<item_id>")
             >>> hosp_flyr = flyr_item.layers[0]
-            
+
             >>> sfilter = StatisticFilter()
             >>> sfilter.add(
             >>>         statisticType="avg",
@@ -70,20 +70,20 @@ class StatisticFilter(object):
             >>>         onStatisticField="MEDICAREBE",
             >>>         outStatisticFieldName="sum_Medcare_Beds"
             >>> )
-            
+
             >>> stats = hosp_flyr.query(
             >>>                where="1=1",
-            >>>                statistic_filter=sfilter, 
+            >>>                statistic_filter=sfilter,
             >>>                group_by_fields_for_statistics="TYPE"
             >>>         )
-            
+
             >>> stats.features
-            
+
             [
               {"attributes": {"avg_HospitalBeds": 214.32, "sum_Medcare_Beds": 8306, "TYPE": "GENERAL HOSPITAL"}},
               {"attributes": {"avg_HospitalBeds": 28.6, "sum_Medcare_Beds": 143, "TYPE": "CRITICAL ACCESS HOSPITAL"}},
               {"attributes": {"avg_HospitalBeds": 95.66, "sum_Medcare_Beds": 976, "TYPE": "PSYCHIATRIC HOSPITAL"}},
-            ]     
+            ]
         """
         val = {
             "statisticType": statisticType,
@@ -107,7 +107,20 @@ class StatisticFilter(object):
     # ----------------------------------------------------------------------
     @property
     def filter(self):
-        """returns the key/value pair of a geometry filter"""
+        """
+        Returns a list of dictionaries with key/value pairs reflecting the
+        arguments used with the :meth:`~arcgis._impl.common._filters.StatisticFilter.add`
+        method to populate the :class:`~arcgis._impl.common._filters.StatisticFilter`.
+
+        .. code-block:: python
+
+            # Usage Example: Return from code used in the StatisticFilter.add() snippet
+
+            >>> sfilter.filter
+
+            [{'statisticType': 'avg', 'onStatisticField': 'LICENSEDBE', 'outStatisticFieldName': 'avg_HospitalBeds'},
+             {'statisticType': 'sum', 'onStatisticField': 'MEDICAREBE', 'outStatisticFieldName': 'sum_Medcare_Beds'}]
+        """
         return self._array
 
 
