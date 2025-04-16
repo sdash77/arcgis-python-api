@@ -148,7 +148,7 @@ class QueryParameters(BaseModel):
                     example: STATE_NAME, GENDER
                     """,
     )
-    statistic_filter: Optional[dict] = Field(
+    statistic_filter: dict | list[dict] | None = Field(
         None,
         alias="outStatistics",
         description="""Optional ``StatisticFilter`` instance. The definitions for one or more field-based
