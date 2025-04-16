@@ -5,7 +5,7 @@ from arcgis.geometry import Envelope, Geometry
 from arcgis.geometry.filters import intersects
 
 
-@profiles.agol
+@profiles.enterprise_and_agol
 @integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
 
@@ -78,8 +78,9 @@ class TestQueryFeatureLayer(unittest.TestCase):
         result_offset_results = self.major_cities_layer.query(
             result_offset=100, return_all_records=False
         )
+        oid_field_name = self.major_cities_layer.properties.objectIdField
         assert result_offset_results
-        assert result_offset_results.features[0].attributes["OBJECTID"] == 101
+        assert result_offset_results.features[0].attributes[oid_field_name] == 101
 
     def test_query_object_ids(self):
         """
@@ -110,16 +111,18 @@ class TestQueryFeatureLayer(unittest.TestCase):
         # ObjectId field always included
         assert len(fields.fields) == 4
 
+    def test_query_distinct_values(self):
         distinct_values = self.major_cities_layer.query(
-            out_fields=["class", "families"],
+            out_fields=["class"],
             return_distinct_values=True,
             return_geometry=False,
         )
+        all_count = self.major_cities_layer.query(return_count_only=True)
         # ObjectId field not included
-        assert len(distinct_values.fields) == 2
-        assert len(distinct_values.features) < self.major_cities_layer.query(
-            return_count_only=True
-        )
+        assert len(distinct_values.fields) == 1
+        assert (
+            len(distinct_values.features) < all_count
+        ), f"Incorrect difference. {len(distinct_values.features)} got {all_count}"
 
     def test_query_extent_only(self):
         """

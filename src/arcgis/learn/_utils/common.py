@@ -48,6 +48,16 @@ except Exception:
         pass
 
 
+def raise_mixed_precision_framework_error(framework="invalid"):
+    # Custom error message
+    import_exception = f"Error: Unsupported framework '{framework}'"
+    message = "The selected framework does not support mixed precision operations."
+    installation_steps = "Please update your current framework to PyTorch."
+
+    # Raise the exception with the custom message
+    raise Exception(f"{import_exception}\n\n{message}\n{installation_steps}")
+
+
 def read_image(path, resize_to: int = None, keep_raw=False):
     """
     path: file path of image on disk.

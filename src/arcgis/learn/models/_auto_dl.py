@@ -483,6 +483,7 @@ class AutoDL:
 
         prepare_data_args = data.arcgis_init_kwargs
         prepare_data_args["batch_size"] = None
+        self.prepare_data_args = prepare_data_args
         self._data = prepare_data(**prepare_data_args)
 
         self.verbose = verbose

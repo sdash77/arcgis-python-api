@@ -112,6 +112,19 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
+    def ai_assistants_enabled(self) -> bool:
+        """gets and sets the AI Assistant support"""
+        return self._gis.org_settings.get("aiAssistantsEnabled", False)
+
+    # ----------------------------------------------------------------------
+    @ai_assistants_enabled.setter
+    def ai_assistants_enabled(self, value: bool) -> None:
+        """gets and sets the AI Assistant support"""
+        self._gis.org_settings = {"aiAssistantsEnabled": value}
+        self._gis._properties = None
+
+    # ----------------------------------------------------------------------
+    @property
     def name(self):
         """
         Get/Set the site's name.
@@ -1267,13 +1280,13 @@ class HomePageSettings(object):
             return footer
 
     # ----------------------------------------------------------------------
-    def set_footer(self, text: str, show_text: bool | None = None):
+    def set_footer(self, text: str | None = None, show_text: bool | None = None):
         """Set the text and the visibility of the text in the footer"""
         if self._new_hp:
             hp = self._reader_hp()
             if text:
                 hp["footer"]["copy"] = text
-            if show_text:
+            if show_text in [True, False]:
                 hp["footer"]["showCopy"] = show_text
             params = {
                 "key": "home.page.json",

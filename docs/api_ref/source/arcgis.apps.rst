@@ -38,6 +38,7 @@ Submodules
 
    arcgis.apps.hub
    arcgis.apps.dashboard
+   arcgis.apps.itemgraph
    arcgis.apps.workforce
    arcgis.apps.storymap
    arcgis.apps.survey123

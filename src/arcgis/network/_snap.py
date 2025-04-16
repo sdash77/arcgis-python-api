@@ -60,7 +60,9 @@ def snap_to_roads(
                                             may result in the route that was deduced potentially taking different roads. When specifying the points, you can set properties for each
                                             such as speed of the vehicle when the point was collected using attributes.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
-    travel_mode                             Optional dict.  Choose the mode of transportation, such as driving or walking for the analysis. Travel modes are essentially templates consisting of a long list of travel settings that are used by the service when snapping the input points to the roads that were traversed. The value for the travel_mode parameter should be a JSON object representing travel mode settings.
+    travel_mode                             Optional dict.  Choose the mode of transportation, such as driving or walking for the analysis. Travel modes are essentially templates
+                                            consisting of a long list of travel settings that are used by the service when snapping the input points to the roads that were traversed.
+                                            The value for the travel_mode parameter should be a JSON object representing travel mode settings.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
     return_lines                            Boolean. Specify whether or not the service will return lines representing the roads traversed.
                                             `True` - The output lines will be returned.
@@ -79,10 +81,13 @@ def snap_to_roads(
                                             the settings. A list of supported override settings for each solver and their acceptable values can be obtained by contacting
                                             Esri Technical Support.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
-    analysis_region                         Optional SnapAnalysisRegions. The region in which the analysis will be performed. If a value is not specified for this parameter, the tool will automatically calculate the region name based on the location of the input points. Setting the name of the region is required only if the automatic detection of the region name is not accurate for the inputs.
+    analysis_region                         Optional SnapAnalysisRegions. The region in which the analysis will be performed. If a value is not specified for this parameter, the tool
+                                            will automatically calculate the region name based on the location of the input points. Setting the name of the region is required only if
+                                            the automatic detection of the region name is not accurate for the inputs.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
-    context                                 Optional dict. This parameter contains additional settings that affect task operation, for example, the spatial reference of the output features.
-    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    context                                 Optional dict. This parameter contains additional settings that affect task operation, for example, the spatial reference of the output
+                                            features.
+    --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ======================================  ===========================================================================================================================================
     """

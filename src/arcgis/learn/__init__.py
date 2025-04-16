@@ -1,4 +1,8 @@
 "Functions for calling the Deep Learning Tools."
+
+import torchvision
+
+torchvision.disable_beta_transforms_warning()
 from . import _utils
 from ._utils.env import _LAMBDA_TEXT_CLASSIFICATION
 from arcgis.geoprocessing._support import (
@@ -7,6 +11,8 @@ from arcgis.geoprocessing._support import (
     _analysis_job_status,
     _layer_input,
 )
+from ._utils.utils import AIServiceConnection
+
 import json as _json
 import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer

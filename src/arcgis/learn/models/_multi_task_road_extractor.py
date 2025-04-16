@@ -445,7 +445,6 @@ class MultiTaskRoadExtractor(ArcGISModel):
         if hasattr(self._data, "path"):
             self.learn.path = self._data.path
         self.learn.model = self.learn.model.to(self._device)
-        _set_multigpu_callback(self)
         if pretrained_path is not None:
             super().load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable
@@ -556,10 +555,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
-
         torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
         return torchgeo_backbone
 

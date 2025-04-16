@@ -500,6 +500,12 @@ class Folder:
             )
             futures[future] = part_name
         tp.shutdown(cancel_futures=False)
+        if (
+            isinstance(ftuple[1], (io.BufferedReader, io.TextIOWrapper))
+            and ftuple[1].closed == False
+        ):
+            ftuple[1].close()
+
         return Job(
             futures=futures,
             commit_url=commit_url,
@@ -720,6 +726,11 @@ class Folder:
 
                               Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         -----------------     --------------------------------------------------------------------
+        stream                Optional bool. This parameter is used to override the default streaming
+                              upload methods for the ArcGIS API for Python. This should only be used
+                              in very rare cases where the enterprise disallows streaming uploads.
+                              The default is `True`.
+        -----------------     --------------------------------------------------------------------
         upload_file_size      Optional int. This is used when uploading very large files
                               (50GB+ in size).
                               This is the part size to split the file into when performing a
@@ -851,9 +862,10 @@ class Folder:
             ):
                 #  text workflow
                 params["async"] = False
-                if not isinstance(text, str):
+                if text and not isinstance(text, str):
                     text: str = json.dumps(text)
-                params["text"] = text
+                if text:
+                    params["text"] = text
                 params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
@@ -914,6 +926,8 @@ class Folder:
                 file is None and text is None and url is None and data_url is None
             ):
                 params["async"] = False
+                if not url and "url" in params:
+                    url = params.get("url")
                 if url:
                     params["url"] = url
                 else:
