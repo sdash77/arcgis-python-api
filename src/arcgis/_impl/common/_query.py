@@ -11,7 +11,6 @@ import json
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.auth.tools import LazyLoader
-from cachetools import cached, TTLCache
 
 arcgis_features = LazyLoader("arcgis.features")
 pd = LazyLoader("pandas")
@@ -594,6 +593,7 @@ class Query:
         self.as_df = as_df
         self.parameters = self.create_parameters(parameters)
         self.url = None
+        self._cached_record_count = None
 
     def create_parameters(
         self,
@@ -696,7 +696,7 @@ class Query:
             return result
 
         features = result.get("features", [])
-        if self._needs_more_features(result, features):
+        if self._needs_more_features(features):
             # Pagination workflow
             if (
                 self.parameters.get("objectIds")
@@ -724,7 +724,7 @@ class Query:
         else:
             return False
 
-    def _needs_more_features(self, result, features):
+    def _needs_more_features(self, features):
         """
         Determines if additional query requests are needed to retrieve more features.
         """
@@ -765,8 +765,11 @@ class Query:
 
         return features
 
-    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def _fetch_total_records_count(self):
+        if self._cached_record_count is not None:
+            # If we have a cached count, return it
+            return self._cached_record_count
+
         count_params = copy.deepcopy(self.parameters)
         count_params["returnCountOnly"] = True
         count_params["returnAllRecords"] = False  # must be false when above True
@@ -774,7 +777,8 @@ class Query:
         count_result = self.layer._con._session.get(
             self.url, params=count_params
         ).json()
-        return count_result.get("count")
+        self._cached_record_count = count_result.get("count")
+        return self._cached_record_count
 
     def _fetch_all_ids(self):
         """Query to create a list of object ids."""
