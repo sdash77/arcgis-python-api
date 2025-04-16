@@ -17422,6 +17422,7 @@ class Item(dict):
                 "minScale": min_scale,
                 "maxScale": max_scale,
                 "name": title,
+                "layers": [],
                 "tilingSchema": {
                     "tileCacheInfo": cache_info,
                     "tileImageInfo": {
@@ -17435,7 +17436,7 @@ class Item(dict):
                     },
                 },
                 "cacheOnDemand": True,
-                "cacheOnDemandMinScale": 144448,
+                "cacheOnDemandMinScale": min_scale,
                 "capabilities": "Map,ChangeTracking",
             }
             params = {
@@ -17452,11 +17453,12 @@ class Item(dict):
             )
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res["services"], folder=None)
-            if self._gis._portal.is_arcgisonline:
-                from ..mapping._types import MapImageLayer
+            if self._gis._portal.is_arcgisonline and build_cache:
+                from arcgis.layers import Service
 
                 ms_url = self._gis.content.get(serviceitem_id).url
-                ms = MapImageLayer(url=ms_url, gis=self._gis)
+
+                ms = Service(ms_url, server=self._gis)
                 extent = ",".join(
                     [
                         str(ms.properties["fullExtent"]["xmin"]),
@@ -17469,7 +17471,13 @@ class Item(dict):
                 for lod in cache_info["lods"]:
                     if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
                         lods.append(str(lod["level"]))
-                ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                try:
+
+                    ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                except Exception as ex:
+                    print(
+                        f"An issue building the cache occurred: {ex}. Please see the item homepage for more details."
+                    )
             return self._gis.content.get(serviceitem_id)
         else:
             raise ValueError("Input must of type FeatureService")

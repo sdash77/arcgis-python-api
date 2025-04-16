@@ -2018,10 +2018,8 @@ class MapImageLayerManager(_gis._GISResource):
             <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
-            if self._gis.version >= [10, 3]:
-                url = "%s/update" % self._url
-            else:
-                url = "%s/updateTiles" % self._url
+
+            url = "%s/updateTiles" % self._url
 
             params = {
                 "f": "json",
