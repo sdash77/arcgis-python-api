@@ -17291,6 +17291,12 @@ class Item(dict):
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
+        original_cache_value: bool = copy.deepcopy(build_cache)
+        if build_cache == True and self._gis._portal.is_arcgisonline:
+            # build_cache needs to be false as of 4/16/2025 for ArcGIS Online
+            # and cache built later in the process. Enterprise automatically
+            # builds the cache.
+            build_cache = False
         if self.type.lower() == "Feature Service".lower():
             if cache_info is None:
                 cache_info = {
@@ -17453,7 +17459,7 @@ class Item(dict):
             )
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res["services"], folder=None)
-            if self._gis._portal.is_arcgisonline and build_cache:
+            if self._gis._portal.is_arcgisonline and original_cache_value:
                 from arcgis.layers import Service
 
                 ms_url = self._gis.content.get(serviceitem_id).url
