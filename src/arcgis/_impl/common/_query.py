@@ -785,10 +785,12 @@ class Query:
         original_offset = id_params.get("resultOffset", 0)
 
         # Get the total count of ids
-        if id_params.get("resultRecordCount") is None:
-            total_count = self._fetch_total_records_count()
+        all_records = self._fetch_total_records_count()
+        user_requested_records = id_params.get("resultRecordCount")
+        if user_requested_records is None or user_requested_records > all_records:
+            total_count = all_records
         else:
-            total_count = id_params.get("resultRecordCount")
+            total_count = user_requested_records
 
         # Perform query until all ids are fetched
         while True:
