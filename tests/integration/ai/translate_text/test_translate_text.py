@@ -1,8 +1,3 @@
-#import sys
-#sys.path.insert(0, r"C:\svn\geosaurus_master\src")
-#sys.path.insert(1, r"C:\svn\geosaurus_master\tests")
-import uuid
-import logging
 import unittest
 from arcgis.gis import GIS
 from utils.decorators import integration_test, profiles
