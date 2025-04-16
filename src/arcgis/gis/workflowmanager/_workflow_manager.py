@@ -347,6 +347,22 @@ class WorkflowManagerAdmin:
             if "error" in return_obj:
                 return_obj = json.loads(return_obj)
                 self._gis._con._handle_json_error(return_obj["error"], 0)
+            try:
+                filepath = return_obj
+                if not os.path.isdir(download_location):
+                    print(f"Error: {download_location} is not a valid directory.")
+                    return
+
+                    # Construct the full destination path
+                filename = os.path.basename(filepath)
+                destination_path = os.path.join(download_location, filename)
+
+                # Copy the file from the temp location to the destination
+                shutil.copy(filepath,  destination_path)
+                logger.debug(f"File successfully saved to { destination_path}")
+            except Exception as e:
+                logger.error(f"Error while copying file to desired location: {e}")
+
             return return_obj
 
     def _export_item_async(
