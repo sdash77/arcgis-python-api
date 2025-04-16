@@ -9277,7 +9277,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def query_exif_info(self, input_images, gis=None, future=False, **kwargs):
-        """
+        r"""
         The `query_exif_info` reads the Exif header metadata from single or
         multiple images in shared data store. The Exif metadata is usually stored
         in drone image files. Some common Exif metadata information are GPS
@@ -12737,7 +12737,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         estimate=False,
         **kwargs,
     ):
-        """
+        r"""
         Function is designed to generate training sample image chips from the input imagery data with
         labeled vector data or classified images. The output of this service tool is the data store string
         where the output image chips, labels and metadata files are going to be stored.
