@@ -560,15 +560,17 @@ def create_dependency_graph(
                             graph.add_relationship(dep, item.itemid)
                     finally:
                         continue
-
-                if "http://" in dep or "https://" in dep:
+                try:
+                    if "http://" in dep or "https://" in dep:
+                        dep_item = None
+                    else:
+                        dep_item = gis.content.get(dep)
+                except:
                     dep_item = None
-                else:
-                    dep_item = gis.content.get(dep)
 
                 # check if item is outside of the organization
                 if not dep_item or gis.url not in dep_item.homepage:
-                    if not outside_org:
+                    if not dep or not outside_org:
                         continue
                     graph.add_item(dep, dep_item)
                     if forward:
