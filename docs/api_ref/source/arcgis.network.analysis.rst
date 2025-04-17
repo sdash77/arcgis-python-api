@@ -43,3 +43,7 @@ get_travel_modes
 get_tool_info
 -------------
 .. autofunction:: arcgis.network.analysis.get_tool_info
+
+snap_to_roads
+-------------
+.. autofunction:: arcgis.network.analysis.snap_to_roads

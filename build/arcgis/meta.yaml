@@ -7,7 +7,7 @@ build:
   number: {{ environ.get('BUILD_NUMBER', '0') }}
 package:
   name: arcgis
-  version: 2.4.1
+  version: 2.4.2
 requirements:
   build:
   - python

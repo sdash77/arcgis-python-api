@@ -348,13 +348,23 @@ class ServerManager(object):
         return self._federation.update(server_id, role, function)
 
     # ----------------------------------------------------------------------
-    def validate(self):
+    def validate(self, verbose: bool = False) -> bool | dict:
         """
         This operation returns information on the status of ArcGIS Servers
         registered with Portal for ArcGIS.
 
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        verbose                Optional bool. If `true` a dictionary with any messages will be returned.
+        ==================     ====================================================================
+
         :return:
            True if all servers are functioning as expected, False if there is an
            issue with 1 or more of the Federated Servers.
+
+           when `verbose=True` the response will be a dictionary.
         """
+        if verbose:
+            return self._federation.validate_all()
         return self._federation.validate_all()["status"] == "success"

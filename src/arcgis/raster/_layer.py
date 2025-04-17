@@ -3253,7 +3253,7 @@ class ImageryLayer(Layer):
         -------------------------       --------------------------------------------------------------------
         files                           Optional list. Local source location to the raster to replace the
                                         dataset with.
-                                        Example: [r"<path>\data.tiff"]
+                                        Example: [r"<path>\\data.tiff"]
         -------------------------       --------------------------------------------------------------------
         item_ids                        Optional string.  The uploaded items (raster files) being used to
                                         replace existing raster.
@@ -18968,7 +18968,7 @@ class RasterManager(object):
         ------------------------  --------------------------------------------------------------------
         files                     Optional list. Local source location to the raster to replace the
                                   dataset with.
-                                  Example: [r"<path>\data.tiff"]
+                                  Example: [r"<path>\\data.tiff"]
         ------------------------  --------------------------------------------------------------------
         item_ids                  Optional string.  The uploaded items (raster files) being used to
                                   replace existing raster.
