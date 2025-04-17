@@ -492,7 +492,7 @@ class _ImportPackage:
                             view_def["viewDefinitionQuery"] = query
                         view_layers[idx] = view_def
 
-            reqs = self.graph.get_node(item_id).requires("id")
+            reqs = self.graph.get_node(item_id).contains("id")
             if len(reqs) == 0:
                 raise RuntimeError("View Service does not have a valid data item.")
             elif len(reqs) == 1:
