@@ -1,7 +1,12 @@
+import uuid
+
 import unittest
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
+from utils.data_utils import publish_test_item
 from integration.config import get_resource_path
+
+from arcgis.gis import ItemTypeEnum
 
 enable_verbose_logging()
 
@@ -11,34 +16,33 @@ enable_verbose_logging()
 class TestCanReassignItems(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        uid = uuid.uuid4().hex[-5:]
+
         fp = get_resource_path("staging_data/USA_Major_Cities.zip", unique_copy=True)
         cls.folder = cls.gis.content.folders._get_or_create(
             "integration_test_gis_item_reassign"
         )
-        cls.item = cls.folder.add(
-            item_properties={
-                "title": "reassign_item_test",
-                "type": "Shapefile",
-                "tags": "integration_testing,ntgrtn-tst",
-            },
-            file=fp,
-        ).result()
-        cls.pitem = cls.item.publish(
-            {
-                "name": "reassign_item_test_publish",
-                "tags": "integration_testing,ntgrtn-tst",
-            }
+
+        cls.pitem = publish_test_item(
+            gis=cls.gis,
+            layer_name=f"reassign_item_test_publish_{uid}",
+            source_data_path=fp,
+            item_type=ItemTypeEnum.SHAPEFILE,
         )
+        cls.sitem = cls.pitem.related_items("Service2Data", "forward")[0]
+
+        cls.pitem.move(cls.folder)
+        cls.sitem.move(cls.folder)
 
     @classmethod
     def tearDownClass(cls):
         cls.pitem.delete(permanent=True)
-        cls.item.delete(permanent=True)
+        cls.sitem.delete(permanent=True)
         cls.folder.delete(permanent=True)
 
     def test_can_reassign(self):
         """tests the new reassign operation"""
-        items = [self.item, self.pitem]
+        items = [self.sitem, self.pitem]
         for item in items:
             for user in [
                 u
