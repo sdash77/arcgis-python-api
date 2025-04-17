@@ -304,6 +304,12 @@ SpatialFilter
     :undoc-members:
     :show-inheritance:
     
+StatisticFilter
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis._impl.common._filters.StatisticFilter
+    :members:
+    :undoc-members:
+    
 Submodules
 --------------
 .. toctree::
