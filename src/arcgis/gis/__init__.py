@@ -43,6 +43,7 @@ from arcgis.gis._impl._dataclasses._sfilters import (
     SpatialFilter,
     SpatialRelationship,
 )
+from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
 from arcgis.gis._impl._content_manager.folder import Folder
