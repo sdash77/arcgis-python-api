@@ -1464,9 +1464,36 @@ class GIS(object):
     @property
     def hosting_servers(self) -> list:
         """
-        Returns the hosting servers for the GIS
+        Provides access to representation of all the services running on the hosting server
+        for an organizational deployment. See
+        `ArcGIS Server Services Directory REST API <https://developers.arcgis.com/rest/services-reference/enterprise/get-started-with-the-services-directory/>`_
+        for full explanation.
 
-        :returns: list
+        :returns:
+            * ArcGIS Online: list of :class:`~arcgis.gis.agoserver.AGOLServicesDirectory` objects
+            * ArcGIS Enteprise and ArcGIS Enterprise on Kubernetes: list of :class:`~arcgis.gis.server.catalog.ServicesDirectory` objects.
+
+        .. code-block:: python
+
+            # Usage Example #1: ArcGIS Online:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_admin_profile")
+
+            >>> svc_directory_list = gis.hosting_servers
+            >>> for svc_dir in svc_directory_list:
+            >>>     print(f"{svc_dir}")
+
+            < AGOLServicesDirectory @ https://servicesX.arcgis.com/<org_id>/arcgis/rest/services >
+            < AGOLServicesDirectory @ https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/services >
+
+            # Usage Example #2: ArcGIS Enterprise:
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> for svc_dir in gis.hosting_servers:
+            >>>     print(f"{svc_dir}")
+
+            < ServicesDirectory @ https://example.org_url.com/web_adaptor_name/rest/services >
+
         """
         if self._portal.is_arcgisonline:
             info = self._registered_servers()
