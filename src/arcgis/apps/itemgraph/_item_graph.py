@@ -466,7 +466,10 @@ def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
     def destringize_node(data):
         if not data.startswith("node_"):
             return data
-        itemid = data.split("_")[1]
+        if data.endswith("_item"):
+            itemid = data[5:-5]
+        else:
+            itemid = data[5:]
         item = None
         if include_items and data.endswith("_item"):
             item = gis.content.get(itemid)
