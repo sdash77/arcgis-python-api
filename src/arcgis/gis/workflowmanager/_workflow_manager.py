@@ -289,7 +289,7 @@ class WorkflowManagerAdmin:
         include_other_configs: bool = True,
         passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
-        download_location: Optional[str] = None
+        download_location: Optional[str] = None,
     ):
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
@@ -327,6 +327,24 @@ class WorkflowManagerAdmin:
         :return:
             success object or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
 
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Export An Item Asynchronously
+
+            # create a Workflow Manager object from the workflow item
+            workflow_manager_admin = WorkflowManagerAdmin(gis)
+
+            item = gis.content.search('title:"Python Sample"')[0]
+            export_execution = workflow_manager_admin.export_item(item,
+                                                                  run_async=True,
+                                                                  download_location='C:\\Users\\exampleUser\\Desktop\\')
+            # Now process the export_execution - result() stops execution until the asynchronous work is finished and returns the last message received.
+            result = export_execution.result()
+            print(f'Result = {result}\n')
+            print(f'Here is the Exported ID: {export_execution.export_id}')
+            print(f'Here is the Exported Location: {export_execution.export_location}\n')
+
         """
         params = {"includeOtherConfiguration": include_other_configs}
         if job_template_ids is not None:
@@ -363,7 +381,7 @@ class WorkflowManagerAdmin:
                     destination_path = os.path.join(download_location, filename)
 
                     # Copy the file from the temp location to the destination
-                    shutil.copy(filepath,  destination_path)
+                    shutil.copy(filepath, destination_path)
                     logger.debug(f"File successfully saved to { destination_path}")
                     return destination_path
                 except Exception as e:
@@ -371,12 +389,7 @@ class WorkflowManagerAdmin:
 
             return return_obj
 
-    def _export_item_async(
-        self,
-        item,
-        params,
-        download_location: Optional[str] = None
-    ):
+    def _export_item_async(self, item, params, download_location: Optional[str] = None):
         # Create a ItemExecution object
         ie = ItemExecution(item, ExecutionType.EXPORT)
         # Subscribe to this job
@@ -404,7 +417,9 @@ class WorkflowManagerAdmin:
             if download_location is not None:
                 try:
                     if not os.path.isdir(download_location):
-                        logger.error(f"Error: {download_location} is not a valid directory.")
+                        logger.error(
+                            f"Error: {download_location} is not a valid directory."
+                        )
                         return
                     # Construct the full destination path
                     filename = os.path.basename(filepath)
@@ -412,7 +427,7 @@ class WorkflowManagerAdmin:
 
                     # Copy the file from the temp location to the destination
                     if os.path.dirname(filepath) != download_location:
-                        shutil.copy(filepath,  destination_path)
+                        shutil.copy(filepath, destination_path)
                         ie._export_location = destination_path
                         logger.debug(f"File successfully saved to { destination_path}")
                     else:
@@ -430,7 +445,9 @@ class WorkflowManagerAdmin:
         return ie
 
     def _get_exported_configuration(self, item, export_id: str):
-        url = "{base}/admin/{id}/exportAsync/{exportId}".format(base=self._url, id=item.id, exportId=export_id)
+        url = "{base}/admin/{id}/exportAsync/{exportId}".format(
+            base=self._url, id=item.id, exportId=export_id
+        )
         return_obj = self._gis._con.get(
             url, try_json=False, json_encode=False, post_json=True
         )
@@ -441,7 +458,10 @@ class WorkflowManagerAdmin:
         return return_obj
 
     def import_item(
-        self, item, config_file, passphrase: Optional[str] = None,
+        self,
+        item,
+        config_file,
+        passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
     ):  # TODO TypeHint removed in order to avoid import
         """
@@ -471,6 +491,34 @@ class WorkflowManagerAdmin:
 
         :return:
             success object or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
+
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Import An Item Asynchronously
+
+            # Create a new item using wm_admin
+            new_item_id = wm_admin.create_item(name='New Workflow Item')
+            new_item = gis.content.get(new_item_id)
+
+            # Path to location of .wmc file from a previous exported item.
+            filepath = 'C:\\Users\\exampleUser\\Desktop\\'
+
+            import_execution = wm_admin.import_item(new_item, filepath, run_async=True)
+
+            while not import_execution.done():
+                print(f'Progress = {import_execution.status}')
+                print(f'{import_execution.messages}\n')
+                time.sleep(5)
+
+            print(f'Status = {import_execution.status} \n')
+            print(f'Time elapsed {import_execution.elapse_time}')
+            print(f'Messages received: \n')
+            for m in import_execution.messages:
+                print(f'{m.message} \n')
+
+            # Result() returns the last message received. This will inform you of the final state from importing
+            print(f'Result = {import_execution.result()}\n')
 
         """
 
@@ -4017,12 +4065,14 @@ class JobExecution(WorkflowManagerExecution):
 
 class ItemExecution(WorkflowManagerExecution):
     """
-    TODO
+    Represents some execition on the workflow item level.  The `itemExecution` class allows for the asynchronous
+    operation of an executing workflow manager admin operations. The status of the step execution can then be queried
+    by the class properties, status, result, elapse_time and messages. This class is not intended for users to call directly.
 
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    job                 Required :class:`~arcgis.gis.workflowmanager.Job` The job to execute
+    item                Required Item. The Workflow Manager Item to be imported or exported
     ---------------     --------------------------------------------------------------------
     execution_type      Required :class:`~arcgis.gis.workflowmanager.ExecutionType`. The execution type
     ===============     ====================================================================
@@ -4039,7 +4089,8 @@ class ItemExecution(WorkflowManagerExecution):
         if (
             "itemId" in msg.message
             and msg.message["itemId"] == self._item.id
-            and msg.msg_type in [MessageType.EXPORTCOMPLETED, MessageType.IMPORTCOMPLETED]
+            and msg.msg_type
+            in [MessageType.EXPORTCOMPLETED, MessageType.IMPORTCOMPLETED]
         ):
             logger.debug(f"Received Export {msg}")
             self._messages.append(msg)
@@ -4051,20 +4102,32 @@ class ItemExecution(WorkflowManagerExecution):
             self._event.set()
             nm.disconnect()
 
-
     @property
     def export_id(self):
+        """
+        Get the export id from executing the item export.
+
+        :return:
+            Boolean
+
+        """
         if not self.running() and self._execution_type is ExecutionType.EXPORT:
             return self._export_id
         return None
 
     @property
     def export_location(self):
+        """
+        Get the export location in the local machine. This may be the same as the optional parameter, download_location
+        in :func:`~arcgis.gis.workflowmanageradmin.export_item`
+
+        :return:
+            Boolean
+
+        """
         if not self.running() and self._execution_type is ExecutionType.EXPORT:
             return self._export_location
         return None
-
-
 
     def __repr__(self):
         return f'ItemExecution({{"item": {self._item.id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
@@ -4586,7 +4649,12 @@ class NotificationManager:
 
     """
 
-    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager | WorkflowManagerAdmin, item_exec_callback = None):
+    def __init__(
+        self,
+        item: arcgis.gis.Item,
+        workflow_manager: WorkflowManager | WorkflowManagerAdmin,
+        item_exec_callback=None,
+    ):
         self._item = item
         _initialize(self, item._gis)
         self.workflow_item_id = item.id
@@ -4861,7 +4929,7 @@ class ExecutionType(Enum):
 
     RUN = "RUN"
     STOP = "STOP"
-    FINISH = "FINISH",
+    FINISH = ("FINISH",)
     IMPORT = "IMPORT"
     EXPORT = "EXPORT"
 
