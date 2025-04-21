@@ -1926,7 +1926,8 @@ class FeatureLayer(Layer):
                                             distance is 100, the query geometry is a point, units is set to
                                             meters, and all points within 100 meters of the point are returned.
         -------------------------------     --------------------------------------------------------------------
-        units                               Optional string. The unit for calculating the buffer distance.
+        units                               Optional string or LengthUnit. The unit for calculating the buffer
+                                            distance.
 
                                             * If unit is not specified, the unit is derived from the geometry's
                                               spatial reference.
@@ -1950,7 +1951,7 @@ class FeatureLayer(Layer):
                                                         ...
                                                     }
 
-                                            Values options:
+                                            String Values options:
 
                                             * *esriSRUnit_Meter*
                                             * *esriSRUnit_StatuteMile*
@@ -2290,21 +2291,27 @@ class FeatureLayer(Layer):
 
         units_lu: dict = {
             LengthUnits.METER: "esriSRUnit_Meter",
+            "Meter": "esriSRUnit_Meter",
             9001: "esriSRUnit_Meter",
             "esriSRUnit_Meter": "esriSRUnit_Meter",
             9093: "esriSRUnit_StatuteMile",
+            "StatuteMile": "esriSRUnit_StatuteMile",
             LengthUnits.STATUTEMILE: "esriSRUnit_StatuteMile",
             "esriSRUnit_StatuteMile": "esriSRUnit_StatuteMile",
             9002: "esriSRUnit_Foot",
+            "Foot": "esriSRUnit_Foot",
             LengthUnits.FOOT: "esriSRUnit_Foot",
             "esriSRUnit_Foot": "esriSRUnit_Foot",
             9036: "esriSRUnit_Kilometer",
             LengthUnits.KILOMETER: "esriSRUnit_Kilometer",
+            "Kilometer": "esriSRUnit_Kilometer",
             "esriSRUnit_Kilometer": "esriSRUnit_Kilometer",
             LengthUnits.NAUTICALMILE: "esriSRUnit_NauticalMile",
+            "NauticalMile": "esriSRUnit_NauticalMile",
             9030: "esriSRUnit_NauticalMile",
             "esriSRUnit_NauticalMile": "esriSRUnit_NauticalMile",
             109012: "esriSRUnit_USNauticalMile",
+            "USNauticalMile": "esriSRUnit_USNauticalMile",
             LengthUnits.USNAUTICALMILE: "esriSRUnit_USNauticalMile",
             "esriSRUnit_USNauticalMile": "esriSRUnit_USNauticalMile",
         }
