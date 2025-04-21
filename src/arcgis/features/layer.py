@@ -2286,9 +2286,35 @@ class FeatureLayer(Layer):
             >>> fres
             {'objectIdFieldName': 'FID', 'objectIds': [17, 18, 19, 20, 21]}
         """
+        from arcgis.geometry.functions import LengthUnits
+
+        units_lu: dict = {
+            LengthUnits.METER: "esriSRUnit_Meter",
+            9001: "esriSRUnit_Meter",
+            "esriSRUnit_Meter": "esriSRUnit_Meter",
+            9093: "esriSRUnit_StatuteMile",
+            LengthUnits.STATUTEMILE: "esriSRUnit_StatuteMile",
+            "esriSRUnit_StatuteMile": "esriSRUnit_StatuteMile",
+            9002: "esriSRUnit_Foot",
+            LengthUnits.FOOT: "esriSRUnit_Foot",
+            "esriSRUnit_Foot": "esriSRUnit_Foot",
+            9036: "esriSRUnit_Kilometer",
+            LengthUnits.KILOMETER: "esriSRUnit_Kilometer",
+            "esriSRUnit_Kilometer": "esriSRUnit_Kilometer",
+            LengthUnits.NAUTICALMILE: "esriSRUnit_NauticalMile",
+            9030: "esriSRUnit_NauticalMile",
+            "esriSRUnit_NauticalMile": "esriSRUnit_NauticalMile",
+            109012: "esriSRUnit_USNauticalMile",
+            LengthUnits.USNAUTICALMILE: "esriSRUnit_USNauticalMile",
+            "esriSRUnit_USNauticalMile": "esriSRUnit_USNauticalMile",
+        }
         if statistic_filter:
             statistic_filter: list[dict] | dict = statistic_filter.filter
         # validate parameters
+        if units and units in units_lu:
+            units: str = units_lu[units]
+        elif units and not units in units_lu:
+            raise ValueError("The `units` value provided is not supported.")
         query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
