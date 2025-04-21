@@ -114,6 +114,34 @@ class Test_UserManager_portal_builtin(unittest.TestCase):
         )
         print("Time stamp: " + self.time_stamp)
 
+    def test_createUser_as_defaults(self):
+        """
+        Test to check if a new user has a thumbnail object
+        :return:
+        """
+        # Create user data
+        user_name = "user4x"
+        user_password = "IL0veMyGI$_4Ever"
+        last_name = "dino"
+        role_list = ["org_publisher"]
+        email = "amani@esri.com"
+
+        # Check if user is present, else create
+
+        print("Creating user: " + user_name, end=" ")
+        user_obj_list = self.gis.users.get(user_name)
+        if user_obj_list is None:
+            created_user = self.gis.users.create(
+                user_name,
+                user_password,
+                user_name,
+                last_name,
+                email,
+                role=role_list[0],
+                use_defaults=True
+            )
+            assert not created_user is None
+
     def test_createUser_has_thumbnail(self):
         """
         Test to check if a new user has a thumbnail object
