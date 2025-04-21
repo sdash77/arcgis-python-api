@@ -5,6 +5,7 @@ from collections.abc import Iterable as _Iterable
 from utils.decorators import integration_test
 
 ogc_url = "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer"
+ogc_collection_url = "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer/collections/0"
 
 
 @integration_test
@@ -18,24 +19,44 @@ class TestOGCFS(unittest.TestCase):
         assert ogc.properties
         assert ogc.conformance
         assert isinstance(ogc.collections, _Iterable)
+        endpoints = ["core", "oas30", "html", "geojson"]
+        conformance_urls = [
+            True
+            for e in endpoints
+            for u in ogc.conformance.get("conformsTo")
+            if u.endswith(e)
+        ]
+        self.assertEqual(
+            4,
+            len(conformance_urls),
+            f"Incorrect count of conformance endpoints. Got {len(conformance_urls)}",
+        )
 
     def test_ogc_layer(self):
-        """test the ogc layer methods/functions/proeprties"""
+        """test the ogc layer methods/functions/properties"""
         ogc = OGCFeatureService(url=ogc_url)
-        for ogclyr in ogc.collections:
-            assert isinstance(ogclyr, OGCCollection)
-            assert ogclyr.properties
-            sedf = ogclyr.query(return_all=True)
+        for ogc_lyr in ogc.collections:
+            assert isinstance(ogc_lyr, OGCCollection)
+            assert ogc_lyr.properties
+            sedf = ogc_lyr.query(return_all=True)
             assert isinstance(sedf, pd.DataFrame)
-            assert len(ogclyr.query(return_all=False, limit=10)) == 10
+            assert len(ogc_lyr.query(return_all=False, limit=10)) == 10
             assert isinstance(
-                ogclyr.query(return_all=False, limit=10, as_dict=True), dict
+                ogc_lyr.query(return_all=False, limit=10, as_dict=True), dict
             )
-            assert len(ogclyr.query(return_all=True, as_dict=True)["features"]) == len(
+            assert len(ogc_lyr.query(return_all=True, as_dict=True)["features"]) == len(
                 sedf
             )
-            assert isinstance(ogclyr.get(2180), dict)
+            assert isinstance(ogc_lyr.get(2180), dict)
             break
+
+    def test_ogc_collection(self):
+        ogc_collection = OGCCollection(url=ogc_collection_url)
+        self.assertEqual(
+            "Hospitals_Medical_Centers",
+            ogc_collection.properties.get("title"),
+            "Unexpected OGC Collection title.",
+        )
 
 
 if __name__ == "__main__":

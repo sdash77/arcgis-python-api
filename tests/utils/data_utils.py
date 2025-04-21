@@ -18,6 +18,7 @@ def publish_test_item(
     target_url: Optional[str] = None,
 ) -> Item:
     """
+    Publish an item to portal with specific integration test tags and capabilities.
 
     :param gis: GIS: The target GIS instance
     :param layer_name: str: The name of the target feature service
@@ -32,31 +33,37 @@ def publish_test_item(
     """
     try:
         # Add the item to the portal
-        source_item = add_source_item(gis, layer_name, item_type, source_data_path, target_url)
+        source_item = add_source_item(
+            gis, layer_name, item_type, source_data_path, target_url
+        )
 
         # Source item is good, try publishing
-        feature_layer_item = source_item.publish(
+        portal_item = source_item.publish(
             {"name": layer_name, "tags": INTEGRATION_TEST_ITEM_TAG}
         )
-        if not feature_layer_item:
+        if not portal_item:
             raise Exception(f"Could not update publish {layer_name}")
-        if prep_for_editing:
-            is_prepped_for_editing = prep_test_item(
-                feature_layer_item, override_capabilities
-            )
+
+        if prep_for_editing and portal_item.type == "Feature Service":
+            is_prepped_for_editing = prep_test_item(portal_item, override_capabilities)
             if not is_prepped_for_editing:
                 raise Exception("Could not update editing capabilities")
-        return feature_layer_item
+        return portal_item
 
     except Exception as ex:
-        # If publishing fails, don't leave the source item behind
+        # If publishing fails, try not to leave the source item behind
         if source_item:
             source_item.delete(permanent=True)
         raise Exception("Failed to add necessary item file to portal.", ex)
 
 
-def add_source_item(gis: GIS, layer_name: str, item_type: ItemTypeEnum, source_data_path: str, target_url: Optional[str] = None):
-    source_item = None
+def add_source_item(
+    gis: GIS,
+    layer_name: str,
+    item_type: ItemTypeEnum,
+    source_data_path: str,
+    target_url: Optional[str] = None,
+):
     try:
         ip = ItemProperties(
             title=layer_name,
@@ -74,7 +81,7 @@ def add_source_item(gis: GIS, layer_name: str, item_type: ItemTypeEnum, source_d
         ).result()
         return source_item
     except Exception as ex:
-        raise Exception("Failed to add necessary item file to portal.")
+        raise Exception(f"Failed to add necessary item file to portal. {ex}")
 
 
 def prep_test_item(feature_layer, capabilities):

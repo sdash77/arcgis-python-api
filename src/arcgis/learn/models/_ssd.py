@@ -71,7 +71,6 @@ try:
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
     from ._transformer_backbone import vit_config
-    from ._dofa_utils import dofa_config, dofa_backbones_downstream
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -444,27 +443,20 @@ class SingleShotDetector(ArcGISModel):
 
                 self._create_anchors(grids, zooms, ratios)
 
-                if not self._backbone.__name__ in dofa_backbones_downstream:
+                feature_sizes = _get_feature_size(
+                    (
+                        self._orig_backbone
+                        if hasattr(self, "_orig_backbone")
+                        else self._backbone
+                    ),
+                    cut=backbone_cut,
+                    chip_size=(data.chip_size, data.chip_size),
+                    channel_in=len(getattr(data, "_extract_bands", [0, 1, 2])),
+                    use_custom=self._backbone.__name__ in vit_config.keys(),
+                )
 
-                    feature_sizes = _get_feature_size(
-                        (
-                            self._orig_backbone
-                            if hasattr(self, "_orig_backbone")
-                            else self._backbone
-                        ),
-                        cut=backbone_cut,
-                        chip_size=(data.chip_size, data.chip_size),
-                    )
-
-                    num_features = feature_sizes[-1][-1]
-                    num_channels = feature_sizes[-1][1]
-
-                else:
-                    m = nn.Sequential(
-                        *create_body(self._backbone, False, None).children()
-                    )
-                    num_features = data.chip_size
-                    num_channels = m[0].blocks[-1].mlp.fc2.out_features
+                num_features = feature_sizes[-1][-1]
+                num_channels = feature_sizes[-1][1]
 
                 if (
                     grids[0] > 8
@@ -561,17 +553,12 @@ class SingleShotDetector(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
-    def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
-        dofa_backbone = list(dofa_config.keys())
-        return dofa_backbone
-
-    @staticmethod
     def torchgeo_backbones():
         """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
         return torchgeo_backbone
 
     @staticmethod
@@ -586,7 +573,6 @@ class SingleShotDetector(ArcGISModel):
 
         transformer_backbone = SingleShotDetector.transformer_backbones()
         torchgeo_backbone = SingleShotDetector.torchgeo_backbones()
-        dofa_backbone = SingleShotDetector.dofa_backbones()
 
         return (
             [
@@ -598,7 +584,6 @@ class SingleShotDetector(ArcGISModel):
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
-            + dofa_backbone
         )
 
     @property
@@ -720,27 +705,17 @@ class SingleShotDetector(ArcGISModel):
 
         data.resize_to = resize_to
 
-        if not backbone in dofa_backbones_downstream:
-            ssd = cls(
-                data,
-                emd["Grids"],
-                emd["Zooms"],
-                emd["Ratios"],
-                pretrained_path=str(model_file),
-                backend=backend,
-                backbone=backbone,
-                ssd_version=ssd_version,
-            )
-        else:
-            ssd = cls(
-                data,
-                emd["Grids"],
-                emd["Zooms"],
-                emd["Ratios"],
-                pretrained_path=str(model_file),
-                ssd_version=ssd_version,
-                **model_params,
-            )
+        ssd = cls(
+            data,
+            emd["Grids"],
+            emd["Zooms"],
+            emd["Ratios"],
+            pretrained_path=str(model_file),
+            backend=backend,
+            backbone=backbone,
+            ssd_version=ssd_version,
+            wavelengths=model_params.get("wavelengths", None),
+        )
 
         if not data_passed:
             ssd.learn.data.single_ds.classes = ssd._data.classes
@@ -1339,7 +1314,7 @@ class SingleShotDetector(ArcGISModel):
                                 trained on).
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
-                                during tiled inferencing. Deafult value 1.
+                                during tiled inferencing. Default value 1.
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image

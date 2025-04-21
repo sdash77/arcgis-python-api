@@ -1011,7 +1011,7 @@ def prepare_tabulardata(
     explanatory_variables=None,
     explanatory_rasters=None,
     date_field=None,
-    cell_sizes=[3, 4, 5, 6, 7],
+    cell_sizes=[3, 4, 5, 6],
     distance_features=None,
     preprocessors=None,
     val_split_pct=0.1,
@@ -1181,6 +1181,10 @@ def prepare_tabulardata(
     :return: `TabularData` object
 
     """
+    if cell_sizes:
+        if 7 in cell_sizes:
+            cell_sizes.remove(7)
+
     if input_features is None and (
         explanatory_rasters is None or len(explanatory_rasters) == 0
     ):
@@ -1288,7 +1292,8 @@ def prepare_data(
     =====================   ===========================================
     **Parameter**           **Description**
     ---------------------   -------------------------------------------
-    path                    Required string. Path to data directory or a list of paths.
+    path                    Required string. Path to data directory or a list of paths
+                            in case of multi-folder training.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label. Not supported for MaskRCNN model.
