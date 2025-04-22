@@ -12812,6 +12812,10 @@ class User(dict):
             tags = ",".join(tags)
         import copy
 
+        if first_name or last_name:
+            first_name = first_name or self.firstName
+            last_name = last_name or self.lastName
+            fullname = f"{first_name} {last_name}"
         params = {
             "f": "json",
             "access": access,
