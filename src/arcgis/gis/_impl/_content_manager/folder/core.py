@@ -500,6 +500,12 @@ class Folder:
             )
             futures[future] = part_name
         tp.shutdown(cancel_futures=False)
+        if (
+            isinstance(ftuple[1], (io.BufferedReader, io.TextIOWrapper))
+            and ftuple[1].closed == False
+        ):
+            ftuple[1].close()
+
         return Job(
             futures=futures,
             commit_url=commit_url,
