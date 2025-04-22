@@ -4006,7 +4006,7 @@ class UserManager(object):
                 "level",
                 "email_text",
             }
-            if self._gis.version >= [2025, 1]:
+            if self._gis.version >= [2025, 1] and self._gis._is_kubernetes == False:
                 allowed_keys = {
                     "username",
                     "password",
@@ -4294,7 +4294,7 @@ class UserManager(object):
                           new member defaults are applied to the user. This parameter can still be set to
                           true even if there are no new member defaults configured for the organization.
                           If set to false, the new member defaults are not applied. The default value is
-                          true.
+                          true. This parameter is ignored on `Kubernetes` deployments.
         ================  ===============================================================================
 
         :return:
@@ -4303,7 +4303,7 @@ class UserManager(object):
         """
         # map role parameter of a viewer to the internal value for org viewer.
         if self._gis.version >= [7, 2]:
-            if self._gis._is_agol:
+            if self._gis._is_agol or self._gis._is_kubernetes:
                 if user_type is None:
                     if (
                         self.user_settings
