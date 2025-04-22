@@ -1005,7 +1005,7 @@ class WebExperience(object):
     @deprecated(
         deprecated_in="2.3.0",
         removed_in="2.4.2",
-        current_version="2.4.1",
+        current_version="2.4.2",
         details="Pass in the Web Experience item to `gis.content.clone_items()` instead.",
     )
     def clone(self, target, owner, **kwargs):
