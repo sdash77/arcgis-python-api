@@ -50,21 +50,20 @@ class TestQueryFeatureLayer(unittest.TestCase):
         )
 
     def test_web_map_dependencies(self):
-        item = self.gis.content.get("1cff7162efaa48ad8c933e1a34ebbf4b")
+        item = self.gis.content.get("0e28eb3472854ff6a6831aa3769a1fda")
         graph = create_dependency_graph(self.gis, [item])
         graph_nodes = graph.nodes
         self.assertIsNotNone(graph_nodes.items(), "Story map deps not found")
-        self.assertGreaterEqual(1, len(graph_nodes.items()), "Missing graph items")
-        nodes_list = [n for n in graph_nodes]
-        item_from_graph = self.gis.content.get(nodes_list[0])
-        self.assertEqual(
-            "Web Map",
-            item_from_graph.type,
-            f"Unexpected item type: {item_from_graph.type}",
-        )
+        self.assertGreaterEqual(3, len(graph_nodes.items()), "Missing graph items")
+        for node in graph_nodes:
+            item = self.gis.content.get(node)
+            self.assertTrue(
+                item.type in ["Map Service", "Web Map", "StoryMap"],
+                f"Unexpected item type found: {item.type}",
+            )
 
     def test_feature_layer_dependencies(self):
-        item = self.gis.content.get("0c1fd948abbf4c04bfa4b3f46d0fdfa1")
+        item = self.gis.content.get("b84064f8638c47e89bfd3edb49acb628")
         graph = create_dependency_graph(self.gis, [item])
         graph_nodes = graph.nodes
         self.assertIsNotNone(graph_nodes.items(), "Story map deps not found")
@@ -72,6 +71,6 @@ class TestQueryFeatureLayer(unittest.TestCase):
         for node in graph_nodes:
             item = self.gis.content.get(node)
             self.assertTrue(
-                item.type in ["Feature Service", "CSV"],
+                item.type in ["Feature Service", "Service Definition"],
                 f"Unexpected item type found: {item.type}",
             )
