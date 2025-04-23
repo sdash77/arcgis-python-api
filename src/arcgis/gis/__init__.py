@@ -2038,12 +2038,12 @@ class OfflineContentManager(object):
                              * If *False*, any item that fails to import will be skipped and the
                                process will continue. Default is *False*.
         ----------------     ----------------------------------------------------------------------
-        item_mapping         Optional dictionary. A dictionary of item ids to be remapped to
-                             item ids already existent in the import org. The keys are the item ids
-                             of the dependencies in the offline package and the values are item
-                             ids of the intended replacements in the import org. This is useful
-                             when a specific dependency has already been uploaded and there is no
-                             need for duplication.
+        item_mapping         A mapping of item IDs from the offline package to item IDs that 
+                             already exist in the target organization. The keys represent the item 
+                             IDs of dependencies in the offline package, while the values are the 
+                             corresponding item IDs to be used as replacements during import. This 
+                             prevents duplication by reusing existing items when certain 
+                             dependencies have already been uploaded.
         ================     ======================================================================
 
         :return:
