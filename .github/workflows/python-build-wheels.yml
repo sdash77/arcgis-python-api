@@ -1,48 +1,43 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Build Python Wheels
+name: Build Python Packages
 on: workflow_dispatch
+
+env:
+  BUILD_NUMBER: ${{ github.run_number }}
+
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9']
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - name: Setup conda environment
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Display Python version
-        run: python --version
-      - name: Install libkrb5 for Kerberos on Linux
-        if: contains(matrix.os, 'ubuntu')
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          environment-file: build.environment.yml
+      - name: Configure conda
         run: |
-          echo "Test"
-          sudo apt install -y libkrb5-dev
-          pip install requests-kerberos
-          echo "Test Ended"
-
-      - name: Install the Requirements
-        run: pip install -r src/requirements.txt
-      - name: Clean PYD/SO Files and Folders
+          conda remove -n base conda-anaconda-telemetry -y && echo "conda-anaconda-telemetry removed..." || echo "conda-anaconda-telemetry not installed..."
+      - name: Stage binary dependencies
         run: |
-          python ./build/clean_up_so_pyd.py "./src"      
-      - name: Create the Wheels
+          python ./build/manage_binaries.py copy
+      - name: Build wheel
         run: |
           cd ./src; 
-          pip install wheel
-          python setup.py bdist_wheel
-      - uses: actions/upload-artifact@v2
+          python -m build --wheel --outdir dist .
+      - name: Build sdist
+        run: |
+          cd ./src; 
+          python -m build --sdist --outdir dist .
+      - name: Upload pacakges
+        uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os }}-${{matrix.python-version}}-${{ github.sha }}
-          path: src/dist/*.whl
-          retention-days: 10
+          name: arcgis-pypi-build-${{ github.run_number }}-${{ github.sha }}
+          path: |
+            src/dist/**/*.whl
+            src/dist/**/*.tar.gz
+          retention-days: 90
