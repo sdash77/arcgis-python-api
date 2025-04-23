@@ -180,7 +180,11 @@ class VersionManager(object):
         return self._versions
 
     # ----------------------------------------------------------------------
-    def search(self, owner: Optional[str] = None, show_hidden: bool = False):
+    def search(
+        self,
+        owner: Optional[str] = None,
+        show_hidden: bool = False,
+    ) -> dict | Version:
         """
         For the specified feature service, return the info of all versions
         that the client has access to. If the client is the service owner
@@ -201,12 +205,12 @@ class VersionManager(object):
         """
         url = "%s/versionInfos" % self._url
         params = {"ownerFilter": owner, "includeHidden": show_hidden, "f": "json"}
-        return self._con.post(url, params)
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def get(self, version: str, mode: Optional[str] = None):
         """
-        Finds and Locations a Version by it's name
+        Finds and locates a Version by it's name
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -232,8 +236,57 @@ class VersionManager(object):
                 return v
         return
 
+    # ----------------------------------------------------------------------
+
+    def get_by_name(
+        self,
+        owner: str,
+        version_name: str,
+        mode: Optional[str] = None,
+        show_hidden: bool = False,
+    ) -> Version:
+        """
+        Finds and locates a Version by it's name using `versionInfos`
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        owner               Required String. A filter the versions by the owner.
+        ---------------     --------------------------------------------------------------------
+        version_name        Required String. This is the name of the version to locate.
+        ---------------     --------------------------------------------------------------------
+        mode                Optional String. This allows users to get a version in a specific
+                            state of edit or read.  If None is provided (default) the version
+                            is created without entering a mode.
+
+                            Values:
+
+                            - edit - starts editing mode
+                            - read - starts reading mode
+                            - None - no mode is started.  This is default.
+        ---------------     --------------------------------------------------------------------
+        show_hidden         Optional Boolean. If False (default) hidden versions will not be
+                            returned.
+        ===============     ====================================================================
+
+        """
+        url = "%s/versionInfos" % self._url
+        params = {"ownerFilter": owner, "includeHidden": show_hidden, "f": "json"}
+        version_infos = self._con.get(url, params)
+
+        for v in version_infos["versions"]:
+            if v["versionName"].lower() == f"{owner}.{version_name}".lower():
+                guid = v["versionGuid"][1:-1]
+                vurl = "%s/versions/%s" % (self._url, guid)
+                version = Version(url=vurl, flc=self._flc, gis=self._gis)
+                if mode:
+                    version.mode = mode
+                return version
+
 
 ########################################################################
+
+
 class Version(object):
     """
     A `Version` represents a single branch in the version tree.
