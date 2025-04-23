@@ -5,7 +5,7 @@ env:
   BUILD_NUMBER: ${{ github.run_number }}
 
 jobs:
-  build:
+  build-pip:
     runs-on: ubuntu-latest
     defaults:
       run:
