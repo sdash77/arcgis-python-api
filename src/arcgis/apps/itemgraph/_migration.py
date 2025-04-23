@@ -690,6 +690,7 @@ class _ImportPackage:
         folder: Folder | str = None,
         failure_rollback: bool = False,
     ):
+
         if item_mapping != {}:
             for og_id, new_id in item_mapping.items():
                 new_item = self.gis.content.get(new_id)

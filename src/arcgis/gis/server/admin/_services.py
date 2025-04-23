@@ -25,9 +25,24 @@ from ._types import TypesManager
 ########################################################################
 class ServiceManager(BaseServer):
     """
-    Helper class for managing services. This class is not created by users directly. An instance of this class,
-    called 'services', is available as a property of the Server object. Users call methods on this 'services' object to
-    managing services.
+    Helper class for managing services. This class is not created by users
+    directly, but rather an instance is accessed using the
+    :attr:`~arcgis.gis.server.Server.services` property of a :class:`~arcgis.gis.server.Server`
+    object.
+
+    .. code-block:: python
+
+        # Usage Example: Initializing a ServiceManager object
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+        >>> server_mgr = gis.admin.servers
+        >>> site_server = server_mgr.get(function="RasterAnalytics")
+
+        >>> rax_service_mgr = site_server.services
+        >>> rax_service_mgr
+
+        < ServiceManager @ https://example.url.com/rasteranalytics/admin/services >
     """
 
     _currentURL = None
@@ -293,10 +308,14 @@ class ServiceManager(BaseServer):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        sd_file             Required string. File path to the .sd file
+        sd_file             Required string. File path to the *.sd* file.
         ---------------     --------------------------------------------------------------------
         folder              Optional string. This parameter allows for the override of the
-                            folder option set in the SD file.
+                            folder option set in the *sd* file.
+        ---------------     --------------------------------------------------------------------
+        service_config      Optional dictionary that can override parameters configured in the
+                            *sd* file.  See `CreateService <https://developers.arcgis.com/rest/enterprise-administration/server/createservice/>`_
+                            for full details on key-value pairs.
         ===============     ====================================================================
 
 
