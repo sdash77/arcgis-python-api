@@ -147,7 +147,7 @@ class QueryParameters(BaseModel):
                     example: STATE_NAME, GENDER
                     """,
     )
-    statistic_filter: Optional[dict] = Field(
+    statistic_filter: dict | list[dict] | None = Field(
         None,
         alias="outStatistics",
         description="""Optional ``StatisticFilter`` instance. The definitions for one or more field-based
@@ -232,7 +232,7 @@ class QueryParameters(BaseModel):
                     spatial reference of the layer.
                     """,
     )
-    out_sr: Optional[Union[dict[str, int], str, int]] = Field(
+    out_sr: Optional[Union[dict[str, Any], str, int]] = Field(
         None,
         alias="outSR",
         description="Optional Integer. The WKID for the spatial reference of the returned geometry.",

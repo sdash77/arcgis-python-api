@@ -113,10 +113,14 @@ def get_hooks(backbone, chip_size):
 class _HEDModel(nn.Module):
     def __init__(self, backbone_fn, data, pretrained=True):
         super().__init__()
-        chip_size = data.chip_size
-        in_channels = len(getattr(data, "_extract_bands", [0, 1, 2]))
+        # handle backward compatibility since earlier, in data only chip_size was coming
+        chip_size = getattr(data, "chip_size", data)
         transformer_backbone_list = list(swin_config.keys()) + list(vit_config.keys())
         if backbone_fn.__name__ in transformer_backbone_list:
+            if str(type(data)) == "<class 'int'>":
+                in_channels = self.backbone.patch_embed.proj.in_channels
+            else:
+                in_channels = len(getattr(data, "_extract_bands", [0, 1, 2]))
             self.backbone = backbone_fn(pretrained=pretrained)
             backbone_out = self.backbone(
                 torch.randn(

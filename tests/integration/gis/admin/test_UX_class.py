@@ -35,6 +35,16 @@ class TestUxClass(unittest.TestCase):
         ux = gis.admin.ux
         assert isinstance(ux, UX)
 
+    def test_enable_ai_assistance(self):
+        if self.gis._is_arcgisonline:
+            original_value =  self.gis.admin.ux.ai_assistants_enabled
+            assert self.gis.admin.ux.ai_assistants_enabled in [True, False]
+            self.gis.admin.ux.ai_assistants_enabled = True
+            assert gis.admin.ux.ai_assistants_enabled == True
+            self.gis.admin.ux.ai_assistants_enabled = False
+            assert self.gis.admin.ux.ai_assistants_enabled == False
+            self.gis.admin.ux.ai_assistants_enabled = original_value
+
     def test_properties(self):
         gis = self.gis
         ux = gis.admin.ux
