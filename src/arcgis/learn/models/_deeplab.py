@@ -454,18 +454,12 @@ class DeepLab(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
-    def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
-        from ._dofa_utils import dofa_backbones_downstream
-
-        return dofa_backbones_downstream
-
-    @staticmethod
     def torchgeo_backbones():
         """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
         return torchgeo_backbone
 
     @staticmethod
@@ -486,14 +480,12 @@ class DeepLab(ArcGISModel):
 
         transformer_backbone = DeepLab.transformer_backbones()
         torchgeo_backbone = DeepLab.torchgeo_backbones()
-        dofa_backbone = DeepLab.dofa_backbones()
 
         return (
             [*_resnet_family, *_densenet_family, *_vgg_family]
             + timm_backbones
             + transformer_backbone
             + torchgeo_backbone
-            + dofa_backbone
         )
 
     @property
