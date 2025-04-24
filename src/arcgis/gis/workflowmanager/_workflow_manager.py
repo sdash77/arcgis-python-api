@@ -508,17 +508,17 @@ class WorkflowManagerAdmin:
 
             while not import_execution.done():
                 print(f'Progress = {import_execution.status}')
-                print(f'{import_execution.messages}\n')
+                print(f'{import_execution.messages}')
                 time.sleep(5)
 
-            print(f'Status = {import_execution.status} \n')
+            print(f'Status = {import_execution.status}')
             print(f'Time elapsed {import_execution.elapse_time}')
-            print(f'Messages received: \n')
+            print(f'Messages received: ')
             for m in import_execution.messages:
-                print(f'{m.message} \n')
+                print(f'{m.message} ')
 
             # Result() returns the last message received. This will inform you of the final state from importing
-            print(f'Result = {import_execution.result()}\n')
+            print(f'Result = {import_execution.result()}')
 
         """
 
