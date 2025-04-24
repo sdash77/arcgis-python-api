@@ -9277,7 +9277,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def query_exif_info(self, input_images, gis=None, future=False, **kwargs):
-        """
+        r"""
         The `query_exif_info` reads the Exif header metadata from single or
         multiple images in shared data store. The Exif metadata is usually stored
         in drone image files. Some common Exif metadata information are GPS
@@ -10962,7 +10962,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.1")
+    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.2")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -12737,7 +12737,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         estimate=False,
         **kwargs,
     ):
-        """
+        r"""
         Function is designed to generate training sample image chips from the input imagery data with
         labeled vector data or classified images. The output of this service tool is the data store string
         where the output image chips, labels and metadata files are going to be stored.
