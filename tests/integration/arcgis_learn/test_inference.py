@@ -1,9 +1,28 @@
+import sys
+from pathlib import Path
 import unittest
 import arcpy
 import os
 import stat
 import shutil
-from prop_inferencing import (
+import warnings
+warnings.filterwarnings("ignore")
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+ARCGIS_FOLDER = os.environ.get('ARCGIS_FOLDER')
+if ARCGIS_FOLDER:
+    custom_arcgis_path = Path(ARCGIS_FOLDER)
+    if str(custom_arcgis_path) not in sys.path:
+        sys.path.insert(0, str(custom_arcgis_path))
+else:
+    print("Warning: ARCGIS_FOLDER environment variable is not set.")
+
+
+import arcgis
+from inference_properties import (
     data_inferencing,
     input_data_path_ms,
     input_data_path_rgb,
@@ -121,3 +140,7 @@ class TestInferencing(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         print("Test cases completed successfully")
+
+
+if __name__ == "__main__":
+    unittest.main()

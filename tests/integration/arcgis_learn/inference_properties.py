@@ -1,10 +1,14 @@
 import os
-
-input_data_path_ms = r"D:\files_sanoj\inferencing_test_resources\input_data\ms"
-input_data_path_rgb = r"D:\files_sanoj\inferencing_test_resources\input_data\rgb"
-output_gdb_folder = r"D:\files_sanoj\inferencing_test_resources"
-saved_models_path = r"D:\files_sanoj\inferencing_test_resources\models"
-output_gdb = "outputs_latest.gdb"
+from pathlib import Path
+ 
+DATA_FOLDER = os.environ.get('DATA_FOLDER')
+data_path = Path(DATA_FOLDER)
+ 
+input_data_path_ms = str(os.path.join(data_path, "input_data", "ms"))
+input_data_path_rgb = str(os.path.join(data_path, "input_data", "rgb"))
+output_gdb_folder = str(data_path)
+saved_models_path = str(os.path.join(data_path, "models"))
+output_gdb = "inference_database.gdb"
 
 data_inferencing = {
     'mtre_hourglass': {
