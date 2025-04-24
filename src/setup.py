@@ -15,7 +15,7 @@ from setuptools.command.egg_info import egg_info as _egg_info
 
 # To use a consistent encoding
 from codecs import open
-from os import path
+from os import environ, path
 import sys
 from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
@@ -141,20 +141,8 @@ except:
 
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
-    MAJOR = "2"
-    MINOR = "4"
-    try:
-        import os
-
-        def __path(filename):
-            return os.path.join(os.path.dirname(__file__), filename)
-
-        MICRO = "1"
-        if os.path.exists(__path("build.info")):
-            MICRO = open(__path("build.info")).read().strip()
-    except:
-        MICRO = "1"
-    return f"{MAJOR}.{MINOR}.{MICRO}"
+    ARCGIS_PYTHON_API_VERSION = "2.4.2"
+    return environ.get("ARCGIS_PYTHON_API_VERSION") or ARCGIS_PYTHON_API_VERSION
 
 
 kwargs = {
