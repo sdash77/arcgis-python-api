@@ -1,10 +1,14 @@
 import os
 import warnings
 warnings.filterwarnings('ignore')
-from arcgis.learn import FeatureClassifier
+from arcgis.learn import (
+    FeatureClassifier,
+    MLModel,
+)
 
 data_folder = r"D:\files_sanoj\bacbone_data\rgb"
 data_folder_ms = r"D:\files_sanoj\bacbone_data\ms"
+data_folder_tabular = r"D:\files_sanoj\tabular_data"
 
 data = {
     "fc_singleLabel": {
@@ -52,5 +56,24 @@ data = {
         "regression_parameter": "confusion_matrix",
         "regression_test_score": 0.40,
         "regression_epochs": 1,
-    }
+    },
+    "mlmodel_fairness": {
+        "model_name": "mlmodel_fairness",
+        "datapath": "mlmodel_data",
+        "datapath_ms": False,
+        "model": MLModel,
+        "model_test": "mlmodel_test",
+        "prepare_tabular_data": {
+            "path": os.path.join(data_folder_tabular, "mlmodel_fairness", "salary.csv")
+        },
+        "prepare_data_ms": False,
+        "backbones": False,
+        "wavelengths_ms": False,
+        "wavelengths_rgb": False,
+        "should_test": True,
+        "test_feature_layer": True,
+        "regression_parameter": "automl_score",
+        "regression_test_score": 0.4,
+        "regression_epochs": 1,
+    },
 }

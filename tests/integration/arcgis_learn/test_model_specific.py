@@ -11,6 +11,7 @@ from parameterized import parameterized
 from properties_model_specific import (
     data_folder,
     data_folder_ms,
+    data_folder_tabular,
     data,
 )
 from fastai.vision.learner import ClassificationInterpretation
@@ -18,8 +19,8 @@ import urllib.parse
 
 accuracy_values = {}
 
-def modelAPIs(model, model_object, num_epochs, data_path, model_test, regression_parameter, data, bbone):
-    print("Running modelAPIs for", model_test, data_path)
+def modelAPIs_backbones(model, model_object, num_epochs, data_path, model_test, regression_parameter, data, bbone):
+    print("Running backbone modelAPIs for", model_test, data_path)
     lr_val = model_object.lr_find(allow_plot=False)
     model_object.fit(num_epochs, lr=lr_val, checkpoint=False)
     model_object.plot_losses()
@@ -81,10 +82,23 @@ def backboneTestCases(
         model_object = model(data, backbone=bbone)
         print("The model initialized will be", model_test, bbone, wavelengths_dofa)
     #write model initialiation, fit etc code here
-    modelAPIs(model, model_object, num_epochs, data_path, model_test, regression_parameter, data, bbone)
+    modelAPIs_backbones(model, model_object, num_epochs, data_path, model_test, regression_parameter, data, bbone)
 
 
-def update_parameter():
+def fairnessTestCases(
+        model,
+        model_test,
+        datapath,
+        preparedata,
+        regression_parameter,
+        regression_test_score,
+        model_name,
+        num_epochs,
+):
+    pass
+
+
+def update_parameter_backbones():
     is_ms = False
     parameter = []
     for key, val in data.items():
@@ -109,7 +123,7 @@ def update_parameter():
     return parameter
 
 
-def update_parameter_ms():
+def update_parameter_backbones_ms():
     is_ms = True
     parameter = []
     for key, val in data.items():
@@ -137,9 +151,31 @@ def update_parameter_ms():
             )
     return parameter
 
-class TestBackbonesFeatures(unittest.TestCase):
-    @parameterized.expand(update_parameter)
-    def test(
+def update_parameter_fairness():
+    parameter = []
+    for key, val in data.items():
+        if (
+            val["should_test"]
+            and val["test_feature_layer"]
+        ):
+            parameter.append(
+            (
+                key,
+                val["model_test"],
+                val["model"],
+                val["datapath"],
+                val["prepare_tabular_data"],
+                val["regression_parameter"],
+                val["regression_test_score"],
+                val["model_name"],
+                val["regression_epochs"],
+            )
+        )
+    return parameter
+
+class TestModelSpecificFeatures(unittest.TestCase):
+    @parameterized.expand(update_parameter_backbones)
+    def test_backbones(
         self,
         name,
         model_test,
@@ -169,8 +205,8 @@ class TestBackbonesFeatures(unittest.TestCase):
         )
 
 
-    @parameterized.expand(update_parameter_ms)
-    def test_ms(
+    @parameterized.expand(update_parameter_backbones_ms)
+    def test_backbones_ms(
             self,
             name,
             model_test,
@@ -197,4 +233,29 @@ class TestBackbonesFeatures(unittest.TestCase):
             is_ms,
             bbone,
             wavelengths_dofa,
+        )
+
+
+    @parameterized.expand(update_parameter_fairness)
+    def test_fairness(
+            self,
+            name,
+            model_test,
+            model,
+            datapath,
+            preparedata,
+            regression_parameter,
+            regression_test_score,
+            model_name,
+            num_epochs,
+    ):
+        fairnessTestCases(
+            model,
+            model_test,
+            datapath,
+            preparedata,
+            regression_parameter,
+            regression_test_score,
+            model_name,
+            num_epochs,
         )
