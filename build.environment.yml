@@ -8,5 +8,6 @@ dependencies:
   - python-build
   - conda-build
   - conda-index
+  - conda-package-handling
   - psutil
   - nodejs >=18,<19

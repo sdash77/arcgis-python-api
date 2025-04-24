@@ -26,12 +26,12 @@ jobs:
         run: |
           python ./build/manage_binaries.py copy
       - name: Build wheel
+        working-directory: ./src
         run: |
-          cd ./src; 
           python -m build --wheel --outdir dist .
       - name: Build sdist
+        working-directory: ./src
         run: |
-          cd ./src; 
           python -m build --sdist --outdir dist .
       - name: Upload pacakges
         uses: actions/upload-artifact@v4
@@ -41,3 +41,47 @@ jobs:
             src/dist/**/*.whl
             src/dist/**/*.tar.gz
           retention-days: 90
+  build-conda:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+        # TODO use self-hosted runners
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          environment-file: build.environment.yml
+      - name: Configure conda
+        run: |
+          conda remove -n base conda-anaconda-telemetry -y && echo "conda-anaconda-telemetry removed..." || echo "conda-anaconda-telemetry not installed..."
+      - name: Build conda package
+        working-directory: ./build
+        run: |
+          conda build arcgis -c esri -c esri-build --python ${{ matrix.python }} --package-format .conda --output-folder ./output --no-test
+      - name: Convert conda package
+        # convert to osx-arm64 to osx-64
+        if: ${{ runner.os == 'macOS' }}
+        working-directory: ./build
+        run: |
+          # transmute to .tar.bz2
+          # conda-convert still requires package to be in .tar.bz2 format
+          cph transmute $(find ./osx-arm64 -name *.conda) .tar.bz2
+          # convert to osx-64
+          conda convert -f -p osx-64 $(find ./osx-arm64 -name *.tar.bz2) -o ./output
+          # transmute converted package to .conda
+          cph transmute $(find ./output -name *.tar.bz2) .conda
+      - name: Upload pacakges
+        uses: actions/upload-artifact@v4
+        with:
+          name: arcgis-conda-build-${{ github.run_number }}-${{ github.sha }}-${{ runner.os }}-${{ matrix.python }}
+          path: |
+            build/output/**/*.conda
