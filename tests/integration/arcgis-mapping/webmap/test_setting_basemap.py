@@ -61,10 +61,11 @@ class TestAddLayersToMap(unittest.TestCase):
     def test_different_sr(self):
         """Test adding a basemap with a different spatial reference than original."""
         current_map_sr = self.wm.extent["spatialReference"]["wkid"]
-        self.wm.basemap.basemap = self.gis.content.get(
-            "e67de4be72b349fd8f8ca114bac82a8c"
+        new_basemap = VectorTileLayer(
+            "https://basemaps.arcgis.com/arcgis/rest/services/OpenStreetMap_GCS_v2/VectorTileServer",
+            gis=self.gis
         )
-        # TODO: reminder for adding item to future k8s portal
+        self.wm.basemap.basemap = new_basemap
         assert self.wm.extent["spatialReference"]["wkid"] != current_map_sr
 
 
