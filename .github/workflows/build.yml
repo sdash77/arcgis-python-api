@@ -70,15 +70,15 @@ jobs:
       - name: Convert conda package
         # convert to osx-arm64 to osx-64
         if: ${{ runner.os == 'macOS' }}
-        working-directory: ./build
+        working-directory: ./build/output
         run: |
           # transmute to .tar.bz2
           # conda-convert still requires package to be in .tar.bz2 format
-          cph transmute $(find ./osx-arm64 -name *.conda) .tar.bz2
+          cph transmute $(find . -name *.conda) .tar.bz2
           # convert to osx-64
-          conda convert -f -p osx-64 $(find ./osx-arm64 -name *.tar.bz2) -o ./output
+          conda convert -f -p osx-64 $(find ./osx-arm64 -name *.tar.bz2) -o .
           # transmute converted package to .conda
-          cph transmute $(find ./output -name *.tar.bz2) .conda
+          cph transmute $(find ./osx-64 -name *.tar.bz2) .conda
       - name: Upload pacakges
         uses: actions/upload-artifact@v4
         with:
