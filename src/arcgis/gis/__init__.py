@@ -2064,6 +2064,13 @@ class OfflineContentManager(object):
                                be deleted if any error occurs during the process.
                              * If *False*, any item that fails to import will be skipped and the
                                process will continue. Default is *False*.
+        ----------------     ----------------------------------------------------------------------
+        item_mapping         A mapping of item IDs from the offline package to item IDs that
+                             already exist in the target organization. The keys represent the item
+                             IDs of dependencies in the offline package, while the values are the
+                             corresponding item IDs to be used as replacements during import. This
+                             prevents duplication by reusing existing items when certain
+                             dependencies have already been uploaded.
         ================     ======================================================================
 
         :return:
