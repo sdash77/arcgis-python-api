@@ -136,42 +136,18 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: ${{ matrix.python_version }}
+          environment-file: environment.yml
+          auto-update-conda: true
       - name: Get conda environment path
         id: conda-info
         run: |
           echo "conda-env-path=$CONDA_PREFIX" >> $GITHUB_OUTPUT
-      - name: Get arcgis release info
-        id: arcgis-info
-        run: |
-          # due to https://github.com/conda/conda/issues/14569 we can't use conda search
-          # hardcoding the latest version for now
-          # echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-          echo "latest-version=2.4.1" >> $GITHUB_OUTPUT
       - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
-          key: conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
-      - name: Install shared dependencies
-        run: |
-          # testing dependencies
-          conda install -c main nose2 --yes --quiet
-          pip install requests-mock
-          conda install -c main protobuf --yes --quiet
-
-          # new dependencies
-          conda install -c main "websocket-client>=1.2.3,<2" --yes --quiet
-          conda install -c main "networkx>=3.3,<4" --yes --quiet
-
-          # core dependencies
-          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes --quiet
-          
-          # updated dependencies
-          conda install -c esri "pyarrow>=16,<17" --yes --quiet
-          conda install "pydantic>=2.8.2,<3" --yes --quiet
-          conda install -c main "dask>=2024.12.1,<2025.1.0" --yes --quiet
-        if: steps.restore-cache.outputs.cache-hit != 'true'
+          key: conda-arcgis-${{ matrix.os }}-py${{ matrix.python_version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
       - name: Save dependency cache
         id: save-cache
         if: steps.restore-cache.outputs.cache-hit != 'true'
@@ -179,10 +155,6 @@ jobs:
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
-      - name: Install Linux-specific dependencies
-        if: runner.os == 'Linux'
-        run: |
-          conda install -c main keyrings.alt --yes
       - name: Show conda environment
         run: |
           conda list
@@ -211,7 +183,7 @@ jobs:
           name: test-results-py${{ matrix.python_version }}-${{ matrix.os }}
           path: ./tests/*_testreport.xml
           if-no-files-found: ignore
-          retention-days: 1
+          retention-days: 30
         # always upload test results, except for cancellation
         if: success() || failure()
 
