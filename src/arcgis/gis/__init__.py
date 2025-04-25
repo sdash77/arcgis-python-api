@@ -2064,6 +2064,13 @@ class OfflineContentManager(object):
                                be deleted if any error occurs during the process.
                              * If *False*, any item that fails to import will be skipped and the
                                process will continue. Default is *False*.
+        ----------------     ----------------------------------------------------------------------
+        item_mapping         A mapping of item IDs from the offline package to item IDs that
+                             already exist in the target organization. The keys represent the item
+                             IDs of dependencies in the offline package, while the values are the
+                             corresponding item IDs to be used as replacements during import. This
+                             prevents duplication by reusing existing items when certain
+                             dependencies have already been uploaded.
         ================     ======================================================================
 
         :return:
@@ -16797,12 +16804,12 @@ class Item(dict):
         build_initial_cache    Optional boolean.  The boolean value.
 
                                * Default value is *False*, unless *output_type* argument is
-                                 *tiles* or *vectorTiles*
+                                 *tiles* or *vectorTiles* and publishing to ArcGIS Online.
                                * If *True* and applicable for the *file_type*, the cache
                                  will be built at time of publishing.
 
                                  .. note::
-                                     Cache will always be built for Tile Layers.
+                                     Cache will always be built for Tile Layers for ArcGIS Online.
 
                                See `Map caching <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-map-caching-.htm>`_
                                for full details on caching.
@@ -17343,30 +17350,34 @@ class Item(dict):
         ----------------  ---------------------------------------------------------------
         title             Required string. The name of the new service.
         ----------------  ---------------------------------------------------------------
-        min_scale         Required float. The smallest scale at which to view data.
+        min_scale         Required float. The smallest scale at which to view data. This
+                          is the furthest zoom level out that a layer will display.
 
                           .. note::
-                              Value must be less than *max_scale* argument.
+                              This number should be larger than *max_scale*.
         ----------------  ---------------------------------------------------------------
-        max_scale         Required float. The largest scale at which to view data.
+        max_scale         Required float. The largest scale at which to view data. This is
+                          is the furthest zoom level in that a layer will display.
 
                           .. note::
-                              Value must be larger than *min_scale* argument.
+                              This number should be less than *min_scale*.
+
+                          See `Note on scale properties <https://developers.arcgis.com/rest/services-reference/enterprise/map-service/#new-in-1071>`_
+                          for more information.
         ----------------  ---------------------------------------------------------------
         cache_info        Optional dictionary defining the
                           `tiling scheme <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/caching-terminology.htm#ESRI_SECTION1_9FF9489173C741DD95472F21B5AD8374>`_.
                           See `Map caching <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-map-caching-.htm>`_
                           for full details, including information on defining a scheme.
 
-                          * If none provided, the cache defaults to the *the ArcGIS Online
-                            tiling scheme.
+                          .. note::
+                              If none provided, the cache defaults to the *the ArcGIS Online
+                              tiling scheme*.
         ----------------  ---------------------------------------------------------------
         build_cache       Required boolean. If not provided, *True* will be used.
 
                           .. note::
-                              The only option for creating a valid Tile Layer
-                              :class:`item <arcgis.gis.Item>` with the API is
-                              *True*.
+                              The cache will always be built if in ArcGIS Online.
         ================  ===============================================================
 
         :return:
@@ -17384,10 +17395,10 @@ class Item(dict):
             >>> flyr_item = gis.content.get("<item id of feature layer>")
             >>> tile_lyr_item = flyr_item.create_tile_service(
             >>>                                 title="SeasideHeightsNJTiles",
-            >>>                                 min_scale= 70000.0,
-            >>>                                 max_scale=80000.0,
+            >>>                                 min_scale=36978596,
+            >>>                                 max_scale=9244648
             >>>                                 build_cache=True
-            >>>                  )
+            >>>                                )
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
