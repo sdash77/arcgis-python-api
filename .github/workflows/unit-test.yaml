@@ -4,7 +4,7 @@ on:
   schedule:
     # Mondays at 12:30 PM UTC (4:30 AM Pacific/7:30 AM Eastern) (all platforms, all python versions)
     - cron: '30 12 * * 1'
-    # Tuesday-Sunday at 12:30 PM UTC (Windows & Linux, Python 3.11)(Default supported platforms for ArcGIS Pro/Enterprise)
+    # Tuesday-Sunday at 12:30 PM UTC (Windows & Linux, Python 3.13)(Default supported platforms for ArcGIS Pro/Enterprise)
     - cron: '30 12 * * 0,2-6'
   workflow_dispatch:
     inputs:
@@ -32,7 +32,7 @@ on:
         type: boolean
         description: Run unit tests on Python 3.11?
         required: false
-        default: true
+        default: false
       py312:
         type: boolean
         description: Run unit tests on Python 3.12?
@@ -42,7 +42,7 @@ on:
         type: boolean
         description: Run unit tests on Python 3.13?
         required: false
-        default: false
+        default: true
 
 jobs:
   preflight:
@@ -76,9 +76,9 @@ jobs:
           echo "macos=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.macos }}" >> $GITHUB_OUTPUT
           echo "windows=${{ github.event_name == 'schedule' || github.event.inputs.windows }}" >> $GITHUB_OUTPUT
           echo "py310=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py310 }}" >> $GITHUB_OUTPUT
-          echo "py311=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.py311 }}" >> $GITHUB_OUTPUT
+          echo "py311=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py311 }}" >> $GITHUB_OUTPUT
           echo "py312=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py312 }}" >> $GITHUB_OUTPUT
-          echo "py313=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py313 }}" >> $GITHUB_OUTPUT
+          echo "py313=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.py313 }}" >> $GITHUB_OUTPUT
       - name: Construct matrix
         id: set-matrix
         run: |
