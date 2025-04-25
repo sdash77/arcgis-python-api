@@ -2143,7 +2143,7 @@ class _ItemDefinition(CloneNode):
             return "url"
         return "text"
 
-    def _add_new_item(self, item_properties, data=None):
+    def _add_new_item(self, item_properties, data=None, **kwargs):
         """Add the new item to the portal"""
         thumbnail = self.thumbnail
         if not thumbnail and self.portal_item:
@@ -2163,12 +2163,14 @@ class _ItemDefinition(CloneNode):
         if thumbnail:
             item_properties["thumbnail"] = thumbnail
 
+        stream = kwargs.pop("stream", True)
         if data:
             job = folder.add(
                 **{
                     "item_properties": item_properties,
                     "item_id": item_id,
                     self._data_type_lu(data): data,
+                    "stream": stream,
                 }
             )
         else:
@@ -2176,6 +2178,7 @@ class _ItemDefinition(CloneNode):
                 **{
                     "item_properties": item_properties,
                     "item_id": item_id,
+                    "stream": stream,
                 }
             )
         new_item = job.result()
@@ -3056,7 +3059,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 if not name or not isinstance(name, str):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
-                name = re.sub("\W+", "_", name)
+                name = re.sub(r"\W+", "_", name)
                 name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
                 if self.folder:
@@ -5427,7 +5430,7 @@ class _FormDefinition(_ItemDefinition):
         with open(xml_file_path, "w") as xml_file:
             xml_string = ElementTree.tostring(xml, encoding="unicode")
             xml_string = re.sub(
-                "<h:html\s.*>?",
+                r"<h:html\s.*>?",
                 "<h:html "
                 + " ".join(
                     [
@@ -5811,7 +5814,7 @@ class _QuickCaptureDefinition(_ItemDefinition):
                 data = self._get_item_data()
 
                 # Add the new item
-                new_item = self._add_new_item(item_properties, data)
+                new_item = self._add_new_item(item_properties, data, stream=False)
 
                 # Get the Quick Capture json resource
                 qc_json = new_item.resources.get("qc.project.json", try_json=True)
@@ -6923,9 +6926,9 @@ def _find_and_replace_fields_sql(text, field_mapping):
     for field in field_mapping:
         replace = field_mapping[field]
 
-        results = set(re.findall('([{{("\[ ])({0})([}})"\] ])'.format(field), text))
-        start = re.findall('(^{0})([}})"\] ])'.format(field), text)
-        end = re.findall('([{{("\[ ])({0}$)'.format(field), text)
+        results = set(re.findall(r'([{{("\[ ])({0})([}})"\] ])'.format(field), text))
+        start = re.findall(r'(^{0})([}})"\] ])'.format(field), text)
+        end = re.findall(r'([{{("\[ ])({0}$)'.format(field), text)
         for element in results:
             text = text.replace(
                 "".join(element), "".join([element[0], replace, element[2]])
