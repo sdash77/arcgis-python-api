@@ -75,5 +75,6 @@ data = {
         "regression_parameter": "automl_score",
         "regression_test_score": 0.4,
         "regression_epochs": 1,
+        "model_categories": ["classification", "regression"],
     },
 }

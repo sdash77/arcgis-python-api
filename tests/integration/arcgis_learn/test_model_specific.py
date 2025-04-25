@@ -16,8 +16,15 @@ from properties_model_specific import (
 )
 from fastai.vision.learner import ClassificationInterpretation
 import urllib.parse
+from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from arcgis.learn import prepare_tabulardata
 
 accuracy_values = {}
+
+import arcgis
+print("*"*10, arcgis.__file__, "*"*10)
 
 def modelAPIs_backbones(model, model_object, num_epochs, data_path, model_test, regression_parameter, data, bbone):
     print("Running backbone modelAPIs for", model_test, data_path)
@@ -94,8 +101,89 @@ def fairnessTestCases(
         regression_test_score,
         model_name,
         num_epochs,
+        model_category,
 ):
-    pass
+    print("running test case for ", model_name, model_category)
+    data_df = pd.read_csv(preparedata["path"])
+    test_size = 0.25
+    train, test = train_test_split(data_df, test_size = test_size)
+    if(model_category == "classification"):
+        X = [
+            ('Age',True),
+            ('Workclass',True),
+            ('Education',True),
+            'Education-num',
+            ('Marital-status',True),
+            ('Occupation',True),
+            ('Relationship',True),
+            ('Race',True),
+            ('Gender',True),
+            'Capital-gain',
+            'Capital-loss',
+            'Hours-per-week',
+            ('Native-country',True),
+        ]
+        preprocessors = [('Education-num','Capital-gain', 'Capital-loss', 'Hours-per-week', MinMaxScaler())]
+        data = prepare_tabulardata(train, 'Salary', explanatory_variables=X, preprocessors=preprocessors)
+        print("preparing model instance for classification")
+        model_instance = model(data, "lightgbm.LGBMClassifier", n_estimators=500, random_state=43)
+    else:
+        X = [
+            ('Age',True),
+            ('Workclass',True),
+            ('Education',True),
+            'Education-num',
+            ('Marital-status',True),
+            ('Occupation',True),
+            ('Relationship',True),
+            ('Race',True),
+            ('Gender',True),
+            'Capital-gain',
+            'Capital-loss',
+            'Hours-per-week',
+            ('Native-country',True),
+        ]
+        preprocessors =[('Education-num','Capital-gain', 'Capital-loss', 'Hours-per-week', MinMaxScaler())]
+        data = prepare_tabulardata(train, 'annual_salary_$', explanatory_variables=X)
+        print("preparing model instance for regression")
+        model_instance = model(data, 'sklearn.ensemble.RandomForestRegressor', n_estimators=500, random_state=43)
+    data.show_batch()
+    print("common APIs for regression and classification begin here")
+    model_instance.fit()
+    model_instance.fairness_score(sensitive_feature ='Race')
+    model_instance.fairness_score(sensitive_feature ='Gender')
+    print("fairness tested.. Now mitigating bias introduced by args ...")
+    if model_category=="classification":
+        print("mitigating bias for classification")
+        fairness_args = {
+            'sensitive_feature': 'Race',
+            'mitigation_type': "threshold_optimizer",
+            'mitigation_constraint':'demographic_parity',
+        }
+        model_instance = model(data, 'sklearn.ensemble.RandomForestClassifier', fairness_args=fairness_args, random_state=43)
+        model_instance.fit()
+        d_path = os.path.join(data_folder_tabular, datapath, "models", "classification", model_test)
+        model_save_path = model_instance.save(f"{d_path}")
+    else:
+        print("mitigating bias for regression")
+        fairness_args = {
+            'sensitive_feature': 'Gender',
+            'mitigation_type': 'grid_search',
+            'mitigation_constraint':'ZeroOneLoss',
+        }
+        model_instance = model(data, 'sklearn.ensemble.RandomForestRegressor', fairness_args=fairness_args, n_estimators=500, random_state=43)
+        model_instance.fit()
+        d_path = os.path.join(data_folder_tabular, datapath, "models", "regression", model_test)
+        model_save_path = model_instance.save(f"{d_path}")
+    print("show results start")
+    model_instance.show_results()
+    print("show results end")
+    result = model_instance.score()
+    print("result is ", result)
+    model_instance.load(str(model_save_path) + os.sep + f"{model_test}.emd")
+    #from model with and without data
+    model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd")
+    model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd", data)
 
 
 def update_parameter_backbones():
@@ -158,9 +246,10 @@ def update_parameter_fairness():
             val["should_test"]
             and val["test_feature_layer"]
         ):
-            parameter.append(
+            for model_category in val["model_categories"]:
+                parameter.append(
             (
-                key,
+                key+model_category,
                 val["model_test"],
                 val["model"],
                 val["datapath"],
@@ -169,12 +258,13 @@ def update_parameter_fairness():
                 val["regression_test_score"],
                 val["model_name"],
                 val["regression_epochs"],
+                model_category,
             )
         )
     return parameter
 
 class TestModelSpecificFeatures(unittest.TestCase):
-    @parameterized.expand(update_parameter_backbones)
+    @parameterized.expand(update_parameter_backbones, skip_on_empty=True)
     def test_backbones(
         self,
         name,
@@ -205,7 +295,7 @@ class TestModelSpecificFeatures(unittest.TestCase):
         )
 
 
-    @parameterized.expand(update_parameter_backbones_ms)
+    @parameterized.expand(update_parameter_backbones_ms, skip_on_empty=True)
     def test_backbones_ms(
             self,
             name,
@@ -236,7 +326,7 @@ class TestModelSpecificFeatures(unittest.TestCase):
         )
 
 
-    @parameterized.expand(update_parameter_fairness)
+    @parameterized.expand(update_parameter_fairness, skip_on_empty=True)
     def test_fairness(
             self,
             name,
@@ -248,6 +338,7 @@ class TestModelSpecificFeatures(unittest.TestCase):
             regression_test_score,
             model_name,
             num_epochs,
+            model_category,
     ):
         fairnessTestCases(
             model,
@@ -258,4 +349,5 @@ class TestModelSpecificFeatures(unittest.TestCase):
             regression_test_score,
             model_name,
             num_epochs,
+            model_category,
         )
