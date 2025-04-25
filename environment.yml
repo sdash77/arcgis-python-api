@@ -51,10 +51,11 @@ dependencies:
 # as this is only to build the docs locally
 # docs should NOT be published from this environment
 # for testing only
-- fastai::fastai
-- pytorch >=2
-- timm 0.4.12.*
-- torchvision >=0.15.0
+# TODO add learn dependencies to enable docs build for v2.4.2
+# - fastai::fastai
+# - pytorch >=2
+# - timm 0.4.12.*
+# - torchvision >=0.15.0
 # ---- sphinx/docs build ----
 - sphinx >=7,<8
 # ---- etc ----
