@@ -73,6 +73,49 @@ def pixelClassification_params_ms():
             )
     return parameter
 
+
+def objectDetection_params_rgb():
+    is_ms = False
+    parameter = []
+    for key, val in data_inferencing.items():
+        if (val["should_test"] and val["inference_function"] == "DetectObjectsUsingDeepLearning"):
+            parameter.append(
+                (
+                    key,
+                    val["input_path_rgb"],
+                    val["model_path_rgb"],
+                    os.path.join(output_gdb_folder, output_gdb, val["output_filename_rgb"]),
+                    val["padding"],
+                    val["batch_size"],
+                    val["threshold"],
+                    val["nms_overlap"],
+                    val["exclude_pad_detections"],
+                )
+            )
+    return parameter
+
+
+def objectDetection_params_ms():
+    is_ms = True
+    parameter = []
+    for key, val in data_inferencing.items():
+        if (val["should_test"] and val["inference_function"] == "DetectObjectsUsingDeepLearning" and val["input_path_ms"] != False):
+            parameter.append(
+                (
+                    key+"_ms",
+                    val["input_path_ms"],
+                    val["model_path_ms"],
+                    os.path.join(output_gdb_folder, output_gdb, val["output_filename_ms"]),
+                    val["padding"],
+                    val["batch_size"],
+                    val["threshold"],
+                    val["nms_overlap"],
+                    val["exclude_pad_detections"],
+                )
+            )
+    return parameter
+
+
 def pixelClassificationInferencing(name, input_image_path, model, output_file_path, padding, batch_size, threshold, scratch_workspace):
     print("Running Inferencing for:", name)
     with arcpy.EnvManager(scratchWorkspace=scratch_workspace):
@@ -89,36 +132,25 @@ def pixelClassificationInferencing(name, input_image_path, model, output_file_pa
         out_classified_raster.save(output_file_path)
 
 
+def objectDetectionInferencing(name, input_image_path, model, output_file_path, padding, batch_size, threshold, nms_overlap, exclude_pad_detections):
+    print("Running Inferencing for:", name)
+    with arcpy.EnvManager(scratchWorkspace=r""):
+        arcpy.ia.DetectObjectsUsingDeepLearning(
+            in_raster=input_image_path,
+            out_detected_objects=output_file_path,
+            in_model_definition=model,
+            arguments=f"padding {padding};threshold {threshold};nms_overlap {nms_overlap};batch_size {batch_size};exclude_pad_detections {exclude_pad_detections};test_time_augmentation False;tta_scales 1",
+            run_nms="NO_NMS",
+            confidence_score_field="Confidence",
+            class_value_field="Class",
+            max_overlap_ratio=0,
+            processing_mode="PROCESS_AS_MOSAICKED_IMAGE",
+            use_pixelspace="NO_PIXELSPACE",
+            in_objects_of_interest=None
+        )
+
+
 class TestInferencing(unittest.TestCase):
-
-    @parameterized.expand(pixelClassification_params_rgb)
-    def test_pixelClassification(
-        self,
-        name,
-        input_image_path,
-        model,
-        output_file_path,
-        padding,
-        batch_size,
-        threshold,
-        scratch_workspace,
-    ):
-        pixelClassificationInferencing(name, input_image_path, model, output_file_path, padding, batch_size, threshold, scratch_workspace)
-
-
-    @parameterized.expand(pixelClassification_params_ms)
-    def test_pixelClassification_ms(
-        self,
-        name,
-        input_image_path,
-        model,
-        output_file_path,
-        padding,
-        batch_size,
-        threshold,
-        scratch_workspace,
-    ):
-        pixelClassificationInferencing(name, input_image_path, model, output_file_path, padding, batch_size, threshold, scratch_workspace)
 
 
     @classmethod
@@ -135,7 +167,69 @@ class TestInferencing(unittest.TestCase):
              print("creating new file geodatabase")
              arcpy.CreateFileGDB_management(output_gdb_folder, output_gdb)
              print("File geodatabase created successfully")
+
+    
+    @parameterized.expand(pixelClassification_params_rgb, skip_on_empty=True)
+    def test_pixelClassification(
+        self,
+        name,
+        input_image_path,
+        model,
+        output_file_path,
+        padding,
+        batch_size,
+        threshold,
+        scratch_workspace,
+    ):
+        pixelClassificationInferencing(name, input_image_path, model, output_file_path, padding, batch_size, threshold, scratch_workspace)
+
+
+    @parameterized.expand(pixelClassification_params_ms, skip_on_empty=True)
+    def test_pixelClassification_ms(
+        self,
+        name,
+        input_image_path,
+        model,
+        output_file_path,
+        padding,
+        batch_size,
+        threshold,
+        scratch_workspace,
+    ):
+        pixelClassificationInferencing(name, input_image_path, model, output_file_path, padding, batch_size, threshold, scratch_workspace)
             
+    
+    @parameterized.expand(objectDetection_params_rgb, skip_on_empty=True)
+    def test_objectDetection(
+        self,
+        name,
+        input_image_path,
+        model,
+        output_file_path,
+        padding,
+        batch_size,
+        threshold,
+        nms_overlap,
+        exclude_pad_detections,
+    ):
+        objectDetectionInferencing(name, input_image_path, model, output_file_path, padding, batch_size, threshold, nms_overlap, exclude_pad_detections)
+
+
+    @parameterized.expand(objectDetection_params_ms, skip_on_empty=True)
+    def test_objectDetection_ms(
+        self,
+        name,
+        input_image_path,
+        model,
+        output_file_path,
+        padding,
+        batch_size,
+        threshold,
+        nms_overlap,
+        exclude_pad_detections,
+    ):
+        objectDetectionInferencing(name, input_image_path, model, output_file_path, padding, batch_size, threshold, nms_overlap, exclude_pad_detections)
+
     
     @classmethod
     def tearDownClass(cls):
