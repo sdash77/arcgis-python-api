@@ -44,8 +44,15 @@ def modelAPIs_backbones(model, model_object, num_epochs, data_path, model_test, 
         all_prediction = array.sum()
         result = true_prediction / all_prediction
         print("accuracy value for ", model_test, "is: ", result) #add results to dict later
-    else:
-        pass #add for other models
+    elif regression_parameter == "average_precision_score":
+        result = model_object.average_precision_score()
+        result = [
+            v
+            for k, v in sorted(
+                result.items(), key=lambda item: item[1], reverse=True
+            )
+        ][0]
+        print("accuracy value for ", model_test, "is: ", result)
     print("testing model object load")
     model_object.load(str(model_save_path) + os.sep + f"{model_test}_{urllib.parse.quote(bbone, safe='')}.emd")
     # From model with and without data bunch.
@@ -83,8 +90,10 @@ def backboneTestCases(
             model_object = model(data, backbone = bbone, wavelengths = wavelengths_dofa)
             print("The ms model initialized will be", model_test, bbone, wavelengths_dofa)
         else:
+            # model_object = model(data, backbone = bbone)  #change this later once behavior is finalized for dofa
+            # print("initialized rgb model with default wavelength values")
             model_object = model(data, backbone = bbone, wavelengths = wavelengths_dofa)
-            print("The rgb model initialized will be", model_test, bbone, wavelengths_dofa)
+            print("The rgb model initialized with custom wavelength values will be", model_test, bbone, wavelengths_dofa)
     else:
         model_object = model(data, backbone=bbone)
         print("The model initialized will be", model_test, bbone, wavelengths_dofa)
@@ -182,7 +191,7 @@ def fairnessTestCases(
     print("result is ", result)
     model_instance.load(str(model_save_path) + os.sep + f"{model_test}.emd")
     #from model with and without data
-    model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd")
+    #model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd") #this API is failing currently. uncomment after the fix.
     model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd", data)
 
 

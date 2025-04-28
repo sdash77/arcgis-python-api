@@ -4,6 +4,7 @@ warnings.filterwarnings('ignore')
 from arcgis.learn import (
     FeatureClassifier,
     MLModel,
+    MaskRCNN,
 )
 
 data_folder = r"D:\files_sanoj\bacbone_data\rgb"
@@ -54,6 +55,29 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "confusion_matrix",
+        "regression_test_score": 0.40,
+        "regression_epochs": 1,
+    },
+    "maskrcnn": {
+        "model_name": "maskrcnn",
+        "datapath": "maskrcnn",
+        "datapath_ms": "maskrcnn",
+        "model": MaskRCNN,
+        "model_test": "maskrcnn_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "maskrcnn"),
+            "batch_size": None,
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "maskrcnn"),
+            "batch_size": None,
+        },
+        "backbones": ["dofa_base"],
+        "wavelengths_ms": [0.665, 0.56, 0.49, 0.85],
+        "wavelengths_rgb": [0.665, 0.56, 0.49],
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
         "regression_epochs": 1,
     },
