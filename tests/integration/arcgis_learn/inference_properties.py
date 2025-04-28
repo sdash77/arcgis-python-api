@@ -1,0 +1,106 @@
+import os
+from pathlib import Path
+ 
+DATA_FOLDER = os.environ.get('DATA_FOLDER')
+data_path = Path(DATA_FOLDER)
+ 
+input_data_path_ms = str(os.path.join(data_path, "input_data", "ms"))
+input_data_path_rgb = str(os.path.join(data_path, "input_data", "rgb"))
+output_gdb_folder = str(data_path)
+saved_models_path = str(os.path.join(data_path, "models"))
+output_gdb = "inference_database.gdb"
+
+data_inferencing = {
+    'mtre_hourglass': {
+        "name": "mtre_hourglass",
+        "inference_function": "ClassifyPixelsUsingDeepLearning",
+        "input_path_rgb": os.path.join(input_data_path_rgb, "mtre.tif"),
+        "input_path_ms": os.path.join(input_data_path_ms, "mtre.tif"),
+        "model_path_rgb": os.path.join(saved_models_path, "rgb_hourglass.dlpk"),
+        "model_path_ms": os.path.join(saved_models_path, "ms_hourglass.dlpk"),
+        "output_filename_rgb": "segmentation_rgb_mtre_hourglass",
+        "output_filename_ms": "segmentation_ms_mtre_hourglass",
+        "should_test": True,
+        "padding": 32,
+        "batch_size": 4,
+        "threshold": 0.5,
+    },
+    'mtre_linknet': {
+        "name": "mtre_linknet",
+        "inference_function": "ClassifyPixelsUsingDeepLearning",
+        "input_path_rgb": os.path.join(input_data_path_rgb, "mtre.tif"),
+        "input_path_ms": os.path.join(input_data_path_ms, "mtre.tif"),
+        "model_path_rgb": os.path.join(saved_models_path, "rgb_linknet.dlpk"),
+        "model_path_ms": os.path.join(saved_models_path, "ms_linknet.dlpk"),
+        "output_filename_rgb": "segmentation_rgb_mtre_linknet",
+        "output_filename_ms": "segmentation_ms_mtre_linknet",
+        "should_test": True,
+        "padding": 32,
+        "batch_size": 4,
+        "threshold": 0.5,
+    },
+    'ssd': {
+        "name": "ssd",
+        "inference_function": "DetectObjectsUsingDeepLearning",
+        "input_path_rgb": os.path.join(input_data_path_rgb, "ssd_frcnn_ret_yolo.tif"),
+        "input_path_ms": os.path.join(input_data_path_ms, "ret_frcnn_ssd.tif"),
+        "model_path_rgb": os.path.join(saved_models_path, "rgb_ssd.dlpk"),
+        "model_path_ms": os.path.join(saved_models_path, "ms_ssd.dlpk"),
+        "output_filename_rgb": "ssd_detections_rgb",
+        "output_filename_ms": "ssd_detections_ms",
+        "should_test": True,
+        "padding": 56,
+        "batch_size": 64,
+        "threshold": 0.5,
+        "nms_overlap": 0.1,
+        "exclude_pad_detections": True,
+    },
+    'yolo': {
+        "name": "yolo",
+        "inference_function": "DetectObjectsUsingDeepLearning",
+        "input_path_rgb": os.path.join(input_data_path_rgb, "ssd_frcnn_ret_yolo.tif"),
+        "input_path_ms": os.path.join(input_data_path_ms, "yolo.tif"),
+        "model_path_rgb": os.path.join(saved_models_path, "rgb_yolo.dlpk"),
+        "model_path_ms": os.path.join(saved_models_path, "ms_yolo.dlpk"),
+        "output_filename_rgb": "yolo_rgb_detections",
+        "output_filename_ms": "yolo_ms_detections",
+        "should_test": True,
+        "padding": 56,
+        "batch_size": 4,
+        "threshold": 0.1,
+        "nms_overlap": 0.1,
+        "exclude_pad_detections": True,
+    },
+    'faster_rcnn': {
+        "name": "faster_rcnn",
+        "inference_function": "DetectObjectsUsingDeepLearning",
+        "input_path_rgb": os.path.join(input_data_path_rgb, "ssd_frcnn_ret_yolo.tif"),
+        "input_path_ms": os.path.join(input_data_path_ms, "ret_frcnn_ssd.tif"),
+        "model_path_rgb": os.path.join(saved_models_path, "rgb_frcnn.dlpk"),
+        "model_path_ms": os.path.join(saved_models_path, "ms_frcnn.dlpk"),
+        "output_filename_rgb": "frcnn_rgb_detections",
+        "output_filename_ms": "frcnn_ms_detections",
+        "should_test": True,
+        "padding": 56,
+        "batch_size": 64,
+        "threshold": 0.5,
+        "nms_overlap": 0.1,
+        "exclude_pad_detections": True,
+    },
+    'retina_net': {
+        "name": "retina_net",
+        "inference_function": "DetectObjectsUsingDeepLearning",
+        "input_path_rgb": os.path.join(input_data_path_rgb, "ssd_frcnn_ret_yolo.tif"),
+        "input_path_ms": os.path.join(input_data_path_ms, "ret_frcnn_ssd.tif"),
+        "model_path_rgb": os.path.join(saved_models_path, "rgb_retina.dlpk"),
+        "model_path_ms": os.path.join(saved_models_path, "ms_retina.dlpk"),
+        "output_filename_rgb": "retina_rgb_detections",
+        "output_filename_ms": "retina_ms_detections",
+        "should_test": True,
+        "padding": 56,
+        "batch_size": 64,
+        "threshold": 0.5,
+        "nms_overlap": 0.1,
+        "exclude_pad_detections": True,
+    },
+}
