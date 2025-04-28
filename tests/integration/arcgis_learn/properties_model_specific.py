@@ -7,9 +7,9 @@ from arcgis.learn import (
     MaskRCNN,
 )
 
-data_folder = r"D:\files_sanoj\bacbone_data\rgb"
-data_folder_ms = r"D:\files_sanoj\bacbone_data\ms"
-data_folder_tabular = r"D:\files_sanoj\tabular_data"
+data_folder = r"D:\TestAutomation\model_specific_tests_data\bacbone_data\rgb"
+data_folder_ms = r"D:\TestAutomation\model_specific_tests_data\bacbone_data\ms"
+data_folder_tabular = r"D:\TestAutomation\model_specific_tests_data\tabular_data"
 
 data = {
     "fc_singleLabel": {
