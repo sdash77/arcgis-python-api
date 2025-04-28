@@ -132,6 +132,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
+      - name: Preprocess environment.yml
+        run: |
+          import re, yaml
+          with open('environment.yml', 'r') as env_file:
+              env = yaml.safe_load(env_file)
+          is_python = lambda dep: type(dep) is str and re.split('=|==|<=|>=| |,|!=|~', dep)[0] == 'python'
+          env['dependencies'] = [dep for dep in env['dependencies'] if not is_python(dep)]
+          with open('environment.yml', 'w') as env_file:
+              yaml.safe_dump(env, env_file)
+        shell: python
+      - name: Print environment.yml
+        run: |
+          cat environment.yml
       - name: Configure conda
         uses: conda-incubator/setup-miniconda@v3
         with:

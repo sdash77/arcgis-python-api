@@ -1,4 +1,4 @@
-name: geosaurus_dev_env_py313
+name: geosaurus_dev_env
 channels:
 - defaults
 - esri
