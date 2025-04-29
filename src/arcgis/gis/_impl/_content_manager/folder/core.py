@@ -500,6 +500,12 @@ class Folder:
             )
             futures[future] = part_name
         tp.shutdown(cancel_futures=False)
+        if (
+            isinstance(ftuple[1], (io.BufferedReader, io.TextIOWrapper))
+            and ftuple[1].closed == False
+        ):
+            ftuple[1].close()
+
         return Job(
             futures=futures,
             commit_url=commit_url,
@@ -858,6 +864,7 @@ class Folder:
                 params["async"] = False
                 if text and not isinstance(text, str):
                     text: str = json.dumps(text)
+                if text:
                     params["text"] = text
                 params = _process_parameters(params)
                 future = tp.submit(

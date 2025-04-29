@@ -686,7 +686,8 @@ class FasterRCNN(ModelExtension):
         """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
         return torchgeo_backbone
 
     @staticmethod

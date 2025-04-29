@@ -71,7 +71,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)

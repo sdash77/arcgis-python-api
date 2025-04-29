@@ -1,9 +1,12 @@
 import time
 import unittest
-from arcgis.features.layer import FeatureLayerCollection
 from arcgis.gis import GIS
-from . import parcel_fabric_utils as pfutils
+from arcgis.features._version import VersionManager, Version
+from arcgis.features.layer import FeatureLayerCollection
+
+from parcels import parcel_fabric_utils as pfutils
 from utils.decorators import integration_test
+
 
 @integration_test
 class TestVersionManagementSQL(unittest.TestCase):
@@ -38,9 +41,7 @@ class TestVersionManagementSQL(unittest.TestCase):
             cls.service_urls["FeatureServer"], cls.gis
         )
         cls.vms = cls.parcel_fabric_flc.versions
-        cls.records_fl = pfutils.get_feature_layer(
-            cls.parcel_fabric_flc, "Records"
-        )
+        cls.records_fl = pfutils.get_feature_layer(cls.parcel_fabric_flc, "Records")
 
         cls.timestamp = int(time.time())
         cls.record_name = f"api-{cls.timestamp}"
@@ -51,10 +52,14 @@ class TestVersionManagementSQL(unittest.TestCase):
         fq_version_name = f"admin.{_version_name_txt}"
 
         with self.vms.get(fq_version_name, "read") as version:
-            self.assertTrue(version.properties.isBeingRead, "Context mgr: Read session not open")
+            self.assertTrue(
+                version.properties.isBeingRead, "Context mgr: Read session not open"
+            )
             # start the 'edit' session
             version.mode = "edit"
-            self.assertTrue(version.properties.isBeingEdited, "Context mgr: Edit session not open")
+            self.assertTrue(
+                version.properties.isBeingEdited, "Context mgr: Edit session not open"
+            )
 
         # Outside of with statement
         self.assertFalse(version.properties.isBeingRead, "Read session still open")
@@ -137,6 +142,70 @@ class TestVersionManagementSQL(unittest.TestCase):
 
         deleted_version = version.delete()
         self.assertTrue(deleted_version, "The version was not deleted.")
+
+    def test_get_no_mode(self):
+        """Use vms.get to retrieve a single version without edit session"""
+        version_name = "ADMIN.pyapi_get_by_name"
+        with self.vms.get(version_name, None) as version:
+            self.assertIsNotNone(version, "The version object is None")
+            self.assertIsInstance(version, Version, "Result is not of type Version")
+            self.assertEqual(
+                version_name,
+                version.properties["versionName"],
+                f"Incorrect version name. Got {version.properties['versionName']}",
+            )
+
+    def test_get_by_name_no_mode(self):
+        """Use vms.get_by_name to retrieve a single version without edit session"""
+        version_name = "pyapi_get_by_name"
+        with self.vms.get_by_name("ADMIN", version_name, mode=None) as version:
+            self.assertIsNotNone(version, "The version object is None")
+            self.assertIsInstance(version, Version, "Result is not of type Version")
+            self.assertEqual(
+                version_name,
+                version.properties["versionName"].split(".")[1],
+                f"Incorrect version name. Got {version.properties['versionName']}",
+            )
+
+    def test_get_start_editing(self):
+        """Use vms.get to retrieve a single version without edit session"""
+        version_name = "ADMIN.pyapi_get_by_name"
+        with self.vms.get(version_name, "edit") as version:
+            self.assertIsNotNone(version, "The version object is None")
+            self.assertIsInstance(version, Version, "Result is not of type Version")
+            self.assertEqual(
+                version_name,
+                version.properties["versionName"],
+                f"Incorrect version name. Got {version.properties['versionName']}",
+            )
+            locks = self.vms.locks
+            self.assertIsNotNone(locks, "No locks found")
+            self.assertTrue(version.properties.isBeingEdited, "isBeingEdited not set")
+            self.assertTrue(version.properties.isLocked, "The version is not locked")
+
+        # Locks are flushed
+        self.assertFalse(version.properties.isBeingEdited, "isBeingEdited not set")
+        self.assertFalse(version.properties.isLocked, "The version is not locked")
+
+    def test_get_by_name_start_editing(self):
+        """Use vms.get_by_name to retrieve a single version without edit session"""
+        version_name = "pyapi_get_by_name"
+        with self.vms.get_by_name("ADMIN", version_name, mode="edit") as version:
+            self.assertIsNotNone(version, "The version object is None")
+            self.assertIsInstance(version, Version, "Result is not of type Version")
+            self.assertEqual(
+                version_name,
+                version.properties["versionName"].split(".")[1],
+                f"Incorrect version name. Got {version.properties['versionName']}",
+            )
+            locks = self.vms.locks
+            self.assertIsNotNone(locks, "No locks found")
+            self.assertTrue(version.properties.isBeingEdited, "isBeingEdited not set")
+            self.assertTrue(version.properties.isLocked, "The version is not locked")
+
+        # Locks are flushed
+        self.assertFalse(version.properties.isBeingEdited, "isBeingEdited not set")
+        self.assertFalse(version.properties.isLocked, "The version is not locked")
 
 
 if __name__ == "__main__":
