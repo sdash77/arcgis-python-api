@@ -7,7 +7,7 @@ from arcgis.apps.itemgraph import create_dependency_graph, load_from_file
 
 @profiles.admin_enterprise
 @integration_test
-class TestQueryFeatureLayer(unittest.TestCase):
+class TestGraphDependencies(unittest.TestCase):
 
     def test_dependency_graph(self):
         # pythonapitestnb org, use an admin profile
