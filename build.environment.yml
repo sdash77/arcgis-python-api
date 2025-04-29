@@ -1,0 +1,13 @@
+name: arcgis_pyapi_build
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python >=3.13,<3.14
+  - pip
+  - python-build
+  - conda-build
+  - conda-index
+  - conda-package-handling
+  - psutil
+  - nodejs >=18,<19
