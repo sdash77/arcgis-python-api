@@ -4,11 +4,32 @@
 #              arcgis learn to make code robust to future changes.
 # -------------------------------------------------------------------
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+import sys
+from pathlib import Path
 import unittest
+import os
+import stat
+import shutil
+import warnings
+warnings.filterwarnings("ignore")
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+ARCGIS_FOLDER = os.environ.get('ARCGIS_FOLDER')
+if ARCGIS_FOLDER:
+    custom_arcgis_path = Path(ARCGIS_FOLDER)
+    if str(custom_arcgis_path) not in sys.path:
+        sys.path.insert(0, str(custom_arcgis_path))
+else:
+    print("Warning: ARCGIS_FOLDER environment variable is not set.")
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from parameterized import parameterized
-from properties_model_specific import (
+
+from properties_model_apis import (
     data_folder,
     data_folder_ms,
     data_folder_tabular,
@@ -20,6 +41,8 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from arcgis.learn import prepare_tabulardata
+
+import gc, torch
 
 accuracy_values = {}
 
@@ -53,6 +76,12 @@ def modelAPIs_backbones(model, model_object, num_epochs, data_path, model_test, 
             )
         ][0]
         print("accuracy value for ", model_test, "is: ", result)
+    elif regression_parameter == "edge_detection":
+        result = model_object.compute_precision_recall()["Precision"]
+        print("accuracy value for ", model_test, "is: ", result)
+    elif regression_parameter == "accuracy":
+        result = model_object.accuracy()
+        print("accuracy value for ", model_test, "is: ", result)
     print("testing model object load")
     model_object.load(str(model_save_path) + os.sep + f"{model_test}_{urllib.parse.quote(bbone, safe='')}.emd")
     # From model with and without data bunch.
@@ -64,6 +93,9 @@ def modelAPIs_backbones(model, model_object, num_epochs, data_path, model_test, 
     model_object = model.from_model(
         str(model_save_path) + os.sep + f"{model_test}_{urllib.parse.quote(bbone, safe='')}.emd", data
     )
+    del model_object
+    gc.collect()
+    torch.cuda.empty_cache()
 
 
 
@@ -87,11 +119,13 @@ def backboneTestCases(
     data.show_batch()
     if bbone == "dofa_base":
         if is_ms:
-            model_object = model(data, backbone = bbone, wavelengths = wavelengths_dofa)
-            print("The ms model initialized will be", model_test, bbone, wavelengths_dofa)
+            if model_test == "deeplab_test_ms":
+                model_object = model(data, backbone = bbone)
+                print("The ms model initialized with wavelength values from emd file will be", model_test, bbone)
+            else:
+                model_object = model(data, backbone = bbone, wavelengths = wavelengths_dofa)
+                print("The ms model initialized will be", model_test, bbone, wavelengths_dofa)
         else:
-            # model_object = model(data, backbone = bbone)  #change this later once behavior is finalized for dofa
-            # print("initialized rgb model with default wavelength values")
             model_object = model(data, backbone = bbone, wavelengths = wavelengths_dofa)
             print("The rgb model initialized with custom wavelength values will be", model_test, bbone, wavelengths_dofa)
     else:
@@ -193,6 +227,9 @@ def fairnessTestCases(
     #from model with and without data
     #model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd") #this API is failing currently. uncomment after the fix.
     model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd", data)
+    del model_instance
+    gc.collect()
+    torch.cuda.empty_cache()
 
 
 def update_parameter_backbones():
@@ -360,3 +397,8 @@ class TestModelSpecificFeatures(unittest.TestCase):
             num_epochs,
             model_category,
         )
+
+
+if __name__ == "__main__":
+    unittest.main()
+ 
