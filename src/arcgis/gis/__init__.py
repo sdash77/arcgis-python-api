@@ -538,6 +538,11 @@ class GIS(object):
 
         if url is None:
             url = "https://www.arcgis.com"
+        home_index_val: int = url.lower().find("/home")
+        if home_index_val > -1:
+            # removes the /home value and anything after it.
+            # this method makes the /home logic caseless.
+            url = url[:home_index_val]
         if (self._uri_validator(url) is False) and (
             str(url).lower() not in ["pro", "home"]
         ):
