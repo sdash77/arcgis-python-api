@@ -318,13 +318,12 @@ class ItemGraph(nx.DiGraph):
         except:
             return None
 
-    def add_dependencies(
-        self, item_list: list[Item, str], outside_org: bool = True, **kwargs
-    ):
+    def add_dependencies(self, item_list, outside_org: bool = True, **kwargs):
         """
-        Adds a list of items to the graph and their dependencies. The function recursively explores
-        the dependencies of each item that is part of the organization, encompassing the full dependency
-        tree of each source item.
+        Adds a list of items to the graph and their dependencies, or merges another graph into the
+        existent graph. For new items, the function recursively explores the dependencies of each
+        item that is accesible with the graph's GIS object, encompassing the full dependency
+        tree of each item.
 
         .. note::
             If the *outside_org* argument is set to *True*, items external to the organization
@@ -333,8 +332,12 @@ class ItemGraph(nx.DiGraph):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        item_list           Required list of :class:`items <arcgis.gis.Item>` or *Item ID*
-                            values to include in the graph.
+        item_list           Required list of :class:`items <arcgis.gis.Item>`, list of *Item ID*
+                            values, or an :class:`ItemGraph <arcgis.apps.itemgraph.ItemGraph>`
+                            to include in the graph. If a graph is provided, the two graphs'
+                            nodes and edges will be merged together. If a list of item (id's)
+                            is provided, the dependencies of all the new items will be explored
+                            and added to the graph.
         ---------------     --------------------------------------------------------------------
         outside_org         Optional boolean.
 
@@ -361,7 +364,18 @@ class ItemGraph(nx.DiGraph):
                             relationships
         ===============     ========================================================================
         """
-        create_dependency_graph(self.gis, item_list, outside_org, graph=self, **kwargs)
+        if isinstance(item_list, list):
+            create_dependency_graph(
+                self.gis, item_list, outside_org, graph=self, **kwargs
+            )
+        elif isinstance(item_list, ItemGraph):
+            self.update(item_list)
+            for node in self.all_items():
+                node.graph = self
+        else:
+            raise ValueError(
+                "item_list must be a list of items/item ID's or an ItemGraph."
+            )
 
     def all_items(self, out_format: str = "node"):
         """
