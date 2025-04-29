@@ -24,11 +24,11 @@ requirements:
   - lxml
   - matplotlib
   - matplotlib-inline
-  - numpy >=1.21.6,<2
+  - numpy >=2.2.0,<3
   - pandas >=2.0.0,<2.3.0
   - pillow
   - puremagic >=1.15,<2
-  - pyarrow >=14,<17
+  - pyarrow >=16,<20
   - pylerc
   - pyspnego >=0.8.0
   - pywin32-security [win]
@@ -44,9 +44,9 @@ requirements:
   - networkx >=3.3, <4
   - websocket-client >=1.2.3, <2.0.0
 source:
-  git_url: ../..
+  path: ../..
 test:
   imports:
   - arcgis.gis
 extra:
-  build_string: {{ GIT_BUILD_STR }}
+  build_string: {{ environ.get('GITHUB_SHA', 'manual_build') }}
