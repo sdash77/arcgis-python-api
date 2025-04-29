@@ -3890,18 +3890,7 @@ class Job(object):
 
 
 class WorkflowManagerExecution:
-    """
-    TODO
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    job                 Required :class:`~arcgis.gis.workflowmanager.Job` The job to execute
-    ---------------     --------------------------------------------------------------------
-    execution_type      Required :class:`~arcgis.gis.workflowmanager.ExecutionType`. The execution type
-    ===============     ====================================================================
-
-    """
+    """Base class that JobExecution and ItemExecution derive from"""
 
     _start_time = None
     _end_time = None
@@ -4929,7 +4918,7 @@ class ExecutionType(Enum):
 
     RUN = "RUN"
     STOP = "STOP"
-    FINISH = ("FINISH",)
+    FINISH = "FINISH"
     IMPORT = "IMPORT"
     EXPORT = "EXPORT"
 
