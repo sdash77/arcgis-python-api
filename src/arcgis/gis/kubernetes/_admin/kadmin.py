@@ -403,7 +403,7 @@ class KubernetesAdmin(_BaseKube):
         if self._catalog is None:
             from arcgis.gis.kubernetes._server import KubeServiceDirectory
 
-            url = f"{self._url.replace('/admin', '/rest')}/services"
+            url = f"{self._gis.url}/rest/services"
             self._catalog = KubeServiceDirectory(url, gis=self._gis)
         return self._catalog
 

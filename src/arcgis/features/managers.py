@@ -2840,9 +2840,9 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # check if the service is a view
         rest_url = (
-            gis._url + "/sharing/rest"
-            if "sharing/rest" not in gis._url.lower()
-            else gis._url
+            gis.url + "/sharing/rest"
+            if "sharing/rest" not in gis.url.lower()
+            else gis.resturl
         )
 
         # get the owner of the service
