@@ -2231,10 +2231,13 @@ class RMProject:
 
         content = self._gis.content
         fm = content.folders
-        for folder in fm.list():
-            if folder.properties["id"] == self._project_item.ownerFolder:
-                self._folder = folder
-                break
+        try:
+            for folder in fm.list():
+                if folder.properties["id"] == self._project_item.ownerFolder:
+                    self._folder = folder
+                    break
+        except:
+            self._folder = None
 
     def _get_project_json(self):
         url = f"{REALITY_URL}/api/v2/projects/{self._project_item.itemid}"
@@ -2310,7 +2313,7 @@ class RMProject:
         """
         return self._project_item.sharing.groups.list()
 
-    def delete(self, gis):
+    def delete(self, gis=None):
         """
         The ``delete`` method deletes the project item from the portal and all the associated products.
 
@@ -2559,7 +2562,6 @@ class RMProject:
 
 
         """
-        from ._realitymapping_mission import RMMission
 
         res_list = self.missions
         missions_list = []
