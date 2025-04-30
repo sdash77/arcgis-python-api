@@ -496,6 +496,7 @@ class GeoArray(ExtensionArray):
         array : ndarray
             NumPy ndarray with 'dtype' for its dtype.
         """
+        np_version = [int(v) for v in np.__version__.split(".")]
         if isinstance(dtype, GeoType):
             if copy:
                 return self.copy()
@@ -504,9 +505,17 @@ class GeoArray(ExtensionArray):
         elif pd.api.types.is_string_dtype(dtype) and not pd.api.types.is_object_dtype(
             dtype
         ):
-            return np.array([g.JSON for g in self.data])
+            if np_version < [2, 0, 0]:
+
+                return np.array([g.JSON for g in self.data])
+            else:
+                return np.asarray([g.JSON for g in self.data])
         else:
-            return np.array(self, dtype=dtype, copy=copy)
+
+            if np_version < [2, 0, 0]:
+                return np.array(self, dtype=dtype)
+            else:
+                return np.asarray(self, dtype=dtype)
 
     @property
     def na_value(self):
