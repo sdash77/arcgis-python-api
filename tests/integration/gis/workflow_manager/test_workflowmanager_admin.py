@@ -179,48 +179,49 @@ class TestWorkflowManager(unittest.TestCase):
 
     def test_export_item_returns_successfully(self):
         # Act
-        item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Export_Item_" + str(datetime.datetime.now())
-        )
-
-        item = self.connection._gis.content.get(item_id)
+        item = self.connection.workflow_item
         actual = self.connection.workflow_manager_admin.export_item(item)
+        export_size = os.stat(actual).st_size
 
+        # TODO Make sure we're deleting downloaded files - Talk to Andrew/Jay about this. I don't see anything in test_AttachmentManager_class.py
         # Assert
         self.assertIsInstance(actual, str, "Incorrect return type")
         self.assertTrue(
             "workflow_configuration" in actual, "Did not return a temporary file path"
         )
-        self.connection.workflow_manager_admin.delete_item(item)
+        self.assertGreater(
+            export_size, 0, "Downloaded file size is not greater than 0"
+        )
 
-    def test_export_item_with_download_location_returns_successfully(self):
+    def test_export_item_with_save_path_returns_successfully(self):
         # Act
-        item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Export_Item_" + str(datetime.datetime.now())
-        )
+        item = self.connection.workflow_item
 
-        item = self.connection._gis.content.get(item_id)
-        filepath = self.connection.workflow_manager_admin.export_item(item)
-        directory = os.path.dirname(filepath)
-        actual = self.connection.workflow_manager_admin.export_item(
-            item, download_location=directory
-        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            directory = temp_dir
+            actual = self.connection.workflow_manager_admin.export_item(
+                item, save_path=temp_dir
+            )
+            export_size = os.stat(actual).st_size
 
         # Assert
         self.assertIsInstance(actual, str, "Incorrect return type")
-        self.assertTrue(directory in actual, "Did not return a temporary file path")
-        self.connection.workflow_manager_admin.delete_item(item)
+        self.assertTrue(directory in actual, f"Output {actual} did not exist within specified save_path {directory}")
+        self.assertTrue(
+            "workflow_configuration" in actual, "Output did not contain expected filename"
+        )
+        self.assertGreater(
+            export_size, 0, "Downloaded file size is not greater than 0"
+        )
 
     def test_export_item_async_returns_successfully(self):
         # Act
-        item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Export_Item_" + str(datetime.datetime.now())
-        )
+        item = self.connection.workflow_item
 
-        item = self.connection._gis.content.get(item_id)
         actual = self.connection.workflow_manager_admin.export_item(
             item, run_async=True
         )
+        self.assertTrue(actual.running(), "Export is not running")
         res = actual.result()
         # Assert
         self.assertIsInstance(actual, ItemExecution, "Incorrect return type")
@@ -229,44 +230,32 @@ class TestWorkflowManager(unittest.TestCase):
             os.path.isfile(actual.export_location), "Did not download wmc correctly."
         )
 
-        self.connection.workflow_manager_admin.delete_item(item)
-
-    def test_export_item_async_with_download_location_returns_successfully(self):
+    def test_export_item_async_with_save_path_returns_successfully(self):
         # Act
-        # item_id = self.connection.workflow_manager_admin.create_item(
-        #     "Testing_Export_Item_" + str(datetime.datetime.now())
-        # )
-        item_id = "04f8a718744244eba365e31268583cf3"
+        item = self.connection.workflow_item
+        with tempfile.TemporaryDirectory() as temp_dir:
+            directory = temp_dir
+            exportItemExec = self.connection.workflow_manager_admin.export_item(
+                item, run_async=True, save_path=temp_dir
+            )
+            self.assertIsInstance(exportItemExec, ItemExecution, "Incorrect return type")
+            exportItemExec.result()
+            actual = exportItemExec.export_location
+            export_size = os.stat(actual).st_size
 
-        item = self.connection._gis.content.get(item_id)
-        filepath = self.connection.workflow_manager_admin.export_item(item)
-        directory = os.path.dirname(filepath)
-        new_path = os.path.join(directory, uuid.uuid4().hex)
-        # Rename the file for testing
-        os.rename(filepath, new_path)
-        actual = self.connection.workflow_manager_admin.export_item(
-            item, run_async=True, download_location=directory
-        )
-        res = actual.result()
         # Assert
-        self.assertIsInstance(actual, ItemExecution, "Incorrect return type")
-        self.assertIsInstance(res, Notification, "Incorrect return type")
+        self.assertIsNotNone(exportItemExec.export_id)
+        self.assertTrue(directory in actual, f"Output {actual} did not exist within specified save_path {directory}")
         self.assertTrue(
-            os.path.isfile(actual.export_location), "Did not download wmc correctly."
+            "workflow_configuration" in actual, "Output did not contain expected filename"
         )
-        self.assertTrue(
-            directory in actual.export_location, "Did not return a temporary file path"
+        self.assertGreater(
+            export_size, 0, "Downloaded file size is not greater than 0"
         )
 
-        self.connection.workflow_manager_admin.delete_item(item)
 
     def test_export_item_with_passphrase_returns_successfully(self):
-        # Act
-        item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Export_Item2_" + str(datetime.datetime.now())
-        )
-
-        item = self.connection._gis.content.get(item_id)
+        item = self.connection.workflow_item
         actual = self.connection.workflow_manager_admin.export_item(
             item, passphrase="test phrase"
         )
@@ -276,7 +265,6 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertTrue(
             "workflow_configuration" in actual, "Did not return a temporary file path"
         )
-        self.connection.workflow_manager_admin.delete_item(item)
 
     def test_export_item_with_specific_job_templates_returns_successfully(self):
         # Act

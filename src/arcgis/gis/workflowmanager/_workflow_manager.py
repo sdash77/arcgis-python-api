@@ -289,7 +289,7 @@ class WorkflowManagerAdmin:
         include_other_configs: bool = True,
         passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
-        download_location: Optional[str] = None,
+        save_path: Optional[str] = None,
     ):
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
@@ -320,12 +320,12 @@ class WorkflowManagerAdmin:
                                export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution` The download
                                location can then be found by prompting for the export_location.
         ---------------------  ---------------------------------------------------------
-        download_location      Optional. The location to download the wmc file after finish exporting. If not set, the
+        save_path              Optional. The location to save the wmc file after finish exporting. If not set, the
                                file will download to the default location.
         =====================  =========================================================
 
         :return:
-            success object or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
+           String if run_async is False or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
 
 
         .. code-block:: python
@@ -338,8 +338,8 @@ class WorkflowManagerAdmin:
             item = gis.content.search('title:"Python Sample"')[0]
             export_execution = workflow_manager_admin.export_item(item,
                                                                   run_async=True,
-                                                                  download_location='C:\\Users\\exampleUser\\Desktop\\')
-            # Now process the export_execution - result() stops execution until the asynchronous work is finished and returns the last message received.
+                                                                  save_path='C:\\Users\\exampleUser\\Desktop\\')
+            # Now process the export_execution - result() blocks execution until the asynchronous work is finished and returns the last message received.
             result = export_execution.result()
             print(f'Result = {result}\n')
             print(f'Here is the Exported ID: {export_execution.export_id}')
@@ -355,54 +355,34 @@ class WorkflowManagerAdmin:
             params["passphrase"] = passphrase
 
         if run_async:
-            return self._export_item_async(item, params, download_location)
+            return self._export_item_async(item, params, save_path)
         else:
             url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
             return_obj = self._gis._con.post(
-                url, params=params, try_json=False, json_encode=False, post_json=True
+                url, params=params, try_json=False, json_encode=False, post_json=True, out_folder=save_path
             )
 
             if "error" in return_obj:
                 return_obj = json.loads(return_obj)
                 self._gis._con._handle_json_error(return_obj["error"], 0)
 
-            if download_location is not None:
-                try:
-                    filepath = return_obj
-                    if not os.path.isdir(download_location):
-                        print(f"Error: {download_location} is not a valid directory.")
-                        return
-                    # Do nothing if the file is already in download location
-                    if os.path.dirname(filepath) == download_location:
-                        return filepath
-
-                        # Construct the full destination path
-                    filename = os.path.basename(filepath)
-                    destination_path = os.path.join(download_location, filename)
-
-                    # Copy the file from the temp location to the destination
-                    shutil.copy(filepath, destination_path)
-                    logger.debug(f"File successfully saved to { destination_path}")
-                    return destination_path
-                except Exception as e:
-                    logger.error(f"Error while copying file to desired location: {e}")
-
             return return_obj
 
-    def _export_item_async(self, item, params, download_location: Optional[str] = None):
+    def _export_item_async(self, item, params, save_path: Optional[str] = None):
         # Create a ItemExecution object
         ie = ItemExecution(item, ExecutionType.EXPORT)
+        ie._before_completion = lambda: self._retrieve_completed_export(item, ie, save_path)
         # Subscribe to this job
         nm = NotificationManager(item, self, ie._callback)
 
         nm.connect()
 
-        # Call the actual endpoint
-        url = "{base}/admin/{id}/exportAsync".format(base=self._url, id=item.id)
-
         try:
+            # Call the actual endpoint
+            url = "{base}/admin/{id}/exportAsync".format(base=self._url, id=item.id)
+
             return_obj = self._gis._con.post(
-                url, params=params, try_json=False, json_encode=False, post_json=True
+                url, params=params, try_json=False, json_encode=False, post_json=True, out_folder=save_path
             )
 
             # If it fails, unsubscribe then throw
@@ -411,51 +391,27 @@ class WorkflowManagerAdmin:
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj)
 
-            # get result after websocket handling and then download file
-            res = ie.result()
-            filepath = self._get_exported_configuration(item, ie.export_id)
-            if download_location is not None:
-                try:
-                    if not os.path.isdir(download_location):
-                        logger.error(
-                            f"Error: {download_location} is not a valid directory."
-                        )
-                        return
-                    # Construct the full destination path
-                    filename = os.path.basename(filepath)
-                    destination_path = os.path.join(download_location, filename)
-
-                    # Copy the file from the temp location to the destination
-                    if os.path.dirname(filepath) != download_location:
-                        shutil.copy(filepath, destination_path)
-                        ie._export_location = destination_path
-                        logger.debug(f"File successfully saved to { destination_path}")
-                    else:
-                        ie._export_location = filepath
-                except Exception as e:
-                    logger.error(f"Error while copying file to desired location: {e}")
-            else:
-                ie._export_location = filepath
-        except:
+        finally:
             nm.disconnect()
-            raise
 
         # If it succeeds, return the JobExecution
         ie._started()
         return ie
 
-    def _get_exported_configuration(self, item, export_id: str):
+    def _retrieve_completed_export(self, item, ie: ItemExecution, save_path: Optional[str]):
+        export_id = ie._export_id
+        logger.debug(f'Retrieving completed export {export_id}')
         url = "{base}/admin/{id}/exportAsync/{exportId}".format(
             base=self._url, id=item.id, exportId=export_id
         )
         return_obj = self._gis._con.get(
-            url, try_json=False, json_encode=False, post_json=True
+            url, try_json=False, json_encode=False, post_json=True, out_folder=save_path
         )
 
         if "error" in return_obj:
             return_obj = json.loads(return_obj)
             self._gis._con._handle_json_error(return_obj["error"], 0)
-        return return_obj
+        ie._export_location = return_obj
 
     def import_item(
         self,
@@ -4073,6 +4029,7 @@ class ItemExecution(WorkflowManagerExecution):
         self._item = item
         self._execution_type = execution_type
         self._export_location = None
+        self._before_completion = None
 
     def _callback(self, msg: Notification, nm: NotificationManager):
         if (
@@ -4086,13 +4043,17 @@ class ItemExecution(WorkflowManagerExecution):
 
             if self._execution_type is ExecutionType.EXPORT:
                 self._export_id = msg.message["exportId"]
+                logger.debug(f'Set export id {self._export_id}')
+
+            if self._before_completion:
+                self._before_completion()
 
             self._end_time = datetime.datetime.now()
             self._event.set()
             nm.disconnect()
 
     @property
-    def export_id(self):
+    def export_id(self) -> Optional[str]:
         """
         Get the export id from executing the item export.
 
@@ -4105,9 +4066,9 @@ class ItemExecution(WorkflowManagerExecution):
         return None
 
     @property
-    def export_location(self):
+    def export_location(self) -> Optional[str]:
         """
-        Get the export location in the local machine. This may be the same as the optional parameter, download_location
+        Get the export location in the local machine. This may be the same as the optional parameter, save_path
         in :func:`~arcgis.gis.workflowmanageradmin.export_item`
 
         :return:
