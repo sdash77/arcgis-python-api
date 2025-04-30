@@ -65,6 +65,7 @@ class TestPublishSurvey(unittest.TestCase):
             enable_delete_protection=False,
             create_coded_value_domains=True,
             enable_sync=False,
+            create_web_map=False,
         )
         assert type(self.survey) == arcgis.apps.survey123.Survey
 
