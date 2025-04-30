@@ -8478,12 +8478,16 @@ class ContentManager(object):
         params = {"f": "json", "items": ""}
 
         # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
-        rsupport = self._gis.properties.recycleBinSupported
-        renabled = (
-            self._gis.properties.recycleBinEnabled
-            if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
-            else False
-        )
+
+        rsupport: bool = False
+        renabled: bool = False
+        if "recycleBinSupported" in self._gis.properties:
+            rsupport = self._gis.properties.recycleBinSupported
+            renabled = (
+                self._gis.properties.recycleBinEnabled
+                if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+                else False
+            )
         if (
             permanent
             and (self._gis._is_agol or self._gis.version > [2023, 2])
@@ -8491,7 +8495,7 @@ class ContentManager(object):
             and renabled
         ):
             params["permanentDelete"] = permanent
-        else:
+        elif permanent and rsupport == False and renabled == False:
             _log.warning(
                 "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
             )
