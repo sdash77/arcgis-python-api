@@ -135,11 +135,13 @@ class TestWorkflowManager(unittest.TestCase):
         )
 
         item_two = self.connection._gis.content.get(item_id_two)
-        actual = self.connection.workflow_manager_admin.import_item(item_two, filepath)
+        try:
+            actual = self.connection.workflow_manager_admin.import_item(item_two, filepath)
 
-        # Assert
-        self.assertTrue(actual, "Incorrect return type")
-        self.connection.workflow_manager_admin.delete_item(item_two)
+            # Assert
+            self.assertTrue(actual, "Incorrect return type")
+        finally:
+            self.connection.workflow_manager_admin.delete_item(item_two)
 
     def test_import_item__with_passphrase_returns_successfully(self):
         # Act
@@ -154,14 +156,15 @@ class TestWorkflowManager(unittest.TestCase):
         )
 
         item_two = self.connection._gis.content.get(item_id_two)
-        actual = self.connection.workflow_manager_admin.import_item(
-            item_two, filepath, passphrase=passphrase
-        )
+        try:
+            actual = self.connection.workflow_manager_admin.import_item(
+                item_two, filepath, passphrase=passphrase
+            )
 
-        # Assert
-        self.assertTrue(actual, "Incorrect return type")
-
-        self.connection.workflow_manager_admin.delete_item(item_two)
+            # Assert
+            self.assertTrue(actual, "Incorrect return type")
+        finally:
+            self.connection.workflow_manager_admin.delete_item(item_two)
 
     def test_import_item_async_returns_successfully(self):
         # Act
@@ -193,7 +196,6 @@ class TestWorkflowManager(unittest.TestCase):
         actual = self.connection.workflow_manager_admin.export_item(item)
         export_size = os.stat(actual).st_size
 
-        # TODO Make sure we're deleting downloaded files - Talk to Andrew/Jay about this. I don't see anything in test_AttachmentManager_class.py
         # Assert
         self.assertIsInstance(actual, str, "Incorrect return type")
         self.assertTrue(
@@ -283,145 +285,147 @@ class TestWorkflowManager(unittest.TestCase):
         )
 
         item = self.connection._gis.content.get(item_id)
-        wm = WorkflowManager(item)
-        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
-        diagram_id = wm.create_diagram(
-            name="Test New Diagram123 " + uniqueness,
-            display_grid=True,
-            description="Test Description",
-            active=True,
-            annotations=[
-                {
-                    "position": "0,0,100,250",
-                    "color": "130, 202, 237",
-                    "outlineColor": "130, 202, 237",
-                    "labelColor": "black",
-                    "text": "test annotations",
-                }
-            ],
-            data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
-            steps=[
-                {
-                    "action": {"actionType": "Manual"},
-                    "automatic": False,
-                    "canSkip": False,
-                    "color": "130, 202, 237",
-                    "description": "Start and end of a workflow",
-                    "helpText": "Start/End help text",
-                    "helpUrl": "Start/End help url",
-                    "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
-                    "labelColor": "black",
-                    "name": "Start/End",
-                    "outlineColor": "130, 202, 237",
-                    "paths": [
-                        {
-                            "assignedType": "Unassigned",
-                            "lineColor": "black",
-                            "nextStep": "21bff5ee-1586-a635-30ea" "-86769f01ac93",
-                            "notifications": [],
-                            "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
-                            "ports": ["BOTTOM", "TOP"],
-                        }
-                    ],
-                    "position": "0,0,100,50",
-                    "proceedNext": True,
-                    "shape": 3,
-                    "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
-                }
-            ],
-        )
+        try:
+            wm = WorkflowManager(item)
+            uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+            diagram_id = wm.create_diagram(
+                name="Test New Diagram123 " + uniqueness,
+                display_grid=True,
+                description="Test Description",
+                active=True,
+                annotations=[
+                    {
+                        "position": "0,0,100,250",
+                        "color": "130, 202, 237",
+                        "outlineColor": "130, 202, 237",
+                        "labelColor": "black",
+                        "text": "test annotations",
+                    }
+                ],
+                data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
+                steps=[
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea" "-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    }
+                ],
+            )
 
-        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+            uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
 
-        name = "Testing Template  " + uniqueness
-        table_name = "testing_table_" + uniqueness
-        template_id = uniqueness[0:22]
+            name = "Testing Template  " + uniqueness
+            table_name = "testing_table_" + uniqueness
+            template_id = uniqueness[0:22]
 
-        diagrams = self.connection.workflow_manager.diagrams
-        diagram = {}
-        for gram in diagrams:
-            if gram.diagram_name == "Introduction to Workflow Manager":
-                diagram = gram
-                break
+            diagrams = self.connection.workflow_manager.diagrams
+            diagram = {}
+            for gram in diagrams:
+                if gram.diagram_name == "Introduction to Workflow Manager":
+                    diagram = gram
+                    break
 
-        template_id = wm.create_job_template(
-            name=name,
-            id=template_id,
-            diagram_id=diagram.diagram_id,
-            diagram_name=diagram.diagram_name,
-            priority="high",
-            category="Functional Tests",
-            job_duration=5,
-            assigned_to=self.connection.portal_username,
-            default_due_date="2020-04-02T13:25:50Z",
-            default_start_date="2020-04-02T13:25:50Z",
-            start_date_type="CreationDate",
-            assigned_type="Unassigned",
-            description="Test Test test",
-            default_description="Test Test123",
-            state="Active",
-            last_updated_by="Abbie Admin",
-            last_updated_date="2020-04-02T13:25:50Z",
-            extended_property_table_definitions=[
-                {
-                    "tableName": table_name,
-                    "tableAlias": table_name,
-                    "tableOrder": 0,
-                    "relationshipType": "OneToOne",
-                    "extendedPropertyDefinitions": [
-                        {
-                            "propertyOrder": 0,
-                            "visible": True,
-                            "propertyName": "prop1",
-                            "editable": True,
-                            "dataType": "String",
-                            "propertyAlias": "prop1",
-                            "required": True,
-                            "fieldLength": 50,
-                        },
-                        {
-                            "propertyOrder": 1,
-                            "visible": True,
-                            "propertyName": "prop2",
-                            "editable": True,
-                            "dataType": "String",
-                            "propertyAlias": "prop2",
-                            "required": True,
-                            "fieldLength": 50,
-                        },
-                        {
-                            "propertyOrder": 2,
-                            "visible": True,
-                            "propertyName": "string",
-                            "editable": True,
-                            "domain": {
-                                "type": "codedValue",
-                                "codedValues": [
-                                    {"code": "123", "name": "123"},
-                                    {"code": "456", "name": "456"},
-                                ],
-                                "range": ["string"],
+            template_id = wm.create_job_template(
+                name=name,
+                id=template_id,
+                diagram_id=diagram.diagram_id,
+                diagram_name=diagram.diagram_name,
+                priority="high",
+                category="Functional Tests",
+                job_duration=5,
+                assigned_to=self.connection.portal_username,
+                default_due_date="2020-04-02T13:25:50Z",
+                default_start_date="2020-04-02T13:25:50Z",
+                start_date_type="CreationDate",
+                assigned_type="Unassigned",
+                description="Test Test test",
+                default_description="Test Test123",
+                state="Active",
+                last_updated_by="Abbie Admin",
+                last_updated_date="2020-04-02T13:25:50Z",
+                extended_property_table_definitions=[
+                    {
+                        "tableName": table_name,
+                        "tableAlias": table_name,
+                        "tableOrder": 0,
+                        "relationshipType": "OneToOne",
+                        "extendedPropertyDefinitions": [
+                            {
+                                "propertyOrder": 0,
+                                "visible": True,
+                                "propertyName": "prop1",
+                                "editable": True,
+                                "dataType": "String",
+                                "propertyAlias": "prop1",
+                                "required": True,
+                                "fieldLength": 50,
                             },
-                            "dataType": "String",
-                            "propertyAlias": "string",
-                            "required": True,
-                            "fieldLength": 50,
-                        },
-                    ],
-                }
-            ],
-        )
+                            {
+                                "propertyOrder": 1,
+                                "visible": True,
+                                "propertyName": "prop2",
+                                "editable": True,
+                                "dataType": "String",
+                                "propertyAlias": "prop2",
+                                "required": True,
+                                "fieldLength": 50,
+                            },
+                            {
+                                "propertyOrder": 2,
+                                "visible": True,
+                                "propertyName": "string",
+                                "editable": True,
+                                "domain": {
+                                    "type": "codedValue",
+                                    "codedValues": [
+                                        {"code": "123", "name": "123"},
+                                        {"code": "456", "name": "456"},
+                                    ],
+                                    "range": ["string"],
+                                },
+                                "dataType": "String",
+                                "propertyAlias": "string",
+                                "required": True,
+                                "fieldLength": 50,
+                            },
+                        ],
+                    }
+                ],
+            )
 
-        actual = self.connection.workflow_manager_admin.export_item(
-            item, [template_id], [diagram_id, diagram.diagram_id], False
-        )
+            actual = self.connection.workflow_manager_admin.export_item(
+                item, [template_id], [diagram_id, diagram.diagram_id], False
+            )
 
-        # Assert
-        self.assertIsInstance(actual, str, "Incorrect return type")
-        self.assertTrue(
-            "workflow_configuration" in actual, "Did not return a temporary file path"
-        )
-        self.connection.workflow_manager_admin.delete_item(item)
+            # Assert
+            self.assertIsInstance(actual, str, "Incorrect return type")
+            self.assertTrue(
+                "workflow_configuration" in actual, "Did not return a temporary file path"
+            )
+        finally:
+            self.connection.workflow_manager_admin.delete_item(item)
 
     # endregion
 
@@ -533,15 +537,17 @@ class TestWorkflowManager(unittest.TestCase):
             workflow_item_id = workflow_manager_admin.create_item(item_name)
 
             workflow_item = gis.content.get(workflow_item_id)
-            workflow_manager = WorkflowManager(workflow_item)
+            try:
+                workflow_manager = WorkflowManager(workflow_item)
 
-            # basic check using api that needs a token
-            roles = workflow_manager.wm_roles
+                # basic check using api that needs a token
+                roles = workflow_manager.wm_roles
 
-            # Assertions
-            self.assertIsInstance(roles, list, "Incorrect return type")
-            self.assertEqual(len(roles), 4, "Incorrect number of items downloaded")
-            self.connection.workflow_manager_admin.delete_item(workflow_item)
+                # Assertions
+                self.assertIsInstance(roles, list, "Incorrect return type")
+                self.assertEqual(len(roles), 4, "Incorrect number of items downloaded")
+            finally:
+                self.connection.workflow_manager_admin.delete_item(workflow_item)
 
         except Exception as testException:
             print(
