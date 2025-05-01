@@ -7,11 +7,9 @@ import logging
 import sys
 import threading
 import urllib.parse
-import shutil
-import os
+from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Callable
-from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)
 
@@ -290,7 +288,7 @@ class WorkflowManagerAdmin:
         passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
         save_path: Optional[str] = None,
-    ):
+    ) -> str | ItemExecution:
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
         includes the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and
@@ -389,10 +387,11 @@ class WorkflowManagerAdmin:
             if "error" in return_obj:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
-                raise Exception(return_obj)
+                raise Exception('Unexpected error when exporting configuration')
 
-        finally:
+        except:
             nm.disconnect()
+            raise
 
         # If it succeeds, return the JobExecution
         ie._started()
@@ -415,11 +414,11 @@ class WorkflowManagerAdmin:
 
     def import_item(
         self,
-        item,
+        item,  # TODO TypeHint removed in order to avoid import
         config_file,
         passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
-    ):  # TODO TypeHint removed in order to avoid import
+    ) -> bool | ItemExecution:
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatibility. This will
@@ -440,13 +439,12 @@ class WorkflowManagerAdmin:
                             used when exporting the configuration file. If no passphrase is specified, the keys for
                             encrypted user defined settings will be imported without their values.
         ------------------  ---------------------------------------------------------
-        run_async           Optional. A boolean indicating whether to run export item asynchronously. If set to true,
-                            export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution` The download
-                            location can then be found by prompting for the export_location.
+        run_async           Optional. A boolean indicating whether to run import item asynchronously. If set to true,
+                            import_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`
         ==================  =========================================================
 
         :return:
-            success object or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
+            bool if run_async is False or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
 
 
         .. code-block:: python
@@ -458,7 +456,7 @@ class WorkflowManagerAdmin:
             new_item = gis.content.get(new_item_id)
 
             # Path to location of .wmc file from a previous exported item.
-            filepath = 'C:\\Users\\exampleUser\\Desktop\\'
+            filepath = 'C:\\Users\\exampleUser\\Desktop\\test.wmc'
 
             import_execution = wm_admin.import_item(new_item, filepath, run_async=True)
 
@@ -474,6 +472,7 @@ class WorkflowManagerAdmin:
                 print(f'{m.message} ')
 
             # Result() returns the last message received. This will inform you of the final state from importing
+            # It can also be called while the import is in progress to block until the import is complete
             print(f'Result = {import_execution.result()}')
 
         """
@@ -512,7 +511,7 @@ class WorkflowManagerAdmin:
             try:
                 return_obj = call_post(url, config_file, data)
                 if return_obj is False:
-                    raise Exception(return_obj)
+                    raise Exception('Unexpected error when importing configuration')
             except:
                 nm.disconnect()
                 raise
@@ -4035,10 +4034,10 @@ class ItemExecution(WorkflowManagerExecution):
         if (
             "itemId" in msg.message
             and msg.message["itemId"] == self._item.id
-            and msg.msg_type
-            in [MessageType.EXPORTCOMPLETED, MessageType.IMPORTCOMPLETED]
+            and ((self._execution_type == ExecutionType.EXPORT and msg.msg_type == MessageType.EXPORTCOMPLETED)
+                 or (self._execution_type == ExecutionType.IMPORT and msg.msg_type == MessageType.IMPORTCOMPLETED))
         ):
-            logger.debug(f"Received Export {msg}")
+            logger.debug(f"Received {msg}")
             self._messages.append(msg)
 
             if self._execution_type is ExecutionType.EXPORT:
