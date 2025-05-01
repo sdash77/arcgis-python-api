@@ -127,11 +127,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     def test_import_item_returns_successfully(self):
         # Act
-        item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Import_Item1_" + str(datetime.datetime.now())
-        )
-
-        item = self.connection._gis.content.get(item_id)
+        item = self.connection.workflow_item
         filepath = self.connection.workflow_manager_admin.export_item(item)
 
         item_id_two = self.connection.workflow_manager_admin.create_item(
@@ -143,17 +139,12 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertTrue(actual, "Incorrect return type")
-        self.connection.workflow_manager_admin.delete_item(item)
         self.connection.workflow_manager_admin.delete_item(item_two)
 
     def test_import_item__with_passphrase_returns_successfully(self):
         # Act
-        item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Import_Item3_" + str(datetime.datetime.now())
-        )
-
         passphrase = "test phrase"
-        item = self.connection._gis.content.get(item_id)
+        item = self.connection.workflow_item
         filepath = self.connection.workflow_manager_admin.export_item(
             item, passphrase=passphrase
         )
@@ -170,8 +161,27 @@ class TestWorkflowManager(unittest.TestCase):
         # Assert
         self.assertTrue(actual, "Incorrect return type")
 
-        self.connection.workflow_manager_admin.delete_item(item)
         self.connection.workflow_manager_admin.delete_item(item_two)
+
+    def test_import_item_async_returns_successfully(self):
+        # Act
+        item = self.connection.workflow_item
+        filepath = self.connection.workflow_manager_admin.export_item(item)
+
+        item_id_two = self.connection.workflow_manager_admin.create_item(
+            "Testing_Import_Item2_" + str(datetime.datetime.now())
+        )
+        item_two = self.connection._gis.content.get(item_id_two)
+        try:
+            importItemExec = self.connection.workflow_manager_admin.import_item(item_two, filepath, run_async=True)
+
+            # Assert
+            self.assertTrue(importItemExec.running(), 'Import is not still running')
+            result = importItemExec.result()
+            self.assertIsInstance(result, Notification, 'Result is not a Notification')
+            self.assertTrue(importItemExec.done(), 'Import is not done')
+        finally:
+            self.connection.workflow_manager_admin.delete_item(item_two)
 
     # endregion
 
