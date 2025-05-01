@@ -692,6 +692,12 @@ class Query:
             self.parameters.get("returnExtentOnly")
         ):
             return result
+        elif self.parameters.get("outStatistics", None) and self.parameters.get(
+            "groupByFieldsForStatistics", None
+        ):
+            if self.as_df:
+                return self._query_df(result)
+            return arcgis_features.FeatureSet.from_dict(result)
         elif self._is_true(raw):
             return result
 
