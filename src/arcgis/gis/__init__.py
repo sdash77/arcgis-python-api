@@ -538,6 +538,11 @@ class GIS(object):
 
         if url is None:
             url = "https://www.arcgis.com"
+        home_index_val: int = url.lower().find("/home")
+        if home_index_val > -1:
+            # removes the /home value and anything after it.
+            # this method makes the /home logic caseless.
+            url = url[:home_index_val]
         if (self._uri_validator(url) is False) and (
             str(url).lower() not in ["pro", "home"]
         ):
@@ -786,7 +791,7 @@ class GIS(object):
                     if self._adminPrivateServiceUrl:
                         url: str = self._adminPrivateServiceUrl
                     else:
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -820,7 +825,7 @@ class GIS(object):
                     if self._adminPrivateServiceUrl:
                         url: str = self._adminPrivateServiceUrl
                     else:
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -858,7 +863,7 @@ class GIS(object):
                             KubernetesAdmin,
                         )
 
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
                     else:
                         from .admin.portaladmin import PortalAdminManager
@@ -1410,6 +1415,8 @@ class GIS(object):
         if self._is_hosted_nb_home:
             return self._public_portal_url
         else:
+            if self._url.find("/home") > -1:
+                self._url = self._url.replace("/home", "")
             return self._url
 
     @property
@@ -2064,6 +2071,13 @@ class OfflineContentManager(object):
                                be deleted if any error occurs during the process.
                              * If *False*, any item that fails to import will be skipped and the
                                process will continue. Default is *False*.
+        ----------------     ----------------------------------------------------------------------
+        item_mapping         A mapping of item IDs from the offline package to item IDs that
+                             already exist in the target organization. The keys represent the item
+                             IDs of dependencies in the offline package, while the values are the
+                             corresponding item IDs to be used as replacements during import. This
+                             prevents duplication by reusing existing items when certain
+                             dependencies have already been uploaded.
         ================     ======================================================================
 
         :return:
@@ -3309,7 +3323,7 @@ class UserManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "< UserManager at {url} >".format(url=self._gis._url)
+        return "< UserManager at {url} >".format(url=self._gis.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -7401,7 +7415,7 @@ class ContentManager(object):
             >>> gis.content.analyze(item = "9311d21a9a2047d19c0faaebd6f2cca6", file_type = "csv")
 
         """
-        surl = f"{self._gis._url}/sharing/rest/content/features/analyze"
+        surl = f"{self._gis.url}/sharing/rest/content/features/analyze"
         files = {"file": file_path} if file_path and os.path.isfile(file_path) else None
         params = self._get_analyze_params(
             is_arcgis_online=self._gis._portal.is_arcgisonline,
@@ -8471,12 +8485,16 @@ class ContentManager(object):
         params = {"f": "json", "items": ""}
 
         # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
-        rsupport = self._gis.properties.recycleBinSupported
-        renabled = (
-            self._gis.properties.recycleBinEnabled
-            if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
-            else False
-        )
+
+        rsupport: bool = False
+        renabled: bool = False
+        if "recycleBinSupported" in self._gis.properties:
+            rsupport = self._gis.properties.recycleBinSupported
+            renabled = (
+                self._gis.properties.recycleBinEnabled
+                if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+                else False
+            )
         if (
             permanent
             and (self._gis._is_agol or self._gis.version > [2023, 2])
@@ -8484,7 +8502,7 @@ class ContentManager(object):
             and renabled
         ):
             params["permanentDelete"] = permanent
-        else:
+        elif permanent and rsupport == False and renabled == False:
             _log.warning(
                 "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
             )
@@ -11946,7 +11964,7 @@ class User(dict):
         if report_type != "itemUsages":
             del params["timeAggregate"]
         url = "%s/sharing/rest/community/users/%s/report" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -12930,7 +12948,7 @@ class User(dict):
             us = self.user_settings
             us["landingPage"] = {"url": f"{value}"}
             url = "%s/sharing/rest/community/users/%s/setProperties" % (
-                self._gis._url,
+                self._gis.url,
                 self.username,
             )
             params = {"f": "json", "properties": us}
@@ -12965,7 +12983,7 @@ class User(dict):
 
         """
         url = "%s/sharing/rest/community/users/%s/properties" % (
-            self._gis._url,
+            self._gis.url,
             self.username,
         )
         params = {"f": "json"}
@@ -12986,7 +13004,7 @@ class User(dict):
         :return: dict
         """
         url = "%s/sharing/rest/community/users/%s/setProperties" % (
-            self._gis._url,
+            self._gis.url,
             self.username,
         )
         params = {"f": "json", "properties": value}
@@ -13006,7 +13024,7 @@ class User(dict):
         """
         params = {"f": "json"}
         url = "%s/sharing/rest/community/users/%s/disable" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -13028,7 +13046,7 @@ class User(dict):
         """
         params = {"f": "json"}
         url = "%s/sharing/rest/community/users/%s/enable" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -13103,7 +13121,7 @@ class User(dict):
         if self._gis._portal.is_arcgisonline is False:
             return []
         url = "%s/sharing/rest/community/users/%s/linkedUsers" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         start = 1
@@ -13166,7 +13184,7 @@ class User(dict):
             username = username.username
         params = {"f": "json", "user": username, "userToken": userToken}
         url = "%s/sharing/rest/community/users/%s/linkUser" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -13203,7 +13221,7 @@ class User(dict):
             username = username.username
         params = {"f": "json", "user": username}
         url = "%s/sharing/rest/community/users/%s/unlinkUser" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -16797,12 +16815,12 @@ class Item(dict):
         build_initial_cache    Optional boolean.  The boolean value.
 
                                * Default value is *False*, unless *output_type* argument is
-                                 *tiles* or *vectorTiles*
+                                 *tiles* or *vectorTiles* and publishing to ArcGIS Online.
                                * If *True* and applicable for the *file_type*, the cache
                                  will be built at time of publishing.
 
                                  .. note::
-                                     Cache will always be built for Tile Layers.
+                                     Cache will always be built for Tile Layers for ArcGIS Online.
 
                                See `Map caching <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-map-caching-.htm>`_
                                for full details on caching.
@@ -17343,30 +17361,34 @@ class Item(dict):
         ----------------  ---------------------------------------------------------------
         title             Required string. The name of the new service.
         ----------------  ---------------------------------------------------------------
-        min_scale         Required float. The smallest scale at which to view data.
+        min_scale         Required float. The smallest scale at which to view data. This
+                          is the furthest zoom level out that a layer will display.
 
                           .. note::
-                              Value must be less than *max_scale* argument.
+                              This number should be larger than *max_scale*.
         ----------------  ---------------------------------------------------------------
-        max_scale         Required float. The largest scale at which to view data.
+        max_scale         Required float. The largest scale at which to view data. This is
+                          is the furthest zoom level in that a layer will display.
 
                           .. note::
-                              Value must be larger than *min_scale* argument.
+                              This number should be less than *min_scale*.
+
+                          See `Note on scale properties <https://developers.arcgis.com/rest/services-reference/enterprise/map-service/#new-in-1071>`_
+                          for more information.
         ----------------  ---------------------------------------------------------------
         cache_info        Optional dictionary defining the
                           `tiling scheme <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/caching-terminology.htm#ESRI_SECTION1_9FF9489173C741DD95472F21B5AD8374>`_.
                           See `Map caching <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-map-caching-.htm>`_
                           for full details, including information on defining a scheme.
 
-                          * If none provided, the cache defaults to the *the ArcGIS Online
-                            tiling scheme.
+                          .. note::
+                              If none provided, the cache defaults to the *the ArcGIS Online
+                              tiling scheme*.
         ----------------  ---------------------------------------------------------------
         build_cache       Required boolean. If not provided, *True* will be used.
 
                           .. note::
-                              The only option for creating a valid Tile Layer
-                              :class:`item <arcgis.gis.Item>` with the API is
-                              *True*.
+                              The cache will always be built if in ArcGIS Online.
         ================  ===============================================================
 
         :return:
@@ -17384,10 +17406,10 @@ class Item(dict):
             >>> flyr_item = gis.content.get("<item id of feature layer>")
             >>> tile_lyr_item = flyr_item.create_tile_service(
             >>>                                 title="SeasideHeightsNJTiles",
-            >>>                                 min_scale= 70000.0,
-            >>>                                 max_scale=80000.0,
+            >>>                                 min_scale=36978596,
+            >>>                                 max_scale=9244648
             >>>                                 build_cache=True
-            >>>                  )
+            >>>                                )
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
