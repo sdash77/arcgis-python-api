@@ -3870,7 +3870,7 @@ class WorkflowManagerExecution:
 
     @abstractmethod
     def _callback(self, msg: Notification, nm: NotificationManager):
-        pass
+        raise NotImplemented()
 
     def _started(self):
         self._start_time = datetime.datetime.now()
