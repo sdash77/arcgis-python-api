@@ -136,7 +136,9 @@ class TestWorkflowManager(unittest.TestCase):
 
         item_two = self.connection._gis.content.get(item_id_two)
         try:
-            actual = self.connection.workflow_manager_admin.import_item(item_two, filepath)
+            actual = self.connection.workflow_manager_admin.import_item(
+                item_two, filepath
+            )
 
             # Assert
             self.assertTrue(actual, "Incorrect return type")
@@ -176,13 +178,15 @@ class TestWorkflowManager(unittest.TestCase):
         )
         item_two = self.connection._gis.content.get(item_id_two)
         try:
-            importItemExec = self.connection.workflow_manager_admin.import_item(item_two, filepath, run_async=True)
+            importItemExec = self.connection.workflow_manager_admin.import_item(
+                item_two, filepath, run_async=True
+            )
 
             # Assert
-            self.assertTrue(importItemExec.running(), 'Import is not still running')
+            self.assertTrue(importItemExec.running(), "Import is not still running")
             result = importItemExec.result()
-            self.assertIsInstance(result, Notification, 'Result is not a Notification')
-            self.assertTrue(importItemExec.done(), 'Import is not done')
+            self.assertIsInstance(result, Notification, "Result is not a Notification")
+            self.assertTrue(importItemExec.done(), "Import is not done")
         finally:
             self.connection.workflow_manager_admin.delete_item(item_two)
 
@@ -201,9 +205,7 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertTrue(
             "workflow_configuration" in actual, "Did not return a temporary file path"
         )
-        self.assertGreater(
-            export_size, 0, "Downloaded file size is not greater than 0"
-        )
+        self.assertGreater(export_size, 0, "Downloaded file size is not greater than 0")
 
     def test_export_item_with_save_path_returns_successfully(self):
         # Act
@@ -218,13 +220,15 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertIsInstance(actual, str, "Incorrect return type")
-        self.assertTrue(directory in actual, f"Output {actual} did not exist within specified save_path {directory}")
         self.assertTrue(
-            "workflow_configuration" in actual, "Output did not contain expected filename"
+            directory in actual,
+            f"Output {actual} did not exist within specified save_path {directory}",
         )
-        self.assertGreater(
-            export_size, 0, "Downloaded file size is not greater than 0"
+        self.assertTrue(
+            "workflow_configuration" in actual,
+            "Output did not contain expected filename",
         )
+        self.assertGreater(export_size, 0, "Downloaded file size is not greater than 0")
 
     def test_export_item_async_returns_successfully(self):
         # Act
@@ -250,21 +254,24 @@ class TestWorkflowManager(unittest.TestCase):
             exportItemExec = self.connection.workflow_manager_admin.export_item(
                 item, run_async=True, save_path=temp_dir
             )
-            self.assertIsInstance(exportItemExec, ItemExecution, "Incorrect return type")
+            self.assertIsInstance(
+                exportItemExec, ItemExecution, "Incorrect return type"
+            )
             exportItemExec.result()
             actual = exportItemExec.export_location
             export_size = os.stat(actual).st_size
 
         # Assert
         self.assertIsNotNone(exportItemExec.export_id)
-        self.assertTrue(directory in actual, f"Output {actual} did not exist within specified save_path {directory}")
         self.assertTrue(
-            "workflow_configuration" in actual, "Output did not contain expected filename"
+            directory in actual,
+            f"Output {actual} did not exist within specified save_path {directory}",
         )
-        self.assertGreater(
-            export_size, 0, "Downloaded file size is not greater than 0"
+        self.assertTrue(
+            "workflow_configuration" in actual,
+            "Output did not contain expected filename",
         )
-
+        self.assertGreater(export_size, 0, "Downloaded file size is not greater than 0")
 
     def test_export_item_with_passphrase_returns_successfully(self):
         item = self.connection.workflow_item
@@ -302,7 +309,9 @@ class TestWorkflowManager(unittest.TestCase):
                         "text": "test annotations",
                     }
                 ],
-                data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
+                data_sources=[
+                    {"name": "dsource", "url": "string", "sourceType": "string"}
+                ],
                 steps=[
                     {
                         "action": {"actionType": "Manual"},
@@ -422,7 +431,8 @@ class TestWorkflowManager(unittest.TestCase):
             # Assert
             self.assertIsInstance(actual, str, "Incorrect return type")
             self.assertTrue(
-                "workflow_configuration" in actual, "Did not return a temporary file path"
+                "workflow_configuration" in actual,
+                "Did not return a temporary file path",
             )
         finally:
             self.connection.workflow_manager_admin.delete_item(item)

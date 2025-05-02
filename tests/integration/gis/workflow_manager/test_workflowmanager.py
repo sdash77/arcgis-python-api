@@ -3889,7 +3889,7 @@ class TestWorkflowManager(unittest.TestCase):
             time.sleep(5)
             counter = counter + 1
             if counter > 10:
-                raise TimeoutError('Step did not complete in time')
+                raise TimeoutError("Step did not complete in time")
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
@@ -3921,7 +3921,7 @@ class TestWorkflowManager(unittest.TestCase):
             time.sleep(5)
             counter = counter + 1
             if counter > 10:
-                raise TimeoutError('Step did not complete in time')
+                raise TimeoutError("Step did not complete in time")
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
@@ -3953,7 +3953,7 @@ class TestWorkflowManager(unittest.TestCase):
             time.sleep(5)
             counter = counter + 1
             if counter > 10:
-                raise TimeoutError('Step did not complete in time')
+                raise TimeoutError("Step did not complete in time")
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")

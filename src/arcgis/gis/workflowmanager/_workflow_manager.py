@@ -357,7 +357,12 @@ class WorkflowManagerAdmin:
         else:
             url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
             return_obj = self._gis._con.post(
-                url, params=params, try_json=False, json_encode=False, post_json=True, out_folder=save_path
+                url,
+                params=params,
+                try_json=False,
+                json_encode=False,
+                post_json=True,
+                out_folder=save_path,
             )
 
             if "error" in return_obj:
@@ -369,7 +374,9 @@ class WorkflowManagerAdmin:
     def _export_item_async(self, item, params, save_path: Optional[str] = None):
         # Create a ItemExecution object
         ie = ItemExecution(item, ExecutionType.EXPORT)
-        ie._before_completion = lambda: self._retrieve_completed_export(item, ie, save_path)
+        ie._before_completion = lambda: self._retrieve_completed_export(
+            item, ie, save_path
+        )
         # Subscribe to this job
         nm = NotificationManager(item, self, ie._callback)
 
@@ -380,14 +387,19 @@ class WorkflowManagerAdmin:
             url = "{base}/admin/{id}/exportAsync".format(base=self._url, id=item.id)
 
             return_obj = self._gis._con.post(
-                url, params=params, try_json=False, json_encode=False, post_json=True, out_folder=save_path
+                url,
+                params=params,
+                try_json=False,
+                json_encode=False,
+                post_json=True,
+                out_folder=save_path,
             )
 
             # If it fails, unsubscribe then throw
             if "error" in return_obj:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
-                raise Exception('Unexpected error when exporting configuration')
+                raise Exception("Unexpected error when exporting configuration")
 
         except:
             nm.disconnect()
@@ -397,9 +409,11 @@ class WorkflowManagerAdmin:
         ie._started()
         return ie
 
-    def _retrieve_completed_export(self, item, ie: ItemExecution, save_path: Optional[str]):
+    def _retrieve_completed_export(
+        self, item, ie: ItemExecution, save_path: Optional[str]
+    ):
         export_id = ie._export_id
-        logger.debug(f'Retrieving completed export {export_id}')
+        logger.debug(f"Retrieving completed export {export_id}")
         url = "{base}/admin/{id}/exportAsync/{exportId}".format(
             base=self._url, id=item.id, exportId=export_id
         )
@@ -511,7 +525,7 @@ class WorkflowManagerAdmin:
             try:
                 return_obj = call_post(url, config_file, data)
                 if return_obj is False:
-                    raise Exception('Unexpected error when importing configuration')
+                    raise Exception("Unexpected error when importing configuration")
             except:
                 nm.disconnect()
                 raise
@@ -4034,15 +4048,23 @@ class ItemExecution(WorkflowManagerExecution):
         if (
             "itemId" in msg.message
             and msg.message["itemId"] == self._item.id
-            and ((self._execution_type == ExecutionType.EXPORT and msg.msg_type == MessageType.EXPORTCOMPLETED)
-                 or (self._execution_type == ExecutionType.IMPORT and msg.msg_type == MessageType.IMPORTCOMPLETED))
+            and (
+                (
+                    self._execution_type == ExecutionType.EXPORT
+                    and msg.msg_type == MessageType.EXPORTCOMPLETED
+                )
+                or (
+                    self._execution_type == ExecutionType.IMPORT
+                    and msg.msg_type == MessageType.IMPORTCOMPLETED
+                )
+            )
         ):
             logger.debug(f"Received {msg}")
             self._messages.append(msg)
 
             if self._execution_type is ExecutionType.EXPORT:
                 self._export_id = msg.message["exportId"]
-                logger.debug(f'Set export id {self._export_id}')
+                logger.debug(f"Set export id {self._export_id}")
 
             if self._before_completion:
                 self._before_completion()
