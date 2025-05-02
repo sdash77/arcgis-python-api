@@ -123,6 +123,8 @@ jobs:
     defaults:
       run:
         shell: bash -el {0}
+    env:
+      ALLOW_INSTALLED_ARCGIS: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -177,7 +179,7 @@ jobs:
           python build/manage_binaries.py copy --local
       - name: Install arcgis from source
         run: |
-          python -m pip install -e ./src --no-deps
+          python -m pip install ./src --no-deps
       - name: Run smoke tests
         working-directory: ./tests
         run: |
