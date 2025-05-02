@@ -2838,12 +2838,7 @@ class FeatureLayerCollectionManager(_GISResource):
         item = content.get(itemid=self.properties["serviceItemId"])
         fs = features.FeatureLayerCollection(url=item.url, gis=gis)
 
-        # check if the service is a view
-        rest_url = (
-            gis._url + "/sharing/rest"
-            if "sharing/rest" not in gis._url.lower()
-            else gis._url
-        )
+        rest_url = gis.resturl
 
         # get the owner of the service
         user = item["owner"] if "owner" in item else gis.users.me.username
