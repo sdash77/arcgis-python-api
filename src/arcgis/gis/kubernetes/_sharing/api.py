@@ -1300,7 +1300,7 @@ class KbertnetesPy(object):
         """
         res = self.con.post("community/users/" + username, {"f": "json"})
         res2 = self.con.get(
-            "/community/self", {"f": "json", "returnUserLicensedItems": True}
+            "community/self", {"f": "json", "returnUserLicensedItems": True}
         )
         res2.update(res)
         return res2

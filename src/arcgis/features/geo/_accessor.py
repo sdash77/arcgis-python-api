@@ -2951,8 +2951,6 @@ class GeoAccessor(object):
         replace_mappings = {
             pd.NA: None,
             np.nan: None,
-            np.NaN: None,
-            np.NAN: None,
             pd.NaT: None,
         }
         df = self._data.copy()
@@ -3187,7 +3185,7 @@ class GeoAccessor(object):
             data = [
                 g.spatial_reference
                 for g in self._data[self.name]
-                if g not in [None, np.NaN, np.nan, "", {}] and isinstance(g, dict)
+                if g not in [None, np.nan, "", {}] and isinstance(g, dict)
             ]
             srs = [
                 _geometry.SpatialReference(sr)

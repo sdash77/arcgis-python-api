@@ -2,10 +2,9 @@ name: geosaurus_dev_env
 channels:
 - defaults
 - esri
-- esri/label/prerelease
 - esri-build
 dependencies:
-- python 3.11.*
+- python 3.13.*
 - pip
 - setuptools
 # ---- arcgis ----
@@ -56,8 +55,6 @@ dependencies:
 # - pytorch >=2
 # - timm 0.4.12.*
 # - torchvision >=0.15.0
-# ---- sphinx/docs build ----
-- sphinx >=7,<8
 # ---- etc ----
 - black
 - keyrings.alt
@@ -65,6 +62,7 @@ dependencies:
 - protobuf
 - pip:
   # ---- sphinx/docs build ----
+  - sphinx >=7,<8
   - sphinx_rtd_theme>=2,<3
   - autodoc_pydantic>=2,<3
   # ---- automated testing ----
