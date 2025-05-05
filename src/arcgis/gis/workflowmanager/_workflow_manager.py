@@ -282,8 +282,8 @@ class WorkflowManagerAdmin:
     def export_item(
         self,
         item,  # TODO TypeHint removed in order to avoid import
-        job_template_ids: Optional[str] = None,
-        diagram_ids: Optional[str] = None,
+        job_template_ids: Optional[list[str]] = None,
+        diagram_ids: Optional[list[str]] = None,
         include_other_configs: bool = True,
         passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
@@ -3867,6 +3867,7 @@ class WorkflowManagerExecution:
     def __init__(self):
         self._messages = []
         self._event = threading.Event()
+        self._err = None
 
     @abstractmethod
     def _callback(self, msg: Notification, nm: NotificationManager):
@@ -3916,7 +3917,10 @@ class WorkflowManagerExecution:
 
         """
         if self._event.wait(timeout):
-            return self._messages[-1]
+            if self._err:
+                raise Exception(self._err)
+            else:
+                return self._messages[-1]
 
         raise TimeoutError("Timeout waiting for result")
 
@@ -4051,11 +4055,13 @@ class ItemExecution(WorkflowManagerExecution):
             and (
                 (
                     self._execution_type == ExecutionType.EXPORT
-                    and msg.msg_type == MessageType.EXPORTCOMPLETED
+                    and msg.msg_type
+                    in [MessageType.EXPORTCOMPLETED, MessageType.EXPORTFAILED]
                 )
                 or (
                     self._execution_type == ExecutionType.IMPORT
-                    and msg.msg_type == MessageType.IMPORTCOMPLETED
+                    and msg.msg_type
+                    in [MessageType.IMPORTCOMPLETED, MessageType.IMPORTFAILED]
                 )
             )
         ):
@@ -4066,8 +4072,17 @@ class ItemExecution(WorkflowManagerExecution):
                 self._export_id = msg.message["exportId"]
                 logger.debug(f"Set export id {self._export_id}")
 
-            if self._before_completion:
-                self._before_completion()
+            if msg.msg_type in [MessageType.EXPORTFAILED, MessageType.IMPORTFAILED]:
+                self._err = (
+                    msg.message["msg"] if "msg" in msg.message else "Unexpected error"
+                )
+            elif (
+                self._before_completion
+            ):  # Don't do the before completion when there was an error
+                try:
+                    self._before_completion()
+                except:
+                    self._err = sys.exc_info()[1]
 
             self._end_time = datetime.datetime.now()
             self._event.set()
@@ -4888,7 +4903,9 @@ class MessageType(Enum):
     STEP_INFO_REQUIRED = "STEPINFOREQUIRED"
     STEP_INFORMATION = "STEPINFORMATION"
     EXPORTCOMPLETED = "EXPORTCOMPLETED"
+    EXPORTFAILED = "EXPORTFAILED"
     IMPORTCOMPLETED = "IMPORTCOMPLETED"
+    IMPORTFAILED = "IMPORTFAILED"
 
 
 class ExecutionType(Enum):
