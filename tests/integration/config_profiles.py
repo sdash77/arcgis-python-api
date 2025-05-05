@@ -116,7 +116,7 @@ def setup_profiles(
     if not kube_name in updated_list:
         pm.create(
             kube_name,
-            url="https://1140pubbi-1140pubbi.apps.openshift416release.esri.com/web/home",
+            url="https://1140pubbi-1140pubbi.apps.openshift416release.esri.com/web",
             username="PAPIpublisher",
             password="PAPIletmein01",
         )
@@ -125,7 +125,7 @@ def setup_profiles(
     if not kube_admin_name in updated_list:
         pm.create(
             kube_admin_name,
-            url="https://1140pubbi-1140pubbi.apps.openshift416release.esri.com/web/home",
+            url="https://1140pubbi-1140pubbi.apps.openshift416release.esri.com/web",
             username="PAPIadmin",
             password="PAPIletmein01",
         )
