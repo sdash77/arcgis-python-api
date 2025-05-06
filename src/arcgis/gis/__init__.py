@@ -43,6 +43,7 @@ from arcgis.gis._impl._dataclasses._sfilters import (
     SpatialFilter,
     SpatialRelationship,
 )
+from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
 from arcgis.gis._impl._content_manager.folder import Folder
@@ -537,6 +538,11 @@ class GIS(object):
 
         if url is None:
             url = "https://www.arcgis.com"
+        home_index_val: int = url.lower().find("/home")
+        if home_index_val > -1:
+            # removes the /home value and anything after it.
+            # this method makes the /home logic caseless.
+            url = url[:home_index_val]
         if (self._uri_validator(url) is False) and (
             str(url).lower() not in ["pro", "home"]
         ):
@@ -785,7 +791,7 @@ class GIS(object):
                     if self._adminPrivateServiceUrl:
                         url: str = self._adminPrivateServiceUrl
                     else:
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -819,7 +825,7 @@ class GIS(object):
                     if self._adminPrivateServiceUrl:
                         url: str = self._adminPrivateServiceUrl
                     else:
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -857,7 +863,7 @@ class GIS(object):
                             KubernetesAdmin,
                         )
 
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
                     else:
                         from .admin.portaladmin import PortalAdminManager
@@ -1338,6 +1344,12 @@ class GIS(object):
     def properties(self):
         """
         ``properties`` manages the actual properties of the GIS object.
+
+        To see all the properties that can be found in the GIS object, refer to the
+        portal properties documentation at `Portal Properties
+        <https://developers.arcgis.com/rest/users-groups-and-items/common-parameters/#portal-parameters>`_.
+
+        :return: A dictionary-like object called a PropertyMap of the properties of the GIS object.
         """
         if self._properties is None:
             self._properties = _mixins.PropertyMap(self._get_properties(force=True))
@@ -1403,6 +1415,8 @@ class GIS(object):
         if self._is_hosted_nb_home:
             return self._public_portal_url
         else:
+            if self._url.find("/home") > -1:
+                self._url = self._url.replace("/home", "")
             return self._url
 
     @property
@@ -1457,9 +1471,36 @@ class GIS(object):
     @property
     def hosting_servers(self) -> list:
         """
-        Returns the hosting servers for the GIS
+        Provides access to representation of all the services running on the hosting server
+        for an organizational deployment. See
+        `ArcGIS Server Services Directory REST API <https://developers.arcgis.com/rest/services-reference/enterprise/get-started-with-the-services-directory/>`_
+        for full explanation.
 
-        :returns: list
+        :returns:
+            * ArcGIS Online: list of :class:`~arcgis.gis.agoserver.AGOLServicesDirectory` objects
+            * ArcGIS Enteprise and ArcGIS Enterprise on Kubernetes: list of :class:`~arcgis.gis.server.catalog.ServicesDirectory` objects.
+
+        .. code-block:: python
+
+            # Usage Example #1: ArcGIS Online:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_admin_profile")
+
+            >>> svc_directory_list = gis.hosting_servers
+            >>> for svc_dir in svc_directory_list:
+            >>>     print(f"{svc_dir}")
+
+            < AGOLServicesDirectory @ https://servicesX.arcgis.com/<org_id>/arcgis/rest/services >
+            < AGOLServicesDirectory @ https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/services >
+
+            # Usage Example #2: ArcGIS Enterprise:
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> for svc_dir in gis.hosting_servers:
+            >>>     print(f"{svc_dir}")
+
+            < ServicesDirectory @ https://example.org_url.com/web_adaptor_name/rest/services >
+
         """
         if self._portal.is_arcgisonline:
             info = self._registered_servers()
@@ -2030,6 +2071,13 @@ class OfflineContentManager(object):
                                be deleted if any error occurs during the process.
                              * If *False*, any item that fails to import will be skipped and the
                                process will continue. Default is *False*.
+        ----------------     ----------------------------------------------------------------------
+        item_mapping         A mapping of item IDs from the offline package to item IDs that
+                             already exist in the target organization. The keys represent the item
+                             IDs of dependencies in the offline package, while the values are the
+                             corresponding item IDs to be used as replacements during import. This
+                             prevents duplication by reusing existing items when certain
+                             dependencies have already been uploaded.
         ================     ======================================================================
 
         :return:
@@ -3275,7 +3323,7 @@ class UserManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "< UserManager at {url} >".format(url=self._gis._url)
+        return "< UserManager at {url} >".format(url=self._gis.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -4338,7 +4386,7 @@ class UserManager(object):
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes
             and provider != "enterprise"
-            and self._gis._portal._version != "10.3"
+            and self._gis.version < [10, 3]
         ):
             if (
                 credits == -1
@@ -4412,7 +4460,7 @@ class UserManager(object):
                         return new_user
         # If kubernets is 11.1 then need to use the second method, even if provider is arcgis
         elif self._gis._portal.is_kubernetes and (
-            provider == "enterprise" or self._gis._portal._version == "10.3"
+            provider == "enterprise" or self._gis.version >= [10, 3]
         ):
             createuser_url = (
                 self._portal.url
@@ -5410,14 +5458,14 @@ class RoleManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def clone(self, roles: list[Role]) -> list[_cloner.CloningJob]:
+    def clone(self, roles: Union[list[Role], list[str]]) -> list[_cloner.CloningJob]:
         """
         Clones a list of Roles from one organization to another
 
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        roles                  Required list[Role]. An array of roles from the source GIS.
+        roles                  Required list. An array of role objects or role ids or role names from the source GIS.
         ==================     ====================================================================
 
         :returns: list[Future]
@@ -5425,6 +5473,10 @@ class RoleManager(object):
         jobs = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as tp:
             for role in roles:
+                if isinstance(role, str):
+                    role = self.get_role(role)
+                    if role is None:
+                        raise ValueError(f"Role {role} not found.")
                 role: Role
                 future: concurrent.futures.Future = tp.submit(
                     self.create,
@@ -5995,11 +6047,20 @@ class Role(object):
 class GroupManager(object):
     """
     The ``GroupManager`` class is a helper class for managing GIS groups.
-    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available
-    as a property of the :class:`~arcgis.gis.GIS` object.
+    This class is not meant to be initialized directly, but rather an instance
+    is accessible as the :attr:`~arcgis.gis.GIS.groups` property of the
+    :class:`~arcgis.gis.GIS` object.
 
-    .. note::
-       This class is not created by users directly.
+    .. code-block:: python
+
+        # Usage Example: Initialize a GroupManager
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_organization_admin_profile")
+
+        >>> group_mgr = gis.groups
+        >>> group_mgr
+
+        <arcgis.gis.GroupManager object at 0x<mem_addr>>
     """
 
     def __init__(self, gis):
@@ -7354,7 +7415,7 @@ class ContentManager(object):
             >>> gis.content.analyze(item = "9311d21a9a2047d19c0faaebd6f2cca6", file_type = "csv")
 
         """
-        surl = f"{self._gis._url}/sharing/rest/content/features/analyze"
+        surl = f"{self._gis.url}/sharing/rest/content/features/analyze"
         files = {"file": file_path} if file_path and os.path.isfile(file_path) else None
         params = self._get_analyze_params(
             is_arcgis_online=self._gis._portal.is_arcgisonline,
@@ -7857,7 +7918,7 @@ class ContentManager(object):
                             - title
                             - typeKeywords
                             - owner
-                            Example: filter=owner:"jsmith"
+                            Example: filter="owner:'jsmith'"
         ================    ===============================================================
 
         :return:
@@ -8424,12 +8485,16 @@ class ContentManager(object):
         params = {"f": "json", "items": ""}
 
         # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
-        rsupport = self._gis.properties.recycleBinSupported
-        renabled = (
-            self._gis.properties.recycleBinEnabled
-            if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
-            else False
-        )
+
+        rsupport: bool = False
+        renabled: bool = False
+        if "recycleBinSupported" in self._gis.properties:
+            rsupport = self._gis.properties.recycleBinSupported
+            renabled = (
+                self._gis.properties.recycleBinEnabled
+                if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+                else False
+            )
         if (
             permanent
             and (self._gis._is_agol or self._gis.version > [2023, 2])
@@ -8437,7 +8502,7 @@ class ContentManager(object):
             and renabled
         ):
             params["permanentDelete"] = permanent
-        else:
+        elif permanent and rsupport == False and renabled == False:
             _log.warning(
                 "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
             )
@@ -9003,7 +9068,7 @@ class ContentManager(object):
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
             # Feature Collection Workflow
-            return df.spatial.to_feature_collection(**kwargs)
+            return _cm_helper.import_as_fc(self._gis, df, **kwargs)
 
     # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
@@ -11090,6 +11155,7 @@ class Group(dict):
         hidden_members: bool = False,
         membership_access: Optional[str] = None,
         autojoin: bool = False,
+        **kwargs,
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -11165,7 +11231,11 @@ class Group(dict):
                             will have access. `None` is the default.
 
                             Values: `org`, `collaboration`, or `None`
-        ------------------  ---------------------------------------------------------
+        ==================  =========================================================
+
+        Keyword Arguments:
+
+        ==================  =========================================================
         autojoin            Optional Boolean. The default is `False`. Only applies to
                             org accounts. If `True`, this group will allow joined
                             without requesting membership approval.
@@ -11206,6 +11276,8 @@ class Group(dict):
             display_settings = display_settings_lu[display_settings]
         else:
             raise ValueError("Display settings must be set to a valid value.")
+        if not autojoin:
+            autojoin = kwargs.pop("auto_join", False)
         resp = self._portal.update_group(
             self.groupid,
             title,
@@ -11226,7 +11298,7 @@ class Group(dict):
             leaving_disallowed=leaving_disallowed,
             hidden_members=hidden_members,
             membership_access=membership_access,
-            auto_join=autojoin,
+            autojoin=autojoin,
         )
         if resp:
             self._hydrate()
@@ -11892,7 +11964,7 @@ class User(dict):
         if report_type != "itemUsages":
             del params["timeAggregate"]
         url = "%s/sharing/rest/community/users/%s/report" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -12758,6 +12830,10 @@ class User(dict):
             tags = ",".join(tags)
         import copy
 
+        if first_name or last_name:
+            first_name = first_name or self.firstName
+            last_name = last_name or self.lastName
+            fullname = f"{first_name} {last_name}"
         params = {
             "f": "json",
             "access": access,
@@ -12872,7 +12948,7 @@ class User(dict):
             us = self.user_settings
             us["landingPage"] = {"url": f"{value}"}
             url = "%s/sharing/rest/community/users/%s/setProperties" % (
-                self._gis._url,
+                self._gis.url,
                 self.username,
             )
             params = {"f": "json", "properties": us}
@@ -12907,7 +12983,7 @@ class User(dict):
 
         """
         url = "%s/sharing/rest/community/users/%s/properties" % (
-            self._gis._url,
+            self._gis.url,
             self.username,
         )
         params = {"f": "json"}
@@ -12928,7 +13004,7 @@ class User(dict):
         :return: dict
         """
         url = "%s/sharing/rest/community/users/%s/setProperties" % (
-            self._gis._url,
+            self._gis.url,
             self.username,
         )
         params = {"f": "json", "properties": value}
@@ -12948,7 +13024,7 @@ class User(dict):
         """
         params = {"f": "json"}
         url = "%s/sharing/rest/community/users/%s/disable" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -12970,7 +13046,7 @@ class User(dict):
         """
         params = {"f": "json"}
         url = "%s/sharing/rest/community/users/%s/enable" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -13045,7 +13121,7 @@ class User(dict):
         if self._gis._portal.is_arcgisonline is False:
             return []
         url = "%s/sharing/rest/community/users/%s/linkedUsers" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         start = 1
@@ -13108,7 +13184,7 @@ class User(dict):
             username = username.username
         params = {"f": "json", "user": username, "userToken": userToken}
         url = "%s/sharing/rest/community/users/%s/linkUser" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -13145,7 +13221,7 @@ class User(dict):
             username = username.username
         params = {"f": "json", "user": username}
         url = "%s/sharing/rest/community/users/%s/unlinkUser" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -16673,13 +16749,13 @@ class Item(dict):
             4. feature collection files
             5. file geodatabase files
         CSV files that contain location fields (i.e. address fields or XY fields) are spatially enabled during the process of publishing.
-        Shapefiles and file geodatabases should be packaged as *.zip files.
+        Shapefiles and file geodatabases should be packaged as `*.zip` files.
 
-        Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
+        Tiled map services can be created from service definition (`*.sd`) files, tile packages, and existing feature services.
 
-        Vector tile services can be created from vector tile package (*.vtpk) files.
+        Vector tile services can be created from vector tile package (`*.vtpk`) files.
 
-        Scene services can be created from scene layer package (*.spk, *.slpk) files.
+        Scene services can be created from scene layer package (`*.spk`, `*.slpk`) files.
 
         Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map
         as well as its packaged data together with the definition of the geo-service to be created.
@@ -16688,7 +16764,7 @@ class Item(dict):
             ArcGIS does not permit overwriting if you published multiple hosted feature layers from the same data item.
 
         .. note::
-            ArcGIS for Enterprise for Kubernetes does not support publishing service definition file generated by ArcMap.
+            ArcGIS for Enterprise for Kubernetes does not support publishing service definition files generated by ArcMap.
 
         ===================    ===============================================================
         **Parameter**           **Description**
@@ -16698,33 +16774,68 @@ class Item(dict):
                                See `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
                                in the ArcGIS REST API for details.
         -------------------    ---------------------------------------------------------------
-        address_fields         Optional dictionary. containing mapping of df columns to address fields,
+        address_fields         Optional dictionary. A mapping of column names to address fields
+                               necessary for geocoding.
         -------------------    ---------------------------------------------------------------
-        output_type            Optional string.  Only used when a feature service is published as a tile service.
+        output_type            Optional string.
+
+                               .. note::
+                                   Only used when a Feature Layer :class:`~arcgis.gis.Item` is
+                                   published as a Tile Layer *item*.
+
+                               Options:
+
+                               * *tiles* - For Tile Layer :class:`items <arcgis.gis.Item>`
+                                 sourced by *Map Service*
+                               * *vectorTiles* - For Tile Layer :class:`items <arcgis.gis.Item>` sourced
+                                 by a *Vector Tile Service*
         -------------------    ---------------------------------------------------------------
         overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
                                Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
         -------------------    ---------------------------------------------------------------
         file_type              Optional string.  Some formats are not automatically detected,
-                               when this occurs, the file_type can be specified:
-                               serviceDefinition, shapefile, csv, excel, tilePackage,
-                               featureService, featureCollection, fileGeodatabase, geojson,
-                               scenepackage, vectortilepackage, imageCollection, mapService,
-                               and sqliteGeodatabase are valid entries. This is an
-                               optional parameter.
+                               when this occurs, the file_type can be specified as one of the
+                               below:
+
+                               * *serviceDefinition*
+                               * *shapefile*
+                               * *csv*
+                               * *excel*
+                               * *tilePackage*
+                               * *featureService*
+                               * *featureCollection*
+                               * *fileGeodatabase*
+                               * *geojson*
+                               * *scenepackage*
+                               * *vectortilepackage*
+                               * *imageCollection*
+                               * *mapService*
+                               * *sqliteGeodatabase*
         -------------------    ---------------------------------------------------------------
-        build_initial_cache    Optional boolean.  The boolean value (default False), if true
-                               and applicable for the file_type, the value will built cache
-                               for the service.
+        build_initial_cache    Optional boolean.  The boolean value.
+
+                               * Default value is *False*, unless *output_type* argument is
+                                 *tiles* or *vectorTiles* and publishing to ArcGIS Online.
+                               * If *True* and applicable for the *file_type*, the cache
+                                 will be built at time of publishing.
+
+                                 .. note::
+                                     Cache will always be built for Tile Layers for ArcGIS Online.
+
+                               See `Map caching <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-map-caching-.htm>`_
+                               for full details on caching.
         -------------------    ---------------------------------------------------------------
-        item_id                Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
-                               This parameter allows the desired item id to be specified during creation which
-                               can be useful for cloning and automated content creation scenarios.
-                               The specified id must be a 32 character GUID string without any special characters.
+        item_id                Optional string. This parameter allows the desired item id to be
+                               specified during creation which can be useful for cloning and
+                               automated content creation scenarios. The specified id must be a
+                               32 character GUID string without any special characters.
+
+                               .. note::
+                                   Available starting at ArcGIS Enterprise 10.8.1. Not available
+                                   in ArcGIS Online.
 
                                If the `item_id` is already being used, an error will be raised
-                               during the `publish` process.
-
+                               during the process.
         -------------------    ---------------------------------------------------------------
         geocode_service        Optional Geocoder. When publishing a table of data, an optional
                                `Geocoder` can be supplied in order to specify which service
@@ -16738,8 +16849,10 @@ class Item(dict):
         ===================    ===============================================================
 
         :return:
-            When *future=False*, an :class:`~arcgis.gis.Item` object corresponding to the
-            published web layer. When *future=True*, a *concurrent.futures.Future* object.
+            * When *future=False*, an :class:`~arcgis.gis.Item` object corresponding to the
+              published web layer.
+            * When *future=True*, a *concurrent.futures.Future* object whose *result()* method
+              can be queried for result.
 
         .. code-block:: python
 
@@ -16747,28 +16860,34 @@ class Item(dict):
 
             >>> csv_item = gis.content.get('<csv item id>')
             >>> analyzed = gis.content.analyze(item=csv_item, file_type='csv')
+
             >>> publish_parameters = analyzed['publishParameters']
             >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
             >>> publish_parameters['locationType'] = "none" # this makes it a hosted table
-            >>> published_item = csv_item.publish(publish_parameters)
 
+            >>> published_item = csv_item.publish(publish_parameters)
 
         .. code-block:: python
 
             # Publishing a Tile Service Example
 
-            >>> item.publish(address_fields= { "CountryCode" : "Country"},
-            >>>               output_type="Tiles",
-            >>>               file_type="CSV",
-            >>>               item_id=9311d21a9a2047d19c0faaebd6f2cca6
-            >>>             )
+            >>> item.publish(
+            >>>       address_fields= {
+            >>>           "CountryCode" : "Country"
+            >>>       },
+            >>>       output_type="tiles",
+            >>>       file_type="CSV",
+            >>>       item_id=9311d21a9a2047d19c0faaebd6f2cca6
+            >>>)
 
         .. note::
-            For publish_parameters, see `Publish Item
+            For details on *publish_parameters* options, see `Publish Item
             <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
-            in the ArcGIS REST API for more details.
+            in the ArcGIS REST API documentation.
         """
 
+        if self.type == "Vector Tile Package" and build_initial_cache == False:
+            build_initial_cache = True
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
             "address_fields": address_fields,
@@ -16779,6 +16898,7 @@ class Item(dict):
             "item_id": item_id,
             "geocode_service": geocode_service,
         }
+
         if future:
             executor: concurrent.futures.ThreadPoolExecutor = (
                 concurrent.futures.ThreadPoolExecutor(1)
@@ -17241,27 +17361,55 @@ class Item(dict):
         ----------------  ---------------------------------------------------------------
         title             Required string. The name of the new service.
         ----------------  ---------------------------------------------------------------
-        min_scale         Required float. The smallest scale at which to view data.
+        min_scale         Required float. The smallest scale at which to view data. This
+                          is the furthest zoom level out that a layer will display.
+
+                          .. note::
+                              This number should be larger than *max_scale*.
         ----------------  ---------------------------------------------------------------
-        max_scale         Required float. The largest scale at which to view data.
+        max_scale         Required float. The largest scale at which to view data. This is
+                          is the furthest zoom level in that a layer will display.
+
+                          .. note::
+                              This number should be less than *min_scale*.
+
+                          See `Note on scale properties <https://developers.arcgis.com/rest/services-reference/enterprise/map-service/#new-in-1071>`_
+                          for more information.
         ----------------  ---------------------------------------------------------------
-        cache_info        Optional dictionary. If not none, administrator provides the
-                          tile cache info for the service. The default is the ArcGIS Online scheme.
+        cache_info        Optional dictionary defining the
+                          `tiling scheme <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/caching-terminology.htm#ESRI_SECTION1_9FF9489173C741DD95472F21B5AD8374>`_.
+                          See `Map caching <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-map-caching-.htm>`_
+                          for full details, including information on defining a scheme.
+
+                          .. note::
+                              If none provided, the cache defaults to the *the ArcGIS Online
+                              tiling scheme*.
         ----------------  ---------------------------------------------------------------
-        build_cache       Optional boolean. Default is False; if True, the cache will be
-                          built at publishing time.  This will increase the time it takes
-                          to publish the service.
+        build_cache       Required boolean. If not provided, *True* will be used.
+
+                          .. note::
+                              The cache will always be built if in ArcGIS Online.
         ================  ===============================================================
 
         :return:
-           The :class:`~arcgis.gis.Item` object if successfully added, None if unsuccessful.
+           The *Tile Layer* :class:`~arcgis.gis.Item` object if successfully added,
+           *None* if unsuccessful.
 
         .. code-block:: python
 
             # Usage Example
 
-            >>> item.create_tile_service(title="SeasideHeightsNJTiles", min_scale= 70000.0,max_scale=80000.0)
+            >>> from arcgis.gis import GIS
 
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> flyr_item = gis.content.get("<item id of feature layer>")
+            >>> tile_lyr_item = flyr_item.create_tile_service(
+            >>>                                 title="SeasideHeightsNJTiles",
+            >>>                                 min_scale=36978596,
+            >>>                                 max_scale=9244648
+            >>>                                 build_cache=True
+            >>>                                )
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
@@ -17540,6 +17688,44 @@ class Item(dict):
                 return ret[0]["serviceItemId"]
             else:
                 raise Exception("No job results.")
+        elif ret[0]["type"] == "Vector Tile Service":
+            service_item_id = ret[0]["serviceItemId"]
+            # https://tilesdevext.arcgis.com/tiles/01ClFLufh9nZafWR/arcgis/rest/admin/services/set2_vtpk_worldgreen/VectorTileServer
+            # https://tilesdevext.arcgis.com/tiles/01ClFLufh9nZafWR/arcgis/rest/services/vtpk_worldgreen/VectorTileServer
+            # replace /rest/services/ with /rest/admin/services/
+            # check if "status" is in properties and if "status" == failed or completed
+            # or if "status" doesn't exist.
+            status_url: str = ret[0]["serviceurl"].replace(
+                "/rest/services/", "/rest/admin/services/"
+            )
+            resp: requests.Response = self._gis.session.get(
+                status_url, params={"f": "json"}
+            )
+            wait: int = 1
+            while "status" in resp.json():
+                time.sleep(wait)
+                resp: requests.Response = self._gis.session.get(
+                    status_url, params={"f": "json"}
+                )
+                if wait <= 4:
+                    wait += 1
+                data = resp.json()
+                status: str = data.get("status", "").lower()
+                cache_execution_status: str = data.get(
+                    "cacheExecutionStatus", ""
+                ).lower()
+
+                if cache_execution_status == "none":
+                    return service_item_id
+                elif status in ["failed"] or cache_execution_status in [
+                    "failed",
+                    "error",
+                ]:
+                    raise Exception(data)
+                elif "error" in data:
+                    raise Exception(data)
+
+            return service_item_id
         else:
             raise Exception("No job id")
 
@@ -18814,7 +19000,7 @@ class Item(dict):
         graph = create_dependency_graph(self._gis, [self], outside_org=outside_org)
         if out_format.lower() == "graph":
             return graph
-        node = graph.get_item(self.id)
+        node = graph.get_node(self.id)
         if deep:
             return node.requires(out_format=out_format)
         return node.contains(out_format=out_format)

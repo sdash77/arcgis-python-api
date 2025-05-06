@@ -1068,7 +1068,7 @@ class TimeSeriesModel(ArcGISModel):
                                 datetime_dict[i] = tuple([new_delta, end_value_temp])
 
         pred_temp_df = pd.DataFrame(
-            np.full([number_of_predictions, orig_dataframe.shape[1]], np.NAN)
+            np.full([number_of_predictions, orig_dataframe.shape[1]], np.nan)
         )
         pred_temp_df.columns = orig_dataframe.columns
         # preserve the indexes. Need to adjust 1 because new index will start from 0
@@ -1254,8 +1254,9 @@ class TimeSeriesModel(ArcGISModel):
         sample_ticks = False
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
-                index_data_copy
+            if not (
+                pd.api.types.is_datetime64_any_dtype(index_data_copy)
+                or pd.api.types.is_timedelta64_dtype(index_data_copy)
             ):
                 try:
                     index_data_copy = pd.to_datetime(index_data_copy)

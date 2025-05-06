@@ -1204,6 +1204,10 @@ class GeoAccessor(object):
             import os
             os.environ["ARCGIS_GEOMETRY_ENGINE"] = "<engine of choice>"
 
+    .. note::
+        If you are using shapely in conjunction with shapefiles instead of arcpy or gdal, you will have to
+        do all reprojections manually. Shapely does not support projections.
+
     """
 
     _viz = None
@@ -2729,7 +2733,7 @@ class GeoAccessor(object):
         fields                          list of strings specifying the field names.
         ---------------------------     --------------------------------------------------------------------
         spatial_filter                  A `Geometry` object that will filter the results.  This requires
-                                        `arcpy` to work.
+                                        `arcpy` or `gdal` to work.
         ---------------------------     --------------------------------------------------------------------
         sr                              A Spatial reference to project (or transform) output GeoDataFrame
                                         to. This requires `arcpy` to work.
@@ -2947,8 +2951,6 @@ class GeoAccessor(object):
         replace_mappings = {
             pd.NA: None,
             np.nan: None,
-            np.NaN: None,
-            np.NAN: None,
             pd.NaT: None,
         }
         df = self._data.copy()
@@ -3170,7 +3172,8 @@ class GeoAccessor(object):
     @property
     def sr(self):
         """
-        The ``sr`` property gets and sets the :class:`~arcgis.geometry.SpatialReference` of the dataframe
+        The ``sr`` property gets and sets the :class:`~arcgis.geometry.SpatialReference` of the dataframe.
+        Can only be done with the ArcPy Geometry Engine.
 
         ==================      ====================================================================
         **Parameter**            **Description**
@@ -3182,7 +3185,7 @@ class GeoAccessor(object):
             data = [
                 g.spatial_reference
                 for g in self._data[self.name]
-                if g not in [None, np.NaN, np.nan, "", {}] and isinstance(g, dict)
+                if g not in [None, np.nan, "", {}] and isinstance(g, dict)
             ]
             srs = [
                 _geometry.SpatialReference(sr)

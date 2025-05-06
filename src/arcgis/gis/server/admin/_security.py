@@ -697,7 +697,7 @@ class User(dict):
         ------------------     --------------------------------------------------------------------
         password               Optional string. The password for this user.
         ------------------     --------------------------------------------------------------------
-        fullname               Optional string. A full name for this user.
+        full_name               Optional string. A full name for this user.
         ------------------     --------------------------------------------------------------------
         description            Optional string. Provide comments or description for this user.
         ------------------     --------------------------------------------------------------------
@@ -1344,7 +1344,7 @@ class Role(dict):
         return True
 
     # ----------------------------------------------------------------------
-    def set_privileges(self, privilage: str) -> bool:
+    def set_privileges(self, privilege: str) -> bool:
         """
         Assigns a privilege to this role.
 
@@ -1367,7 +1367,7 @@ class Role(dict):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        privilage              Required string. The capability to assign to the role. Choices are
+        privilege              Required string. The capability to assign to the role. Choices are
                                ADMINISTER, PUBLISH, ACCESS
         ==================     ====================================================================
 
@@ -1376,12 +1376,12 @@ class Role(dict):
 
         """
         allowed = ["administer", "publish", "access"]
-        if privilage.lower() in allowed:
-            privilage = privilage.upper()
+        if privilege.lower() in allowed:
+            privilege = privilege.upper()
         else:
-            raise ValueError("Invalid privilage.")
+            raise ValueError("Invalid privilege.")
         return self._security._assign_privilege(
-            rolename=self.rolename, privilege=privilage
+            rolename=self.rolename, privilege=privilege
         )
 
     # ----------------------------------------------------------------------

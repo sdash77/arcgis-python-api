@@ -4,6 +4,7 @@ from typing import Optional
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 from arcgis import GIS, features
 from arcgis.gis import ItemProperties, Item
+from integration.config import INTEGRATION_TEST_ITEM_TAG
 
 
 def publish_test_item(
@@ -13,9 +14,11 @@ def publish_test_item(
     item_type: ItemTypeEnum,
     prep_for_editing: bool = True,
     override_capabilities: Optional[dict] = None,
+    source_item: Optional[Item] = None,
     target_url: Optional[str] = None,
 ) -> Item:
     """
+    Publish an item to portal with specific integration test tags and capabilities.
 
     :param gis: GIS: The target GIS instance
     :param layer_name: str: The name of the target feature service
@@ -24,10 +27,43 @@ def publish_test_item(
         e.g. SERVICE_DEFINITION, SHAPEFILE, etc.
     :param prep_for_editing: bool: Should the published service be given editing capabilities:
     :param override_capabilities: dict(str): Provide custom feature service capabilities
+    :param source_item: Item: (Optional) The source file item to publish
     :param target_url: str: Url of a target server used for cloning items.
     :return:
     """
-    source_item = None
+    try:
+        # Add the item to the portal
+        source_item = add_source_item(
+            gis, layer_name, item_type, source_data_path, target_url
+        )
+
+        # Source item is good, try publishing
+        portal_item = source_item.publish(
+            {"name": layer_name, "tags": INTEGRATION_TEST_ITEM_TAG}
+        )
+        if not portal_item:
+            raise Exception(f"Could not update publish {layer_name}")
+
+        if prep_for_editing and portal_item.type == "Feature Service":
+            is_prepped_for_editing = prep_test_item(portal_item, override_capabilities)
+            if not is_prepped_for_editing:
+                raise Exception("Could not update editing capabilities")
+        return portal_item
+
+    except Exception as ex:
+        # If publishing fails, try not to leave the source item behind
+        if source_item:
+            source_item.delete(permanent=True)
+        raise Exception("Failed to add necessary item file to portal.", ex)
+
+
+def add_source_item(
+    gis: GIS,
+    layer_name: str,
+    item_type: ItemTypeEnum,
+    source_data_path: str,
+    target_url: Optional[str] = None,
+):
     try:
         ip = ItemProperties(
             title=layer_name,
@@ -35,6 +71,7 @@ def publish_test_item(
             tags=["ntgrtn-tst"],
             snippet="Item for Feature Layer integration testing",
         )
+
         if target_url:
             ip.url = target_url
         root_folder = gis.content.folders.get()
@@ -42,29 +79,9 @@ def publish_test_item(
             item_properties=ip,
             file=source_data_path,
         ).result()
-        # publish the item
-        if not source_item:
-            raise Exception(f"Could not update publish {layer_name}")
-
-        # Source item is good, try publishing
-        feature_layer_item = source_item.publish(
-            {"name": layer_name, "tags": "ntgrtn-tst"}
-        )
-        if not feature_layer_item:
-            raise Exception(f"Could not update publish {layer_name}")
-        if prep_for_editing:
-            is_prepped_for_editing = prep_test_item(
-                feature_layer_item, override_capabilities
-            )
-            if not is_prepped_for_editing:
-                raise Exception("Could not update editing capabilities")
-        return feature_layer_item
-
+        return source_item
     except Exception as ex:
-        # If publishing fails, don't leave the source item behind
-        if source_item:
-            source_item.delete(permanent=True)
-        raise Exception("Failed to add necessary item file to portal.", ex)
+        raise Exception(f"Failed to add necessary item file to portal. {ex}")
 
 
 def prep_test_item(feature_layer, capabilities):
@@ -171,3 +188,49 @@ def get_feature_layer_url(
                     result_url = f"{result_url}/{layer_id}"
                 return result_url
     return None
+
+
+def create_group(gis: GIS, group_name: str):
+    """
+    Create a test group in GIS
+
+    :param gis: GIS: The GIS instance
+    :param group_name: str: The name of the group
+    :return: The created group
+    """
+    try:
+        group = gis.groups.create(
+            title=group_name,
+            tags=INTEGRATION_TEST_ITEM_TAG,
+            access="org",
+        )
+        return group
+    except Exception as ex:
+        raise Exception("Failed to create necessary group in portal.", ex)
+
+
+def cleanup_groups(groups: list):
+    """
+    Delete groups
+
+    :param groups: list: The groups to delete
+    :return: void
+    """
+    for group in groups:
+        try:
+            group.delete()
+        except Exception as ex:
+            print("Failed to delete group.", group, ex)
+
+
+def cleanup_folders(gis: GIS, folder_names: list):
+    """
+    Delete folders
+
+    :param folder_names: list: The names of folders to delete.
+    :return:void
+    """
+    for folder_name in folder_names:
+        for folder in list(gis.content.folders.list()):
+            if folder.name.startswith(folder_name):
+                folder.delete()
