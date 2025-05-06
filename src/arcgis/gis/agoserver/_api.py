@@ -62,15 +62,30 @@ def _create_service(url: str, layer_type: str, gis: GIS, name: str = None):
 ###########################################################################
 class AGOLServicesDirectory:
     """
-    The ArcGIS Online Services Directory displays the hosted services for
-    a site.
+    Provides access to the hosted services for specific servers of the ArcGIS
+    Online Organization. Objects of this class are not meant to be initialized
+    directly, but instead a list of directories is returned when accessing the
+    :attr:`~arcgis.gis.GIS.hosting_servers` property on a GIS object initialized
+    with ArcGIS Online credentials:
+
+    .. code-block:: python
+
+        # Usage Example: Get ArcGIS Online organization Service Directories
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_online_profile")
+
+        >>> gis.hosting_servers
+
+        [< AGOLServicesDirectory @ https://servicesX.arcgis.com/<org_id>/arcgis/rest/services >,
+         < AGOLServicesDirectory @ https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/services >]
 
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required String. The url string to the ArcGIS Online Server
     ------------------     --------------------------------------------------------------------
-    gis                    Required GIS. The connection to ArcGIS Online.
+    gis                    Required :class:`~arcgis.gis.GIS` object initialized from
+                           ArcGIS Online credentials.
     ==================     ====================================================================
 
     """
@@ -102,9 +117,16 @@ class AGOLServicesDirectory:
     @property
     def properties(self) -> _isd.InsensitiveDict:
         """
-        Returns the server's properties
+        Returns the server's version property and a list of services
+        in the organization on that server.
 
-        :returns: InsensitiveDict
+        .. note::
+            Return times for this property will vary based on number of services
+            hosted by the organization.
+
+        :returns:
+            A dictionary-like InsensitiveDict object containing the
+            version and a list of services hosted on the particular server.
         """
         resp = self._gis._con.get(self._url, {"f": "json"})
         return _isd.InsensitiveDict(resp)
@@ -113,7 +135,7 @@ class AGOLServicesDirectory:
     @property
     def folders(self) -> list:
         """
-        Returns a list of folder names
+        Returns an empty list.
 
         :returns: List
         """
@@ -122,7 +144,33 @@ class AGOLServicesDirectory:
     # ---------------------------------------------------------------------
     @property
     def services(self) -> list:
-        """returns a list of services hosted on ArcGIS Online Server"""
+        """
+        Returns a list of layer objects hosted on the ArcGIS Online server.
+
+        .. code-block:: python
+
+            # Usage Example: Accessing services through the properties of a Tile Server
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_admin_profile")
+
+            >>> gis.hosting_servers
+
+            [< AGOLServicesDirectory @ https://services7.arcgis.com/<org_id>/arcgis/rest/services >,
+             < AGOLServicesDirectory @ https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/services >]
+
+            >>> tile_sd = gis.hosting_servers[1]
+            >>> tiles_sd.services
+
+            [<PointCloudLayer url:"https://tiles.arcgis.com/tiles/org_id/arcgis/rest/services/scene_service1/SceneServer">,
+            <VectorTileLayer url:"https://tiles.arcgis.com/tiles/org_id/arcgis/rest/services/vector_service1/VectorTileServer">,
+            ...
+            <MapImageLayer url:"https://tiles.arcgis.com/tiles/org_id/arcgis/rest/services/map_service1/MapServer">]
+
+
+
+
+
+        """
         services = []
 
         if "services" in self.properties:
