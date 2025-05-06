@@ -59,3 +59,12 @@ nose2 = "*"
 parameterized = "*"
 requests-mock = "*"
 unittest-xml-reporting = "*"
+
+[feature.daily]
+channels = ["https://esri-forge.python.geocloud.com"]
+
+[feature.daily.dependencies]
+arcgis = ">=2.4.2,<3"
+
+[environments]
+daily = { features = ["daily"] }
