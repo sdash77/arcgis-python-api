@@ -116,20 +116,21 @@ def setup_profiles(
     if not kube_name in updated_list:
         pm.create(
             kube_name,
-            url="https://1140pubbi-1140pubbi.apps.openshift412release.esri.com/web/home",
-            username="SHSpublisher",
-            password="ShSPublisher43",
+            url="https://1140pubbi-1140pubbi.apps.openshift416release.esri.com/web",
+            username="PAPIpublisher",
+            password="PAPIletmein01",
         )
         print(f"Created profile {kube_name}")
 
     if not kube_admin_name in updated_list:
         pm.create(
             kube_admin_name,
-            url="https://1140pubbi-1140pubbi.apps.openshift412release.esri.com/web/home",
-            username="ShSAdmin",
-            password="ShSAdmin43",
+            url="https://1140pubbi-1140pubbi.apps.openshift416release.esri.com/web",
+            username="PAPIadmin",
+            password="PAPIletmein01",
         )
         print(f"Created profile {kube_admin_name}")
+
     if not devext_admin_name in updated_list:
         pm.create(
             profile=devext_admin_name,
@@ -140,6 +141,8 @@ def setup_profiles(
             cert_file=None,
             client_id=None,
         )
+        print(f"Created profile {devext_admin_name}")
+
     if not utility_network_name in updated_list:
         pm.create(
             utility_network_name,
