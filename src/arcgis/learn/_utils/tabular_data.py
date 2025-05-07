@@ -1809,7 +1809,7 @@ class TabularDataObject(object):
                                 )
                                 value = raster_value[0][0]
                             except:
-                                value = [np.NaN]
+                                value = [np.nan]
                             for i in range(len(value)):
                                 if i == 0:
                                     rasters_data[raster.name].append(value[i])

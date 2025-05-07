@@ -1068,7 +1068,7 @@ class TimeSeriesModel(ArcGISModel):
                                 datetime_dict[i] = tuple([new_delta, end_value_temp])
 
         pred_temp_df = pd.DataFrame(
-            np.full([number_of_predictions, orig_dataframe.shape[1]], np.NAN)
+            np.full([number_of_predictions, orig_dataframe.shape[1]], np.nan)
         )
         pred_temp_df.columns = orig_dataframe.columns
         # preserve the indexes. Need to adjust 1 because new index will start from 0

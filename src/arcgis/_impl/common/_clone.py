@@ -3683,19 +3683,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             field_mapping[
                                                 original_editor_field_name
                                             ] = new_editor_field_name
-                                            # Delete old editor tracking fields
-                                            if self.is_view == False:
-                                                try:
-                                                    new_delete_field = new_fields[
-                                                        new_fields_lower.index(
-                                                            original_editor_field_name.lower()
-                                                        )
-                                                    ]
-                                                    del_fields.append(
-                                                        new_delete_field["name"]
-                                                    )
-                                                except ValueError:
-                                                    pass
 
                         original_oid_field = _deep_get(layer, "objectIdField")
                         new_oid_field = _deep_get(new_layer_properties, "objectIdField")
