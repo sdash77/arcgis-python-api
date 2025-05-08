@@ -315,7 +315,7 @@ class WorkflowManagerAdmin:
                                exported without their values.
         ---------------------  ---------------------------------------------------------
         run_async              Optional. A boolean indicating whether to run export item asynchronously. If set to true,
-                               export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution` The download
+                               export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`. The download
                                location can then be found by prompting for the export_location.
         ---------------------  ---------------------------------------------------------
         save_path              Optional. The location to save the wmc file after finish exporting. If not set, the
@@ -395,7 +395,6 @@ class WorkflowManagerAdmin:
                 out_folder=save_path,
             )
 
-            # If it fails, unsubscribe then throw
             if "error" in return_obj:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
@@ -465,14 +464,14 @@ class WorkflowManagerAdmin:
 
             # USAGE EXAMPLE: Import An Item Asynchronously
 
-            # Create a new item using wm_admin
-            new_item_id = wm_admin.create_item(name='New Workflow Item')
+            # Create a new item using workflow_manager_admin
+            new_item_id = workflow_manager_admin.create_item(name='New Workflow Item')
             new_item = gis.content.get(new_item_id)
 
             # Path to location of .wmc file from a previous exported item.
             filepath = 'C:\\Users\\exampleUser\\Desktop\\test.wmc'
 
-            import_execution = wm_admin.import_item(new_item, filepath, run_async=True)
+            import_execution = workflow_manager_admin.import_item(new_item, filepath, run_async=True)
 
             while not import_execution.done():
                 print(f'Progress = {import_execution.status}')
@@ -3706,7 +3705,6 @@ class Job(object):
                     json_encode=False,
                 )
             )
-            # If it fails, unsubscribe then throw
             if "error" in return_obj:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
@@ -3961,7 +3959,7 @@ class WorkflowManagerExecution:
 
 class JobExecution(WorkflowManagerExecution):
     """
-    Represents a single step executing in a workflow manager job.  The `JobExecution` class allows for the asynchronous
+    Represents a single step executing in a Workflow Manager job.  The `JobExecution` class allows for the asynchronous
     operation of an executing step. The status of the step execution can then be queried by the class properties,
     status, result, elapse_time and messages. This class is not intended for users to call directly.
 
@@ -4027,8 +4025,8 @@ class JobExecution(WorkflowManagerExecution):
 
 class ItemExecution(WorkflowManagerExecution):
     """
-    Represents some execition on the workflow item level.  The `itemExecution` class allows for the asynchronous
-    operation of an executing workflow manager admin operations. The status of the step execution can then be queried
+    Represents some execution on the workflow item level.  The `ItemExecution` class allows for the asynchronous
+    operation of an executing Workflow Manager admin operations. The status of the step execution can then be queried
     by the class properties, status, result, elapse_time and messages. This class is not intended for users to call directly.
 
     ===============     ====================================================================
@@ -4056,12 +4054,12 @@ class ItemExecution(WorkflowManagerExecution):
                 (
                     self._execution_type == ExecutionType.EXPORT
                     and msg.msg_type
-                    in [MessageType.EXPORTCOMPLETED, MessageType.EXPORTFAILED]
+                    in [MessageType.EXPORT_COMPLETED, MessageType.EXPORT_FAILED]
                 )
                 or (
                     self._execution_type == ExecutionType.IMPORT
                     and msg.msg_type
-                    in [MessageType.IMPORTCOMPLETED, MessageType.IMPORTFAILED]
+                    in [MessageType.IMPORT_COMPLETED, MessageType.IMPORT_FAILED]
                 )
             )
         ):
@@ -4072,7 +4070,7 @@ class ItemExecution(WorkflowManagerExecution):
                 self._export_id = msg.message["exportId"]
                 logger.debug(f"Set export id {self._export_id}")
 
-            if msg.msg_type in [MessageType.EXPORTFAILED, MessageType.IMPORTFAILED]:
+            if msg.msg_type in [MessageType.EXPORT_FAILED, MessageType.IMPORT_FAILED]:
                 self._err = (
                     msg.message["msg"] if "msg" in msg.message else "Unexpected error"
                 )
@@ -4094,7 +4092,7 @@ class ItemExecution(WorkflowManagerExecution):
         Get the export id from executing the item export.
 
         :return:
-            Boolean
+            str
 
         """
         if not self.running() and self._execution_type is ExecutionType.EXPORT:
@@ -4108,7 +4106,7 @@ class ItemExecution(WorkflowManagerExecution):
         in :func:`~arcgis.gis.workflowmanageradmin.export_item`
 
         :return:
-            Boolean
+            str
 
         """
         if not self.running() and self._execution_type is ExecutionType.EXPORT:
@@ -4623,7 +4621,7 @@ class JobLocation(object):
 
 class NotificationManager:
     """
-    Represents a helper class for workflow manager websocket notifications. Accessible as the
+    Represents a helper class for Workflow Manager websocket notifications. Accessible as the
     :attr:`~arcgis.gis.workflowmanager.WorkflowManager.notifications` property of the
     :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
 
@@ -4711,7 +4709,7 @@ class NotificationManager:
 
     def connect(self):
         """
-        Establishes a websocket connection to the workflow manager server.
+        Establishes a websocket connection to the Workflow Manager server.
 
         .. code-block:: python
             # USAGE EXAMPLE: Manage websocket connection manually
@@ -4734,7 +4732,7 @@ class NotificationManager:
 
     def disconnect(self):
         """
-        Removes and disconnects the websocket connection to the workflow manager server.
+        Removes and disconnects the websocket connection to the Workflow Manager server.
         """
         if self.websocket_connection:
             self.websocket_connection.disconnect()
@@ -4902,10 +4900,10 @@ class MessageType(Enum):
     STEP_ERROR = "STEPERROR"
     STEP_INFO_REQUIRED = "STEPINFOREQUIRED"
     STEP_INFORMATION = "STEPINFORMATION"
-    EXPORTCOMPLETED = "EXPORTCOMPLETED"
-    EXPORTFAILED = "EXPORTFAILED"
-    IMPORTCOMPLETED = "IMPORTCOMPLETED"
-    IMPORTFAILED = "IMPORTFAILED"
+    EXPORT_COMPLETED = "EXPORTCOMPLETED"
+    EXPORT_FAILED = "EXPORTFAILED"
+    IMPORT_COMPLETED = "IMPORTCOMPLETED"
+    IMPORT_FAILED = "IMPORTFAILED"
 
 
 class ExecutionType(Enum):
