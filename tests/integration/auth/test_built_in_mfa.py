@@ -1,4 +1,6 @@
 import sys
+sys.path.insert(0, r"C:\svn\geosaurus_master\src")
+sys.path.insert(1, r"C:\svn\geosaurus_master\tests")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -31,8 +33,24 @@ class TestMFASecurityAuth(unittest.TestCase):
         cls.username = "mfauser"
         cls.password = "esri.agp2"
         cls.mfa_code = "QHM72ADVWBPIQHYT"
-
+    
+    @unittest.skip("Needs Human Interaction")
+    def test_mfa_gis(self):
+        from arcgis.gis import GIS
+        from arcgis.auth.tools._util import mfa_otp
+        url = "https://devext.arcgis.com/sharing/rest"
+        username = "mfauser"
+        password = "esri.agp2"
+        #
+        #   Enter the code in twice for the workflow
+        #
+        verify_code = mfa_otp(self.mfa_code)
+        print(verify_code)
+        GIS(url=url, username=username, password=password, verify_cert=False, trust_env=True)
+        
+    
     def test_login_mfa(self):
+        
         auth = EsriBuiltInAuth(
             url=self.url,
             username=self.username,
@@ -43,24 +61,28 @@ class TestMFASecurityAuth(unittest.TestCase):
             referer=None,
             proxies=PROXIES,
             mfa_code=self.mfa_code,
+            session=EsriSession()
         )
         assert auth.token
-
+    
     def test_login_mfa_call(self):
-        auth = EsriBuiltInAuth(
-            url=self.url,
-            username=self.username,
-            password=self.password,
-            expiration=None,
-            legacy=False,
-            verify_cert=False,
-            referer=None,
-            proxies=PROXIES,
-            mfa_code=self.mfa_code,
-        )
+        
         with EsriSession(
-            auth=auth, verify_cert=False, proxy=PROXIES
+           verify_cert=False, proxy=PROXIES
         ) as session:
+            auth = EsriBuiltInAuth(
+                url=self.url,
+                username=self.username,
+                password=self.password,
+                expiration=None,
+                legacy=False,
+                verify_cert=False,
+                referer=None,
+                proxies=PROXIES,
+                mfa_code=self.mfa_code,
+                session=session, 
+            )
+            session.auth = auth
             data = session.get(
                 "https://devext.arcgis.com/sharing/rest/portals/self?f=json"
             ).json()
