@@ -446,7 +446,7 @@ class WorkflowManagerAdmin:
         ------------------  ---------------------------------------------------------
         item                Required Item. The Workflow Manager Item that to import the configuration to.
         ------------------  ---------------------------------------------------------
-        config_file         Required. The file path to the workflow manager configuration file.
+        config_file         Required. The file path to the Workflow Manager configuration file.
         ------------------  ---------------------------------------------------------
         passphrase          Optional. If importing encrypted user defined settings, specify the same passphrase
                             used when exporting the configuration file. If no passphrase is specified, the keys for
@@ -539,7 +539,7 @@ class WorkflowManagerAdmin:
 
 class JobManager:
     """
-    Represents a helper class for workflow manager jobs. Accessible as the
+    Represents a helper class for Workflow Manager jobs. Accessible as the
     :attr:`~arcgis.gis.workflowmanager.WorkflowManager.jobs` property of the
     :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
 
@@ -2774,7 +2774,7 @@ class Template(object):
 
 class SavedSearchesManager:
     """
-    Represents a helper class for workflow manager saved searches. Accessible as the
+    Represents a helper class for Workflow Manager saved searches. Accessible as the
     :attr:`~arcgis.gis.workflowmanager.WorkflowManager.saved_searches` property.
 
     ===============     ====================================================================
