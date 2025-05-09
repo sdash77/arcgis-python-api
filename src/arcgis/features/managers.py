@@ -600,7 +600,7 @@ class AttachmentManager(object):
                         "NAME": data["name"],
                         "CONTENTTYPE": data["contentType"],
                         "SIZE": data["size"],
-                        "KEYWORDS": data["keywords"],
+                        "KEYWORDS": data.get("keywords", None),
                         "IMAGE_PREVIEW": preview,
                     }
                     if "globalId" in data:

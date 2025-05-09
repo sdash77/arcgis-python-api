@@ -49,7 +49,7 @@ try:
 except Exception as e:
     HAS_NUMPY = False
 else:
-    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+    warnings.filterwarnings("ignore", category=np.exceptions.VisibleDeprecationWarning)
 
 try:
     from bs4 import BeautifulSoup
