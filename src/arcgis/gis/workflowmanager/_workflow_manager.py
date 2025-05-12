@@ -337,9 +337,16 @@ class WorkflowManagerAdmin:
             export_execution = workflow_manager_admin.export_item(item,
                                                                   run_async=True,
                                                                   save_path='C:\\Users\\exampleUser\\Desktop\\')
-            # Now process the export_execution - result() blocks execution until the asynchronous work is finished and returns the last message received.
+            # result() blocks execution until the asynchronous work is finished and returns the last message received.
             result = export_execution.result()
             print(f'Result = {result}\n')
+
+            # Use .done() in a loop if you want to perform other actions while waiting for export to complete
+            # while not export_execution.done():
+            #     print(f'Progress = {import_execution.status}')
+            #     print(f'{import_execution.messages}')
+            #     time.sleep(5)
+
             print(f'Here is the Exported ID: {export_execution.export_id}')
             print(f'Here is the Exported Location: {export_execution.export_location}\n')
 
@@ -473,20 +480,21 @@ class WorkflowManagerAdmin:
 
             import_execution = workflow_manager_admin.import_item(new_item, filepath, run_async=True)
 
-            while not import_execution.done():
-                print(f'Progress = {import_execution.status}')
-                print(f'{import_execution.messages}')
-                time.sleep(5)
+            # result() blocks execution until the asynchronous work is finished and returns the last message received.
+            result = export_execution.result()
+            print(f'Result = {result}\n')
+
+            # Use .done() in a loop if you want to perform other actions while waiting for import to complete
+            # while not import_execution.done():
+            #     print(f'Progress = {import_execution.status}')
+            #     print(f'{import_execution.messages}')
+            #     time.sleep(5)
 
             print(f'Status = {import_execution.status}')
             print(f'Time elapsed {import_execution.elapse_time}')
             print(f'Messages received: ')
             for m in import_execution.messages:
                 print(f'{m.message} ')
-
-            # Result() returns the last message received. This will inform you of the final state from importing
-            # It can also be called while the import is in progress to block until the import is complete
-            print(f'Result = {import_execution.result()}')
 
         """
 
