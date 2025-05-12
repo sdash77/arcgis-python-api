@@ -487,6 +487,9 @@ class Collection(object):
         """
         data = []
         for entry in self._iterate_content():
+            # Skip the first two entries (cover and navigation) since we do not want them in the table
+            if entry["type"] in ["Cover", "Collection Navigation"]:
+                continue
             data.append(
                 {
                     "Type": entry["type"],
@@ -498,7 +501,12 @@ class Collection(object):
         return pd.DataFrame(data)
 
     # ----------------------------------------------------------------------
-    def update_content_info(self, index: int | list[int], visible: bool):
+    def update_content_info(
+        self,
+        index: int | list[int],
+        custom_title: str | None = None,
+        visible: bool | None = None,
+    ):
         """
         Update the content item in the collection.
 
@@ -511,23 +519,35 @@ class Collection(object):
         ---------------     --------------------------------------------------------------------
         index               Required integer or list of integers. The index position(s) of the item to update.
         ---------------     --------------------------------------------------------------------
+        custom_title        Optional string. The custom title to set for the item.
+        ---------------     --------------------------------------------------------------------
         visible             Required boolean. If True, the item is visible. If False, the item is hidden.
                             If a list of indices is passed, all items will be set to the same specified visibility.
         ===============     ====================================================================
 
-        :return: True if the visibility was updated successfully.
+        :return: DataFrame of content information with the updated changes.
         """
         if not isinstance(index, list):
             index = [index]
         root_node = self._properties["root"]
         ui_node = self._properties["nodes"][root_node]["children"][0]
         ui = self._properties["nodes"][ui_node]
+        items = ui["data"]["items"]
 
         # Iterate through the items in the collection-ui node
-        for i, item in enumerate(ui["data"]["items"]):
+        for i, _ in enumerate(items):
             if i in index:
-                # Update the visibility of the item
-                item["isHidden"] = not visible
+                if visible is not None:
+                    # Update the visibility of the item
+                    self._properties["nodes"][ui_node]["data"]["items"][i][
+                        "isHidden"
+                    ] = not visible
+                if custom_title is not None:
+                    # Update the custom title of the item
+                    self._properties["nodes"][ui_node]["data"]["items"][i][
+                        "customTitle"
+                    ] = custom_title
+        return self.content_info
 
     # ----------------------------------------------------------------------
     def remove(self, index):
