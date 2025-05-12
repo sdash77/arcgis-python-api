@@ -14,7 +14,8 @@ from arcgis.gis import Group, User
 from arcgis.gis.clone._ux import UXCloner
 import requests
 
-_basemap_definitions = LazyLoader("arcgis.layers._basemap_definitions")
+_basemap_definitions = LazyLoader("arcgis.map._definitions._basemap_definitions")
+_basemap_definitions_3d = LazyLoader("arcgis.map._definitions._3d_basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
 _cm = LazyLoader("arcgis.gis._impl._content_manager")
 
@@ -758,7 +759,7 @@ class UX(object):
     def map_settings(self):
         """
         Get an instance of the :class:`~arcgis.gis.admin.MapSettings` class to
-        make edits to the org's default map settings such as extent, basemap, etc.
+        make edits to the org's default map and scene settings such as extent, basemap, etc.
         """
         return MapSettings(gis=self._gis)
 
@@ -1394,12 +1395,12 @@ class MapSettings(object):
     @property
     def default_extent(self):
         """
-        Get/Set the site's default extent
+        Get/Set the site's default extent. This is used when a new map or scene is created.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        extent            Required dictionary. The default extent defines where a webmap
+        extent            Required dictionary. The default extent defines where a webmap or webscene
                           will open.
                           If a value of None is given, the default extent will be provided.
                           Example Extent (default):
@@ -1467,6 +1468,43 @@ class MapSettings(object):
         except:
             raise ValueError(
                 "Valid Basemaps: 'dark-gray-vector', 'gray-vector', 'hybrid', 'oceans', 'osm', 'satellite', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo-vector'"
+            )
+
+    # ----------------------------------------------------------------------
+    @property
+    def default_basemap_3d(self):
+        """
+        Get/Set the site's default 3D basemap.
+
+        The Default 3D Basemap opens when users click New Scene.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        basemap           Required string. The new default 3D basemap to set. If None, the
+                          default will be the 2D default basemap.
+        ================  ===============================================================
+
+        :return: dictionary
+
+        """
+        return self._gis.properties.get("default3DBasemap", self.default_basemap)
+
+    # ----------------------------------------------------------------------
+    @default_basemap_3d.setter
+    def default_basemap_3d(self, value: str):
+        """
+        See main ``default_basemap_3d`` property docstring
+        """
+        try:
+            basemap = {
+                "baseMapLayers": _basemap_definitions_3d.basemap_dict[value],
+                "title": value.replace("-", " ").title(),
+            }
+            return self._gis.update_properties({"default3DBasemap": basemap})
+        except:
+            raise ValueError(
+                "Valid 3D Basemaps: 'topo-3d', 'navigation-3d', 'streets-3d', 'osm-3d', 'gray-3d', 'navigation-dark-3d', 'streets-dark-3d', 'dark-gray-3d'"
             )
 
     # ----------------------------------------------------------------------
@@ -1561,6 +1599,48 @@ class MapSettings(object):
         self._gis.update_properties(
             {"basemapGalleryGroupQuery": group, "useVectorBasemaps": value}
         )
+
+    # ----------------------------------------------------------------------
+    @property
+    def basemap_gallery_group_3d(self):
+        """
+        Select the group whose web maps will be shown in the 3D basemap gallery.
+        To change the group, assign either an instance of Group or the group id.
+        Setting to None will revert to default.
+
+        :return: An instance of Group if a group is set, else the default or None
+        """
+        group_id = self._gis.properties.get("3DBasemapGalleryGroupQuery")
+        if group_id:
+            if "id:" in group_id:
+                # must use [3::] to slice string since format of: "id:123abc"
+                groups = self._gis.groups.search(group_id[3::])
+                if groups:
+                    return groups[0]
+                else:
+                    return None
+            else:
+                return group_id
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @basemap_gallery_group_3d.setter
+    def basemap_gallery_group_3d(self, group: Group | str | None):
+        if isinstance(group, Group):
+            group = "id:" + group.id
+        elif isinstance(group, str):
+            res = self._gis.groups.search(group)
+            if len(res) == 0:
+                raise ValueError(
+                    "The group id provided could not be found in your org."
+                )
+            else:
+                group = "id:" + group
+        elif group is None:
+            group = None
+
+        self._gis.update_properties({"3DBasemapGalleryGroupQuery": group})
 
     # ----------------------------------------------------------------------
     @property
