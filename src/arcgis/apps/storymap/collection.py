@@ -498,7 +498,7 @@ class Collection(object):
         return pd.DataFrame(data)
 
     # ----------------------------------------------------------------------
-    def update_content(self, index: int | list[int], visible: bool):
+    def update_content_info(self, index: int | list[int], visible: bool):
         """
         Update the content item in the collection.
 
