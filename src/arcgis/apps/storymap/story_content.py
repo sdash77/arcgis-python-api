@@ -1813,7 +1813,6 @@ class Map:
         return []
 
     # ----------------------------------------------------------------------
-    # create a method that updates the visibility of the map layers. The user should be able to specify the layer and whether the visibility is True or False.
     def update_map_layers(self, layer_id: str | int, visible: bool):
         """
         Update the visibility of the map layers.
