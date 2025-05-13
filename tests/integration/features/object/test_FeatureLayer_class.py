@@ -5,12 +5,12 @@ from arcgis.features import FeatureLayer, FeatureLayerCollection, FeatureSet, Fe
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 
 from pandas import DataFrame
-from integration.config import QALAB_ROOT_PATH
+from integration.config import QALAB_ROOT_PATH, get_resource_path
 from utils.decorators import integration_test, profiles
 from utils.data_utils import publish_test_item, cleanup_published_items
 
 
-@profiles.enterprise_and_agol
+@profiles.all
 @integration_test
 class TestFeatureLayerClass(unittest.TestCase):
     """
