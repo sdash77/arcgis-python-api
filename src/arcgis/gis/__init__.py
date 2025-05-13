@@ -566,7 +566,11 @@ class GIS(object):
                     "key_file parameter is required along with cert_file when using PKI authentication."
                 )
         self.resturl = _create_base_url(url)
-        self._url = url.replace("http://", "https://")
+        self._url = url.replace("http://", "https://").replace("/home", "")
+        if self._url[-1] == "/":
+            self._url = self._url[:-1]
+        if self.url[-1] == "/":
+            self.url = self.url[:-1]
         self._username = username
         self._password = password
         self._key_file = key_file
