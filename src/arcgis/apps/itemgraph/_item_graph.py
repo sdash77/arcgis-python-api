@@ -586,7 +586,7 @@ def create_dependency_graph(
                     dep_item = None
 
                 # check if item is outside of the organization
-                if not dep_item or gis.url not in dep_item.homepage:
+                if not dep_item or not dep_item.get("isOrgItem", False):
                     if not dep or not outside_org:
                         continue
                     graph.add_item(dep, dep_item)
