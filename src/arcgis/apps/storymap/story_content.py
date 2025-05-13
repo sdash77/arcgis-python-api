@@ -5382,6 +5382,12 @@ class BriefingSlide:
             else:
                 self._title: Text | None = None
 
+            display_title = node_data.get("displayTitle", None)
+            if display_title:
+                self._display_title: str = display_title
+            else:
+                self._display_title: str | None = None
+
             self._section_position: str | None = node_data.get("sectionPosition", None)
 
     def _initialize_new_slide(
@@ -5398,8 +5404,10 @@ class BriefingSlide:
             self._title: Text = (
                 Text(title, TextStyles.SUBHEADING) if isinstance(title, str) else title
             )
+            self._display_title: str = title if isinstance(title, str) else title.text
         else:
             self._title: Text | None = None
+            self._display_title: str | None = None
 
         # set subtitle
         if subtitle:
@@ -5622,6 +5630,31 @@ class BriefingSlide:
 
         # assign new subtitle
         self._subtitle = subtitle
+
+    # ----------------------------------------------------------------------
+    @property
+    def display_title(self) -> str | None:
+        """
+        Get/Set the display title of the slide. This is the title that will be shown in the
+        briefing when the slide is displayed.
+
+        :return:
+            A string of the display title if it exists, otherwise None.
+        """
+        return self._display_title
+
+    # ----------------------------------------------------------------------
+    @display_title.setter
+    def display_title(self, title: str):
+        """
+        Set the display title of the slide. This is the title that will be shown in the
+        briefing when the slide is displayed.
+
+        :param title: A string of the display title.
+        """
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["displayTitle"] = title
+        self._display_title = title
 
     # ----------------------------------------------------------------------
     @property
