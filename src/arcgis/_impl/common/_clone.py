@@ -3059,7 +3059,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 if not name or not isinstance(name, str):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
-                name = re.sub("\W+", "_", name)
+                name = re.sub(r"\W+", "_", name)
                 name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
                 if self.folder:
@@ -3683,19 +3683,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             field_mapping[
                                                 original_editor_field_name
                                             ] = new_editor_field_name
-                                            # Delete old editor tracking fields
-                                            if self.is_view == False:
-                                                try:
-                                                    new_delete_field = new_fields[
-                                                        new_fields_lower.index(
-                                                            original_editor_field_name.lower()
-                                                        )
-                                                    ]
-                                                    del_fields.append(
-                                                        new_delete_field["name"]
-                                                    )
-                                                except ValueError:
-                                                    pass
 
                         original_oid_field = _deep_get(layer, "objectIdField")
                         new_oid_field = _deep_get(new_layer_properties, "objectIdField")
@@ -5430,7 +5417,7 @@ class _FormDefinition(_ItemDefinition):
         with open(xml_file_path, "w") as xml_file:
             xml_string = ElementTree.tostring(xml, encoding="unicode")
             xml_string = re.sub(
-                "<h:html\s.*>?",
+                r"<h:html\s.*>?",
                 "<h:html "
                 + " ".join(
                     [
@@ -6926,9 +6913,9 @@ def _find_and_replace_fields_sql(text, field_mapping):
     for field in field_mapping:
         replace = field_mapping[field]
 
-        results = set(re.findall('([{{("\[ ])({0})([}})"\] ])'.format(field), text))
-        start = re.findall('(^{0})([}})"\] ])'.format(field), text)
-        end = re.findall('([{{("\[ ])({0}$)'.format(field), text)
+        results = set(re.findall(r'([{{("\[ ])({0})([}})"\] ])'.format(field), text))
+        start = re.findall(r'(^{0})([}})"\] ])'.format(field), text)
+        end = re.findall(r'([{{("\[ ])({0}$)'.format(field), text)
         for element in results:
             text = text.replace(
                 "".join(element), "".join([element[0], replace, element[2]])

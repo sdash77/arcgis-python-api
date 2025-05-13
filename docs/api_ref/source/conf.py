@@ -25,12 +25,13 @@ from datetime import datetime
 copyright = f"2016-{datetime.now().year}, Esri"
 
 # Bump both versions. The short X.Y version.
-version = "2.4.1"
+version = "2.4.2"
 # The full version, including alpha/beta/rc tags.
-release = "2.4.1"
+release = "2.4.2"
 
 # Add currently public version to this list - this is needed for the picker UI
 versions = [
+    "2.4.1", 
     "2.4.0",
     "2.3.1",
     "2.3.0",

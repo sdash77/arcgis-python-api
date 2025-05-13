@@ -2,10 +2,9 @@ name: geosaurus_dev_env
 channels:
 - defaults
 - esri
-- esri/label/prerelease
 - esri-build
 dependencies:
-- python 3.11.*
+- python 3.13.*
 - pip
 - setuptools
 # ---- arcgis ----
@@ -22,11 +21,11 @@ dependencies:
 - matplotlib-inline
 - nbconvert
 - networkx >=3.3, <4
-- numpy>=1.21.6,<2
-- pandas >=2.0.0,<2.2.0
+- numpy >=2.2.0,<3
+- pandas >=2.0.0,<2.3.0
 - pillow
 - puremagic >=1.15,<2
-- pyarrow >=16,<17
+- pyarrow >=16,<20
 - pylerc
 - pyspnego >=0.8.0
 - pydantic >=2.8.2, <3
@@ -51,12 +50,11 @@ dependencies:
 # as this is only to build the docs locally
 # docs should NOT be published from this environment
 # for testing only
-- fastai::fastai
-- pytorch >=2
-- timm 0.4.12.*
-- torchvision >=0.15.0
-# ---- sphinx/docs build ----
-- sphinx >=7,<8
+# TODO add learn dependencies to enable docs build for v2.4.2
+# - fastai::fastai
+# - pytorch >=2
+# - timm 0.4.12.*
+# - torchvision >=0.15.0
 # ---- etc ----
 - black
 - keyrings.alt
@@ -64,6 +62,7 @@ dependencies:
 - protobuf
 - pip:
   # ---- sphinx/docs build ----
+  - sphinx >=7,<8
   - sphinx_rtd_theme>=2,<3
   - autodoc_pydantic>=2,<3
   # ---- automated testing ----

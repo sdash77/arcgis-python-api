@@ -9277,7 +9277,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def query_exif_info(self, input_images, gis=None, future=False, **kwargs):
-        """
+        r"""
         The `query_exif_info` reads the Exif header metadata from single or
         multiple images in shared data store. The Exif metadata is usually stored
         in drone image files. Some common Exif metadata information are GPS
@@ -10962,7 +10962,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.1")
+    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.2")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -12737,7 +12737,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         estimate=False,
         **kwargs,
     ):
-        """
+        r"""
         Function is designed to generate training sample image chips from the input imagery data with
         labeled vector data or classified images. The output of this service tool is the data store string
         where the output image chips, labels and metadata files are going to be stored.
@@ -17277,6 +17277,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_value=None,
         dimension_description=None,
         dimension_unit=None,
+        update_statistics=True,
+        update_transpose=True,
         future=False,
         estimate=False,
         **kwargs,
@@ -17298,6 +17300,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_description: dimensionDescription (str). Optional parameter.
 
         dimension_unit: dimensionUnit (str). Optional parameter.
+
+        update_statistics: updateStatistics (bool). Optional parameter.
+
+        update_transpose: updateTranspose (bool). Optional parameter.
 
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
@@ -17333,19 +17339,38 @@ class _RasterAnalysisTools(BaseAnalytics):
             if manage_mode.lower() == element.lower():
                 manage_mode = element
 
-        gpjob = self._tbx.manage_multidimensional_raster(
-            target_multidimensional_raster=target_multidimensional_raster,
-            manage_mode=manage_mode,
-            variables=variables,
-            input_multidimensional_rasters=input_multidimensional_rasters,
-            dimension_name=dimension_name,
-            dimension_value=dimension_value,
-            dimension_description=dimension_description,
-            dimension_unit=dimension_unit,
-            gis=self._gis,
-            future=True,
-            estimate=estimate,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version < 11.5:
+                gpjob = self._tbx.manage_multidimensional_raster(
+                    target_multidimensional_raster=target_multidimensional_raster,
+                    manage_mode=manage_mode,
+                    variables=variables,
+                    input_multidimensional_rasters=input_multidimensional_rasters,
+                    dimension_name=dimension_name,
+                    dimension_value=dimension_value,
+                    dimension_description=dimension_description,
+                    dimension_unit=dimension_unit,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
+            elif (current_version is not None) and current_version >= 11.5:
+                gpjob = self._tbx.manage_multidimensional_raster(
+                    target_multidimensional_raster=target_multidimensional_raster,
+                    manage_mode=manage_mode,
+                    variables=variables,
+                    input_multidimensional_rasters=input_multidimensional_rasters,
+                    dimension_name=dimension_name,
+                    dimension_value=dimension_value,
+                    dimension_description=dimension_description,
+                    dimension_unit=dimension_unit,
+                    update_statistics=update_statistics,
+                    update_transpose=update_transpose,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)

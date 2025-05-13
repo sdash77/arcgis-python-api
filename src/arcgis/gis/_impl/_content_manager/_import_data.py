@@ -178,6 +178,8 @@ def _create_items(gis, file, file_type, **kwargs):
             "hasStaticData": True,
             "layerInfo": {"capabilities": "Query"},
         }
+        if isinstance(kwargs.get("target_sr"), int):
+            publish_parameters["targetSR"] = {"wkid": kwargs.get("target_sr")}
         if service_name is None:
             service_name = re.sub(r"[\s\W]", "_", title.replace(" ", ""))
 

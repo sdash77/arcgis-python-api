@@ -6229,13 +6229,27 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        type                Optional string or CoverType enum. The type of story cover to be used in the story.
+        type                Optional string or :class:`~arcgis.apps.storymap.story_content.CoverType`
+                            enumeration. The type of story cover to be used in the story.
 
-                            ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal" | "card" | "split" | "top"``
-                            ``Values for Collection: "grid" | "magazine" | "journal"``
+                            * Values for :class:`~arcgis.apps.storymap.story.StoryMap`
+                              and :class:`~arcgis.apps.storymap.briefing.Briefing`:
+                             * *full*
+                             * *sidebyside*
+                             * *minimal*
+                             * *card*
+                             * *split*
+                             * *top*
+
+                            * Values for :class:`~arcgis.apps.storymap.collection.Collection`:
+
+                             * *grid*
+                             * *magazine*
+                             * *journal*
 
                             .. note::
-                                As of Enterprise 11.4 only "full", "sidebyside", and "minimal" are supported for Storymap and Briefing.
+                                As of Enterprise 11.4 only "full", "sidebyside", and "minimal" are
+                                supported for Storymap and Briefing.
         ===============     ====================================================================
 
         :return:
