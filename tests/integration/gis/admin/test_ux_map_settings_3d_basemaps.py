@@ -7,7 +7,7 @@ from random import randrange
 enable_verbose_logging()
 
 
-@profiles.agol_admin
+@profiles.admin_agol
 @integration_test
 class TestUxMapSettings3DBasemaps(unittest.TestCase):
     def test_get_3d_basemaps(self):
