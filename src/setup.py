@@ -50,6 +50,7 @@ def _get_rel_site_packages_dir():
         except Exception:
             pass
 
+
 dependencies = [
     "pillow",
     "urllib3>=2.1.0,<3",
