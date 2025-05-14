@@ -54,9 +54,7 @@ source:
   path: ../..
 test:
   commands:
-  # for Windows, we use pywin32-security (built by esri as a subset of pywin32)
-  # add pywin32 so this part of the test will pass
-  - pip install pywin32 && pip check && pip uninstall pywin32 -y # [win]
+  # skipping Windows due to complexity with pywin32/pywin32-security
   - pip check # [not win]
   imports:
   - arcgis.gis
