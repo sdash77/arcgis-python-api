@@ -288,6 +288,7 @@ class WorkflowManagerAdmin:
         passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
         save_path: Optional[str] = None,
+        export_mapping: Optional[bool] = None,
     ) -> str | ItemExecution:
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
@@ -320,6 +321,9 @@ class WorkflowManagerAdmin:
         ---------------------  ---------------------------------------------------------
         save_path              Optional. The location to save the wmc file after finish exporting. If not set, the
                                file will download to the default location.
+        ---------------------  ---------------------------------------------------------
+        export_mapping         Optional. Export a mapping file along with the item configuration. If not defined,
+                               no mapping file will be generated. This option is only valid if run_async is True.
         =====================  =========================================================
 
         :return:
@@ -336,7 +340,8 @@ class WorkflowManagerAdmin:
             item = gis.content.search('title:"Python Sample"')[0]
             export_execution = workflow_manager_admin.export_item(item,
                                                                   run_async=True,
-                                                                  save_path='C:\\Users\\exampleUser\\Desktop\\')
+                                                                  save_path='C:\\Users\\exampleUser\\Desktop\\',
+                                                                  export_mapping=True)
             # result() blocks execution until the asynchronous work is finished and returns the last message received.
             result = export_execution.result()
             print(f'Result = {result}\n')
@@ -360,7 +365,7 @@ class WorkflowManagerAdmin:
             params["passphrase"] = passphrase
 
         if run_async:
-            return self._export_item_async(item, params, save_path)
+            return self._export_item_async(item, params, save_path, export_mapping is True)
         else:
             url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
             return_obj = self._gis._con.post(
@@ -378,11 +383,11 @@ class WorkflowManagerAdmin:
 
             return return_obj
 
-    def _export_item_async(self, item, params, save_path: Optional[str] = None):
+    def _export_item_async(self, item, params, save_path: Optional[str] = None, export_mapping: bool = False):
         # Create a ItemExecution object
         ie = ItemExecution(item, ExecutionType.EXPORT)
         ie._before_completion = lambda: self._retrieve_completed_export(
-            item, ie, save_path
+            item, ie, save_path, export_mapping
         )
         # Subscribe to this job
         nm = NotificationManager(item, self, ie._callback)
@@ -416,7 +421,7 @@ class WorkflowManagerAdmin:
         return ie
 
     def _retrieve_completed_export(
-        self, item, ie: ItemExecution, save_path: Optional[str]
+        self, item, ie: ItemExecution, save_path: Optional[str], export_mapping: bool
     ):
         export_id = ie._export_id
         logger.debug(f"Retrieving completed export {export_id}")
@@ -431,6 +436,17 @@ class WorkflowManagerAdmin:
             return_obj = json.loads(return_obj)
             self._gis._con._handle_json_error(return_obj["error"], 0)
         ie._export_location = return_obj
+
+        if export_mapping is True:
+            # Get the configuration mapping file
+            logger.debug(f"Retrieving mapping file for completed export {export_id}")
+            return_mapping_obj = self._gis._con.get(
+                url, {"fileType": "json"}, out_folder=save_path
+            )
+            if "error" in return_mapping_obj:
+                return_mapping_obj = json.loads(return_mapping_obj)
+                self._gis._con._handle_json_error(return_mapping_obj["error"], 0)
+            ie._export_mapping_location = return_mapping_obj
 
     def import_item(
         self,
@@ -4052,6 +4068,7 @@ class ItemExecution(WorkflowManagerExecution):
         self._item = item
         self._execution_type = execution_type
         self._export_location = None
+        self._export_mapping_location = None
         self._before_completion = None
 
     def _callback(self, msg: Notification, nm: NotificationManager):
@@ -4119,6 +4136,20 @@ class ItemExecution(WorkflowManagerExecution):
         """
         if not self.running() and self._execution_type is ExecutionType.EXPORT:
             return self._export_location
+        return None
+
+    @property
+    def export_mapping_location(self) -> Optional[str]:
+        """
+        Get the export location of the mapping file in the local machine. This may be the same as the optional parameter, save_path
+        in :func:`~arcgis.gis.workflowmanageradmin.export_item`
+
+        :return:
+            str
+
+        """
+        if not self.running() and self._execution_type is ExecutionType.EXPORT:
+            return self._export_mapping_location
         return None
 
     def __repr__(self):
@@ -4937,3 +4968,9 @@ class ExecutionStatus(Enum):
 
     RUNNING = "RUNNING"
     COMPLETE = "COMPLETE"
+
+
+class ExportFileType(Enum):
+    WMC = "wmc"
+    JSON = "json"
+

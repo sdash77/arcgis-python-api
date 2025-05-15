@@ -273,6 +273,46 @@ class TestWorkflowManager(unittest.TestCase):
         )
         self.assertGreater(export_size, 0, "Downloaded file size is not greater than 0")
 
+    def test_export_item_async_with_export_mapping_file_returns_successfully(self):
+        # Act
+        item = self.connection.workflow_item
+        with tempfile.TemporaryDirectory() as temp_dir:
+            directory = temp_dir
+            exportItemExec = self.connection.workflow_manager_admin.export_item(
+                item, run_async=True, save_path=temp_dir, export_mapping=True
+            )
+            self.assertIsInstance(
+                exportItemExec, ItemExecution, "Incorrect return type"
+            )
+            exportItemExec.result()
+            exported_file = exportItemExec.export_location # config file
+            export_size = os.stat(exported_file).st_size
+            exported_mapping_file = exportItemExec.export_mapping_location # mapping file
+            export_mapping_size = os.stat(exported_mapping_file).st_size
+
+        # Assert
+        self.assertIsNotNone(exportItemExec.export_id)
+        # Verify exported file
+        self.assertTrue(
+            directory in exported_file,
+            f"Output {exported_file} did not exist within specified save_path {directory}",
+        )
+        self.assertTrue(
+            "workflow_configuration" in exported_file,
+            "Output did not contain expected filename",
+        )
+        self.assertGreater(export_size, 0, "Downloaded configuration file size is not greater than 0")
+        # Verify exported mapping file
+        self.assertTrue(
+            directory in exported_mapping_file,
+            f"Output {exported_mapping_file} did not exist within specified save_path {directory}",
+        )
+        self.assertTrue(
+            "mapping" in exported_mapping_file,
+            "Output did not contain expected filename",
+        )
+        self.assertGreater(export_mapping_size, 0, "Downloaded mapping file size is not greater than 0")
+
     def test_export_item_with_passphrase_returns_successfully(self):
         item = self.connection.workflow_item
         actual = self.connection.workflow_manager_admin.export_item(
