@@ -3337,6 +3337,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ):
                         # Need to remove relationships first and add them back individually
                         # after all layers and tables have been added to the definition
+                        if "serviceItemId" in layer:
+                            layer["serviceItemId"] = new_item.id
                         if (
                             "relationships" in layer
                             and layer["relationships"] is not None
