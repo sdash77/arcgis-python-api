@@ -323,7 +323,7 @@ class WorkflowManagerAdmin:
                                file will download to the default location.
         ---------------------  ---------------------------------------------------------
         export_mapping         Optional. Export a mapping file along with the item configuration. If not defined,
-                               no mapping file will be generated. This option is only valid if run_async is True.
+                               no mapping file will be generated. This option will only apply if run_async is True.
         =====================  =========================================================
 
         :return:
@@ -348,12 +348,13 @@ class WorkflowManagerAdmin:
 
             # Use .done() in a loop if you want to perform other actions while waiting for export to complete
             # while not export_execution.done():
-            #     print(f'Progress = {import_execution.status}')
-            #     print(f'{import_execution.messages}')
+            #     print(f'Progress = {export_execution.status}')
+            #     print(f'{export_execution.messages}')
             #     time.sleep(5)
 
             print(f'Here is the Exported ID: {export_execution.export_id}')
             print(f'Here is the Exported Location: {export_execution.export_location}\n')
+            print(f'Here is the Exported Mapping File Location: {export_execution.export_mapping_location}\n')
 
         """
         params = {"includeOtherConfiguration": include_other_configs}
@@ -4141,7 +4142,7 @@ class ItemExecution(WorkflowManagerExecution):
     @property
     def export_mapping_location(self) -> Optional[str]:
         """
-        Get the export location of the mapping file in the local machine. This may be the same as the optional parameter, save_path
+        Get the export mapping file location in the local machine. This may be the same as the optional parameter, save_path
         in :func:`~arcgis.gis.workflowmanageradmin.export_item`
 
         :return:
@@ -4968,9 +4969,3 @@ class ExecutionStatus(Enum):
 
     RUNNING = "RUNNING"
     COMPLETE = "COMPLETE"
-
-
-class ExportFileType(Enum):
-    WMC = "wmc"
-    JSON = "json"
-
