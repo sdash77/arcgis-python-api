@@ -170,7 +170,8 @@ class ItemTypeEnum(Enum):
     WORKFLOW_MANAGER_PACKAGE = "Workflow Manager Package"
     TILES_SERVICE_3D = "3DTiles Service"
     TILES_PACKAGE_3D = "3DTiles Package"
-
+    MOBILE_BASEMAP_PACKAGE = "Mobile Basemap Package"
+    MOBILE_MAP_PACKAGE = "Mobile Map Package"
 
 ###########################################################################
 class MetadataFormatEnum(Enum):
