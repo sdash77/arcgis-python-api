@@ -173,6 +173,7 @@ class ItemTypeEnum(Enum):
     MOBILE_BASEMAP_PACKAGE = "Mobile Basemap Package"
     MOBILE_MAP_PACKAGE = "Mobile Map Package"
 
+
 ###########################################################################
 class MetadataFormatEnum(Enum):
     FGDB = "fgdb"
