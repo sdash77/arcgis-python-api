@@ -319,8 +319,8 @@ class WorkflowManagerAdmin:
                                export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`. The download
                                location can then be found by prompting for the export_location.
         ---------------------  ---------------------------------------------------------
-        save_path              Optional. The location to save the wmc file after finish exporting. If not set, the
-                               file will download to the default location.
+        save_path              Optional. The directory location to save the wmc file and optional mapping file after
+                               export finishes. If not set, the file(s) will download to the default location.
         ---------------------  ---------------------------------------------------------
         export_mapping         Optional. Export a mapping file along with the item configuration. If not defined,
                                no mapping file will be generated. This option will only apply if run_async is True.
@@ -353,7 +353,7 @@ class WorkflowManagerAdmin:
             #     time.sleep(5)
 
             print(f'Here is the Exported ID: {export_execution.export_id}')
-            print(f'Here is the Exported Location: {export_execution.export_location}\n')
+            print(f'Here is the Exported File Location: {export_execution.export_location}\n')
             print(f'Here is the Exported Mapping File Location: {export_execution.export_mapping_location}\n')
 
         """
@@ -4128,8 +4128,9 @@ class ItemExecution(WorkflowManagerExecution):
     @property
     def export_location(self) -> Optional[str]:
         """
-        Get the export location in the local machine. This may be the same as the optional parameter, save_path
-        in :func:`~arcgis.gis.workflowmanageradmin.export_item`
+        Get the exported file location on the local machine. If the save_path optional parameter was specified
+        in :func:`~arcgis.gis.workflowmanageradmin.export_item`, the file was exported to that directory location.
+        Otherwise, the default location was used.
 
         :return:
             str
@@ -4142,8 +4143,9 @@ class ItemExecution(WorkflowManagerExecution):
     @property
     def export_mapping_location(self) -> Optional[str]:
         """
-        Get the export mapping file location in the local machine. This may be the same as the optional parameter, save_path
-        in :func:`~arcgis.gis.workflowmanageradmin.export_item`
+        Get the exported mapping file location on the local machine. If the save_path optional parameter was specified
+        in :func:`~arcgis.gis.workflowmanageradmin.export_item`, the file was exported to that directory location.
+        Otherwise, the default location was used.
 
         :return:
             str

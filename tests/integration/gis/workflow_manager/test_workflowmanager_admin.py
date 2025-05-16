@@ -263,6 +263,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertIsNotNone(exportItemExec.export_id)
+        # Verify exported file
         self.assertTrue(
             directory in actual,
             f"Output {actual} did not exist within specified save_path {directory}",
@@ -272,6 +273,8 @@ class TestWorkflowManager(unittest.TestCase):
             "Output did not contain expected filename",
         )
         self.assertGreater(export_size, 0, "Downloaded file size is not greater than 0")
+        # Verify no exported mapping file
+        self.assertIsNone(exportItemExec.export_mapping_location)
 
     def test_export_item_async_with_export_mapping_file_returns_successfully(self):
         # Act
