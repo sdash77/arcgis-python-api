@@ -288,9 +288,11 @@ class TestWorkflowManager(unittest.TestCase):
                 exportItemExec, ItemExecution, "Incorrect return type"
             )
             exportItemExec.result()
-            exported_file = exportItemExec.export_location # config file
+            exported_file = exportItemExec.export_location  # config file
             export_size = os.stat(exported_file).st_size
-            exported_mapping_file = exportItemExec.export_mapping_location # mapping file
+            exported_mapping_file = (
+                exportItemExec.export_mapping_location
+            )  # mapping file
             export_mapping_size = os.stat(exported_mapping_file).st_size
 
         # Assert
@@ -304,17 +306,21 @@ class TestWorkflowManager(unittest.TestCase):
             "workflow_configuration" in exported_file,
             "Output did not contain expected filename",
         )
-        self.assertGreater(export_size, 0, "Downloaded configuration file size is not greater than 0")
+        self.assertGreater(
+            export_size, 0, "Downloaded configuration file size is not greater than 0"
+        )
         # Verify exported mapping file
         self.assertTrue(
             directory in exported_mapping_file,
             f"Output {exported_mapping_file} did not exist within specified save_path {directory}",
         )
         self.assertTrue(
-            "mapping" in exported_mapping_file,
+            "workflow_mapping" in exported_mapping_file,
             "Output did not contain expected filename",
         )
-        self.assertGreater(export_mapping_size, 0, "Downloaded mapping file size is not greater than 0")
+        self.assertGreater(
+            export_mapping_size, 0, "Downloaded mapping file size is not greater than 0"
+        )
 
     def test_export_item_with_passphrase_returns_successfully(self):
         item = self.connection.workflow_item

@@ -366,7 +366,9 @@ class WorkflowManagerAdmin:
             params["passphrase"] = passphrase
 
         if run_async:
-            return self._export_item_async(item, params, save_path, export_mapping is True)
+            return self._export_item_async(
+                item, params, save_path, export_mapping is True
+            )
         else:
             url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
             return_obj = self._gis._con.post(
@@ -384,7 +386,13 @@ class WorkflowManagerAdmin:
 
             return return_obj
 
-    def _export_item_async(self, item, params, save_path: Optional[str] = None, export_mapping: bool = False):
+    def _export_item_async(
+        self,
+        item,
+        params,
+        save_path: Optional[str] = None,
+        export_mapping: bool = False,
+    ):
         # Create a ItemExecution object
         ie = ItemExecution(item, ExecutionType.EXPORT)
         ie._before_completion = lambda: self._retrieve_completed_export(
