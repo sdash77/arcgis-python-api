@@ -339,6 +339,7 @@ class AutoML(object):
                 fairness_threshold=self._fairness_threshold,
                 privileged_groups=self._privileged_groups,
                 underprivileged_groups=self._underprivileged_groups,
+                stack_models=False,
             )
         else:
             result_path = self._data.path
@@ -976,7 +977,7 @@ class AutoML(object):
         prediction_type="features",
         output_raster_path=None,
         match_field_names=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         confidence=True,
         get_local_explanations=False,
         **kwargs,
@@ -1049,6 +1050,9 @@ class AutoML(object):
             :class:`~arcgis.features.FeatureLayer` if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
+        if cell_sizes:
+            if 7 in cell_sizes:
+                cell_sizes.remove(7)
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if prediction_type in ["features", "dataframe"]:
@@ -1104,7 +1108,7 @@ class AutoML(object):
         input_features,
         rasters=None,
         datefield=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         output_name="Prediction Layer",
         gis=None,
