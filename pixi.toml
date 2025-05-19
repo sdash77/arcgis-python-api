@@ -50,6 +50,9 @@ black = "*"
 selenium = "*"
 protobuf = "*"
 
+[target.win-64.dependencies]
+pywin32-security = "*"
+
 [pypi-dependencies]
 sphinx = ">=7, <8"
 sphinx-rtd-theme = ">=2, <3"
@@ -66,5 +69,18 @@ channels = ["https://esri-forge.python.geocloud.com"]
 [feature.daily.dependencies]
 arcgis = ">=2.4.2,<3"
 
+[feature.docs]
+channels = ["conda-forge", "fastai"]
+
+[feature.docs.dependencies]
+# spacy does not yet support python3.13
+# https://github.com/explosion/spaCy/issues/13658#issuecomment-2886370190
+# docs seem to build without fastai
+# fastai = {channel = "fastai"}
+pytorch = {channel = "conda-forge"}
+timm = {channel = "esri", version = "~=0.4.12"}
+torchvision = {channel = "conda-forge"}
+
 [environments]
 daily = { features = ["daily"] }
+docs = { features = ["docs"] }
