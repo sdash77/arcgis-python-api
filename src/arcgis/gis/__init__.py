@@ -13796,7 +13796,7 @@ class Item(dict):
         """
         if self._gis._is_agol:
             try:
-                self.subInfo or 0
+                return self.subInfo or 0
             except:
                 return None
         return None
