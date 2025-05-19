@@ -3,18 +3,17 @@ import unittest
 from arcgis.map import Map
 from arcgis.features import FeatureLayer
 from arcgis.layers import VectorTileLayer
-from arcgis.gis import GIS
 from utils.decorators import integration_test, profiles
 
 
-@profiles.agol
+@profiles.all
 @integration_test
 class TestAddLayersToMap(unittest.TestCase):
 
     def setUp(self):
         # create webmap
         self.wm = Map(gis=self.gis)
-        assert self.wm
+        assert isinstance(self.wm, Map)
 
     def test_vector_layer(self):
         """Test adding a vector tile layer as a basemap"""
@@ -24,16 +23,14 @@ class TestAddLayersToMap(unittest.TestCase):
             "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer",
             gis=self.gis,
         )
-        assert layer
+        assert isinstance(layer, VectorTileLayer)
 
         self.wm.basemap.basemap = layer
         assert (
             self.wm.basemap.basemap["baseMapLayers"][0]["layerType"]
             == "VectorTileLayer"
         )
-        self.wm.basemap.basemap_title(
-            self.wm.basemap.basemap["baseMapLayers"][0]["title"]
-        )
+        self.wm.basemap.title = self.wm.basemap.basemap["baseMapLayers"][0]["title"]
         assert self.wm.basemap.basemap["title"] == layer.properties.name.replace(
             "_", " "
         )
@@ -45,6 +42,7 @@ class TestAddLayersToMap(unittest.TestCase):
 
         for basemap in basemaps:
             self.wm.basemap.basemap = basemap
+            assert basemap.replace("-", " ").lower() in self.wm.basemap.basemap["title"].lower()
             time.sleep(2)
 
     def test_invalid_basemap(self):
@@ -62,10 +60,13 @@ class TestAddLayersToMap(unittest.TestCase):
 
     def test_different_sr(self):
         """Test adding a basemap with a different spatial reference than original."""
-        self.wm.basemap.basemap = self.gis.content.get(
-            "e67de4be72b349fd8f8ca114bac82a8c"
+        current_map_sr = self.wm.extent["spatialReference"]["wkid"]
+        new_basemap = VectorTileLayer(
+            "https://basemaps.arcgis.com/arcgis/rest/services/OpenStreetMap_GCS_v2/VectorTileServer",
+            gis=self.gis
         )
-        assert self.wm
+        self.wm.basemap.basemap = new_basemap
+        assert self.wm.extent["spatialReference"]["wkid"] != current_map_sr
 
 
 if __name__ == "__main__":
