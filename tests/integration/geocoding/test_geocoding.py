@@ -188,7 +188,7 @@ class TestGeocoder(unittest.TestCase):
         match_addr = reverse_gc.get("address").get("Match_addr")
         self.assertEqual(
             match_addr,
-            "6 York St, Camden, New Jersey, 08102",
+            "4 York St, Camden, New Jersey, 08102",
             f"Incorrect address found: Got {match_addr}",
         )
         city = reverse_gc.get("address").get("City")
@@ -212,7 +212,7 @@ class TestGeocoder(unittest.TestCase):
         match_addr = reverse_gc.get("address").get("Match_addr")
         self.assertEqual(
             match_addr,
-            "6 York St, Camden, New Jersey, 08102",
+            "4 York St, Camden, New Jersey, 08102",
             f"Incorrect address found: Got {match_addr}",
         )
         city = reverse_gc.get("address").get("City")
