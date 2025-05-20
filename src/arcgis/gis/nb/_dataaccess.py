@@ -1,7 +1,7 @@
 import os
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import List, Dict, Any
-from arcgis.gis import GIS
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
@@ -36,6 +36,27 @@ class NotebookFile:
         return InsensitiveDict(self._definition)
 
     # ---------------------------------------------------------------------
+    def rename(self, name: str) -> bool:
+        """
+        Rename the file on the server.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        name                 Required String. The new name of the file.
+        ===================  ==========================================================================
+
+        :return: True if the file was renamed, False or an error if it was not.
+        """
+        url = f"{self._da._url}/notebookworkspace/move"
+        params = {
+            "f": "json",
+            "source": self.properties.name,
+            "target": name,
+        }
+        return self._da._gis.session.post(url, params).json().get("status") == "success"
+
+    # ---------------------------------------------------------------------
     def download(self) -> str:
         """
         Copies down the data from the server to the local machine
@@ -45,11 +66,21 @@ class NotebookFile:
         return self._da._download(filename=self.properties["Name"])
 
     # ---------------------------------------------------------------------
+    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
     def erase(self) -> bool:
         """
         Deletes a file from the system
 
         :return: Boolean
+        """
+        return self._da._delete(filename=self.properties["Name"])
+
+    # ---------------------------------------------------------------------
+    def delete(self) -> bool:
+        """
+        Deletes a file from the system. This will permanently delete the file.
+
+        :return: True if the file was deleted, False or an error if it was not.
         """
         return self._da._delete(filename=self.properties["Name"])
 
@@ -67,6 +98,14 @@ class NotebookDataAccess:
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
+
+    # --------------------------------------------------------------------
+    def __repr__(self):
+        return "NotebookDataAccess"
+
+    # ---------------------------------------------------------------------
+    def __str__(self):
+        return "NotebookDataAccess"
 
     # ---------------------------------------------------------------------
     def upload(self, fp: str) -> bool:
@@ -104,7 +143,12 @@ class NotebookDataAccess:
 
         :return: List[Dict[str, Any]]
         """
-        url = f"{self._url}/notebookworkspace"
+        if self._gis._is_arcgisonline:
+            url = self._url.replace(
+                f"/{self._gis.users.me.username}", "/notebooksWorkspace"
+            )
+        else:
+            url = f"{self._url}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
