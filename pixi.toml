@@ -7,9 +7,15 @@ platforms = ["win-64", "linux-64", "osx-arm64", "osx-64"]
 version = "0.1.0"
 
 [tasks]
+docs = {depends-on = [{task = "_docs", environment = "docs"}], description = "Build Sphinx docs (html and json)"}
+docs-html = {depends-on = [{task = "_docs_html", environment = "docs"}], description = "Build Sphinx docs (html)"}
+docs-json = {depends-on = [{task = "_docs_json", environment = "docs"}], description = "Build Sphinx docs (json)"}
+"_docs" = "make -C ./docs/api_ref html json"
+"_docs_html" = "make -C ./docs/api_ref html"
+"_docs_json" = "make -C ./docs/api_ref json"
 
 [dependencies]
-python = "3.13.*"
+python = "~=3.13"
 pip = "*"
 setuptools = "*"
 azure-storage-blob = "<=12.9"
@@ -45,7 +51,7 @@ websocket-client = ">=1.2.3,<2"
 anywidget = "==0.9.13"
 ipywidgets = ">=8.0.0"
 jupyterlab = ">=4.0.7,<5"
-black = "*"
+black = "~=24.0"
 "keyrings.alt" = "*"
 selenium = "*"
 protobuf = "*"
@@ -70,7 +76,7 @@ channels = ["https://esri-forge.python.geocloud.com"]
 arcgis = ">=2.4.2,<3"
 
 [feature.docs]
-channels = ["conda-forge", "fastai"]
+channels = ["conda-forge"]
 
 [feature.docs.dependencies]
 # spacy does not yet support python3.13
