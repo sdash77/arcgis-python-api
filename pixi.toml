@@ -2,7 +2,7 @@
 authors = ["Jay Roebuck <jroebuck@esri.com>"]
 channels = ["esri-build", "esri", "main"]
 channel-priority = "disabled"
-name = "geosaurus_dev_env"
+name = "geosaurus"
 platforms = ["win-64", "linux-64", "osx-arm64", "osx-64"]
 version = "0.1.0"
 
