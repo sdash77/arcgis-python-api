@@ -7,25 +7,25 @@ platforms = ["win-64", "linux-64", "osx-arm64", "osx-64"]
 version = "0.1.0"
 
 [tasks]
-docs = {depends-on = [{task = "_docs_depends", environment = "docs"}, {task = "_docs_html", environment = "docs"}, {task = "_docs_json", environment = "docs"}], description = "Build Sphinx docs (html and json)"}
-"docs:html" = {depends-on = [{task = "_docs_html", environment = "docs"}], description = "Build Sphinx docs (html)"}
-"docs:json" = {depends-on = [{task = "_docs_json", environment = "docs"}], description = "Build Sphinx docs (json)"}
-"docs:preview" = {cmd = "cd ../python-api-doc && npm i && npm run python:start:apiref", depends-on = [{task = "_docs_gatsby_depends", environment = "docs"}], description = "Build Sphinx docs (json) and start a Gatsby server"}
+"docs" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:html", environment = "docs"}, {task = "_docs:json", environment = "docs"}], description = "Build Sphinx docs (html and json)"}
+"docs:html" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:html", environment = "docs"}], description = "Build Sphinx docs (html)"}
+"docs:json" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:json", environment = "docs"}], description = "Build Sphinx docs (json)"}
+"docs:preview" = {cmd = "cd ../python-api-doc && npm i && npm run python:start:apiref", depends-on = [{task = "_docs:preview:depends", environment = "docs"}], description = "Build Sphinx docs (json) and start a Gatsby server"}
 # tasks with names prefixed with "_" are not listed in `pixi task list`
 # and are not intended to be run directly
-"_docs_html" = "cd ./docs/api_ref && make html"
-"_docs_json" = "cd ./docs/api_ref && make json"
+"_docs:html" = "cd ./docs/api_ref && make html"
+"_docs:json" = "cd ./docs/api_ref && make json"
 "_docs_cp_arcgis_map_namespace" = "cp -r ../geoserpent/arcgis-mapping/src/arcgis/map ./src/arcgis"
 # ensures Esri/arcgis-python-api repo is locally available, otherwise clones it
-"_ensure_public_repo" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../arcgis-python-api'))\" || git clone https://github.com/Esri/arcgis-python-api.git ../arcgis-python-api"
+"_repo:ensure:public" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../arcgis-python-api'))\" || git clone https://github.com/Esri/arcgis-python-api.git ../arcgis-python-api"
 # ensures geoserpent repo is locally available, otherwise clones it
-"_ensure_geoserpent" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../geoserpent'))\" || git clone https://github.com/ArcGIS/geoserpent.git ../geoserpent"
+"_repo:ensure:geoserpent" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../geoserpent'))\" || git clone https://github.com/ArcGIS/geoserpent.git ../geoserpent"
 # ensures devtopia/ArcGISDevelopers/python-api-doc repo is locally available, otherwise clones it
-"_ensure_afd" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../python-api-doc'))\" || git clone https://github.com/ArcGIS/geosaurus.git --branch afd-doc/main --single-branch --depth 1 ../python-api-doc"
+"_repo:ensure:python-api-doc" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../python-api-doc'))\" || git clone https://github.com/ArcGIS/geosaurus.git --branch afd-doc/main --single-branch --depth 1 ../python-api-doc"
 # ensures doc repo has local config, otherwise creates it with local paths
-"_ensure_afd_config" = "python -c \"import os,sys;sys.exit(not os.path.isfile('../python-api-doc/sites/python/config/config.local.yml'))\" || (export currentRepoPath=$(python -c \"import pathlib; print(pathlib.Path().absolute().name)\") && echo apiRefLocalFolder: \\\"../$currentRepoPath/docs/api_ref/build/json\\\" >> ../python-api-doc/sites/python/config/config.local.yml && echo docLocalFolder: \\\"../arcgis-python-api\\\" >> ../python-api-doc/sites/python/config/config.local.yml)"
-"_docs_depends" = {depends-on = ["_ensure_geoserpent", "_docs_cp_arcgis_map_namespace"], description = "Configure environment for full doc build"}
-"_docs_gatsby_depends" = {depends-on = ["_docs_depends", "_ensure_public_repo", "_ensure_afd", "_ensure_afd_config", {task = "_docs_json", environment = "docs"}], description = "Configure environment for Gatsby build"}
+"_config:ensure:python-api-doc" = "python -c \"import os,sys;sys.exit(not os.path.isfile('../python-api-doc/sites/python/config/config.local.yml'))\" || (export currentRepoPath=$(python -c \"import pathlib; print(pathlib.Path().absolute().name)\") && echo apiRefLocalFolder: \\\"../$currentRepoPath/docs/api_ref/build/json\\\" >> ../python-api-doc/sites/python/config/config.local.yml && echo docLocalFolder: \\\"../arcgis-python-api\\\" >> ../python-api-doc/sites/python/config/config.local.yml)"
+"_docs:depends" = {depends-on = ["_repo:ensure:geoserpent", "_docs_cp_arcgis_map_namespace"], description = "Configure environment for full doc build"}
+"_docs:preview:depends" = {depends-on = ["_docs:depends", "_repo:ensure:public", "_repo:ensure:python-api-doc", "_config:ensure:python-api-doc", {task = "_docs:json", environment = "docs"}], description = "Configure environment for Gatsby build"}
 
 [dependencies]
 python = "~=3.13"
