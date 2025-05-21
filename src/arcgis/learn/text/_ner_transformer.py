@@ -580,9 +580,9 @@ class _TransformerEntityRecognizer(ArcGISModel):
     def _get_emd_params(self, save_inference_file=True):
         _emd_template = {}
         _emd_template["Architecture"] = self.learn.model._transformer_architecture
-        _emd_template["PretrainedModel"] = (
-            self.learn.model._transformer_pretrained_model_name
-        )
+        _emd_template[
+            "PretrainedModel"
+        ] = self.learn.model._transformer_pretrained_model_name
         _emd_template["ModelType"] = "Transformer"
         _emd_template["MixedPrecisionTraining"] = self._mixed_precision
         _emd_template["AddressTag"] = self._address_tag
@@ -724,28 +724,45 @@ class _TransformerEntityRecognizer(ArcGISModel):
             auxillary_index = []
             for sen_index in range(len(batch)):
                 if sen_index in truncated_indexes:
-                    split_sentences = self._sliding_window_split(batch[sen_index + offset], self.learn.model._max_seq_len)
+                    split_sentences = self._sliding_window_split(
+                        batch[sen_index + offset], self.learn.model._max_seq_len
+                    )
                     # insert in the batch the split sentences
-                    batch = batch[:sen_index + offset] + split_sentences + batch[sen_index + offset+1:]
-                    main_index.extend([sen_index]*len(split_sentences))
-                    auxillary_index.extend([sen_index + offset + i for i in range(len(split_sentences))])
-                    offset += len(split_sentences)-1
+                    batch = (
+                        batch[: sen_index + offset]
+                        + split_sentences
+                        + batch[sen_index + offset + 1 :]
+                    )
+                    main_index.extend([sen_index] * len(split_sentences))
+                    auxillary_index.extend(
+                        [sen_index + offset + i for i in range(len(split_sentences))]
+                    )
+                    offset += len(split_sentences) - 1
 
                 else:
                     main_index.append(sen_index)
-                    auxillary_index.append(sen_index+offset)
+                    auxillary_index.append(sen_index + offset)
 
             for mini_batch_index in range(0, len(batch), batch_size):
-                mini_batch = batch[mini_batch_index : mini_batch_index+batch_size]
+                mini_batch = batch[mini_batch_index : mini_batch_index + batch_size]
                 tokens, labels = self.learn.model.generate_inference(
                     mini_batch, self._device
                 )
 
                 if debug:
                     batch_results = get_results(
-                        tokens, labels, tokenizer, id2label, model_type, len(tokens),
-                        main_index=main_index[mini_batch_index : mini_batch_index+batch_size],
-                        auxillary_index=auxillary_index[mini_batch_index : mini_batch_index+batch_size],
+                        tokens,
+                        labels,
+                        tokenizer,
+                        id2label,
+                        model_type,
+                        len(tokens),
+                        main_index=main_index[
+                            mini_batch_index : mini_batch_index + batch_size
+                        ],
+                        auxillary_index=auxillary_index[
+                            mini_batch_index : mini_batch_index + batch_size
+                        ],
                     )
                     mini_results.extend(batch_results)
                 else:
@@ -756,8 +773,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
                         drop=drop,
                         start_index=i,
                         file_names=file_names[i : i + batch_size],
-                        main_index=main_index[mini_batch_index: mini_batch_index + batch_size],
-                        auxillary_index=auxillary_index[mini_batch_index: mini_batch_index + batch_size],
+                        main_index=main_index[
+                            mini_batch_index : mini_batch_index + batch_size
+                        ],
+                        auxillary_index=auxillary_index[
+                            mini_batch_index : mini_batch_index + batch_size
+                        ],
                     )
                     mini_results.extend(batch_results)
             if debug:
@@ -783,11 +804,15 @@ class _TransformerEntityRecognizer(ArcGISModel):
             else:
                 temp_df = pd.DataFrame(mini_results, columns=columns)
                 return temp_df
-                temp_df = temp_df.groupby(["main_index"]).agg(lambda x: list(OrderedDict.fromkeys(x))) # added this in place of the set because of order
+                temp_df = temp_df.groupby(["main_index"]).agg(
+                    lambda x: list(OrderedDict.fromkeys(x))
+                )  # added this in place of the set because of order
                 temp_df.drop(columns=["auxillary_index"], inplace=True)
                 temp_df.reset_index(drop=True, inplace=True)
                 # convert all the list into string
-                temp_df = temp_df.applymap(lambda x: ", ".join(x) if isinstance(x, list) else x)
+                temp_df = temp_df.applymap(
+                    lambda x: ", ".join(x) if isinstance(x, list) else x
+                )
                 results.append(temp_df)
 
         if debug:
@@ -801,7 +826,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         Split the sentence into chunks of max_len size with a stride of 0.
         """
         # Split at the nearest sentence boundary, approximating max_len
-        sentences = re.split(r'(?<=[.!?])\s+', sentence)
+        sentences = re.split(r"(?<=[.!?])\s+", sentence)
         tokens = []
         current_chunk = []
         for s in sentences:
@@ -820,6 +845,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
             tokens[i] = self.learn.model._tokenizer.convert_tokens_to_string(tokens[i])
 
         return tokens
+
     def get_truncated_indices(self, sentences):
         """
         Identify indices of sentences that are truncated by the tokenizer.
@@ -842,18 +868,26 @@ class _TransformerEntityRecognizer(ArcGISModel):
             truncation=True,
             return_overflowing_tokens=True,
             return_attention_mask=False,
-            return_token_type_ids=False
+            return_token_type_ids=False,
         )
         if "overflow_to_sample_mapping" in encoding:
             # `overflow_to_sample_mapping` maps each output chunk to original sentence index
-            for i, sample_idx in enumerate(encoding.get("overflow_to_sample_mapping", [])):
+            for i, sample_idx in enumerate(
+                encoding.get("overflow_to_sample_mapping", [])
+            ):
                 # If a sample produces more than one chunk, it's truncated
-                if sample_idx not in truncated_indices and \
-                        encoding["overflow_to_sample_mapping"].count(sample_idx) > 1:
+                if (
+                    sample_idx not in truncated_indices
+                    and encoding["overflow_to_sample_mapping"].count(sample_idx) > 1
+                ):
                     truncated_indices.append(sample_idx)
         else:
             # fetch all the indexes with postive value of `num_truncated_tokens`
-            truncated_indices = [i for i, x in enumerate(encoding.get("num_truncated_tokens", [])) if x > 0]
+            truncated_indices = [
+                i
+                for i, x in enumerate(encoding.get("num_truncated_tokens", []))
+                if x > 0
+            ]
         return truncated_indices
 
     def _process_results(
@@ -873,7 +907,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
         model_type = self.learn.model._transformer_architecture
         columns = {x.split("-")[-1] for x in self._data._unique_tags}
         results = get_results(
-            tokens, predictions, tokenizer, id2label, model_type, num_items=len(tokens),
+            tokens,
+            predictions,
+            tokenizer,
+            id2label,
+            model_type,
+            num_items=len(tokens),
             main_index=main_index,
             auxillary_index=auxillary_index,
         )
@@ -908,7 +947,16 @@ class _TransformerEntityRecognizer(ArcGISModel):
                     else f"Example_{main_index[index] + start_index}"
                 )
                 for address in address_list:
-                    data_list.append([main_index[index], auxillary_index[index],  text, file_name_column, address, *values])
+                    data_list.append(
+                        [
+                            main_index[index],
+                            auxillary_index[index],
+                            text,
+                            file_name_column,
+                            address,
+                            *values,
+                        ]
+                    )
             else:
                 file_name_column = (
                     file_names[main_index[index]]
@@ -916,7 +964,15 @@ class _TransformerEntityRecognizer(ArcGISModel):
                     else f"Example_{main_index[index] + start_index}"
                 )
                 values = [", ".join(row.get(column, "")) for column in cols]
-                data_list.append([main_index[index], auxillary_index[index], text, file_name_column, *values])
+                data_list.append(
+                    [
+                        main_index[index],
+                        auxillary_index[index],
+                        text,
+                        file_name_column,
+                        *values,
+                    ]
+                )
 
         # data_list = data_list[:self._data._bs]
 
@@ -956,7 +1012,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
         output = self.learn.model.forward(*x)
         predictions = output[1].argmax(2).tolist()
         tokens = x[0].tolist()
-        df = self._process_results(tokens, predictions, main_index=list(range(len(tokens))) , auxillary_index=list(range(len(tokens))))
+        df = self._process_results(
+            tokens,
+            predictions,
+            main_index=list(range(len(tokens))),
+            auxillary_index=list(range(len(tokens))),
+        )
         df.drop(columns=["main_index", "auxillary_index"], inplace=True)
         return df
 

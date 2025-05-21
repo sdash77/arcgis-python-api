@@ -310,7 +310,6 @@ class TransformerNERDataBunch(DataBunch):
         reverse: bool = False,
         **kwargs,
     ):
-
         x, y = self.one_batch(ds_type, True, True)
         batch_tokens = x[0].tolist()
         batch_labels = y[0].tolist()
@@ -379,7 +378,16 @@ def get_next_tokens(token_ids, index, model_type, tok):
     return whole_word_ids
 
 
-def get_results(batch_tokens, batch_labels, tokenizer, id2label, model_type, num_items, main_index, auxillary_index):
+def get_results(
+    batch_tokens,
+    batch_labels,
+    tokenizer,
+    id2label,
+    model_type,
+    num_items,
+    main_index,
+    auxillary_index,
+):
     results = []
     for index, (tokens, labels) in enumerate(zip(batch_tokens, batch_labels)):
         labels = [id2label[x] for x in labels]
