@@ -27,6 +27,9 @@ version = "0.1.0"
 "_config:ensure:python-api-doc" = "python -c \"import os,sys;sys.exit(not os.path.isfile('../python-api-doc/sites/python/config/config.local.yml'))\" || (export currentRepoPath=$(python -c \"import pathlib; print(pathlib.Path().absolute().name)\") && echo apiRefLocalFolder: \\\"../$currentRepoPath/docs/api_ref/build/json\\\" >> ../python-api-doc/sites/python/config/config.local.yml && echo docLocalFolder: \\\"../arcgis-python-api\\\" >> ../python-api-doc/sites/python/config/config.local.yml)"
 "_docs:depends" = {depends-on = ["_repo:ensure:geoserpent", "_docs_cp_arcgis_map_namespace"], description = "Configure environment for full doc build"}
 "_docs:preview:depends" = {depends-on = ["_docs:depends", "_repo:ensure:public", "_repo:ensure:python-api-doc", "_config:ensure:python-api-doc", {task = "_docs:json", environment = "docs"}], description = "Configure environment for Gatsby build"}
+# task for running specified integration tests in test environment
+test = {cmd = "python -m nose2 -v -s {{test_path}} -t tests", depends-on = [{task = "profile", environment = "test"}], args = [{arg = "test_path", default = "tests/integration/gis/connection"}], description = "Run integration tests from specified path"}
+profile = {cmd = "python tests/integration/config_profiles.py", description = "Create profiles for integration tests"}
 
 [dependencies]
 python = "~=3.13"
@@ -77,11 +80,6 @@ pywin32-security = "*"
 sphinx = ">=7, <8"
 sphinx-rtd-theme = ">=2, <3"
 autodoc-pydantic = ">=2, <3"
-coverage = "*"
-nose2 = "*"
-parameterized = "*"
-requests-mock = "*"
-unittest-xml-reporting = "*"
 
 [feature.daily]
 channels = ["https://esri-forge.python.geocloud.com"]
@@ -102,6 +100,14 @@ timm = {channel = "esri", version = "~=0.4.12"}
 torchvision = {channel = "conda-forge"}
 nodejs = {channel = "conda-forge", version = "~=22.0"}
 
+[feature.test.dependencies]
+coverage = "*"
+nose2 = "*"
+parameterized = "*"
+requests-mock = "*"
+unittest-xml-reporting = "*"
+
 [environments]
 daily = { features = ["daily"] }
 docs = { features = ["docs"] }
+test = { features = ["test"] }
