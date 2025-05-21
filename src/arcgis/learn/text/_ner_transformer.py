@@ -6,6 +6,7 @@ import traceback
 from pathlib import Path
 from collections import OrderedDict
 from functools import partial
+from typing import List, Any, Dict, Tuple, Union
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
 
 HAS_FASTAI = True
@@ -671,8 +672,13 @@ class _TransformerEntityRecognizer(ArcGISModel):
         return cls_object
 
     def extract_entities(
-        self, text_list, batch_size=4, drop=True, debug=False, show_progress=True
-    ):
+        self,
+        text_list: Union[str, bytes, List],
+        batch_size: int = 4,
+        drop: bool = True,
+        debug: bool = False,
+        show_progress: bool = True,
+    ) -> Union[List[Dict[str, Any]], pd.DataFrame]:
         results, columns, file_names = [], [], []
         if isinstance(text_list, (str, bytes)):
             path = text_list
@@ -803,7 +809,6 @@ class _TransformerEntityRecognizer(ArcGISModel):
                 results.extend(result_debug)
             else:
                 temp_df = pd.DataFrame(mini_results, columns=columns)
-                return temp_df
                 temp_df = temp_df.groupby(["main_index"]).agg(
                     lambda x: list(OrderedDict.fromkeys(x))
                 )  # added this in place of the set because of order
@@ -821,9 +826,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
             results = pd.concat(results, axis=0, ignore_index=True)
             return results
 
-    def _sliding_window_split(self, sentence, max_len):
+    def _sliding_window_split(self, sentence: str, max_len: int) -> list:
         """
         Split the sentence into chunks of max_len size with a stride of 0.
+        Args:
+            sentence (str): The input sentence to be split.
+            max_len (int): The maximum length of each chunk.
         """
         # Split at the nearest sentence boundary, approximating max_len
         sentences = re.split(r"(?<=[.!?])\s+", sentence)
@@ -837,7 +845,13 @@ class _TransformerEntityRecognizer(ArcGISModel):
                 current_chunk = s_tokens
             else:
                 current_chunk += s_tokens
-        if current_chunk:
+
+        # Handle cases where a single sentence exceeds max_len. Cases where the sentence does not have any puctuations
+        if len(current_chunk) > max_len:
+            for i in range(0, len(current_chunk), max_len - 10):
+                tokens.append(current_chunk[i : i + max_len - 10])
+            current_chunk = []
+        elif current_chunk:
             tokens.append(current_chunk)
 
         # convert tokens back to sentences
@@ -846,16 +860,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
 
         return tokens
 
-    def get_truncated_indices(self, sentences):
+    def get_truncated_indices(self, sentences: list):
         """
         Identify indices of sentences that are truncated by the tokenizer.
 
         Args:
             sentences (List[str]): List of input sentences.
-            model_name (str): Hugging Face model name for tokenizer.
-            max_length (int): Maximum number of tokens allowed by model.
-            stride (int): Stride size for handling overflow tokens (default 0, no overlap handling).
-
         Returns:
             List[int]: Indices of sentences that exceed max token length and get truncated.
         """
@@ -882,7 +892,8 @@ class _TransformerEntityRecognizer(ArcGISModel):
                 ):
                     truncated_indices.append(sample_idx)
         else:
-            # fetch all the indexes with postive value of `num_truncated_tokens`
+            # fetch all the indexes with postive value of `num_truncated_tokens`. Applied when tokenizer is
+            # not Fast tokenizer type
             truncated_indices = [
                 i
                 for i, x in enumerate(encoding.get("num_truncated_tokens", []))
