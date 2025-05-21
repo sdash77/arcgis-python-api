@@ -851,9 +851,9 @@ class TextClassifier(ArcGISModel):
         if self._backbone != "llm":
             is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
             _emd_template["Architecture"] = self.learn.model._transformer_architecture
-            _emd_template[
-                "PretrainedModel"
-            ] = self.learn.model._transformer_pretrained_model_name
+            _emd_template["PretrainedModel"] = (
+                self.learn.model._transformer_pretrained_model_name
+            )
             _emd_template["ModelType"] = "Transformer"
             _emd_template["MixedPrecisionTraining"] = self._mixed_precision
             _emd_template["TextColumns"] = self._data._text_cols

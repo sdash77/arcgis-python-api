@@ -580,9 +580,9 @@ class _TransformerEntityRecognizer(ArcGISModel):
     def _get_emd_params(self, save_inference_file=True):
         _emd_template = {}
         _emd_template["Architecture"] = self.learn.model._transformer_architecture
-        _emd_template[
-            "PretrainedModel"
-        ] = self.learn.model._transformer_pretrained_model_name
+        _emd_template["PretrainedModel"] = (
+            self.learn.model._transformer_pretrained_model_name
+        )
         _emd_template["ModelType"] = "Transformer"
         _emd_template["MixedPrecisionTraining"] = self._mixed_precision
         _emd_template["AddressTag"] = self._address_tag
