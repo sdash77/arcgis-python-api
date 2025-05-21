@@ -122,6 +122,6 @@ class AGOLNotebookManager:
             user = self._gis.users.me
             url = user.generate_direct_access_url("notebook")["url"]
             # remove the /notebookWorkspace part and replace with the username
-            url = url.replace("/notebooksWorkspace", f"/{user.username}")
+            url = url.replace("/notebooksWorkspace", "")
             self._da = NotebookDataAccess(url, self._gis)
         return self._da

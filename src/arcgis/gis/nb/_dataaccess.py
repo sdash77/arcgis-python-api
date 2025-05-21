@@ -48,11 +48,15 @@ class NotebookFile:
 
         :return: True if the file was renamed, False or an error if it was not.
         """
-        url = f"{self._da._url}/notebookworkspace/move"
+        url = f"{self._da._url}/move"
+        if self._da._gis._is_arcgisonline:
+            url = url.replace("/azureblob", "")
         params = {
             "f": "json",
             "source": self.properties.name,
             "target": name,
+            "targetUserName": self._da._username,
+            "token": self._da._gis._con.token,
         }
         return self._da._gis.session.post(url, params).json().get("status") == "success"
 
@@ -78,7 +82,7 @@ class NotebookFile:
     # ---------------------------------------------------------------------
     def delete(self) -> bool:
         """
-        Deletes a file from the system. This will permanently delete the file.
+        Deletes a file from the system. This will permanently delete the file and the action cannot be undone.
 
         :return: True if the file was deleted, False or an error if it was not.
         """
@@ -98,6 +102,7 @@ class NotebookDataAccess:
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
+        self._username = gis.users.me.username
 
     # --------------------------------------------------------------------
     def __repr__(self):
@@ -108,47 +113,14 @@ class NotebookDataAccess:
         return "NotebookDataAccess"
 
     # ---------------------------------------------------------------------
-    def upload(self, fp: str) -> bool:
-        """
-        Uploads a file to the Notebook Server
-
-        ===================  ==========================================================================
-        **Parameter**         **Description**
-        -------------------  --------------------------------------------------------------------------
-        fp                   Required String. The path of the file to upload
-        ===================  ==========================================================================
-
-        :return: Boolean
-        """
-
-        url = f"{self._url}/notebookworkspace/{os.path.basename(fp)}"
-        if os.path.isfile(fp) == False:
-            raise ValueError(f"Cannot find file: {fp}")
-        additional_headers = {
-            "Content-Type": "application/octet-stream",
-            "Content-Length": f"{os.path.getsize(fp)}",
-            "x-ms-blob-type": "BlockBlob",
-            "x-ms-version": "2020-02-10",
-        }
-        resp = self._gis._con.put_raw(
-            url, data=open(fp, "rb"), additional_headers=additional_headers
-        )
-        return resp.status_code >= 200 and resp.status_code < 300
-
-    # ---------------------------------------------------------------------
     @property
-    def files(self) -> List[Dict[str, Any]]:
+    def files(self) -> List[NotebookFile]:
         """
         Lists files that are located in the workspace directory (/arcgis/home) of the user making the request.
 
-        :return: List[Dict[str, Any]]
+        :return: List[NotebookFile] - List of NotebookFile objects
         """
-        if self._gis._is_arcgisonline:
-            url = self._url.replace(
-                f"/{self._gis.users.me.username}", "/notebooksWorkspace"
-            )
-        else:
-            url = f"{self._url}/notebookworkspace"
+        url = f"{self._url}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
@@ -159,6 +131,159 @@ class NotebookDataAccess:
             NotebookFile(f, self)
             for f in self._gis._con.get(url, params).pop("Blobs", [])
         ]
+
+    # ---------------------------------------------------------------------
+    def transfer_user_workspace(
+        self,
+        source_username: str,
+        target_username: str | None = None,
+        folder_name: str | None = None,
+    ) -> bool:
+        """
+        Transfer the workspace of one user to another user in the organization.
+        This can only be done by an administrator.
+
+        This method is useful for transferring the workspace of a user who is leaving the organization to another user.
+
+        ===================  ==========================================================================
+        **Parameter**        **Description**
+        -------------------  --------------------------------------------------------------------------
+        source_username      Required String. The username of the user whose workspace you want to transfer.
+        -------------------  --------------------------------------------------------------------------
+        target_username      Optional String. The username of the user to whom you want to transfer the workspace.
+                             If not provided, the workspace will be transferred to the current user.
+        -------------------  --------------------------------------------------------------------------
+        folder_name          Optional String. The name of the folder to which the workspace will be transferred.
+                             If not provided, a default name will be used.
+        ===================  ==========================================================================
+
+        :return: True if the transfer was successful, False or an error if it was not.
+        """
+        # check username exists in the org
+        if target_username is None:
+            target_username = self._username
+
+        if [
+            self._gis.users.get(source_username) or self._gis.users.get(target_username)
+        ] is None:
+            raise ValueError(
+                f"User {source_username} or {target_username} does not exist in the organization."
+            )
+
+        # if folder_name is None, create the default folder name
+        if folder_name is None:
+            folder_name = f"_transferred_{source_username}"
+
+        url = f"{self._url}/transferUserWorkspace".replace("/azureblob", "")
+        params = {
+            "f": "json",
+            "targetFoldername": folder_name,
+            "userName": source_username,
+            "targetUserName": target_username,
+        }
+        return self._gis.session.post(url, params).json().get("status") == "success"
+
+    # ---------------------------------------------------------------------
+    def create_folder(self, folder: str) -> bool:
+        """
+        Create a folder in your `/arcgis/home` notebook workspace directory.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        folder               Required String. The name of the folder to create. To create a folder in a subfolder,
+                             use the format `subfolder1/subfolder2/foldername`. If you want to create a folder
+                             in the root directory, use the format `foldername`.
+        ===================  ==========================================================================
+
+        """
+        if self._gis._is_arcgisonline:
+            url = f"{self._url}/{self._username}/createFolder".replace("/azureblob", "")
+        else:
+            url = f"{self._url}/notebookworkspace/createFolder"
+        params = {
+            "f": "json",
+            "folderName": folder,
+            "token": self._gis._con.token,
+        }
+        return self._gis._con.post(url, params).get("status") == "success"
+
+    # ---------------------------------------------------------------------
+    def upload(self, fp: str | list[str], folder: str | None = None) -> list[bool]:
+        """
+        Uploads a file to the Notebook Server
+
+        ===================     ==========================================================================
+        **Parameter**           **Description**
+        -------------------     --------------------------------------------------------------------------
+        fp                      Required String or list of Strings. Either: the path to the file to upload,
+                                a list of paths to the files to upload, or the path to a folder where all
+                                the files in the folder will be uploaded under the folder name.
+        -------------------     --------------------------------------------------------------------------
+        folder                  Optional String. The name of the folder to upload the file to. If not provided,
+                                the file will be uploaded to the root directory of the notebook workspace.
+                                Example: `folder1` or `folder1/folder2`.
+        ===================     ==========================================================================
+
+        :return: List of booleans. True if the file was uploaded, False or an error if it was not.
+        """
+        # if the fp is a folder, get all the files in the folder
+        if os.path.isdir(fp):
+            # get all the files in the folder
+            files = [
+                os.path.join(fp, f)
+                for f in os.listdir(fp)
+                if os.path.isfile(os.path.join(fp, f))
+            ]
+            # if the file is a folder and no folder was given, create one
+            if folder is None:
+                folder = os.path.basename(fp)
+                try:
+                    self.create_folder(folder)
+                except Exception as e:
+                    if "folder already exists" in str(e):
+                        # if the folder already exists, ignore the error
+                        pass
+                    else:
+                        raise e
+
+            # upload each file
+            return all([self.upload(f, folder) for f in files])
+
+        if not isinstance(fp, list):
+            # if the fp is not a list, make it a list
+            fp = [fp]
+
+        responses = []
+        for file in fp:
+            # check if the file exists
+            if not os.path.isfile(file):
+                raise ValueError(f"File {file} does not exist.")
+
+            # get the name of the file
+            filename = os.path.basename(file)
+
+            # if a folder is provided, add it to the path
+            if folder:
+                # the path will be of style: folder/filename
+                full_fp = folder + "/" + filename
+
+            if self._gis._is_arcgisonline:
+                url = f"{self._url}/{self._username}/{full_fp}"
+            else:
+                url = f"{self._url}/notebookworkspace/{os.path.basename(file)}"
+
+            additional_headers = {
+                "Content-Type": "application/octet-stream",
+                "Content-Length": f"{os.path.getsize(file)}",
+                "x-ms-blob-type": "BlockBlob",
+                "x-ms-version": "2020-10-02",
+            }
+            resp = self._gis._con.put_raw(
+                url, data=open(file, "rb"), additional_headers=additional_headers
+            )
+            responses.append(resp.status_code >= 200 and resp.status_code < 300)
+        return responses
 
     # ---------------------------------------------------------------------
     def _download(self, filename: str) -> str:
@@ -181,24 +306,5 @@ class NotebookDataAccess:
         params = {
             "f": "json",
             "fileName": filename,
-        }
-        return self._gis._con.post(url, params).get("status") == "success"
-
-    # ---------------------------------------------------------------------
-    def create_folder(self, folder: str) -> bool:
-        """
-        create a folder in your `/arcgis/home` notebook workspace directory.
-
-        ===================  ==========================================================================
-        **Parameter**         **Description**
-        -------------------  --------------------------------------------------------------------------
-        folder               Required String. The name of the folder to create.
-        ===================  ==========================================================================
-
-        """
-        url = f"{self._url}/notebookworkspace/createFolder"
-        params = {
-            "f": "json",
-            "folderName": folder,
         }
         return self._gis._con.post(url, params).get("status") == "success"
