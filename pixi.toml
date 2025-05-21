@@ -11,6 +11,7 @@ version = "0.1.0"
 "docs:html" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:html", environment = "docs"}], description = "Build Sphinx docs (html)"}
 "docs:json" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:json", environment = "docs"}], description = "Build Sphinx docs (json)"}
 "docs:preview" = {cmd = "cd ../python-api-doc && npm i && npm run python:start:apiref", depends-on = [{task = "_docs:preview:depends", environment = "docs"}], description = "Build Sphinx docs (json) and start a Gatsby server"}
+"docs:preview:full" = {cmd = "cd ../python-api-doc && npm i && npm run python:start", depends-on = [{task = "_docs:preview:depends", environment = "docs"}], description = "Build Sphinx docs (json) and start a Gatsby server"}
 # tasks with names prefixed with "_" are not listed in `pixi task list`
 # and are not intended to be run directly
 "_docs:html" = "cd ./docs/api_ref && make html"
