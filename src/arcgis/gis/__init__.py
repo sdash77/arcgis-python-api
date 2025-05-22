@@ -7584,7 +7584,8 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         service_description        Optional string. Description of the service.
         -----------------------    -------------------------------------------------------------
-        has_static_data            Optional boolean. Indicating whether the data can change.  Default is True, data is not allowed to change.
+        has_static_data            Optional boolean. Indicating whether the data can change.
+                                   Default is False.
         -----------------------    -------------------------------------------------------------
         max_record_count           Optional integer. Maximum number of records in query operations.
         -----------------------    -------------------------------------------------------------
@@ -7673,6 +7674,8 @@ class ContentManager(object):
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Language and country information.
         =================  =====================================================================
+
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/create-service/#description
 
         :return:
              The :class:`~arcgis.gis.Item` for the service if successfully created, None if unsuccessful.
@@ -14173,6 +14176,7 @@ class Item(dict):
                                .. note::
                                    See `Organization verification <https://doc.arcgis.com/en/arcgis-online/administer/configure-general.htm#VERIFY_ORG>`_
                                    for requirements to use *public_authoritative* status.
+                                   Also, `authoritative` will be converted to `org_authoritative` status.
         ==================     ====================================================================
 
         .. code-block:: python
