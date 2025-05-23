@@ -79,8 +79,7 @@ def add_source_item(
         if not folder:
             folder = gis.content.folders.get()
         elif isinstance(folder, str):
-            pfolder = gis.content.folders.get(folder)
-            folder = pfolder if pfolder else gis.content.folders._get_or_create(folder)
+            folder = gis.content.folders._get_or_create(folder)
         source_item = folder.add(
             item_properties=ip,
             file=source_data_path,
