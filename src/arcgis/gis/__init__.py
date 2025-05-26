@@ -11170,7 +11170,7 @@ class Group(dict):
         title               Optional string. The new name of the group.
         ------------------  ---------------------------------------------------------
         tags                Optional string. A comma-delimited list of new tags, or
-                            a list of tags as strings.
+                            a list of tags as strings. To remove tags, pass in an empty string or list.
         ------------------  ---------------------------------------------------------
         description         Optional string. The new description for the group.
         ------------------  ---------------------------------------------------------
@@ -11264,7 +11264,9 @@ class Group(dict):
             max_file_size = 1024000
         if users_update_items is None:
             users_update_items = False
-        if tags is not None:
+        if tags is [] or tags == "":
+            tags = ","
+        elif tags is not None:
             if isinstance(tags, list):
                 tags = ",".join(tags)
         if (
