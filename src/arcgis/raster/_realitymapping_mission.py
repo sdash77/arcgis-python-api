@@ -7,7 +7,6 @@ from arcgis.gis import GIS, Item
 from arcgis.raster._realitymapping import RMProject
 
 _LOGGER = logging.getLogger(__name__)
-REALITY_URL = "https://baymax.esri.com:6443/arcgis/reality"
 
 
 class RMMission:
@@ -63,9 +62,9 @@ class RMMission:
 
         self._project_item = project._project_item
         self._gis = project._gis
-        self._workspace = self._mission_json.get("workspace", None)
         self._collection = None
-        self._resource_info = self._resource_info(self._mission_name)
+        self._reality_url = self._gis._url[:self._gis._url.find(".com")+4] + ":6443/arcgis/reality/api"
+        self._workspace = self._mission_json.get("workspace", None)
 
     @property
     def _mission_json(self):
@@ -95,7 +94,7 @@ class RMMission:
             "orthoMosaic": "ortho"
         }
 
-        url = f"{REALITY_URL}/api/v2/missions/{self._mission_id}/dataproducts"
+        url = f"{self._reality_url}/missions/{self._mission_id}/dataproducts"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         products = requests.get(url, headers=headers, verify=False).json()
         for product in products:
@@ -143,7 +142,7 @@ class RMMission:
         if self._collection is not None:
             return self._collection
         else:
-            url = f"{REALITY_URL}/api/v2/missions/{self._mission_id}/dataproducts"
+            url = f"{self._reality_url}/missions/{self._mission_id}/dataproducts"
             headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
             products = requests.get(url, headers=headers, verify=False).json()
             for product in products:
@@ -192,7 +191,7 @@ class RMMission:
         return updated_item
 
     def _get_mission_json(self, mission_id):
-        url = f"{REALITY_URL}/api/v2/missions/{mission_id}"
+        url = f"{self._reality_url}/missions/{mission_id}"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         resp = requests.get(url, headers=headers, verify=False).json()
         return resp
@@ -312,82 +311,8 @@ class RMMission:
 
         :return: A boolean indicating whether the deletion was successful or not
         """
-        try:
-            gis = self._gis
-            project = self._project
-            project_item = project._project_item
-            resource_manager = project_item.resources
-            resource = self._resource_info
-            resource_name = resource["resource"]
+        return self._gis._tools.realitymapping.delete_mission(self, future=False)
 
-            # mission_json = self._get_mission_json(self._mission_name)
-            mission_json = self._mission_json
-            oid = mission_json["oid"]
-
-            products_list = [
-                "imageCollection",
-                "ortho",
-                "dsm",
-                "dsm_mesh",
-                "mesh",
-                "true_ortho",
-                "point_cloud",
-                "dtm",
-            ]
-            items_list = []
-            slpk_items_list = []
-            image_collection_item = None
-
-            for product in products_list:
-                item = self._get_product_item(product)
-                if product in ["dsm_mesh", "mesh", "point_cloud"]:
-                    slpk_item = self._get_product_item(product, is_slpk=True)
-                    slpk_items_list.append(slpk_item)
-                items_list.append(item)
-                # Store the image collection item separately as well since we need it below
-                if product == "imageCollection":
-                    image_collection_item = item
-
-            prj_data = project_item.get_data()
-            flights_list = prj_data.get("flights", [])
-
-            flights_list = [flight for flight in flights_list if flight["oid"] != oid]
-            prj_data.update({"flights": flights_list})
-
-            image_count = image_collection_item.layers[0].query(return_count_only=True)
-
-            project_properties = project_item.properties
-            flight_count = project_properties.get("flightCount", 0)
-            flight_count = flight_count - 1
-
-            image_count_ex = project_properties.get("imageCount", 0)
-            image_count_ex = image_count_ex - image_count
-
-            project_properties.update(
-                {"flightCount": flight_count, "imageCount": image_count_ex}
-            )
-            import json
-
-            project_item.update(
-                item_properties={"properties": project_properties},
-                data=json.dumps(prj_data),
-            )
-
-            try:
-                resource_manager.remove(resource_name)
-            except:
-                raise RuntimeError("Error deleting the mission resource")
-        except:
-            raise RuntimeError("Error deleting the mission")
-
-        items_to_be_deleted = [item for item in items_list if item is not None]
-        items_to_be_deleted += [item for item in slpk_items_list if item is not None]
-        try:
-            deleted = gis.content.delete_items(items_to_be_deleted)
-        except:
-            _LOGGER.warning("Failed to delete the products")
-
-        return True
 
     def add_image(
         self,

@@ -25,8 +25,6 @@ from arcgis.geoprocessing._support import (
 from arcgis.features.layer import FeatureLayer
 import requests
 
-REALITY_URL = "https://baymax.esri.com:6443/arcgis/reality"
-
 
 ###################################################################################################
 ###
@@ -2238,9 +2236,11 @@ class RMProject:
                     break
         except:
             self._folder = None
+        
+        self._reality_url = self._gis._url[:self._gis._url.find(".com")+4] + ":6443/arcgis/reality/api"
 
     def _get_project_json(self):
-        url = f"{REALITY_URL}/api/v2/projects/{self._project_item.itemid}"
+        url = f"{self._reality_url}/projects/{self._project_item.itemid}"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         resp = requests.get(url, headers=headers, verify=False).json()
         return resp
@@ -2258,7 +2258,7 @@ class RMProject:
         """
         from ._realitymapping_mission import RMMission
 
-        url = f"{REALITY_URL}/api/v2/projects/{self._project_item.itemid}/missions"
+        url = f"{self._reality_url}/projects/{self._project_item.itemid}/missions"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         res_list = requests.get(url, headers=headers, verify=False).json()
         self._mission_list = []
@@ -2313,19 +2313,13 @@ class RMProject:
         """
         return self._project_item.sharing.groups.list()
 
-    def delete(self, gis=None):
+    def delete(self):
         """
         The ``delete`` method deletes the project item from the portal and all the associated products.
 
         :return: A boolean indicating whether the deletion was successful or not
         """
-        gis = arcgis.env.active_gis if gis is None else gis
-        if (
-            not isinstance(self, (RMProject, Item)) or
-            (isinstance(self, Item) and self.type != "Reality Mapping Project")
-        ):
-            raise ValueError("Invalid project. Project must be a Reality Mapping Project Item or RMProject object.")    
-        return gis._tools.realitymapping.delete_project(self, future=False)
+        return self._gis._tools.realitymapping.delete_project(self, future=False)
 
     @property
     def settings(self):

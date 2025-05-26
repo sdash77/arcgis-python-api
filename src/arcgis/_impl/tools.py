@@ -9747,6 +9747,21 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if future:
             return job
         return job.result()
+
+    # ----------------------------------------------------------------------
+    def delete_mission(self, mission, future=False, **kwargs):
+        task = "DeleteMission"
+        gis = self._gis
+        mission = {"itemId": mission._mission_id}
+        
+        gpjob = self._tbx.delete_mission(mission, gis=gis, future=True)
+        
+        gpjob._is_reality = True
+        job = RMJob(gpjob)
+        if future:
+            return job
+        return job.result()
+
 ###########################################################################
 class _RasterAnalysisTools(BaseAnalytics):
     """FA Tools"""
