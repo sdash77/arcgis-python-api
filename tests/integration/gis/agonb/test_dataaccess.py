@@ -1,9 +1,10 @@
 import os
 import unittest
+from integration.config import get_resource_path
 from utils.decorators import integration_test, profiles
 
-CAPITALS_CSV = "test/integration/resources/mapping/capitals_tbl.csv"
-RESTAURANTS_XLSX = "test/integration/resources/mapping/restaurants.xlsx"
+CAPITALS_CSV = get_resource_path("mapping/capitals_tbl.csv")
+RESTAURANTS_XLSX = get_resource_path("mapping/restaurants.xlsx")
 
 
 @profiles.admin_agol
