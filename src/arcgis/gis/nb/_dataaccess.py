@@ -120,7 +120,10 @@ class NotebookDataAccess:
 
         :return: List[NotebookFile] - List of NotebookFile objects
         """
-        url = f"{self._url}/notebookworkspace"
+        if self._gis._is_arcgisonline:
+            url = f"{self._url}/notebooksWorkspace"
+        else:
+            url = f"{self._url}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
@@ -228,7 +231,7 @@ class NotebookDataAccess:
         :return: List of booleans. True if the file was uploaded, False or an error if it was not.
         """
         # if the fp is a folder, get all the files in the folder
-        if os.path.isdir(fp):
+        if not isinstance(fp, list) and os.path.isdir(fp):
             # get all the files in the folder
             files = [
                 os.path.join(fp, f)
