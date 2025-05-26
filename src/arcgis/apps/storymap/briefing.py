@@ -274,56 +274,6 @@ class Briefing(object):
         return actions
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.4.0",
-        removed_in="2.4.2",
-        details="Use the `arcgis.apps.storymap.Cover` class that can be accessed through the cover property in the cover slide.",
-    )
-    def cover(
-        self,
-        title: Optional[str] = None,
-        type: str = None,
-        summary: Optional[str] = None,
-        by_line: Optional[str] = None,
-        media: Optional[Union[Content.Image, Content.Video]] = None,
-    ):
-        """
-        A briefing's cover is the first slide.
-        This method allows the cover to be edited by updating the title, byline, media, and more.
-        Changing one part of the briefing cover will not change the rest of the cover. If just the
-        media is passed in then only the media will change.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the Briefing cover.
-        ---------------     --------------------------------------------------------------------
-        type                Optional string. The type of briefing cover to be used in the story.
-
-                            ``Values: "full" | "sidebyside" | "minimal"``
-        ---------------     --------------------------------------------------------------------
-        summary             Optional string. The description of the story.
-        ---------------     --------------------------------------------------------------------
-        by_line             Optional string. Crediting the author(s).
-        ---------------     --------------------------------------------------------------------
-        media               Optional url or file path or :class:`~arcgis.apps.storymap.story_content.Image` or
-                            :class:`~arcgis.apps.storymap.story_content.Video` object.
-        ===============     ====================================================================
-
-        :return: True if the cover was updated successfully.
-
-        .. code-block:: python
-
-            briefing = Briefing(<briefing item>)
-            briefing.cover(title="My Briefing Title", type="sidebyside", summary="My little summary", by_line="python_dev")
-            briefing.save()
-
-        """
-        # call method to update cover
-        utils.cover(self, title, type, summary, by_line, media)
-        return True
-
-    # ----------------------------------------------------------------------
     def get_logo(self):
         """
         Get the logo image for the briefing. The logo is seen in the header of the briefing.
