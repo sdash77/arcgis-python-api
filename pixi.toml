@@ -105,6 +105,14 @@ timm = {channel = "esri", version = "~=0.4.12"}
 torchvision = {channel = "conda-forge"}
 nodejs = {channel = "conda-forge", version = "~=22.0"}
 
+[feature.local]
+[feature.local.target.win-64.activation]
+scripts = ["pixi.local.bat"]
+
+[feature.local.target.unix.activation]
+scripts = ["pixi.local.sh"]
+
 [environments]
 daily = { features = ["daily"] }
+local = { features = ["local"] }
 docs = { features = ["docs"] }

@@ -15,7 +15,7 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/linux-64/anyio-4.7.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
-      - conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_18.conda
+      - conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_49.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/argon2-cffi-bindings-21.2.0-py313h5eee18b_1.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/arrow-cpp-19.0.0-h865e1df_2.tar.bz2
@@ -381,7 +381,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/anyio-4.7.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/appnope-0.1.3-py313hecd8cb5_0.tar.bz2
-      - conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_18.conda
+      - conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_49.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/argon2-cffi-bindings-21.2.0-py313h46256e1_1.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/arrow-cpp-19.0.0-h2a1e5b1_2.tar.bz2
@@ -713,7 +713,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/anyio-4.7.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/appnope-0.1.3-py313hca03da5_0.tar.bz2
-      - conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_18.conda
+      - conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_49.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/argon2-cffi-bindings-21.2.0-py313h80987f9_1.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/arrow-cpp-19.0.0-h0b7d223_2.tar.bz2
@@ -1044,7 +1044,7 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/win-64/anyio-4.7.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
-      - conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_18.conda
+      - conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_49.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/argon2-cffi-bindings-21.2.0-py313h827c3e9_1.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/arrow-cpp-19.0.0-h33d5241_2.tar.bz2
@@ -4293,6 +4293,1378 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/52/a7/d2782e4e3f77c8450f727ba74a8f12756d5ba823d81b941f1b04da9d033a/sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/08/aa4fdfb71f7de5176385bd9e90852eaf6b5d622735020ad600f2bab54385/typing_inspection-0.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/39/88/f6e9b87428584a3c62cac768185c438ca6d561367a5d267b293259d76075/unittest_xml_reporting-3.2.0-py2.py3-none-any.whl
+  local:
+    channels:
+    - url: https://conda.anaconda.org/esri-build/
+    - url: https://conda.anaconda.org/esri/
+    - url: https://conda.anaconda.org/main/
+    indexes:
+    - https://pypi.org/simple
+    packages:
+      linux-64:
+      - conda: https://conda.anaconda.org/esri/linux-64/_libgcc_mutex-0.1-main.conda
+      - conda: https://conda.anaconda.org/main/linux-64/_openmp_mutex-5.1-1_gnu.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
+      - conda: https://conda.anaconda.org/main/linux-64/anyio-4.7.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/argon2-cffi-bindings-21.2.0-py313h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/arrow-cpp-19.0.0-h865e1df_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/asttokens-3.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/async-lru-2.0.4-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/attrs-24.3.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-auth-0.6.19-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-cal-0.5.20-hdbd6064_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-common-0.8.5-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-compression-0.2.16-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-event-stream-0.2.15-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-http-0.6.25-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-io-0.13.10-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-mqtt-0.7.13-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-s3-0.1.51-hdbd6064_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-c-sdkutils-0.1.6-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-checksums-0.1.13-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-crt-cpp-0.18.16-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/aws-sdk-cpp-1.11.212-hecad206_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/azure-core-1.29.5-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/azure-storage-blob-12.9.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/babel-2.16.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/beautifulsoup4-4.12.3-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/black-24.10.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/blas-1.0-mkl.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/bleach-6.2.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/blinker-1.9.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/blosc-1.21.3-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/boost-cpp-1.82.0-hdb19cb5_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/bottleneck-1.4.2-py313hf0014fa_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/brotli-python-1.0.9-py313h6a678d5_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/bzip2-1.0.8-h5eee18b_6.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/c-ares-1.19.1-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ca-certificates-2025.2.25-h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/cachetools-5.5.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/cairo-1.16.0-hb05425b_5.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/certifi-2025.4.26-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/cffi-1.17.1-py313h1fdaa30_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/cfitsio-3.470-h5893167_7.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/charset-normalizer-3.3.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/click-8.1.8-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/cloudpickle-3.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/comm-0.2.2-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/contourpy-1.3.1-py313hdb19cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/cryptography-44.0.1-py313h7825ff9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/cycler-0.11.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/cyrus-sasl-2.1.28-h52b45da_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/cytoolz-1.0.1-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/dask-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/dask-core-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/dask-expr-1.1.21-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/dbus-1.13.18-hb2f20db_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/debugpy-1.8.11-py313h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/decorator-5.1.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/defusedxml-0.7.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/distributed-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/entrypoints-0.4-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/executing-0.8.3-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/expat-2.7.1-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/fontconfig-2.14.1-h55d465d_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/fonttools-4.55.3-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/freetype-2.13.3-h4a9f257_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/freexl-2.0.0-hf309648_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/fsspec-2025.3.2-py313h7040dfc_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/gdal-3.6.2-py313h0b61064_10.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/geomet-1.0.0-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/geos-3.10.6-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/geotiff-1.7.0-ha59944b_4.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/gflags-2.2.2-h6a678d5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/giflib-5.2.2-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/glib-2.78.4-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/glib-tools-2.78.4-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/glog-0.5.0-h6a678d5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/h11-0.14.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/hdf4-4.2.13-h3ca952b_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/hdf5-1.14.5-h2b7332f_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/heapdict-1.0.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/httpcore-1.0.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/httpx-0.28.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/icu-73.1-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/idna-3.7-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/importlib-metadata-8.5.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/importlib_metadata-8.5.0-hd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/intel-openmp-2023.1.0-hdb19cb5_46306.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ipykernel-6.29.5-py313h06a4308_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ipython-9.1.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ipython_pygments_lexers-1.1.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ipywidgets-8.1.5-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/isodate-0.6.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/jaraco.classes-3.2.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jaraco.context-6.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jaraco.functools-4.1.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jedi-0.19.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/jeepney-0.7.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jinja2-3.1.6-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jpeg-9e-h5eee18b_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/json-c-0.16-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/json5-0.9.25-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jsonschema-4.23.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jsonschema-specifications-2023.7.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jupyter-lsp-2.2.5-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jupyter_client-8.6.3-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jupyter_core-5.7.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jupyter_events-0.12.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jupyter_server-2.15.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jupyter_server_terminals-0.5.3-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jupyterlab-4.3.4-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
+      - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_server-2.27.3-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_widgets-3.0.13-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/kealib-1.5.0-h3984248_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/keyring-25.6.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/keyrings.alt-5.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/kiwisolver-1.4.8-py313h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/krb5-1.20.1-h143b758_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/lcms2-2.16-h92b89f2_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ld_impl_linux-64-2.40-h12ee557_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/lerc-4.0.0-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libabseil-20250127.0-cxx17_h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libboost-1.82.0-h109eef0_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libbrotlicommon-1.0.9-h5eee18b_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libbrotlidec-1.0.9-h5eee18b_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libbrotlienc-1.0.9-h5eee18b_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libcups-2.4.2-h2d74bed_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libcurl-8.12.1-hc9e6f67_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libdeflate-1.22-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libedit-3.1.20230828-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libev-4.33-h7f8727e_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libevent-2.1.12-hdbd6064_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libffi-3.4.4-h6a678d5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libgcc-ng-11.2.0-h1234567_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libgdal-3.6.2-h7c6aff6_10.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libgfortran-ng-11.2.0-h00389a5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libgfortran5-11.2.0-h1234567_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libglib-2.78.4-hdc74915_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libgomp-11.2.0-h1234567_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libgrpc-1.71.0-h2d74bed_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libiconv-1.16-h5eee18b_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libkml-1.3.0-h096b73e_7.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libmpdec-4.0.0-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/linux-64/libnetcdf-4.9.2-h3fd9d12_6.conda
+      - conda: https://conda.anaconda.org/main/linux-64/libnghttp2-1.57.0-h2d74bed_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libpng-1.6.39-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libpq-17.4-hdbd6064_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libprotobuf-5.29.3-hc99497a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libre2-11-2024.07.02-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libsodium-1.0.18-h7b6447c_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libspatialite-5.1.0-h798b768_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libssh2-1.11.1-h251f7ec_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libstdcxx-ng-11.2.0-h1234567_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libthrift-0.15.0-h1795dd8_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libtiff-4.7.0-hde9077f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libuuid-1.41.5-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libwebp-base-1.3.2-h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libxcb-1.17.0-h9b100fa_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libxkbcommon-1.9.1-h69220b7_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libxml2-2.13.8-hfdd30dd_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libxslt-1.1.41-h097e994_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libzip-1.8.0-h6ac8c49_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/locket-1.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/lxml-5.3.0-py313h57af460_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/lz4-4.3.2-py313h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/lz4-c-1.9.4-h6a678d5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/markupsafe-3.0.2-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/matplotlib-3.10.0-py313h06a4308_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/matplotlib-base-3.10.0-py313h68cf311_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/matplotlib-inline-0.1.7-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/minizip-4.0.3-hf59b114_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/mistune-3.1.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/mkl-2023.1.0-h213fc3f_46344.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/mkl-service-2.4.0-py313h5eee18b_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/mkl_fft-1.3.11-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/mkl_random-1.2.8-py313h06d7b56_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/more-itertools-10.3.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/msgpack-python-1.0.3-py313hdb19cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/msrest-0.7.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/mypy_extensions-1.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/mysql-8.4.0-h721767e_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/nbclient-0.10.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/nbconvert-7.16.6-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/nbconvert-core-7.16.6-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/nbformat-5.10.4-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ncurses-6.4-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/nest-asyncio-1.6.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/networkx-3.4.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/notebook-shim-0.2.4-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/nspr-4.35-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/nss-3.89.1-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/numexpr-2.10.1-py313h3c60e43_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/numpy-2.2.5-py313h8d96ed3_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/numpy-base-2.2.5-py313h8e760e0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/oauthlib-3.2.2-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/openjpeg-2.5.2-h0d4d230_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/openldap-2.6.4-h42fbc30_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/openssl-3.0.16-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/orc-2.1.1-hd396ef6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/outcome-1.3.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/overrides-7.4.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/packaging-24.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pandas-2.2.3-py313h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pandocfilters-1.5.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/parso-0.8.4-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/partd-1.4.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pathspec-0.10.3-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pcre2-10.42-hebb0a14_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pexpect-4.8.0-pyhd3eb1b0_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pillow-11.1.0-py313hac6e08b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pip-25.1-pyhc872135_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pixman-0.40.0-h7f8727e_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/platformdirs-4.3.7-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/poppler-24.09.0-hc52b300_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/poppler-data-0.4.11-h06a4308_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/proj-9.3.1-h4591001_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/prometheus_client-0.21.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/prompt-toolkit-3.0.47-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/prompt_toolkit-3.0.47-0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/protobuf-5.29.3-py313he621ea3_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/psutil-5.9.0-py313h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/psygnal-0.12.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pthread-stubs-0.3-h0ce48e5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/ptyprocess-0.7.0-pyhd3eb1b0_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pure_eval-0.2.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/puremagic-1.28-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pyarrow-19.0.0-py313h6a678d5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pycparser-2.21-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/pydantic-2.10.6-py_0.conda
+      - conda: https://conda.anaconda.org/esri/linux-64/pydantic-core-2.27.2-py313_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/pygments-2.19.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pyjwt-2.10.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/pylerc-4.0-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/pyparsing-3.2.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pyqt-6.7.1-py313h6a678d5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pyqt6-sip-13.9.1-py313h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pysocks-1.7.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pyspnego-0.9.2-py313h06a4308_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/python-3.13.2-hf623796_100_cp313.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/python-dateutil-2.9.0post0-py313h06a4308_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/python-fastjsonschema-2.20.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/python-gssapi-1.8.3-py313h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/python-json-logger-3.2.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/python-lmdb-1.6.2-py313h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/python-tzdata-2025.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/python_abi-3.13-0_cp313.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pytz-2024.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pyyaml-6.0.2-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/pyzmq-26.2.0-py313h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/qhull-2020.2-hdb19cb5_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/qtbase-6.7.3-hdaa5aa8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/qtdeclarative-6.7.3-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/qtsvg-6.7.3-he621ea3_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/qttools-6.7.3-h80c7b02_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/qtwebchannel-6.7.3-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/qtwebsockets-6.7.3-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/re2-2024.07.02-hdb19cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/readline-8.2-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/referencing-0.30.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/requests-2.32.3-py313h06a4308_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/requests-gssapi-1.2.3-py_2.conda
+      - conda: https://conda.anaconda.org/main/noarch/requests-kerberos-0.14.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/requests-oauthlib-2.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/requests-toolbelt-1.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/rfc3339-validator-0.1.4-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/rfc3986-validator-0.1.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/rpds-py-0.22.3-py313h4aa5aa6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ruamel.yaml-0.18.10-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ruamel.yaml.clib-0.2.12-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/s2n-1.3.27-hdbd6064_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/secretstorage-3.3.1-py313h06a4308_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/selenium-4.24.0-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/send2trash-1.8.2-py313h06a4308_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/setuptools-72.1.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/sip-6.10.0-py313h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/six-1.17.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/snappy-1.2.1-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/sniffio-1.3.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/sortedcontainers-2.4.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/soupsieve-2.5-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/sqlite-3.45.3-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/stack_data-0.5.1-py_0.conda
+      - conda: https://conda.anaconda.org/main/linux-64/tbb-2021.8.0-hdb19cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/tblib-1.7.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/terminado-0.17.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/tiledb-2.3.3-h77177df_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/tinycss2-1.4.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/tk-8.6.14-h39e8969_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/toolz-1.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/tornado-6.5-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/traitlets-5.14.3-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/trio-0.30.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/trio-websocket-0.12.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/truststore-0.10.0-py_1.conda
+      - conda: https://conda.anaconda.org/main/linux-64/typing-extensions-4.12.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/typing_extensions-4.12.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/tzdata-2025b-h04d1e81_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/ujson-5.10.0-py313h6a678d5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/uriparser-0.9.7-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/urllib3-2.3.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/utf8proc-2.6.1-h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/watchfiles-0.24.0-py313h4aa5aa6_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/wcwidth-0.2.5-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/webencodings-0.5.1-py313h06a4308_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/websocket-client-1.8.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/wheel-0.45.1-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/widgetsnbextension-4.0.13-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/wrapt-1.17.0-py313h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/wsproto-1.2.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xcb-util-0.4.1-h5eee18b_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xcb-util-cursor-0.1.5-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xcb-util-image-0.4.0-h5eee18b_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xcb-util-renderutil-0.3.10-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xerces-c-3.2.4-h6a678d5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xkeyboard-config-2.44-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xorg-libx11-1.8.12-h9b100fa_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xorg-libxau-1.0.12-h9b100fa_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xorg-libxdmcp-1.1.5-h9b100fa_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xorg-xorgproto-2024.1-h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/xz-5.6.4-h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/yaml-0.2.5-h7b6447c_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/zeromq-4.3.5-h6a678d5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/zict-3.0.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/zipp-3.21.0-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/zlib-1.2.13-h5eee18b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/zstd-1.5.6-hc292b87_0.tar.bz2
+      - pypi: https://files.pythonhosted.org/packages/32/34/d4e1c02d3bee589efb5dfa17f88ea08bdb3e3eac12bc475462aec52ed223/alabaster-0.7.16-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7b/df/87120e2195f08d760bc5cf8a31cfa2381a6887517aa89453b23f1ae3354f/autodoc_pydantic-2.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/4a/7e/3db2bd1b1f9e95f7cddca6d6e75e2f2bd9f51b1246e546d88addca0106bd/certifi-2025.4.26-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e2/28/ffc026b26f441fc67bd21ab7f03b313ab3fe46714a14b516f931abe1a2d8/charset_normalizer-3.4.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/89/60/f5f50f61b6332451520e6cdc2401700c48310c64bc2dd34027a47d6ab4ca/coverage-7.8.2-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/26/87/f238c0670b94533ac0353a4e2a1a771a0cc73277b88bff23d3ae35a256c1/docutils-0.20.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ff/62/85c4c919272577931d407be5ba5d71c20f0b616d31a0befe0ae45bb79abd/imagesize-1.4.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/2f/04/6ef935dc74e729932e39478e44d8cfe6a83550552eaa072b7c05f6f22488/lxml-5.4.0-cp313-cp313-manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/0c/91/96cf928db8236f1bfab6ce15ad070dfdd02ed88261c2afafd4b43575e9e9/MarkupSafe-3.0.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/87/e6/6babe53a1dbfa55f6d30eb7408f4c4994658e5f27e3dbbb2b437912e5a32/nose2-0.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/20/12/38679034af332785aac8774540895e234f4d07f7545804097de4b666afd8/packaging-25.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/2f/804f58f0b856ab3bf21617cccf5b39206e6c4c94c2cd227bde125ea6105f/parameterized-0.9.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b5/69/831ed22b38ff9b4b64b66569f0e5b7b97cf3638346eb95a2147fdb49ad5f/pydantic-2.11.5-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/eb/3c/f4abd740877a35abade05e437245b192f9d0ffb48bbbbd708df33d3cda37/pydantic_core-2.33.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/b6/5f/d6d641b490fd3ec2c4c13b4244d68deea3a1b970a97be64f34fb5504ff72/pydantic_settings-2.9.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/1e/18/98a99ad95133c6a6e2005fe89faedf294a748bd5dc803008059409ac9b1e/python_dotenv-1.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/97/ec/889fbc557727da0c34a33850950310240f2040f3b1955175fdb2b36a8910/requests_mock-1.12.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c8/78/3565d011c61f5a43488987ee32b6f3f656e7f107ac2782dd57bdd7d91d9a/snowballstemmer-3.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/ef/153f6803c5d5f8917dbb7f7fcf6d34a871ede3296fa89c2c703f5f8a6c8e/sphinx-7.4.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ea/46/00fda84467815c29951a9c91e3ae7503c409ddad04373e7cfc78daad4300/sphinx_rtd_theme-2.0.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/85/9ebeae2f76e9e77b952f4b274c27238156eae7979c5421fba91a28f4970d/sphinxcontrib_applehelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/35/7a/987e583882f985fe4d7323774889ec58049171828b58c2217e7f79cdf44e/sphinxcontrib_devhelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0a/7b/18a8c0bcec9182c05a0b3ec2a776bba4ead82750a55ff798e8d406dae604/sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/76/85/749bd22d1a68db7291c89e2ebca53f4306c3f205853cf31e9de279034c3c/sphinxcontrib_jquery-4.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/42/4c8646762ee83602e3fb3fbe774c2fac12f317deb0b5dbeeedd2d3ba4b77/sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/27/83/859ecdd180cacc13b1f7e857abf8582a64552ea7a061057a6c716e790fce/sphinxcontrib_qthelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/52/a7/d2782e4e3f77c8450f727ba74a8f12756d5ba823d81b941f1b04da9d033a/sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/39/88/f6e9b87428584a3c62cac768185c438ca6d561367a5d267b293259d76075/unittest_xml_reporting-3.2.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/6b/11/cc635220681e93a0183390e26485430ca2c7b5f9d33b15c74c2861cb8091/urllib3-2.4.0-py3-none-any.whl
+      osx-64:
+      - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
+      - conda: https://conda.anaconda.org/main/osx-64/anyio-4.7.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/main/osx-64/appnope-0.1.3-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/argon2-cffi-bindings-21.2.0-py313h46256e1_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/arrow-cpp-19.0.0-h2a1e5b1_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/asttokens-3.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/async-lru-2.0.4-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/attrs-24.3.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-auth-0.6.19-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-cal-0.5.20-h3333b6a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-common-0.8.5-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-compression-0.2.16-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-event-stream-0.2.15-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-http-0.6.25-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-io-0.13.10-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-mqtt-0.7.13-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-s3-0.1.51-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-c-sdkutils-0.1.6-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-checksums-0.1.13-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-crt-cpp-0.18.16-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/aws-sdk-cpp-1.11.212-h9475118_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/azure-core-1.29.5-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/azure-storage-blob-12.9.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/babel-2.16.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/beautifulsoup4-4.12.3-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/black-24.10.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/blas-1.0-openblas.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/bleach-6.2.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/blinker-1.9.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/blosc-1.21.3-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/boost-cpp-1.82.0-ha357a0b_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/bottleneck-1.4.2-py313ha0efc16_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/brotli-python-1.0.9-py313h6d0c2b6_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/bzip2-1.0.8-h6c40b1e_6.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/c-ares-1.19.1-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ca-certificates-2025.2.25-hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/cachetools-5.5.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/cairo-1.16.0-h3ce6f7e_5.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/certifi-2025.4.26-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/cffi-1.17.1-py313h9205ec4_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/cfitsio-3.470-hbd21bf8_7.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/charset-normalizer-3.3.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/click-8.1.8-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/cloudpickle-3.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/comm-0.2.2-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/contourpy-1.3.1-py313h1962661_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/cryptography-44.0.1-py313he15b966_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/cycler-0.11.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/cyrus-sasl-2.1.28-h3973f50_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/cytoolz-1.0.1-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/dask-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/dask-core-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/dask-expr-1.1.21-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/debugpy-1.8.11-py313h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/decorator-5.1.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/defusedxml-0.7.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/distributed-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/entrypoints-0.4-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/executing-0.8.3-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/expat-2.7.1-h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/fontconfig-2.14.1-h269ac6a_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/fonttools-4.55.3-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/freetype-2.13.3-h02243ff_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/freexl-2.0.0-hce1ea5d_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/fsspec-2025.3.2-py313h653c010_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/gdal-3.6.2-py313h18dcb4f_10.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/geomet-1.0.0-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/geos-3.10.6-h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/geotiff-1.7.0-h2a015a5_4.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/gettext-0.21.0-h4e8c18a_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/gflags-2.2.2-hcec6c5f_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/giflib-5.2.2-h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/glib-2.78.4-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/glib-tools-2.78.4-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/glog-0.5.0-hcec6c5f_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/h11-0.14.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/hdf4-4.2.13-h39711bb_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/hdf5-1.14.5-h80586a8_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/heapdict-1.0.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/httpcore-1.0.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/httpx-0.28.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/icu-73.1-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/idna-3.7-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/importlib-metadata-8.5.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/importlib_metadata-8.5.0-hd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ipykernel-6.29.5-py313hecd8cb5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ipython-9.1.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ipython_pygments_lexers-1.1.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ipywidgets-8.1.5-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/isodate-0.6.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/jaraco.classes-3.2.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jaraco.context-6.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jaraco.functools-4.1.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jedi-0.19.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jinja2-3.1.6-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jpeg-9e-h46256e1_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/json-c-0.16-hca72f7f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/json5-0.9.25-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jsonschema-4.23.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jsonschema-specifications-2023.7.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jupyter-lsp-2.2.5-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jupyter_client-8.6.3-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jupyter_core-5.7.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jupyter_events-0.12.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jupyter_server-2.15.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jupyter_server_terminals-0.5.3-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jupyterlab-4.3.4-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
+      - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_server-2.27.3-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_widgets-3.0.13-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/kealib-1.5.0-h003f39c_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/keyring-25.6.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/keyrings.alt-5.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/kiwisolver-1.4.8-py313h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/krb5-1.20.1-h428f121_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/lcms2-2.16-h31d93a5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/lerc-4.0.0-h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libabseil-20250127.0-cxx17_h548131f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libboost-1.82.0-hf53b9f2_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libbrotlicommon-1.0.9-h46256e1_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libbrotlidec-1.0.9-h46256e1_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libbrotlienc-1.0.9-h46256e1_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libcurl-8.12.1-h9bcc28a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libcxx-14.0.6-h9765a3e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libdeflate-1.22-h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libedit-3.1.20230828-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libev-4.33-h9ed2024_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libevent-2.1.12-h04015c4_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libffi-3.4.4-hecd8cb5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libgdal-3.6.2-he467f5b_10.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libgfortran-5.0.0-11_3_0_hecd8cb5_28.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libgfortran5-11.3.0-h9dfd629_28.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libglib-2.78.4-h19e1a8f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libgrpc-1.71.0-hf2926fd_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libiconv-1.16-h6c40b1e_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libkml-1.3.0-h85bf17e_7.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libmpdec-4.0.0-h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libnetcdf-4.8.1-hedf2ebd_5.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libnghttp2-1.57.0-h9beae6a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libopenblas-0.3.29-h3f8574a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libpng-1.6.39-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libpq-17.4-h184c1cd_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libprotobuf-5.29.3-h56ee573_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libre2-11-2024.07.02-hab2016f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libsodium-1.0.18-h1de35cc_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libspatialite-5.1.0-ha633967_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libssh2-1.11.1-h3a17b82_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libthrift-0.15.0-h70b4b81_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libtiff-4.7.0-h2dfa3ea_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libwebp-base-1.3.2-h46256e1_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libxml2-2.13.8-h6070cd6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libxslt-1.1.41-ha190046_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libzip-1.8.0-h29ab7a1_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/llvm-openmp-14.0.6-h0dcd299_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/locket-1.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/lxml-5.3.0-py313h8defbaf_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/lz4-4.3.2-py313h46256e1_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/lz4-c-1.9.4-hcec6c5f_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/markupsafe-3.0.2-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/matplotlib-3.10.0-py313hecd8cb5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/matplotlib-base-3.10.0-py313hae83f4b_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/matplotlib-inline-0.1.7-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/minizip-4.0.3-h79ad51c_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/mistune-3.1.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/more-itertools-10.3.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/msgpack-python-1.0.3-py313h1962661_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/msrest-0.7.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/mypy_extensions-1.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/nbclient-0.10.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/nbconvert-7.16.6-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/nbconvert-core-7.16.6-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/nbformat-5.10.4-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ncurses-6.4-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/nest-asyncio-1.6.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/networkx-3.4.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/notebook-shim-0.2.4-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/nspr-4.35-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/nss-3.89.1-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/numexpr-2.10.1-py313hc59c7be_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/numpy-2.2.5-py313hea2f92b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/numpy-base-2.2.5-py313h4cb5ad8_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/oauthlib-3.2.2-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/openjpeg-2.5.2-h2d09ccc_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/openldap-2.6.4-h6e6fb41_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/openssl-3.0.16-h184c1cd_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/orc-2.1.1-h4dda5a6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/outcome-1.3.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/overrides-7.4.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/packaging-24.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pandas-2.2.3-py313h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pandocfilters-1.5.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/parso-0.8.4-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/partd-1.4.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pathspec-0.10.3-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pcre2-10.42-h9b97e30_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pexpect-4.8.0-pyhd3eb1b0_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pillow-11.1.0-py313h935ef2f_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pip-25.1-pyhc872135_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pixman-0.40.0-h9ed2024_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/platformdirs-4.3.7-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/poppler-24.09.0-h774fa5f_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/poppler-data-0.4.11-hecd8cb5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/proj-9.3.1-h2218de1_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/prometheus_client-0.21.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/prompt-toolkit-3.0.47-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/prompt_toolkit-3.0.47-0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/protobuf-5.29.3-py313h8d5cf9e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/psutil-5.9.0-py313h46256e1_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/psygnal-0.12.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/ptyprocess-0.7.0-pyhd3eb1b0_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pure_eval-0.2.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/puremagic-1.28-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pyarrow-19.0.0-py313h6d0c2b6_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pycparser-2.21-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/pydantic-2.10.6-py_0.conda
+      - conda: https://conda.anaconda.org/esri/osx-64/pydantic-core-2.27.2-py313h3c055b9_10.conda
+      - conda: https://conda.anaconda.org/main/osx-64/pygments-2.19.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pyjwt-2.10.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/pylerc-4.0-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-64/pyparsing-3.2.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pysocks-1.7.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pyspnego-0.9.2-py313hecd8cb5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/python-3.13.2-h1ec50cd_100_cp313.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/python-dateutil-2.9.0post0-py313hecd8cb5_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/python-fastjsonschema-2.20.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/python-gssapi-1.8.3-py313h46256e1_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/python-json-logger-3.2.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/python-lmdb-1.6.2-py313h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/python-tzdata-2025.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/python_abi-3.13-0_cp313.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pytz-2024.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pyyaml-6.0.2-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/pyzmq-26.2.0-py313h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/qhull-2020.2-ha357a0b_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/re2-2024.07.02-h1962661_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/readline-8.2-hca72f7f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/referencing-0.30.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/requests-2.32.3-py313hecd8cb5_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/requests-gssapi-1.2.3-py_2.conda
+      - conda: https://conda.anaconda.org/main/noarch/requests-kerberos-0.14.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/requests-oauthlib-2.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/requests-toolbelt-1.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/rfc3339-validator-0.1.4-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/rfc3986-validator-0.1.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/rpds-py-0.22.3-py313h83de92b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ruamel.yaml-0.18.10-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ruamel.yaml.clib-0.2.12-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/selenium-4.24.0-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/send2trash-1.8.2-py313hecd8cb5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/setuptools-72.1.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/six-1.17.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/snappy-1.2.1-h6d0c2b6_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/sniffio-1.3.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/sortedcontainers-2.4.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/soupsieve-2.5-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/sqlite-3.45.3-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/stack_data-0.5.1-py_0.conda
+      - conda: https://conda.anaconda.org/main/noarch/tblib-1.7.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/terminado-0.17.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/tiledb-2.3.3-h1b93210_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/tinycss2-1.4.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/tk-8.6.14-h4d00af3_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/toolz-1.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/tornado-6.5-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/traitlets-5.14.3-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/trio-0.30.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/trio-websocket-0.12.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/truststore-0.10.0-py_1.conda
+      - conda: https://conda.anaconda.org/main/osx-64/typing-extensions-4.12.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/typing_extensions-4.12.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/tzdata-2025b-h04d1e81_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/ujson-5.10.0-py313h6d0c2b6_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/uriparser-0.9.7-h6c40b1e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/urllib3-2.3.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/utf8proc-2.6.1-h6c40b1e_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/watchfiles-0.24.0-py313h83de92b_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/wcwidth-0.2.5-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/webencodings-0.5.1-py313hecd8cb5_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/websocket-client-1.8.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/wheel-0.45.1-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/widgetsnbextension-4.0.13-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/wrapt-1.17.0-py313h46256e1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/wsproto-1.2.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/xerces-c-3.2.4-hcec6c5f_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/xz-5.6.4-h46256e1_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/yaml-0.2.5-haf1e3a3_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/zeromq-4.3.5-hcec6c5f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/zict-3.0.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/zipp-3.21.0-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/zlib-1.2.13-h4b97444_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/zstd-1.5.6-h138b38a_0.tar.bz2
+      - pypi: https://files.pythonhosted.org/packages/32/34/d4e1c02d3bee589efb5dfa17f88ea08bdb3e3eac12bc475462aec52ed223/alabaster-0.7.16-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7b/df/87120e2195f08d760bc5cf8a31cfa2381a6887517aa89453b23f1ae3354f/autodoc_pydantic-2.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/4a/7e/3db2bd1b1f9e95f7cddca6d6e75e2f2bd9f51b1246e546d88addca0106bd/certifi-2025.4.26-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ea/12/a93df3366ed32db1d907d7593a94f1fe6293903e3e92967bebd6950ed12c/charset_normalizer-3.4.2-cp313-cp313-macosx_10_13_universal2.whl
+      - pypi: https://files.pythonhosted.org/packages/1a/93/eb6400a745ad3b265bac36e8077fdffcf0268bdbbb6c02b7220b624c9b31/coverage-7.8.2-cp313-cp313-macosx_10_13_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/26/87/f238c0670b94533ac0353a4e2a1a771a0cc73277b88bff23d3ae35a256c1/docutils-0.20.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ff/62/85c4c919272577931d407be5ba5d71c20f0b616d31a0befe0ae45bb79abd/imagesize-1.4.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b5/3e/6602a4dca3ae344e8609914d6ab22e52ce42e3e1638c10967568c5c1450d/lxml-5.4.0-cp313-cp313-macosx_10_13_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/83/0e/67eb10a7ecc77a0c2bbe2b0235765b98d164d81600746914bebada795e97/MarkupSafe-3.0.2-cp313-cp313-macosx_10_13_universal2.whl
+      - pypi: https://files.pythonhosted.org/packages/87/e6/6babe53a1dbfa55f6d30eb7408f4c4994658e5f27e3dbbb2b437912e5a32/nose2-0.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/20/12/38679034af332785aac8774540895e234f4d07f7545804097de4b666afd8/packaging-25.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/2f/804f58f0b856ab3bf21617cccf5b39206e6c4c94c2cd227bde125ea6105f/parameterized-0.9.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b5/69/831ed22b38ff9b4b64b66569f0e5b7b97cf3638346eb95a2147fdb49ad5f/pydantic-2.11.5-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/46/8c/99040727b41f56616573a28771b1bfa08a3d3fe74d3d513f01251f79f172/pydantic_core-2.33.2-cp313-cp313-macosx_10_12_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/b6/5f/d6d641b490fd3ec2c4c13b4244d68deea3a1b970a97be64f34fb5504ff72/pydantic_settings-2.9.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/1e/18/98a99ad95133c6a6e2005fe89faedf294a748bd5dc803008059409ac9b1e/python_dotenv-1.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/97/ec/889fbc557727da0c34a33850950310240f2040f3b1955175fdb2b36a8910/requests_mock-1.12.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c8/78/3565d011c61f5a43488987ee32b6f3f656e7f107ac2782dd57bdd7d91d9a/snowballstemmer-3.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/ef/153f6803c5d5f8917dbb7f7fcf6d34a871ede3296fa89c2c703f5f8a6c8e/sphinx-7.4.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ea/46/00fda84467815c29951a9c91e3ae7503c409ddad04373e7cfc78daad4300/sphinx_rtd_theme-2.0.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/85/9ebeae2f76e9e77b952f4b274c27238156eae7979c5421fba91a28f4970d/sphinxcontrib_applehelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/35/7a/987e583882f985fe4d7323774889ec58049171828b58c2217e7f79cdf44e/sphinxcontrib_devhelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0a/7b/18a8c0bcec9182c05a0b3ec2a776bba4ead82750a55ff798e8d406dae604/sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/76/85/749bd22d1a68db7291c89e2ebca53f4306c3f205853cf31e9de279034c3c/sphinxcontrib_jquery-4.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/42/4c8646762ee83602e3fb3fbe774c2fac12f317deb0b5dbeeedd2d3ba4b77/sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/27/83/859ecdd180cacc13b1f7e857abf8582a64552ea7a061057a6c716e790fce/sphinxcontrib_qthelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/52/a7/d2782e4e3f77c8450f727ba74a8f12756d5ba823d81b941f1b04da9d033a/sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/39/88/f6e9b87428584a3c62cac768185c438ca6d561367a5d267b293259d76075/unittest_xml_reporting-3.2.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/6b/11/cc635220681e93a0183390e26485430ca2c7b5f9d33b15c74c2861cb8091/urllib3-2.4.0-py3-none-any.whl
+      osx-arm64:
+      - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/anyio-4.7.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/appnope-0.1.3-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/argon2-cffi-bindings-21.2.0-py313h80987f9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/arrow-cpp-19.0.0-h0b7d223_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/asttokens-3.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/async-lru-2.0.4-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/attrs-24.3.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-auth-0.6.19-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-cal-0.5.20-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-common-0.8.5-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-compression-0.2.16-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-event-stream-0.2.15-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-http-0.6.25-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-io-0.13.10-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-mqtt-0.7.13-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-s3-0.1.51-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-c-sdkutils-0.1.6-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-checksums-0.1.13-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-crt-cpp-0.18.16-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/aws-sdk-cpp-1.11.212-hdd7fb2f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/azure-core-1.29.5-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/azure-storage-blob-12.9.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/babel-2.16.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/beautifulsoup4-4.12.3-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/black-24.10.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/blas-1.0-openblas.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/bleach-6.2.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/blinker-1.9.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/blosc-1.21.3-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/boost-cpp-1.82.0-h48ca7d4_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/bottleneck-1.4.2-py313ha35b7ea_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/brotli-python-1.0.9-py313h313beb8_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/bzip2-1.0.8-h80987f9_6.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/c-ares-1.19.1-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ca-certificates-2025.2.25-hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/cachetools-5.5.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/cairo-1.16.0-h302bd0f_5.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/certifi-2025.4.26-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/cffi-1.17.1-py313h3eb5a62_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/cfitsio-3.470-h7f6438f_7.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/charset-normalizer-3.3.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/click-8.1.8-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/cloudpickle-3.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/comm-0.2.2-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/contourpy-1.3.1-py313h48ca7d4_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/cryptography-44.0.1-py313h8026fc7_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/cycler-0.11.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/cyrus-sasl-2.1.28-h9131b1a_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/cytoolz-1.0.1-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/dask-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/dask-core-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/dask-expr-1.1.21-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/debugpy-1.8.11-py313h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/decorator-5.1.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/defusedxml-0.7.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/distributed-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/entrypoints-0.4-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/executing-0.8.3-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/expat-2.7.1-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/fontconfig-2.14.1-h6402c1e_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/fonttools-4.55.3-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/freetype-2.13.3-h47d26ad_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/freexl-2.0.0-ha3de405_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/fsspec-2025.3.2-py313h7eb115d_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/gdal-3.6.2-py313h6dafdc7_10.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/geomet-1.0.0-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/geos-3.10.6-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/geotiff-1.7.0-hcec61be_4.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/gettext-0.21.0-hbdbcc25_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/gflags-2.2.2-h313beb8_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/giflib-5.2.2-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/glib-2.78.4-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/glib-tools-2.78.4-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/glog-0.5.0-h313beb8_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/h11-0.14.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/hdf4-4.2.13-h5e329fb_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/hdf5-1.14.5-hd77251f_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/heapdict-1.0.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/httpcore-1.0.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/httpx-0.28.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/icu-73.1-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/idna-3.7-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/importlib-metadata-8.5.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/importlib_metadata-8.5.0-hd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ipykernel-6.29.5-py313hca03da5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ipython-9.1.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ipython_pygments_lexers-1.1.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ipywidgets-8.1.5-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/isodate-0.6.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/jaraco.classes-3.2.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jaraco.context-6.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jaraco.functools-4.1.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jedi-0.19.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jinja2-3.1.6-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jpeg-9e-h80987f9_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/json-c-0.16-h1a28f6b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/json5-0.9.25-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jsonschema-4.23.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jsonschema-specifications-2023.7.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyter-lsp-2.2.5-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_client-8.6.3-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_core-5.7.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_events-0.12.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server-2.15.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server_terminals-0.5.3-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab-4.3.4-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_server-2.27.3-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_widgets-3.0.13-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/kealib-1.5.0-h3444380_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/keyring-25.6.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/keyrings.alt-5.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/kiwisolver-1.4.8-py313h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/krb5-1.20.1-hf3e1bf2_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/lcms2-2.16-he26ebf3_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/lerc-4.0.0-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libabseil-20250127.0-cxx17_h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libboost-1.82.0-h0bc93f9_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libbrotlicommon-1.0.9-h80987f9_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libbrotlidec-1.0.9-h80987f9_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libbrotlienc-1.0.9-h80987f9_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libcurl-8.12.1-hde089ae_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libcxx-14.0.6-h848a8c0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libdeflate-1.22-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libedit-3.1.20230828-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libev-4.33-h1a28f6b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libevent-2.1.12-h02f6b3c_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libffi-3.4.4-hca03da5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libgdal-3.6.2-hb8790f9_10.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libgfortran-5.0.0-11_3_0_hca03da5_28.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libgfortran5-11.3.0-h009349e_28.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libglib-2.78.4-h0a96307_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libgrpc-1.71.0-h62f6fdd_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libiconv-1.16-h80987f9_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libkml-1.3.0-hc4d7c42_7.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libmpdec-4.0.0-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libnetcdf-4.8.1-h7d1a7d1_5.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libnghttp2-1.57.0-h62f6fdd_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libopenblas-0.3.29-hea593b9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libpng-1.6.39-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libpq-17.4-h02f6b3c_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libprotobuf-5.29.3-h9f9f828_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libre2-11-2024.07.02-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libsodium-1.0.18-h1a28f6b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libspatialite-5.1.0-h4e90699_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libssh2-1.11.1-h3e2b118_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libthrift-0.15.0-h73c2103_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libtiff-4.7.0-h91aec0a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libwebp-base-1.3.2-h80987f9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libxml2-2.13.8-h0b34f26_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libxslt-1.1.41-hf4d3faa_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libzip-1.8.0-h62fee54_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/llvm-openmp-14.0.6-hc6e5704_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/locket-1.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/lxml-5.3.0-py313h1d4350b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/lz4-4.3.2-py313h80987f9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/lz4-c-1.9.4-h313beb8_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/markupsafe-3.0.2-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/matplotlib-3.10.0-py313hca03da5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/matplotlib-base-3.10.0-py313hb68df00_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/matplotlib-inline-0.1.7-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/minizip-4.0.3-ha89c15f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/mistune-3.1.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/more-itertools-10.3.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/msgpack-python-1.0.3-py313h48ca7d4_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/msrest-0.7.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/mypy_extensions-1.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/nbclient-0.10.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/nbconvert-7.16.6-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/nbconvert-core-7.16.6-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/nbformat-5.10.4-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ncurses-6.4-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/nest-asyncio-1.6.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/networkx-3.4.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/notebook-shim-0.2.4-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/nspr-4.35-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/nss-3.89.1-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/numexpr-2.10.1-py313h5d9532f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/numpy-2.2.5-py313hdcf7240_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/numpy-base-2.2.5-py313h9d8309b_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/oauthlib-3.2.2-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/openjpeg-2.5.2-hba36e21_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/openldap-2.6.4-he7ef289_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/openssl-3.0.16-h02f6b3c_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/orc-2.1.1-h55d209b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/outcome-1.3.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/overrides-7.4.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/packaging-24.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pandas-2.2.3-py313hcf29cfe_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pandocfilters-1.5.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/parso-0.8.4-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/partd-1.4.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pathspec-0.10.3-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pcre2-10.42-hb066dcc_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pexpect-4.8.0-pyhd3eb1b0_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pillow-11.1.0-py313h41ba818_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pip-25.1-pyhc872135_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pixman-0.40.0-h1a28f6b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/platformdirs-4.3.7-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/poppler-24.09.0-hb57d120_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/poppler-data-0.4.11-hca03da5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/proj-9.3.1-hdced247_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/prometheus_client-0.21.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/prompt-toolkit-3.0.47-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/prompt_toolkit-3.0.47-0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/protobuf-5.29.3-py313h514c7bf_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/psutil-5.9.0-py313h80987f9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/psygnal-0.12.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/ptyprocess-0.7.0-pyhd3eb1b0_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pure_eval-0.2.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/puremagic-1.28-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pyarrow-19.0.0-py313h313beb8_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pycparser-2.21-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/pydantic-2.10.6-py_0.conda
+      - conda: https://conda.anaconda.org/esri/osx-arm64/pydantic-core-2.27.2-py313h8a0c2ca_10.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/pygments-2.19.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pyjwt-2.10.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/pylerc-4.0-py_0.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/pyparsing-3.2.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pysocks-1.7.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pyspnego-0.9.2-py313hca03da5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/python-3.13.2-h4862095_100_cp313.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/python-dateutil-2.9.0post0-py313hca03da5_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/python-fastjsonschema-2.20.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/python-gssapi-1.8.3-py313h80987f9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/python-json-logger-3.2.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/python-lmdb-1.6.2-py313h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/python-tzdata-2025.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/python_abi-3.13-0_cp313.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pytz-2024.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pyyaml-6.0.2-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/pyzmq-26.2.0-py313h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/qhull-2020.2-h48ca7d4_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/re2-2024.07.02-h48ca7d4_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/readline-8.2-h1a28f6b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/referencing-0.30.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/requests-2.32.3-py313hca03da5_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/requests-gssapi-1.2.3-py_2.conda
+      - conda: https://conda.anaconda.org/main/noarch/requests-kerberos-0.14.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/requests-oauthlib-2.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/requests-toolbelt-1.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/rfc3339-validator-0.1.4-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/rfc3986-validator-0.1.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/rpds-py-0.22.3-py313h2aea54e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ruamel.yaml-0.18.10-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ruamel.yaml.clib-0.2.12-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/selenium-4.24.0-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/send2trash-1.8.2-py313hca03da5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/setuptools-72.1.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/six-1.17.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/snappy-1.2.1-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/sniffio-1.3.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/sortedcontainers-2.4.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/soupsieve-2.5-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/sqlite-3.45.3-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/stack_data-0.5.1-py_0.conda
+      - conda: https://conda.anaconda.org/main/noarch/tblib-1.7.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/terminado-0.17.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/tiledb-2.3.3-hb4a6b97_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/tinycss2-1.4.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/tk-8.6.14-h6ba3021_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/toolz-1.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.5-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/traitlets-5.14.3-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/trio-0.30.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/trio-websocket-0.12.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/truststore-0.10.0-py_1.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/typing-extensions-4.12.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/typing_extensions-4.12.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/tzdata-2025b-h04d1e81_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/ujson-5.10.0-py313h313beb8_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/uriparser-0.9.7-h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/urllib3-2.3.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/utf8proc-2.6.1-h80987f9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/watchfiles-0.24.0-py313h2aea54e_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/wcwidth-0.2.5-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/webencodings-0.5.1-py313hca03da5_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/websocket-client-1.8.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/wheel-0.45.1-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/widgetsnbextension-4.0.13-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/wrapt-1.17.0-py313h80987f9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/wsproto-1.2.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/xerces-c-3.2.4-h313beb8_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/xz-5.6.4-h80987f9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/yaml-0.2.5-h1a28f6b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/zeromq-4.3.5-h313beb8_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/zict-3.0.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/zipp-3.21.0-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/zlib-1.2.13-h18a0788_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/zstd-1.5.6-hfb09047_0.tar.bz2
+      - pypi: https://files.pythonhosted.org/packages/32/34/d4e1c02d3bee589efb5dfa17f88ea08bdb3e3eac12bc475462aec52ed223/alabaster-0.7.16-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7b/df/87120e2195f08d760bc5cf8a31cfa2381a6887517aa89453b23f1ae3354f/autodoc_pydantic-2.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/4a/7e/3db2bd1b1f9e95f7cddca6d6e75e2f2bd9f51b1246e546d88addca0106bd/certifi-2025.4.26-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ea/12/a93df3366ed32db1d907d7593a94f1fe6293903e3e92967bebd6950ed12c/charset_normalizer-3.4.2-cp313-cp313-macosx_10_13_universal2.whl
+      - pypi: https://files.pythonhosted.org/packages/1b/7c/bdbf113f92683024406a1cd226a199e4200a2001fc85d6a6e7e299e60253/coverage-7.8.2-cp313-cp313-macosx_11_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/26/87/f238c0670b94533ac0353a4e2a1a771a0cc73277b88bff23d3ae35a256c1/docutils-0.20.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ff/62/85c4c919272577931d407be5ba5d71c20f0b616d31a0befe0ae45bb79abd/imagesize-1.4.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/87/cb/2ba1e9dd953415f58548506fa5549a7f373ae55e80c61c9041b7fd09a38a/lxml-5.4.0-cp313-cp313-macosx_10_13_universal2.whl
+      - pypi: https://files.pythonhosted.org/packages/2b/6d/9409f3684d3335375d04e5f05744dfe7e9f120062c9857df4ab490a1031a/MarkupSafe-3.0.2-cp313-cp313-macosx_11_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/87/e6/6babe53a1dbfa55f6d30eb7408f4c4994658e5f27e3dbbb2b437912e5a32/nose2-0.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/20/12/38679034af332785aac8774540895e234f4d07f7545804097de4b666afd8/packaging-25.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/2f/804f58f0b856ab3bf21617cccf5b39206e6c4c94c2cd227bde125ea6105f/parameterized-0.9.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b5/69/831ed22b38ff9b4b64b66569f0e5b7b97cf3638346eb95a2147fdb49ad5f/pydantic-2.11.5-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/3a/cc/5999d1eb705a6cefc31f0b4a90e9f7fc400539b1a1030529700cc1b51838/pydantic_core-2.33.2-cp313-cp313-macosx_11_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/b6/5f/d6d641b490fd3ec2c4c13b4244d68deea3a1b970a97be64f34fb5504ff72/pydantic_settings-2.9.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/1e/18/98a99ad95133c6a6e2005fe89faedf294a748bd5dc803008059409ac9b1e/python_dotenv-1.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/97/ec/889fbc557727da0c34a33850950310240f2040f3b1955175fdb2b36a8910/requests_mock-1.12.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c8/78/3565d011c61f5a43488987ee32b6f3f656e7f107ac2782dd57bdd7d91d9a/snowballstemmer-3.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/ef/153f6803c5d5f8917dbb7f7fcf6d34a871ede3296fa89c2c703f5f8a6c8e/sphinx-7.4.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ea/46/00fda84467815c29951a9c91e3ae7503c409ddad04373e7cfc78daad4300/sphinx_rtd_theme-2.0.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/85/9ebeae2f76e9e77b952f4b274c27238156eae7979c5421fba91a28f4970d/sphinxcontrib_applehelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/35/7a/987e583882f985fe4d7323774889ec58049171828b58c2217e7f79cdf44e/sphinxcontrib_devhelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0a/7b/18a8c0bcec9182c05a0b3ec2a776bba4ead82750a55ff798e8d406dae604/sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/76/85/749bd22d1a68db7291c89e2ebca53f4306c3f205853cf31e9de279034c3c/sphinxcontrib_jquery-4.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/42/4c8646762ee83602e3fb3fbe774c2fac12f317deb0b5dbeeedd2d3ba4b77/sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/27/83/859ecdd180cacc13b1f7e857abf8582a64552ea7a061057a6c716e790fce/sphinxcontrib_qthelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/52/a7/d2782e4e3f77c8450f727ba74a8f12756d5ba823d81b941f1b04da9d033a/sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/39/88/f6e9b87428584a3c62cac768185c438ca6d561367a5d267b293259d76075/unittest_xml_reporting-3.2.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/6b/11/cc635220681e93a0183390e26485430ca2c7b5f9d33b15c74c2861cb8091/urllib3-2.4.0-py3-none-any.whl
+      win-64:
+      - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
+      - conda: https://conda.anaconda.org/main/win-64/anyio-4.7.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/argon2-cffi-bindings-21.2.0-py313h827c3e9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/arrow-cpp-19.0.0-h33d5241_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/asttokens-3.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/async-lru-2.0.4-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/attrs-24.3.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-auth-0.6.19-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-cal-0.5.20-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-common-0.8.5-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-compression-0.2.16-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-event-stream-0.2.15-hd77b12b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-http-0.6.25-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-io-0.13.10-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-mqtt-0.7.13-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-s3-0.1.51-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-c-sdkutils-0.1.6-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-checksums-0.1.13-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-crt-cpp-0.18.16-hd77b12b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/aws-sdk-cpp-1.11.212-h6a15179_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/azure-core-1.29.5-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/azure-storage-blob-12.9.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/babel-2.16.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/beautifulsoup4-4.12.3-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri-build/win-64/black-24.10.0-py313_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/bleach-6.2.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/blinker-1.9.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/blosc-1.21.3-h6c2663c_1.conda
+      - conda: https://conda.anaconda.org/main/win-64/boost-cpp-1.82.0-h59b6b97_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/bottleneck-1.4.2-py313h2cb717b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/brotli-python-1.0.9-py313h5da7b33_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/bzip2-1.0.8-h2bbff1b_6.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/c-ares-1.19.1-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/ca-certificates-2025.2.25-haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/cachetools-5.5.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/cairo-1.16.0-haedb8bc_6.conda
+      - conda: https://conda.anaconda.org/main/win-64/certifi-2025.4.26-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/cffi-1.17.1-py313h827c3e9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/cfitsio-3.470-h2bbff1b_7.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/charset-normalizer-3.3.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/click-8.1.8-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/cloudpickle-3.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/colorama-0.4.6-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/comm-0.2.2-py_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/contourpy-1.3.1-py313h214f63a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/cryptography-44.0.1-py313hbd6ee87_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/cycler-0.11.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/cytoolz-1.0.1-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/dask-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/dask-core-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/dask-expr-1.1.21-py_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/debugpy-1.8.11-py313h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/decorator-5.1.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/defusedxml-0.7.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/distributed-2024.12.1-py_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/entrypoints-0.4-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/executing-0.8.3-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/expat-2.7.1-h8ddb27b_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/fontconfig-2.14.1-h9c4af85_4.conda
+      - conda: https://conda.anaconda.org/main/win-64/fonttools-4.55.3-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/freetype-2.13.3-0.conda
+      - conda: https://conda.anaconda.org/main/win-64/freexl-2.0.0-hd7a5696_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/fsspec-2025.3.2-py313h4442805_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/gdal-3.6.2-py313hf17909d_10.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/geomet-1.0.0-py_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/geos-3.10.6-he74ecf9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/geotiff-1.7.0-hbf7d8e7_4.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/gflags-2.2.2-hd77b12b_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/glib-2.78.4-hd77b12b_2.conda
+      - conda: https://conda.anaconda.org/esri/win-64/glib-tools-2.78.4-hd77b12b_2.conda
+      - conda: https://conda.anaconda.org/main/win-64/glog-0.5.0-hd77b12b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/h11-0.14.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/hdf4-4.2.13-h712560f_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/hdf5-1.14.5-ha36df97_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/heapdict-1.0.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/httpcore-1.0.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/httpx-0.28.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/icc_rt-2022.1.0-h6049295_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/icu-73.1-h6c2663c_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/idna-3.7-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/importlib-metadata-8.5.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/importlib_metadata-8.5.0-hd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/intel-openmp-2024.2.1-arcgispro_1083.conda
+      - conda: https://conda.anaconda.org/main/win-64/ipykernel-6.29.5-py313haa95532_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/ipython-9.1.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/ipython_pygments_lexers-1.1.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/ipywidgets-8.1.5-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/isodate-0.6.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/jaraco.classes-3.2.1-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jaraco.context-6.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jaraco.functools-4.1.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jedi-0.19.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jinja2-3.1.6-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jpeg-9e-h827c3e9_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/json5-0.9.25-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jsonschema-4.23.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jsonschema-specifications-2023.7.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jupyter-lsp-2.2.5-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jupyter_client-8.6.3-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jupyter_core-5.7.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jupyter_events-0.12.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jupyter_server-2.15.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jupyter_server_terminals-0.5.3-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jupyterlab-4.3.4-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
+      - conda: https://conda.anaconda.org/main/win-64/jupyterlab_server-2.27.3-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/jupyterlab_widgets-3.0.13-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/kealib-1.5.0-h6c4040a_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/keyring-25.6.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/keyrings.alt-5.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/kiwisolver-1.4.8-py313h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/krb5-1.20.1-h5b6d351_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/lcms2-2.16-h62be587_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/lerc-4.0.0-h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libabseil-20250127.0-cxx17_h52369b4_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libboost-1.82.0-h3399ecb_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libbrotlicommon-1.0.9-h827c3e9_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libbrotlidec-1.0.9-h827c3e9_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libbrotlienc-1.0.9-h827c3e9_9.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libcurl-8.12.1-h9da9810_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libdeflate-1.22-h5bf469e_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libevent-2.1.12-h56d1f94_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libffi-3.4.4-hd77b12b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libgdal-3.6.2-hdf1f3d4_10.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/libglib-2.78.4-ha17d25a_2.conda
+      - conda: https://conda.anaconda.org/main/win-64/libgrpc-1.71.0-hf4237ab_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libiconv-1.16-h2bbff1b_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libkml-1.3.0-h63940dd_7.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libmpdec-4.0.0-h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libnetcdf-4.8.1-h99c5407_5.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/libpng-1.6.43-1.conda
+      - conda: https://conda.anaconda.org/main/win-64/libpq-17.4-h70ee33d_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libprotobuf-5.29.3-hac4c8cb_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libre2-11-2024.07.02-h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/libsodium-1.0.18-5.conda
+      - conda: https://conda.anaconda.org/main/win-64/libspatialite-5.1.0-h6715bb4_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libssh2-1.11.1-h2addb87_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libthrift-0.15.0-h4364b78_2.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/libtiff-4.7.0-1.conda
+      - conda: https://conda.anaconda.org/main/win-64/libwebp-base-1.3.2-h3d04722_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libxml2-2.13.8-h866ff63_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libxslt-1.1.41-h0739af5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/libzip-1.8.0-h289538f_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/locket-1.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/lxml-5.3.0-py313h395c83e_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/lz4-4.3.2-py313h827c3e9_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/lz4-c-1.9.4-1.conda
+      - conda: https://conda.anaconda.org/main/win-64/markupsafe-3.0.2-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/matplotlib-3.10.0-py313haa95532_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/matplotlib-base-3.10.0-py313h7aa5d4e_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/matplotlib-inline-0.1.7-py_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/minizip-4.0.3-hb68bac4_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/mistune-3.1.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/mkl-2024.2.2-arcgispro_14.conda
+      - conda: https://conda.anaconda.org/esri/win-64/mkl-service-2.4.2-py313_arcgispro_0.conda
+      - conda: https://conda.anaconda.org/esri/win-64/mkl_fft-1.3.11-py313_arcgispro_4.conda
+      - conda: https://conda.anaconda.org/esri/win-64/mkl_random-1.2.8-py313_arcgispro_2.conda
+      - conda: https://conda.anaconda.org/main/win-64/more-itertools-10.3.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/msgpack-python-1.0.3-py313h214f63a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/msrest-0.7.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/mypy_extensions-1.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/nbclient-0.10.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/nbconvert-7.16.6-py_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/nbconvert-core-7.16.6-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/nbformat-5.10.4-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/nest-asyncio-1.6.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/networkx-3.4.2-py313_1.conda
+      - conda: https://conda.anaconda.org/main/win-64/notebook-shim-0.2.4-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/numexpr-2.10.2-py313_1.conda
+      - conda: https://conda.anaconda.org/esri/win-64/numpy-2.2.0-py313_1.conda
+      - conda: https://conda.anaconda.org/esri/win-64/numpy-base-2.2.0-py313_1.conda
+      - conda: https://conda.anaconda.org/esri/noarch/oauthlib-3.2.2-py_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/openjpeg-2.5.2-h9b5d1b5_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/openssl-3.0.16-h3f729d1_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/orc-2.1.1-hd1c1d5c_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/outcome-1.3.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/overrides-7.4.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/packaging-24.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/pandas-2.2.3-py313_2.conda
+      - conda: https://conda.anaconda.org/main/noarch/pandocfilters-1.5.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/parso-0.8.4-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/partd-1.4.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pathspec-0.10.3-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/pcre2-10.42-h0ff8eda_1.conda
+      - conda: https://conda.anaconda.org/main/win-64/pillow-11.1.0-py313hea0d53e_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pip-25.1-pyhc872135_2.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/pixman-0.43.4-0.conda
+      - conda: https://conda.anaconda.org/main/win-64/platformdirs-4.3.7-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/poppler-24.09.0-h89719ba_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/poppler-data-0.4.11-haa95532_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/proj-9.3.1-h4c8f42b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/prometheus_client-0.21.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/prompt-toolkit-3.0.47-py_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/prompt_toolkit-3.0.47-0.conda
+      - conda: https://conda.anaconda.org/main/win-64/protobuf-5.29.3-py313h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/psutil-5.9.0-py313h827c3e9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/psygnal-0.12.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pure_eval-0.2.2-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/puremagic-1.28-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pyarrow-19.0.0-py313h5da7b33_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/pycparser-2.21-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/pydantic-2.10.6-py_0.conda
+      - conda: https://conda.anaconda.org/esri/win-64/pydantic-core-2.27.2-py313_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/pygments-2.19.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pyjwt-2.10.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/pylerc-4.0-py_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/pyparsing-3.2.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pyqt-6.7.1-py313h5da7b33_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pyqt6-sip-13.9.1-py313h827c3e9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pysocks-1.7.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri-build/win-64/pyspnego-0.11.2-py313_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/python-3.13.2-hadb2040_100_cp313.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/python-dateutil-2.9.0post0-py313haa95532_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/python-fastjsonschema-2.20.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/python-gssapi-1.8.3-py313h827c3e9_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/python-json-logger-3.2.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/python-lmdb-1.6.2-py313h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/python_abi-3.13-0_cp313.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/pytz-2025.1-py313_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/pywin32-308-py313h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pywin32-ctypes-0.2.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri-build/win-64/pywin32-security-310-py313_0.conda
+      - conda: https://conda.anaconda.org/main/win-64/pywinpty-2.0.15-py313h72d21ff_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pyyaml-6.0.2-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/pyzmq-26.2.0-py313h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/qhull-2020.2-h59b6b97_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/qtbase-6.7.3-h0804d20_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/qtdeclarative-6.7.3-h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/qtsvg-6.7.3-hf2fb9eb_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/qttools-6.7.3-h0de5f00_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/qtwebchannel-6.7.3-h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/qtwebsockets-6.7.3-h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/re2-2024.07.02-h214f63a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/referencing-0.30.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/requests-2.32.3-py313haa95532_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/requests-gssapi-1.2.3-py_2.conda
+      - conda: https://conda.anaconda.org/main/noarch/requests-kerberos-0.14.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/requests-oauthlib-2.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/requests-toolbelt-1.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/rfc3339-validator-0.1.4-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/rfc3986-validator-0.1.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/rpds-py-0.22.3-py313h636fa0f_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/ruamel.yaml-0.18.10-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/ruamel.yaml.clib-0.2.12-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/selenium-4.24.0-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/send2trash-1.8.2-py313haa95532_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/setuptools-78.1.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/sip-6.10.0-py313h5da7b33_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/six-1.17.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/snappy-1.2.1-hcdb6601_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/sniffio-1.3.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/sortedcontainers-2.4.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/soupsieve-2.5-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/sqlite-3.49.1-0.conda
+      - conda: https://conda.anaconda.org/esri-build/win-64/sspilib-0.3.0-py313_0.conda
+      - conda: https://conda.anaconda.org/esri/noarch/stack_data-0.5.1-py_0.conda
+      - conda: https://conda.anaconda.org/main/noarch/tblib-1.7.0-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/terminado-0.17.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/tiledb-2.3.3-hd8964de_3.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/tinycss2-1.4.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/tk-8.6.14-h0416ee5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/toolz-1.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/tornado-6.5-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/traitlets-5.14.3-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/trio-0.30.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/trio-websocket-0.12.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/esri/noarch/truststore-0.10.0-py_1.conda
+      - conda: https://conda.anaconda.org/main/win-64/typing-extensions-4.12.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/typing_extensions-4.12.2-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/tzdata-2025b-h04d1e81_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/ujson-5.10.0-py313h5da7b33_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/uriparser-0.9.7-h2bbff1b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/urllib3-2.3.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/utf8proc-2.6.1-h2bbff1b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/vc-14.42-haa95532_5.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/vs2015_runtime-14.42.34433-hbfb602d_5.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/watchfiles-0.24.0-py313h636fa0f_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/noarch/wcwidth-0.2.5-pyhd3eb1b0_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/webencodings-0.5.1-py313haa95532_2.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/websocket-client-1.8.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/wheel-0.45.1-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/widgetsnbextension-4.0.13-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/win_inet_pton-1.1.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/winpty-0.4.3-4.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/wrapt-1.17.0-py313h827c3e9_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/wsproto-1.2.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/xerces-c-3.2.4-hd77b12b_1.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/xz-5.6.4-h4754444_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/yaml-0.2.5-0.conda
+      - conda: https://conda.anaconda.org/esri/win-64/zeromq-4.3.5-0.conda
+      - conda: https://conda.anaconda.org/main/win-64/zict-3.0.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/zipp-3.21.0-py313haa95532_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/win-64/zlib-1.2.13-h8cc25b3_1.tar.bz2
+      - conda: https://conda.anaconda.org/esri/win-64/zlib-ng-2.1.6-2.conda
+      - conda: https://conda.anaconda.org/esri/win-64/zstd-1.5.7-0.conda
+      - pypi: https://files.pythonhosted.org/packages/32/34/d4e1c02d3bee589efb5dfa17f88ea08bdb3e3eac12bc475462aec52ed223/alabaster-0.7.16-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7b/df/87120e2195f08d760bc5cf8a31cfa2381a6887517aa89453b23f1ae3354f/autodoc_pydantic-2.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/4a/7e/3db2bd1b1f9e95f7cddca6d6e75e2f2bd9f51b1246e546d88addca0106bd/certifi-2025.4.26-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e9/b0/0200da600134e001d91851ddc797809e2fe0ea72de90e09bec5a2fbdaccb/charset_normalizer-3.4.2-cp313-cp313-win_amd64.whl
+      - pypi: https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c6/dc/947e75d47ebbb4b02d8babb1fad4ad381410d5bc9da7cfca80b7565ef401/coverage-7.8.2-cp313-cp313-win_amd64.whl
+      - pypi: https://files.pythonhosted.org/packages/26/87/f238c0670b94533ac0353a4e2a1a771a0cc73277b88bff23d3ae35a256c1/docutils-0.20.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ff/62/85c4c919272577931d407be5ba5d71c20f0b616d31a0befe0ae45bb79abd/imagesize-1.4.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/fc/14/c115516c62a7d2499781d2d3d7215218c0731b2c940753bf9f9b7b73924d/lxml-5.4.0-cp313-cp313-win_amd64.whl
+      - pypi: https://files.pythonhosted.org/packages/29/88/07df22d2dd4df40aba9f3e402e6dc1b8ee86297dddbad4872bd5e7b0094f/MarkupSafe-3.0.2-cp313-cp313-win_amd64.whl
+      - pypi: https://files.pythonhosted.org/packages/87/e6/6babe53a1dbfa55f6d30eb7408f4c4994658e5f27e3dbbb2b437912e5a32/nose2-0.15.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/20/12/38679034af332785aac8774540895e234f4d07f7545804097de4b666afd8/packaging-25.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/2f/804f58f0b856ab3bf21617cccf5b39206e6c4c94c2cd227bde125ea6105f/parameterized-0.9.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b5/69/831ed22b38ff9b4b64b66569f0e5b7b97cf3638346eb95a2147fdb49ad5f/pydantic-2.11.5-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a0/75/4a0a9bac998d78d889def5e4ef2b065acba8cae8c93696906c3a91f310ca/pydantic_core-2.33.2-cp313-cp313-win_amd64.whl
+      - pypi: https://files.pythonhosted.org/packages/b6/5f/d6d641b490fd3ec2c4c13b4244d68deea3a1b970a97be64f34fb5504ff72/pydantic_settings-2.9.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/1e/18/98a99ad95133c6a6e2005fe89faedf294a748bd5dc803008059409ac9b1e/python_dotenv-1.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/97/ec/889fbc557727da0c34a33850950310240f2040f3b1955175fdb2b36a8910/requests_mock-1.12.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c8/78/3565d011c61f5a43488987ee32b6f3f656e7f107ac2782dd57bdd7d91d9a/snowballstemmer-3.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0d/ef/153f6803c5d5f8917dbb7f7fcf6d34a871ede3296fa89c2c703f5f8a6c8e/sphinx-7.4.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/ea/46/00fda84467815c29951a9c91e3ae7503c409ddad04373e7cfc78daad4300/sphinx_rtd_theme-2.0.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/85/9ebeae2f76e9e77b952f4b274c27238156eae7979c5421fba91a28f4970d/sphinxcontrib_applehelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/35/7a/987e583882f985fe4d7323774889ec58049171828b58c2217e7f79cdf44e/sphinxcontrib_devhelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0a/7b/18a8c0bcec9182c05a0b3ec2a776bba4ead82750a55ff798e8d406dae604/sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/76/85/749bd22d1a68db7291c89e2ebca53f4306c3f205853cf31e9de279034c3c/sphinxcontrib_jquery-4.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/42/4c8646762ee83602e3fb3fbe774c2fac12f317deb0b5dbeeedd2d3ba4b77/sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/27/83/859ecdd180cacc13b1f7e857abf8582a64552ea7a061057a6c716e790fce/sphinxcontrib_qthelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/52/a7/d2782e4e3f77c8450f727ba74a8f12756d5ba823d81b941f1b04da9d033a/sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/39/88/f6e9b87428584a3c62cac768185c438ca6d561367a5d267b293259d76075/unittest_xml_reporting-3.2.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/6b/11/cc635220681e93a0183390e26485430ca2c7b5f9d33b15c74c2861cb8091/urllib3-2.4.0-py3-none-any.whl
 packages:
 - conda: https://conda.anaconda.org/esri/linux-64/_libgcc_mutex-0.1-main.conda
   sha256: 2598a6655d4ae808602bba11d0883c45b3b025650b932241b078dcd55e4ffe6c
@@ -4547,9 +5919,9 @@ packages:
   license_family: BSD
   size: 12154
   timestamp: 1728587453104
-- conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_18.conda
-  sha256: b63578375f66b0e0c6e03b49666ab32902b39bc2fced6ee9072e6f09b55e107b
-  md5: 42b04509c8ae1cc30e4b8dfcbf3e3453
+- conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_49.conda
+  sha256: 290b61b0bf398ba845d99a485d5efde8d3a2635862514c7983e68bc2f08f9275
+  md5: fac164da8763ae11f4ce191dcfa1212b
   depends:
   - cachetools
   - certifi
@@ -4581,11 +5953,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 1137216
-  timestamp: 1746447030897
-- conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_18.conda
-  sha256: 2d51b75d4a141150210f849c683734030d38c79db9b729097a2d705c818c0a50
-  md5: 6c7a4e8064c74c8e87c2e50b2430e44b
+  size: 7707098
+  timestamp: 1748347848634
+- conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_49.conda
+  sha256: 00d2661171085089f471ab1a2cbe2305ad77989583cb92d399844167ce66d0b5
+  md5: 4ba5c778ff075b3f9225e0ab3a78ec6b
   depends:
   - cachetools
   - certifi
@@ -4617,11 +5989,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 1113760
-  timestamp: 1746447023732
-- conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_18.conda
-  sha256: dad1b1cf0dbd6b91f92459bd425443d0e0f8afff8b22bba1a4bcb1b835485e34
-  md5: 702eeff7f51692b699632e113cfa8c85
+  size: 6811803
+  timestamp: 1748347863823
+- conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_49.conda
+  sha256: fb47bc039df54f79db88b84a678d4b65463f169cebb5debc333f3fe44fc22bc0
+  md5: 422ada2e1732e8cff9359669b029a52a
   depends:
   - cachetools
   - certifi
@@ -4653,11 +6025,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 1137999
-  timestamp: 1746447023732
-- conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_18.conda
-  sha256: d2daa3d6e3883d59321660616e02f0b0e3d956c8511ce6c0b256e130cd22eb52
-  md5: 3cf6dc5984201fa992d07fc81c6880b5
+  size: 7649453
+  timestamp: 1748347863823
+- conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_49.conda
+  sha256: 976bcbbb95bdaee8fb56d65dfdc6443e596b41172c2e6d5a9df47ed640a04d5c
+  md5: f28c46d2feaecb4ad4fe11cd27250564
   depends:
   - cachetools
   - certifi
@@ -4690,8 +6062,8 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 1137380
-  timestamp: 1746447188290
+  size: 7606808
+  timestamp: 1748348273288
 - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-23.1.0-pyhd8ed1ab_1.conda
   sha256: 7af62339394986bc470a7a231c7f37ad0173ffb41f6bc0e8e31b0be9e3b9d20f
   md5: a7ee488b71c30ada51c48468337b85ba
@@ -8464,6 +9836,34 @@ packages:
   name: coverage
   version: 7.8.0
   sha256: 5ac46d0c2dd5820ce93943a501ac5f6548ea81594777ca585bf002aa8854cacd
+  requires_dist:
+  - tomli ; python_full_version <= '3.11' and extra == 'toml'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/1a/93/eb6400a745ad3b265bac36e8077fdffcf0268bdbbb6c02b7220b624c9b31/coverage-7.8.2-cp313-cp313-macosx_10_13_x86_64.whl
+  name: coverage
+  version: 7.8.2
+  sha256: ea561010914ec1c26ab4188aef8b1567272ef6de096312716f90e5baa79ef8ca
+  requires_dist:
+  - tomli ; python_full_version <= '3.11' and extra == 'toml'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/1b/7c/bdbf113f92683024406a1cd226a199e4200a2001fc85d6a6e7e299e60253/coverage-7.8.2-cp313-cp313-macosx_11_0_arm64.whl
+  name: coverage
+  version: 7.8.2
+  sha256: cb86337a4fcdd0e598ff2caeb513ac604d2f3da6d53df2c8e368e07ee38e277d
+  requires_dist:
+  - tomli ; python_full_version <= '3.11' and extra == 'toml'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/89/60/f5f50f61b6332451520e6cdc2401700c48310c64bc2dd34027a47d6ab4ca/coverage-7.8.2-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  name: coverage
+  version: 7.8.2
+  sha256: dc67994df9bcd7e0150a47ef41278b9e0a0ea187caba72414b71dc590b99a108
+  requires_dist:
+  - tomli ; python_full_version <= '3.11' and extra == 'toml'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/c6/dc/947e75d47ebbb4b02d8babb1fad4ad381410d5bc9da7cfca80b7565ef401/coverage-7.8.2-cp313-cp313-win_amd64.whl
+  name: coverage
+  version: 7.8.2
+  sha256: 2f9bc608fbafaee40eb60a9a53dbfb90f53cc66d3d32c2849dc27cf5638a21e3
   requires_dist:
   - tomli ; python_full_version <= '3.11' and extra == 'toml'
   requires_python: '>=3.9'
@@ -16926,6 +18326,16 @@ packages:
   license_family: BSD
   size: 10123989
   timestamp: 1664896966769
+- conda: https://conda.anaconda.org/main/osx-64/libopenblas-0.3.29-h3f8574a_0.tar.bz2
+  sha256: 3a3a9861ff781d55b4f38925c3f6059cb7811f5813ca85bf5a656e7b69d92bba
+  md5: a33a5f061ffab5a47e96ba9fd5385555
+  depends:
+  - libgfortran 5.*
+  - libgfortran5 >=11.2.0
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 10583047
+  timestamp: 1746648378310
 - conda: https://conda.anaconda.org/main/osx-arm64/libopenblas-0.3.21-h269037a_0.tar.bz2
   sha256: ec0e83103c71d3f338c35c4bad8e5109ac9f94ed06a08d16f5b98d38be295ca9
   md5: 0ba7c7444f2cbc64396d3873b874ec63
@@ -16937,6 +18347,16 @@ packages:
   license_family: BSD
   size: 13307698
   timestamp: 1664897510704
+- conda: https://conda.anaconda.org/main/osx-arm64/libopenblas-0.3.29-hea593b9_0.tar.bz2
+  sha256: afb7d99dc5c389a71c87276e1dba77070d121ad47af85294b4204e8520d52680
+  md5: 16515b49d9604d4bdb6eabd8d98ccb8d
+  depends:
+  - libgfortran 5.*
+  - libgfortran5 >=11.2.0
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 14114094
+  timestamp: 1746645858131
 - conda: https://conda.anaconda.org/main/linux-64/libopengl-1.7.0-h5eee18b_2.tar.bz2
   sha256: ac58785fc7b65282e47562024bf48b90a49b6d3734bf7062d45bc95c1acf38b8
   md5: 487afb510fd9a2d6353ce2a40017ecb3
@@ -21379,6 +22799,26 @@ packages:
   license_family: BSD
   size: 10826
   timestamp: 1742573780480
+- conda: https://conda.anaconda.org/main/linux-64/numpy-2.2.5-py313h8d96ed3_0.tar.bz2
+  sha256: dc20db88bc0119ad5ebb5caf7600db3f6f0fd2d4d7fcca4bdbef1eb70e35fcba
+  md5: a667ed29d020b2a0d2016a7edb4c5e24
+  depends:
+  - blas 1.0 mkl
+  - libgcc-ng >=11.2.0
+  - libstdcxx-ng >=11.2.0
+  - mkl >=2023.1.0,<2024.0a0
+  - mkl-service >=2.3.0,<3.0a0
+  - mkl_fft
+  - mkl_random
+  - numpy-base 2.2.5 py313h8e760e0_0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - setuptools <74
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 12544
+  timestamp: 1747238223254
 - conda: https://conda.anaconda.org/main/osx-64/numpy-2.2.4-py313hc5c9681_0.tar.bz2
   sha256: 0324702f0c30ce83e814b00c977790f9338c37a5120469b684242d8d3e4ce06d
   md5: 0d10e52b461eb5b92ed54d36ec2a47d7
@@ -21395,6 +22835,22 @@ packages:
   license_family: BSD
   size: 11903
   timestamp: 1742571776225
+- conda: https://conda.anaconda.org/main/osx-64/numpy-2.2.5-py313hea2f92b_0.tar.bz2
+  sha256: 1719a9435a8becd7f067cde141edd8f947cb880891b46f739ee7d26696995075
+  md5: 7387fee1cd211c9cb216edb5a46b3f31
+  depends:
+  - blas * openblas
+  - libcxx >=14.0.6
+  - libopenblas >=0.3.29,<1.0a0
+  - numpy-base 2.2.5 py313h4cb5ad8_0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - setuptools <74
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 13645
+  timestamp: 1747240377173
 - conda: https://conda.anaconda.org/main/osx-arm64/numpy-2.2.4-py313h7c57ca2_0.tar.bz2
   sha256: 029f354a4cef5302cf3283370488bc394a5dd93369ce634865aba9811f34e6f1
   md5: 26c2072d8db74898718d3e660bb6beb2
@@ -21411,6 +22867,22 @@ packages:
   license_family: BSD
   size: 11961
   timestamp: 1742570875034
+- conda: https://conda.anaconda.org/main/osx-arm64/numpy-2.2.5-py313hdcf7240_0.tar.bz2
+  sha256: 1a01a261f6c161a22e445ff70b852c7091aaf399a18466ca89ce438354d18219
+  md5: 73ea471d0f63f52ebee12cffb9b57810
+  depends:
+  - blas * openblas
+  - libcxx >=14.0.6
+  - libopenblas >=0.3.29,<1.0a0
+  - numpy-base 2.2.5 py313h9d8309b_0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - setuptools <74
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 13631
+  timestamp: 1747238485592
 - conda: https://conda.anaconda.org/esri/win-64/numpy-base-2.2.0-py313_1.conda
   sha256: 55101410b815dc3b404b5b874364e2d7172ae09f773d83507e43fdfe83d9cb8d
   md5: 87e79a2ff8656d8c89df511e746986b8
@@ -21439,6 +22911,23 @@ packages:
   license_family: BSD
   size: 9457569
   timestamp: 1742573767551
+- conda: https://conda.anaconda.org/main/linux-64/numpy-base-2.2.5-py313h8e760e0_0.tar.bz2
+  sha256: cfe4c8089a082233bed27a696082c183a8f6c1be1f5bc558981c56106206095a
+  md5: c5b3c24333b60708e54733fb48a5dc40
+  depends:
+  - blas 1.0 mkl
+  - libgcc-ng >=11.2.0
+  - libstdcxx-ng >=11.2.0
+  - mkl >=2023.1.0,<2024.0a0
+  - mkl-service >=2.3.0,<3.0a0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - setuptools <74
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 9437555
+  timestamp: 1747238207561
 - conda: https://conda.anaconda.org/main/osx-64/numpy-base-2.2.4-py313h0dbffa8_0.tar.bz2
   sha256: d6aaabc298a85d6fc2d647f67cde2f5aaab79a9f86760bd32e522aba1e6282e9
   md5: acaac51d1b3c240438e6dc229933f948
@@ -21454,6 +22943,21 @@ packages:
   license_family: BSD
   size: 8876844
   timestamp: 1742571743828
+- conda: https://conda.anaconda.org/main/osx-64/numpy-base-2.2.5-py313h4cb5ad8_0.tar.bz2
+  sha256: b2547fac7c5fb7f91ba9c1b6d3a9a1b664f47d5447950b5d84905c5a7e8e1271
+  md5: 2bc554727e4fa70f7d5f2d72d00bc4e1
+  depends:
+  - blas * openblas
+  - libcxx >=14.0.6
+  - libopenblas >=0.3.29,<1.0a0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - setuptools <74
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 8866584
+  timestamp: 1747240328143
 - conda: https://conda.anaconda.org/main/osx-arm64/numpy-base-2.2.4-py313hb98e858_0.tar.bz2
   sha256: 17d07de6b81ec58a69441b24b7d74165bd697b985793f12777e7a4fc7dfa21de
   md5: 25f88e268d8be4558bf02878d43e6674
@@ -21469,6 +22973,21 @@ packages:
   license_family: BSD
   size: 7305262
   timestamp: 1742570856278
+- conda: https://conda.anaconda.org/main/osx-arm64/numpy-base-2.2.5-py313h9d8309b_0.tar.bz2
+  sha256: 24202a17b058928d21a5941503bfbab3e9d762e52b9cbf58de507b04fc6ae30f
+  md5: 50a95df1fdb1645e6a8b0b711872cdfe
+  depends:
+  - blas * openblas
+  - libcxx >=14.0.6
+  - libopenblas >=0.3.29,<1.0a0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - setuptools <74
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 7360660
+  timestamp: 1747238474127
 - conda: https://conda.anaconda.org/conda-forge/noarch/oauthlib-3.2.2-pyhd8ed1ab_1.conda
   sha256: bec65607d36759e85aab2331ff7f056cb32be0bca92ee2b955aea3306330bd1b
   md5: bf5f2c90d503d43a8c45cedf766b4b8e
@@ -24162,6 +25681,18 @@ packages:
   name: pydantic
   version: 2.11.4
   sha256: d9615eaa9ac5a063471da949c8fc16376a84afb5024688b3ff885693506764eb
+  requires_dist:
+  - annotated-types>=0.6.0
+  - pydantic-core==2.33.2
+  - typing-extensions>=4.12.2
+  - typing-inspection>=0.4.0
+  - email-validator>=2.0.0 ; extra == 'email'
+  - tzdata ; python_full_version >= '3.9' and sys_platform == 'win32' and extra == 'timezone'
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/b5/69/831ed22b38ff9b4b64b66569f0e5b7b97cf3638346eb95a2147fdb49ad5f/pydantic-2.11.5-py3-none-any.whl
+  name: pydantic
+  version: 2.11.5
+  sha256: f9c26ba06f9747749ca1e5c94d6a85cb84254577553c8785576fd38fa64dc0f7
   requires_dist:
   - annotated-types>=0.6.0
   - pydantic-core==2.33.2
@@ -28806,6 +30337,17 @@ packages:
   license_family: Apache
   size: 885148
   timestamp: 1735842154727
+- conda: https://conda.anaconda.org/main/linux-64/tornado-6.5-py313h5eee18b_0.tar.bz2
+  sha256: 5d1c77e233a58dd39b7ad7548c104a618c7e4cac4a1446972334d7df2939c834
+  md5: 69fdcdc29e07777623a695c0029b6bb1
+  depends:
+  - libgcc-ng >=11.2.0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  license: Apache-2.0
+  license_family: Apache
+  size: 894862
+  timestamp: 1747918167782
 - conda: https://conda.anaconda.org/main/osx-64/tornado-6.4.2-py313h46256e1_0.tar.bz2
   sha256: bed9f17d0628982855579651309add19e0e96e2107c33fbd90c7dd84d1338a40
   md5: 7b6994ea9af5d3ff3b20a5470d0347ac
@@ -28816,6 +30358,16 @@ packages:
   license_family: Apache
   size: 885367
   timestamp: 1735843116108
+- conda: https://conda.anaconda.org/main/osx-64/tornado-6.5-py313h46256e1_0.tar.bz2
+  sha256: b15bded930d484229a03f72c63f668f905eab890c608dae10884158f2c1c296a
+  md5: 8b49ed4e33dc3262eeaed40621fcb366
+  depends:
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  license: Apache-2.0
+  license_family: Apache
+  size: 897562
+  timestamp: 1747918302795
 - conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.4.2-py313h80987f9_0.tar.bz2
   sha256: c23f8b8a681d1788fea7cb8be0231125605d32f05b8c3be81fc876929fd46059
   md5: ff4724e9baaa23a7c91e78da836692b6
@@ -28826,6 +30378,16 @@ packages:
   license_family: Apache
   size: 888077
   timestamp: 1735843050792
+- conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.5-py313h80987f9_0.tar.bz2
+  sha256: 96d5df94acb6b9ff8213088b5d246cefea25411d245a53dd0dcaf8ed751a4c3a
+  md5: 04eb3c9ea17c9b4f2c0296ba378e8226
+  depends:
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  license: Apache-2.0
+  license_family: Apache
+  size: 898206
+  timestamp: 1747918327108
 - conda: https://conda.anaconda.org/main/win-64/tornado-6.4.2-py313h827c3e9_0.tar.bz2
   sha256: f35e556a30031f9652eafa104531773f6639be1f141c14a202ec583b6521b15a
   md5: 4f932902e17e6aba7b6d3991a683d015
@@ -28838,6 +30400,18 @@ packages:
   license_family: Apache
   size: 901883
   timestamp: 1735843523484
+- conda: https://conda.anaconda.org/main/win-64/tornado-6.5-py313h827c3e9_0.tar.bz2
+  sha256: 3a3fc638b4cf7e5dd77ac0e78a98a38e872ca4b61fad592e332957dc8a7da922
+  md5: 1d90e4827da44394d272d4fdeeda7d12
+  depends:
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - vc >=14.2,<15.0a0
+  - vs2015_runtime >=14.29.30133,<15.0a0
+  license: Apache-2.0
+  license_family: Apache
+  size: 914062
+  timestamp: 1747918523469
 - conda: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.67.1-pyhd8ed1ab_1.conda
   sha256: 11e2c85468ae9902d24a27137b6b39b4a78099806e551d390e394a8c34b48e40
   md5: 9efbfdc37242619130ea42b1cc4ed861
@@ -29157,6 +30731,13 @@ packages:
   name: typing-inspection
   version: 0.4.0
   sha256: 50e72559fcd2a6367a19f7a7e610e6afcb9fac940c650290eed893d61386832f
+  requires_dist:
+  - typing-extensions>=4.12.0
+  requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
+  name: typing-inspection
+  version: 0.4.1
+  sha256: 389055682238f53b04f7badcb49b989835495a96700ced5dab2d8feae4b26f51
   requires_dist:
   - typing-extensions>=4.12.0
   requires_python: '>=3.9'
