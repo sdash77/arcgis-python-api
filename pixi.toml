@@ -12,8 +12,8 @@ version = "0.1.0"
 "docs" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:html", environment = "docs"}, {task = "_docs:json", environment = "docs"}], description = "Build Sphinx docs (html and json)"}
 "docs:html" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:html", environment = "docs"}], description = "Build Sphinx docs (html)"}
 "docs:json" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:json", environment = "docs"}], description = "Build Sphinx docs (json)"}
-"docs:preview" = {cmd = "cd ../python-api-doc && npm i && npm run python:start:apiref", depends-on = [{task = "_docs:preview:depends", environment = "docs"}], description = "Build Sphinx docs (json) and start a Gatsby server"}
-"docs:preview:full" = {cmd = "cd ../python-api-doc && npm i && npm run python:start", depends-on = [{task = "_docs:preview:depends", environment = "docs"}], description = "Build Sphinx docs (json) and start a Gatsby server"}
+"docs:preview" = {depends-on = [{task = "_docs:preview:depends", environment = "docs"}, {task = "_docs:preview:start", environment = "docs", args = [":apiref"]}], description = "Build Sphinx docs (json) and start a Gatsby server"}
+"docs:preview:full" = {depends-on = [{task = "_docs:preview:depends", environment = "docs"}, {task = "_docs:preview:start", environment = "docs"}], description = "Build Sphinx docs (json) and start a Gatsby server"}
 # tasks with names prefixed with "_" are not listed in `pixi task list`
 # and are not intended to be run directly
 "_black" = {cmd = "python -m black {{check}} {{verbose}} {{path}}", description = "Run `black`", args = [{arg = "check", default = ""}, {arg = "verbose", default = ""}, {arg = "path", default = "./src"}]}
@@ -30,6 +30,7 @@ version = "0.1.0"
 "_config:ensure:python-api-doc" = "python -c \"import os,sys;sys.exit(not os.path.isfile('../python-api-doc/sites/python/config/config.local.yml'))\" || (export currentRepoPath=$(python -c \"import pathlib; print(pathlib.Path().absolute().name)\") && echo apiRefLocalFolder: \\\"../$currentRepoPath/docs/api_ref/build/json\\\" >> ../python-api-doc/sites/python/config/config.local.yml && echo docLocalFolder: \\\"../arcgis-python-api\\\" >> ../python-api-doc/sites/python/config/config.local.yml)"
 "_docs:depends" = {depends-on = ["_repo:ensure:geoserpent", "_docs_cp_arcgis_map_namespace"], description = "Configure environment for full doc build"}
 "_docs:preview:depends" = {depends-on = ["_docs:depends", "_repo:ensure:public", "_repo:ensure:python-api-doc", "_config:ensure:python-api-doc", {task = "_docs:json", environment = "docs"}], description = "Configure environment for Gatsby build"}
+"_docs:preview:start" = {cmd = "cd ../python-api-doc && npm i && npm run python:start{{subtask}}", args = [{arg = "subtask", default = ""}]}
 
 [dependencies]
 python = "~=3.13"
