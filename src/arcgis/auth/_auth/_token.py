@@ -439,10 +439,11 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         self._session = session
+        self.proxies = kwargs.pop("proxies", None)
         if not session:
             self._session = requests.Session()
             self._session.verify = verify_cert
-            self.proxies = kwargs.pop("proxies", {})
+
             if self.proxies:
                 self._session.proxies = self.proxies
 
