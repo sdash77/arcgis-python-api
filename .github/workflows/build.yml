@@ -1,5 +1,8 @@
 name: Build Python Packages
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * *' # Run every day at 12PM UTC
 
 env:
   BUILD_NUMBER: ${{ github.run_number }}
@@ -67,6 +70,15 @@ jobs:
         working-directory: ./build
         run: |
           conda build arcgis --override-channels -c esri -c esri-build -c defaults --python ${{ matrix.python }} --package-format .conda --output-folder ./output --no-test
+      - name: Test conda package
+        working-directory: ./build/output
+        run: |
+          export CONDA_SUBDIR="${{ runner.os == 'macOS' && 'osx-arm64' || (runner.os == 'Windows' && 'win-64' || 'linux-64') }}"
+          export ARCGIS_CONDA_PKG=$(find $CONDA_SUBDIR -name "*.conda")
+          conda build --test --override-channels -c esri -c esri-build -c defaults $ARCGIS_CONDA_PKG || {
+            # test failure is a warning
+            echo "::warning file=$ARCGIS_CONDA_PKG::Conda package test failed. Please review the logs."
+          }
       - name: Convert conda package
         # convert to osx-arm64 to osx-64
         if: ${{ runner.os == 'macOS' }}
@@ -85,3 +97,53 @@ jobs:
           name: arcgis-conda-build-${{ github.run_number }}-${{ github.sha }}-${{ runner.os }}-${{ matrix.python }}
           path: |
             build/output/**/*.conda
+  deploy-conda:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    needs: [build-conda]
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_ESRI_FORGE }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_ESRI_FORGE }}
+      AWS_REGION: ${{ secrets.AWS_REGION_ESRI_FORGE }}
+      S3_ENDPOINT: https://s3.${{ secrets.AWS_REGION_ESRI_FORGE }}.amazonaws.com
+      # channel for default branch: s3://<bucket>
+      # channel for non-default branch: s3://<bucket>/label/<branch>
+      CONDA_CHANNEL: s3://${{ secrets.AWS_BUCKET_ESRI_FORGE }}${{ github.ref_name != github.event.repository.default_branch && '/label/' || '' }}${{ github.ref_name != github.event.repository.default_branch && github.ref_name || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            build.environment.yml
+          sparse-checkout-cone-mode: false
+      - name: Setup conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          environment-file: build.environment.yml
+      - name: Download conda packages
+        uses: actions/download-artifact@v4
+        with:
+          path: ./condapkg
+          pattern: arcgis-conda-build-${{ github.run_number }}-${{ github.sha }}-*
+          merge-multiple: true
+      - name: Upload conda packages to S3
+        run: |
+          # Upload to S3
+          rattler-build upload s3 \
+            --channel $CONDA_CHANNEL \
+            --endpoint-url $S3_ENDPOINT \
+            --region $AWS_REGION \
+            ./condapkg/**/*.conda
+      - name: Index s3 conda packages using rattler-index
+        env:
+          S3_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_ESRI_FORGE }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_ESRI_FORGE }}
+          S3_REGION: ${{ secrets.AWS_REGION_ESRI_FORGE }}
+          S3_FORCE_PATH_STYLE: true
+          S3_ENDPOINT: https://s3.${{ secrets.AWS_REGION_ESRI_FORGE }}.amazonaws.com
+        run: |
+          rattler-index s3 $CONDA_CHANNEL

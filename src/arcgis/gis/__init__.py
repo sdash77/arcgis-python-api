@@ -538,6 +538,11 @@ class GIS(object):
 
         if url is None:
             url = "https://www.arcgis.com"
+        home_index_val: int = url.lower().find("/home")
+        if home_index_val > -1:
+            # removes the /home value and anything after it.
+            # this method makes the /home logic caseless.
+            url = url[:home_index_val]
         if (self._uri_validator(url) is False) and (
             str(url).lower() not in ["pro", "home"]
         ):
@@ -786,7 +791,7 @@ class GIS(object):
                     if self._adminPrivateServiceUrl:
                         url: str = self._adminPrivateServiceUrl
                     else:
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -820,7 +825,7 @@ class GIS(object):
                     if self._adminPrivateServiceUrl:
                         url: str = self._adminPrivateServiceUrl
                     else:
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -858,7 +863,7 @@ class GIS(object):
                             KubernetesAdmin,
                         )
 
-                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
+                        url: str = f"{self._portal.url}/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
                     else:
                         from .admin.portaladmin import PortalAdminManager
@@ -1410,6 +1415,8 @@ class GIS(object):
         if self._is_hosted_nb_home:
             return self._public_portal_url
         else:
+            if self._url.find("/home") > -1:
+                self._url = self._url.replace("/home", "")
             return self._url
 
     @property
@@ -3316,7 +3323,7 @@ class UserManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "< UserManager at {url} >".format(url=self._gis._url)
+        return "< UserManager at {url} >".format(url=self._gis.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -7450,7 +7457,7 @@ class ContentManager(object):
             >>> gis.content.analyze(item = "9311d21a9a2047d19c0faaebd6f2cca6", file_type = "csv")
 
         """
-        surl = f"{self._gis._url}/sharing/rest/content/features/analyze"
+        surl = f"{self._gis.url}/sharing/rest/content/features/analyze"
         files = {"file": file_path} if file_path and os.path.isfile(file_path) else None
         params = self._get_analyze_params(
             is_arcgis_online=self._gis._portal.is_arcgisonline,
@@ -11999,7 +12006,7 @@ class User(dict):
         if report_type != "itemUsages":
             del params["timeAggregate"]
         url = "%s/sharing/rest/community/users/%s/report" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -12983,7 +12990,7 @@ class User(dict):
             us = self.user_settings
             us["landingPage"] = {"url": f"{value}"}
             url = "%s/sharing/rest/community/users/%s/setProperties" % (
-                self._gis._url,
+                self._gis.url,
                 self.username,
             )
             params = {"f": "json", "properties": us}
@@ -13018,7 +13025,7 @@ class User(dict):
 
         """
         url = "%s/sharing/rest/community/users/%s/properties" % (
-            self._gis._url,
+            self._gis.url,
             self.username,
         )
         params = {"f": "json"}
@@ -13039,7 +13046,7 @@ class User(dict):
         :return: dict
         """
         url = "%s/sharing/rest/community/users/%s/setProperties" % (
-            self._gis._url,
+            self._gis.url,
             self.username,
         )
         params = {"f": "json", "properties": value}
@@ -13059,7 +13066,7 @@ class User(dict):
         """
         params = {"f": "json"}
         url = "%s/sharing/rest/community/users/%s/disable" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -13081,7 +13088,7 @@ class User(dict):
         """
         params = {"f": "json"}
         url = "%s/sharing/rest/community/users/%s/enable" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -13156,7 +13163,7 @@ class User(dict):
         if self._gis._portal.is_arcgisonline is False:
             return []
         url = "%s/sharing/rest/community/users/%s/linkedUsers" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         start = 1
@@ -13219,7 +13226,7 @@ class User(dict):
             username = username.username
         params = {"f": "json", "user": username, "userToken": userToken}
         url = "%s/sharing/rest/community/users/%s/linkUser" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)
@@ -13256,7 +13263,7 @@ class User(dict):
             username = username.username
         params = {"f": "json", "user": username}
         url = "%s/sharing/rest/community/users/%s/unlinkUser" % (
-            self._gis._url,
+            self._gis.url,
             self._user_id,
         )
         res = self._gis._con.post(url, params)

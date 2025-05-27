@@ -8013,6 +8013,8 @@ def manage_multidimensional_raster(
     dimension_value: Optional[str] = None,
     dimension_description: Optional[str] = None,
     dimension_unit: Optional[str] = None,
+    update_statistics: bool = True,
+    update_transpose: bool = True,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -8064,6 +8066,30 @@ def manage_multidimensional_raster(
                                              This is required if manage_mode is set to ADD_DIMENSION.
     ------------------------------------     --------------------------------------------------------------------
     dimension_unit                           Optional string. The unit of the dimension to be modified.
+    ------------------------------------     --------------------------------------------------------------------
+    update_statistics                        Optional boolean. Specifies whether the statistics will be recalculated
+                                             for the multidimensional raster dataset.
+
+                                             - True - Statistics will be recalculated. This is the default.
+                                             - False - Statistics will not be recalculated.
+
+                                             Example:
+
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 11.5 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    update_transpose                         Optional boolean. Specifies whether the transpose will be rebuilt for
+                                             the multidimensional raster dataset.
+
+                                             - True - The transpose will be rebuilt. If no transpose exists, a new transpose will be built. This is the default.
+                                             - False - The transpose will not be rebuilt.
+
+                                             Example:
+
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 11.5 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -8118,6 +8144,8 @@ def manage_multidimensional_raster(
         dimension_value=dimension_value,
         dimension_description=dimension_description,
         dimension_unit=dimension_unit,
+        update_statistics=update_statistics,
+        update_transpose=update_transpose,
         future=future,
         estimate=estimate,
         **kwargs,
