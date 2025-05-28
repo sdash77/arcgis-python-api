@@ -1551,18 +1551,24 @@ class TabularDataObject(object):
                 max_len_for_problem_col = 0
                 for item in dataframe[col_name]:
                     try:
-                        max_len_for_problem_col = max(max_len_for_problem_col, len(str(item)))
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, len(str(item))
+                        )
                     except Exception as item_e:
                         # Decide how to handle unprocessable items (e.g., skip, or assign a default length)
-                        max_len_for_problem_col = max(max_len_for_problem_col, 0) # Assume length 0 if error
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, 0
+                        )  # Assume length 0 if error
                 col_length[col_name] = max_len_for_problem_col
             except Exception as e:
                 # Generic fallback for other errors
                 max_len_for_problem_col = 0
                 for item in dataframe[col_name]:
                     try:
-                        max_len_for_problem_col = max(max_len_for_problem_col, len(str(item)))
-                    except Exception: # Catch all if above fails
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, len(str(item))
+                        )
+                    except Exception:  # Catch all if above fails
                         max_len_for_problem_col = max(max_len_for_problem_col, 0)
                 col_length[col_name] = max_len_for_problem_col
 
