@@ -41,6 +41,11 @@ on:
         description: Install on Windows?
         required: false
         default: true
+      test-import:
+        type: boolean
+        description: Test import of arcgis after installation?
+        required: false
+        default: true
 
 
 jobs:
@@ -96,6 +101,10 @@ jobs:
         if: github.event.inputs.conda == 'true'
         run: |
           conda install arcgis=${{ github.event.inputs.version }} ${{ needs.preflight.outputs.channels }} --yes
+      - name: Test arcgis import (conda)
+        if: github.event.inputs.conda == 'true' && github.event.inputs.test-import == 'true'
+        run: |
+          python -c "import arcgis; print(arcgis.__version__)"
       - name: Export environment
         if: github.event.inputs.conda == 'true'
         run: |
@@ -126,6 +135,10 @@ jobs:
         run: |
           conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
           conda activate arcgis_pip && python -m pip install ./src
+      - name: Test arcgis import (pip)
+        if: github.event.inputs.pip == 'true' && github.event.inputs.test-import == 'true'
+        run: |
+          conda activate arcgis_pip && python -c "import arcgis; print(arcgis.__version__)"
       - name: Export pip environment
         if: github.event.inputs.pip == 'true'
         run: |
