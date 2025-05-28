@@ -54,7 +54,7 @@ jobs:
         - name: Construct matrix
           id: set-matrix
           run: |
-            matrix=$(echo {} | jq '. |= {"os": [], "python_version": ["3.10", "3.11", "3.12"]}' | jq -r tostring)
+            matrix=$(echo {} | jq '. |= {"os": [], "python_version": ["3.10", "3.11", "3.12", "3.13"]}' | jq -r tostring)
             if [ "${{ github.event.inputs.linux }}" = 'true' ]; then
               echo "Running on Linux"
               matrix=$(echo $matrix | jq '.os += ["ubuntu-latest"]' | jq -r tostring)
@@ -114,10 +114,18 @@ jobs:
           conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
           conda activate arcgis_pip && python -m pip install "arcgis==${{ github.event.inputs.version }}.*"
       - name: Install arcgis (pip from url)
-        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url != ''
+        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url != '' && github.event.inputs.pip-url != 'local'
         run: |
           conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
           conda activate arcgis_pip && python -m pip install ${{ github.event.inputs.pip-url }}
+      - name: Checkout repository (local pip install)
+        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url == 'local'
+        uses: actions/checkout@v4
+      - name: Install arcgis (pip from local)
+        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url == 'local'
+        run: |
+          conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
+          conda activate arcgis_pip && python -m pip install ./src
       - name: Export pip environment
         if: github.event.inputs.pip == 'true'
         run: |
