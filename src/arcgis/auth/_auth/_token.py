@@ -965,7 +965,10 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         patterns = [
             {"pattern": re.compile("var oAuthInfo = ({.*?});", re.DOTALL), "group": 0},
             {"pattern": re.compile("var oAuthInfo = ({.*?})", re.DOTALL), "group": 0},
-            {"pattern": re.compile(r"var\s+(\w+)\s*=\s*({.*?})", re.DOTALL), "group": 1},
+            {
+                "pattern": re.compile(r"var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
+                "group": 1,
+            },
         ]
         for script in lxml.html.fromstring(text).xpath("//script/text()"):
             script_code = str(script).strip()
