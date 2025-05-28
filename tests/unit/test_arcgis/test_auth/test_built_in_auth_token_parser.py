@@ -11,6 +11,18 @@ class TestBuiltInAuthTokenParser(unittest.TestCase):
         assert result["oauth_state"] == "abc123"
         assert result["foo"] == "bar"
 
+    def test_match_oauth_info_valid_no_semicolon_valid(self):
+        html = '<html><head><script>var oAuthInfo = {"oauth_state": "xyz789"}</script></head></html>'
+        result = EsriBuiltInAuth._match_oauth_info(html)
+        assert result is not None
+        assert result["oauth_state"] == "xyz789"
+
+    def test_match_oauth_info_fallback_on_first_object_valid(self):
+        html = '<html><head><script>var anotherObject = {"oauth_state": "abc123"}</script></head></html>'
+        result = EsriBuiltInAuth._match_oauth_info(html)
+        assert result is not None
+        assert result["oauth_state"] == "abc123"
+
     def test_match_oauth_info_missing(self):
         html = '<html><head><title>Login</title></head></html>'
         result = EsriBuiltInAuth._match_oauth_info(html)

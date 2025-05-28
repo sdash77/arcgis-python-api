@@ -963,17 +963,18 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     def _match_oauth_info(cls, text: str) -> dict | None:
         """Extracts OAuth info JSON object from script text in OAuth response"""
         patterns = [
-            re.compile("var oAuthInfo = ({.*?});", re.DOTALL),
-            re.compile("var oAuthInfo = ({.*?})", re.DOTALL),
-            re.compile(r"var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
+            {"pattern": re.compile("var oAuthInfo = ({.*?});", re.DOTALL), "group": 0},
+            {"pattern": re.compile("var oAuthInfo = ({.*?})", re.DOTALL), "group": 0},
+            {"pattern": re.compile(r"var\s+(\w+)\s*=\s*({.*?})", re.DOTALL), "group": 1},
         ]
         for script in lxml.html.fromstring(text).xpath("//script/text()"):
             script_code = str(script).strip()
-            for pattern in patterns:
+            for pattern_config in patterns:
+                pattern = pattern_config["pattern"]
                 match = pattern.search(script_code)
                 if not match:
                     continue
-                js_object = match.groups()[0]
+                js_object = match.groups()[pattern_config["group"]]
                 try:
                     return json.loads(js_object)
                 except Exception:
