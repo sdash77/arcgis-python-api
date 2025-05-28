@@ -48,9 +48,12 @@ class NotebookFile:
 
         :return: True if the file was renamed, False or an error if it was not.
         """
-        url = f"{self._da._url}/move"
         if self._da._gis._is_arcgisonline:
-            url = url.replace("/azureblob", "")
+            url = f"{self._da._url}/move".replace(
+                "/azureblob", f"/{self._da._username}"
+            )
+        else:
+            url = f"{self._da._url}/{self._da._username}/notebookworkspace/move"
         params = {
             "f": "json",
             "source": self.properties.name,
@@ -173,6 +176,13 @@ class NotebookDataAccess:
                 f"User {source_username} or {target_username} does not exist in the organization."
             )
 
+        # check the target user is an administrator
+        target_user = self._gis.users.get(target_username)
+        if not target_user.role or target_user.role != "org_admin":
+            raise ValueError(
+                f"User {target_username} is not an administrator. Only administrators can transfer user workspaces."
+            )
+
         # if folder_name is None, create the default folder name
         if folder_name is None:
             folder_name = f"_transferred_{source_username}"
@@ -263,6 +273,17 @@ class NotebookDataAccess:
             if not os.path.isfile(file):
                 raise ValueError(f"File {file} does not exist.")
 
+            # Check if file already exists, enterprise does this automatically
+            if self._gis._is_arcgisonline:
+                # check the file is not already in the workspace
+                existing_files = self.files
+                if any(
+                    f.properties.name == os.path.basename(file) for f in existing_files
+                ):
+                    raise ValueError(
+                        f"File {os.path.basename(file)} already exists in the workspace."
+                    )
+
             # get the name of the file
             filename = os.path.basename(file)
 
@@ -305,7 +326,10 @@ class NotebookDataAccess:
         """
         downloads a file from the
         """
-        url = f"{self._url}/notebookworkspace/deleteFile"
+        if self._gis._is_arcgisonline:
+            url = f"{self._url}/deleteFile".replace("/azureblob", f"/{self._username}")
+        else:
+            url = f"{self._url}/notebookworkspace/deleteFile"
         params = {
             "f": "json",
             "fileName": filename,
