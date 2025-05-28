@@ -360,7 +360,7 @@ class Machine(object):
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
 
-        :return: Boolean
+        :return: String stating "success" or error message.
 
         """
         params = {"f": "json"}
