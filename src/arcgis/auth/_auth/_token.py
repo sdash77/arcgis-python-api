@@ -477,7 +477,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._re_expressions = {
             "step-1a": re.compile("var oAuthInfo = ({.*?});", re.DOTALL),
             "step-1b": re.compile("var oAuthInfo = ({.*?})", re.DOTALL),
-            "step-1c": re.compile("var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
+            "step-1c": re.compile(r"var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
             "step-2": re.compile(r"<title>SUCCESS code=(.*?)</title>", re.DOTALL),
             "password_reset": re.compile(r"{.*\:.*}"),
         }

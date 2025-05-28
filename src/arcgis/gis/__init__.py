@@ -6142,9 +6142,9 @@ class GroupManager(object):
                                   tags = "new, group, USA",
                                   description = "a new group in the USA",
                                   access = "public")
-            >>> job = gis_destination.groups.clone([group], offline=True, save_folder=r"c:\storage", file_name="groups)
+            >>> job = gis_destination.groups.clone([group], offline=True, save_folder="/path/to/storage", file_name="groups")
             >>> job.result()
-            c:\storage\groups.GROUP_CLONER
+            /path/to/storage/groups.GROUP_CLONER
 
         """
         return self._cloner.clone(
@@ -9718,7 +9718,7 @@ class CategorySchemaManager(object):
             current_path = ""
         for category in schema_dict:
             title = category["title"]
-            new_path = f"{current_path}\{title}" if current_path else title
+            new_path = f"{current_path}\\{title}" if current_path else title
             paths.append(
                 new_path.replace("\\", "/")
             )  # Replace backslashes with forward slashes
@@ -14453,7 +14453,7 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
+            >>> item.download("C:\\ARCGIS\\Projects\\", "hurricane_data")
 
         """
         data_path: str = f"content/items/" + self.itemid + "/data"
