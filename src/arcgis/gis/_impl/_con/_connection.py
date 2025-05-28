@@ -1299,7 +1299,7 @@ class Connection(object):
                                       Files can be provided two ways:
 
                                       The most basic way is:
-                                      Way1: {key : r"c:\temp\myfile.foo}
+                                      Way1: {key : "/path/to/myfile.foo"}
                                       This is just the file path and the key.
 
 
