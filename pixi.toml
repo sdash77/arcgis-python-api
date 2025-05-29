@@ -32,7 +32,7 @@ version = "0.1.0"
 "_docs:preview:depends" = {depends-on = ["_docs:depends", "_repo:ensure:public", "_repo:ensure:python-api-doc", "_config:ensure:python-api-doc", {task = "_docs:json", environment = "docs"}], description = "Configure environment for Gatsby build"}
 "_docs:preview:start" = {cmd = "cd ../python-api-doc && npm i && npm run python:start{{subtask}}", args = [{arg = "subtask", default = ""}]}
 # task for running specified integration tests in test environment
-test = {cmd = "python -m nose2 -v -s {{test_path}} -t tests", depends-on = [{task = "profile", environment = "test"}], args = [{arg = "test_path", default = "tests/integration/gis/connection"}], description = "Run integration tests from specified path"}
+"test:integration" = {cmd = "python -m nose2 -v -s {{test_path}} -t tests", depends-on = [{task = "profile", environment = "test"}], args = [{arg = "test_path", default = "tests/integration/gis/connection"}], description = "Run integration tests from specified path or gis.connection, if unspecified"}
 profile = {cmd = "python tests/integration/config_profiles.py", description = "Create profiles for integration tests"}
 
 [dependencies]
