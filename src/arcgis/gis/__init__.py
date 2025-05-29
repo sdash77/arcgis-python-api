@@ -11264,7 +11264,7 @@ class Group(dict):
             max_file_size = 1024000
         if users_update_items is None:
             users_update_items = False
-        if tags is [] or tags == "":
+        if tags == [] or tags == "":
             tags = ","
         elif tags is not None:
             if isinstance(tags, list):
