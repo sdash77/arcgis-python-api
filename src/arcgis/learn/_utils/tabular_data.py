@@ -1539,6 +1539,7 @@ class TabularDataObject(object):
 
         # Vectorize consumes a lot of memory. Refer bug 11894. Alternative is to use applymap as below.
         # col_length = dataframe.astype(str).applymap(len).max(axis=0)
+        col_length = {}
         for col_name in dataframe.columns:
             try:
                 # Convert only the current Series (column) to string, then calculate lengths
