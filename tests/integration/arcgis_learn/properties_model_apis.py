@@ -23,6 +23,7 @@ from arcgis.learn import (
     FasterRCNN,
     RetinaNet,
     SingleShotDetector,
+    AutoML,
 )
 DATA_FOLDER = os.environ.get('DATA_FOLDER')
 data_path = Path(DATA_FOLDER)
@@ -225,6 +226,26 @@ data = {
         "model_test": "mlmodel_test",
         "prepare_tabular_data": {
             "path": os.path.join(data_folder_tabular, "mlmodel_fairness", "salary.csv")
+        },
+        "prepare_data_ms": False,
+        "backbones": False,
+        "wavelengths_ms": False,
+        "wavelengths_rgb": False,
+        "should_test": True,
+        "test_feature_layer": True,
+        "regression_parameter": "automl_score",
+        "regression_test_score": 0.4,
+        "regression_epochs": 1,
+        "model_categories": ["classification", "regression"],
+    },
+    "automl_fairness": {
+        "model_name": "automl_fairness",
+        "datapath": "automl_data",
+        "datapath_ms": False,
+        "model": AutoML,
+        "model_test": "automl_test",
+        "prepare_tabular_data": {
+            "path": os.path.join(data_folder_tabular, "automl_data", "solar_power_train.csv")
         },
         "prepare_data_ms": False,
         "backbones": False,
