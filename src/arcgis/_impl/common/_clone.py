@@ -7119,7 +7119,7 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
             for label_info in labeling_infos:
                 label_expression = _deep_get(label_info, "labelExpression")
                 if label_expression is not None:
-                    results = re.findall("\[(.*?)\]", label_expression)
+                    results = re.findall(r"\[(.*?)\]", label_expression)
                     for result in results:
                         if result in field_mapping:
                             label_info["labelExpression"] = str(
