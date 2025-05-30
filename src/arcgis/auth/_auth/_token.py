@@ -439,10 +439,11 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         self._session = session
+        self.proxies = kwargs.pop("proxies", None)
         if not session:
             self._session = requests.Session()
             self._session.verify = verify_cert
-            self.proxies = kwargs.pop("proxies", {})
+
             if self.proxies:
                 self._session.proxies = self.proxies
 
@@ -476,7 +477,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._re_expressions = {
             "step-1a": re.compile("var oAuthInfo = ({.*?});", re.DOTALL),
             "step-1b": re.compile("var oAuthInfo = ({.*?})", re.DOTALL),
-            "step-1c": re.compile("var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
+            "step-1c": re.compile(r"var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
             "step-2": re.compile(r"<title>SUCCESS code=(.*?)</title>", re.DOTALL),
             "password_reset": re.compile(r"{.*\:.*}"),
         }
