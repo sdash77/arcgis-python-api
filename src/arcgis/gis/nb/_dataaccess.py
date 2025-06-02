@@ -142,8 +142,8 @@ class NotebookDataAccess:
     # ---------------------------------------------------------------------
     def transfer_user_workspace(
         self,
-        source_username: User | str,
-        target_username: User | str | None = None,
+        source_user: User | str,
+        target_user: User | str | None = None,
         folder_name: str | None = None,
     ) -> bool:
         """
@@ -155,9 +155,9 @@ class NotebookDataAccess:
         ===================  ==========================================================================
         **Parameter**        **Description**
         -------------------  --------------------------------------------------------------------------
-        source_username      Required User instance or string. The user or username for which the workspace will be transferred.
+        source_user          Required User instance or string. The user or username for which the workspace will be transferred.
         -------------------  --------------------------------------------------------------------------
-        target_username      Optional User instance or string. The user or username to which the workspace will be transferred.
+        target_user          Optional User instance or string. The user or username to which the workspace will be transferred.
                              If not provided, the workspace will be transferred to the current user.
         -------------------  --------------------------------------------------------------------------
         folder_name          Optional String. The name of the folder to which the workspace will be transferred.
@@ -167,32 +167,49 @@ class NotebookDataAccess:
         :return: True if the transfer was successful, False or an error if it was not.
         """
         # check username exists in the org
-        if target_username is None:
+        if target_user is None:
             target_username = self._username
-        elif isinstance(target_username, User):
-            target_username = target_username.username
-        if isinstance(source_username, User):
-            source_username = source_username.username
+            target_user = self._gis.users.me
+        elif isinstance(target_user, User):
+            target_username = target_user.username
+        else:
+            target_username = target_user
+            target_user = self._gis.users.get(target_user)
+        if isinstance(source_user, User):
+            source_username = source_user.username
+        else:
+            source_username = source_user
+            source_user = self._gis.users.get(source_user)
 
+        # check source user exists in the org
+        if not source_user or not target_user:
+            raise ValueError(
+                f"Source user {source_username} or target user {target_username} does not exist in the organization."
+            )
         # check the target user is an administrator
-        target_user = self._gis.users.get(target_username)
         if not target_user.role or target_user.role != "org_admin":
             raise ValueError(
-                f"User {target_username} is not an administrator. Only administrators can transfer user workspaces."
+                f"User {target_user} is not an administrator. Only administrators can transfer user workspaces."
             )
 
         # if folder_name is None, create the default folder name
         if folder_name is None:
-            folder_name = f"_transferred_{source_username}"
+            folder_name = f"_transferred_{source_user}"
 
         url = f"{self._url}/transferUserWorkspace".replace("/azureblob", "")
         params = {
             "f": "json",
             "targetFoldername": folder_name,
-            "userName": source_username,
-            "targetUserName": target_username,
+            "userName": source_user,
+            "targetUserName": target_user,
         }
-        return self._gis.session.post(url, params).json().get("status") == "success"
+        res = self._gis.session.post(url, params).json()
+        if "status" in res and res["status"] == "success":
+            return True
+        elif "error" in res:
+            raise ValueError(
+                f"Error transferring user workspace: {res['error']['message']}"
+            )
 
     # ---------------------------------------------------------------------
     def create_folder(self, folder: str) -> bool:
