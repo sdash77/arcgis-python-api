@@ -2,6 +2,7 @@ import os
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import List, Dict, Any
 from arcgis._impl.common._deprecate import deprecated
+from arcgis.gis import User
 
 
 ###########################################################################
@@ -141,8 +142,8 @@ class NotebookDataAccess:
     # ---------------------------------------------------------------------
     def transfer_user_workspace(
         self,
-        source_username: str,
-        target_username: str | None = None,
+        source_username: User | str,
+        target_username: User | str | None = None,
         folder_name: str | None = None,
     ) -> bool:
         """
@@ -154,9 +155,9 @@ class NotebookDataAccess:
         ===================  ==========================================================================
         **Parameter**        **Description**
         -------------------  --------------------------------------------------------------------------
-        source_username      Required String. The username of the user whose workspace you want to transfer.
+        source_username      Required User instance or string. The user or username for which the workspace will be transferred.
         -------------------  --------------------------------------------------------------------------
-        target_username      Optional String. The username of the user to whom you want to transfer the workspace.
+        target_username      Optional User instance or string. The user or username to which the workspace will be transferred.
                              If not provided, the workspace will be transferred to the current user.
         -------------------  --------------------------------------------------------------------------
         folder_name          Optional String. The name of the folder to which the workspace will be transferred.
@@ -168,13 +169,10 @@ class NotebookDataAccess:
         # check username exists in the org
         if target_username is None:
             target_username = self._username
-
-        if [
-            self._gis.users.get(source_username) or self._gis.users.get(target_username)
-        ] is None:
-            raise ValueError(
-                f"User {source_username} or {target_username} does not exist in the organization."
-            )
+        elif isinstance(target_username, User):
+            target_username = target_username.username
+        if isinstance(source_username, User):
+            source_username = source_username.username
 
         # check the target user is an administrator
         target_user = self._gis.users.get(target_username)
