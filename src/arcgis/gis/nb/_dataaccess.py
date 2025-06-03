@@ -194,14 +194,14 @@ class NotebookDataAccess:
 
         # if folder_name is None, create the default folder name
         if folder_name is None:
-            folder_name = f"_transferred_{source_user}"
+            folder_name = f"_transferred_{source_username}"
 
         url = f"{self._url}/transferUserWorkspace".replace("/azureblob", "")
         params = {
             "f": "json",
             "targetFoldername": folder_name,
-            "userName": source_user,
-            "targetUserName": target_user,
+            "userName": source_username,
+            "targetUserName": target_username,
         }
         res = self._gis.session.post(url, params).json()
         if "status" in res and res["status"] == "success":
