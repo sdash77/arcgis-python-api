@@ -375,6 +375,13 @@ UsageStatistics
     :members:
     :undoc-members:
     :show-inheritance:
+
+AboutManager
+------------
+.. autoclass:: arcgis.gis.admin.AboutManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
     
 AGOLUsageReports
 ---------------
