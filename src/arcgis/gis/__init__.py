@@ -3721,8 +3721,9 @@ class UserManager(object):
         thumbnail: Optional[str] = None,
         user_type: Optional[str] = None,
         credits: float = -1,
-        groups: Optional[list[str]] = None,
+        groups: Optional[list[Group]] = None,
         email_text: Optional[str] = None,
+        use_defaults: Optional[bool] = True,
     ):
         """
         The ``create`` operation is used to create built-in or pre-create organization-specific identity
@@ -3885,6 +3886,14 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email_text        Optional string. Custom text to include in the invitation email. This text will
                           be appended to the top of the default email text. `ArcGIS Online` only.
+        ----------------  -------------------------------------------------------------------------------
+        use_defaults      Optional bool. Introduced at Enterprise 11.5. Determines if new member defaults
+                          (the user type, member role, add-on licenses, and group memberships that are
+                          assigned to new users by default) should be applied to the new user. If
+                          specified as true, new member defaults are applied to the user. This parameter
+                          can still be set to true even if there are no new member defaults configured
+                          for the organization. If set to false, the new member defaults are not applied.
+                          The default value is `True`.
         ================  ===============================================================================
 
         :return:
@@ -3991,6 +4000,7 @@ class UserManager(object):
             "credits": credits,
             "groups": groups,
             "email_text": email_text,
+            "use_defaults": use_defaults,
         }
         if self._gis.version >= [6, 4]:
             allowed_keys = {
@@ -4010,6 +4020,25 @@ class UserManager(object):
                 "level",
                 "email_text",
             }
+            if self._gis.version >= [2025, 1] and self._gis._is_kubernetes == False:
+                allowed_keys = {
+                    "username",
+                    "password",
+                    "firstname",
+                    "lastname",
+                    "email",
+                    "description",
+                    "role",
+                    "provider",
+                    "idp_username",
+                    "user_type",
+                    "thumbnail",
+                    "credits",
+                    "groups",
+                    "level",
+                    "email_text",
+                    "use_defaults",
+                }
             params = {}
             for k, v in kwargs.items():
                 if k in allowed_keys:
@@ -4206,6 +4235,7 @@ class UserManager(object):
         groups=None,
         level=None,
         email_text=None,
+        use_defaults=None,
     ):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
@@ -4271,6 +4301,14 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email_text        Optional string. Custom text to include in the invitation email. This text will
                           be appended to the default email text. ArcGIS Online only.
+        ----------------  -------------------------------------------------------------------------------
+        use_defaults      Optional bool. Introduced at 11.5. Determines if new member defaults (the user
+                          type, member role, add-on licenses, and group memberships that are assigned to
+                          new users by default) should be applied to the new user. If specified as true,
+                          new member defaults are applied to the user. This parameter can still be set to
+                          true even if there are no new member defaults configured for the organization.
+                          If set to false, the new member defaults are not applied. The default value is
+                          true. This parameter is ignored on `Kubernetes` deployments.
         ================  ===============================================================================
 
         :return:
@@ -4279,7 +4317,7 @@ class UserManager(object):
         """
         # map role parameter of a viewer to the internal value for org viewer.
         if self._gis.version >= [7, 2]:
-            if self._gis._is_agol:
+            if self._gis._is_agol or self._gis._is_kubernetes:
                 if user_type is None:
                     if (
                         self.user_settings
@@ -4503,9 +4541,13 @@ class UserManager(object):
                 "idpUsername": idp_username,
                 "userLicenseTypeId": user_type,
             }
+            if self._gis.version >= [2025, 1]:
+                params["applyDefaults"] = use_defaults
             if "password" in params and params["password"] is None:
                 params.pop("password", None)
-            self._portal.con.post(createuser_url, params)
+            resp = self._portal.con.post(createuser_url, params)
+            if "username" in resp:
+                username = resp.get("username", None)
             if params["username"].find("\\") > -1:
                 d = params["username"].split("\\")
                 d.reverse()
