@@ -28,6 +28,12 @@ class TestPortalIndexer(unittest.TestCase):
     def test_reindex(self):
         indexer = gis.admin.system.indexer
         assert indexer.reindex("USER_MODE")
+    
+    @unittest.skipIf(gis.version < [2025, 1], reason="Portal needs to be 11.5+")
+    def test_mismatch(self):
+        indexer = gis.admin.system.indexer
+        assert indexer.mismatch
+        
 
     @unittest.skip(reason="manual test only")
     def test_reconfigure(self):
