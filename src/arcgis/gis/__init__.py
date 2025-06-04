@@ -567,6 +567,7 @@ class GIS(object):
                 )
         self.resturl = _create_base_url(url)
         self._url = url.replace("http://", "https://")
+        self._url = self._url.rstrip("/")
         self._username = username
         self._password = password
         self._key_file = key_file
@@ -4317,7 +4318,15 @@ class UserManager(object):
         """
         # map role parameter of a viewer to the internal value for org viewer.
         if self._gis.version >= [7, 2]:
-            if self._gis._is_agol or self._gis._is_kubernetes:
+            if (
+                self._gis._is_agol
+                or self._gis._is_kubernetes
+                or (
+                    self._gis._is_arcgisonline == False
+                    and self._gis._is_kubernetes == False
+                    and self._gis.version >= [2025, 1]
+                )
+            ):
                 if user_type is None:
                     if (
                         self.user_settings
@@ -13843,7 +13852,7 @@ class Item(dict):
         """
         if self._gis._is_agol:
             try:
-                self.subInfo or 0
+                return self.subInfo or 0
             except:
                 return None
         return None
