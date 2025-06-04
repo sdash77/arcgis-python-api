@@ -4318,7 +4318,15 @@ class UserManager(object):
         """
         # map role parameter of a viewer to the internal value for org viewer.
         if self._gis.version >= [7, 2]:
-            if self._gis._is_agol or self._gis._is_kubernetes:
+            if (
+                self._gis._is_agol
+                or self._gis._is_kubernetes
+                or (
+                    self._gis._is_arcgisonline == False
+                    and self._gis._is_kubernetes == False
+                    and self._gis.version >= [2025, 1]
+                )
+            ):
                 if user_type is None:
                     if (
                         self.user_settings
