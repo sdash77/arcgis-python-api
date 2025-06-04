@@ -47,5 +47,6 @@ from ._dsmgr import (
 )
 from ._partnercollab import PartneredCollabManager, PartneredCollaboration
 from ._classification import ClassificationManager
+from ._about import AboutManager
 
 __all__ = ["PortalAdminManager", "AGOLAdminManager"]
