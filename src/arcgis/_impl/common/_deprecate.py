@@ -109,7 +109,7 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None, detail
         * Raises a :class:`~DeprecatedWarning`
           via the :mod:`warnings` module, which is a subclass of the built-in
           :class:`DeprecationWarning`. Note that built-in
-          :class:`DeprecationWarning`\s are ignored by default, so for users
+          instances of :class:`DeprecationWarning` are ignored by default, so for users
           to be informed of said warnings they will need to enable them--see
           the :mod:`warnings` module documentation for more details.
 
