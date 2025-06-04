@@ -6143,9 +6143,9 @@ class GroupManager(object):
                                   tags = "new, group, USA",
                                   description = "a new group in the USA",
                                   access = "public")
-            >>> job = gis_destination.groups.clone([group], offline=True, save_folder=r"c:\storage", file_name="groups)
+            >>> job = gis_destination.groups.clone([group], offline=True, save_folder="/path/to/storage", file_name="groups")
             >>> job.result()
-            c:\storage\groups.GROUP_CLONER
+            /path/to/storage/groups.GROUP_CLONER
 
         """
         return self._cloner.clone(
@@ -7585,7 +7585,8 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         service_description        Optional string. Description of the service.
         -----------------------    -------------------------------------------------------------
-        has_static_data            Optional boolean. Indicating whether the data can change.  Default is True, data is not allowed to change.
+        has_static_data            Optional boolean. Indicating whether the data can change.
+                                   Default is False.
         -----------------------    -------------------------------------------------------------
         max_record_count           Optional integer. Maximum number of records in query operations.
         -----------------------    -------------------------------------------------------------
@@ -7674,6 +7675,8 @@ class ContentManager(object):
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Language and country information.
         =================  =====================================================================
+
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/create-service/#description
 
         :return:
              The :class:`~arcgis.gis.Item` for the service if successfully created, None if unsuccessful.
@@ -9716,7 +9719,7 @@ class CategorySchemaManager(object):
             current_path = ""
         for category in schema_dict:
             title = category["title"]
-            new_path = f"{current_path}\{title}" if current_path else title
+            new_path = f"{current_path}\\{title}" if current_path else title
             paths.append(
                 new_path.replace("\\", "/")
             )  # Replace backslashes with forward slashes
@@ -11171,7 +11174,7 @@ class Group(dict):
         title               Optional string. The new name of the group.
         ------------------  ---------------------------------------------------------
         tags                Optional string. A comma-delimited list of new tags, or
-                            a list of tags as strings.
+                            a list of tags as strings. To remove tags, pass in an empty string or list.
         ------------------  ---------------------------------------------------------
         description         Optional string. The new description for the group.
         ------------------  ---------------------------------------------------------
@@ -11265,7 +11268,9 @@ class Group(dict):
             max_file_size = 1024000
         if users_update_items is None:
             users_update_items = False
-        if tags is not None:
+        if tags == [] or tags == "":
+            tags = ","
+        elif tags is not None:
             if isinstance(tags, list):
                 tags = ",".join(tags)
         if (
@@ -13797,7 +13802,7 @@ class Item(dict):
         """
         if self._gis._is_agol:
             try:
-                self.subInfo or 0
+                return self.subInfo or 0
             except:
                 return None
         return None
@@ -14174,6 +14179,7 @@ class Item(dict):
                                .. note::
                                    See `Organization verification <https://doc.arcgis.com/en/arcgis-online/administer/configure-general.htm#VERIFY_ORG>`_
                                    for requirements to use *public_authoritative* status.
+                                   Also, `authoritative` will be converted to `org_authoritative` status.
         ==================     ====================================================================
 
         .. code-block:: python
@@ -14450,7 +14456,7 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
+            >>> item.download("C:\\ARCGIS\\Projects\\", "hurricane_data")
 
         """
         data_path: str = f"content/items/" + self.itemid + "/data"
