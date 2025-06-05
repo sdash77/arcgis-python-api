@@ -89,7 +89,7 @@ jobs:
               break
             fi
 
-            echo "Build in progress..."
+            echo "Waiting for tests to finish..."
             sleep 60
           done
 
