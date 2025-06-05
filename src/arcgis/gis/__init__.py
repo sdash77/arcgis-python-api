@@ -567,6 +567,7 @@ class GIS(object):
                 )
         self.resturl = _create_base_url(url)
         self._url = url.replace("http://", "https://")
+        self._url = self._url.rstrip("/")
         self._username = username
         self._password = password
         self._key_file = key_file
