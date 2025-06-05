@@ -37,17 +37,18 @@ jobs:
           JENKINS_USER: ${{ secrets.JENKINS_USER }}
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
         run: |
-          crumb=$(curl -s -u $JENKINS_USER:$JENKINS_API_TOKEN "$JENKINS_URL/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
-          
-          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$JENKINS_URL/job/learn_pr_suraj/build" \
-            -u $JENKINS_USER:$JENKINS_API_TOKEN \
+          set -e
+          crumb=$(curl -s -u "$JENKINS_USER:$JENKINS_API_TOKEN" "$JENKINS_URL/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
+
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$JENKINS_URL/job/learn_pr_suraj/buildWithParameters" \
+            -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
             -H "$crumb" \
-          --data-urlencode "PR_BRANCH=${{ github.event.pull_request.head.ref }}" \
-          --data-urlencode "PR_SHA=${{ github.event.pull_request.head.sha }}")
+            --data-urlencode "PR_BRANCH=${{ github.event.pull_request.head.ref }}" \
+            --data-urlencode "PR_SHA=${{ github.event.pull_request.head.sha }}")
 
           if [ "$response" -ne 201 ]; then
             echo "Failed to trigger Jenkins job. HTTP status: $response"
             exit 1
           fi
 
-          echo "Jenkins job triggered successfully"
+          echo "✅ Jenkins job triggered successfully"
