@@ -71,18 +71,35 @@ jobs:
               echo "✅ Jenkins build started with build number: $build_number"
               break
             fi
-
-            # Extract 'why' field from the response
-            why=$(echo "$response" | grep -o '"why":"[^"]*"' | sed 's/"why":"\(.*\)"/\1/')
-            if [[ -z "$why" ]]; then
-              why="Waiting..."
-            fi
-
-            echo "Still waiting... reason: $why"
             sleep 5
           done
 
           if [[ -z "$build_number" ]]; then
             echo "❌ Timed out waiting for Jenkins to start the build"
             exit 1
+          fi
+
+          echo "🔄 Polling Jenkins build result for build number: $build_number..."
+
+          for i in {1..360}; do
+            build_status_json=$(curl -s "$JENKINS_URL/job/learn_pr_tests_github_actions/$build_number/api/json" \
+              -u "$JENKINS_USER:$JENKINS_API_TOKEN")
+
+            result=$(echo "$build_status_json" | grep -o '"result":"[^"]*"' | cut -d'"' -f4)
+
+            if [[ "$result" != "null" && -n "$result" ]]; then
+              echo "✅ Jenkins build completed with result: $result"
+              break
+            fi
+
+            echo "⌛ Build in progress... retrying in 60s (attempt $i of 360)"
+            sleep 60
+          done
+
+          # Final check
+          if [[ "$result" != "SUCCESS" ]]; then
+            echo "❌ Jenkins build failed or did not finish successfully"
+            exit 1
+          else
+            echo "✅ Jenkins build succeeded"
           fi
