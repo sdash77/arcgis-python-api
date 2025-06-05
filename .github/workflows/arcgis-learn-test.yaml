@@ -62,18 +62,24 @@ jobs:
           echo "Jenkins job triggered. Queue URL: $queue_url"
 
           echo "Waiting for Jenkins to start the build..."
-          
           for i in {1..60}; do
             echo "Polling Jenkins queue for build number (attempt $i)..."
             response=$(curl -s "$queue_url/api/json" -u "$JENKINS_USER:$JENKINS_API_TOKEN")
-            build_number=$(echo "$response" | jq -r '.executable.number // empty')
+
+            # Extract build number using grep + sed
+            build_number=$(echo "$response" | grep -o '"number":[0-9]*' | sed 's/[^0-9]*//g')
 
             if [[ -n "$build_number" ]]; then
               echo "✅ Jenkins build started with build number: $build_number"
               break
             fi
 
-            why=$(echo "$response" | jq -r '.why // "Waiting..."')
+            # Extract 'why' field from the response
+            why=$(echo "$response" | grep -o '"why":"[^"]*"' | sed 's/"why":"\(.*\)"/\1/')
+            if [[ -z "$why" ]]; then
+              why="Waiting..."
+            fi
+
             echo "Still waiting... reason: $why"
             sleep 5
           done
