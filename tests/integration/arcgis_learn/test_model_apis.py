@@ -116,8 +116,6 @@ def backboneTestCases(
     data_path,
     preparedata,
     regression_parameter,
-    regression_test_score,
-    model_name,
     num_epochs,
     is_ms,
     bbone,
@@ -153,10 +151,7 @@ def fairnessTestCases(
         model_test,
         datapath,
         preparedata,
-        regression_parameter,
-        regression_test_score,
         model_name,
-        num_epochs,
         model_category,
 ):
     print("running test case for ", model_name, model_category)

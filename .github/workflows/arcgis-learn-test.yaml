@@ -1,0 +1,51 @@
+name: arcgis-learn-api-tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  trigger-pull_request:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Get changed files
+        uses: tj-actions/changed-files@v41
+        id: changes
+        with:
+          files: |
+            src/arcgis/learn/**
+            tests/integration/arcgis_learn/**
+
+      - name: Skip if no relevant files changed
+        if: steps.changes.outputs.any_changed != 'true'
+        run: echo "No relevant files changed."
+
+      - name: api-confidence-tests
+        if: steps.changes.outputs.any_changed == 'true'
+        env:
+          JENKINS_URL: ${{ secrets.JENKINS_URL }}
+          JENKINS_USER: ${{ secrets.JENKINS_USER }}
+          JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
+        run: |
+          crumb=$(curl -s -u $JENKINS_USER:$JENKINS_API_TOKEN "$JENKINS_URL/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
+          
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$JENKINS_URL/job/learn_pr_suraj/build" \
+            -u $JENKINS_USER:$JENKINS_API_TOKEN \
+            -H "$crumb")
+
+          if [ "$response" -ne 201 ]; then
+            echo "Failed to trigger Jenkins job. HTTP status: $response"
+            exit 1
+          fi
+
+          echo "Jenkins job triggered successfully"
