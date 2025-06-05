@@ -7,6 +7,22 @@
 import os
 import warnings
 warnings.filterwarnings('ignore')
+import sys
+from pathlib import Path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+ARCGIS_FOLDER = os.environ.get('ARCGIS_FOLDER')
+if ARCGIS_FOLDER:
+    custom_arcgis_path = Path(ARCGIS_FOLDER)
+    if str(custom_arcgis_path) not in sys.path:
+        sys.path.insert(0, str(custom_arcgis_path))
+else:
+    print("Warning: ARCGIS_FOLDER environment variable is not set.")
+
+import arcgis
+print("Working arcgis file:", arcgis.__file__)
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import unittest
@@ -15,7 +31,6 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
-import glob
 import gc
 from sys import platform
 import pandas as pd
