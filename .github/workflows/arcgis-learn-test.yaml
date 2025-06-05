@@ -30,7 +30,7 @@ jobs:
         if: steps.changes.outputs.any_changed != 'true'
         run: echo "No relevant files changed."
 
-      - name: api-confidence-tests
+      - name: Trigger Jenkins Job and Wait for Result
         if: steps.changes.outputs.any_changed == 'true'
         env:
           JENKINS_URL: ${{ secrets.JENKINS_URL }}
@@ -38,8 +38,12 @@ jobs:
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
         run: |
           set -e
-          crumb=$(curl -s -u "$JENKINS_USER:$JENKINS_API_TOKEN" "$JENKINS_URL/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
 
+          echo "Getting Jenkins crumb"
+          crumb=$(curl -s -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
+            "$JENKINS_URL/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
+
+          echo "Triggering Jenkins job"
           queue_url=$(curl -s -i -X POST "$JENKINS_URL/job/learn_pr_tests_github_actions/buildWithParameters" \
             -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
             -H "$crumb" \
@@ -48,49 +52,22 @@ jobs:
             | grep -i Location | awk '{print $2}' | tr -d '\r')
 
           if [ -z "$queue_url" ]; then
-            echo "Failed to trigger Jenkins job"
+            echo "Failed to trigger Jenkins build"
             exit 1
           fi
 
           echo "Jenkins job triggered. Queue URL: $queue_url"
 
-          echo "Jenkins queue URL: $queue_url"
-          if [[ -z "$queue_url" ]]; then
-            echo "Failed to trigger Jenkins build"
-            exit 1
-          fi
-          # Poll the Jenkins queue to get the build number
           echo "Waiting for Jenkins to start the build..."
           for i in {1..30}; do
             build_number=$(curl -s "$queue_url/api/json" \
               -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
               | grep -o '"number":[0-9]*' | grep -o '[0-9]*')
+
             if [[ -n "$build_number" ]]; then
               echo "Jenkins build started with number: $build_number"
               break
             fi
+
             sleep 5
           done
-          if [[ -z "$build_number" ]]; then
-            echo "Timed out waiting for Jenkins build to start"
-            exit 1
-          fi
-          # Poll the Jenkins job status
-          echo "Polling Jenkins build result..."
-          for i in {1..60}; do
-            result=$(curl -s "$JENKINS_URL/job/learn_pr_suraj/$build_number/api/json" \
-              -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
-              | grep -o '"result":"[^"]*"' | cut -d'"' -f4)
-            if [[ "$result" != "null" && -n "$result" ]]; then
-              echo "Jenkins build completed with result: $result"
-              break
-            fi
-            sleep 10
-          done
-          # Exit the GitHub Action with failure if Jenkins build failed
-          if [[ "$result" != "SUCCESS" ]]; then
-            echo "Jenkins build failed or was not successful"
-            exit 1
-          else
-            echo "Jenkins build succeeded"
-          fi

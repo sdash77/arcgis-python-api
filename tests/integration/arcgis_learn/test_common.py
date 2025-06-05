@@ -19,7 +19,7 @@ import glob
 import gc
 from sys import platform
 import pandas as pd
-from integration.arcgis_learn.properties import (
+from properties import (
     data,
     data_folder,
     setuposenviron,
