@@ -53,38 +53,3 @@ jobs:
           fi
 
           echo "Jenkins job triggered. Queue URL: $queue_url"
-
-          for i in $(seq 1 30); do
-            build_number=$(curl -s "${queue_url}api/json" -u "$JENKINS_USER:$JENKINS_API_TOKEN" | grep -o '"number":[0-9]*' | grep -o '[0-9]*')
-            if [ -n "$build_number" ]; then
-              echo "Jenkins build started with number: $build_number"
-              break
-            fi
-            sleep 5
-          done
-
-          if [ -z "$build_number" ]; then
-            echo "Timed out waiting for Jenkins build to start"
-            exit 1
-          fi
-
-          for i in $(seq 1 60); do
-            result=$(curl -s "$JENKINS_URL/job/learn_pr_tests_github_actions/$build_number/api/json" \
-              -u "$JENKINS_USER:$JENKINS_API_TOKEN" | grep -o '"result":"[^"]*"' | cut -d'"' -f4)
-            if [ "$result" != "null" ] && [ -n "$result" ]; then
-              echo "Jenkins build completed with result: $result"
-              break
-            fi
-            sleep 10
-          done
-
-          if [ "$result" = "SUCCESS" ]; then
-            echo "enkins build succeeded"
-            exit 0
-          elif [ "$result" = "UNSTABLE" ]; then
-            echo "Jenkins build unstable"
-            exit 78
-          else
-            echo "Jenkins build failed"
-            exit 1
-          fi
