@@ -13,6 +13,11 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
 
+parent_dir = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(parent_dir))
+
+from utils._common import *
+
 ARCGIS_FOLDER = os.environ.get('ARCGIS_FOLDER')
 if ARCGIS_FOLDER:
     custom_arcgis_path = Path(ARCGIS_FOLDER)
@@ -31,6 +36,7 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
+import glob
 import gc
 from sys import platform
 import pandas as pd
@@ -1023,6 +1029,14 @@ class TestTraining(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("Inside Setup Class!!!")
+        smoke_test_paths = glob.glob(
+            os.path.join(r"../../tests/smoke", "**", "*.py"), recursive=True
+        )
+        smoke_test_xml_output = os.path.join(".", "smoke_test.xml")
+        run_unittest_on(
+            smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
+        )
+        log.info("Smoke tests appear to have passed, continuing...")
 
     def setUp(self):
         print("Test: " + self._testMethodName)
