@@ -7,10 +7,6 @@ boundary_clean
 ______________
 .. autofunction:: arcgis.raster.functions.gbl.boundary_clean
 
-calculate_distance
-__________________
-.. autofunction:: arcgis.raster.functions.gbl.calculate_distance
-
 calculate_travel_cost
 _____________________
 .. autofunction:: arcgis.raster.functions.gbl.calculate_travel_cost
