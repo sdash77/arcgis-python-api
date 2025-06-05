@@ -73,6 +73,7 @@ class TabularDataObject(object):
     _text_variables = []
     _image_variables = []
     dependent_variables = []
+    _fairness_encoder = None
 
     @classmethod
     def prepare_data_for_layer_learner(
