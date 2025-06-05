@@ -29,6 +29,9 @@ jobs:
       - name: Skip if no relevant files changed
         if: steps.changes.outputs.any_changed != 'true'
         run: echo "No relevant files changed."
+      
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Trigger Jenkins Job and Wait for Result
         if: steps.changes.outputs.any_changed == 'true'
@@ -60,31 +63,22 @@ jobs:
 
           echo "Waiting for Jenkins to start the build..."
           
-          for i in {1..30}; do
-            echo "Attempt $i: Fetching build number from queue..."
+          for i in {1..60}; do
+            echo "Polling Jenkins queue for build number (attempt $i)..."
+            response=$(curl -s "$queue_url/api/json" -u "$JENKINS_USER:$JENKINS_API_TOKEN")
+            build_number=$(echo "$response" | jq -r '.executable.number // empty')
 
-            echo "Running: curl -s \"$queue_url/api/json\""
-            response=$(curl -s "$queue_url/api/json" \
-              -u "$JENKINS_USER:$JENKINS_API_TOKEN")
-
-            curl_exit=$?
-            if [[ $curl_exit -ne 0 ]]; then
-              echo "curl failed with exit code $curl_exit"
-              echo "Response: $response"
-              exit 1
+            if [[ -n "$build_number" ]]; then
+              echo "✅ Jenkins build started with build number: $build_number"
+              break
             fi
 
-            echo "Response: $response"
-
-            # Now attempt to extract build_number
-            build_number=$(echo "$response" | grep -o '"number":[0-9]*' | grep -o '[0-9]*')
-            grep_exit=$?
-            if [[ $grep_exit -ne 0 || -z "$build_number" ]]; then
-              echo "Build number not found yet. Sleeping 5s..."
-              sleep 5
-              continue
-            fi
-
-            echo "Jenkins build started with number: $build_number"
-            break
+            why=$(echo "$response" | jq -r '.why // "Waiting..."')
+            echo "Still waiting... reason: $why"
+            sleep 5
           done
+
+          if [[ -z "$build_number" ]]; then
+            echo "❌ Timed out waiting for Jenkins to start the build"
+            exit 1
+          fi
