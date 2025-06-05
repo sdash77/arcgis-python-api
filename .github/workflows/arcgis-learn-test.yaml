@@ -54,36 +54,43 @@ jobs:
 
           echo "Jenkins job triggered. Queue URL: $queue_url"
 
-          for i in $(seq 1 30); do
-            build_number=$(curl -s "${queue_url}api/json" -u "$JENKINS_USER:$JENKINS_API_TOKEN" | grep -o '"executable":{"number":[0-9]*' | grep -o '[0-9]*')
-            if [ -n "$build_number" ]; then
-              echo "Jenkins build started: #$build_number"
+          echo "Jenkins queue URL: $queue_url"
+          if [[ -z "$queue_url" ]]; then
+            echo "Failed to trigger Jenkins build"
+            exit 1
+          fi
+          # Poll the Jenkins queue to get the build number
+          echo "Waiting for Jenkins to start the build..."
+          for i in {1..30}; do
+            build_number=$(curl -s "$queue_url/api/json" \
+              -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
+              | grep -o '"number":[0-9]*' | grep -o '[0-9]*')
+            if [[ -n "$build_number" ]]; then
+              echo "Jenkins build started with number: $build_number"
               break
             fi
             sleep 5
           done
-
-          if [ -z "$build_number" ]; then
+          if [[ -z "$build_number" ]]; then
             echo "Timed out waiting for Jenkins build to start"
             exit 1
           fi
-
-          # Wait for Jenkins build to finish
-          for i in $(seq 1 60); do
-            result=$(curl -s "$JENKINS_URL/job/learn_pr_tests_github_actions/$build_number/api/json" -u "$JENKINS_USER:$JENKINS_API_TOKEN" | grep -o '"result":"[^"]*"' | cut -d'"' -f4)
-            if [ "$result" != "null" ] && [ -n "$result" ]; then
-              echo "Jenkins build finished with result: $result"
+          # Poll the Jenkins job status
+          echo "Polling Jenkins build result..."
+          for i in {1..60}; do
+            result=$(curl -s "$JENKINS_URL/job/learn_pr_suraj/$build_number/api/json" \
+              -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
+              | grep -o '"result":"[^"]*"' | cut -d'"' -f4)
+            if [[ "$result" != "null" && -n "$result" ]]; then
+              echo "Jenkins build completed with result: $result"
               break
             fi
             sleep 10
           done
-
-          if [ "$result" = "SUCCESS" ]; then
-            exit 0
-          elif [ "$result" = "UNSTABLE" ]; then
-            echo "Build unstable"
-            exit 78
-          else
-            echo "Build failed"
+          # Exit the GitHub Action with failure if Jenkins build failed
+          if [[ "$result" != "SUCCESS" ]]; then
+            echo "Jenkins build failed or was not successful"
             exit 1
+          else
+            echo "Jenkins build succeeded"
           fi

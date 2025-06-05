@@ -1275,3 +1275,8 @@ def tearDownModule():
             continue
 
     print("**End Common Arcgis Learn module Training**")
+
+
+
+if __name__ == "__main__":
+    unittest.main()
