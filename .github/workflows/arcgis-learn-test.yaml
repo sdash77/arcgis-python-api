@@ -59,15 +59,32 @@ jobs:
           echo "Jenkins job triggered. Queue URL: $queue_url"
 
           echo "Waiting for Jenkins to start the build..."
+          
           for i in {1..30}; do
-            build_number=$(curl -s "$queue_url/api/json" \
-              -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
-              | grep -o '"number":[0-9]*' | grep -o '[0-9]*')
+            echo "Attempt $i: Fetching build number from queue..."
 
-            if [[ -n "$build_number" ]]; then
-              echo "Jenkins build started with number: $build_number"
-              break
+            echo "Running: curl -s \"$queue_url/api/json\""
+            response=$(curl -s "$queue_url/api/json" \
+              -u "$JENKINS_USER:$JENKINS_API_TOKEN")
+
+            curl_exit=$?
+            if [[ $curl_exit -ne 0 ]]; then
+              echo "curl failed with exit code $curl_exit"
+              echo "Response: $response"
+              exit 1
             fi
 
-            sleep 5
+            echo "Response: $response"
+
+            # Now attempt to extract build_number
+            build_number=$(echo "$response" | grep -o '"number":[0-9]*' | grep -o '[0-9]*')
+            grep_exit=$?
+            if [[ $grep_exit -ne 0 || -z "$build_number" ]]; then
+              echo "Build number not found yet. Sleeping 5s..."
+              sleep 5
+              continue
+            fi
+
+            echo "Jenkins build started with number: $build_number"
+            break
           done
