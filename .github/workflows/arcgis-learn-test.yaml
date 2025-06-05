@@ -40,7 +40,7 @@ jobs:
           set -e
           crumb=$(curl -s -u "$JENKINS_USER:$JENKINS_API_TOKEN" "$JENKINS_URL/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
 
-          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$JENKINS_URL/job/learn_pr_suraj/buildWithParameters" \
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$JENKINS_URL/job/learn_pr_tests_github_actions/buildWithParameters" \
             -u "$JENKINS_USER:$JENKINS_API_TOKEN" \
             -H "$crumb" \
             --data-urlencode "PR_BRANCH=${{ github.event.pull_request.head.ref }}" \
