@@ -221,471 +221,6 @@ def _create_project(
     return item
 
 
-def _add_mission(
-    project,
-    image_list: list,
-    mission_name: Optional[str] = None,
-    image_collection: Optional[str] = None,
-    raster_type_name: Optional[str] = None,
-    raster_type_params: Optional[dict[str, Any]] = None,
-    out_sr: Optional[dict[str, Any]] = None,
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    **kwargs,
-):
-    """
-    Add flights to the realitymapping project item. You can add imagery from one or more drone flights 
-    to your realitymapping project item.
-
-    ======================               ====================================================================
-    **Parameter**                        **Description**
-    ----------------------               --------------------------------------------------------------------
-    project_item                         Required Item. The realitymapping project item to which the flight has to be added
-    ----------------------               --------------------------------------------------------------------
-    image_list                           Required, the list of input images to be added to
-                                         the image collection being created. This parameter can
-                                         be a list of image paths or a path to a folder containing the images
-
-                                         The function can create hosted imagery layers on enterprise from 
-                                         local raster datasets by uploading the data to the server.    
-    ----------------------               --------------------------------------------------------------------
-    flight_name                          Optional string. The name of the flight.
-    ----------------------               --------------------------------------------------------------------
-    image_collection                     Optional string, the name of the image collection to create.
-                  
-                                         The image collection can be an existing image service, in \
-                                         which the function will create a mosaic dataset and the existing \
-                                         hosted image service will then point to the new mosaic dataset.
-
-                                         If the image collection does not exist, a new multi-tenant \
-                                         service will be created.
-
-                                         This parameter can be the Item representing an existing image_collection \
-                                         or it can be a string representing the name of the image_collection \
-                                         (either existing or to be created.)
-
-                                         The image collection will be created in the same folder as the one created
-                                         by the create_project method
-    ----------------------               --------------------------------------------------------------------
-    raster_type_name                     Optional string. The name of the raster type to use for adding data to \
-                                         the image collection. Default is "UAV/UAS"
-
-                                         Example:
-
-                                            "UAV/UAS"
-    ----------------------               --------------------------------------------------------------------
-    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
-        
-                                         The process of add rasters to the image collection can be \
-                                         controlled by specifying additional raster type arguments.
-
-                                         The raster type parameters argument is a dictionary.
-
-                                         The dictionary can contain productType, processingTemplate, \
-                                         pansharpenType, Filter, pansharpenWeights, ConstantZ, \
-                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
-                                         ScaleFactor, ValidRange
-
-                                         Please check the table below (Supported Raster Types), \
-                                         for more details about the product types, \
-                                         processing templates, pansharpen weights for each raster type. 
-
-                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
-                                         - Possible values for filter - [None, "Sharpen", "SharpenMore"]
-                                         - Value for StretchType dictionary can be as follows:
-
-                                           - "None"
-                                           - "MinMax; <min>; <max>"
-                                           - "PercentMinMax; <MinPercent>; <MaxPercent>"
-                                           - "StdDev; <NumberOfStandardDeviation>"
-                                           Example: {"StretchType": "MinMax; <min>; <max>"}
-                                         - Value for ValidRange dictionary can be as follows:
-
-                                           - "<MaskMinValue>, <MaskMaxValue>"
-                                           Example: {"ValidRange": "10, 200"}
-
-                                         Example:
-
-                                            {"productType":"All","processingTemplate":"Pansharpen",
-                                            "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
-                                            "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
-    ----------------------               --------------------------------------------------------------------
-    out_sr                               Optional integer. Additional parameters of the service.
-                            
-                                         The following additional parameters can be specified:
-
-                                         - Spatial reference of the image_collection; The well-known ID of \
-                                         the spatial reference or a spatial reference dictionary object for the \
-                                         input geometries.
-
-                                         If the raster type name is set to "UAV/UAS", the spatial reference of the
-                                         output image collection will be determined by the raster type parameters defined.
-    ----------------------               --------------------------------------------------------------------
-    context                              Optional dict. The context parameter is used to provide additional input parameters.
-    
-                                         Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
-                                        
-                                         Use ``image_collection_properties`` key to set value for imageCollectionType.
-
-                                         .. note::
-
-                                            The "imageCollectionType" property is important for image collection that will later on be adjusted by realitymapping system service. 
-                                            Based on the image collection type, the realitymapping system service will choose different algorithm for adjustment. 
-                                            Therefore, if the image collection is created by reference, the requester should set this 
-                                            property based on the type of images in the image collection using the following keywords. 
-                                            If the imageCollectionType is not set, it defaults to "UAV/UAS"
-
-                                         If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
-
-                                         The context parameter can also be used to specify whether to build overviews, \
-                                         build footprints, to specify pixel value that represents the NoData etc.
-
-
-                                         Example:
-
-                                            | {"buildFootprints":True,                                            
-                                            | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
-                                            | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
-                                            | "maintainEdge":False,"simplification":None,"numVertices":20,
-                                            | "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
-                                            | "minRegionSize":100},
-                                            | "defineNodata":True,                                            
-                                            | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
-                                            | "buildOverview":True}
-
-                                         The context parameter can be used to add new fields when creating \
-                                         the image collection.
-
-
-                                         Example:
-
-                                            | {"fields": [{"name": "cloud_cover", "type": "Long"},
-                                            | {"name": "cloud_shadow_count", "type": "Long"}]}
-    ----------------------               --------------------------------------------------------------------
-    gis                                  Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. The GIS on which this tool runs. If not specified, the active GIS is used.
-    ----------------------               --------------------------------------------------------------------
-    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
-                                         results will be returned asynchronously.
-    ======================               ====================================================================
-
-    :return: The imagery layer item
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    project_item = project._project_item
-    resource_manager = project_item.resources
-    oid = project.mission_count
-
-    for f in gis.users.me.folders:
-        if f._fid == project_item.ownerFolder:
-            folder = f.properties
-            break
-
-    from datetime import datetime
-    from arcgis.raster.analytics import create_image_collection
-
-    if image_collection is None:
-        image_collection = "image_collection" + "_" + _id_generator()
-
-    if raster_type_name is None:
-        raster_type_name = "UAV/UAS"
-
-    if mission_name is None:
-        mission_name = "mission" + "_" + _id_generator()
-    fname = f"{mission_name}.json"
-    workspace_name = fname.replace(".json", "")
-    # timestamp = datetime.timestamp()
-    # workspace_name = f"{mission_name}_{timestamp}"
-
-    if context is None:
-        context = {"workspace": workspace_name}
-    else:
-        context["workspace"] = workspace_name
-
-    if out_sr is None and project._spatial_reference is not None:
-        out_sr = project._spatial_reference["spatialReference"]
-        if isinstance(out_sr, arcgis._impl.common._mixins.PropertyMap):
-            out_sr = dict(out_sr)
-
-    output_collection = create_image_collection(
-        image_collection=image_collection,
-        input_rasters=image_list,
-        raster_type_name=raster_type_name,
-        raster_type_params=raster_type_params,
-        out_sr=out_sr,
-        context=context,
-        gis=gis,
-        folder=folder,
-    )
-
-    try:
-        if output_collection and project._spatial_reference is None:
-            # Get the lyr SR and set it on the SR instance variable
-            lyr = output_collection.layers[0]
-            project._spatial_reference = {
-                "spatialReference": lyr.extent.spatialReference
-            }
-            props = None
-            # Get the project item data to update the SR for the portal item
-            project_data = project_item.get_data()
-            project_data.update(project._spatial_reference)
-
-            if "wkid" in project._spatial_reference:
-                wkid = project._spatial_reference["wkid"]
-                props = {"spatialReference": wkid}
-            elif "wkt" in project._spatial_reference:
-                wkt = project._spatial_reference["wkt"]
-                props = {"spatialReference": wkt}
-            elif "wkt2" in project._spatial_reference:
-                wkt_2 = project._spatial_reference["wkt2"]
-                props = {"spatialReference": wkt_2}
-
-            project_item.update(item_properties=props, data=project_data)
-    except:
-        pass
-
-    try:
-        job_info = output_collection.properties
-        job_response = {}
-        if "jobUrl" in job_info:
-            # Get the url of the Analysis job to track the status.
-
-            job_url = job_info.get("jobUrl")
-            params = {"f": "json"}
-            job_response = gis._con.post(job_url, params)
-
-        mission_json = {
-            "items": {"imageCollection": {}},
-            "jobs": {
-                "imageCollection": {"checked": True, "progress": 100, "success": True},
-                "adjustment": {"checked": False, "mode": "Quick"},
-                "ortho": {"checked": False},
-                "matchControlPoint": {"checked": False},
-                "queryControlPoints": {"checked": False},
-                "computeControlPoints": {"checked": False},
-                "appendControlPoints": {"checked": False},
-            },
-            "rasterType": "UAV/UAS",
-            "cameraInfo": {},
-            "sourceData": {},
-            "spatialReference": {},
-            "adjustSettings": {},
-            "processingSettings": {},
-            "mapping": {
-                "basemap": {
-                    "title": "Topographic",
-                    "baseMapLayers": [
-                        {
-                            "layerType": "ArcGISTiledMapServiceLayer",
-                            "opacity": 1,
-                            "visibility": True,
-                            "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
-                        }
-                    ],
-                },
-                "referenceData": [],
-                "layers": {"visibilities": {"footprint": False}},
-            },
-            "projectVersion": 1,
-            "createTS": "",
-            "oid": oid,
-            "gcsExtent": {},
-            "workspace": workspace_name,
-        }
-
-        mission_json.update(
-            {
-                "items": {
-                    "imageCollection": {
-                        "itemId": output_collection.itemid,
-                        "url": output_collection.url,
-                    }
-                }
-            }
-        )
-
-        mission_json["jobs"]["imageCollection"].update(
-            {"messages": job_response["messages"]}
-        )
-
-        mission_json.update({"rasterType": raster_type_name})
-
-        def get_camera_props(cam_props):
-            cam_props_lower = dict((k.lower(), v) for k, v in cam_props.items())
-            cam_dict = {
-                "make": cam_props_lower.get("maker", ""),
-                "focalLength": cam_props_lower.get("focallength", ""),
-                "model": cam_props_lower.get("model", ""),
-                "cols": cam_props_lower.get("columns", ""),
-                "rows": cam_props_lower.get("rows", ""),
-                "pixelSize": cam_props_lower.get("pixelsize", ""),
-            }
-            return cam_dict
-
-        cam_props = {}
-        try:
-            if "cameraProperties" in raster_type_params:
-                cam_props = get_camera_props(raster_type_params["cameraProperties"])
-            else:
-                try:
-                    lyr = output_collection.layers[0]
-                    cam_info = lyr.query_gps_info()
-                    cam_props = cam_info["cameras"][0]
-                except:
-                    # older servers may not have query gps info rest end point
-                    pass
-        except:
-            pass
-
-        mission_json.update({"cameraInfo": cam_props})
-
-        gps_data = []
-        gps_info_list = ["name", "lat", "long", "alt", "acq"]
-
-        if (
-            raster_type_params is not None
-            and isinstance(raster_type_params, dict)
-            and "gps" in raster_type_params
-        ):
-            for ele in raster_type_params["gps"]:
-                dict_gps = dict(zip(gps_info_list, ele))
-                gps_data.append(dict_gps)
-        if not gps_data:
-            try:
-                lyr = output_collection.layers[0]
-                gps_info = lyr.query_gps_info()["images"]
-                for img_info in gps_info:
-                    from arcgis.raster._util import _to_datetime
-
-                    acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
-                    gps = img_info["gps"]
-                    name = img_info["name"]
-                    lat = gps["latitude"]
-                    long = gps["longitude"]
-                    alt = gps["altitude"]
-                    gps_val = [name, lat, long, alt, acq]
-                    dict_gps = dict(zip(gps_info_list, gps_val))
-                    gps_data.append(dict_gps)
-            except:
-                # older servers may not have query gps info rest end point
-                pass
-
-        try:
-            lyr = output_collection.layers[0]
-            query_output = lyr.query(
-                where="OBJECTID=1",
-                out_fields="AcquisitionDate",
-                return_all_records=False,
-                return_geometry=False,
-            )
-            acq_date = query_output["features"][0]["attributes"]["AcquisitionDate"]
-            from datetime import datetime
-
-            ts = int(acq_date) / 1000
-            flight_date = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
-        except:
-            dt = datetime.now()
-            flight_date = dt.strftime("%Y-%m-%d")
-
-        image_count = output_collection.layers[0].query(return_count_only=True)
-
-        mission_json.update(
-            {
-                "sourceData": {
-                    "gps": gps_data,
-                    "imageCount": image_count,
-                    "flightDate": flight_date,
-                }
-            }
-        )
-
-        project_id = datetime.now().strftime("%Y%m%d%H%M%S")
-        mission_json.update({"projectId": project_id})
-
-        ts = int(datetime.timestamp(datetime.now())) * 1000
-        mission_json.update({"createTS": ts})
-
-        ## Set extent
-        try:
-            gcs_extent = {}
-            extent_arr = output_collection.extent
-            if extent_arr is not None:
-                gcs_extent = {
-                    "xmin": extent_arr[0][0],
-                    "ymin": extent_arr[0][1],
-                    "xmax": extent_arr[1][0],
-                    "ymax": extent_arr[1][1],
-                    "spatialReference": {"wkid": 4326},
-                }
-        except:
-            gcs_extent = {}
-
-        projected_extent = {}
-        try:
-            projected_extent = dict(output_collection.layers[0].extent)
-        except:
-            projected_extent = {}
-
-        mission_json.update(
-            {"gcsExtent": gcs_extent, "projectedExtent": projected_extent}
-        )
-
-        try:
-            coverage_area = output_collection.layers[0].query_boundary()["area"]
-            mission_json.update({"coverage": coverage_area})
-        except:
-            pass
-
-        try:
-            resource_manager.add(
-                file_name=fname,
-                text=mission_json,
-                folder_name="flights",
-                properties={
-                    "oid": oid,
-                    "imageCount": image_count,
-                    "createTS": ts,
-                    "items": [
-                        {
-                            "product": "imageCollection",
-                            "id": output_collection.id,
-                            "created": True,
-                        }
-                    ],
-                    "gcpItems": [],
-                    "baStatus": "succeeded",
-                },
-            )
-            prj_data = project_item.get_data()
-            flights_list = prj_data.get("flights", [])
-            flights_list.append({"oid": oid, "createTS": ts})
-            prj_data.update({"flights": flights_list})
-            prj_data.update({"projectVersion": 2, "rasterType": raster_type_name})
-
-            project_properties = project_item.properties
-            flight_count = project_properties.get("flightCount", 0)
-            flight_count = flight_count + 1
-
-            image_count_ex = project_properties.get("imageCount", 0)
-            image_count_ex = image_count + image_count_ex
-
-            project_properties.update(
-                {"flightCount": flight_count, "imageCount": image_count}
-            )
-            project_item.update(
-                item_properties={"properties": project_properties},
-                data=json.dumps(prj_data),
-            )
-
-            # project_item.update(data=json.dumps(prj_data))
-        except:
-            raise RuntimeError("Error adding the mission")
-    except:
-        raise RuntimeError("Error updating the mission JSON")
-    return output_collection, mission_name
-
-
 ###################################################################################################
 ###
 ### PUBLIC API
@@ -2337,157 +1872,6 @@ class RMProject:
         props = item.properties
         updated_item = item.update(item_properties=props, data=properties_dict)
         return updated_item
-
-    def add_mission(
-        self,
-        image_list: list,
-        mission_name: Optional[str] = None,
-        image_collection: Optional[str] = None,
-        raster_type_name: Optional[str] = None,
-        raster_type_params: Optional[dict[str, Any]] = None,
-        out_sr: Optional[dict[str, Any]] = None,
-        context: Optional[dict[str, Any]] = None,
-    ):
-        """
-        Add missions to the realitymapping project item. You can add imagery from one or more drone flights 
-        to your realitymapping project item.
-
-        ======================               ====================================================================
-        **Parameter**                        **Description**
-        ----------------------               --------------------------------------------------------------------
-        project_item                         Required Item. The realitymapping project item to which the flight has to be added
-        ----------------------               --------------------------------------------------------------------
-        image_list                           Required, the list of input images to be added to
-                                             the image collection being created. This parameter can
-                                             be a list of image paths or a path to a folder containing the images
-
-                                             The function can create hosted imagery layers on enterprise from 
-                                             local raster datasets by uploading the data to the server.    
-        ----------------------               --------------------------------------------------------------------
-        mission_name                         Optional string. The name of the flight.
-        ----------------------               --------------------------------------------------------------------
-        image_collection                     Optional string, the name of the image collection to create.
-                  
-                                             The image collection can be an existing image service, in \
-                                             which the function will create a mosaic dataset and the existing \
-                                             hosted image service will then point to the new mosaic dataset.
-
-                                             If the image collection does not exist, a new multi-tenant \
-                                             service will be created.
-
-                                             This parameter can be the Item representing an existing image_collection \
-                                             or it can be a string representing the name of the image_collection \
-                                             (either existing or to be created.)
-
-                                             The image collection will be created in the same folder as the one created
-                                             by the create_project method
-        ----------------------               --------------------------------------------------------------------
-        raster_type_name                     Optional string. The name of the raster type to use for adding data to \
-                                             the image collection. Default is "UAV/UAS"
-
-                                             Example:
-
-                                                "UAV/UAS"
-        ----------------------               --------------------------------------------------------------------
-        raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
-        
-                                             The process of add rasters to the image collection can be \
-                                             controlled by specifying additional raster type arguments.
-
-                                             The raster type parameters argument is a dictionary.
-
-                                             The dictionary can contain productType, processingTemplate, \
-                                             pansharpenType, Filter, pansharpenWeights, ConstantZ, \
-                                             dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
-                                             ScaleFactor, ValidRange
-
-                                             Please check the table below (Supported Raster Types), \
-                                             for more details about the product types, \
-                                             processing templates, pansharpen weights for each raster type. 
-
-                                             - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
-                                             - Possible values for filter - [None, "Sharpen", "SharpenMore"]
-                                             - Value for StretchType dictionary can be as follows:
-
-                                               - "None"
-                                               - "MinMax; <min>; <max>"
-                                               - "PercentMinMax; <MinPercent>; <MaxPercent>"
-                                               - "StdDev; <NumberOfStandardDeviation>"
-                                               Example: {"StretchType": "MinMax; <min>; <max>"}
-                                             - Value for ValidRange dictionary can be as follows:
-
-                                               - "<MaskMinValue>, <MaskMaxValue>"
-                                               Example: {"ValidRange": "10, 200"}
-
-                                             Example:
-
-                                                {"productType":"All","processingTemplate":"Pansharpen",
-                                                "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
-                                                "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
-        ----------------------               --------------------------------------------------------------------
-        context                              Optional dict. The context parameter is used to provide additional input parameters.
-    
-                                             Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
-                                        
-                                             Use ``image_collection_properties`` key to set value for imageCollectionType.
-
-                                             .. note::
-
-                                                The "imageCollectionType" property is important for image collection that will later on be adjusted by realitymapping system service. 
-                                                Based on the image collection type, the realitymapping system service will choose different algorithm for adjustment. 
-                                                Therefore, if the image collection is created by reference, the requester should set this 
-                                                property based on the type of images in the image collection using the following keywords. 
-                                                If the imageCollectionType is not set, it defaults to "UAV/UAS"
-
-                                             If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
-
-                                             The context parameter can also be used to specify whether to build overviews, \
-                                             build footprints, to specify pixel value that represents the NoData etc.
-
-
-                                             Example:
-
-                                                | {"buildFootprints":True,                                            
-                                                | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
-                                                | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
-                                                | "maintainEdge":False,"simplification":None,"numVertices":20,
-                                                | "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
-                                                | "minRegionSize":100},
-                                                | "defineNodata":True,                                            
-                                                | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
-                                                | "buildOverview":True}
-
-                                             The context parameter can be used to add new fields when creating \
-                                             the image collection.
-
-
-                                             Example:
-
-                                                | {"fields": [{"name": "cloud_cover", "type": "Long"},
-                                                | {"name": "cloud_shadow_count", "type": "Long"}]}
-        ======================               ====================================================================
-
-        :return: The imagery layer item
-
-        """
-
-        try:
-            from ._realitymapping_mission import RMMission
-
-            collection, mission_name = _add_mission(
-                project=self,
-                image_list=image_list,
-                mission_name=mission_name,
-                image_collection=image_collection,
-                raster_type_name=raster_type_name,
-                raster_type_params=raster_type_params,
-                out_sr=out_sr,
-                context=context,
-            )
-            return RMMission(mission_name=mission_name, project=self)
-
-        except:
-            raise RuntimeError("Failed to add the mission to the project")
         
     def create_mission(
         self,
@@ -2506,8 +1890,11 @@ class RMProject:
         gis = arcgis.env.active_gis if gis is None else gis
         project_item = {"itemId": self._project_item.itemid}
 
+        random_name = _id_generator()
+        if mission_name is None:
+            mission_name = "mission_" + random_name
         if image_collection is None:
-            image_collection = "image_collection" + "_" + _id_generator()
+            image_collection = "image_collection" + "_" + random_name
 
         if raster_type_name is None:
             raster_type_name = "UAV/UAS"
@@ -2519,14 +1906,19 @@ class RMProject:
                 input_rasters=image_list,
                 raster_type_name=raster_type_name,
                 raster_type_params=raster_type_params,
-                otu_sr=out_sr,
+                out_sr=out_sr,
                 context=context,
+                folder=self._folder,
                 **kwargs,
             )
         )
 
         mission_def = {"name": mission_name}
-        context = {"workspace": mission_name}
+        if context is None:
+            context = {"workspace": mission_name}
+        else:
+            if "workspace" not in context:
+                context["workspace"] = mission_name
 
         mission = gis._tools.realitymapping.create_mission(
             project_item=project_item,
@@ -2540,7 +1932,7 @@ class RMProject:
         )
 
         from ._realitymapping_mission import RMMission
-        return RMMission(mission_name=mission_name, mission_id=mission["mission"]["itemId"] ,project=self)
+        return RMMission(mission_name=mission_name, mission_id=mission["mission"]["itemId"], project=self)
 
     def get_mission(self, name):
         """
@@ -2567,6 +1959,36 @@ class RMProject:
         if len(missions_list) == 1:
             return missions_list[0]
         return missions_list
+
+    def merge_missions(
+        self,
+        missions,
+        output_mission_name,
+        output_collection_name=None,
+        mission_settings=None,
+        *,
+        gis=None,
+        future=False,
+        **kwargs,
+    ):
+        gis = arcgis.env.active_gis if gis is None else gis
+        output_collection_name = output_collection_name if output_collection_name else output_mission_name + "_collection"
+        if kwargs.get("folder", None) is None:
+            kwargs["folder"] = self._folder
+        context = {"workspace": output_mission_name}
+        
+        mission = gis._tools.realitymapping.merge_missions(
+            missions=missions,
+            output_mission_name=output_mission_name,
+            output_collection_name=output_collection_name,
+            context=context,
+            mission_settings=mission_settings,
+            future=future,
+            **kwargs,
+        )
+
+        from ._realitymapping_mission import RMMission
+        return RMMission(mission_name=output_mission_name, mission_id=mission["mission"]["itemId"], project=self)
 
     def __repr__(self):
         return "<%s - %s>" % (type(self).__name__, self._project_name)
