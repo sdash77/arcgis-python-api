@@ -89,7 +89,7 @@ jobs:
               break
             fi
 
-            echo "Waiting for tests to finish..."
+            echo "Waiting for tests to finish.."
             sleep 60
           done
 
