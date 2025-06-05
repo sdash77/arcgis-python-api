@@ -1,4 +1,4 @@
-name: arcgis-learn-api-tests
+name: arcgis-learn-api-confidence-tests
 
 on:
   pull_request:
