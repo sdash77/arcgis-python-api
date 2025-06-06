@@ -58,6 +58,7 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
+_FAIRNESS_CLASSIFICATION_SUPPORT = "We support only binary classification and Regression in fairness evaluation. Please provide binary class as label for fairness evaluation."
 _FAIRNESS_NOT_APPLIED = "Obtaining fairness score needs the ground truth and hence this method is not supported when model is instantiated for inferencing. "
 _FAIRNESS_NOT_SUPPORTED = "Fairness is not supported with this model type"
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
@@ -488,6 +489,8 @@ class MLModel(object):
         visualize=False,
     ):
         """
+        As of now we support only binary classification in fairness evaluation.
+
         Shows sample fairness score and plots for the model.
 
         =====================   ===========================================
@@ -524,8 +527,14 @@ class MLModel(object):
 
         self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
         if not self._fairness and self._data._is_classification:
-            labelEncoder = self.fairness_label_encoder
+            if self._fairness:
+                labelEncoder = self.fairness_label_encoder
+            else:
+                labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
+            if len(np.unique(train_labels)) > 2:
+                raise ValueError(_FAIRNESS_CLASSIFICATION_SUPPORT)
+
             y_true = labelEncoder.transform(self._validation_labels)
             y_pred = self._predict(self._data._ml_data[2])
 
