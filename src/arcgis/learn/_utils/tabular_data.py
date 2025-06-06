@@ -82,7 +82,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         procs=None,
         val_split_pct=0.1,
@@ -1394,7 +1394,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         index_field=None,
         **kwargs,
@@ -1809,7 +1809,7 @@ class TabularDataObject(object):
                                 )
                                 value = raster_value[0][0]
                             except:
-                                value = [np.NaN]
+                                value = [np.nan]
                             for i in range(len(value)):
                                 if i == 0:
                                     rasters_data[raster.name].append(value[i])

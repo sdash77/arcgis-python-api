@@ -232,21 +232,17 @@ WMTSLayer
 Utility Functions for Mapping
 -----------------------------
 
-export_to_html
-^^^^^^^^^^
-.. autofunction:: arcgis.map.map_widget.export_to_html
-
 sync_navigation
 ^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.map_widget.sync_navigation
+.. autofunction:: arcgis.map.Map.sync_navigation
 
 print
 ^^^^^
-.. autofunction:: arcgis.map.map_widget.print
+.. autofunction:: arcgis.map.Map.print
 
 SymbolService
 ^^^^^^^^^
-.. autoclass:: arcgis.layers.SymbolService
+.. autoclass:: arcgis.layers._symbol.SymbolService
     :members:
     :undoc-members:
     :show-inheritance:

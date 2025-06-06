@@ -1,5 +1,5 @@
 {% set name = "arcgis_learn" %}
-{% set version = "2.4.1" %}
+{% set version = "2.4.2" %}
 
 package:
   name: {{ name | lower }}
@@ -14,7 +14,7 @@ requirements:
 
   run:
     - accelerate 0.33.*
-    - arcgis >=2.4.1
+    - arcgis >=2.4.2
     - boost 1.82.*
     - bitsandbytes 0.43.*
     - cudatoolkit 11.8.*

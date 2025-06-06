@@ -2455,7 +2455,7 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
 def query_exif_info(
     input_images, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
 ):
-    """
+    r"""
     The `query_exif_info` reads the Exif header metadata from single or
     multiple images in shared data store. The Exif metadata is usually stored
     in drone image files. Some common Exif metadata information are GPS
