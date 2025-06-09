@@ -46,7 +46,7 @@ from arcgis.gis._impl._dataclasses._sfilters import (
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
-from arcgis.gis._impl._content_manager.folder import Folder
+from arcgis.gis._impl._content_manager.folder import Folder, Job
 
 try:
     import pandas as pd
@@ -567,6 +567,7 @@ class GIS(object):
                 )
         self.resturl = _create_base_url(url)
         self._url = url.replace("http://", "https://")
+        self._url = self._url.rstrip("/")
         self._username = username
         self._password = password
         self._key_file = key_file
@@ -11173,7 +11174,7 @@ class Group(dict):
         title               Optional string. The new name of the group.
         ------------------  ---------------------------------------------------------
         tags                Optional string. A comma-delimited list of new tags, or
-                            a list of tags as strings.
+                            a list of tags as strings. To remove tags, pass in an empty string or list.
         ------------------  ---------------------------------------------------------
         description         Optional string. The new description for the group.
         ------------------  ---------------------------------------------------------
@@ -11267,7 +11268,9 @@ class Group(dict):
             max_file_size = 1024000
         if users_update_items is None:
             users_update_items = False
-        if tags is not None:
+        if tags == [] or tags == "":
+            tags = ","
+        elif tags is not None:
             if isinstance(tags, list):
                 tags = ",".join(tags)
         if (
@@ -13799,7 +13802,7 @@ class Item(dict):
         """
         if self._gis._is_agol:
             try:
-                self.subInfo or 0
+                return self.subInfo or 0
             except:
                 return None
         return None
