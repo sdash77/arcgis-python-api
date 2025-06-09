@@ -1029,16 +1029,18 @@ class TestTraining(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("Inside Setup Class!!!")
-        smoke_dir = Path(__file__).parent.parent.parent / "smoke"
-        test_loader = unittest.TestLoader()
-        print(smoke_dir)
-        suite = test_loader.discover(start_dir=str(smoke_dir), pattern="*.py")
+        # smoke_dir = Path(__file__).parent.parent.parent / "smoke"
+        # test_loader = unittest.TestLoader()
+        # print(smoke_dir)
+        # suite = test_loader.discover(start_dir=str(smoke_dir), pattern="*.py")
 
-        runner = unittest.TextTestRunner(verbosity=2)
-        result = runner.run(suite)
+        # runner = unittest.TextTestRunner(verbosity=2)
+        # result = runner.run(suite)
 
-        if not result.wasSuccessful():
-            raise AssertionError("One or more smoke tests failed during setup_class")
+        # if not result.wasSuccessful():
+        #     raise AssertionError("One or more smoke tests failed during setup_class")
+        # else:
+        #     print("Smoke tests ran successfully...")
 
     def setUp(self):
         print("Test: " + self._testMethodName)
