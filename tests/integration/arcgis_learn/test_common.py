@@ -1028,7 +1028,7 @@ def autodl_main():
 class TestTraining(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        print("Inside Setup Class!!!")
+        print("Inside Setup Class!!")
 
     def setUp(self):
         print("Test: " + self._testMethodName)
