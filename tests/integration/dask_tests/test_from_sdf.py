@@ -19,8 +19,9 @@ import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features.analysis import create_viewshed
 from utils.decorators import integration_test, profiles
-from integration.config import QALAB_ROOT_PATH
+from integration.config import get_resource_path
 from utils.data_utils import publish_test_item, cleanup_published_items
+
 
 dask.config.set({"dataframe.convert-string": False})
 
@@ -29,8 +30,8 @@ dask.config.set({"dataframe.convert-string": False})
 class TestSDF2Dask(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        path = os.path.join(QALAB_ROOT_PATH, r"dask_test\USA_Major_Cities_1.zip")
-        cls.item = publish_test_item(gis=cls.gis, layer_name = f"dask_test_{str(uuid4())[:4]}", source_data_path=path, item_type=ItemTypeEnum.SHAPEFILE)
+        resource_path = get_resource_path("staging_data/USA_Major_Cities.zip", unique_copy=True)
+        cls.item = publish_test_item(gis=cls.gis, layer_name = f"dask_test_{str(uuid4())[:4]}", source_data_path=resource_path, item_type=ItemTypeEnum.SHAPEFILE)
 
     def test_consume_sdf(self):
         item = self.item
