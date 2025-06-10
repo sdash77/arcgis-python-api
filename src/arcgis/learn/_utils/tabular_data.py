@@ -2518,12 +2518,20 @@ def show_local_interpretation(
                     explainer.expected_value, shap_values, processed_df, matplotlib=True
                 )
             else:
-                shap.plots.force(
-                    explainer.expected_value[0],
-                    shap_values[0][:, 0],
-                    processed_df,
-                    matplotlib=True,
-                )
+                try:
+                    shap.plots.force(
+                        explainer.expected_value[0],
+                        shap_values[0],
+                        processed_df,
+                        matplotlib=True,
+                    )
+                except:
+                    shap.plots.force(
+                        explainer.expected_value[0],
+                        shap_values[0][:, 0],
+                        processed_df,
+                        matplotlib=True,
+                    )
     elif method == "KernelRegressor":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
