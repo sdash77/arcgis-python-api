@@ -3337,6 +3337,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ):
                         # Need to remove relationships first and add them back individually
                         # after all layers and tables have been added to the definition
+                        if "serviceItemId" in layer:
+                            layer["serviceItemId"] = new_item.id
                         if (
                             "relationships" in layer
                             and layer["relationships"] is not None
@@ -3683,19 +3685,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             field_mapping[
                                                 original_editor_field_name
                                             ] = new_editor_field_name
-                                            # Delete old editor tracking fields
-                                            if self.is_view == False:
-                                                try:
-                                                    new_delete_field = new_fields[
-                                                        new_fields_lower.index(
-                                                            original_editor_field_name.lower()
-                                                        )
-                                                    ]
-                                                    del_fields.append(
-                                                        new_delete_field["name"]
-                                                    )
-                                                except ValueError:
-                                                    pass
 
                         original_oid_field = _deep_get(layer, "objectIdField")
                         new_oid_field = _deep_get(new_layer_properties, "objectIdField")
@@ -7157,7 +7146,7 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
             for label_info in labeling_infos:
                 label_expression = _deep_get(label_info, "labelExpression")
                 if label_expression is not None:
-                    results = re.findall("\[(.*?)\]", label_expression)
+                    results = re.findall(r"\[(.*?)\]", label_expression)
                     for result in results:
                         if result in field_mapping:
                             label_info["labelExpression"] = str(

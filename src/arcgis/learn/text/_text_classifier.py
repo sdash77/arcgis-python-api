@@ -70,7 +70,7 @@ else:
 try:
     import numpy as np
 
-    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+    warnings.filterwarnings("ignore", category=np.exceptions.VisibleDeprecationWarning)
 except:
     HAS_NUMPY = False
 
