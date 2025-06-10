@@ -81,7 +81,7 @@ class NotebookFile:
 
         :return: Boolean
         """
-        return self._da._delete(filename=self.properties["Name"])
+        return self.delete()
 
     # ---------------------------------------------------------------------
     def delete(self) -> bool:
