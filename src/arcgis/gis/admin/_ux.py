@@ -112,6 +112,19 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
+    def ai_assistants_enabled(self) -> bool:
+        """gets and sets the AI Assistant support"""
+        return self._gis.org_settings.get("aiAssistantsEnabled", False)
+
+    # ----------------------------------------------------------------------
+    @ai_assistants_enabled.setter
+    def ai_assistants_enabled(self, value: bool) -> None:
+        """gets and sets the AI Assistant support"""
+        self._gis.org_settings = {"aiAssistantsEnabled": value}
+        self._gis._properties = None
+
+    # ----------------------------------------------------------------------
+    @property
     def name(self):
         """
         Get/Set the site's name.

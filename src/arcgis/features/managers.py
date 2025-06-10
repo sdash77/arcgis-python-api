@@ -600,7 +600,7 @@ class AttachmentManager(object):
                         "NAME": data["name"],
                         "CONTENTTYPE": data["contentType"],
                         "SIZE": data["size"],
-                        "KEYWORDS": data["keywords"],
+                        "KEYWORDS": data.get("keywords", None),
                         "IMAGE_PREVIEW": preview,
                     }
                     if "globalId" in data:
@@ -2840,9 +2840,9 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # check if the service is a view
         rest_url = (
-            gis._url + "/sharing/rest"
-            if "sharing/rest" not in gis._url.lower()
-            else gis._url
+            gis.url + "/sharing/rest"
+            if "sharing/rest" not in gis.url.lower()
+            else gis.resturl
         )
 
         # get the owner of the service
@@ -3410,11 +3410,19 @@ class FeatureLayerCollectionManager(_GISResource):
             postdata = {"f": "json"}
 
             old_publish_parameters = self._gis._con.post(path, postdata)
-            base_url = feature_layer_item.privateUrl
-            lyr_url_info = "%s/layers" % base_url
-            fs_url = "%s" % base_url
-            # layer_info gets information on the layers and tables of an item
-            layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
+            try:
+
+                base_url = feature_layer_item.privateUrl
+                lyr_url_info = "%s/layers" % base_url
+                fs_url = "%s" % base_url
+                # layer_info gets information on the layers and tables of an item
+                layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
+            except:
+                base_url = feature_layer_item.url
+                lyr_url_info = "%s/layers" % base_url
+                fs_url = "%s" % base_url
+                # layer_info gets information on the layers and tables of an item
+                layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
             [lyr.pop("fields") for lyr in layer_info["layers"]]
             [lyr.pop("fields") for lyr in layer_info["tables"]]
             feature_service_def = self._gis._con.get(fs_url, {"f": "json"})
@@ -3714,7 +3722,7 @@ class FeatureLayerManager(_GISResource):
                                 ]
                              }
            >>> res = fl.manager.add_to_definition(
-                                json_dict=add_field
+                                json_dict=new_field
                     )
            >>> res
 
@@ -3740,7 +3748,7 @@ class FeatureLayerManager(_GISResource):
                              }
 
           >>> future = fl.manager.add_to_definition(
-                                            json_dict=add_field,
+                                            json_dict=new_field,
                                             future=True
                        )
           >>> res = future.result()

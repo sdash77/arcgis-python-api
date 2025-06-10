@@ -25,21 +25,29 @@ from typing import Optional
 ########################################################################
 class MachineManager(BaseServer):
     """
-    This resource represents a collection of all the server machines that
-    have been registered with the site. In other words, it represents the
-    total computing power of your site. A site will continue to run as long
-    as there is at least one server machine online.
+    This class provides management capabilities for a specific
+    :class:`~arcgis.gis.server.Server` machine in an ArcGIS Enterprise
+    deployment. Objects of this class are not meant to be initialized directly
+    but are accessed by the :attr:`~arcgis.gis.server.Server.machines` property
+    on a *server*.
 
-    For a server machine to start hosting GIS services, it must be in a cluster
-    (note that clusters have been deprecated, see
-    http://server.arcgis.com/en/server/latest/administer/windows/about-single-cluster-mode.htm ).
-    When you create a new site, a cluster called 'default' (deployed with
-    singleClusterMode set to true) is created for you.
+    .. code-block:: python
 
-    The list of server machines in your site can be dynamic. You can
-    register additional server machines when you need to increase the
-    computing power of your site, or unregister them if you no longer need
-    them.
+        # Usage Example: Accessing the machine for an ArcGIS Server
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+        >>> server_mgr = gis.admin.servers
+        >>> ra_server = server_mgr.get(function="RasterAnalytics")[0]
+        >>> ra_server
+
+        < Server @ https://organization.example.com/<web_adaptor>/admin >
+
+        >>> server_machine_mgr = ra_server.machines
+        >>> server_machine_mgr
+
+        < MachineManager @ https://organization.example.com/<web_adaptor>/admin/machines >
+
     """
 
     _machines = None
@@ -201,22 +209,16 @@ class MachineManager(BaseServer):
 ########################################################################
 class Machine(BaseServer):
     """
-    A resource to provide administrative tools for managing this machine
-    and the required SSL Certificate.
-
-    .. note::
-        The Machine
-
-        A server machine represents a machine on which ArcGIS Server
-        software has been installed and licensed. A site is made up of one
-        or more machines that must be registered with the site.  The site's
-        machines work together to host GIS services and data, and provide
-        administrative capabilities for the site. Each server machine is
-        capable of performing all these administrative tasks and hence a
-        site can be thought of as a distributed peer-to-peer network of
-        machines. The server machine communicates with its peers over a
-        range of TCP and UDP ports that can be configured using the edit operation
-        (https://developers.arcgis.com/rest/enterprise-administration/server/editmachine.htm ).
+    A resource to administer aspects of the machine on which the ArcGIS
+    Portal or Server software has been installed. A site is composed of one or
+    more server machines, each of which is registered with the site.  The site's
+    machines work together to host GIS services and data, and provide
+    administrative capabilities for the site. Each server machine is capable
+    of performing all these administrative tasks and hence a site can be thought
+    of as a distributed peer-to-peer network of *machines*. The server machine
+    communicates with its peers over a range of TCP and UDP ports that can be
+    configured using the
+    `edit operation <https://developers.arcgis.com/rest/enterprise-administration/server/editmachine.htm>`_
 
 
     .. note::
@@ -225,26 +227,24 @@ class Machine(BaseServer):
         A certificate represents a key pair that has been digitally signed
         and acknowledged by a Certifying Authority (CA). It is the most
         fundamental component in enabling SSL on your server. Before you
-        enable SSL on your server, you need to generate a certificate and
-        get it signed by a trusted CA.
+        enable SSL on your server, you need to
+        :meth:`~arcgis.gis.admin.SSLCertificates.generate` certificates and get
+        them signed by a trusted CA. See the REST API
+        `generate certificate <https://developers.arcgis.com/rest/enterprise-administration/server/generatecertificate.htm>`_
+        documentation for more information.
 
-        The Generate Certificate
-        (https://developers.arcgis.com/rest/enterprise-administration/server/generatecertificate.htm )
-        operation creates a new self-signed certificate and adds it to
-        the keystore. For your convenience, the server is capable of generating
-        self-signed certificates that can be used during development or
-        staging. However, it is critical that you obtain CA-signed
-        certificates when standing up a production server. Even though
-        a self-signed certificate can be used to enable SSL, it is recommended
-        that you use these only on staging or development servers.
+        The operation creates a new self-signed certificate and adds it to the
+        keystore. For your convenience, the server is capable of generating
+        self-signed certificates that can be used during development or staging.
+        However, it is critical that you obtain CA-signed certificates when
+        standing up a production server.
 
-        In order to get a certificate signed by a CA, you need to generate
-        a CSR (certificate signing request) and then submit it to your CA.
-        The CA will sign your certificate request which can then be
-        imported into the server by using the import CA signed certificate
+        In order to get a certificate signed by a CA, you need to generate a CSR
+        (certificate signing request) and then submit it to your CA. The CA will
+        sign your certificate request which can then be imported into the server
+        by using the
+        :meth:`import CA signed certificate <arcgis.gis.admin.SSLCertificates.import_certificate>`
         operation.
-
-
     """
 
     _appServerMaxHeapSize = None
@@ -460,7 +460,7 @@ class Machine(BaseServer):
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
 
-        :return: Boolean
+        :return: String stating "success" or error message.
 
         """
         params = {"f": "json", "csrfPreventToken": self._con.token}
