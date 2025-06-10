@@ -396,7 +396,7 @@ class ImageryModel(ArcGISModel):
             else:
                 print("This method is not supported with the current model type.")
                 return
-            
+
         else:
             print("Train the model first using fit()")
             return
