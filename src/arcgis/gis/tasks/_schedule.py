@@ -400,12 +400,9 @@ class Task(BaseTask):
         if task_url is None:
             params.pop("taskUrl", None)
         if cron is None:
-            cron_schedule: dict = self.properties["cronSchedule"]
-            params["minute"] = cron_schedule["minute"]
-            params["hour"] = cron_schedule["hour"]
-            params["dayOfMonth"] = cron_schedule["dayOfMonth"]
-            params["month"] = cron_schedule["month"]
-            params["dayOfWeek"] = cron_schedule["dayOfWeek"]
+            cron_schedule: dict = self.properties.get("cronSchedule", {})
+            params["minute"] = cron_schedule.get("minute")
+            ...
         elif isinstance(cron, str) and cron in SPECIALS:
             cron = SPECIALS[cron].split(" ")
             params["minute"] = cron[0]
