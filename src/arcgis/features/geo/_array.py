@@ -504,9 +504,9 @@ class GeoArray(ExtensionArray):
         elif pd.api.types.is_string_dtype(dtype) and not pd.api.types.is_object_dtype(
             dtype
         ):
-            return np.array([g.JSON for g in self.data])
+            return np.asarray([g.JSON for g in self.data])
         else:
-            return np.array(self, dtype=dtype, copy=copy)
+            return np.asarray(self, dtype=dtype)
 
     @property
     def na_value(self):
