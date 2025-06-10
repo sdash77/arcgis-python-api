@@ -51,7 +51,7 @@ class NotebookFile:
         """
         if self._da._gis._is_arcgisonline:
             url = f"{self._da._url}/move".replace(
-                "/azureblob", f"/{self._da._username}"
+                "/azureblob/", f"/{self._da._username}/"
             )
         else:
             url = f"{self._da._url}/{self._da._username}/notebookworkspace/move"
