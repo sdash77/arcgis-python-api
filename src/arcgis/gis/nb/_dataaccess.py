@@ -196,7 +196,7 @@ class NotebookDataAccess:
         if folder_name is None:
             folder_name = f"_transferred_{source_username}"
 
-        url = f"{self._url}/transferUserWorkspace".replace("/azureblob", "")
+        url = f"{self._url}/transferUserWorkspace".replace("/azureblob/", "/")
         params = {
             "f": "json",
             "targetFoldername": folder_name,
