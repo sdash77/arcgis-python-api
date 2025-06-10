@@ -402,7 +402,10 @@ class Task(BaseTask):
         if cron is None:
             cron_schedule: dict = self.properties.get("cronSchedule", {})
             params["minute"] = cron_schedule.get("minute")
-            ...
+            params["hour"] = cron_schedule.get("hour")
+            params["dayOfMonth"] = cron_schedule.get("dayOfMonth")
+            params["month"] = cron_schedule.get("month")
+            params["dayOfWeek"] = cron_schedule.get("dayOfWeek")
         elif isinstance(cron, str) and cron in SPECIALS:
             cron = SPECIALS[cron].split(" ")
             params["minute"] = cron[0]
