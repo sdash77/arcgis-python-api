@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import concurrent.futures
-import uuid
-import tempfile
 from enum import Enum
 import os
 import json
 import logging
 from typing import Any
-from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
 from arcgis.gis.clone._ux import UXCloner
@@ -404,7 +401,7 @@ class UX(object):
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        visiblity         Required boolean. If True, the desciptive text will show on the
+        visibility         Required boolean. If True, the descriptive text will show on the
                           home page. If False, the descriptive text will not be displayed
         ================  ===============================================================
 
@@ -418,11 +415,11 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @description_visibility.setter
-    def description_visibility(self, visiblity: bool):
+    def description_visibility(self, visibility: bool):
         """
         See main ``description_visibility`` property docstring
         """
-        return self._gis.update_properties({"showHomePageDescription": visiblity})
+        return self._gis.update_properties({"showHomePageDescription": visibility})
 
     # ----------------------------------------------------------------------
     @property
@@ -1472,7 +1469,7 @@ class MapSettings(object):
 
     # ----------------------------------------------------------------------
     @property
-    def default_basemap_3d(self):
+    def default_3d_basemap(self):
         """
         Get/Set the site's default 3D basemap.
 
@@ -1491,8 +1488,8 @@ class MapSettings(object):
         return self._gis.properties.get("default3DBasemap", self.default_basemap)
 
     # ----------------------------------------------------------------------
-    @default_basemap_3d.setter
-    def default_basemap_3d(self, value: str):
+    @default_3d_basemap.setter
+    def default_3d_basemap(self, value: str):
         """
         See main ``default_basemap_3d`` property docstring
         """
@@ -1602,7 +1599,7 @@ class MapSettings(object):
 
     # ----------------------------------------------------------------------
     @property
-    def basemap_gallery_group_3d(self):
+    def basemap_gallery_3d_group(self):
         """
         Select the group whose web maps will be shown in the 3D basemap gallery.
         To change the group, assign either an instance of Group or the group id.
@@ -1625,8 +1622,8 @@ class MapSettings(object):
             return None
 
     # ----------------------------------------------------------------------
-    @basemap_gallery_group_3d.setter
-    def basemap_gallery_group_3d(self, group: Group | str | None):
+    @basemap_gallery_3d_group.setter
+    def basemap_gallery_3d_group(self, group: Group | str | None):
         if isinstance(group, Group):
             group = "id:" + group.id
         elif isinstance(group, str):
@@ -1673,7 +1670,7 @@ class MapSettings(object):
         ):
             self._gis.update_properties({"use3dBasemaps": value})
             assert self._gis.properties["use3dBasemaps"] == value
-        elif self._gis._is_arcgisonline == False:
+        elif self._gis._is_arcgisonline is False:
             _log.warning("This property only works with ArcGIS Online.")
 
     # ----------------------------------------------------------------------
@@ -2626,7 +2623,7 @@ class SecuritySettings(object):
         =========================       ==================================================
         **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
-        smtp_host                       Requried string. The IP address, or the fully
+        smtp_host                       Required string. The IP address, or the fully
                                         qualified domain name (FDQN), of the SMTP Server.
 
                                         Example: smtpServer=smtp.myorg.org
@@ -2731,7 +2728,7 @@ class SecuritySettings(object):
         =========================       ==================================================
         **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
-        mail_to                         Requried string. The email the test message will
+        mail_to                         Required string. The email the test message will
                                         be sent to.
         =========================       ==================================================
 
