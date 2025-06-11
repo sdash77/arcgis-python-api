@@ -9777,7 +9777,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         gis = self._gis
         
         missions = {"itemIds": [mission._mission_id for mission in missions]}
-        output_mission_name = {"name": output_mission_name}        
+        mission_def = {
+            "name": output_mission_name,
+        }
+        if mission_settings:
+            mission_def["settings"] = mission_settings
+
         output_collection_name, _ = self._set_output_raster(
             output_name=output_collection_name,
             task=task,
@@ -9786,10 +9791,9 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         gpjob = self._tbx.merge_missions(
             mission_list=missions,
-            output_mission_name=output_mission_name,
+            mission_definition=mission_def,
             output_collection_name=output_collection_name,
             context=context,
-            mission_settings=mission_settings,
             gis=gis,
             future=True
         )
