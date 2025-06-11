@@ -190,7 +190,7 @@ class _DeepCloner:
         if cloned_db_list:
             cloned_db = cloned_db_list[0]
             cloned_item_list.append(cloned_db)
-        
+
             if not self.target._is_agol:
                 cdb_data = cloned_db.get_data()
                 selectors = _deep_get(cdb_data, "desktopView", "header", "selectors")
@@ -204,11 +204,11 @@ class _DeepCloner:
                             if "statisticDefinitions" in dataset:
                                 for stat_def in dataset["statisticDefinitions"]:
                                     if "onStatisticField" in stat_def:
-                                        map_dict[stat_def["onStatisticField"]] = stat_def["onStatisticField"].lower()
-                    
+                                        map_dict[stat_def["onStatisticField"]] = (
+                                            stat_def["onStatisticField"].lower()
+                                        )
+
             cloned_db.remap_data(item_mapping=map_dict, force=True)
-            
-                            
 
         return cloned_item_list
 
