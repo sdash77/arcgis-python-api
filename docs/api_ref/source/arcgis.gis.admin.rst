@@ -460,6 +460,27 @@ DataStoreMetric
     :undoc-members:
     :show-inheritance:
 
+DeveloperCredential
+-------------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.DeveloperCredential
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DeveloperCredentialManager
+--------------------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.DeveloperCredentialManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+TokenPrivilege
+--------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.TokenPrivilege
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 License
 ---------------
 .. autoclass:: arcgis.gis.admin.License
