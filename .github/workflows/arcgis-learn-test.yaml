@@ -39,18 +39,10 @@ jobs:
           export run_weekly=0
           export run_backbones=0
           export PYTHONPATH="$WORKSPACE/tests"
-          SMOKE_DIR="$WORKSPACE/tests/smoke"
 
-          echo "Running smoke tests from: $SMOKE_DIR"
-          echo "======================================="
-          for test_file in "$SMOKE_DIR"/*.py; do
-            $PYTHON "$test_file"
-            exit_code=$?
-            if [ $exit_code -ne 0 ]; then
-              echo "Test Failed: $test_file"
-              exit $exit_code
-            fi
-          done          
-          echo "All smoke tests passed."
-          echo "======================================="
+          echo "Running full test suite"
+          $PYTHON $WORKSPACE/automation/jenkins_entry_point.py \
+            --automation-type test_suite \
+            --suite-path /root/test_automation/suites/learn_pr_suite.yml
+
           
