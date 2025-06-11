@@ -18,13 +18,13 @@ sys.path.insert(0, str(parent_dir))
 
 from utils._common import *
 
-ARCGIS_FOLDER = os.environ.get('ARCGIS_FOLDER')
-if ARCGIS_FOLDER:
-    custom_arcgis_path = Path(ARCGIS_FOLDER)
-    if str(custom_arcgis_path) not in sys.path:
-        sys.path.insert(0, str(custom_arcgis_path))
-else:
-    print("Warning: ARCGIS_FOLDER environment variable is not set.")
+# ARCGIS_FOLDER = os.environ.get('ARCGIS_FOLDER')
+# if ARCGIS_FOLDER:
+#     custom_arcgis_path = Path(ARCGIS_FOLDER)
+#     if str(custom_arcgis_path) not in sys.path:
+#         sys.path.insert(0, str(custom_arcgis_path))
+# else:
+#     print("Warning: ARCGIS_FOLDER environment variable is not set.")
 
 import arcgis
 print("Working arcgis file:", arcgis.__file__)
@@ -170,18 +170,6 @@ failure_score = []
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
     print("Run Smoke tests...")
-    TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
-    sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
-    from utils._common import run_unittest_on
-
-    smoke_test_paths = glob.glob(
-            os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
-        )
-    smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
-    run_unittest_on(
-        smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
-    )
-
     global authorization_data
     authorization_data = setuposenviron()
     if os.environ.get("run_nightly") == "1":
@@ -1130,6 +1118,21 @@ class TestTraining(unittest.TestCase):
                 )
         print("Test:" + self._testMethodName + "is completed.\n")
         print("------------------------------------------------------------------\n")
+
+    def test_smoke():
+        print("Smoke Tests Running...")
+        TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
+        sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
+        from utils._common import run_unittest_on
+
+        smoke_test_paths = glob.glob(
+                os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
+            )
+        smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
+        run_unittest_on(
+            smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
+        )
+        print("Smoke tests Ends...")
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter, skip_on_empty=True)
