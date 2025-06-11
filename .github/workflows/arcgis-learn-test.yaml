@@ -9,7 +9,8 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
+  checks: write
 
 concurrency:
   group: test-runner-lock
@@ -60,7 +61,7 @@ jobs:
         if: always()
         with:
           name: PyTest Results
-          path: ${{ github.workspace }}/tests/_output/test-results.xml
+          path: ${{github.workspace}}/tests/_output/test-results.xml
           reporter: java-junit
 
           
