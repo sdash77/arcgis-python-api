@@ -26,10 +26,11 @@ from utils._common import *
 # else:
 #     print("Warning: ARCGIS_FOLDER environment variable is not set.")
 
+import glob
 print("Smoke Tests Running...")
 TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
-sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
-from utils._common import run_unittest_on
+# sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
+# from utils._common import run_unittest_on
 
 smoke_test_paths = glob.glob(
         os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
