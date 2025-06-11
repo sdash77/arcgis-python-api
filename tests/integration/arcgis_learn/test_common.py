@@ -1119,7 +1119,7 @@ class TestTraining(unittest.TestCase):
         print("Test:" + self._testMethodName + "is completed.\n")
         print("------------------------------------------------------------------\n")
 
-    def test_smoke():
+    def test_smoke(self):
         print("Smoke Tests Running...")
         TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
         sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
