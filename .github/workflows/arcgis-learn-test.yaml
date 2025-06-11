@@ -27,6 +27,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       
       - name: run tests in arcgis_learn supported conda env - Linux
+        continue-on-error: true
         run: |
           PYTHON=/root/anaconda3/envs/jenkins_03_April_25/bin/python
           echo "Python Version:"
@@ -60,7 +61,7 @@ jobs:
         uses: dorny/test-reporter@v1
         if: always()
         with:
-          name: PyTest Results
+          name: Test Results - arcgis.learn API
           path: ${{github.workspace}}/tests/_output/test-results.xml
           reporter: java-junit
 

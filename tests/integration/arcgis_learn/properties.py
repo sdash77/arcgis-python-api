@@ -126,7 +126,7 @@ data = {
         "model": SingleShotDetector,
         "model_test": "ssd_test",
         "prepare_data": {
-            "path": os.path.join(data_folder, "100_cracks_data"),
+            "path": os.path.join(data_folder, "100_cracks_datas"),
             "batch_size": None,
             "dataset_type": "PASCAL_VOC_rectangles",
         },
@@ -134,7 +134,7 @@ data = {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
         },
-        "should_test": False,
+        "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
