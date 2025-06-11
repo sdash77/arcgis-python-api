@@ -383,35 +383,32 @@ class EsriSession:
     # ----------------------------------------------------------------------
     @verify.setter
     def verify(self, value: bool):
-        new_session_created = False
-        verify_changed = False
-
-        if self._session is None:
-            self._session = Session()
-            new_session_created = True
-
         if not isinstance(value, bool):
             raise ValueError(
                 "`verify only accepts a boolean.  If you want to pass a CA bundle, please use ca_bundle`"
             )
 
-        if self._session.verify != value:
-            self._session.verify = value
-            verify_changed = True
+        new_session_created = False
+        if self._session is None:
+            self._session = Session()
+            new_session_created = True
 
-        if new_session_created or verify_changed:
-            old_adapter: EsriTrustStoreAdapter = self._adapter
-            self._adapter = EsriTrustStoreAdapter(
-                max_retries=self._retry,
-                assert_hostname=old_adapter.assert_hostname,
-                verify=value,
-                additional_certs=old_adapter.additional_certs,
-                pki_data=self._x509_cert,
-                pki_password=self._x509_pw,
-            )
-            old_adapter.close()
-            self._session.mount("http://", self._adapter)
-            self._session.mount("https://", self._adapter)
+        if self._session.verify == value and not new_session_created:
+            return
+
+        self._session.verify = value
+        old_adapter: EsriTrustStoreAdapter = self._adapter
+        self._adapter = EsriTrustStoreAdapter(
+            max_retries=self._retry,
+            assert_hostname=old_adapter.assert_hostname,
+            verify=value,
+            additional_certs=old_adapter.additional_certs,
+            pki_data=self._x509_cert,
+            pki_password=self._x509_pw,
+        )
+        old_adapter.close()
+        self._session.mount("http://", self._adapter)
+        self._session.mount("https://", self._adapter)
 
     # ----------------------------------------------------------------------
     def mount(self, prefix: str, adapter: "HTTPAdapter"):
