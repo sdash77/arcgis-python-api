@@ -131,7 +131,7 @@ class DeveloperCredential:
     def session(self) -> EsriSession:
         """returns the session for the DeveloperCredential"""
         if self._session is None:
-            self._sesion = self._item._gis.session
+            self._session = self._item._gis.session
         return self._session
 
     def __str__(self):
