@@ -31,7 +31,7 @@ jobs:
           pwd
 
           echo "Setting up required environment variables"
-          WORKSPACE = pwd
+          WORKSPACE=pwd
           export LC_ALL=en_US.UTF-8; export LC_CTYPE=en_US.UTF-8;
           export run_nightly=0; export run_inference=0; export run_weekly=0; export run_backbones=0;
           export PYTHONPATH="$WORKSPACE/tests"
