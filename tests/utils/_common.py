@@ -34,7 +34,7 @@ GEOSAURUS_PYTHON_EXEC = [
     "install",
     "-e",
     '"' + GEOSAURUS_SRC_DIR + '"',
-    "--no-deps",
+    "--no-deps", "--user",
     "&&",
     '"' + sys.executable + '"',
 ]
@@ -119,7 +119,7 @@ def setup_env():
         "pip",
         "install",
         "-e",
-        '"' + GEOSAURUS_SRC_DIR + '"',
+        '"' + GEOSAURUS_SRC_DIR + '"', "--user", 
         "--no-deps",
     ]
     run_shell_command(" ".join(pip_install_cmd))
