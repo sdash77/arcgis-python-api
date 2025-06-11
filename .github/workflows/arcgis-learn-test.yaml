@@ -32,6 +32,9 @@ jobs:
 
           echo "Setting up required environment variables"
           WORKSPACE=$(pwd)
+          echo "copy KNN file"
+          scp "/root/test_automation/dlls/nearest_neighbors.cpython-311-x86_64-linux-gnu.so" "$WORKSPACE/src/arcgis/learn/_utils/nearest_neighbors.cpython-311-x86_64-linux-gnu.so";
+          echo "File copied to $WORKSPACE/src/arcgis/learn/_utils"
           export LC_ALL=en_US.UTF-8
           export LC_CTYPE=en_US.UTF-8
           export run_nightly=0
@@ -43,6 +46,7 @@ jobs:
           echo "Running full test suite"
           $PYTHON $WORKSPACE/automation/jenkins_entry_point.py \
             --automation-type test_suite \
-            --suite-path /root/test_automation/suites/learn_pr_suite.yml
+            --suite-path /root/test_automation/suites/learn_pr_suite.yml \
+            --no-browser-output
 
           
