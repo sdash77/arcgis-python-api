@@ -368,7 +368,9 @@ class Country(object):
         self._gis = ba.source
 
         # stash for use later
-        self._ba_cntry = ba.get_country(iso3, year=year, derivative_variables=derivative_variables)
+        self._ba_cntry = ba.get_country(
+            iso3, year=year, derivative_variables=derivative_variables
+        )
 
         # if the source is a GIS set a few more properties
         if isinstance(self._gis, GIS):

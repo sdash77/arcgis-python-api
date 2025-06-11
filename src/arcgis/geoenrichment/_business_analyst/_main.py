@@ -104,7 +104,11 @@ class AOI(object):
         """GIS implementation of enrich_variables property."""
         # if the AOI has an iso3 property, then is a Country, and should be added as part of the request
         iso3 = self.__dict__["iso3"] if hasattr(self, "iso3") else None
-        derivative_variables = self.__dict__["derivative_variables"] if hasattr(self, "derivative_variables") else False
+        derivative_variables = (
+            self.__dict__["derivative_variables"]
+            if hasattr(self, "derivative_variables")
+            else False
+        )
 
         # get the enrich variables
         ev = self._ba._get_enrich_variables_gis(iso3, derivative_variables)
@@ -960,7 +964,12 @@ class BusinessAnalyst(object):
 
         return iso3_str
 
-    def get_country(self, iso3: str, year: Optional[int] = None, derivative_variables: Optional[bool] = False) -> Country:
+    def get_country(
+        self,
+        iso3: str,
+        year: Optional[int] = None,
+        derivative_variables: Optional[bool] = False,
+    ) -> Country:
         """
         Get a Country object instance.
         =============================       ====================================================================
@@ -1050,7 +1059,9 @@ class BusinessAnalyst(object):
         iso3 = self._standardize_country_str(iso3)
 
         # create a iso3 object instance
-        cntry = Country(iso3, year=year, enrichment=self, derivative_variables=derivative_variables)
+        cntry = Country(
+            iso3, year=year, enrichment=self, derivative_variables=derivative_variables
+        )
 
         return cntry
 
@@ -1068,7 +1079,9 @@ class BusinessAnalyst(object):
         return ev
 
     @lru_cache(maxsize=255)
-    def _get_enrich_variables_gis(self, iso3: Optional[str] = None, derivative_variables: Optional[bool] = False) -> pd.DataFrame:
+    def _get_enrich_variables_gis(
+        self, iso3: Optional[str] = None, derivative_variables: Optional[bool] = False
+    ) -> pd.DataFrame:
         """Provide method to return enrich variables at both the BusinessAnalyst and AOI (Country) levels."""
         # construct the url with the option to simply not explicitly specify a iso3
         url = f"{self._base_url}/Geoenrichment/DataCollections/"
@@ -1077,7 +1090,9 @@ class BusinessAnalyst(object):
 
         # get the data collections from the GIS enrichment REST endpoint
         if derivative_variables:
-            res = self.source._con.get(url, params={"f": "json", "addDerivativeVariables": "all"})
+            res = self.source._con.get(
+                url, params={"f": "json", "addDerivativeVariables": "all"}
+            )
         else:
             res = self.source._con.get(url, params={"f": "json"})
 
@@ -1107,11 +1122,26 @@ class BusinessAnalyst(object):
             coll_df.rename(columns={"id": "name"}, inplace=True)
             if derivative_variables:
                 coll_df = coll_df[
-                    ["name", "alias", "data_collection", "description", "vintage", "units", "derivative"]
+                    [
+                        "name",
+                        "alias",
+                        "data_collection",
+                        "description",
+                        "vintage",
+                        "units",
+                        "derivative",
+                    ]
                 ]
             else:
                 coll_df = coll_df[
-                    ["name", "alias", "data_collection", "description", "vintage", "units"]
+                    [
+                        "name",
+                        "alias",
+                        "data_collection",
+                        "description",
+                        "vintage",
+                        "units",
+                    ]
                 ]
 
             # append the list
