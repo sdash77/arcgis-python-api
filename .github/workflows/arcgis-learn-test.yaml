@@ -25,7 +25,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       
-      - name: run tests in conda env
+      - name: run tests in arcgis_learn supported conda env - Linux
         run: |
           PYTHON=/root/anaconda3/envs/jenkins_03_April_25/bin/python
           echo "Python Version:"
@@ -55,12 +55,12 @@ jobs:
           echo "TEST SCRIPT STARTS"
           "$PYTHON" -m pytest "$TEST_FILE" -v -s --color=yes --junit-xml="$REPORT_FILE" --disable-warnings
 
-- name: Publish test results
-  uses: dorny/test-reporter@v1
-  if: always()
-  with:
-    name: PyTest Results
-    path: ${{ github.workspace }}/tests/_output/test-results.xml
-    reporter: java-junit
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: PyTest Results
+          path: ${{ github.workspace }}/tests/_output/test-results.xml
+          reporter: java-junit
 
           
