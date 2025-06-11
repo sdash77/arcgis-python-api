@@ -1145,10 +1145,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         # Use wkt if possible, this solves issues occurring with polygons and multipolygons
         if hasattr(shapely_geometry, "wkt"):
-            return geom_cls(
-                shapely_geometry.wkt,
-                spatial_reference=spatial_reference or {"wkid": 4326},
-            )
+            geom = geom_cls(shapely_geometry.wkt)
+            if spatial_reference:
+                geom["spatialReference"] = spatial_reference
+            return geom
 
         # If no wkt is available, use the mapping function to convert to GeoJSON
         # Convert Shapely geometry to GeoJSON
