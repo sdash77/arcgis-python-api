@@ -126,7 +126,7 @@ data = {
         "model": SingleShotDetector,
         "model_test": "ssd_test",
         "prepare_data": {
-            "path": os.path.join(data_folder, "100_cracks_datas"),
+            "path": os.path.join(data_folder, "100_cracks_data"),
             "batch_size": None,
             "dataset_type": "PASCAL_VOC_rectangles",
         },
