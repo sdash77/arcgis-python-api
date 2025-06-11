@@ -6,11 +6,11 @@ import warnings
 import pandas as pd
 
 from ._llm import LLM
+from arcgis.features import FeatureSet
 
 try:
     from ._ner_spacy import _SpacyEntityRecognizer
     from .._utils._ner_utils import spaCyNERDatabunch
-    from arcgis.features import FeatureSet
 
     warnings.filterwarnings("ignore", category=UserWarning)
     HAS_SPACY = True

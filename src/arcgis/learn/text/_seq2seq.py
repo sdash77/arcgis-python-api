@@ -7,6 +7,8 @@ import json
 import warnings
 import traceback
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
+from typing import Tuple, List, Union
+from arcgis.features import FeatureSet
 
 HAS_FASTAI = True
 
@@ -34,7 +36,6 @@ try:
         seq2seq_acc,
         calculate_bleu,
     )
-    from typing import Tuple, List, Union
     from ._model_extension_text import TextModelExtension
     from .._utils.text_transforms import TransformersBaseTokenizer, TransformersVocab
     from ._arcgis_transformer import ModelBackbone, infer_model_type
@@ -46,7 +47,6 @@ try:
         transformer_seq_length,
     )
     from transformers import logging
-    from arcgis.features import FeatureSet
     from .._utils.llm_utils import data_sanity_llm
     from ._llm import LLM
 except Exception as e:
