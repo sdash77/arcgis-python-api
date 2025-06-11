@@ -64,6 +64,5 @@ jobs:
           name: Test Results - arcgis.learn API
           path: ${{github.workspace}}/tests/_output/test-results.xml
           reporter: java-junit
-          fail-on-error: false
 
           
