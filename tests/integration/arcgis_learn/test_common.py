@@ -5,6 +5,7 @@
 
 
 import os
+import glob
 import warnings
 warnings.filterwarnings('ignore')
 import sys
@@ -17,21 +18,8 @@ parent_dir = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(parent_dir))
 
 from utils._common import *
-
-# ARCGIS_FOLDER = os.environ.get('ARCGIS_FOLDER')
-# if ARCGIS_FOLDER:
-#     custom_arcgis_path = Path(ARCGIS_FOLDER)
-#     if str(custom_arcgis_path) not in sys.path:
-#         sys.path.insert(0, str(custom_arcgis_path))
-# else:
-#     print("Warning: ARCGIS_FOLDER environment variable is not set.")
-
-import glob
-print("Smoke Tests Running...")
+print("Smoke tests are running...")
 TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
-# sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
-# from utils._common import run_unittest_on
-
 smoke_test_paths = glob.glob(
         os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
     )
@@ -51,7 +39,6 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
-import glob
 import gc
 from sys import platform
 import pandas as pd
