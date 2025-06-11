@@ -6,15 +6,20 @@ on:
     paths:
       - 'src/arcgis/learn/**'
       - 'tests/integration/arcgis_learn/**'
+  workflow_dispatch:
+    inputs:
+      env_name:
+        description: "Name of Conda environment"
+        required: false
+        default: "jenkins_03_April_25"
+      test_file:
+        description: "Path to test file"
+        required: false
+        default: "tests/integration/arcgis_learn/test_common.py"
 
 permissions:
   contents: read
-  pull-requests: write
-  checks: write
-
-concurrency:
-  group: test-runner-lock
-  cancel-in-progress: false 
+  pull-requests: read
 
 jobs:
   trigger-pull_request:
@@ -24,11 +29,14 @@ jobs:
       - name: Checkout PR code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      
-      - name: run tests in arcgis_learn supported conda env
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Run tests in arcgis_learn supported conda env - Linux
         run: |
-          PYTHON=/root/anaconda3/envs/jenkins_03_April_25/bin/python
+          ENV_NAME="${{ github.event.inputs.env_name || 'jenkins_03_April_25' }}"
+          TEST_FILE="${{ github.event.inputs.test_file || 'tests/integration/arcgis_learn/test_common.py' }}"
+          PYTHON="/root/anaconda3/envs/$ENV_NAME/bin/python"
+
           echo "Python Version:"
           $PYTHON --version
 
@@ -38,8 +46,9 @@ jobs:
           echo "Setting up required environment variables"
           WORKSPACE=$(pwd)
           echo "copy KNN file"
-          scp "/root/test_automation/dlls/nearest_neighbors.cpython-311-x86_64-linux-gnu.so" "$WORKSPACE/src/arcgis/learn/_utils/nearest_neighbors.cpython-311-x86_64-linux-gnu.so";
+          scp "/root/test_automation/dlls/nearest_neighbors.cpython-311-x86_64-linux-gnu.so" "$WORKSPACE/src/arcgis/learn/_utils/nearest_neighbors.cpython-311-x86_64-linux-gnu.so"
           echo "File copied to $WORKSPACE/src/arcgis/learn/_utils"
+
           export LC_ALL=en_US.UTF-8
           export LC_CTYPE=en_US.UTF-8
           export run_nightly=0
@@ -49,27 +58,24 @@ jobs:
           export TESTFOLDERPATH="$WORKSPACE/tests"
           export PYTHONPATH="$WORKSPACE/tests"
 
-          TEST_FILE=$WORKSPACE/tests/integration/arcgis_learn/test_common.py
           REPORT_FILE=$WORKSPACE/tests/_output/test-results.xml
 
           echo "============================="
           echo "TEST SCRIPT STARTS"
           "$PYTHON" -m pytest "$TEST_FILE" -v -s --color=yes --junit-xml="$REPORT_FILE" --disable-warnings
-      
+
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: ${{github.workspace}}/tests/_output/test-results.xml
+          path: ${{ github.workspace }}/tests/_output/test-results.xml
 
       - name: Publish test results
-        uses: dorny/test-reporter@v1
         if: always()
+        uses: dorny/test-reporter@v1
         with:
           name: Test Results - arcgis.learn API
-          path: ${{github.workspace}}/tests/_output/test-results.xml
+          path: ${{ github.workspace }}/tests/_output/test-results.xml
           reporter: java-junit
           fail-on-error: false
-
-          
