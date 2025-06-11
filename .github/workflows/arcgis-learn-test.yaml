@@ -6,8 +6,7 @@ on:
   paths:
       - 'src/arcgis/learn/**'
       - 'tests/integration/arcgis_learn/**'
-  workflow_dispatch:
-
+      
 permissions:
   contents: read
   pull-requests: read
