@@ -26,6 +26,20 @@ from utils._common import *
 # else:
 #     print("Warning: ARCGIS_FOLDER environment variable is not set.")
 
+print("Smoke Tests Running...")
+TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
+sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
+from utils._common import run_unittest_on
+
+smoke_test_paths = glob.glob(
+        os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
+    )
+smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
+run_unittest_on(
+    smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
+)
+print("Smoke tests Ends...")
+
 import arcgis
 print("Working arcgis file:", arcgis.__file__)
 
@@ -1118,21 +1132,6 @@ class TestTraining(unittest.TestCase):
                 )
         print("Test:" + self._testMethodName + "is completed.\n")
         print("------------------------------------------------------------------\n")
-
-    def test_smoke(self):
-        print("Smoke Tests Running...")
-        TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
-        sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
-        from utils._common import run_unittest_on
-
-        smoke_test_paths = glob.glob(
-                os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
-            )
-        smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
-        run_unittest_on(
-            smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
-        )
-        print("Smoke tests Ends...")
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter, skip_on_empty=True)
