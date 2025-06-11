@@ -107,6 +107,10 @@ class NotebookDataAccess:
         self._url = url
         self._gis = gis
         self._username = gis.users.me.username
+        if not self._check_user_has_workspace(self._username):
+            raise ValueError(
+                f"User {self._username} does not have a workspace in the organization."
+            )
 
     # --------------------------------------------------------------------
     def __repr__(self):
@@ -140,7 +144,25 @@ class NotebookDataAccess:
         ]
 
     # ---------------------------------------------------------------------
-    def transfer_user_workspace(
+    def _check_user_has_workspace(self, username: str) -> bool:
+        """
+        Checks if the user has a workspace in the organization.
+
+        :param user: User instance or username to check.
+        :return: True if the user has a workspace, False otherwise.
+        """
+        workspace_url = f"{self._url}/listUserWorkspaces".replace("/azureblob/", "/")
+
+        try:
+            res = self._gis.session.get(workspace_url).json()
+        except Exception as ex:
+            raise RuntimeError(f"Failed to fetch workspaces: {ex}")
+
+        all_workspaces = res.get("Containers", [])
+        return any(workspace.get("Name") == username for workspace in all_workspaces)
+
+    # ---------------------------------------------------------------------
+    def transfer_workspace(
         self,
         source_user: User | str,
         target_user: User | str | None = None,
@@ -166,30 +188,51 @@ class NotebookDataAccess:
 
         :return: True if the transfer was successful, False or an error if it was not.
         """
-        # check username exists in the org
-        if target_user is None:
-            target_username = self._username
-            target_user = self._gis.users.me
-        elif isinstance(target_user, User):
-            target_username = target_user.username
-        else:
-            target_username = target_user
-            target_user = self._gis.users.get(target_user)
+        ### Check if the user is an administrator and can transfer workspaces
+        me = self._gis.users.me
+        privileges = me.privileges or []
+        is_admin = (
+            me.role == "org_admin"
+            if self._gis._is_arcgisonline
+            else "portal:admin:managerServers" in privileges
+            and "portal:admin:manageSecurity" in privileges
+        )
+        if not is_admin:
+            raise ValueError(
+                "Only organization administrators can transfer user workspaces."
+            )
+
+        # Resolve source_user
         if isinstance(source_user, User):
             source_username = source_user.username
         else:
             source_username = source_user
-            source_user = self._gis.users.get(source_user)
+            source_user = self._gis.users.get(source_username)
 
-        # check source user exists in the org
+        # Resolve target_user
+        if target_user is None:
+            target_user = self._gis.users.me
+            target_username = target_user.username
+        elif isinstance(target_user, User):
+            target_username = target_user.username
+        else:
+            target_username = target_user
+            target_user = self._gis.users.get(target_username)
+
+        # Ensure users exist
         if not source_user or not target_user:
             raise ValueError(
-                f"Source user {source_username} or target user {target_username} does not exist in the organization."
+                f"Source user '{source_username}' or target user '{target_username}' does not exist in the organization."
             )
-        # check the target user is an administrator
-        if not target_user.role or target_user.role != "org_admin":
+
+        # Check both users have workspaces
+        if not self._check_user_has_workspace(source_username):
             raise ValueError(
-                f"User {target_user} is not an administrator. Only administrators can transfer user workspaces."
+                f"Source user '{source_username}' does not have a workspace in the organization."
+            )
+        if not self._check_user_has_workspace(target_username):
+            raise ValueError(
+                f"Target user '{target_username}' does not have a workspace in the organization."
             )
 
         # if folder_name is None, create the default folder name
@@ -203,13 +246,20 @@ class NotebookDataAccess:
             "userName": source_username,
             "targetUserName": target_username,
         }
-        res = self._gis.session.post(url, params).json()
-        if "status" in res and res["status"] == "success":
+
+        try:
+            res = self._gis.session.post(url, params).json()
+        except Exception as ex:
+            raise RuntimeError(f"Workspace transfer request failed: {ex}")
+
+        if res.get("status") == "success":
             return True
         elif "error" in res:
             raise ValueError(
                 f"Error transferring user workspace: {res['error']['message']}"
             )
+        else:
+            raise ValueError(f"Unknown error during workspace transfer: {res}")
 
     # ---------------------------------------------------------------------
     def create_folder(self, folder: str) -> bool:
