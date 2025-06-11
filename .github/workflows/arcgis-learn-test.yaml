@@ -3,10 +3,10 @@ name: arcgis-learn-api-confidence-tests
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  paths:
+    paths:
       - 'src/arcgis/learn/**'
       - 'tests/integration/arcgis_learn/**'
-      
+
 permissions:
   contents: read
   pull-requests: read
@@ -25,7 +25,7 @@ jobs:
         run: |
           PYTHON=/root/anaconda3/envs/jenkins_03_April_25/bin/python
           echo "Python Version:"
-          $PYTHON --Version
+          $PYTHON --version
 
           echo "Inside directory"
           pwd
