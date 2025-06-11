@@ -15,7 +15,8 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/linux-64/anyio-4.7.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
-      - conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_49.conda
+      - conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_64.conda
+      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_640.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/argon2-cffi-bindings-21.2.0-py313h5eee18b_1.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/arrow-cpp-19.0.0-h865e1df_2.tar.bz2
@@ -381,7 +382,8 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/anyio-4.7.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/appnope-0.1.3-py313hecd8cb5_0.tar.bz2
-      - conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_49.conda
+      - conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_64.conda
+      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_640.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/argon2-cffi-bindings-21.2.0-py313h46256e1_1.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/arrow-cpp-19.0.0-h2a1e5b1_2.tar.bz2
@@ -713,7 +715,8 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/anyio-4.7.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/appnope-0.1.3-py313hca03da5_0.tar.bz2
-      - conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_49.conda
+      - conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_64.conda
+      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_640.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/argon2-cffi-bindings-21.2.0-py313h80987f9_1.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/arrow-cpp-19.0.0-h0b7d223_2.tar.bz2
@@ -1044,7 +1047,8 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/win-64/anyio-4.7.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
-      - conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_49.conda
+      - conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_64.conda
+      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_640.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/argon2-cffi-bindings-21.2.0-py313h827c3e9_1.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/arrow-cpp-19.0.0-h33d5241_2.tar.bz2
@@ -5919,9 +5923,9 @@ packages:
   license_family: BSD
   size: 12154
   timestamp: 1728587453104
-- conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_49.conda
-  sha256: 290b61b0bf398ba845d99a485d5efde8d3a2635862514c7983e68bc2f08f9275
-  md5: fac164da8763ae11f4ce191dcfa1212b
+- conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_64.conda
+  sha256: b5f28916404f698db4d3190ce3cefd37f02cd3ecd5368b99647f16cb3805fe0c
+  md5: 05d0a89f10ae3546776d0c276df84100
   depends:
   - cachetools
   - certifi
@@ -5953,11 +5957,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 7707098
-  timestamp: 1748347848634
-- conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_49.conda
-  sha256: 00d2661171085089f471ab1a2cbe2305ad77989583cb92d399844167ce66d0b5
-  md5: 4ba5c778ff075b3f9225e0ab3a78ec6b
+  size: 7649173
+  timestamp: 1749643860819
+- conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_64.conda
+  sha256: fde55ff38a7f59685de356bd8cb06b88f72a5b982877d0d45bb414b171e94152
+  md5: bab8e2a4efc3086bac99c6c3a2b1fc4b
   depends:
   - cachetools
   - certifi
@@ -5989,11 +5993,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 6811803
-  timestamp: 1748347863823
-- conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_49.conda
-  sha256: fb47bc039df54f79db88b84a678d4b65463f169cebb5debc333f3fe44fc22bc0
-  md5: 422ada2e1732e8cff9359669b029a52a
+  size: 6818216
+  timestamp: 1749643865137
+- conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_64.conda
+  sha256: 73deb0f9a3e53f118bacb4d7b196957ba92dd2cd7a6f8028072332f5b28cd916
+  md5: 53dad16952cdb6bf96b81cfddbc6503d
   depends:
   - cachetools
   - certifi
@@ -6025,11 +6029,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 7649453
-  timestamp: 1748347863823
-- conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_49.conda
-  sha256: 976bcbbb95bdaee8fb56d65dfdc6443e596b41172c2e6d5a9df47ed640a04d5c
-  md5: f28c46d2feaecb4ad4fe11cd27250564
+  size: 7667961
+  timestamp: 1749643865137
+- conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_64.conda
+  sha256: 051ad123f7833e860c57bc80ef6e3fc34bb303f1000e99e25bbee024fd3f8bac
+  md5: 2072c66e62c1cbcda839f840322fc59b
   depends:
   - cachetools
   - certifi
@@ -6062,8 +6066,23 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 7606808
-  timestamp: 1748348273288
+  size: 7591883
+  timestamp: 1749644112612
+- conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_640.conda
+  sha256: d5ca3b075f48d0ef4168e15339bb5ac0832566f57fccaa8565733c9782332a5a
+  md5: 1ece55327a162f22d472ffa94cf2a917
+  depends:
+  - anywidget 0.9.13.*
+  - arcgis >=2.4.0,<2.5.0
+  - ipywidgets >=8.0.0
+  - jupyterlab >=4.0.7,<5
+  - matplotlib-inline
+  - pandas >=2.0.0,<2.3.0
+  - pydantic >=2.8.2,<3
+  - python >=3.10,<3.14
+  license: Esri Master License Agreement (MLA)
+  size: 6335066
+  timestamp: 1749683548909
 - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-23.1.0-pyhd8ed1ab_1.conda
   sha256: 7af62339394986bc470a7a231c7f37ad0173ffb41f6bc0e8e31b0be9e3b9d20f
   md5: a7ee488b71c30ada51c48468337b85ba
