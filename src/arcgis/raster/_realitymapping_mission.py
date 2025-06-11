@@ -196,36 +196,6 @@ class RMMission:
         resp = requests.get(url, headers=headers, verify=False).json()
         return resp
 
-    def _update_mission_json(self, mission_json):
-        rm = self._project_item.resources
-        resource = self._resource_info
-        resource_name = resource["resource"]
-
-        resource_props = resource["properties"]
-        import json
-
-        properties = json.loads(resource["properties"])
-
-        import tempfile, uuid, os
-
-        fname = resource_name.split("/")[1]
-        temp_dir = tempfile.gettempdir()
-        temp_file = os.path.join(temp_dir, fname)
-        with open(temp_file, "w") as writer:
-            json.dump(mission_json, writer)
-        del writer
-
-        try:
-            rm.update(
-                file=temp_file,
-                text=mission_json,
-                folder_name="flights",
-                file_name=fname,
-                properties=properties,
-            )
-        except:
-            raise RuntimeError("Error updating the mission resource")
-
     def delete_product(self, product):
         """
         The ``delete_product`` method deletes the product specified by the product parameter.
