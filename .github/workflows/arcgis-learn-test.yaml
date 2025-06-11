@@ -27,6 +27,22 @@ jobs:
           echo "Python Version:"
           $PYTHON --version
 
-          echo "Inside directory"
+          echo "Working directory"
           pwd
+
+          echo "Setting up required environment variables"
+          WORKSPACE = pwd
+          export LC_ALL=en_US.UTF-8; export LC_CTYPE=en_US.UTF-8;
+          export run_nightly=0; export run_inference=0; export run_weekly=0; export run_backbones=0;
+          export PYTHONPATH="$WORKSPACE/tests"
+          SMOKE_DIR="$WORKSPACE/tests/smoke"
+
+          echo "Running smoke tests from: $SMOKE_DIR"
+          echo "======================================="
+          for test_file in "$SMOKE_DIR"/*.py; do
+            $PYTHON "$test_file"
+            exit_code=$?
+          
+          echo "All smoke tests passed."
+          echo "======================================="
           
