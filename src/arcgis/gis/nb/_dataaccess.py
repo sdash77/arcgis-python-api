@@ -154,7 +154,7 @@ class NotebookDataAccess:
         workspace_url = f"{self._url}/listUserWorkspaces".replace("/azureblob/", "/")
 
         try:
-            res = self._gis.session.get(workspace_url).json()
+            res = self._gis.session.get(workspace_url, params={"f": "json"}).json()
         except Exception as ex:
             raise RuntimeError(f"Failed to fetch workspaces: {ex}")
 
@@ -194,7 +194,7 @@ class NotebookDataAccess:
         is_admin = (
             me.role == "org_admin"
             if self._gis._is_arcgisonline
-            else "portal:admin:managerServers" in privileges
+            else "portal:admin:manageServers" in privileges
             and "portal:admin:manageSecurity" in privileges
         )
         if not is_admin:
@@ -244,9 +244,11 @@ class NotebookDataAccess:
             "f": "json",
             "targetFoldername": folder_name,
             "userName": source_username,
-            "targetUserName": target_username,
         }
-
+        if self._gis._is_arcgisonline:
+            params["targetUserName"] = target_username
+        else:
+            params["targetUsername"] = target_username
         try:
             res = self._gis.session.post(url, params).json()
         except Exception as ex:
