@@ -1812,7 +1812,7 @@ class RMProject:
         :return: An integer representing the number of missions
         """
         if not self._mission_list:
-            self.missions()
+            len(self.missions)
         return len(self._mission_list)
 
     @property
