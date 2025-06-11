@@ -1,7 +1,4 @@
 from __future__ import annotations
-import sys
-
-sys.path.insert(0, r"C:\svn\geosaurus_master\src")
 from arcgis.gis import GIS, Item, User
 from arcgis.auth import EsriSession
 from typing import Iterable, Union
