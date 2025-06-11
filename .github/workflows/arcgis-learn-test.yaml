@@ -41,12 +41,13 @@ jobs:
           export run_inference=0
           export run_weekly=0
           export run_backbones=0
-          export PYTHONPATH="$WORKSPACE/tests"
+          export TESTFOLDERPATH="$WORKSPACE/tests"
 
-          echo "Running full test suite"
-          $PYTHON $WORKSPACE/automation/jenkins_entry_point.py \
-            --automation-type test_suite \
-            --suite-path /root/test_automation/suites/learn_pr_suite.yml \
-            --no-browser-output
+          TEST_FILE=$WORKSPACE/tests/integration/arcgis_learn/test_common.py
+          REPORT_FILE=$WORKSPACE/tests/_output/test-results.xml
+
+          echo "============================="
+          echo "TEST SCRIPT STARTS"
+          "$PYTHON" -m pytest "$TEST_FILE" -v -s --color=yes --junit-xml="$REPORT_FILE" --disable-warnings
 
           

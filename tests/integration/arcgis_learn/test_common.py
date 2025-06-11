@@ -169,6 +169,19 @@ failure_score = []
 
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
+    print("Run Smoke tests...")
+    TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
+    sys.path.append(os.path.abspath(os.path.join(TESTFOLDERPATH)))
+    from utils._common import run_unittest_on
+
+    smoke_test_paths = glob.glob(
+            os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
+        )
+    smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
+    run_unittest_on(
+        smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
+    )
+
     global authorization_data
     authorization_data = setuposenviron()
     if os.environ.get("run_nightly") == "1":
