@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\svn\geosaurus_master\src")
-sys.path.insert(1, r"C:\svn\geosaurus_master\tests")
 import unittest
 import datetime as _dt
 from utils.decorators import integration_test, from_to_profiles, profiles
@@ -23,15 +20,19 @@ class TestDeveloperCredentialsEnterprise(unittest.TestCase):
             assert self.gis.admin.developer_credentials is None
     
     def test_list(self):
-        dc: DeveloperCredentialManager =  self.gis.admin.developer_credentials
-        if dc:
+        mgr: DeveloperCredentialManager =  self.gis.admin.developer_credentials
+        if not mgr:
+            self.skipTest(f"Developer Credential Manager not available on {self.gis.url}")
+        else:
             for token in mgr.list():
                 assert isinstance(token, DeveloperCredential)
                 break
     
     def test_developer_credential(self):
         mgr: DeveloperCredentialManager =  self.gis.admin.developer_credentials
-        if mgr:
+        if not mgr:
+            self.skipTest(f"Developer Credential Manager not available on {self.gis.url}")
+        else:
             expiration = _dt.datetime.now() + _dt.timedelta(weeks=35)
             credential: DeveloperCredential = mgr.create(title="ArcGIS Python API Token",
                        privileges=[TokenPrivilege.FEATURES_USER_EDIT,
@@ -56,14 +57,18 @@ class TestDeveloperCredentialsAGOL(unittest.TestCase):
     
     def test_list(self):
         mgr: DeveloperCredentialManager =  self.gis.admin.developer_credentials
-        if mgr:
+        if not mgr:
+            self.skipTest(f"Developer Credential Manager not available on {self.gis.url}")
+        else:
             for token in mgr.list():
                 assert isinstance(token, DeveloperCredential)
                 break
     
     def test_developer_credential(self):
         mgr: DeveloperCredentialManager =  self.gis.admin.developer_credentials
-        if mgr:
+        if not mgr:
+            self.skipTest(f"Developer Credential Manager not available on {self.gis.url}")
+        else:
             expiration = _dt.datetime.now() + _dt.timedelta(weeks=35)
             credential: DeveloperCredential = mgr.create(title="ArcGIS Python API Token",
                        privileges=[TokenPrivilege.FEATURES_USER_EDIT,
