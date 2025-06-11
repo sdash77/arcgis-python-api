@@ -381,6 +381,29 @@ class EsriSession:
         return self._session.verify
 
     # ----------------------------------------------------------------------
+    def _rebuild_adapter(
+        self,
+        *,
+        verify: bool | None = None,
+        pki_data: str | None = None,
+        pki_password: str | None = None,
+    ):
+        old_adapter = self._adapter
+
+        self._adapter = EsriTrustStoreAdapter(
+            max_retries=self._retry,
+            assert_hostname=old_adapter.assert_hostname,
+            verify=verify if verify is not None else old_adapter.verify,
+            additional_certs=old_adapter.additional_certs,
+            pki_data=pki_data if pki_data is not None else self._x509_cert,
+            pki_password=pki_password if pki_password is not None else self._x509_pw,
+        )
+
+        old_adapter.close()
+        self._session.mount("http://", self._adapter)
+        self._session.mount("https://", self._adapter)
+
+    # ----------------------------------------------------------------------
     @verify.setter
     def verify(self, value: bool):
         if not isinstance(value, bool):
@@ -397,18 +420,7 @@ class EsriSession:
             return
 
         self._session.verify = value
-        old_adapter: EsriTrustStoreAdapter = self._adapter
-        self._adapter = EsriTrustStoreAdapter(
-            max_retries=self._retry,
-            assert_hostname=old_adapter.assert_hostname,
-            verify=value,
-            additional_certs=old_adapter.additional_certs,
-            pki_data=self._x509_cert,
-            pki_password=self._x509_pw,
-        )
-        old_adapter.close()
-        self._session.mount("http://", self._adapter)
-        self._session.mount("https://", self._adapter)
+        self._rebuild_adapter(verify=value)
 
     # ----------------------------------------------------------------------
     def mount(self, prefix: str, adapter: "HTTPAdapter"):
@@ -491,17 +503,7 @@ class EsriSession:
         if cert:
             self._cert = cert
             self._x509_cert, self._x509_pw = cert
-            self._adapter: EsriTrustStoreAdapter = EsriTrustStoreAdapter(
-                max_retries=self._retry,
-                assert_hostname=self._adapter.assert_hostname,
-                verify=self._adapter.verify,
-                additional_certs=self._adapter.additional_certs,
-                pki_data=cert[0],
-                pki_password=cert[1],
-            )
-
-            self.mount("https://", self._adapter)
-            self.mount("http://", self._adapter)
+            self._rebuild_adapter(pki_data=cert[0], pki_password=cert[1])
 
     # ----------------------------------------------------------------------
     def get(self, url, **kwargs) -> "requests.Response":
