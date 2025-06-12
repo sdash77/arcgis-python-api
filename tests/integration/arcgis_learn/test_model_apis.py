@@ -54,10 +54,16 @@ def modelAPIs_backbones(model, model_object, num_epochs, data_path, model_test, 
     lr_val = model_object.lr_find(allow_plot=False)
     model_object.fit(num_epochs, lr=lr_val, checkpoint=False)
     model_object.plot_losses()
-    model_object.show_results()
+    if bbone == "gradcam":
+        model_object.show_results(gradcam = True)
+    else:
+        model_object.show_results()
     # save model
     d_path = os.path.join(data_folder, data_path, "models", model_test+"_"+urllib.parse.quote(bbone, safe=""))
-    model_save_path = model_object.save(f"{d_path}")
+    if bbone == "gradcam":
+        model_save_path = model_object.save(f"{d_path}", gradcam = True)
+    else:
+        model_save_path = model_object.save(f"{d_path}")
     #computing accuracy
     if regression_parameter == "confusion_matrix":
         array = ClassificationInterpretation.from_learner(
@@ -84,6 +90,10 @@ def modelAPIs_backbones(model, model_object, num_epochs, data_path, model_test, 
         print("accuracy value for ", model_test, "is: ", result)
     print("testing model object load")
     model_object.load(str(model_save_path) + os.sep + f"{model_test}_{urllib.parse.quote(bbone, safe='')}.emd")
+    if bbone == "gradcam":
+        print("making gradcam prediction on image at path: ", os.path.join(data_folder, data_path, "images", "000000000001.tif"))
+        predicted_class = model_object.predict(os.path.join(data_folder, data_path, "images", "000000000001.tif"), visualize=True, gradcam=True)
+        print("gradcam prediction made on image ", predicted_class)
     # From model with and without data bunch.
     print("testing model object from model w/o data")
     model_object = model.from_model(
@@ -117,7 +127,10 @@ def backboneTestCases(
     from arcgis.learn import prepare_data
     data = prepare_data(**preparedata)
     data.show_batch()
-    if bbone == "dofa_base":
+    if bbone == "gradcam":      #for gradcam
+        model_object = model(data)
+        print("model initialized for gradcam")
+    elif bbone == "dofa_base":
         if is_ms:
             if model_test == "deeplab_test_ms":
                 model_object = model(data, backbone = bbone)
@@ -148,85 +161,116 @@ def fairnessTestCases(
 ):
     print("running test case for ", model_name, model_category)
     data_df = pd.read_csv(preparedata["path"])
-    test_size = 0.25
-    train, test = train_test_split(data_df, test_size = test_size)
-    if(model_category == "classification"):
-        X = [
-            ('Age',True),
-            ('Workclass',True),
-            ('Education',True),
-            'Education-num',
-            ('Marital-status',True),
-            ('Occupation',True),
-            ('Relationship',True),
-            ('Race',True),
-            ('Gender',True),
-            'Capital-gain',
-            'Capital-loss',
-            'Hours-per-week',
-            ('Native-country',True),
-        ]
-        preprocessors = [('Education-num','Capital-gain', 'Capital-loss', 'Hours-per-week', MinMaxScaler())]
-        data = prepare_tabulardata(train, 'Salary', explanatory_variables=X, preprocessors=preprocessors)
-        print("preparing model instance for classification")
-        model_instance = model(data, "lightgbm.LGBMClassifier", n_estimators=500, random_state=43)
+    if model_test == 'mlmodel_test':
+        print('setting training data for ml model')
+        test_size = 0.25
+        train, test = train_test_split(data_df, test_size = test_size)
+        if(model_category == "classification"):
+            X = [
+                ('Age',True),
+                ('Workclass',True),
+                ('Education',True),
+                'Education-num',
+                ('Marital-status',True),
+                ('Occupation',True),
+                ('Relationship',True),
+                ('Race',True),
+                ('Gender',True),
+                'Capital-gain',
+                'Capital-loss',
+                'Hours-per-week',
+                ('Native-country',True),
+            ]
+            preprocessors = [('Education-num','Capital-gain', 'Capital-loss', 'Hours-per-week', MinMaxScaler())]
+            data = prepare_tabulardata(train, 'Salary', explanatory_variables=X, preprocessors=preprocessors)
+            print("preparing model instance for classification")
+            model_instance = model(data, "lightgbm.LGBMClassifier", n_estimators=500, random_state=43)
+            model_instance.fit()
+            model_instance.fairness_score(sensitive_feature ='Race')
+            model_instance.fairness_score(sensitive_feature ='Gender')
+            print("mitigating bias for classification")
+            fairness_args = {
+                'sensitive_feature': 'Race',
+                'mitigation_type': "threshold_optimizer",
+                'mitigation_constraint':'demographic_parity',
+            }
+            model_instance = model(data, 'sklearn.ensemble.RandomForestClassifier', fairness_args=fairness_args, random_state=43)
+            model_instance.fit()
+            d_path = os.path.join(data_folder_tabular, datapath, "models", "classification", model_test)
+            model_save_path = model_instance.save(f"{d_path}")
+        else:
+            X = [
+                ('Age',True),
+                ('Workclass',True),
+                ('Education',True),
+                'Education-num',
+                ('Marital-status',True),
+                ('Occupation',True),
+                ('Relationship',True),
+                ('Race',True),
+                ('Gender',True),
+                'Capital-gain',
+                'Capital-loss',
+                'Hours-per-week',
+                ('Native-country',True),
+            ]
+            preprocessors =[('Education-num','Capital-gain', 'Capital-loss', 'Hours-per-week', MinMaxScaler())]
+            data = prepare_tabulardata(train, 'annual_salary_$', explanatory_variables=X)
+            print("preparing model instance for regression")
+            model_instance = model(data, 'sklearn.ensemble.RandomForestRegressor', n_estimators=500, random_state=43)
+            model_instance.fit()
+            model_instance.fairness_score(sensitive_feature ='Race')
+            model_instance.fairness_score(sensitive_feature ='Gender')
+            print("mitigating bias for regression")
+            fairness_args = {
+                'sensitive_feature': 'Gender',
+                'mitigation_type': 'grid_search',
+                'mitigation_constraint':'ZeroOneLoss',
+            }
+            model_instance = model(data, 'sklearn.ensemble.RandomForestRegressor', fairness_args=fairness_args, n_estimators=500, random_state=43)
+            model_instance.fit()
+            d_path = os.path.join(data_folder_tabular, datapath, "models", "regression", model_test)
+            model_save_path = model_instance.save(f"{d_path}")
     else:
-        X = [
-            ('Age',True),
-            ('Workclass',True),
-            ('Education',True),
-            'Education-num',
-            ('Marital-status',True),
-            ('Occupation',True),
-            ('Relationship',True),
-            ('Race',True),
-            ('Gender',True),
-            'Capital-gain',
-            'Capital-loss',
-            'Hours-per-week',
-            ('Native-country',True),
-        ]
-        preprocessors =[('Education-num','Capital-gain', 'Capital-loss', 'Hours-per-week', MinMaxScaler())]
-        data = prepare_tabulardata(train, 'annual_salary_$', explanatory_variables=X)
-        print("preparing model instance for regression")
-        model_instance = model(data, 'sklearn.ensemble.RandomForestRegressor', n_estimators=500, random_state=43)
+        print('setting training data for auto ml')
+        if(model_category == "classification"):
+            X = ['capacity_f', 'wind_speed', 'dayl__s_', 'prcp__mm_d','srad__W_m_',('swe__kg_m_', True),'tmax__deg','tmin__deg','vp__Pa_']
+            data = prepare_tabulardata(data_df, 'altitude_class', explanatory_variables=X)
+            model_instance = model(data=data, eval_metric='accuracy')
+            model_instance.fit()
+            model_instance.fairness_score(sensitive_feature ='swe__kg_m_', fairness_metrics="demographic_parity_difference", visualize=True)
+            print("mitigating bias for classification")
+            model_instance = model(data, sensitive_variables= ['swe__kg_m_'], fairness_metric = 'demographic_parity_ratio')
+            model_instance.fit()
+            model_instance.report()
+            d_path = os.path.join(data_folder_tabular, datapath, "models", "classification", model_test)
+            model_save_path = model_instance.save(f"{d_path}")
+        else:
+            X = [('altitude_m',True), 'wind_speed', 'dayl__s_', 'prcp__mm_d','srad__W_m_',('swe__kg_m_', True),'tmax__deg','tmin__deg','vp__Pa_']
+            data = prepare_tabulardata(data_df, 'capacity_f', explanatory_variables=X)
+            model_instance = model(data)
+            model_instance.fit()
+            model_instance.fairness_score(sensitive_feature ='altitude_m', fairness_metrics="RMSE", visualize=True)
+            print("mitigating bias for regression")
+            model_instance = model(data, sensitive_variables= ['altitude_m'], fairness_metric = 'group_loss_ratio')
+            model_instance.fit()
+            model_instance.report()
+            d_path = os.path.join(data_folder_tabular, datapath, "models", "regression", model_test)
+            model_save_path = model_instance.save(f"{d_path}")
+    print("common APIs for fairness models: regression and classification begin here")
     data.show_batch()
-    print("common APIs for regression and classification begin here")
-    model_instance.fit()
-    model_instance.fairness_score(sensitive_feature ='Race')
-    model_instance.fairness_score(sensitive_feature ='Gender')
-    print("fairness tested.. Now mitigating bias introduced by args ...")
-    if model_category=="classification":
-        print("mitigating bias for classification")
-        fairness_args = {
-            'sensitive_feature': 'Race',
-            'mitigation_type': "threshold_optimizer",
-            'mitigation_constraint':'demographic_parity',
-        }
-        model_instance = model(data, 'sklearn.ensemble.RandomForestClassifier', fairness_args=fairness_args, random_state=43)
-        model_instance.fit()
-        d_path = os.path.join(data_folder_tabular, datapath, "models", "classification", model_test)
-        model_save_path = model_instance.save(f"{d_path}")
-    else:
-        print("mitigating bias for regression")
-        fairness_args = {
-            'sensitive_feature': 'Gender',
-            'mitigation_type': 'grid_search',
-            'mitigation_constraint':'ZeroOneLoss',
-        }
-        model_instance = model(data, 'sklearn.ensemble.RandomForestRegressor', fairness_args=fairness_args, n_estimators=500, random_state=43)
-        model_instance.fit()
-        d_path = os.path.join(data_folder_tabular, datapath, "models", "regression", model_test)
-        model_save_path = model_instance.save(f"{d_path}")
     print("show results start")
     model_instance.show_results()
     print("show results end")
     result = model_instance.score()
     print("result is ", result)
-    model_instance.load(str(model_save_path) + os.sep + f"{model_test}.emd")
-    #from model with and without data
-    #model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd") #this API is failing currently. uncomment after the fix.
-    model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd", data)
+    if(model_test == 'mlmodel_test'):
+        model_instance.load(str(model_save_path) + os.sep + f"{model_test}.emd")
+        model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd", data)
+        model_instance = model.from_model(str(model_save_path) + os.sep + f"{model_test}.emd")
+    elif(model_test == 'automl_test'):
+        model_instance = model.from_model(str(model_save_path))
+    #from_model for automl doesn't work currently due to known issue of saving multiple randomly named .emd files. It also fails or MLmodel without data.
     del model_instance
     gc.collect()
     torch.cuda.empty_cache()
@@ -237,6 +281,24 @@ def update_parameter_backbones():
     parameter = []
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"]:
+            #To add test case for Gradcam
+            if key == "fc_singleLabel":
+                parameter.append(
+                    (
+                        key+"_gradcam",
+                        val["model_test"],
+                        val["model"],
+                        val["datapath"],
+                        val["prepare_data"],
+                        val["regression_parameter"],
+                        val["regression_test_score"],
+                        val["model_name"],
+                        val["regression_epochs"],
+                        is_ms,
+                        "gradcam", #here, we usually put backbone name, but using gradcam here for gradcam test case. gradcam is NOT a backbone
+                        False,
+                    )
+                )
             for bbone in val["backbones"]:
                 parameter.append(
                 (
@@ -295,7 +357,7 @@ def update_parameter_fairness():
             for model_category in val["model_categories"]:
                 parameter.append(
             (
-                key+model_category,
+                key+'_'+model_category,
                 val["model_test"],
                 val["model"],
                 val["datapath"],
