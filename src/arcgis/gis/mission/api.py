@@ -174,7 +174,7 @@ class Mission(object):
         ------------------     --------------------------------------------------------------------
         questions              Required String. A string formatted as a JSON Array containing questions and their fields. If an empty array is passed, the request is rejected. Used to represent the desired questions and their fields. Question types are based on Survey123 question type fields.
                                Available question types: Single Line Text, Single Choice, Number,
-                               Image, Multiline Text, Dropdown, Multiple Choice, and Date/Time.
+                               Image, Multiline Text, Dropdown, and Date/Time.
                                See https://doc.arcgis.com/en/survey123/browser/create-surveys/quickreferencecreatesurveys.htm#GUID-2D96112F-85B1-4C41-9C6F-A85BB6026A51 for details.
         ------------------     --------------------------------------------------------------------
         description	           Optional String. A description of the report.
