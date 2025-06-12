@@ -228,7 +228,7 @@ class NotebookDataAccess:
         # Check both users have workspaces
         if not self._check_user_has_workspace(source_username):
             raise ValueError(
-                f"Source user '{source_username}' does not have a workspace in the organization."
+                f"Source user '{source_username}' does not have a notebook workspace in the organization."
             )
         if not self._check_user_has_workspace(target_username):
             raise ValueError(
