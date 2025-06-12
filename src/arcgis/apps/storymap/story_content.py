@@ -1813,6 +1813,38 @@ class Map:
         return []
 
     # ----------------------------------------------------------------------
+    def update_map_layers(self, layer_id: str | int, visible: bool):
+        """
+        Update the visibility of the map layers.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        layer_id            Required String or integer index. The id of the layer to update. You can find the id in the map layers property.
+        ------------------  ----------------------------------------
+        visible             Required Boolean. True if the layer should be visible, False otherwise.
+        ==================  ========================================
+
+        :return:
+            The updated map layers that are being used.
+        """
+        if self._existing is True:
+            for i, layer in enumerate(
+                self._story._properties["resources"][self.resource_node]["data"][
+                    "mapLayers"
+                ]
+            ):
+                if layer["id"] == layer_id:
+                    self._story._properties["resources"][self.resource_node]["data"][
+                        "mapLayers"
+                    ][i]["visible"] = visible
+                    break
+        self._map_layers = self._story._properties["resources"][self.resource_node][
+            "data"
+        ]["mapLayers"]
+        return self._map_layers
+
+    # ----------------------------------------------------------------------
     def _calculate_z_value(self, scale: int = None):
         import math
 
