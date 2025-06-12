@@ -12,7 +12,7 @@ import arcgis
 import json
 from arcgis.gis import GIS, Item
 import collections
-from ._util import _flatten_adjust_settings, _nestify_context, _validate_settings, _update_settings
+from ._util import _flatten_adjust_settings, _nestify_context, _validate_settings, _update_settings, get_request, post_request
 import string as _string
 import random as _random
 
@@ -1700,7 +1700,9 @@ class RMProject:
     def _get_project_json(self):
         url = f"{self._reality_url}/projects/{self._project_item.itemid}"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
-        resp = requests.get(url, headers=headers, verify=False).json()
+        resp = get_request(url, headers=headers)
+        if not resp:
+            raise RuntimeError("Failed to retrieve project JSON.")
         return resp
     
     @property
@@ -1718,7 +1720,9 @@ class RMProject:
 
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/missions"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
-        res_list = requests.get(url, headers=headers, verify=False).json()
+        res_list = get_request(url, headers=headers)
+        if not res_list:
+            raise RuntimeError("Failed to retrieve missions for the project.")
         self._mission_list = []
         for mission in res_list:
             name = mission["name"]
@@ -1803,10 +1807,9 @@ class RMProject:
         
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/update"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
-        resp = requests.post(url, json=payload, headers=headers, verify=False).json()
-        if isinstance(resp, dict) and resp and "error" in resp:
-            message = resp.get("message", "No additional detail provided.")
-            Exception(f"Failed to process request: {message}")
+        resp = post_request(url, payload=payload, headers=headers)
+        if not resp:
+            raise RuntimeError("Failed to update project settings.")
         
     def create_mission(
         self,

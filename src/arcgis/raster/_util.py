@@ -1,4 +1,7 @@
+from functools import wraps
 import json as _json
+
+import requests
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 
 # from arcgis.raster._layer import Raster as _Raster
@@ -2817,3 +2820,32 @@ def _update_settings(default_settings, input_settings):
             _update_settings(default_settings[key], value)  # Recursively update
         else:
             default_settings[key] = value  # Update value directly
+
+def request_handler(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            response = func(*args, **kwargs)
+            if "is_delete_request" in kwargs and kwargs["is_delete_request"]:
+                response_op = response.text
+            else:
+                response_op = response.json()
+        except Exception as e:
+            _LOGGER.warning(f"Failed to process request: {e}")
+            return None
+
+        if isinstance(response_op, dict) and response_op and "error" in response_op:
+            message = response_op.get("message", "No additional detail provided.")
+            _LOGGER.error(f"Failed to process request: {message}")
+            return None
+
+        return response_op
+    return wrapper
+
+@request_handler
+def get_request(url, headers):
+    return requests.get(url, headers=headers, verify=False)
+
+@request_handler
+def post_request(url, payload, headers, **kwargs):
+    return requests.post(url, json=payload, headers=headers, verify=False)

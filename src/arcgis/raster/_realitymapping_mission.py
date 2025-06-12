@@ -5,7 +5,7 @@ from typing import Any, Optional
 import requests
 from arcgis.gis import GIS, Item
 from arcgis.raster._realitymapping import RMProject
-from ._util import _update_settings, _validate_settings
+from ._util import _update_settings, _validate_settings, get_request, post_request
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,12 +64,13 @@ class RMMission:
         self._project_item = project._project_item
         self._gis = project._gis
         self._collection = None
+        self._prod_to_id_map = {}
         self._reality_url = self._gis._url[:self._gis._url.find(".com")+4] + ":6443/arcgis/reality/api"
         self._workspace = self._mission_json.get("workspace", None)
 
     @property
     def _mission_json(self):
-        return self._get_mission_json(self._mission_id)
+        return self._get_mission_json()
     
     @property
     def mission_id(self):
@@ -82,7 +83,7 @@ class RMMission:
 
         :return: A list of products of the mission
         """
-        mission_products = []
+        mission_products = {}
         dataprod_mapping = {
             "orthoDEM": "dem",
             "qualityReport": "report",
@@ -97,15 +98,15 @@ class RMMission:
 
         url = f"{self._reality_url}/missions/{self._mission_id}/dataproducts"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
-        products = requests.get(url, headers=headers, verify=False).json()
+        products = get_request(url, headers=headers)
+        if not products:
+            _LOGGER.warning("No products found for this mission.")
+            return mission_products
         for product in products:
             prod_type = product["interpretation"]
-            if prod_type in dataprod_mapping:
-                mission_products.append(
-                    {
-                        dataprod_mapping[prod_type]: product["arcgisItem"]
-                    }
-                )
+            prod_type = dataprod_mapping[prod_type] if prod_type in dataprod_mapping else prod_type
+            mission_products[prod_type] = product["arcgisItem"]
+            self._prod_to_id_map[prod_type] = product["id"]
 
         return mission_products
 
@@ -143,15 +144,13 @@ class RMMission:
         if self._collection is not None:
             return self._collection
         else:
-            url = f"{self._reality_url}/missions/{self._mission_id}/dataproducts"
-            headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
-            products = requests.get(url, headers=headers, verify=False).json()
-            for product in products:
-                prod_type = product["interpretation"]
-                if prod_type == "mosaicDataset":
-                    item = product["arcgisItem"]
-                    if "itemId" in item:
-                        self._collection = self._gis.content.get(item["itemId"])
+            products = self.products
+            img_coll = products.get("image_collection", None)
+            if img_coll is not None:
+                if "itemId" in img_coll:
+                    self._collection = self._gis.content.get(img_coll["itemId"])
+            else:
+                _LOGGER.warning("No image collection found for this mission.")
         return self._collection
 
     @property
@@ -198,15 +197,16 @@ class RMMission:
         
         url = f"{self._reality_url}/missions/{self.mission_id}/update"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
-        resp = requests.post(url, json=payload, headers=headers, verify=False).json()
-        if isinstance(resp, dict) and resp and "error" in resp:
-            message = resp.get("message", "No additional detail provided.")
-            Exception(f"Failed to process request: {message}")
+        resp = post_request(url, payload=payload, headers=headers)
+        if not resp:
+            raise RuntimeError("Failed to update mission settings.")
 
-    def _get_mission_json(self, mission_id):
-        url = f"{self._reality_url}/missions/{mission_id}"
+    def _get_mission_json(self):
+        url = f"{self._reality_url}/missions/{self._mission_id}"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
-        resp = requests.get(url, headers=headers, verify=False).json()
+        resp = get_request(url=url, headers=headers)
+        if not resp:
+            raise RuntimeError(f"Failed to retrieve settings.")
         return resp
 
     def delete_product(self, product):
@@ -234,42 +234,43 @@ class RMMission:
             raise RuntimeError("Invalid product type")
 
         product = product.lower()
-        deleted = False
-        slpk_deleted = False
+        deleted = True
+        slpk_deleted = True
+        dp_deleted = True
 
-        mission_json = self._mission_json
-        if "items" in mission_json:
-            for key in mission_json["items"]:
-                if key == product:
-                    item_info = mission_json["items"][key]
-                    if isinstance(item_info, dict):
-                        if "itemId" in item_info:
-                            item_object = self._gis.content.get(item_info["itemId"])
-                            if item_object is None:
-                                return False
-                            deleted = item_object.delete()
-                        if "slpkItemId" in item_info:
-                            item_object = self._gis.content.get(item_info["slpkItemId"])
-                            if item_object is None:
-                                return False
-                            slpk_deleted = item_object.delete()
-                    elif item_info is None:
-                        return False
-                    if "slpkItemId" in item_info:
-                        if deleted and slpk_deleted:
-                            mission_json["items"].update({key: {}})
-                            if key in mission_json["jobs"]:
-                                mission_json["jobs"].update({key: {"checked": False}})
-                            self._update_mission_json(mission_json)
-                            return True
-                    else:
-                        if deleted:
-                            mission_json["items"].update({key: {}})
-                            if key in mission_json["jobs"]:
-                                mission_json["jobs"].update({key: {"checked": False}})
-                            self._update_mission_json(mission_json)
-                            return True
-        return False
+        products_dict = self.products
+        if not products_dict:
+            _LOGGER.warning("No products found in the mission.")
+            return False
+            
+        if product not in products_dict:
+            _LOGGER.warning(f"Product '{product}' not found in the mission.")
+            return False
+        
+        item_info = products_dict[product]
+        dp_id = self._prod_to_id_map.get(product)
+        if isinstance(item_info, dict):
+            if "itemId" in item_info:
+                item_object = self._gis.content.get(item_info["itemId"])
+                deleted = item_object.delete() if item_object else False
+            if "slpkItemId" in item_info:
+                item_object = self._gis.content.get(item_info["slpkItemId"])
+                slpk_deleted = item_object.delete() if item_object else False
+        elif item_info is None:
+            return False
+        
+        # attempt to delete from sitescan db
+        if dp_id is not None:
+            url = f"{self._reality_url}/dataproducts/{dp_id}/delete"
+            headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+            resp = post_request(url, payload=None, headers=headers, is_delete_request=True)
+            if resp != "OK":
+                _LOGGER.warning("Failed to delete the product from mission.")
+                dp_deleted = False
+
+        if "slpkItemId" in item_info:
+            return deleted and dp_deleted and slpk_deleted
+        return deleted and dp_deleted
 
     def _get_product_item(self, product, is_slpk=False):
         item_id = None
