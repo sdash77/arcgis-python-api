@@ -99,7 +99,7 @@ class RMMission:
         url = f"{self._reality_url}/missions/{self._mission_id}/dataproducts"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         products = get_request(url, headers=headers)
-        if not products:
+        if products is None:
             _LOGGER.warning("No products found for this mission.")
             return mission_products
         for product in products:
@@ -198,14 +198,14 @@ class RMMission:
         url = f"{self._reality_url}/missions/{self.mission_id}/update"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         resp = post_request(url, payload=payload, headers=headers)
-        if not resp:
+        if resp is None:
             raise RuntimeError("Failed to update mission settings.")
 
     def _get_mission_json(self):
         url = f"{self._reality_url}/missions/{self._mission_id}"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         resp = get_request(url=url, headers=headers)
-        if not resp:
+        if resp is None:
             raise RuntimeError(f"Failed to retrieve settings.")
         return resp
 

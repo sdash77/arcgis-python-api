@@ -1701,7 +1701,7 @@ class RMProject:
         url = f"{self._reality_url}/projects/{self._project_item.itemid}"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         resp = get_request(url, headers=headers)
-        if not resp:
+        if resp is None:
             raise RuntimeError("Failed to retrieve project JSON.")
         return resp
     
@@ -1721,7 +1721,7 @@ class RMProject:
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/missions"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         res_list = get_request(url, headers=headers)
-        if not res_list:
+        if res_list is None:
             raise RuntimeError("Failed to retrieve missions for the project.")
         self._mission_list = []
         for mission in res_list:
@@ -1808,7 +1808,7 @@ class RMProject:
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/update"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         resp = post_request(url, payload=payload, headers=headers)
-        if not resp:
+        if resp is None:
             raise RuntimeError("Failed to update project settings.")
         
     def create_mission(
