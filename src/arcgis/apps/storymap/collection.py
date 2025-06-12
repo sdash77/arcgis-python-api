@@ -504,7 +504,7 @@ class Collection(object):
     def update_content_info(
         self,
         index: int | list[int],
-        custom_title: str | None = None,
+        custom_title: str | list[str] | None = None,
         visible: bool | None = None,
     ):
         """
@@ -519,7 +519,7 @@ class Collection(object):
         ---------------     --------------------------------------------------------------------
         index               Required integer or list of integers. The index position(s) of the item to update.
         ---------------     --------------------------------------------------------------------
-        custom_title        Optional string. The custom title to set for the item.
+        custom_title        Optional string or list of strings. The custom title to set for the item.
         ---------------     --------------------------------------------------------------------
         visible             Required boolean. If True, the item is visible. If False, the item is hidden.
                             If a list of indices is passed, all items will be set to the same specified visibility.
