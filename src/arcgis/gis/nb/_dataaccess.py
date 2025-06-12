@@ -109,7 +109,7 @@ class NotebookDataAccess:
         self._username = gis.users.me.username
         if not self._check_user_has_workspace(self._username):
             raise ValueError(
-                f"User {self._username} does not have a workspace in the organization."
+                f"User {self._username} does not have a notebook workspace in the organization."
             )
 
     # --------------------------------------------------------------------
