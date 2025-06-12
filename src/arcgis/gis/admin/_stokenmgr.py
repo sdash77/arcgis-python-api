@@ -439,6 +439,7 @@ class DeveloperCredentialManager:
             privileges=token_priveleges,
             personal_token=is_personal_token,
         )
+        assert result
         assert item.update(
             item_properties={
                 "apiToken1ExpirationDate": int(expiration.timestamp() * 1000)
