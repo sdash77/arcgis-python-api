@@ -12,7 +12,7 @@ import arcgis
 import json
 from arcgis.gis import GIS, Item
 import collections
-from ._util import _initialize_project, _flatten_adjust_settings, _nestify_context
+from ._util import _flatten_adjust_settings, _nestify_context, _validate_settings, _update_settings
 import string as _string
 import random as _random
 
@@ -1784,17 +1784,29 @@ class RMProject:
         return self._project_json.get("processingSettings", {})
 
     @settings.setter
-    def settings(self, properties_dict):
+    def settings(self, new_settings):
         """
         The ``settings`` method updates the properties of the project item.
-
         """
-        if properties_dict is None:
-            raise ValueError("properties_dict cannot be None")
-        item = self._project_item
-        props = item.properties
-        updated_item = item.update(item_properties=props, data=properties_dict)
-        return updated_item
+        if new_settings is None:
+            raise ValueError("new_settings cannot be None")
+        
+        current_settings = self.settings
+        is_valid = _validate_settings(current_settings, new_settings)
+        
+        if not is_valid:
+            raise ValueError("Invalid settings provided.")
+        
+        # update the current settings with the new settings
+        _update_settings(current_settings, new_settings)
+        payload = {"processingSettings": current_settings}
+        
+        url = f"{self._reality_url}/projects/{self._project_item.itemid}/update"
+        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        resp = requests.post(url, json=payload, headers=headers, verify=False).json()
+        if isinstance(resp, dict) and resp and "error" in resp:
+            message = resp.get("message", "No additional detail provided.")
+            Exception(f"Failed to process request: {message}")
         
     def create_mission(
         self,

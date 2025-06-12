@@ -5,6 +5,7 @@ from typing import Any, Optional
 import requests
 from arcgis.gis import GIS, Item
 from arcgis.raster._realitymapping import RMProject
+from ._util import _update_settings, _validate_settings
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -178,17 +179,29 @@ class RMMission:
         return self._mission_json.get("processingSettings", {})
 
     @settings.setter
-    def settings(self, properties_dict):
+    def settings(self, new_settings):
         """
-        The ``settings`` method updates the properties of the project item.
-
+        The ``settings`` method updates the properties of the mission.
         """
-        if properties_dict is None:
-            raise ValueError("properties_dict cannot be None")
-        item = self._project_item
-        props = item.properties
-        updated_item = item.update(item_properties=props, data=properties_dict)
-        return updated_item
+        if new_settings is None:
+            raise ValueError("new_settings cannot be None")
+        
+        current_settings = self.settings
+        is_valid = _validate_settings(current_settings, new_settings)
+        
+        if not is_valid:
+            raise ValueError("Invalid settings provided.")
+        
+        # update the current settings with the new settings
+        _update_settings(current_settings, new_settings)
+        payload = {"processingSettings": current_settings}
+        
+        url = f"{self._reality_url}/missions/{self.mission_id}/update"
+        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        resp = requests.post(url, json=payload, headers=headers, verify=False).json()
+        if isinstance(resp, dict) and resp and "error" in resp:
+            message = resp.get("message", "No additional detail provided.")
+            Exception(f"Failed to process request: {message}")
 
     def _get_mission_json(self, mission_id):
         url = f"{self._reality_url}/missions/{mission_id}"

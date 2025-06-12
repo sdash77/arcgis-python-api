@@ -2763,3 +2763,57 @@ def _nestify_context(context):
             adjust_options_list.append(f"{mapping[key]} {value}")
 
     context["adjustOptions"] = adjust_options_list
+
+def _validate_settings(default_settings, input_settings):
+    """
+    Validates input_settings against the full default_settings but only checks the subset given in input_settings.
+    """
+    if isinstance(default_settings, dict):
+        # Ensure input is also a dictionary
+        if not isinstance(input_settings, dict):
+            return False
+
+        for key in input_settings:  # Iterate over input_settings keys instead of default_settings keys
+            if key == "ortho":
+                return True
+            if key not in default_settings:
+                return False
+
+            valid = _validate_settings(default_settings[key], input_settings[key])
+            if not valid:
+                return False
+
+        return True
+
+    elif isinstance(default_settings, list):
+        # Ensure input is also a list
+        if not isinstance(input_settings, list):
+            return False
+
+        if len(input_settings) > len(default_settings):
+            print(f"Too many settings provided: {input_settings}")
+            return False
+
+        for default_item, ip_item in zip(default_settings, input_settings):
+            valid = _validate_settings(default_item, ip_item)
+            if not valid:
+                return False
+
+        return True
+
+    else:
+        # Ensure the data type matches
+        if not isinstance(input_settings, type(default_settings)):
+            return False
+
+        return True
+
+def _update_settings(default_settings, input_settings):
+    """
+    Recursively updates a dictionary.
+    """
+    for key, value in input_settings.items():
+        if isinstance(value, dict) and isinstance(default_settings.get(key), dict):
+            _update_settings(default_settings[key], value)  # Recursively update
+        else:
+            default_settings[key] = value  # Update value directly
