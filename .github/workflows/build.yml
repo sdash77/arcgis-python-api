@@ -1,4 +1,4 @@
-name: Build Python Packages
+name: Build
 on:
   workflow_dispatch:
   schedule:
@@ -70,6 +70,15 @@ jobs:
         working-directory: ./build
         run: |
           conda build arcgis --override-channels -c esri -c esri-build -c defaults --python ${{ matrix.python }} --package-format .conda --output-folder ./output --no-test
+      - name: Test conda package
+        working-directory: ./build/output
+        run: |
+          export CONDA_SUBDIR="${{ runner.os == 'macOS' && 'osx-arm64' || (runner.os == 'Windows' && 'win-64' || 'linux-64') }}"
+          export ARCGIS_CONDA_PKG=$(find $CONDA_SUBDIR -name "*.conda")
+          conda build --test --override-channels -c esri -c esri-build -c defaults $ARCGIS_CONDA_PKG || {
+            # test failure is a warning
+            echo "::warning file=$ARCGIS_CONDA_PKG::Conda package test failed. Please review the logs."
+          }
       - name: Convert conda package
         # convert to osx-arm64 to osx-64
         if: ${{ runner.os == 'macOS' }}

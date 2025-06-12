@@ -170,6 +170,8 @@ class ItemTypeEnum(Enum):
     WORKFLOW_MANAGER_PACKAGE = "Workflow Manager Package"
     TILES_SERVICE_3D = "3DTiles Service"
     TILES_PACKAGE_3D = "3DTiles Package"
+    MOBILE_BASEMAP_PACKAGE = "Mobile Basemap Package"
+    MOBILE_MAP_PACKAGE = "Mobile Map Package"
 
 
 ###########################################################################
@@ -267,7 +269,7 @@ class ItemProperties:
             "serviceUsername": self.service_username,
             "servicePassword": self.service_password,
             "serviceProxyFilter": self.service_proxy,
-            "categories": ",".join(self.categories or []),
+            "categories": self.categories or [],
             "text": self.text or None,
             "extension": self.extension or None,
             "fileName": self.file_name or None,
@@ -316,7 +318,7 @@ class ItemProperties:
             "serviceUsername": self.service_username,
             "servicePassword": self.service_password,
             "serviceProxyFilter": self.service_proxy,
-            "categories": ",".join(self.categories or []),
+            "categories": self.categories or [],
             "text": self.text or None,
             "extension": self.extension or None,
             "overwrite": self.overwrite or None,
