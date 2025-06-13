@@ -593,6 +593,7 @@ class Query:
         self.as_df = as_df
         self.parameters = self.create_parameters(parameters)
         self.url = None
+        self._cached_record_count = None
 
     def create_parameters(
         self,
@@ -691,11 +692,17 @@ class Query:
             self.parameters.get("returnExtentOnly")
         ):
             return result
+        elif self.parameters.get("outStatistics", None) and self.parameters.get(
+            "groupByFieldsForStatistics", None
+        ):
+            if self.as_df:
+                return self._query_df(result)
+            return arcgis_features.FeatureSet.from_dict(result)
         elif self._is_true(raw):
             return result
 
         features = result.get("features", [])
-        if self._needs_more_features(result, features):
+        if self._needs_more_features(features):
             # Pagination workflow
             if (
                 self.parameters.get("objectIds")
@@ -723,17 +730,24 @@ class Query:
         else:
             return False
 
-    def _needs_more_features(self, result, features):
+    def _needs_more_features(self, features):
         """
-        Checks if more features need to be fetched.
-        This can be because exceededTransferLimit is True
-        or resultRecordCount is set and the number of
-        features fetched is less than the resultRecordCount.
+        Determines if additional query requests are needed to retrieve more features.
         """
-        return result.get("exceededTransferLimit") or (
-            self.parameters.get("resultRecordCount")
-            and self.parameters.get("resultRecordCount") != len(features)
-        )
+        fetched = len(features)
+        requested_feature_count = self.parameters.get("resultRecordCount")
+        total_available = self._fetch_total_records_count()
+
+        # If we've already fetched everything available, don't fetch more
+        if fetched >= total_available:
+            return False
+
+        # If user defined a cap, and we haven't hit it, continue
+        if requested_feature_count is not None:
+            return fetched < requested_feature_count
+
+        # Default case: no user cap, fetch until we've got everything
+        return fetched < total_available
 
     def _fetch_all_features_single_thread(self, features, result):
         """Fetches all features by handling pagination."""
@@ -758,6 +772,10 @@ class Query:
         return features
 
     def _fetch_total_records_count(self):
+        if self._cached_record_count is not None:
+            # If we have a cached count, return it
+            return self._cached_record_count
+
         count_params = copy.deepcopy(self.parameters)
         count_params["returnCountOnly"] = True
         count_params["returnAllRecords"] = False  # must be false when above True
@@ -765,7 +783,8 @@ class Query:
         count_result = self.layer._con._session.get(
             self.url, params=count_params
         ).json()
-        return count_result.get("count")
+        self._cached_record_count = count_result.get("count")
+        return self._cached_record_count
 
     def _fetch_all_ids(self):
         """Query to create a list of object ids."""
@@ -776,10 +795,11 @@ class Query:
         original_offset = id_params.get("resultOffset", 0)
 
         # Get the total count of ids
-        if id_params.get("resultRecordCount") is None:
-            total_count = self._fetch_total_records_count()
-        else:
-            total_count = id_params.get("resultRecordCount")
+        all_records = self._fetch_total_records_count()
+        user_requested_records = id_params.get("resultRecordCount")
+        total_count = all_records - original_offset
+        if user_requested_records and user_requested_records < total_count:
+            total_count = user_requested_records
 
         # Perform query until all ids are fetched
         while True:
