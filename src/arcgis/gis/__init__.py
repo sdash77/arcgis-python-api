@@ -10188,13 +10188,17 @@ class ResourceManager(object):
         resp = self._portal.con.post(query_url, params, files=files)
         return resp
 
-    def list(self):
+    def list(self, as_list=True):
         """
         The ``list`` method provides a lists all file resources of an existing item.
 
-        .. note::
-            This resource is only available to
-            the user, item owner, and the organization administrator.
+        ================    ===============================================================
+        **Parameter**       **Description**
+        ----------------    ---------------------------------------------------------------
+        as_list             Optional boolean. If True, returns a Python list of dictionaries.
+                            If False, returns a Iterator.
+                            Default is True.
+        ================    ===============================================================
 
         :return:
             For item resources a Python list of dictionaries of the form:
@@ -10220,39 +10224,45 @@ class ResourceManager(object):
                     "access": "<access type>",
                 }
             ]
-
         """
-        if self._item:
-            query_url = "content/items/" + self._item.itemid + "/resources"
-        else:
-            query_url = f"{self._gis.resturl}community/users/{self._username}/resources"
 
-        params = {"f": "json", "num": 500}
-        resp = self._gis.session.get(query_url, params=params).json()
-        resp_resources = (
-            resp.get("resources", []) if self._item else resp.get("userResources", [])
-        )
-        count = int(resp.get("num"))
-        next_start = int(
-            resp.get("nextStart", -999)
-        )  # added for back support for portal (10.4.1)
+        def resource_generator():
+            if self._item:
+                query_url = "content/items/" + self._item.itemid + "/resources"
+            else:
+                query_url = (
+                    f"{self._gis.resturl}community/users/{self._username}/resources"
+                )
 
-        # loop through pages
-        while next_start > 0:
-            params2 = {"f": "json", "num": 500, "start": next_start}
-
-            resp2 = self._gis.session.get(query_url, params=params2).json()
-            resp_resources.extend(
-                resp2.get("resources") if self._item else resp2.get("userResources", [])
+            params = {"f": "json", "num": 500}
+            resp = self._gis.session.get(query_url, params=params).json()
+            resp_resources = (
+                resp.get("resources", [])
+                if self._item
+                else resp.get("userResources", [])
             )
-            count += int(resp2.get("num"))
-            next_start = int(
-                resp2.get("nextStart", -999)
-            )  # added for back support for portal (10.4.1)
-            if next_start == -999:
-                break
+            for res in resp_resources:
+                yield res
+            next_start = int(resp.get("nextStart", -999))
+            while next_start > 0:
+                params2 = {"f": "json", "num": 500, "start": next_start}
+                resp2 = self._gis.session.get(query_url, params=params2).json()
+                resources2 = (
+                    resp2.get("resources")
+                    if self._item
+                    else resp2.get("userResources", [])
+                )
+                for res in resources2:
+                    yield res
+                next_start = int(resp2.get("nextStart", -999))
+                if next_start == -999:
+                    break
 
-        return resp_resources
+        gen = resource_generator()
+        if as_list:
+            return list(gen)
+        else:
+            return gen
 
     def get(
         self,
@@ -11896,6 +11906,15 @@ class User(dict):
 
             return RecycleBin(gis=self._gis, user=self.username)
         return None
+
+    # ----------------------------------------------------------------------
+    @_lazy_property
+    def resources(self) -> ResourceManager:
+        """
+        Creates a :class:`~arcgis.gis.ResourceManager` object for the user.
+        You can use the methods and properties in this class to work with user app resources.
+        """
+        return ResourceManager(gis=self._gis, user=self)
 
     # ----------------------------------------------------------------------
     def user_types(self):
@@ -14030,13 +14049,13 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @_lazy_property
-    def resources(self):
+    def resources(self) -> ResourceManager:
         """
         The ``resources`` property returns the Item's Resource Manager
 
         :return: A :class:`~arcgis.gis.ResourceManager` object
         """
-        return ResourceManager(self, self._gis)
+        return ResourceManager(item=self, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
