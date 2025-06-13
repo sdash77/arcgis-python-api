@@ -77,6 +77,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
             ClimaX,
             PTv3Seg,
             PTv3Det,
+            Hyperspectral3DRCNet,
         )
 
         from ._object_tracker import ObjectTracker

@@ -1635,6 +1635,10 @@ def prepare_data(
                     emdstats = json.load(f)
                 if emdstats.get("IsMultidimensional", False):
                     dataset_type = "PSETAE"
+            if dataset_type == "Export_Tiles":
+                il = ArcGISImageList.from_folder(os.path.join(path, "images"))
+                if il[0].shape[0] > 15:
+                    dataset_type = "3DRCNet"
         # elif os.path.exists(path/'images_before') and os.path.exists(path/'images_after'):
         #     dataset_type = 'ChangeDetection'
         elif _check_esri_files(path / "A") and _check_esri_files(path / "B"):
@@ -1767,6 +1771,7 @@ def prepare_data(
             "ObjectTracking",
             "PSETAE",
             "SR3",
+            "3DRCNet",
         ]
         and has_esri_files
     ):
@@ -2706,6 +2711,7 @@ def prepare_data(
         _is_multispec = False
 
         def check_ms(il, il2):
+            from osgeo import gdal
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
@@ -3011,6 +3017,19 @@ def prepare_data(
             **kwargs,
         )
         data._estimate_batch = _estimate_batch
+        return data
+
+    if dataset_type == "3DRCNet":
+        from ._data_utils.hyperspec_data import prepare_hyperspec_data
+
+        data = prepare_hyperspec_data(
+            path=path,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            working_dir=working_dir,
+            class_mapping=class_mapping,
+            **kwargs,
+        )
         return data
 
     elif dataset_type == "ClimaX":
