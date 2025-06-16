@@ -69,13 +69,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: tests/_output/test-results.xml
+          path: ${{ github.workspace }}/tests/_output/test-results.xml
 
       - name: Publish test results
         if: always()
-        uses: ctrf-io/github-test-reporter@v1
+        uses: dorny/test-reporter@v1
         with:
           name: Test Results - arcgis.learn API
-          path: tests/_output/*.json
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ github.workspace }}/tests/_output/test-results.xml
           reporter: java-junit
           fail-on-error: false
