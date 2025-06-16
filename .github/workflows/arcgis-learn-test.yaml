@@ -78,5 +78,5 @@ jobs:
         with:
           name: Test Results - arcgis.learn API
           path: tests/_output/test-results.xml
-          reporter: java-junit
+          reporter: python
           fail-on-error: false
