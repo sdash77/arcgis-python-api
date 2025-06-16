@@ -309,41 +309,45 @@ class Country(object):
         name: str,
         gis: Optional[GIS] = None,
         year: Optional[Union[str, int]] = None,
+        derivative_variables: Optional[bool] = False,
     ):
         """
         Get a reference to a particular country, given its name, or its
         two letter abbreviation or three letter ISO3 code.
 
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        name              Required string. The country name, two letter code or
-                          three letter ISO3 code identifying the country.
-        ----------------  --------------------------------------------------------
-        gis               Optional :class:`~arcgis.gis.GIS` instance. This
-                          specifies what GIS country sources are available based
-                          on the GIS source, a Web GIS (either `ArcGIS Online` or
-                          `ArcGIS Enterprise`) or `ArcGIS Pro with the Business
-                          Analyst extension and at least one country data pack`.
-                          If not explicitly specified, it tries to use an active
-                          GIS already created in the Python session. If an active
-                          GIS is not available, it then tries to use local
-                          resources, ArcGIS Pro with Business Analyst and at least
-                          one country dataset installed locally. Finally, if
-                          neither of these (Pro or an active GIS) are available,
-                          a :class:`~arcgis.gis.GIS` object instance must be
-                          explicitly provided.
-        ----------------  --------------------------------------------------------
-        year              Optional integer. Explicitly specifying the vintage
-                          (year) of data to use. This option is only available
-                          when using a `'local'` GIS source, and will be
-                          ignored if used with a Web GIS source.
-        ================  ========================================================
+        =====================  ========================================================
+        **Parameter**           **Description**
+        ---------------------  --------------------------------------------------------
+        name                   Required string. The country name, two letter code or
+                               three letter ISO3 code identifying the country.
+        ---------------------  --------------------------------------------------------
+        gis                    Optional :class:`~arcgis.gis.GIS` instance. This
+                               specifies what GIS country sources are available based
+                               on the GIS source, a Web GIS (either `ArcGIS Online` or
+                               `ArcGIS Enterprise`) or `ArcGIS Pro with the Business
+                               Analyst extension and at least one country data pack`.
+                               If not explicitly specified, it tries to use an active
+                               GIS already created in the Python session. If an active
+                               GIS is not available, it then tries to use local
+                               resources, ArcGIS Pro with Business Analyst and at least
+                               one country dataset installed locally. Finally, if
+                               neither of these (Pro or an active GIS) are available,
+                               a :class:`~arcgis.gis.GIS` object instance must be
+                               explicitly provided.
+        --------------------  --------------------------------------------------------
+        year                   Optional integer. Explicitly specifying the vintage
+                               (year) of data to use. This option is only available
+                               when using a `'local'` GIS source, and will be
+                               ignored if used with a Web GIS source.
+        ---------------------  --------------------------------------------------------
+        derivative_variables   Optional boolean. Support derivative variables.
+                               Return a data collection with the additional variables: percent,index,average.
+        =====================  ========================================================
 
         :return:
             :class:`~arcgis.geoenrichment.Country` instance for the requested country.
         """
-        return cls(name, gis, year)
+        return cls(name, gis, year, derivative_variables)
 
     # noinspection PyMissingConstructor
     def __init__(
@@ -351,6 +355,7 @@ class Country(object):
         iso3: str,
         gis: GIS = None,
         year: Optional[Union[str, int]] = None,
+        derivative_variables: Optional[bool] = False,
         **kwargs,
     ) -> None:
         # handle the caveat of using a GIS('Pro') input
@@ -363,7 +368,9 @@ class Country(object):
         self._gis = ba.source
 
         # stash for use later
-        self._ba_cntry = ba.get_country(iso3, year=year)
+        self._ba_cntry = ba.get_country(
+            iso3, year=year, derivative_variables=derivative_variables
+        )
 
         # if the source is a GIS set a few more properties
         if isinstance(self._gis, GIS):
