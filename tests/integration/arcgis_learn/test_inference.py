@@ -22,6 +22,11 @@ else:
 
 
 import arcgis
+from arcgis.gis import GIS
+from arcgis.learn import MLModel, prepare_tabulardata, FullyConnectedNetwork
+from sklearn.model_selection import train_test_split
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 from inference_properties import (
     data_inferencing,
     input_data_path_ms,
@@ -130,6 +135,56 @@ def classification3d_params():
                     val["input_path"],
                     val["model_path"],
                     val["batch_size"],
+                )
+            )
+    return parameter
+
+
+def mlModel_params():
+    parameter = []
+    for model_category in data_inferencing['mlModel']['model_categories']:
+        if model_category == 'classification':
+            parameter.append(
+                (
+                    data_inferencing['mlModel']['name']+'_'+model_category,
+                    data_inferencing['mlModel']['input_path'],
+                    data_inferencing['mlModel']['model_path_classification'],
+                    model_category,
+                )
+            )
+        else:
+            parameter.append(
+                (
+                    data_inferencing['mlModel']['name']+'_'+model_category,
+                    data_inferencing['mlModel']['input_path'],
+                    data_inferencing['mlModel']['model_path_regression'],
+                    model_category,
+                )
+            )
+    return parameter
+
+
+def fcn_params():
+    parameter = []
+    for model_category in data_inferencing['fcn']['model_categories']:
+        if model_category == 'classification':
+            parameter.append(
+                (
+                    data_inferencing['fcn']['name']+'_'+model_category,
+                    data_inferencing['fcn']['training_item_id'],
+                    data_inferencing['fcn']['validation_item_id'],
+                    data_inferencing['fcn']['model_path_classification'],
+                    model_category,
+                )
+            )
+        else:
+            parameter.append(
+                (
+                    data_inferencing['fcn']['name']+'_'+model_category,
+                    data_inferencing['fcn']['training_item_id'],
+                    data_inferencing['fcn']['validation_item_id'],
+                    data_inferencing['fcn']['model_path_regression'],
+                    model_category,
                 )
             )
     return parameter
@@ -283,39 +338,42 @@ class TestInferencing(unittest.TestCase):
         objectDetectionInferencing(name, input_image_path, model, output_file_path, model_args)
     
     def test_text_classification(self):
-        arcpy.env.overwriteOutput = True
-        in_table = os.path.join(data_inferencing["textclassifier"]["gdb_path"], data_inferencing["textclassifier"]["input_filename"])
-        pretrained_model_path_emd = data_inferencing["textclassifier"]["model_path"]
-        arcpy.geoai.ClassifyTextUsingDeepLearning(
-            in_table,
-            "Address",
-            pretrained_model_path_emd,
-            "ClassLabel",
-            "sequence_length 512")
+        if(data_inferencing["textclassifier"]["should_test"]):
+            arcpy.env.overwriteOutput = True
+            in_table = os.path.join(data_inferencing["textclassifier"]["gdb_path"], data_inferencing["textclassifier"]["input_filename"])
+            pretrained_model_path_emd = data_inferencing["textclassifier"]["model_path"]
+            arcpy.geoai.ClassifyTextUsingDeepLearning(
+                in_table,
+                "Address",
+                pretrained_model_path_emd,
+                "ClassLabel",
+                "sequence_length 512")
 
         
     
     def test_entity_recognizer(self):
-        in_folder = os.path.join(data_inferencing["entityrecognizer"]["gdb_path"], data_inferencing["entityrecognizer"]["input_filename"])
-        arcpy.env.overwriteOutput = True
-        pretrained_model_path_emd = data_inferencing["entityrecognizer"]["model_path"]
-        out_table = os.path.join(data_inferencing["entityrecognizer"]["gdb_path"], "entity_table")
-        arcpy.geoai.ExtractEntitiesUsingDeepLearning(
-            in_folder,
-            out_table,
-            pretrained_model_path_emd,
-            "sequence_length 512", 2, "", None)
+        if(data_inferencing["entityrecognizer"]["should_test"]):
+            in_folder = os.path.join(data_inferencing["entityrecognizer"]["gdb_path"], data_inferencing["entityrecognizer"]["input_filename"])
+            arcpy.env.overwriteOutput = True
+            pretrained_model_path_emd = data_inferencing["entityrecognizer"]["model_path"]
+            out_table = os.path.join(data_inferencing["entityrecognizer"]["gdb_path"], "entity_table")
+            arcpy.geoai.ExtractEntitiesUsingDeepLearning(
+                in_folder,
+                out_table,
+                pretrained_model_path_emd,
+                "sequence_length 512", 2, "", None)
     
     def test_sequence2sequence(self):
-        arcpy.env.overwriteOutput = True
-        in_table = os.path.join(data_inferencing["sequence2sequence"]["gdb_path"], data_inferencing["sequence2sequence"]["input_filename"])
-        pretrained_model_path_emd = data_inferencing["sequence2sequence"]["model_path"]
-        arcpy.geoai.TransformTextUsingDeepLearning(
-            in_table,
-            "Input",
-            pretrained_model_path_emd,
-            "Result",
-            "sequence_length 512")
+        if(data_inferencing["sequence2sequence"]["should_test"]):
+            arcpy.env.overwriteOutput = True
+            in_table = os.path.join(data_inferencing["sequence2sequence"]["gdb_path"], data_inferencing["sequence2sequence"]["input_filename"])
+            pretrained_model_path_emd = data_inferencing["sequence2sequence"]["model_path"]
+            arcpy.geoai.TransformTextUsingDeepLearning(
+                in_table,
+                "Input",
+                pretrained_model_path_emd,
+                "Result",
+                "sequence_length 512")
     
     @parameterized.expand(detection3d_params, skip_on_empty=True)
     def test_detection3d(
@@ -339,6 +397,82 @@ class TestInferencing(unittest.TestCase):
     ):
         classification3dInferencing(name, input_path, model, batch_size)
 
+    def test_predict_autoML(self):
+        if(data_inferencing['autoML']['should_test']):
+            arcpy.geoai.PredictUsingAutoML(
+            in_model_definition=data_inferencing['autoML']['model_path'],
+            prediction_type="PREDICT_FEATURE",
+            in_features=data_inferencing['autoML']['input_path'],
+            explanatory_rasters=None,
+            distance_features=None,
+            out_prediction_features=os.path.join(output_gdb_folder, output_gdb, data_inferencing["autoML"]["output_filename"]),
+            out_prediction_surface=None,
+            match_explanatory_variables="state state;voter_laws voter_laws;county county",
+            match_distance_variables=None,
+            match_explanatory_rasters=None,
+            get_prediction_explanations="FALSE"
+        )
+            
+            
+    @parameterized.expand(mlModel_params, skip_on_empty=True)
+    def test_mlModel(
+        self,
+        name,
+        input_path,
+        model,
+        model_category,
+    ):
+        adult_income =  pd.read_csv(input_path)
+        test_size = 0.25
+        train, test = train_test_split(adult_income, test_size = test_size)
+        if(model_category == 'classification'):
+            print('mlModel classification inferencing starts')
+            X = [('Age',True),('Workclass',True),('Education',True),'Education-num',('Marital-status',True),('Occupation',True),
+                 ('Relationship',True), ('Race',True),('Gender',True),'Capital-gain', 'Capital-loss', 'Hours-per-week',
+                 ('Native-country',True)]
+            preprocessors =[('Education-num','Capital-gain', 'Capital-loss', 'Hours-per-week', MinMaxScaler())]
+            data = prepare_tabulardata(train, 'Salary', explanatory_variables=X, preprocessors=preprocessors)
+            model_instance = MLModel.from_model(model, data)
+        else:
+            print('mlModel regression inferencing starts')
+            X = [('Age',True),('Workclass',True),('Education',True),'Education-num',('Marital-status',True),('Occupation',True),
+                 ('Relationship',True), ('Race',True),('Gender',True),'Capital-gain', 'Capital-loss', 'Hours-per-week',
+                 ('Native-country',True)]
+            preprocessors =[('Education-num','Capital-gain', 'Capital-loss', 'Hours-per-week', MinMaxScaler())]
+            data = prepare_tabulardata(train, 'annual_salary_$', explanatory_variables=X, preprocessors=preprocessors)
+            model_instance = MLModel.from_model(model, data)
+        predictions = model_instance.predict(test, prediction_type='dataframe')
+        print(predictions.head(2))
+
+
+    @parameterized.expand(fcn_params, skip_on_empty=True)
+    def test_fcn(
+        self,
+        name,
+        training_item_id,
+        validation_item_id,
+        model,
+        model_category,
+    ):
+        gis = GIS()
+        training_item = gis.content.get(training_item_id)
+        training_layer = training_item.layers[0]
+        training_sdf = training_layer.query().sdf
+        test_item = gis.content.get(validation_item_id)
+        test_layer = test_item.layers[0]
+        test_sdf = test_layer.query().sdf
+        if(model_category=='classification'):
+            print("fcn classification inference begins")
+            X = ['capacity_f', 'wind_speed', 'dayl__s_', 'prcp__mm_d','srad__W_m_','swe__kg_m_','tmax__deg','tmin__deg','vp__Pa_']
+            data = prepare_tabulardata(training_layer,'altitude_m', explanatory_variables=X)
+            fcn_instance = FullyConnectedNetwork.from_model(model, data)
+        else:
+            print("fcn regression inference begins")
+            X = ['altitude_m', 'wind_speed', 'dayl__s_', 'prcp__mm_d','srad__W_m_','swe__kg_m_','tmax__deg','tmin__deg','vp__Pa_']
+            data = prepare_tabulardata(training_layer,'capacity_f', explanatory_variables=X)
+            fcn_instance = FullyConnectedNetwork.from_model(model, data)
+        fcn_predictions = fcn_instance.predict(test_layer, prediction_type='dataframe')
+        print(fcn_predictions.head(2))
     
     @classmethod
     def tearDownClass(cls):

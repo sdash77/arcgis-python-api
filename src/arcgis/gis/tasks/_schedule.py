@@ -2,12 +2,11 @@ from __future__ import annotations
 import json
 import datetime
 from arcgis.gis import GIS, User, Item
-from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
 
 
 ###########################################################################
-class BaseTask(object):
+class BaseTask:
     """
     Base Schedule Class
     """
@@ -31,14 +30,14 @@ class BaseTask(object):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self) -> InsensitiveDict:
+    def properties(self) -> dict:
         """
         Set of properties for the object.
         """
         if self._properties is None:
             params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
-            self._properties = InsensitiveDict(res)
+            self._properties = res
         return self._properties
 
 
@@ -70,7 +69,7 @@ class Run(BaseTask):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"<{self.__class__.__name__} @ {self.properties.runId}>"
+        return f"<{self.__class__.__name__} @ {self.properties['runId']}>"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -93,11 +92,16 @@ class Run(BaseTask):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """
-        A dictionary-like object listing various properties of the
+        A dictionary object listing various properties of the
         :class:`run <arcgis.gis.tasks.Run>` object.
         """
+        if self._properties is None:
+            params = {"f": "json"}
+            resp = self._gis.session.get(self._url, params=params)
+            res: dict = resp.json()
+            self._properties = res
         return self._properties
 
     # ----------------------------------------------------------------------
@@ -133,11 +137,11 @@ class Run(BaseTask):
         elif status and status.lower() not in status_values:
             raise ValueError("Invalid status")
         elif status is None:
-            params["status"] = self.properties.status
+            params["status"] = self.properties["status"]
         if description:
             params["result"] = description
         elif description is None:
-            params["result"] = self.properties.result
+            params["result"] = self.properties["result"]
 
         url = f"{self._url}/update"
         res = self._gis._con.post(url, params)
@@ -196,7 +200,7 @@ class Task(BaseTask):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"<Task @ {self.properties.id}>"
+        return f"<Task @ {self.properties['id']}>"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -246,9 +250,9 @@ class Task(BaseTask):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """
-        A dictionary-like object listing various properties of the
+        A dictionary object listing various properties of the
         :class:`task <arcgis.gis.tasks.Task>` object.
 
         .. code-block:: python
@@ -280,6 +284,15 @@ class Task(BaseTask):
         :return:
             Dictionary-like object of *task* properties.
         """
+        if self._properties is None:
+            resp = self._gis.session.get(
+                self._url,
+                params={
+                    "f": "json",
+                },
+            )
+            resp.raise_for_status()
+            self._properties = resp.json()
         return self._properties
 
     # ----------------------------------------------------------------------
@@ -366,8 +379,8 @@ class Task(BaseTask):
             "midnight": "0 0 * * *",
         }
         params = {
-            "title": title or self.properties.title,
-            "type": task_type or self.properties.type,
+            "title": title or self.properties["title"],
+            "type": task_type or self.properties["type"],
             "taskUrl": task_url or "",
             "parameters": parameters,
             "itemId": None,
@@ -376,7 +389,7 @@ class Task(BaseTask):
             "dayOfMonth": None,
             "month": None,
             "dayOfWeek": None,
-            "maxOccurrences": occurences or self.properties.maxOccurrences,
+            "maxOccurrences": occurences or self.properties["maxOccurrences"],
             "isActive": None,
             "f": "json",
         }
@@ -387,11 +400,12 @@ class Task(BaseTask):
         if task_url is None:
             params.pop("taskUrl", None)
         if cron is None:
-            params["minute"] = self.properties.cronSchedule.minute
-            params["hour"] = self.properties.cronSchedule.hour
-            params["dayOfMonth"] = self.properties.cronSchedule.dayOfMonth
-            params["month"] = self.properties.cronSchedule.month
-            params["dayOfWeek"] = self.properties.cronSchedule.dayOfWeek
+            cron_schedule: dict = self.properties.get("cronSchedule", {})
+            params["minute"] = cron_schedule.get("minute")
+            params["hour"] = cron_schedule.get("hour")
+            params["dayOfMonth"] = cron_schedule.get("dayOfMonth")
+            params["month"] = cron_schedule.get("month")
+            params["dayOfWeek"] = cron_schedule.get("dayOfWeek")
         elif isinstance(cron, str) and cron in SPECIALS:
             cron = SPECIALS[cron].split(" ")
             params["minute"] = cron[0]
@@ -412,7 +426,7 @@ class Task(BaseTask):
         elif item:
             params["itemId"] = item
         else:
-            params["itemId"] = self.properties.itemId
+            params["itemId"] = self.properties["itemId"]
 
         if start_date:
             params["startDate"] = local_time_to_online(dt=start_date)
@@ -425,7 +439,7 @@ class Task(BaseTask):
         if parameters:
             params["parameters"] = json.dumps(parameters)
         elif "parameters" in self.properties:
-            params["parameters"] = self.properties.parameters
+            params["parameters"] = self.properties["parameters"]
         url = f"{self._url}/update"
         res = self._gis._con.post(url, params)
         if "success" in res:
@@ -455,7 +469,7 @@ class Task(BaseTask):
 
 
 ###########################################################################
-class TaskManager(object):
+class TaskManager:
     """
 
     Provides the functions to create, update, delete and view
