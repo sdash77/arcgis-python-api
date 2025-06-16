@@ -72,7 +72,7 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: dorny/test-reporter@v1
         with:
           name: Test Results - arcgis.learn API
           path: ${{ github.workspace }}/tests/_output/test-results.xml
