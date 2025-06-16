@@ -188,14 +188,14 @@ data = {
         "model": RetinaNet,
         "model_test": "rn_test",
         "prepare_data": {
-            "path": os.path.join(data_folder, "yolo_data"),
+            "path": os.path.join(data_folder, "yolo_datas"),
             "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
         },
-        "should_test": False,
+        "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
