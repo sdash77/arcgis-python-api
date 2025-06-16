@@ -73,7 +73,7 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action/linux@v2
+        uses: turing85/publish-report@v2
         with:
           name: Test Results - arcgis.learn API
           github_token: ${{ secrets.GITHUB_TOKEN }}

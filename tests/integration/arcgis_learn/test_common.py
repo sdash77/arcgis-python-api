@@ -171,7 +171,6 @@ failure_score = []
 
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
-    print("Run Smoke tests...")
     global authorization_data
     authorization_data = setuposenviron()
     if os.environ.get("run_nightly") == "1":
