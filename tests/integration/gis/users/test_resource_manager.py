@@ -22,8 +22,13 @@ class TestUserResourceManagerIntegration(unittest.TestCase):
         # List resources and check our file is present
         resource_list = list(resources.list())
         self.assertTrue(any(r["key"] == test_file_name for r in resource_list))
-        resources.remove()
         
+        # Get the resource and check its content
+        resource = resources.get(test_file_name)
+        self.assertIsNotNone(resource)
+        self.assertEqual(resource, test_text)
+        resources.remove(test_file_name)
+
 
 if __name__ == "__main__":
     unittest.main()

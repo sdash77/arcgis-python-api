@@ -10272,11 +10272,10 @@ class ResourceManager(object):
         out_file_name: Optional[str] = None,
     ):
         """
-        The ``get`` method retrieves a specific file resource of an existing item.
+        The ``get`` method retrieves a specific resource of an existing item or user.
 
         .. note::
-            This operation is only available to the item owner and the organization administrator.
-            This is not supported for user resources.
+            This operation is only available to the user, item owner, and the organization administrator.
 
         ================  ===============================================================
         **Parameter**      **Description**
@@ -10285,6 +10284,7 @@ class ResourceManager(object):
                           For files in the root, just specify the file name. For files in
                           folders (prefixes), specify using the format
                           <foldername>/<foldername>./../<filename>
+                          For a user resource this is the key name.
         ----------------  ---------------------------------------------------------------
         try_json          Optional boolean. If True, will attempt to convert JSON files to
                           Python dictionary objects. Default is True.
@@ -10308,14 +10308,21 @@ class ResourceManager(object):
 
             >>> Item.resources.get("file_path", try_json=True, out_folder="out_folder_name")
 
+            >>> User.resources.get("file_name", try_json=True, out_folder="out_folder_name")
+
         """
         out_folder: str = out_folder or tempfile.gettempdir()
         safe_file_format: str = file.replace(r"\\", "/")
         safe_file_format: str = safe_file_format.replace("//", "/")
 
-        query_url: str = (
-            "content/items/" + self._item.itemid + "/resources/" + safe_file_format
-        )
+        if self._item:
+            query_url: str = (
+                "content/items/" + self._item.itemid + "/resources/" + safe_file_format
+            )
+        else:
+            query_url: str = (
+                f"{self._gis.resturl}community/users/{self._username}/resources/{safe_file_format}"
+            )
 
         resp: requests.Response = self._portal.con.get(
             query_url,
@@ -11908,7 +11915,7 @@ class User(dict):
         return None
 
     # ----------------------------------------------------------------------
-    @_lazy_property
+    @property
     def resources(self) -> ResourceManager:
         """
         Creates a :class:`~arcgis.gis.ResourceManager` object for the user.
