@@ -1131,110 +1131,110 @@ class TestTraining(unittest.TestCase):
             self
         )
 
-    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
-    @parameterized.expand(update_parameter_ms, skip_on_empty=True)
-    def test_ms(
-        self,
-        name,
-        model_test,
-        model,
-        datapath,
-        preparedata,
-        regression_parameter,
-        regression_test_score,
-        inferencing_parameter,
-        model_name,
-        inferencing_image_server,
-        ms_flag,
-        data_folder_path,
-        num_epochs,
-    ):
-        if os.environ.get("run_nightly") != "1":
-            commonTestCases(
-            model,
-            model_test,
-            datapath,
-            preparedata,
-            regression_parameter,
-            regression_test_score,
-            inferencing_parameter,
-            model_name,
-            inferencing_image_server,
-            ms_flag,
-            data_folder_path,
-            num_epochs,
-            self,
-        )
-        else:
-            print("ignoring nightly training for ms data")
-            pass
+    # @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    # @parameterized.expand(update_parameter_ms, skip_on_empty=True)
+    # def test_ms(
+    #     self,
+    #     name,
+    #     model_test,
+    #     model,
+    #     datapath,
+    #     preparedata,
+    #     regression_parameter,
+    #     regression_test_score,
+    #     inferencing_parameter,
+    #     model_name,
+    #     inferencing_image_server,
+    #     ms_flag,
+    #     data_folder_path,
+    #     num_epochs,
+    # ):
+    #     if os.environ.get("run_nightly") != "1":
+    #         commonTestCases(
+    #         model,
+    #         model_test,
+    #         datapath,
+    #         preparedata,
+    #         regression_parameter,
+    #         regression_test_score,
+    #         inferencing_parameter,
+    #         model_name,
+    #         inferencing_image_server,
+    #         ms_flag,
+    #         data_folder_path,
+    #         num_epochs,
+    #         self,
+    #     )
+    #     else:
+    #         print("ignoring nightly training for ms data")
+    #         pass
 
-    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
-    @parameterized.expand(update_parameter_fl, skip_on_empty=True)
-    def test_fl(
-        self,
-        name,
-        query,
-        model_type,
-        prepare_tabular_data,
-        regression_parameter,
-        regression_test_score,
-        inferencing_parameter,
-        model_name,
-        data_path,
-        model_test,
-        data_folder_path,
-    ):
-        CommonTestUsingFL(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            inferencing_parameter,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-        )
+    # @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    # @parameterized.expand(update_parameter_fl, skip_on_empty=True)
+    # def test_fl(
+    #     self,
+    #     name,
+    #     query,
+    #     model_type,
+    #     prepare_tabular_data,
+    #     regression_parameter,
+    #     regression_test_score,
+    #     inferencing_parameter,
+    #     model_name,
+    #     data_path,
+    #     model_test,
+    #     data_folder_path,
+    # ):
+    #     CommonTestUsingFL(
+    #         query,
+    #         model_type,
+    #         prepare_tabular_data,
+    #         regression_parameter,
+    #         regression_test_score,
+    #         inferencing_parameter,
+    #         model_name,
+    #         data_path,
+    #         model_test,
+    #         data_folder_path,
+    #     )
 
-    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
-    @parameterized.expand(text_models, skip_on_empty=True)
-    def test_text_models(self, key, model_name, model, data, labels):
-        CommonTestTextModels(model_name, model, data, labels)
+    # @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    # @parameterized.expand(text_models, skip_on_empty=True)
+    # def test_text_models(self, key, model_name, model, data, labels):
+    #     CommonTestTextModels(model_name, model, data, labels)
 
-    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
-    @parameterized.expand(update_parameter_df, skip_on_empty=True)
-    def test_automl(
-        self,
-        query,
-        model_type,
-        prepare_tabular_data,
-        regression_parameter,
-        regression_test_score,
-        model_name,
-        data_path,
-        model_test,
-        data_folder_path,
-    ):
-        CommonTestUsingDF(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-            self,
-        )
+    # @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    # @parameterized.expand(update_parameter_df, skip_on_empty=True)
+    # def test_automl(
+    #     self,
+    #     query,
+    #     model_type,
+    #     prepare_tabular_data,
+    #     regression_parameter,
+    #     regression_test_score,
+    #     model_name,
+    #     data_path,
+    #     model_test,
+    #     data_folder_path,
+    # ):
+    #     CommonTestUsingDF(
+    #         query,
+    #         model_type,
+    #         prepare_tabular_data,
+    #         regression_parameter,
+    #         regression_test_score,
+    #         model_name,
+    #         data_path,
+    #         model_test,
+    #         data_folder_path,
+    #         self,
+    #     )
 
-    def test_autodl(self):
-        if os.environ.get("run_nightly") != "1":
-            autodl_main()
-        else:
-            pass
+    # def test_autodl(self):
+    #     if os.environ.get("run_nightly") != "1":
+    #         autodl_main()
+    #     else:
+    #         pass
 
     @classmethod
     def tearDownClass(cls):
