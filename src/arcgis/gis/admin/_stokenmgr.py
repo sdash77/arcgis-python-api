@@ -377,6 +377,29 @@ class DeveloperCredentialManager:
         """
         Creates Developer Credentials on a given GIS.
 
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        title             Required str. The name of the developer credential item
+        ----------------  ---------------------------------------------------------------
+        privileges:       Required List[Union[TokenPrivilege, str]]. List of privileges
+                          for the developer credential.
+        ----------------  ---------------------------------------------------------------
+        referers          Required List[str]. List of referers.
+        ----------------  ---------------------------------------------------------------
+        expiration        Required _dt.datetime. The date the developer credentials
+                          expire.  This cannot be more than 1 year from date of creation.
+        ----------------  ---------------------------------------------------------------
+        items             Optional list[Item]. A list of items to restrict access to.
+        ----------------  ---------------------------------------------------------------
+        redirect_uris     Optional list[str]. Allowed list of redirect uris.
+        ----------------  ---------------------------------------------------------------
+        tags              Optional list[str] | str | None. The tags for the item.
+        ----------------  ---------------------------------------------------------------
+        snippet           Optional String. The snippet of the developer credential item.
+        ----------------  ---------------------------------------------------------------
+        folder            Optional Folder. The save location for the developer credentials.
+        ================  ===============================================================
 
         """
         then: _dt.datetime = _dt.datetime.now() + _dt.timedelta(weeks=52)
@@ -469,7 +492,8 @@ class DeveloperCredentialManager:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        owner            Required User. The user to list the scoped tokens for.
+        owner             Optional User. The user to list the scoped tokens for. The default
+                          is the current logged in user.
         ================  ===============================================================
 
         :returns: list of DeveloperCredential objects
