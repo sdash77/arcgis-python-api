@@ -4442,8 +4442,14 @@ class UserManager(object):
                     _log.error("Unable to create " + username)
                     return None
                 else:
-                    new_user = self.get(username)
 
+                    new_user = self.get(username)
+                    if os.path.isfile(thumbnail):
+                        ret = new_user.update(thumbnail=thumbnail)
+                        if not ret:
+                            _log.error(
+                                "Unable to update the thumbnail for  " + username
+                            )
                     if (
                         self.user_settings
                         and "userType" in new_user
