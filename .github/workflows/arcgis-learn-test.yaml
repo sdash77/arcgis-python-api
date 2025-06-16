@@ -18,8 +18,9 @@ on:
         default: "tests/integration/arcgis_learn/test_common.py"
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
+  repository-projects: write
 
 jobs:
   trigger-pull_request:
