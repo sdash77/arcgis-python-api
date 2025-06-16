@@ -68,8 +68,8 @@ class ImageryModel(ArcGISModel):
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        path                    Required string. Path to
-                                Esri Model Definition(EMD) or DLPK file.
+        path                    Required string. Name or Path to
+                                Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required ImageryDataObject. Returned data
                                 object from :meth:`~arcgis.learn.prepare_data`  function.
