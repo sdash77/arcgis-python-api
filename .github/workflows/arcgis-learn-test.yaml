@@ -1,4 +1,4 @@
-name: arcgis-learn confidence tests
+name: arcgis-learn-api-confidence-tests
 
 on:
   pull_request:
@@ -18,13 +18,12 @@ on:
         default: "tests/integration/arcgis_learn/test_common.py"
 
 permissions:
-  contents: write
-  pull-requests: write
-  repository-projects: write
+  contents: read
+  pull-requests: read
 
 jobs:
   trigger-pull_request:
-    runs-on: [self-hosted, learn]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout PR code
@@ -36,19 +35,19 @@ jobs:
         run: |
           ENV_NAME="${{ github.event.inputs.env_name || 'jenkins_03_April_25' }}"
           TEST_FILE="${{ github.event.inputs.test_file || 'tests/integration/arcgis_learn/test_common.py' }}"
-          source /root/anaconda3/etc/profile.d/conda.sh
-          conda activate $ENV_NAME
+          PYTHON="/root/anaconda3/envs/$ENV_NAME/bin/python"
 
           echo "Python Version:"
-          python --version
+          $PYTHON --version
 
           echo "Working directory"
           pwd
 
           echo "Setting up required environment variables"
           WORKSPACE=$(pwd)
-          echo "copy binaries"
-          python build/manage_binaries.py copy --local
+          echo "copy KNN file"
+          scp "/root/test_automation/dlls/nearest_neighbors.cpython-311-x86_64-linux-gnu.so" "$WORKSPACE/src/arcgis/learn/_utils/nearest_neighbors.cpython-311-x86_64-linux-gnu.so"
+          echo "File copied to $WORKSPACE/src/arcgis/learn/_utils"
 
           export LC_ALL=en_US.UTF-8
           export LC_CTYPE=en_US.UTF-8
@@ -63,20 +62,20 @@ jobs:
 
           echo "============================="
           echo "TEST SCRIPT STARTS"
-          python -m pytest "$TEST_FILE" -v -s --color=yes --junit-xml="$REPORT_FILE" --disable-warnings
+          "$PYTHON" -m pytest "$TEST_FILE" -v -s --color=yes --junit-xml="$REPORT_FILE" --disable-warnings
 
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: tests/_output/test-results.xml
+          path: ${{ github.workspace }}/tests/_output/test-results.xml
 
       - name: Publish test results
         if: always()
         uses: dorny/test-reporter@v1
         with:
           name: Test Results - arcgis.learn API
-          path: tests/_output/test-results.xml
+          path: ${{ github.workspace }}/tests/_output/test-results.xml
           reporter: java-junit
           fail-on-error: false
