@@ -326,7 +326,7 @@ class NotebookDataAccess:
         if self._gis._is_arcgisonline:
             url = f"{self._url}/{self._username}/{full_path}"
         else:
-            url = f"{self._url}/notebookworkspace/{filename}"
+            url = f"{self._url}/notebookworkspace/{full_path}"
 
         headers = {
             "Content-Type": "application/octet-stream",
