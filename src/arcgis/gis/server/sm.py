@@ -105,7 +105,7 @@ class ServerManager(object):
             admin_url = server["adminUrl"]
             public_url = server["url"]
             try:
-                if server["serverFunction"] == "NotebookServer":
+                if "notebookserver" in server["serverFunction"].lower():
                     try:
                         from arcgis.gis.nb import NotebookServer
 
@@ -118,7 +118,7 @@ class ServerManager(object):
                         nbs = NotebookServer(url=public_url, gis=self._gis)
                         nbs.info
                         self._server_list.append(nbs)
-                elif server["serverFunction"] == "MissionServer":
+                elif "missionserver" in server["serverFunction"].lower():
                     from arcgis.gis.mission import MissionServer
 
                     try:
