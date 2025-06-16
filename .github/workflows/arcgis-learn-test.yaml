@@ -56,6 +56,7 @@ jobs:
           export run_weekly=0
           export run_backbones=0
           export TESTFOLDERPATH="$WORKSPACE/tests"
+          export PYTHONPATH="$WORKSPACE/tests"
 
           REPORT_FILE=$WORKSPACE/tests/_output/test-results.xml
 
