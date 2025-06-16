@@ -73,9 +73,9 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: turing85/publish-report@v2
+        uses: ctrf-io/github-test-reporter@v1
         with:
           name: Test Results - arcgis.learn API
-          path: tests/_output/test-results.xml
+          path: tests/_output/*.json
           reporter: java-junit
           fail-on-error: false
