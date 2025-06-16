@@ -63,7 +63,7 @@ jobs:
 
           echo "============================="
           echo "TEST SCRIPT STARTS"
-          pytest "$TEST_FILE" -v -s --color=yes --junit-xml="$REPORT_FILE" --disable-warnings
+          python -m pytest "$TEST_FILE" -v -s --color=yes --junit-xml="$REPORT_FILE" --disable-warnings
 
       - name: Upload test report
         if: always()
@@ -78,5 +78,5 @@ jobs:
         with:
           name: Test Results - arcgis.learn API
           path: tests/_output/test-results.xml
-          reporter: python
+          reporter: pytest
           fail-on-error: false
