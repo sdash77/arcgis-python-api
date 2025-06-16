@@ -161,13 +161,22 @@ class DeveloperCredential:
         """
         if redirect_uris is None and referers is None and privileges is None:
             return False
+        privileges = privileges or self._item.app_info["privileges"]
+        if isinstance(privileges, str):
+            privileges = json.load(privileges)
+        token_privileges: list[str] = []
+        for priv in privileges:
+            if isinstance(priv, str):
+                token_privileges.append(priv)
+            elif isinstance(priv, TokenPrivilege):
+                token_privileges.append(priv.value)
 
         params = {
             "f": "json",
             "client_id": self._item.app_info["client_id"],
             "httpReferrers": referers
             or json.dumps(self._item.app_info["httpReferrers"]),
-            "privileges": privileges or json.dumps(self._item.app_info["privileges"]),
+            "privileges": json.dumps(token_privileges),
         }
 
         url: str = (
