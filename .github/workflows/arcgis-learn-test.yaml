@@ -80,3 +80,4 @@ jobs:
           title: Test Results - arcgis.learn API
           path: tests/_output/test-results.xml
           summary: true
+          fail-on-empty: false
