@@ -741,10 +741,10 @@ class FeatureLayer(Layer):
         return res
 
     # ----------------------------------------------------------------------
-    def _list_attachments(self, oid):
+    def _list_attachments(self, oid, version=None):
         """list attachments for a given OBJECT ID"""
 
-        params = {"f": "json"}
+        params = {"f": "json", "gdbVersion": version}
         if self._dynamic_layer is not None:
             url = self.url.split("?")[0] + "/%s/attachments" % oid
             params["layer"] = self._dynamic_layer

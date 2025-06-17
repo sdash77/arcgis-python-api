@@ -697,7 +697,7 @@ class AttachmentManager(object):
             A list of attachments
 
         """
-        return self._layer._list_attachments(oid)["attachmentInfos"]
+        return self._layer._list_attachments(oid, self._version)["attachmentInfos"]
 
     def download(
         self,
