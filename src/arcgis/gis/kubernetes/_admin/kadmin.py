@@ -20,6 +20,7 @@ from arcgis.gis.admin._livingatlas import (
     LivingAtlasManager,
 )
 from arcgis.gis.admin._classification import ClassificationManager
+from ._healthcheck import HealthCheckManager
 
 
 class KubernetesAdmin(_BaseKube):
@@ -61,6 +62,7 @@ class KubernetesAdmin(_BaseKube):
     _jobs = None
     _collaborations = None
     _classification: ClassificationManager | None = None
+    _healthcheck: HealthCheckManager | None = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
@@ -479,3 +481,13 @@ class KubernetesAdmin(_BaseKube):
             url: str = f"{self._gis.resturl}portals/self/classification"
             self._classification = ClassificationManager(url=url, gis=self._gis)
         return self._classification
+
+    @property
+    def health_check(self) -> HealthCheckManager:
+        """
+        Provides access to the health check manager class
+        """
+        if self._healthcheck is None:
+            url: str = f"{self._url}/healthCheck"
+            self._healthcheck = HealthCheckManager(url=url, session=self._gis.session)
+        return self._healthcheck

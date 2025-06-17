@@ -2505,7 +2505,10 @@ class GeoAccessor(object):
         :return:
             Spatially Enabled DataFrame
 
+        Usage:
 
+        >>> df = pd.DataFrame(data={"geom": polygon_data, "oid": [1, 2, 3]})
+        >>> sdf = pd.DataFrame.spatial.from_df(df, geometry_column="geom")
 
 
         NOTE: Credits will be consumed for batch_geocoding, from
@@ -4176,7 +4179,11 @@ class GeoAccessor(object):
                 self._data[self.name] = vals
                 return True
 
-            elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
+            elif isinstance(spatial_reference, (int, str, dict)) and HASPYPROJ:
+                if isinstance(spatial_reference, int):
+                    spatial_reference = {"wkid": spatial_reference}
+                elif isinstance(spatial_reference, str):
+                    spatial_reference = {"wkt": spatial_reference}
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference,

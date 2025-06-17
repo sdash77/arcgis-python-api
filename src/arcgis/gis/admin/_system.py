@@ -77,6 +77,29 @@ class Indexer(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
+    @property
+    def mismatch(self) -> dict:
+        """
+        The status resource returns the current status of the indexing
+        service and the number of users, groups, and search items in both
+        the database (store) and the index.
+
+        If, in the response, the database and index values do not match,
+        indexing is either in progress or there is a problem with the
+        index. If indexing is in progress, you can view the status by
+        refreshing the page. If indexing is complete and there is a problem
+        with the index, perform the Reindex to correct any issues.
+
+        :returns: dict
+
+        """
+        url: str = f"{self._url}/status/mismatch"
+        params: dict = {
+            "f": "json",
+        }
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     def reconfigure(self) -> bool:
         """
         This operation recreates the index service metadata, schema, and data in the event it becomes corrupted.

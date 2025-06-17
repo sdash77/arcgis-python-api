@@ -51,44 +51,33 @@ def _get_rel_site_packages_dir():
             pass
 
 
-# Conda uses this setup file, but we want to suppress some functionality
-if "--conda-install-mode" in sys.argv:
-    sys.argv.remove("--conda-install-mode")
-    conda_install_mode = True
-else:
-    conda_install_mode = False
-
-if conda_install_mode:
-    # conda handles its own dependencies, so don't specify any pip-dependencies
-    dependencies = []
-else:
-    dependencies = [
-        "pillow",
-        "urllib3>=2.1.0,<3",
-        "cachetools",
-        "lxml",
-        "cryptography",
-        "pandas >=2.0.0,<2.3.0",
-        "numpy >=2.2.0,<3",
-        "matplotlib",
-        "keyring >=23.3.0",
-        "pylerc",
-        "ujson >=3",
-        "truststore>=0.10.0",
-        'pywin32 >=223;platform_system=="Windows"',
-        "geomet",
-        "requests >=2.32.3,<3",
-        "requests-oauthlib",
-        "requests_toolbelt",
-        "pyspnego >=0.8.0",
-        "dask[dataframe] >=2024.12.1,<2025.1.0",
-        "matplotlib-inline",
-        "pyarrow >=17,<20",
-        "puremagic >=1.15,<2",
-        "pydantic >=2.8.2, <3",
-        "networkx >=3.3, <4",
-        "websocket-client >=1.2.3, <2.0.0",
-    ]
+dependencies = [
+    "pillow",
+    "urllib3>=2.1.0,<3",
+    "cachetools",
+    "lxml",
+    "cryptography",
+    "pandas >=2.0.0,<2.4.0",
+    "numpy >=2.2.0,<3",
+    "matplotlib",
+    "keyring >=23.3.0",
+    "pylerc",
+    "ujson >=3",
+    "truststore>=0.10.0",
+    'pywin32 >=223;platform_system=="Windows"',
+    "geomet",
+    "requests >=2.32.3,<3",
+    "requests-oauthlib",
+    "requests_toolbelt",
+    "pyspnego >=0.8.0",
+    "dask[dataframe] >=2024.12.1,<2025.1.0",
+    "matplotlib-inline",
+    "pyarrow >=17,<20",
+    "puremagic >=1.15,<2",
+    "pydantic >=2.8.2, <3",
+    "networkx >=3.3, <4",
+    "websocket-client >=1.2.3, <2.0.0",
+]
 
 
 def _post_install():
