@@ -480,7 +480,10 @@ def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
     def destringize_node(data):
         if not data.startswith("node_"):
             return data
-        itemid = data.split("_")[1]
+        if data.endswith("_item"):
+            itemid = data[5:-5]
+        else:
+            itemid = data[5:]
         item = None
         if include_items and data.endswith("_item"):
             item = gis.content.get(itemid)
@@ -551,10 +554,14 @@ def create_dependency_graph(
     rev = kwargs.get("include_reverse", False)
 
     def _add_deps(item: Item):
-        if rev is True:
-            deps, rev_deps = _get_item_dependencies(item, gis, True, True)
-        else:
-            deps = _get_item_dependencies(item, gis)
+        try:
+            if rev is True:
+                deps, rev_deps = _get_item_dependencies(item, gis, True, True)
+            else:
+                deps = _get_item_dependencies(item, gis)
+                rev_deps = None
+        except:
+            deps = []
             rev_deps = None
 
         def _handle_deps(item, deps, forward):
@@ -570,15 +577,17 @@ def create_dependency_graph(
                             graph.add_relationship(dep, item.itemid)
                     finally:
                         continue
-
-                if "http://" in dep or "https://" in dep:
+                try:
+                    if "http://" in dep or "https://" in dep:
+                        dep_item = None
+                    else:
+                        dep_item = gis.content.get(dep)
+                except:
                     dep_item = None
-                else:
-                    dep_item = gis.content.get(dep)
 
                 # check if item is outside of the organization
-                if not dep_item or gis.url not in dep_item.homepage:
-                    if not outside_org:
+                if not dep_item or not dep_item.get("isOrgItem", False):
+                    if not dep or not outside_org:
                         continue
                     graph.add_item(dep, dep_item)
                     if forward:

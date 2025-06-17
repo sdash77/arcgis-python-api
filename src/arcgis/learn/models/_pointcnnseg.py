@@ -552,7 +552,6 @@ class PointCNN(ArcGISModel):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
-                                Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
         """

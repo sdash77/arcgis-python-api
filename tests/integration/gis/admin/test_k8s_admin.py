@@ -9,7 +9,7 @@ from utils.decorators import integration_test, profiles
 @integration_test
 class TestKubernetesAdmin(unittest.TestCase):
     """General Test Cases for Kubernetes"""
-
+    
     def test_properties(self):
         """tests the properties off of the GIS Kubernetes Admin Class"""
 
@@ -33,12 +33,12 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert admin.uploads
         assert admin.usage
         assert admin.jobs
-
+    
     def test_scheduled_task(self):
         admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)
         assert isinstance(list(admin.scheduled_tasks()), list)
-
+    
     def test_jobs(self):
         from arcgis.gis.kubernetes._admin._jobs import JobManager
 
@@ -46,6 +46,14 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert isinstance(admin, KubernetesAdmin)
         assert isinstance(admin.jobs, JobManager)
 
+    def test_system_container_images(self):
+        if self.gis.version > [2024, 1]:        
+            admin = self.gis.admin
+            assert isinstance(admin, KubernetesAdmin)
+            assert isinstance(admin.system, SystemManager)
+            sm = admin.system
+            assert sm.container_images
+    
     def test_system(self):
 
         admin = self.gis.admin
@@ -76,24 +84,24 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert sm.architecture_profiles.enhanced
         assert sm.architecture_profiles.development
         assert sm.licenses
-
+    
     def test_overview(self):
         admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)
         assert admin.overview
         assert admin.overview.properties
         assert admin.overview.config
-
+    
     def test_orgs(self):
         assert self.gis.admin.organizations.properties
         assert self.gis.admin.organizations.orgs[0].properties
-
+    
     def test_mode(self):
         assert self.gis.admin.mode.properties
-
+    
     def test_license(self):
         assert self.gis.admin.license.properties
-
+    
     def test_datastores(self):
         assert self.gis.admin.datastores
         assert self.gis.admin.datastores.properties
