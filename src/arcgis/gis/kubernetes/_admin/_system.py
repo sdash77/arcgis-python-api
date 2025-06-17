@@ -369,6 +369,20 @@ class SystemManager:
 
     # ----------------------------------------------------------------------
     @property
+    def container_images(self) -> dict:
+        """
+        Returns a list of the container images that have been pulled and
+        used to deploy applications for ArcGIS Enterprise on Kubernetes.
+
+        :returns: dict
+
+        """
+        url: str = f"{self._url}/containerimages"
+        params: dict = {"f": "json"}
+        return self._con.get(url, params=params)
+
+    # ----------------------------------------------------------------------
+    @property
     def recovery(self) -> RecoveryManager:
         """
         This resource allows an administrator the ability to manage

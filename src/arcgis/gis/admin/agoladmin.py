@@ -18,6 +18,7 @@ from ._partnercollab import PartneredCollabManager
 from arcgis.auth.tools import LazyLoader
 import urllib.parse
 from arcgis.gis.tasks._schedule import Task
+from ._stokenmgr import DeveloperCredentialManager
 
 _pd = LazyLoader("pandas")
 
@@ -39,6 +40,7 @@ class AGOLAdminManager(object):
     """
 
     _collabmgr: PartneredCollabManager | None = None
+    _devcredmgr: DeveloperCredentialManager | None = None
     _con = None
     _gis = None
     _ux = None
@@ -246,6 +248,14 @@ class AGOLAdminManager(object):
             params["start"] = data["nextStart"]
             resp = session.get(url=url, params=params)
             data: dict = resp.json()
+
+    # ----------------------------------------------------------------------
+    @property
+    def developer_credentials(self) -> DeveloperCredentialManager | None:
+        """Manages the developer crednetials for ArcGIS Online or Enterprise"""
+        if self._devcredmgr is None and self._gis.version >= [2025, 1]:
+            self._devcredmgr = DeveloperCredentialManager(gis=self._gis)
+        return self._devcredmgr
 
     # ----------------------------------------------------------------------
     @property
