@@ -58,6 +58,7 @@ import concurrent.futures
 from cachetools import cached, TTLCache
 
 from arcgis.auth import EsriSession
+from arcgis.gis._impl._con import _is_http_url
 
 
 arcgis_env = LazyLoader("arcgis.env")
@@ -4442,8 +4443,17 @@ class UserManager(object):
                     _log.error("Unable to create " + username)
                     return None
                 else:
-                    new_user = self.get(username)
 
+                    new_user = self.get(username)
+                    if thumbnail:
+                        if _is_http_url(thumbnail):
+                            thumbnail = self._gis._con.get(thumbnail)
+                        if os.path.isfile(thumbnail):
+                            ret = new_user.update(thumbnail=thumbnail)
+                            if not ret:
+                                _log.error(
+                                    "Unable to update the thumbnail for  " + username
+                                )
                     if (
                         self.user_settings
                         and "userType" in new_user
