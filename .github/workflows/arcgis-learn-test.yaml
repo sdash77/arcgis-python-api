@@ -65,6 +65,10 @@ jobs:
           echo "============================="
           echo "TEST SCRIPT STARTS"
           python -W ignore -m pytest "$TEST_FILE" -v --color=yes --junit-xml="$REPORT_FILE" --disable-warnings 2> /dev/null
+          STATUS=$?
+          if [ $STATUS -eq 137 ]; then
+            echo "💥 CRASHED due to OOM (exit code 137) on $TEST"
+            exit 137
 
       - name: Upload test report
         if: always()
