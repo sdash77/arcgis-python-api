@@ -64,7 +64,7 @@ jobs:
 
           echo "============================="
           echo "TEST SCRIPT STARTS"
-          python -m pytest "$TEST_FILE" -v -s --color=yes --junit-xml="$REPORT_FILE" --disable-warnings
+          python -W ignore -m pytest "$TEST_FILE" -v --color=yes --junit-xml="$REPORT_FILE" --disable-warnings 2> /dev/null
 
       - name: Upload test report
         if: always()
