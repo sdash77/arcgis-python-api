@@ -176,9 +176,11 @@ class MyFasterRCNN:
             )
         )
 
-        if data._is_multispectral:
+        if data._is_multispectral or data._is_non8bit_rgb:
             model.transform.image_mean = [0] * len(data._extract_bands)
             model.transform.image_std = [1] * len(data._extract_bands)
+
+        self._is_non8bit_rgb = data._is_non8bit_rgb
 
         model.roi_heads.nms_thresh = 0.1
         model.roi_heads.score_thresh = 0.2
@@ -230,7 +232,7 @@ class MyFasterRCNN:
         target_list = []
 
         # denormalize from imagenet_stats
-        if not learn.data._is_multispectral:
+        if not (learn.data._is_multispectral or self._is_non8bit_rgb):
             imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
             mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(
                 model_input_batch.device
@@ -298,15 +300,16 @@ class MyFasterRCNN:
         self.model.roi_heads.score_thresh = thresh
 
         # denormalize from imagenet_stats
-        imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
-        mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(
-            xb.device
-        )
-        std = self.torch.tensor(imagenet_stats[1], dtype=self.torch.float32).to(
-            xb.device
-        )
+        if not self._is_non8bit_rgb:
+            imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
+            mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(
+                xb.device
+            )
+            std = self.torch.tensor(imagenet_stats[1], dtype=self.torch.float32).to(
+                xb.device
+            )
 
-        xb = (xb.permute(0, 2, 3, 1) * std + mean).permute(0, 3, 1, 2)
+            xb = (xb.permute(0, 2, 3, 1) * std + mean).permute(0, 3, 1, 2)
 
         return list(xb)  # model input require in the formate of list
 

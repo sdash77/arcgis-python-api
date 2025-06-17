@@ -1430,7 +1430,14 @@ class ArcGISModel(object):
 
         # Check if model is Multispectral and dump parameters for that
         _emd_template["IsMultispectral"] = getattr(self, "_is_multispectral", False)
-        if _emd_template.get("IsMultispectral", False):
+        # Check if data is not 8 bit RGB then don't use imagenet normalization
+        _emd_template["IsImageNetNormalization"] = not getattr(
+            self._data, "_is_non8bit_rgb", False
+        )
+        if (
+            _emd_template.get("IsMultispectral", False)
+            or not _emd_template["IsImageNetNormalization"]
+        ):
             _emd_template["Bands"] = self._data._bands
             _emd_template["ImageryType"] = self._data._imagery_type
             if getattr(self._data, "_dataset_type", None) != "ChangeDetection":
@@ -2419,7 +2426,6 @@ class ArcGISModel(object):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
-                                Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
 

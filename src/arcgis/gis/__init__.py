@@ -46,7 +46,7 @@ from arcgis.gis._impl._dataclasses._sfilters import (
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
-from arcgis.gis._impl._content_manager.folder import Folder
+from arcgis.gis._impl._content_manager.folder import Folder, Job
 
 try:
     import pandas as pd
@@ -58,6 +58,7 @@ import concurrent.futures
 from cachetools import cached, TTLCache
 
 from arcgis.auth import EsriSession
+from arcgis.gis._impl._con import _is_http_url
 
 
 arcgis_env = LazyLoader("arcgis.env")
@@ -567,6 +568,7 @@ class GIS(object):
                 )
         self.resturl = _create_base_url(url)
         self._url = url.replace("http://", "https://")
+        self._url = self._url.rstrip("/")
         self._username = username
         self._password = password
         self._key_file = key_file
@@ -4441,8 +4443,17 @@ class UserManager(object):
                     _log.error("Unable to create " + username)
                     return None
                 else:
-                    new_user = self.get(username)
 
+                    new_user = self.get(username)
+                    if thumbnail:
+                        if _is_http_url(thumbnail):
+                            thumbnail = self._gis._con.get(thumbnail)
+                        if os.path.isfile(thumbnail):
+                            ret = new_user.update(thumbnail=thumbnail)
+                            if not ret:
+                                _log.error(
+                                    "Unable to update the thumbnail for  " + username
+                                )
                     if (
                         self.user_settings
                         and "userType" in new_user
