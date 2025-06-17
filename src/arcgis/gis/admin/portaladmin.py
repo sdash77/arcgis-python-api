@@ -16,6 +16,7 @@ from arcgis.gis.tasks._schedule import Task
 from ._classification import ClassificationManager
 from ._about import AboutManager
 from arcgis.auth import EsriSession
+from ._stokenmgr import DeveloperCredentialManager
 
 __log__ = logging.getLogger()
 
@@ -64,6 +65,7 @@ class PortalAdminManager(BasePortalAdmin):
     _whm = None
     _classification: ClassificationManager = None
     _aboutmgr: AboutManager | None = None
+    _devcredmgr: DeveloperCredentialManager | None = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
@@ -93,6 +95,14 @@ class PortalAdminManager(BasePortalAdmin):
             elif isinstance(gis, GIS):
                 self._gis = gis
                 self._con = gis._con
+
+    # ----------------------------------------------------------------------
+    @property
+    def developer_credentials(self) -> DeveloperCredentialManager | None:
+        """Manages the developer crednetials for ArcGIS Online or Enterprise"""
+        if self._devcredmgr is None and self._gis.version >= [2025, 1]:
+            self._devcredmgr = DeveloperCredentialManager(gis=self._gis)
+        return self._devcredmgr
 
     # ----------------------------------------------------------------------
     @property
