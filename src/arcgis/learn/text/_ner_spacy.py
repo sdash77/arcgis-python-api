@@ -505,7 +505,8 @@ class _SpacyEntityRecognizer(ArcGISModel):
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Path of the emd file.
+        name_or_path            Required string. Name or Path to
+                                Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
         if "\\" in str(name_or_path) or "/" in str(name_or_path):
