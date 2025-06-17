@@ -34,6 +34,20 @@ If you are an end user, and would like to use daily builds of this API, [follow 
 
 If you are a developer, follow these instructions:
 
+### pixi
+
+* Install [pixi](https://pixi.sh/latest/installation/)
+* Clone this repo: ```git clone https://github.com/ArcGIS/geosaurus.git```
+* (Optional) Clone geoserpent repo for access to `arcgis-mapping` module: ```git clone https://github.com/ArcGIS/geoserpent.git```
+* Run `pixi shell`
+    * pass `-e daily` for an environment with the daily build preinstalled
+    * pass `-e local` for an environment with `./src ` preinstalled
+* Run `jupyter lab` to browse a jupyter lab environment
+
+### conda
+
+> **Note**: using `pixi` is preferred for its built-in tasks and, in particular, for building docs
+
 * Install Anaconda for Python 3.X from https://www.continuum.io/downloads
 * Download or clone this repo. ```git clone https://github.com/ArcGIS/geosaurus.git```
 * ```conda env create --file environment.yml```
@@ -42,25 +56,21 @@ If you are a developer, follow these instructions:
 * ```pip install -e ./src --no-deps``` (for using latest source code)
 * ```jupyter notebook``` (to start a jupyter notebook server)
 
-### The map widget isn't displaying
-Try running these commands: 
-* ```jupyter nbextension install --py --sys-prefix arcgis``` (for enabling the map widget for Jupyter notebook)
-* ```jupyter nbextension enable --py --sys-prefix arcgis``` (to initialize the map widget in the browser every time the notebook loads)
 
 ## Build the Documentation
 
-Go to the ```./docs/api_ref``` folder, and run the following commands:
+```pixi run docs:html``` builds the html documentation for preview.
+```pixi run docs:preview``` builds the json documentation and launches the Gatsby preview locally.
 
-Windows: ```.\make.bat html```
-OSX/Linux: ```make html```
+See ```pixi task ls``` for additional commands.
 
-The results will be in ```./docs/build/html```. Open the ```index.html``` file.
+The html results will be in ```./docs/build/html```. Open the ```index.html``` file.
 
 ## Navigating the Repository
 * automation
-    * This folder contains all of the code run for our C.I. system at http://zion/
+    * This folder contains all of the code run for our legacy C.I. systems
 * build
-    * This folder contains build.py, the script used to generate all conda packages, or pip packages
+    * This folder contains build.py, the script used to generate all conda packages, or pip packages (deprecated)
     * This folder also contains all the conda config, like build/arcgis/meta.yaml, etc.
 * docs
     * This folder contains the script and source for generating our API doc
