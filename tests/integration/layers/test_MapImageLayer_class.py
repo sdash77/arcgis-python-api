@@ -1,15 +1,12 @@
-import os.path
 import unittest
 
 from arcgis.features.layer import FeatureLayer
-from arcgis.geometry import Geometry
 from arcgis.layers import (
     MapImageLayer,
     EnterpriseMapImageLayerManager,
 )
-
+from arcgis.geometry import Geometry
 from utils.decorators import integration_test, profiles
-from integration.config import QALAB_ROOT_PATH
 
 
 @profiles.enterprise
@@ -18,11 +15,12 @@ class TestQueryFeatureLayer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        item = cls.gis.content.get("e7981155f26a4156bd85a44e989f381e")
+        item = cls.gis.content.get("e7981155f26a4156bd85a44e989f381e")  # South_Asia_Region
+        assert item, "Could not obtain item (South Asia Region - e7981155f26a4156bd85a44e989f381e)"
         cls.layer = MapImageLayer.fromitem(item)
 
     def test_manager(self):
-        """ "
+        """
         Test manager property
         """
         manager = self.layer.manager
@@ -81,13 +79,13 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test identify method with various parameters
         """
         identify = self.layer.identify(
-            geometry={
+            geometry=Geometry({
                 "xmin": -13055810.007118689,
                 "ymin": 4028260.3648137297,
                 "xmax": -13039076.794074425,
                 "ymax": 4040181.123446847,
                 "spatialReference": {"wkid": 102100, "latestWkid": 3857},
-            },
+            }),
             geometry_type="Envelope",
             tolerance=2,
             map_extent="-13055810.0071187 4028260.36481373 -13039076.7940744 4040181.12344685",
@@ -96,7 +94,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
             image_display="600,550,96",
         )
         self.assertFalse(
-            "error" in identify.keys(),
+            "error" in identify,
             f"An error occurred during Identify: {identify.get('error')}",
         )
         assert isinstance(identify, dict)

@@ -10,13 +10,9 @@ online_admin = GIS(
     profile="your_online_api_data_owner_profile",
     verify_cert=False,
 )
-# Scene Layer published from a Scene Layer Package
-# scene_layer_item = online_admin.content.get("d30897c3e97b4a1d8a9b3be7ee7599e6")
-# scene_layer = SceneLayer(scene_layer_item.url, online_admin)
-# sl_manager = scene_layer.manager
 
 # Scene Layer published through a Feature Service
-scene_layer_item = online_admin.content.get("470d55b679304e45a9496a2d8f86fd8e")
+scene_layer_item = online_admin.content.get("470d55b679304e45a9496a2d8f86fd8e")  # UrbanHouse
 scene_layer = SceneLayer(scene_layer_item.url, online_admin)
 manager = scene_layer.manager
 
