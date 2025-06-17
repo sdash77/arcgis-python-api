@@ -8,12 +8,13 @@
 /src/arcgis/gis/nb @xlt208 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /src/arcgis/gis/workflowmanager @AngelVDelgadillo @kbedel @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /src/arcgis/graph @CamBDignan @mbana641 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
-/src/arcgis/learn @karthikdutt @priyankatuteja @rohitgeo @vikashranjan26
+/src/arcgis/learn @karthikdutt @priyankatuteja @rohitgeo @vikashranjan26 @SurajBaloni
 /src/arcgis/network @deelesh @max-zeng @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap @kgalliher
 /src/arcgis/notebook @xlt208 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /src/arcgis/raster       @rhea-j @kreetichandran @ppoply @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /build      @jtroe @cariashuang0417
 /tests      @jtroe @cariashuang0417 @kgalliher
+/tests/integration/arcgis_learn @karthikdutt @priyankatuteja @rohitgeo @vikashranjan26 @SurajBaloni
 /tests/integration/gis/notebook_server @xlt208 @jtroe @cariashuang0417 @kgalliher
 /tests/integration/notebook @xlt208 @jtroe @cariashuang0417 @kgalliher
 /.github    @jtroe @cariashuang0417
