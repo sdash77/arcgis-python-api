@@ -71,9 +71,6 @@ class TestContentManager(unittest.TestCase):
         )
 
     def test_import_data_geocode_from_html(self):
-        # Returns SSL certificate expired error as of 4.25.22
-        # df = pd.read_html("https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country")[0]
-        # pd.read_html() failed when reading directly from string as path, succeeds using Path
         df = pd.read_html(self.import_data_geocode_html_path)[0]
 
         # data engineering to clean/restructure dataframe
