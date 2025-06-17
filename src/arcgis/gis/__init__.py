@@ -18806,10 +18806,19 @@ class Item(dict):
         def _replace_related_items(item, item_mapping):
             return
 
-        if not force:
-            for k, v in item_mapping.items():
+        # _replace_related_items(self, item_mapping)
+        expanded_dict = copy.deepcopy(item_mapping)
+        for k, v in item_mapping.items():
+            try:
                 orig_item = self._gis.content.get(k)
+            except:
+                orig_item = None
+            try:
                 new_item = self._gis.content.get(v)
+            except:
+                new_item = None
+
+            if not force:
                 if new_item is None:
                     raise ValueError(
                         f"Replacement item with id {v} does not exist in the GIS. Please use the force parameter to bypass this check."
@@ -18823,11 +18832,6 @@ class Item(dict):
                         f"Items with ids {k} and {v} are not of the same type."
                     )
 
-        # _replace_related_items(self, item_mapping)
-        expanded_dict = copy.deepcopy(item_mapping)
-        for k, v in item_mapping.items():
-            orig_item = self._gis.content.get(k)
-            new_item = self._gis.content.get(v)
             if orig_item and new_item:
                 expanded_dict[orig_item.title] = new_item.title
 
