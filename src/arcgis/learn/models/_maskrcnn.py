@@ -317,6 +317,7 @@ class MaskRCNN(ArcGISModel):
         if self._is_multispectral:
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
+        if self._is_multispectral or getattr(data, "_is_non8bit_rgb", False):
             scaled_mean_values = data._scaled_mean_values[data._extract_bands].tolist()
             scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
 
@@ -461,6 +462,10 @@ class MaskRCNN(ArcGISModel):
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
+
+        if getattr(data, "_is_non8bit_rgb", False):
+            model.transform.image_mean = scaled_mean_values
+            model.transform.image_std = scaled_std_values
 
         if pointrend:
             model = create_pointrend(model, data.c)
