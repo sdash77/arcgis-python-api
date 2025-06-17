@@ -115,7 +115,9 @@ class Federation(BasePortalAdmin):
         return False
 
     # ----------------------------------------------------------------------
-    def update(self, server_id: str, role: str, function: Optional[str] = None):
+    def update(
+        self, server_id: str, role: str, function: Optional[str | list[str]] = None
+    ):
         """
         This operation allows you to set an ArcGIS Server federated with
         Portal for ArcGIS as the hosting server or to enforce fine-grained
@@ -136,7 +138,7 @@ class Federation(BasePortalAdmin):
                                         FEDERATED_SERVER, FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
                                         or HOSTING_SERVER.
         ---------------------------     --------------------------------------------------------------------
-        function                        Optional string. This is the purpose of the ArcGIS Server.
+        function                        Optional string or list of strings. This is the purpose of the ArcGIS Server.
                                         Values are: GeoAnalytics, RasterAnalytics, ImageHosting, NotebookServer, MissionServer, WorkflowManager, or None
         ===========================     ====================================================================
 
@@ -160,8 +162,12 @@ class Federation(BasePortalAdmin):
             role = role.upper()
         else:
             raise ValueError("Invalid role type")
-        if function and function not in function_allow:
-            raise ValueError("Invalid function")
+        if function and isinstance(function, list):
+            # Ensure all functions in the list are allowed and convert to string list
+            function = [f for f in function if f in function_allow]
+            function = ",".join(function)  # Convert list to a comma-separated string
+        elif function and function not in function_allow:
+            raise ValueError("Invalid function type")
         params = {
             "f": "json",
             "serverRole": role,

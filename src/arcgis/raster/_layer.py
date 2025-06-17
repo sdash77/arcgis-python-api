@@ -528,12 +528,12 @@ class _RasterRenderingService(Layer):
                 for ds in gis._datastores:
                     if (
                         "serverFunction" in ds._server.keys()
-                    ) and "ImageHosting" in ds._server["serverFunction"]:
+                    ) and "imagehosting" in ds._server["serverFunction"].lower():
                         image_hosting_server_url = ds._server["url"]
                         break
                     elif (
                         "serverFunction" in ds._server.keys()
-                    ) and "RasterAnalytics" in ds._server["serverFunction"]:
+                    ) and "rasteranalytics" in ds._server["serverFunction"].lower():
                         raster_analytics_server_url = ds._server["url"]
                     elif ("serverFunction" in ds._server.keys()) and ds._server[
                         "serverFunction"

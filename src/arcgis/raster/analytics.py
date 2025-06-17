@@ -30,7 +30,7 @@ def get_datastores(gis: Optional[GIS] = None):
     gis = _arcgis.env.active_gis if gis is None else gis
 
     for ds in gis._datastores:
-        if "RasterAnalytics" in ds._server["serverFunction"]:
+        if "rasteranalytics" in ds._server["serverFunction"].lower():
             return ds
 
     return None
