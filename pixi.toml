@@ -96,7 +96,8 @@ unittest-xml-reporting = "*"
 channels = ["https://esri-forge.python.geocloud.com"]
 
 [feature.daily.dependencies]
-arcgis = ">=2.4.2,<3"
+arcgis = "~=2.4.2"
+arcgis-mapping = "~=4.32"
 
 [feature.docs]
 channels = ["conda-forge"]
