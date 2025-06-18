@@ -3239,13 +3239,9 @@ class GeoAccessor(object):
                 elif isinstance(ref, int):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
-                    self._data[self.name].apply(
-                        lambda x: (
-                            x.update({"spatialReference": ref})
-                            if pd.notnull(x)
-                            else None
-                        )
-                    )
+                    mask = self._data[self.name].notna()
+                    for d in self._data.loc[mask, self.name]:
+                        d["spatialReference"] = ref
 
     # ----------------------------------------------------------------------
     def to_featureset(self):
