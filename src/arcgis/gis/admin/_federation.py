@@ -116,7 +116,7 @@ class Federation(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def update(
-        self, server_id: str, role: str, function: Optional[str | list[str]] = None
+        self, server_id: str, role: str, function: str | list[str] | None = None
     ):
         """
         This operation allows you to set an ArcGIS Server federated with
@@ -164,6 +164,9 @@ class Federation(BasePortalAdmin):
             raise ValueError("Invalid role type")
         if function and isinstance(function, list):
             # Ensure all functions in the list are allowed and convert to string list
+            for f in function:
+                if f not in function_allow:
+                    raise ValueError("Invalid function type: {}".format(f))
             function = [f for f in function if f in function_allow]
             function = ",".join(function)  # Convert list to a comma-separated string
         elif function and function not in function_allow:

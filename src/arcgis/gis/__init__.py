@@ -1263,7 +1263,7 @@ class GIS(object):
 
                 url = f"https://{url[0]}/admin"
                 return [AGOLNotebookManager(url=url, gis=self)]
-        elif self._portal.is_arcgisonline is False and (
+        elif self._portal.is_arcgisonline == False and (
             hasattr(self, "admin") and getattr(self, "admin")
         ):
             from arcgis.gis.nb import NotebookServer
