@@ -7,6 +7,7 @@ import pandas as pd
 
 import arcgis
 from arcgis.auth.tools import LazyLoader
+from __future__ import annotations
 
 _imports = LazyLoader("arcgis._impl.imports")
 renderers = LazyLoader("arcgis.map.renderers")
