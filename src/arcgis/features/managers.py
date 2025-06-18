@@ -683,7 +683,7 @@ class AttachmentManager(object):
             del row
         return results
 
-    def get_list(self, oid: str):
+    def get_list(self, oid: str | int):
         """
         Get the list of attachments for a given OBJECT ID
 
