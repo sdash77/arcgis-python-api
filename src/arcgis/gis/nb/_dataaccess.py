@@ -338,7 +338,7 @@ class NotebookDataAccess:
         resp = self._gis._con.put_raw(
             url, data=open(file_path, "rb"), additional_headers=headers
         )
-        return resp.status_code >= 200 and resp.status_code < 300
+        return 200 <= resp.status_code < 300
 
     # ---------------------------------------------------------------------
     def upload(self, fp: str | list[str], folder: str | None = None) -> list[bool]:
