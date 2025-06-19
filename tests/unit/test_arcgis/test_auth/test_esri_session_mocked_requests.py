@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest.mock import patch
 
 try:
     import requests_mock
@@ -124,6 +125,23 @@ class TestEsriSessionClass(unittest.TestCase):
         self.assertEqual(es.referer, "TomHanks")
         es.referer = "http"
         self.assertEqual(es.referer, "http")
+
+    def test_verify_setter_triggers_adapter_rebuild(self):
+        _session = EsriSession()
+        with patch.object(_session, "_rebuild_adapter") as mock_rebuild:
+            _session.verify = not _session.verify  # flip the value
+            mock_rebuild.assert_called_once_with(verify=_session.verify)
+
+    def test_verify_setter_no_rebuild_if_same_value(self):
+        _session = EsriSession()
+        with patch.object(_session, "_rebuild_adapter") as mock_rebuild:
+            _session.verify = _session.verify  # set to same value
+            mock_rebuild.assert_not_called()
+
+    def test_verify_setter_raises_on_invalid_type(self):
+        _session = EsriSession()
+        with self.assertRaises(ValueError):
+            _session.verify = "not-a-boolean"
 
 
 if __name__ == "__main__":

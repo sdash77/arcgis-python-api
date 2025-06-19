@@ -143,21 +143,9 @@ class _DeepCloner:
                 "The item_mapping parameter is not supported when cloning ArcGIS"
                 " Dashboards. Use item data to remap values and update item."
             )
-        if "desktopView" in dashboard_item.get_data():
-            widgets = dashboard_item.get_data()["desktopView"]["widgets"]
-        else:
-            widgets = dashboard_item.get_data()["widgets"]
-        item_list = []
+        item_list = dashboard_item.get_dependencies(out_format="id")
         cloned_item_list = []
         map_dict = {}
-        for widget in widgets:
-            for k, v in widget.items():
-                if k == "itemId" and v not in item_list:
-                    item_list.append(v)
-                if k == "datasets":
-                    for dataset in v:
-                        if dataset["dataSource"]["itemId"] not in item_list:
-                            item_list.append(dataset["dataSource"]["itemId"])
 
         for item_id in item_list:
             item = dashboard_item._gis.content.get(item_id)
@@ -179,9 +167,10 @@ class _DeepCloner:
                         new_item = cloned_item
             else:
                 new_item = _search_org_for_existing_item(self.target, item)
-                logging.info(
-                    item.title + " not cloned; already existent in target org."
-                )
+                if new_item:
+                    logging.info(
+                        item.title + " not cloned; already existent in target org."
+                    )
                 if not self._print_warning:
                     self._print_warning = True
                     print(
@@ -201,21 +190,25 @@ class _DeepCloner:
         if cloned_db_list:
             cloned_db = cloned_db_list[0]
             cloned_item_list.append(cloned_db)
-            cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
 
-            for widget in cloned_widgets:
-                for k, v in widget.items():
-                    if k == "itemId":
-                        widget["itemId"] = map_dict[v]
-                    if k == "datasets":
-                        for dataset in v:
-                            dataset["dataSource"]["itemId"] = map_dict[
-                                dataset["dataSource"]["itemId"]
-                            ]
+            if not self.target._is_agol:
+                cdb_data = cloned_db.get_data()
+                selectors = _deep_get(cdb_data, "desktopView", "header", "selectors")
+                if selectors:
+                    for selector in selectors:
+                        for dataset in selector.get("datasets", []):
+                            if "groupByFields" in dataset:
+                                gbf_fields = dataset["groupByFields"]
+                                for field in gbf_fields:
+                                    map_dict[field] = field.lower()
+                            if "statisticDefinitions" in dataset:
+                                for stat_def in dataset["statisticDefinitions"]:
+                                    if "onStatisticField" in stat_def:
+                                        map_dict[stat_def["onStatisticField"]] = (
+                                            stat_def["onStatisticField"].lower()
+                                        )
 
-            new_data = cloned_db.get_data()
-            new_data["desktopView"]["widgets"] = cloned_widgets
-            cloned_db.update(item_properties={}, data=new_data)
+            cloned_db.remap_data(item_mapping=map_dict, force=True)
 
         return cloned_item_list
 
