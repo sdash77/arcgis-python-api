@@ -16,6 +16,9 @@ class NotebookFile:
     def __init__(self, definition: Dict[str, Any], da: "NotebookDataAccess"):
         self._definition = definition
         self._da = da
+        self._gis = da._gis
+        self._url = da._url
+        self._is_agol = da._gis._is_arcgisonline
 
     # ---------------------------------------------------------------------
     def __str__(self):
@@ -25,6 +28,15 @@ class NotebookFile:
     def __repr__(self):
         return f"<NotebookFile file={self.properties.name}>"
 
+    # ---------------------------------------------------------------------
+    @property
+    def name(self) -> str:
+        """
+        Get the file name
+        
+        :return: str - The name of the file.
+        """
+        return self.properties.name.strip("/").split("/")[-1]
     # ---------------------------------------------------------------------
     @property
     def properties(self):
@@ -49,9 +61,9 @@ class NotebookFile:
 
         :return: True if the file was renamed, False or an error if it was not.
         """
-        if self._da._gis._is_arcgisonline:
-            url = f"{self._da._url}/move".replace(
-                "/azureblob/", f"/{self._da._username}/"
+        if self._is_agol:
+            url = f"{self._url}/move".replace(
+                "/azureblob/", f"/{self._username}/"
             )
         else:
             url = f"{self._da._url}/{self._da._username}/notebookworkspace/move"
@@ -92,7 +104,155 @@ class NotebookFile:
         """
         return self._da._delete(filename=self.properties["Name"])
 
+###########################################################################
+class NotebookFolder:
+    """
+    Represents a folder in the ArcGIS Notebook Server workspace.
+    This class allows you to manage files and subfolders within a specific folder in the notebook workspace directory.
+    """
 
+    _da = None
+    _folder_name = None
+    _files = None
+
+    # ---------------------------------------------------------------------
+    def __init__(self, folder_name: str, da: "NotebookDataAccess"):
+        self._folder_name = folder_name
+        self._da = da
+        self._url = da._url
+        self._is_agol = da._gis._is_arcgisonline
+
+    # ---------------------------------------------------------------------
+    def __str__(self):
+        return f"<NotebookFolder name={self.name}>"
+
+    # ---------------------------------------------------------------------
+    def __repr__(self):
+        return f"<NotebookFolder name={self.name}>"
+
+    # ---------------------------------------------------------------------
+    @property
+    def name(self) -> str:
+        """
+        Get or set the name of the folder.
+        
+        ====================    ==========================================================================
+        **Argument**            **Description**
+        --------------------    --------------------------------------------------------------------------
+        new_name                Required String. The name of the folder. This will rename the folder.
+        ====================    ==========================================================================
+
+        :return: str - The name of the folder.
+        """
+        return self._folder_name.strip("/").split("/")[-1]
+    
+    # ---------------------------------------------------------------------
+    @name.setter
+    def name(self, new_name: str):
+        if not isinstance(new_name, str):
+            raise ValueError("Folder name must be a string.")
+        if "/" in new_name or new_name.strip() == "":
+            raise ValueError("Folder name must be a simple, non-empty name without slashes.")
+
+        parts = self._folder_name.strip("/").split("/")
+        parts[-1] = new_name
+        self._folder_name = "/".join(parts) + "/"
+        
+        #TODO: rename the folder on the server
+    
+    # ---------------------------------------------------------------------
+    @property
+    def folders(self) -> List["NotebookFolder"]:
+        """
+        Returns the subfolders in the folder.
+
+        :return: List[NotebookFolder] - A list of NotebookFolder objects representing the subfolders.
+        """
+        if self._is_agol:
+            url = f"{self._url}/notebooksWorkspace"
+        else:
+            url = f"{self._url}/notebookworkspace"
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "prefix": self._folder_name,
+            "delimiter": "/",
+            "token": self._da._gis._con.token,
+        }
+        response = self._da._gis._con.get(url, params)
+        # When creating subfolders the name should always have the folder to which it belongs as the prefix
+        return [
+            NotebookFolder(f"{self._folder_name}/{f['Name']}", self._da)
+            for f in response.get("Blobs", [])
+            if f["Properties"].get("ResourceType").lower() == "directory"
+        ]
+        
+    # ---------------------------------------------------------------------
+    @property
+    def files(self) -> List[NotebookFile]:
+        """
+        Returns the files in the folder.
+
+        :return: List[NotebookFile] - A list of NotebookFile objects representing the files in the folder.
+        """
+        if self._is_agol:
+            url = f"{self._url}/notebooksWorkspace"
+        else:
+            url = f"{self._url}/notebookworkspace"
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "prefix": self._folder_name,
+            "token": self._da._gis._con.token,
+        }
+        response = self._da._gis._con.get(url, params)
+        return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
+    
+###########################################################################
+class NotebookFolders:
+    """
+    Represents the folder manager for the ArcGIS Notebook Server.
+    This class allows you to manage folders in the notebook workspace directory of the user making the request.
+    """
+    _da = None
+
+    # ---------------------------------------------------------------------
+    def __init__(self, da: "NotebookDataAccess"):
+        self._da = da
+        self._gis = da._gis
+        self._is_agol = da._gis._is_arcgisonline
+        self._url = da._url
+
+    # ---------------------------------------------------------------------
+    def __str__(self):
+        return "<NotebookFolders>"
+
+    # ---------------------------------------------------------------------
+    def __repr__(self):
+        return "<NotebookFolders>"
+    
+    # ---------------------------------------------------------------------
+    @property
+    def folders(self) -> List[NotebookFolder]:
+        if self._is_agol:
+            url = f"{self._url}/notebooksWorkspace"
+        else:
+            url = f"{self._url}/notebookworkspace"
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "delimiter": "/",
+            "token": self._gis._con.token,
+        }
+        # Get the list of folders in the workspace directory
+        # The response will contain a list of blobs, some of which are directories (folders)
+        return [
+            NotebookFolder(f["Name"], self._da)
+            for f in self._gis._con.get(url, params).get("Blobs", []) if f["Properties"].get("ResourceType").lower() == "directory"
+        ]
 ###########################################################################
 class NotebookDataAccess:
     """
@@ -121,6 +281,17 @@ class NotebookDataAccess:
         return "NotebookDataAccess"
 
     # ---------------------------------------------------------------------
+    @property
+    def notebook_folders(self) -> NotebookFolders:
+        """
+        Returns the folders in the workspace directory (/arcgis/home) of the user making the request.
+
+        :return: NotebookFolders - A NotebookFolders object containing the folders in the workspace.
+        """
+        return NotebookFolders(self)
+    
+    # ---------------------------------------------------------------------
+    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
     @property
     def files(self) -> List[NotebookFile]:
         """
