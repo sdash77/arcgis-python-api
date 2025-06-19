@@ -1732,7 +1732,6 @@ class RMProject:
         self,
         image_list,
         mission_name=None,
-        image_collection=None,
         raster_type_name=None,
         raster_type_params=None,
         out_sr=None,
@@ -1749,7 +1748,8 @@ class RMProject:
         if mission_name is None:
             mission_name = "mission_" + random_name
         if image_collection is None:
-            image_collection = "image_collection" + "_" + random_name
+            from datetime import datetime
+            image_collection = f"{mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         if raster_type_name is None:
             raster_type_name = "UAV/UAS"
@@ -1770,10 +1770,10 @@ class RMProject:
 
         mission_def = {"name": mission_name}
         if context is None:
-            context = {"workspace": mission_name}
+            context = {"workspace": image_collection}
         else:
             if "workspace" not in context:
-                context["workspace"] = mission_name
+                context["workspace"] = image_collection
 
         mission = gis._tools.realitymapping.create_mission(
             project_item=project_item,
