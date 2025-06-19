@@ -102,7 +102,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
                 "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTsClassifier.py"
             )
         _emd_template["ModelType"] = "ImageClassification"
-        _emd_template["class_mapping"] = self._data.classes
+        _emd_template["Class_mapping"] = self._data.classes
         _emd_template["n_channels"] = self._data._n_channels
         _emd_template["window_size"] = self._data._window_size
         _emd_template["max_min"] = self._data._max_min
@@ -154,11 +154,12 @@ class Hyperspectral3DRCNet(ArcGISModel):
                 c=2,
                 chip_size=256,
             )
-            data.classes = emd.get("class_mapping", None)
+            data.classes = emd.get("Class_mapping", None)
             data._n_channels = emd.get("n_channels", None)
             data._max_min = emd.get("max_min", None)
-            data._class_map_dict = emd.get("class_mapping", None)
+            data._class_map_dict = emd.get("Class_mapping", None)
             data._window_size = emd.get("window_size", None)
+            data._num_classes = emd.get("num_classes", None)
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
