@@ -107,7 +107,7 @@ class Rconv_3D(nn.Module):
         attn = q @ k.transpose(-2, -1)  # (B,head,(hwd),1,27)
         attn = (attn * self.scale).softmax(dim=-1)
 
-        x = (attn @ v).transpose(1, 2)  
+        x = (attn @ v).transpose(1, 2)
         x = x.reshape(B, L, C).transpose(-2, -1).reshape(B, C, H, W, S)  # B, n, C
         x = self.proj(x)
         return x
@@ -197,9 +197,7 @@ class Transformer(nn.Module):
 class DownTransformer(nn.Module):
     def __init__(self, dim, dim2, heads, init_values=1e-4, drop_path=0.2):
         super().__init__()
-        self.layers = nn.ModuleList(
-            []
-        ) 
+        self.layers = nn.ModuleList([])
 
         self.norm1 = nn.BatchNorm3d(dim)
         self.norm2 = nn.BatchNorm3d(dim2)
@@ -207,9 +205,7 @@ class DownTransformer(nn.Module):
             MLP_Block(dim=dim2),
         )
         self.drop_path = nn.Sequential(
-            DropPath(drop_path)
-            if drop_path > 0.0
-            else nn.Identity()
+            DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
         )
         self.path_mlp = nn.Sequential(
             Rearrange("B S H W C-> B C S H W"),

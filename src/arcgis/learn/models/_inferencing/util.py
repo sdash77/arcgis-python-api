@@ -8,7 +8,10 @@ import math
 
 from typing import Union, Tuple, Optional, List
 from .._unet_utils import is_contiguous as is_cont
-from arcgis.learn._data_utils.hyperspec_data import predict_on_validation, get_classification_map
+from arcgis.learn._data_utils.hyperspec_data import (
+    predict_on_validation,
+    get_classification_map,
+)
 
 
 def A(*a):
@@ -698,11 +701,17 @@ def pixel_classify_hyperspectral_image(model, tiles, device, model_info):
     y_preds = []
     for i in range(tiles.shape[0]):
         img_arr = torch.tensor(tiles[i]).cuda()
-        label = np.ones((img_arr.shape[1],img_arr.shape[2]))
-        pred, _ = predict_on_validation(model, model_info.get("window_size", 27), tuple(model_info.get("max_min", None)), img_arr, label)
+        label = np.ones((img_arr.shape[1], img_arr.shape[2]))
+        pred, _ = predict_on_validation(
+            model,
+            model_info.get("window_size", 27),
+            tuple(model_info.get("max_min", None)),
+            img_arr,
+            label,
+        )
         cls_labels = get_classification_map(pred, label)
         y_preds.append(cls_labels[None, None])
-    
+
     y_preds = np.concatenate(y_preds, axis=0)
     return torch.tensor(y_preds)
 

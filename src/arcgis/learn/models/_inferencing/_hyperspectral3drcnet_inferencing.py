@@ -51,7 +51,9 @@ class ChildImageClassifier:
                 os.path.join(os.path.dirname(model), model_path)
             )
 
-        self.hyperspectral3drcnet = Hyperspectral3DRCNet.from_model(data=None, emd_path=model)
+        self.hyperspectral3drcnet = Hyperspectral3DRCNet.from_model(
+            data=None, emd_path=model
+        )
         self._learnmodel = self.hyperspectral3drcnet
         self.model = self.hyperspectral3drcnet.learn.model.to(self.device)
         self.model.eval()

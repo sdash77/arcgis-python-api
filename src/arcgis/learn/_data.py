@@ -2715,6 +2715,7 @@ def prepare_data(
 
         def check_ms(il, il2):
             from osgeo import gdal
+
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(

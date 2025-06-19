@@ -397,7 +397,9 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
     ys_preds, ys_reals, xs_imgs = [], [], []
 
     for i, (x, y) in enumerate(zip(xs, ys)):
-        y_pred, y_new = predict_on_validation(self.learn.model, self._data._window_size, self._data.max_min, x, y)
+        y_pred, y_new = predict_on_validation(
+            self.learn.model, self._data._window_size, self._data.max_min, x, y
+        )
         y_real = y.data
         cls_labels = get_classification_map(y_pred, y)
         ys_preds.append(torch.tensor(cls_labels)[None])
