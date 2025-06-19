@@ -33,10 +33,11 @@ class NotebookFile:
     def name(self) -> str:
         """
         Get the file name
-        
+
         :return: str - The name of the file.
         """
         return self.properties.name.strip("/").split("/")[-1]
+
     # ---------------------------------------------------------------------
     @property
     def properties(self):
@@ -62,9 +63,7 @@ class NotebookFile:
         :return: True if the file was renamed, False or an error if it was not.
         """
         if self._is_agol:
-            url = f"{self._url}/move".replace(
-                "/azureblob/", f"/{self._username}/"
-            )
+            url = f"{self._url}/move".replace("/azureblob/", f"/{self._username}/")
         else:
             url = f"{self._da._url}/{self._da._username}/notebookworkspace/move"
         params = {
@@ -104,6 +103,7 @@ class NotebookFile:
         """
         return self._da._delete(filename=self.properties["Name"])
 
+
 ###########################################################################
 class NotebookFolder:
     """
@@ -135,7 +135,7 @@ class NotebookFolder:
     def name(self) -> str:
         """
         Get or set the name of the folder.
-        
+
         ====================    ==========================================================================
         **Argument**            **Description**
         --------------------    --------------------------------------------------------------------------
@@ -145,21 +145,23 @@ class NotebookFolder:
         :return: str - The name of the folder.
         """
         return self._folder_name.strip("/").split("/")[-1]
-    
+
     # ---------------------------------------------------------------------
     @name.setter
     def name(self, new_name: str):
         if not isinstance(new_name, str):
             raise ValueError("Folder name must be a string.")
         if "/" in new_name or new_name.strip() == "":
-            raise ValueError("Folder name must be a simple, non-empty name without slashes.")
+            raise ValueError(
+                "Folder name must be a simple, non-empty name without slashes."
+            )
 
         parts = self._folder_name.strip("/").split("/")
         parts[-1] = new_name
         self._folder_name = "/".join(parts) + "/"
-        
-        #TODO: rename the folder on the server
-    
+
+        # TODO: rename the folder on the server
+
     # ---------------------------------------------------------------------
     @property
     def folders(self) -> List["NotebookFolder"]:
@@ -183,11 +185,11 @@ class NotebookFolder:
         response = self._da._gis._con.get(url, params)
         # When creating subfolders the name should always have the folder to which it belongs as the prefix
         return [
-            NotebookFolder(f['Name'], self._da)
+            NotebookFolder(f["Name"], self._da)
             for f in response.get("Blobs", [])
             if f["Properties"].get("ResourceType").lower() == "directory"
         ]
-        
+
     # ---------------------------------------------------------------------
     @property
     def files(self) -> List[NotebookFile]:
@@ -209,13 +211,127 @@ class NotebookFolder:
         }
         response = self._da._gis._con.get(url, params)
         return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
-    
+
+    # ---------------------------------------------------------------------
+    def create_folder(self, folder_name: str) -> bool:
+        """
+        Create a subfolder in the current folder.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        folder_name          Required String. The name of the subfolder to create.
+                             This will create a subfolder within the current folder.
+        ===================  ==========================================================================
+
+        :return: True if the folder was created, False or an error if it was not.
+        """
+        if self._gis._is_arcgisonline:
+            url = f"{self._url}/{self._da._username}/createFolder".replace(
+                "/azureblob", ""
+            )
+        else:
+            url = f"{self._url}/notebookworkspace/createFolder"
+        params = {
+            "f": "json",
+            "folderName": f"{self._folder_name}{folder_name}",
+            "token": self._gis._con.token,
+        }
+        result = self._gis._con.post(url, params)
+        if result.get("status") == "success":
+            return NotebookFolder(f"{self._folder_name}{folder_name}/", self._da)
+
+    # ---------------------------------------------------------------------
+    def _resolve_files(self, fp):
+        if isinstance(fp, list):
+            return [f for f in fp if os.path.isfile(f)]
+
+        if os.path.isdir(fp):
+            # If the path is a directory, get all files in the directory
+            return [
+                os.path.join(fp, f)
+                for f in os.listdir(fp)
+                if os.path.isfile(os.path.join(fp, f))
+            ]
+
+        if os.path.isfile(fp):
+            # If the path is a file, return it as a list
+            return [fp]
+
+        raise ValueError(
+            f"Invalid file path: {fp}. It must be a file or a directory containing files."
+        )
+
+    # ---------------------------------------------------------------------
+    def _upload_single_file(self, file_path: str) -> bool:
+        if not os.path.isfile(file_path):
+            raise ValueError(f"File {file_path} does not exist.")
+
+        filename = os.path.basename(file_path)
+
+        if self._is_agol:
+            existing_files = self.files
+            if any(f.properties.name == filename for f in existing_files):
+                raise ValueError(f"File {filename} already exists in the workspace.")
+
+        # Add folder path unless root folder
+        full_path = (
+            f"{self._folder_name}{filename}" if self._folder_name != "/" else filename
+        )
+
+        if self._is_agol:
+            url = f"{self._url}/{self._username}/{full_path}"
+        else:
+            url = f"{self._url}/notebookworkspace/{full_path}"
+
+        headers = {
+            "Content-Type": "application/octet-stream",
+            "Content-Length": str(os.path.getsize(file_path)),
+            "x-ms-blob-type": "BlockBlob",
+            "x-ms-version": "2020-10-02",  # Consider making this configurable
+        }
+
+        resp = self._gis._con.put_raw(
+            url, data=open(file_path, "rb"), additional_headers=headers
+        )
+        return 200 <= resp.status_code < 300
+
+    # ---------------------------------------------------------------------
+    def upload(self, fp: str | list[str]) -> list[bool]:
+        """
+        Uploads a file to the Notebook Server in the current folder.
+
+        ===================     ==========================================================================
+        **Parameter**           **Description**
+        -------------------     --------------------------------------------------------------------------
+        fp                      Required String or list of Strings. Either: the path to the file to upload,
+                                a list of paths to the files to upload, or the path to a folder where all
+                                the files in the folder will be uploaded under the folder name.
+        ===================     ==========================================================================
+
+        :return: List of booleans. True if the file was uploaded, False or an error if it was not.
+        """
+        # Get files as a list
+        files = self._resolve_files(fp)
+
+        if not files:
+            raise ValueError(
+                "No valid files found to upload. Please provide a valid file path or directory."
+            )
+
+        responses = []
+        for file in files:
+            responses.append(self._upload_single_file(file))
+        return responses
+
+
 ###########################################################################
 class NotebookFolders:
     """
     Represents the folder manager for the ArcGIS Notebook Server.
     This class allows you to manage folders in the notebook workspace directory of the user making the request.
     """
+
     _da = None
 
     # ---------------------------------------------------------------------
@@ -232,7 +348,7 @@ class NotebookFolders:
     # ---------------------------------------------------------------------
     def __repr__(self):
         return "<NotebookFolders>"
-    
+
     # ---------------------------------------------------------------------
     @property
     def folders(self) -> List[NotebookFolder]:
@@ -251,8 +367,11 @@ class NotebookFolders:
         # The response will contain a list of blobs, some of which are directories (folders)
         return [
             NotebookFolder(f["Name"], self._da)
-            for f in self._gis._con.get(url, params).get("Blobs", []) if f["Properties"].get("ResourceType").lower() == "directory"
+            for f in self._gis._con.get(url, params).get("Blobs", [])
+            if f["Properties"].get("ResourceType").lower() == "directory"
         ]
+
+
 ###########################################################################
 class NotebookDataAccess:
     """
@@ -289,7 +408,7 @@ class NotebookDataAccess:
         :return: NotebookFolders - A NotebookFolders object containing the folders in the workspace.
         """
         return NotebookFolders(self)
-    
+
     # ---------------------------------------------------------------------
     @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
     @property
@@ -435,6 +554,7 @@ class NotebookDataAccess:
             raise ValueError(f"Unknown error during workspace transfer: {res}")
 
     # ---------------------------------------------------------------------
+    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
     def create_folder(self, folder: str) -> bool:
         """
         Create a folder in your `/arcgis/home` notebook workspace directory.
@@ -512,6 +632,7 @@ class NotebookDataAccess:
         return 200 <= resp.status_code < 300
 
     # ---------------------------------------------------------------------
+    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
     def upload(self, fp: str | list[str], folder: str | None = None) -> list[bool]:
         """
         Uploads a file to the Notebook Server
