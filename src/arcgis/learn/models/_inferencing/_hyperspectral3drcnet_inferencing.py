@@ -114,13 +114,13 @@ class ChildImageClassifier:
             batch_width=self.rectangle_width,
         )
 
-        psetae_ts_prediction = util.pixel_classify_hyperspectral_image(
+        hyperspectral_prediction = util.pixel_classify_hyperspectral_image(
             self.model, batch, self.device, model_info=self.json_info
         )
-        psetae_ts_prediction = batch_to_tile(
-            psetae_ts_prediction.unsqueeze(dim=1).detach().cpu().numpy(),
+        hyperspectral_prediction = batch_to_tile(
+            hyperspectral_prediction.unsqueeze(dim=1).detach().cpu().numpy(),
             batch_height,
             batch_width,
         )
 
-        return psetae_ts_prediction
+        return hyperspectral_prediction
