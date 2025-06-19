@@ -1,0 +1,125 @@
+[workspace]
+authors = ["Jay Roebuck <jroebuck@esri.com>"]
+channels = ["esri-build", "esri", "main"]
+channel-priority = "disabled"
+name = "geosaurus"
+platforms = ["win-64", "linux-64", "osx-arm64", "osx-64"]
+version = "0.1.0"
+
+[tasks]
+"lint" = {depends-on = [{task = "_black"}], description = "Reformat src with black"}
+"lint:check" = {depends-on = [{task = "_black", args=["--check"]}], description = "Check src formatting with black"}
+"docs" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:html", environment = "docs"}, {task = "_docs:json", environment = "docs"}], description = "Build Sphinx docs (html and json)"}
+"docs:html" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:html", environment = "docs"}], description = "Build Sphinx docs (html)"}
+"docs:json" = {depends-on = [{task = "_docs:depends", environment = "docs"}, {task = "_docs:json", environment = "docs"}], description = "Build Sphinx docs (json)"}
+"docs:preview" = {depends-on = [{task = "_docs:preview:depends", environment = "docs"}, {task = "_docs:preview:start", environment = "docs", args = [":apiref"]}], description = "Build Sphinx docs (json) and start a Gatsby server"}
+"docs:preview:full" = {depends-on = [{task = "_docs:preview:depends", environment = "docs"}, {task = "_docs:preview:start", environment = "docs"}], description = "Build Sphinx docs (json) and start a Gatsby server"}
+# tasks with names prefixed with "_" are not listed in `pixi task list`
+# and are not intended to be run directly
+"_black" = {cmd = "python -m black {{check}} {{verbose}} {{path}}", description = "Run `black`", args = [{arg = "check", default = ""}, {arg = "verbose", default = ""}, {arg = "path", default = "./src"}]}
+"_docs:html" = "cd ./docs/api_ref && make html"
+"_docs:json" = "cd ./docs/api_ref && make json"
+"_docs_cp_arcgis_map_namespace" = "cp -r ../geoserpent/arcgis-mapping/src/arcgis/map ./src/arcgis"
+# ensures Esri/arcgis-python-api repo is locally available, otherwise clones it
+"_repo:ensure:public" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../arcgis-python-api'))\" || git clone https://github.com/Esri/arcgis-python-api.git ../arcgis-python-api"
+# ensures geoserpent repo is locally available, otherwise clones it
+"_repo:ensure:geoserpent" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../geoserpent'))\" || git clone https://github.com/ArcGIS/geoserpent.git ../geoserpent"
+# ensures devtopia/ArcGISDevelopers/python-api-doc repo is locally available, otherwise clones it
+"_repo:ensure:python-api-doc" = "python -c \"import os,sys;sys.exit(not os.path.isdir('../python-api-doc'))\" || git clone https://github.com/ArcGIS/geosaurus.git --branch afd-doc/main --single-branch --depth 1 ../python-api-doc"
+# ensures doc repo has local config, otherwise creates it with local paths
+"_config:ensure:python-api-doc" = "python -c \"import os,sys;sys.exit(not os.path.isfile('../python-api-doc/sites/python/config/config.local.yml'))\" || (export currentRepoPath=$(python -c \"import pathlib; print(pathlib.Path().absolute().name)\") && echo apiRefLocalFolder: \\\"../$currentRepoPath/docs/api_ref/build/json\\\" >> ../python-api-doc/sites/python/config/config.local.yml && echo docLocalFolder: \\\"../arcgis-python-api\\\" >> ../python-api-doc/sites/python/config/config.local.yml)"
+"_docs:depends" = {depends-on = ["_repo:ensure:geoserpent", "_docs_cp_arcgis_map_namespace"], description = "Configure environment for full doc build"}
+"_docs:preview:depends" = {depends-on = ["_docs:depends", "_repo:ensure:public", "_repo:ensure:python-api-doc", "_config:ensure:python-api-doc", {task = "_docs:json", environment = "docs"}], description = "Configure environment for Gatsby build"}
+"_docs:preview:start" = {cmd = "cd ../python-api-doc && npm i && npm run python:start{{subtask}}", args = [{arg = "subtask", default = ""}]}
+# tasks for running tests
+"test:integration" = {cmd = "python -m nose2 -v -s tests/integration/{{module}}/{{submodule}} -t tests --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path='{{module}}_{{submodule}}_integration_testreport.xml'", depends-on = [{task = "test:config:profiles"}], args = [{arg = "module", default = "ai"}, {arg = "submodule", default = ""}], description = "Run integration tests from specified module and submodule (e.g. pixi run test:integration apps survey123) or ai module, if unspecified"}
+"test:unit" = {cmd = "python -m nose2 -v -s tests/unit/test_arcgis/{{test_path}} --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path='{{test_path}}_unit_testreport.xml'",  depends-on = [{task = "test:config:profiles"}], args = [{arg = "test_path", default = ""}], description = "Run unit tests from specified path (e.g. pixi run test:unit test_apps) or all unit tests, if unspecified"}
+"test:smoke" = {cmd = "cd tests && python -m nose2 -v -s smoke --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path='smoke_testreport.xml'", description = "Run all smoke tests from tests/smoke"}
+"test:config:profiles" = {cmd = "python tests/integration/config_profiles.py", description = "Create profiles for tests (e.g. `GIS(profile='your_enterprise_profile')`)"}
+
+[dependencies]
+python = "~=3.13"
+pip = "*"
+setuptools = "*"
+azure-storage-blob = "<=12.9"
+cachetools = "*"
+certifi = "*"
+cryptography = "*"
+dask = ">=2024.12.1,<2025.1.0"
+gdal = ">=3.6.2,<4"
+geomet = "*"
+keyring = ">=23.3.0"
+lxml = "*"
+matplotlib = "*"
+matplotlib-inline = "*"
+nbconvert = "*"
+networkx = ">=3.3,<4"
+numpy = ">=2.2.0,<3"
+pandas = ">=2.0.0,<2.4.0"
+pillow = "*"
+puremagic = ">=1.15,<2"
+pyarrow = ">=16,<20"
+pylerc = "*"
+pyspnego = ">=0.8.0"
+pydantic = ">=2.8.2,<3"
+requests = ">=2.32.3,<3"
+requests-gssapi = "*"
+requests-kerberos = "*"
+requests-oauthlib = "*"
+requests-toolbelt = "*"
+truststore = ">=0.10.0"
+ujson = ">=3"
+urllib3 = ">=2.1.0,<3"
+websocket-client = ">=1.2.3,<2"
+anywidget = "==0.9.13"
+ipywidgets = ">=8.0.0"
+jupyterlab = ">=4.0.7,<5"
+black = "~=24.0"
+"keyrings.alt" = "*"
+selenium = "*"
+protobuf = "*"
+
+[target.win-64.dependencies]
+pywin32-security = "*"
+
+[pypi-dependencies]
+sphinx = ">=7, <8"
+sphinx-rtd-theme = ">=2, <3"
+autodoc-pydantic = ">=2, <3"
+coverage = "*"
+nose2 = "*"
+parameterized = "*"
+requests-mock = "*"
+unittest-xml-reporting = "*"
+
+[feature.daily]
+channels = ["https://esri-forge.python.geocloud.com"]
+
+[feature.daily.dependencies]
+arcgis = "~=2.4.2"
+arcgis-mapping = "~=4.32"
+
+[feature.docs]
+channels = ["conda-forge"]
+
+[feature.docs.dependencies]
+# spacy does not yet support python3.13
+# https://github.com/explosion/spaCy/issues/13658#issuecomment-2886370190
+# docs seem to build without fastai
+# fastai = {channel = "fastai"}
+pytorch = {channel = "conda-forge"}
+timm = {channel = "esri", version = "~=0.4.12"}
+torchvision = {channel = "conda-forge"}
+nodejs = {channel = "conda-forge", version = "~=22.0"}
+
+[feature.local]
+[feature.local.target.win-64.activation]
+scripts = ["pixi.local.bat"]
+
+[feature.local.target.unix.activation]
+scripts = ["pixi.local.sh"]
+
+[environments]
+daily = { features = ["daily"] }
+local = { features = ["local"] }
+docs = { features = ["docs"] }

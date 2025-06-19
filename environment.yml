@@ -3,6 +3,10 @@ channels:
 - defaults
 - esri
 - esri-build
+# Dependencies to run ./src locally, and run unit and integration tests
+# Building docs requires using pixi docs environment (e.g. `pixi shell --environment docs` or `pixi run docs`)
+# Please consider migrating to pixi for local development
+# See https://pixi.sh for more information
 dependencies:
 - python 3.13.*
 - pip
@@ -22,13 +26,15 @@ dependencies:
 - nbconvert
 - networkx >=3.3, <4
 - numpy >=2.2.0,<3
-- pandas >=2.0.0,<2.3.0
+- pandas >=2.0.0,<2.4.0
 - pillow
 - puremagic >=1.15,<2
 - pyarrow >=16,<20
 - pylerc
 - pyspnego >=0.8.0
 - pydantic >=2.8.2, <3
+# environment.yml does not support platform-specific dependencies
+# use pixi or manually install these
 # - pywin32-security
 - requests >=2.32.3,<3
 - requests-gssapi
@@ -43,18 +49,6 @@ dependencies:
 - anywidget 0.9.13
 - ipywidgets >=8.0.0
 - jupyterlab >=4.0.7,<5
-# ---- arcgis-learn ----
-# ONLY DEPS REQUIRED FOR BUILDING DOCS
-# arcgis_learn officially requires fastchan=1.0.63, 
-# using unconstrained for greater compatibility
-# as this is only to build the docs locally
-# docs should NOT be published from this environment
-# for testing only
-# TODO add learn dependencies to enable docs build for v2.4.2
-# - fastai::fastai
-# - pytorch >=2
-# - timm 0.4.12.*
-# - torchvision >=0.15.0
 # ---- etc ----
 - black
 - keyrings.alt

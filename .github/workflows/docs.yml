@@ -1,0 +1,37 @@
+name: Documentation
+on:
+  workflow_dispatch:
+  pull_request:
+  workflow_run:
+    workflows: [Build]
+    types:
+    - completed
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: geosaurus
+      - uses: actions/checkout@v4
+        with:
+          repository: ArcGIS/geoserpent
+          path: geoserpent
+          token: ${{ secrets.GH_GEOSERPENT_TOKEN }}
+      - uses: prefix-dev/setup-pixi@v0.8.8
+        with:
+          pixi-version: v0.46.0
+          manifest-path: geosaurus/pixi.toml
+          environments: docs
+          frozen: true
+      - run: |
+            cd geosaurus && pixi run docs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arcgis-docs-html-${{ github.run_number }}-${{ github.sha }}
+          path: geosaurus/docs/api_ref/build/html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arcgis-docs-json-${{ github.run_number }}-${{ github.sha }}
+          path: geosaurus/docs/api_ref/build/json
