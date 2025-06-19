@@ -1881,6 +1881,7 @@ def prepare_data(
 
     _infered = False
     sensor_name = "ms"
+    _is_non8bit_rgb = False
     if (
         has_esri_files
         and "InputRastersProps" in emd
@@ -1914,6 +1915,8 @@ def prepare_data(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 ds = gdal.Open(_im_path)
+            if ds.RasterCount == 3 and ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
+                _is_non8bit_rgb = True
             if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
@@ -3282,6 +3285,7 @@ def prepare_data(
         data._do_normalize = True
         if kwargs.get("do_normalize", None) is not None:
             data._do_normalize = kwargs.get("do_normalize", True)
+        # multispectral normalization
         if data._do_normalize:
             data = data.normalize(
                 stats=(data._scaled_mean_values, data._scaled_std_values),
@@ -3600,6 +3604,11 @@ def prepare_data(
         if [data._bands[i] for i in data._extract_bands] == ["r", "g", "b"]:
             _train_tail = False
         data._train_tail = kwargs.get("train_tail", _train_tail)
+
+    if _is_non8bit_rgb:
+        data._is_multispectral = False
+        data._train_tail = False
+    data._is_non8bit_rgb = _is_non8bit_rgb
 
     if not_label_count[0]:
         logger = logging.getLogger()
