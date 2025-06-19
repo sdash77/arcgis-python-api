@@ -6,7 +6,8 @@
 
 import os
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import unittest
@@ -109,15 +110,15 @@ accuracy_values = {
         "maxdeeplab": 0,
         "detreg": 0,
         "samlora": 0,
-        "mm3d":0,
-        "sqnseg":0,
-        "randlanet":0,
-        "psetae":0,
-        "wnet_cgan":0,
-        "pix2pixhd":0,
-        "ptv3seg":0,
-        "ptv3det":0,
-        "mmdetection_dino":0,
+        "mm3d": 0,
+        "sqnseg": 0,
+        "randlanet": 0,
+        "psetae": 0,
+        "wnet_cgan": 0,
+        "pix2pixhd": 0,
+        "ptv3seg": 0,
+        "ptv3det": 0,
+        "mmdetection_dino": 0,
         "rtdetrv2": 0,
         "climax": 0,
     }
@@ -300,9 +301,7 @@ def CommonTestUsingDF(
             random_state=43,
         )
     else:
-        model_object = model_type(
-            data_base_model
-        )
+        model_object = model_type(data_base_model)
 
     model_object.fit()
     model_object.save(f"{os.path.join(data_folder_path, data_path, model_test)}")
@@ -500,7 +499,7 @@ def commonTestCases(
         model_object = model_type(data, model=all_models[0])
     elif model_test == "mmdetection_dino_test":
         all_models = model_type.supported_models
-        model_object = model_type(data, model="dino")  
+        model_object = model_type(data, model="dino")
     elif model_test == "psetae_test":
         model_object = model_type(data, gamma=2, dropout=0.2)
     else:
@@ -513,11 +512,11 @@ def commonTestCases(
     model_object.fit(1, lr=lr_val, checkpoint=False)
     # # Fit for 1 epochs with LR.
 
-    #Test shap feature for textclassifier
+    # Test shap feature for textclassifier
     if model_test == "textclassifier_test":
-        #testing for single text
+        # testing for single text
         model_object.predict("Thanks for the support", explain=True)
-        #testing for list of texts with and without explain_index argument
+        # testing for list of texts with and without explain_index argument
         txt_list = ["awwww, I never noticed this", "Thanks for the support"]
         model_object.predict(txt_list, explain=True)
         model_object.predict(txt_list, explain=True, explain_index=[1])
@@ -1128,7 +1127,7 @@ class TestTraining(unittest.TestCase):
             ms_flag,
             data_folder_path,
             num_epochs,
-            self
+            self,
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
@@ -1151,20 +1150,20 @@ class TestTraining(unittest.TestCase):
     ):
         if os.environ.get("run_nightly") != "1":
             commonTestCases(
-            model,
-            model_test,
-            datapath,
-            preparedata,
-            regression_parameter,
-            regression_test_score,
-            inferencing_parameter,
-            model_name,
-            inferencing_image_server,
-            ms_flag,
-            data_folder_path,
-            num_epochs,
-            self,
-        )
+                model,
+                model_test,
+                datapath,
+                preparedata,
+                regression_parameter,
+                regression_test_score,
+                inferencing_parameter,
+                model_name,
+                inferencing_image_server,
+                ms_flag,
+                data_folder_path,
+                num_epochs,
+                self,
+            )
         else:
             print("ignoring nightly training for ms data")
             pass
@@ -1263,7 +1262,7 @@ def tearDownModule():
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
-        #updateFailureModels()
+        # updateFailureModels()
     for key, val in data.items():
         try:
             os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
