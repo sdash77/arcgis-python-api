@@ -1868,7 +1868,7 @@ class Survey:
         # Create web map
         if create_web_map is True and initial_publish is True:
             arcgismapping = _imports.get_arcgis_map_mod(True)
-            wm = arcgismapping.Map()
+            wm = arcgismapping.Map(gis=self._gis)
             for lyr in list(self._ssi.layers + self._ssi.tables):
                 wm.content.add(
                     lyr,

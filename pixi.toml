@@ -55,7 +55,7 @@ matplotlib-inline = "*"
 nbconvert = "*"
 networkx = ">=3.3,<4"
 numpy = ">=2.2.0,<3"
-pandas = ">=2.0.0,<2.3.0"
+pandas = ">=2.0.0,<2.4.0"
 pillow = "*"
 puremagic = ">=1.15,<2"
 pyarrow = ">=16,<20"
@@ -96,7 +96,8 @@ unittest-xml-reporting = "*"
 channels = ["https://esri-forge.python.geocloud.com"]
 
 [feature.daily.dependencies]
-arcgis = ">=2.4.2,<3"
+arcgis = "~=2.4.2"
+arcgis-mapping = "~=4.32"
 
 [feature.docs]
 channels = ["conda-forge"]
