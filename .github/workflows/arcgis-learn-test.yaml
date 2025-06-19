@@ -1,0 +1,88 @@
+name: arcgis-learn confidence tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/arcgis/learn/**'
+      - 'tests/integration/arcgis_learn/**'
+  workflow_dispatch:
+    inputs:
+      env_name:
+        description: "Name of Conda environment"
+        required: false
+        default: "jenkins_03_April_25"
+      test_file:
+        description: "Path to test file"
+        required: false
+        default: "tests/integration/arcgis_learn/test_common.py"
+
+permissions:
+  contents: write
+  pull-requests: write
+  repository-projects: write
+  checks: write
+
+jobs:
+  trigger-pull_request:
+    runs-on: [self-hosted, learn]
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Run tests in arcgis_learn supported conda env - Linux
+        run: |
+          ENV_NAME="${{ github.event.inputs.env_name || 'jenkins_03_April_25' }}"
+          TEST_FILE="${{ github.event.inputs.test_file || 'tests/integration/arcgis_learn/test_common.py' }}"
+          source /root/anaconda3/etc/profile.d/conda.sh
+          conda activate $ENV_NAME
+
+          echo "Python Version:"
+          python --version
+
+          echo "Working directory"
+          pwd
+
+          echo "Setting up required environment variables"
+          WORKSPACE=$(pwd)
+          echo "copy binaries"
+          python build/manage_binaries.py copy --local
+
+          export LC_ALL=en_US.UTF-8
+          export LC_CTYPE=en_US.UTF-8
+          export run_nightly=0
+          export run_inference=0
+          export run_weekly=0
+          export run_backbones=0
+          export TESTFOLDERPATH="$WORKSPACE/tests"
+          export PYTHONPATH="$WORKSPACE/tests"
+
+          REPORT_FILE=$WORKSPACE/tests/_output/test-results.xml
+
+          echo "============================="
+          echo "TEST SCRIPT STARTS"
+          python -W ignore -m pytest "$TEST_FILE" -v --color=yes --junit-xml="$REPORT_FILE" --disable-warnings 2> /dev/null
+          STATUS=$?
+          if [ $STATUS -eq 137 ]; then
+            echo "CRASHED due to OOM (exit code 137) on $TEST"
+            exit 137
+          fi
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tests/_output/test-results.xml
+
+      - name: Publish test results
+        if: always()
+        uses: pmeier/pytest-results-action@main
+        with:
+          title: Test Results - arcgis.learn API
+          path: tests/_output/test-results.xml
+          summary: true
+          fail-on-empty: false

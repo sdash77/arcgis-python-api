@@ -5,9 +5,34 @@
 
 
 import os
+import glob
 import warnings
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings('ignore')
+import sys
+from pathlib import Path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+parent_dir = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(parent_dir))
+
+from utils._common import *
+print("Smoke tests are running...")
+TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
+smoke_test_paths = glob.glob(
+        os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
+    )
+smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
+run_unittest_on(
+    smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
+)
+print("Smoke tests Ends...")
+
+import arcgis
+print("Working arcgis file:", arcgis.__file__)
+
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import unittest
@@ -16,11 +41,10 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
-import glob
 import gc
 from sys import platform
 import pandas as pd
-from integration.arcgis_learn.properties import (
+from properties import (
     data,
     data_folder,
     setuposenviron,
@@ -331,30 +355,6 @@ def CommonTestUsingDF(
     model_object = model_type.from_model(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
-
-
-# def CommonTestAutoDLMS(
-#     model_name,
-#     datapath,
-#     datapath_ms,
-#     model,
-#     model_test,
-#     prepare_data_rgb,
-#     prepare_data_ms,
-#     network,
-#     time,
-# ):
-#     data = prepare_data(**prepare_data_ms)
-#     model_object = model(data, total_time_limit=1)
-#     model_object.fit()
-#     best_model_path = os.path.join(data_folder_ms, datapath_ms, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
-#     emd_path = glob.glob(best_model_path)[0]
-#     img_model = ImageryModel()
-#     img_model.load(emd_path, data)
-#     img_model.fit()
-#     fine_tuned_model = os.path.join(data_folder_ms, datapath_ms, 'models', 'fine_tuned_model')
-#     img_model.save(fine_tuned_model)
-
 
 def CommonTestUsingFL(
     query,
@@ -1274,3 +1274,8 @@ def tearDownModule():
             continue
 
     print("**End Common Arcgis Learn module Training**")
+
+
+
+if __name__ == "__main__":
+    unittest.main()
