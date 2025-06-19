@@ -183,7 +183,7 @@ class NotebookFolder:
         response = self._da._gis._con.get(url, params)
         # When creating subfolders the name should always have the folder to which it belongs as the prefix
         return [
-            NotebookFolder(f"{self._folder_name}/{f['Name']}", self._da)
+            NotebookFolder(f['Name'], self._da)
             for f in response.get("Blobs", [])
             if f["Properties"].get("ResourceType").lower() == "directory"
         ]
