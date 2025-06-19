@@ -183,9 +183,8 @@ def compute_sensor_model(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input image collection on which to compute
-                           the sensor model.
-                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                Required, the input mission. The mission must be a 
+                           :class:`~arcgis.raster.realitymapping.RMMission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -239,83 +238,75 @@ def compute_sensor_model(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    update_flight_json = False
-    flight_json_details = {}
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
-        settings = {}
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
+    
+    image_collection = mission.image_collection
+    settings = {}
 
-        try:
-            project = mission._project
-            project_adj_settings = project.settings
+    try:
+        project = mission._project
+        project_adj_settings = project.settings
+        if (
+            isinstance(project_adj_settings, dict)
+            and ("template" in project_adj_settings.keys())
+            and "adjustSettings" in project_adj_settings["template"].keys()
+        ):
+            project_adj_settings = project_adj_settings["template"][
+                "adjustSettings"
+            ]
+        keys_to_pop = ["parallelProcessingFactor"]
+
+        if isinstance(context, dict):
+            adjust_options = context.pop("adjustOptions", [])
+            adjust_options = _flatten_adjust_settings(adjust_options)
+            # context is flattened
+            context.update(adjust_options)
+            # update adj dict with all the params from context
+            project_adj_settings.update(context)
+            # pop the keys that are not relevant to the adj settings
+            for key in keys_to_pop:
+                project_adj_settings.pop(key, None)
+            # update context with default values from project_adj_settings if they are not present in context
+            context.update(project_adj_settings)
+            _nestify_context(context)
+
             if (
-                isinstance(project_adj_settings, dict)
-                and ("template" in project_adj_settings.keys())
-                and "adjustSettings" in project_adj_settings["template"].keys()
+                project_adj_settings["locationAccuracy"].lower()
+                != location_accuracy.lower()
             ):
-                project_adj_settings = project_adj_settings["template"][
-                    "adjustSettings"
-                ]
-            keys_to_pop = ["parallelProcessingFactor"]
+                project_adj_settings.update({"locationAccuracy": location_accuracy})
+        elif context is None:
+            context = dict(project_adj_settings)
+            _nestify_context(context)
+        # update the settings to update flight json
+        settings = project_adj_settings
+    except:
+        adj_dict = {}
+        if isinstance(context, dict):
+            context_new = {k.lower(): v for k, v in context.items()}
+            adj_keys = [
+                "computeCandidate",
+                "maxOverlap",
+                "maxLoss",
+                "maxResidual",
+                "initPointResolution",
+                "k",
+                "p",
+                "principalPoint",
+                "focalLength",
+            ]
+            adj_dict = {
+                k: context_new[k.lower()]
+                for k in adj_keys
+                if k.lower() in context_new
+            }
+            adj_dict.update({"locationAccuracy": location_accuracy})
+            settings = adj_dict
 
-            if isinstance(context, dict):
-                adjust_options = context.pop("adjustOptions", [])
-                adjust_options = _flatten_adjust_settings(adjust_options)
-                # context is flattened
-                context.update(adjust_options)
-                # update adj dict with all the params from context
-                project_adj_settings.update(context)
-                # pop the keys that are not relevant to the adj settings
-                for key in keys_to_pop:
-                    project_adj_settings.pop(key, None)
-                # update context with default values from project_adj_settings if they are not present in context
-                context.update(project_adj_settings)
-                _nestify_context(context)
-
-                if (
-                    project_adj_settings["locationAccuracy"].lower()
-                    != location_accuracy.lower()
-                ):
-                    project_adj_settings.update({"locationAccuracy": location_accuracy})
-            elif context is None:
-                context = dict(project_adj_settings)
-                _nestify_context(context)
-            # update the settings to update flight json
-            settings = project_adj_settings
-        except:
-            adj_dict = {}
-            if isinstance(context, dict):
-                context_new = {k.lower(): v for k, v in context.items()}
-                adj_keys = [
-                    "computeCandidate",
-                    "maxOverlap",
-                    "maxLoss",
-                    "maxResidual",
-                    "initPointResolution",
-                    "k",
-                    "p",
-                    "principalPoint",
-                    "focalLength",
-                ]
-                adj_dict = {
-                    k: context_new[k.lower()]
-                    for k in adj_keys
-                    if k.lower() in context_new
-                }
-                adj_dict.update({"locationAccuracy": location_accuracy})
-                settings = adj_dict
-
-        settings.update({"mode": mode})
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "adjustment",
-            "adjust_settings": settings,
-        }
+    settings.update({"mode": mode})
 
     return gis._tools.realitymapping.compute_sensor_model(
         image_collection=image_collection,
@@ -323,7 +314,6 @@ def compute_sensor_model(
         location_accuracy=location_accuracy,
         context=context,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -349,9 +339,8 @@ def alter_processing_states(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, This is the image collection that will be adjusted.
-
-                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                Required, the input mission. The mission must be a 
+                           :class:`~arcgis.raster.realitymapping.RMMission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -380,9 +369,10 @@ def alter_processing_states(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = image_collection.image_collection
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
+
+    image_collection = mission.image_collection
 
     return gis._tools.realitymapping.alter_processing_states(
         image_collection=image_collection,
@@ -404,9 +394,8 @@ def get_processing_states(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, This is the image collection that will be adjusted.
-
-                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                Required, the input mission. The mission must be a 
+                           :class:`~arcgis.raster.realitymapping.RMMission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -421,9 +410,10 @@ def get_processing_states(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
+
+    image_collection = mission.image_collection
 
     return gis._tools.realitymapping.get_processing_states(
         image_collection=image_collection, future=future, **kwargs
@@ -452,10 +442,9 @@ def match_control_points(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input image collection that will be adjusted.
+    mission                Required, the input mission. The mission must be a 
+                           :class:`~arcgis.raster.realitymapping.RMMission` object.
 
-                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
-                            
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
@@ -561,20 +550,12 @@ def match_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    update_flight_json = False
-    flight_json_details = {}
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
 
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "matchControlPoint",
-        }
+    image_collection = mission.image_collection
 
     return gis._tools.realitymapping.match_control_points(
         image_collection=image_collection,
@@ -582,7 +563,6 @@ def match_control_points(
         similarity=similarity,
         context=context,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -609,10 +589,9 @@ def compute_control_points(
     ====================================    ====================================================================
     **Parameter**                            **Description**
     ------------------------------------    --------------------------------------------------------------------
-    mission                                 Required. This is the image collection that will be adjusted.
+    mission                                 Required, the input mission. The mission must be a 
+                                            :class:`~arcgis.raster.realitymapping.RMMission` object.
 
-                                            The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
-                            
                                             The mission must exist.
     ------------------------------------    --------------------------------------------------------------------
     reference_image                         This is the reference image service that can be used to generate ground control 
@@ -684,20 +663,12 @@ def compute_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    update_flight_json = False
-    flight_json_details = {}
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
 
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "computeControlPoints",
-        }
+    image_collection = mission.image_collection
 
     return gis._tools.realitymapping.compute_control_points(
         image_collection=image_collection,
@@ -705,7 +676,6 @@ def compute_control_points(
         image_location_accuracy=image_location_accuracy,
         context=context,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -732,8 +702,9 @@ def edit_control_points(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required.
-                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                Required, the input mission. The mission must be a 
+                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
@@ -815,26 +786,17 @@ def edit_control_points(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    update_flight_json = False
-    flight_json_details = {}
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
 
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "appendControlPoints",
-        }
+    image_collection = mission.image_collection
 
     return gis._tools.realitymapping.edit_control_points(
         image_collection=image_collection,
         input_control_points=control_points,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -860,9 +822,9 @@ def generate_orthomosaic(
     ===================================    ====================================================================
     **Parameter**                           **Description**
     -----------------------------------    --------------------------------------------------------------------
-    mission                                Required. The input image collection that will be used
-                                           to generate the ortho-mosaic from.
-                                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                                Required, the input mission. The mission must be a 
+                                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+
                                            The mission must exist.
     -----------------------------------    --------------------------------------------------------------------
     out_ortho                               Required. This is the ortho-mosaicked image converted from the image
@@ -943,129 +905,120 @@ def generate_orthomosaic(
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
-    update_flight_json = False
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    flight_json_details = {}
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
 
-        if mission.workspace:
-            if context:
-                context["workspace"] = mission.workspace
-            else:
-                context = {"workspace": mission.workspace}
+    image_collection = mission.image_collection
 
-        if kwargs is not None:
-            if "folder" in kwargs:
-                folder = kwargs["folder"]
-            else:
-                for f in gis.users.me.folders:
-                    if f._fid == image_collection.ownerFolder:
-                        folder = f.properties
-                        break
-            kwargs.update({"folder": folder})
+    if mission.workspace:
+        if context:
+            context["workspace"] = mission.workspace
+        else:
+            context = {"workspace": mission.workspace}
 
-        color_balance_keys = [
-            "targetRaster",
-            "skipX",
-            "skipY",
-            "overwriteStats",
-            "dodgingSurface",
-            "colorCorrectionMethod",
-        ]
-        color_balance_dict = {}
-        color_balance_dict.update(
+    if kwargs is not None:
+        if "folder" in kwargs:
+            folder = kwargs["folder"]
+        else:
+            for f in gis.users.me.folders:
+                if f._fid == image_collection.ownerFolder:
+                    folder = f.properties
+                    break
+        kwargs.update({"folder": folder})
+
+    color_balance_keys = [
+        "targetRaster",
+        "skipX",
+        "skipY",
+        "overwriteStats",
+        "dodgingSurface",
+        "colorCorrectionMethod",
+    ]
+    color_balance_dict = {}
+    color_balance_dict.update(
+        {
+            "colorBalance": {
+                "skipX": 0,
+                "skipY": 0,
+                "overwriteStats": "SKIP_EXISTING",
+                "colorCorrectionMethod": "DODGING",
+                "dodgingSurface": "SINGLE_COLOR",
+                "targetImage": "",
+            }
+        }
+    )
+
+    ortho_dict = {}
+    if isinstance(context, dict):
+        context_new = {k.lower(): v for k, v in context.items()}
+        color_balance_dict["colorBalance"].update(
             {
-                "colorBalance": {
-                    "skipX": 0,
-                    "skipY": 0,
-                    "overwriteStats": "SKIP_EXISTING",
-                    "colorCorrectionMethod": "DODGING",
-                    "dodgingSurface": "SINGLE_COLOR",
-                    "targetImage": "",
+                k: context_new[k.lower()]
+                for k in color_balance_keys
+                if k.lower() in context_new
+            }
+        )
+        if "colorCorrectionMethod" in color_balance_dict["colorBalance"]:
+            color_balance_dict["colorBalance"]["method"] = color_balance_dict[
+                "colorBalance"
+            ].pop("colorCorrectionMethod")
+        if "dodgingSurface" in color_balance_dict["colorBalance"]:
+            color_balance_dict["colorBalance"]["surfaceType"] = color_balance_dict[
+                "colorBalance"
+            ].pop("dodgingSurface")
+
+        seamline_keys = [
+            "computeCandidate",
+            "maxOverlap",
+            "maxLoss",
+            "pixelSize",
+            "blendType",
+            "blendUnit",
+            "requestSizeType",
+            "requestSize",
+            "minThinnessRatio",
+            "maxSliverSize",
+            "seamlinesMethod",
+        ]
+        seamline_dict = {}
+        seamline_dict.update(
+            {
+                "seamline": {
+                    "seamlinesMethod": "DISPARITY",
+                    "minRegionSize": 100,
+                    "pixelSize": "",
+                    "blendType": "Both",
+                    "blendWidth": None,
+                    "blendUnit": "Pixels",
+                    "requestSizeType": "Pixels",
+                    "requestSize": 1000,
+                    "minThinnessRatio": 0.05,
+                    "maxSliverSize": 20,
                 }
             }
         )
 
-        ortho_dict = {}
-        if isinstance(context, dict):
-            context_new = {k.lower(): v for k, v in context.items()}
-            color_balance_dict["colorBalance"].update(
-                {
-                    k: context_new[k.lower()]
-                    for k in color_balance_keys
-                    if k.lower() in context_new
-                }
-            )
-            if "colorCorrectionMethod" in color_balance_dict["colorBalance"]:
-                color_balance_dict["colorBalance"]["method"] = color_balance_dict[
-                    "colorBalance"
-                ].pop("colorCorrectionMethod")
-            if "dodgingSurface" in color_balance_dict["colorBalance"]:
-                color_balance_dict["colorBalance"]["surfaceType"] = color_balance_dict[
-                    "colorBalance"
-                ].pop("dodgingSurface")
-
-            seamline_keys = [
-                "computeCandidate",
-                "maxOverlap",
-                "maxLoss",
-                "pixelSize",
-                "blendType",
-                "blendUnit",
-                "requestSizeType",
-                "requestSize",
-                "minThinnessRatio",
-                "maxSliverSize",
-                "seamlinesMethod",
-            ]
-            seamline_dict = {}
-            seamline_dict.update(
-                {
-                    "seamline": {
-                        "seamlinesMethod": "DISPARITY",
-                        "minRegionSize": 100,
-                        "pixelSize": "",
-                        "blendType": "Both",
-                        "blendWidth": None,
-                        "blendUnit": "Pixels",
-                        "requestSizeType": "Pixels",
-                        "requestSize": 1000,
-                        "minThinnessRatio": 0.05,
-                        "maxSliverSize": 20,
-                    }
-                }
+        seamline_dict["seamline"].update(
+            {
+                k: context_new[k.lower()]
+                for k in seamline_keys
+                if k.lower() in context_new
+            }
+        )
+        if "seamlinesMethod" in seamline_dict["seamline"]:
+            seamline_dict["seamline"]["method"] = seamline_dict["seamline"].pop(
+                "seamlinesMethod"
             )
 
-            seamline_dict["seamline"].update(
-                {
-                    k: context_new[k.lower()]
-                    for k in seamline_keys
-                    if k.lower() in context_new
-                }
-            )
-            if "seamlinesMethod" in seamline_dict["seamline"]:
-                seamline_dict["seamline"]["method"] = seamline_dict["seamline"].pop(
-                    "seamlinesMethod"
-                )
+        ortho_mosaic_as_ovr = context.get("orthoMosaicAsOvr", False)
+        ortho_dict = {"ortho": {"orthoMosaicAsOvr": ortho_mosaic_as_ovr}}
 
-            ortho_mosaic_as_ovr = context.get("orthoMosaicAsOvr", False)
-            ortho_dict = {"ortho": {"orthoMosaicAsOvr": ortho_mosaic_as_ovr}}
-
-            if regen_seamlines:
-                ortho_dict.update(seamline_dict)
-            if recompute_color_correction:
-                ortho_dict.update(color_balance_dict)
-
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "ortho",
-            "processing_states": ortho_dict,
-        }
+        if regen_seamlines:
+            ortho_dict.update(seamline_dict)
+        if recompute_color_correction:
+            ortho_dict.update(color_balance_dict)
 
     return gis._tools.realitymapping.generate_orthomosaic(
         image_collection=image_collection,
@@ -1074,7 +1027,6 @@ def generate_orthomosaic(
         recompute_color_correction=recompute_color_correction,
         context=context,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1099,9 +1051,9 @@ def generate_report(
     ===================    ====================================================================
     **Parameter**           **Description**
     -------------------    --------------------------------------------------------------------
-    mission                Required. The input image collection that should be
-                           used to generate a report from.
-                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                Required, the input mission. The mission must be a 
+                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+
                            The mission must exist.
     -------------------    --------------------------------------------------------------------
     report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
@@ -1114,26 +1066,17 @@ def generate_report(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    update_flight_json = False
-    flight_json_details = {}
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
 
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "report",
-        }
+    image_collection = mission.image_collection
 
     return gis._tools.realitymapping.generate_report(
         image_collection=image_collection,
         report_format=report_format,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1199,10 +1142,8 @@ def query_control_points(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input image collection on which to query
-                           the the control points.
-
-                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                Required, the input mission. The mission must be a 
+                           :class:`~arcgis.raster.realitymapping.RMMission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -1221,26 +1162,17 @@ def query_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    update_flight_json = False
-    flight_json_details = {}
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
 
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "queryControlPoints",
-        }
+    image_collection = mission.image_collection
 
     return gis._tools.realitymapping.query_control_points(
         image_collection=image_collection,
         where=query,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1261,8 +1193,8 @@ def reset_image_collection(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input image collection to reset
-                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                Required, the input mission. The mission must be a 
+                           :class:`~arcgis.raster.realitymapping.RMMission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -1276,21 +1208,14 @@ def reset_image_collection(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import RMMission
 
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
 
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "reset",
-        }
+    image_collection = mission.image_collection
 
     return gis._tools.realitymapping.reset_image_collection(
         image_collection=image_collection,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1417,8 +1342,9 @@ def reconstruct_surface(
     =========================================================================   ===========================================================================
     **Parameter**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    mission                                                                     Required String/Item. The adjusted input image collection.
-                                                                                The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
+    mission                                                                     Required, the input mission. The mission must be a 
+                                                                                :class:`~arcgis.raster.realitymapping.RMMission` object.
+
                                                                                 The mission must exist.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
@@ -1558,34 +1484,26 @@ def reconstruct_surface(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import RMMission
 
-    update_flight_json = False
-    flight_json_details = {}
-    image_collection = mission
-    if isinstance(mission, RMMission):
-        image_collection = mission.image_collection
-        update_flight_json = True
+    if not isinstance(mission, RMMission):
+        raise TypeError("The mission parameter must be a RMMission object.")
 
-        flight_json_details = {
-            "update_flight_json": update_flight_json,
-            "mission": mission,
-            "item_name": "reconstructSurface",
-        }
+    image_collection = mission.image_collection
 
-        if mission.workspace:
-            if context:
-                context["workspace"] = mission.workspace
-            else:
-                context = {"workspace": mission.workspace}
+    if mission.workspace:
+        if context:
+            context["workspace"] = mission.workspace
+        else:
+            context = {"workspace": mission.workspace}
 
-        if kwargs is not None:
-            if "folder" in kwargs:
-                folder = kwargs["folder"]
-            else:
-                for f in gis.users.me.folders:
-                    if f._fid == image_collection.ownerFolder:
-                        folder = f.properties
-                        break
-            kwargs.update({"folder": folder})
+    if kwargs is not None:
+        if "folder" in kwargs:
+            folder = kwargs["folder"]
+        else:
+            for f in gis.users.me.folders:
+                if f._fid == image_collection.ownerFolder:
+                    folder = f.properties
+                    break
+        kwargs.update({"folder": folder})
 
     return gis._tools.realitymapping.reconstruct_surface(
         image_collection=image_collection,
@@ -1605,7 +1523,6 @@ def reconstruct_surface(
         output_dtm_name=output_dtm_name,
         context=context,
         future=future,
-        flight_json_details=flight_json_details,
         **kwargs,
     )
 
