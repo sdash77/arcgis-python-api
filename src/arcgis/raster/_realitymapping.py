@@ -1779,7 +1779,7 @@ class RMProject:
         if mission_name is None:
             mission_name = "mission_" + random_name
         from datetime import datetime
-        image_collection = f"{mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        image_collection_name = f"{mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         if raster_type_name is None:
             raster_type_name = "UAV/UAS"
@@ -1787,7 +1787,7 @@ class RMProject:
         _ra = gis._tools.rasteranalysis
         input_rasters, image_collection, raster_type, context, _ = (
             _ra._sanitize_inputs(
-                image_collection=image_collection,
+                image_collection=image_collection_name,
                 input_rasters=image_list,
                 raster_type_name=raster_type_name,
                 raster_type_params=raster_type_params,
@@ -1800,10 +1800,10 @@ class RMProject:
 
         mission_def = {"name": mission_name}
         if context is None:
-            context = {"workspace": image_collection}
+            context = {"workspace": image_collection_name}
         else:
             if "workspace" not in context:
-                context["workspace"] = image_collection
+                context["workspace"] = image_collection_name
 
         mission = gis._tools.realitymapping.create_mission(
             project_item=project_item,
