@@ -1778,9 +1778,8 @@ class RMProject:
         random_name = _id_generator()
         if mission_name is None:
             mission_name = "mission_" + random_name
-        if image_collection is None:
-            from datetime import datetime
-            image_collection = f"{mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        from datetime import datetime
+        image_collection = f"{mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         if raster_type_name is None:
             raster_type_name = "UAV/UAS"
