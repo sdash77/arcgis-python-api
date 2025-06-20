@@ -1775,9 +1775,8 @@ class RMProject:
         gis = arcgis.env.active_gis if gis is None else gis
         project_item = {"itemId": self._project_item.itemid}
 
-        random_name = _id_generator()
         if mission_name is None:
-            mission_name = "mission_" + random_name
+            mission_name = "mission_" + _id_generator()
         from datetime import datetime
         image_collection_name = f"{mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
@@ -1849,8 +1848,7 @@ class RMProject:
     def merge_missions(
         self,
         missions,
-        output_mission_name,
-        output_collection_name=None,
+        output_mission_name=None,
         mission_settings=None,
         *,
         gis=None,
@@ -1858,10 +1856,15 @@ class RMProject:
         **kwargs,
     ):
         gis = arcgis.env.active_gis if gis is None else gis
-        output_collection_name = output_collection_name if output_collection_name else output_mission_name + "_collection"
+
+        if output_mission_name is None:
+            output_mission_name = "mission_" + _id_generator()
+        from datetime import datetime
+        output_collection_name = f"{output_mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
         if kwargs.get("folder", None) is None:
             kwargs["folder"] = self._folder
-        context = {"workspace": output_mission_name}
+        context = {"workspace": output_collection_name}
         
         mission = gis._tools.realitymapping.merge_missions(
             missions=missions,
