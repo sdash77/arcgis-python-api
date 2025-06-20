@@ -22,10 +22,10 @@ class TestNotebookDataAccessUpload(unittest.TestCase):
         self.mock_gis._con.post.return_value = {'status': 'success'}
         self.mock_gis._con.put_raw.return_value.status_code = 200
         self.data_access = NotebookDataAccess('http://fake-url', self.mock_gis)
-        # Patch folders to return a mock Home NotebookFolder
+        # Patch the folders property to return a mock Home NotebookFolder
         self.mock_home_folder = MagicMock(spec=NotebookFolder)
         self.mock_home_folder.name = 'Home'
-        self.data_access.folders = [self.mock_home_folder]
+        type(self.data_access).folders = property(lambda s: [self.mock_home_folder])
 
     @patch('arcgis.gis.nb._dataaccess.os.path.isfile')
     @patch('arcgis.gis.nb._dataaccess.os.path.isdir')

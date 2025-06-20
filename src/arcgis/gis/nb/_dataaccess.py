@@ -4,82 +4,7 @@ from typing import List, Dict, Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import User
 
-def _rename(
-    da: "NotebookDataAccess", folder_name: str, new_name: str
-) -> bool:
-    """
-    Renames a folder in the notebook workspace.
 
-    :param da: NotebookDataAccess instance.
-    :param folder_name: The current name of the folder to rename.
-    :param new_name: The new name for the folder.
-    :return: True if the folder was renamed successfully, False otherwise.
-    """
-    if da._gis._is_agol:
-        url = f"{da._url}/move".replace("/azureblob/", f"/{da._username}/")
-    else:
-        url = f"{da._url}/{da._username}/notebookworkspace/move"
-    params = {
-        "f": "json",
-        "source": folder_name,
-        "target": new_name,
-        "targetUserName": da._username,
-        "token": da._gis._con.token,
-    }
-    return da._gis.session.post(url, params).json().get("status") == "success"
-
-def _get_folders(da: "NotebookDataAccess", folder_name: str | None) -> List["NotebookFolder"]:
-    if da._gis._is_agol:
-        url = f"{da._url}/notebooksWorkspace"
-    else:
-        url = f"{da._url}/notebookworkspace"
-    params = {
-        "f": "json",
-        "restype": "container",
-        "comp": "list",
-        "delimiter": "/",
-        "token": da._gis._con.token,
-    }
-    if folder_name:
-        params["prefix"] = folder_name
-    response = da._gis._con.get(url, params)
-    # When creating subfolders the name should always have the folder to which it belongs as the prefix
-    folders = [
-        NotebookFolder(f["Name"], da)
-        for f in response.get("Blobs", [])
-        if f["Properties"].get("ResourceType").lower() == "directory"
-    ]
-    
-    # Include root folder only if folder_name is None
-    if folder_name is None:
-        folders.insert(0, NotebookFolder("", da))
-    return folders
-
-def _create_folder(
-    da: "NotebookDataAccess", folder_path: str, folder_name: str
-) -> bool:
-    """
-    Creates a folder in the notebook workspace.
-
-    :param da: NotebookDataAccess instance.
-    :param folder_name: The name of the folder to create.
-    :return: True if the folder was created successfully, False otherwise.
-    """
-    if da._gis._is_agol:
-        url = f"{da._url}/{da._username}/createFolder".replace(
-            "/azureblob", ""
-        )
-    else:
-        url = f"{da._url}/notebookworkspace/createFolder"
-    params = {
-        "f": "json",
-        "folderName": f"{folder_path}{folder_name}",
-        "token": da._gis._con.token,
-    }
-    result = da._gis._con.post(url, params)
-    if result.get("status") == "success":
-        return NotebookFolder(f"{folder_path}{folder_name}/", da)  
-    
 ###########################################################################
 class NotebookFile:
     """Represents a Single File on the ArcGIS Notebook Server"""
@@ -134,9 +59,8 @@ class NotebookFile:
 
         :return: True if the file was renamed, False or an error if it was not.
         """
-        return _rename(
-            da=self._da,
-            folder_name=self.properties["Name"],
+        return self._da._rename(
+            folder_name=self._definition.get("Name"),
             new_name=name,
         )
 
@@ -147,7 +71,7 @@ class NotebookFile:
 
         :return: str as file path
         """
-        return self._da._download(filename=self.properties["Name"])
+        return self._da._download(filename=self._definition.get("Name"))
 
     # ---------------------------------------------------------------------
     @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
@@ -166,7 +90,30 @@ class NotebookFile:
 
         :return: True if the file was deleted, False or an error if it was not.
         """
-        return self._da._delete(filename=self.properties["Name"])
+        return self._da._delete(filename=self._definition.get("Name"))
+
+    # ---------------------------------------------------------------------
+    def move(self, target_folder: "NotebookFolder") -> bool:
+        """
+        Moves the file to another NotebookFolder.
+
+        ===================  ============================================================
+        **Parameter**         **Description**
+        -------------------  ------------------------------------------------------------
+        target_folder        Required NotebookFolder. The target folder to move the file to.
+        ===================  ============================================================
+
+        :return: True if the file was moved successfully, False otherwise.
+        """
+        target_folder_path = target_folder._folder_name or ""
+        if not target_folder_path.endswith("/"):
+            target_folder_path += "/"
+
+        filename = self.name
+        current_path = self._definition.get("Name")
+        new_path = f"{target_folder_path}{filename}"
+
+        return self._da._rename(folder_name=current_path, new_name=new_path)
 
 
 ###########################################################################
@@ -215,18 +162,20 @@ class NotebookFolder:
     def rename(self, name: str) -> bool:
         """
         Rename the folder.
-        
+
         ===================  ==========================================================================
         **Parameter**         **Description**
         -------------------  --------------------------------------------------------------------------
         name                 Required String. The new name of the folder.
                              The name must be a simple, non-empty name without slashes.
         ===================  ==========================================================================
-        
+
         :return: True if the folder was renamed, False or an error if it was not.
         """
         if self.name == "Home":
-            raise ValueError("Cannot rename the root folder 'Home'. Please create a subfolder instead.")
+            raise ValueError(
+                "Cannot rename the root folder 'Home'. Please create a subfolder instead."
+            )
         if not isinstance(name, str):
             raise ValueError("Folder name must be a string.")
         if "/" in name or name.strip() == "":
@@ -238,8 +187,7 @@ class NotebookFolder:
         parts[-1] = name
         self._folder_name = "/".join(parts) + "/"
 
-        return _rename(
-            da=self._da,
+        return self._da._rename(
             folder_name=current_name,
             new_name=self._folder_name,
         )
@@ -252,8 +200,7 @@ class NotebookFolder:
 
         :return: List[NotebookFolder] - A list of NotebookFolder objects representing the subfolders.
         """
-        return _get_folders(
-            da=self._da,
+        return self._da._get_folders(
             folder_name=self._folder_name,
         )
 
@@ -273,14 +220,20 @@ class NotebookFolder:
             "f": "json",
             "restype": "container",
             "comp": "list",
-            "prefix": self._folder_name,
+            "delimiter": "/",
             "token": self._da._gis._con.token,
         }
+        if self._folder_name:
+            params["prefix"] = self._folder_name
         response = self._da._gis._con.get(url, params)
-        return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
+        return [
+            NotebookFile(f, self._da)
+            for f in response.get("Blobs", [])
+            if f["Properties"].get("ResourceType").lower() == "file"
+        ]
 
     # ---------------------------------------------------------------------
-    def create_folder(self, folder_name: str) -> bool:
+    def create_folder(self, folder_name: str) -> "NotebookFolder":
         """
         Create a subfolder in the current folder.
 
@@ -291,13 +244,22 @@ class NotebookFolder:
                              This will create a subfolder within the current folder.
         ===================  ==========================================================================
 
-        :return: True if the folder was created, False or an error if it was not.
+        :return: NotebookFolder - A NotebookFolder object representing the newly created subfolder.
         """
-        return _create_folder(
-            da=self._da,
-            folder_path=self._folder_name,
-            folder_name=folder_name,
-        )
+        if self._is_agol:
+            url = f"{self._url}/{self._da._username}/createFolder".replace(
+                "/azureblob", ""
+            )
+        else:
+            url = f"{self._url}/notebookworkspace/createFolder"
+        params = {
+            "f": "json",
+            "folderName": f"{self._folder_name}{folder_name}",
+            "token": self._da._gis._con.token,
+        }
+        result = self._da._gis._con.post(url, params)
+        if result.get("status") == "success":
+            return NotebookFolder(f"{self._folder_name}{folder_name}/", self._da)
 
     # ---------------------------------------------------------------------
     def _resolve_files(self, fp):
@@ -329,7 +291,7 @@ class NotebookFolder:
 
         if self._is_agol:
             existing_files = self.files
-            if any(f.properties.name == filename for f in existing_files):
+            if any(f.name == filename for f in existing_files):
                 raise ValueError(f"File {filename} already exists in the workspace.")
 
         # Add folder path unless root folder
@@ -338,7 +300,7 @@ class NotebookFolder:
         )
 
         if self._is_agol:
-            url = f"{self._url}/{self._username}/{full_path}"
+            url = f"{self._url}/{self._da._username}/{full_path}"
         else:
             url = f"{self._url}/notebookworkspace/{full_path}"
 
@@ -349,9 +311,10 @@ class NotebookFolder:
             "x-ms-version": "2020-10-02",  # Consider making this configurable
         }
 
-        resp = self._gis._con.put_raw(
-            url, data=open(file_path, "rb"), additional_headers=headers
-        )
+        with open(file_path, "rb") as file_data:
+            resp = self._da._gis._con.put_raw(
+                url, data=file_data, additional_headers=headers
+            )
         return 200 <= resp.status_code < 300
 
     # ---------------------------------------------------------------------
@@ -382,6 +345,46 @@ class NotebookFolder:
             responses.append(self._upload_single_file(file))
         return responses
 
+    # ---------------------------------------------------------------------
+    def move(self, target_folder: "NotebookFolder") -> bool:
+        """
+        Move the folder to another folder in the notebook workspace.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        target_folder        Required NotebookFolder. The target folder to which this folder will be moved.
+                             The target folder must be a valid NotebookFolder object.
+        ===================  ==========================================================================
+
+        :return: True if the folder was moved successfully, False or an error if it was not.
+        """
+        if not isinstance(target_folder, NotebookFolder):
+            raise ValueError("target_folder must be a NotebookFolder instance.")
+
+        if self.name == "Home":
+            raise ValueError(
+                "Cannot move the root folder 'Home'. Please create a subfolder instead."
+            )
+
+        target_path = target_folder._folder_name or ""
+        if not target_path.endswith("/") and target_path != "":
+            target_path += "/"
+
+        parts = self._folder_name.strip("/").split("/")
+        new_name = f"{target_path}{parts[-1]}/"
+
+        return self._da._rename(folder_name=self._folder_name, new_name=new_name)
+
+    # ---------------------------------------------------------------------
+    def delete(self) -> bool:
+        """
+        Deletes a folder and all content from the system. This will permanently delete the folder and content and the action cannot be undone.
+
+        :return: True if the folder and content was deleted, False or an error if it was not.
+        """
+        return self._da._delete(filename=self._folder_name)
+
 
 ###########################################################################
 class NotebookDataAccess:
@@ -411,6 +414,34 @@ class NotebookDataAccess:
         return "NotebookDataAccess"
 
     # ---------------------------------------------------------------------
+    def _get_folders(self, folder_name: str | None) -> List["NotebookFolder"]:
+        if self._gis._is_agol:
+            url = f"{self._url}/notebooksWorkspace"
+        else:
+            url = f"{self._url}/notebookworkspace"
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "delimiter": "/",
+            "token": self._gis._con.token,
+        }
+        if folder_name:
+            params["prefix"] = folder_name
+        response = self._gis._con.get(url, params)
+        # When creating subfolders the name should always have the folder to which it belongs as the prefix
+        folders = [
+            NotebookFolder(f["Name"], self)
+            for f in response.get("Blobs", [])
+            if f["Properties"].get("ResourceType").lower() == "directory"
+        ]
+
+        # Include root folder only if folder_name is None
+        if folder_name is None:
+            folders.insert(0, NotebookFolder("", self))
+        return folders
+
+    # ---------------------------------------------------------------------
     @property
     def folders(self) -> List[NotebookFolder]:
         """
@@ -418,8 +449,7 @@ class NotebookDataAccess:
 
         :return: List[NotebookFolder] - A list of NotebookFolder objects containing the folders in the workspace.
         """
-        return _get_folders(
-            da=self,
+        return self._get_folders(
             folder_name=None,
         )
 
@@ -620,6 +650,27 @@ class NotebookDataAccess:
         }
         return self._gis._con.post(url, params).get("status") == "success"
 
+    # ---------------------------------------------------------------------
+    def _rename(self, folder_name: str, new_name: str) -> bool:
+        """
+        Renames a folder in the notebook workspace.
+
+        :param folder_name: The current name of the folder to rename.
+        :param new_name: The new name for the folder.
+        :return: True if the folder was renamed successfully, False otherwise.
+        """
+        if self._gis._is_agol:
+            url = f"{self._url}/move".replace("/azureblob/", f"/{self._username}/")
+        else:
+            url = f"{self._url}/{self._username}/notebookworkspace/move"
+        params = {
+            "f": "json",
+            "source": folder_name,
+            "target": new_name,
+            "targetUserName": self._username,
+            "token": self._gis._con.token,
+        }
+        return self._gis.session.post(url, params).json().get("status") == "success"
 
     # ---------------------------------------------------------------------
     def _resolve_files(self, fp):
