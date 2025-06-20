@@ -1804,7 +1804,7 @@ class RMProject:
         else:
             if "workspace" not in context:
                 context["workspace"] = image_collection_name
-        context["group"] = self.groups[0].id
+        # context["group"] = self.groups[0].id
 
         mission = gis._tools.realitymapping.create_mission(
             project_item=project_item,
