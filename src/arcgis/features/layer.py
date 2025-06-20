@@ -2793,6 +2793,12 @@ class FeatureLayer(Layer):
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+        if hasattr(self.properties, "supportsAppend"):
+            if not self.properties.supportsAppend:
+                raise Exception(
+                    "Append is not supported on this layer, please "
+                    + "update service definition capabilities."
+                )
         upload_formats = self.properties.supportedAppendFormats
         if upload_format not in upload_formats:
             raise ValueError(

@@ -40,6 +40,20 @@ class TestVersionManagementSQL(unittest.TestCase):
             "Incorrect quantity of attachments found in version",
         )
 
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            for version in cls.vms.all:
+                if version.properties.versionName.lower().startswith(
+                    "api_data_owner.api-"
+                ):
+                    # Purge any locks on these test versions
+                    cls.vms.purge(version.properties.versionName)
+                    version.delete()
+                    print(f"deleted version: {version.properties.versionName}")
+        except Exception as ex:
+            print("Error deleting version(s):", str(ex))
+
 
 if __name__ == "__main__":
     unittest.main()
