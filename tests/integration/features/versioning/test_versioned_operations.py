@@ -18,9 +18,7 @@ class TestVersionManagementSQL(unittest.TestCase):
         # Create Python API GIS object and prepare REST service URL strings
         cls.base_server_url = "https://pythonapitestnb.dev.geocloud.com/server/rest/services/BranchVersionedFeatureService/"
         cls.gis = GIS(
-            "https://pythonapitestnb.dev.geocloud.com/portal/",
-            "api_data_owner",
-            "geosaurus_donot3xpose",
+            profile="your_ent_admin_profile",
             verify_cert=False,
         )
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]

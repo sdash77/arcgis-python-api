@@ -2750,7 +2750,7 @@ class FeatureLayer(Layer):
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
         gdb_version                Optional string.  Introduced at 11.5 for use by reference feature
-                                   services. Sets the target geodatabse version. Values for this parameter
+                                   services. Sets the target geodatabase version. Values for this parameter
                                    must be a branch version. If the gdbVersion parameter is not specified,
                                    this operation will target the default version.
         ------------------------   --------------------------------------------------------------------
@@ -2788,7 +2788,7 @@ class FeatureLayer(Layer):
             hasattr(self._gis, "_portal") and self._gis._portal.is_logged_in == False
         ) or (hasattr(self._gis, "is_logged_in") and self._gis.is_logged_in == False):
             raise Exception("Authentication required to perform append.")
-        if self.properties.supportsAppend == False:
+        if not hasattr(self.properties, "supportsAppend"):
             raise Exception(
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
@@ -2817,7 +2817,6 @@ class FeatureLayer(Layer):
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
             "layerMappings": layer_mappings,
-            "gdbVersion": gdb_version,
         }
         if (
             self._gis
@@ -2831,7 +2830,14 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-
+        if (
+            gdb_version
+            and not self._gis._is_arcgisonline
+            and self._gis.version[0] < 2025
+        ):
+            raise ValueError(
+                f"Cannot specify `gdb_version` at this ArcGIS Enterprise release: {self._gis.version}"
+            )
         cparams = copy.copy(params)
         for k, v in cparams.items():
             if v is None:
