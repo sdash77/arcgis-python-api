@@ -136,6 +136,13 @@ NotebookFile
     :undoc-members:
     :show-inheritance:
 
+NotebookFolder
+----------------
+.. autoclass:: arcgis.gis.nb._dataaccess.NotebookFolder
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 NBServicesManager
 -----------------
 .. autoclass:: arcgis.gis.nb._services.NBServicesManager

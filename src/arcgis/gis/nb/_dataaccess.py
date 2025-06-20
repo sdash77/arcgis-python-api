@@ -4,7 +4,82 @@ from typing import List, Dict, Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import User
 
+def _rename(
+    da: "NotebookDataAccess", folder_name: str, new_name: str
+) -> bool:
+    """
+    Renames a folder in the notebook workspace.
 
+    :param da: NotebookDataAccess instance.
+    :param folder_name: The current name of the folder to rename.
+    :param new_name: The new name for the folder.
+    :return: True if the folder was renamed successfully, False otherwise.
+    """
+    if da._gis._is_agol:
+        url = f"{da._url}/move".replace("/azureblob/", f"/{da._username}/")
+    else:
+        url = f"{da._url}/{da._username}/notebookworkspace/move"
+    params = {
+        "f": "json",
+        "source": folder_name,
+        "target": new_name,
+        "targetUserName": da._username,
+        "token": da._gis._con.token,
+    }
+    return da._gis.session.post(url, params).json().get("status") == "success"
+
+def _get_folders(da: "NotebookDataAccess", folder_name: str | None) -> List["NotebookFolder"]:
+    if da._gis._is_agol:
+        url = f"{da._url}/notebooksWorkspace"
+    else:
+        url = f"{da._url}/notebookworkspace"
+    params = {
+        "f": "json",
+        "restype": "container",
+        "comp": "list",
+        "delimiter": "/",
+        "token": da._gis._con.token,
+    }
+    if folder_name:
+        params["prefix"] = folder_name
+    response = da._gis._con.get(url, params)
+    # When creating subfolders the name should always have the folder to which it belongs as the prefix
+    folders = [
+        NotebookFolder(f["Name"], da)
+        for f in response.get("Blobs", [])
+        if f["Properties"].get("ResourceType").lower() == "directory"
+    ]
+    
+    # Include root folder only if folder_name is None
+    if folder_name is None:
+        folders.insert(0, NotebookFolder("", da))
+    return folders
+
+def _create_folder(
+    da: "NotebookDataAccess", folder_path: str, folder_name: str
+) -> bool:
+    """
+    Creates a folder in the notebook workspace.
+
+    :param da: NotebookDataAccess instance.
+    :param folder_name: The name of the folder to create.
+    :return: True if the folder was created successfully, False otherwise.
+    """
+    if da._gis._is_agol:
+        url = f"{da._url}/{da._username}/createFolder".replace(
+            "/azureblob", ""
+        )
+    else:
+        url = f"{da._url}/notebookworkspace/createFolder"
+    params = {
+        "f": "json",
+        "folderName": f"{folder_path}{folder_name}",
+        "token": da._gis._con.token,
+    }
+    result = da._gis._con.post(url, params)
+    if result.get("status") == "success":
+        return NotebookFolder(f"{folder_path}{folder_name}/", da)  
+    
 ###########################################################################
 class NotebookFile:
     """Represents a Single File on the ArcGIS Notebook Server"""
@@ -16,17 +91,14 @@ class NotebookFile:
     def __init__(self, definition: Dict[str, Any], da: "NotebookDataAccess"):
         self._definition = definition
         self._da = da
-        self._gis = da._gis
-        self._url = da._url
-        self._is_agol = da._gis._is_arcgisonline
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<NotebookFile file={self.properties.name}>"
+        return f"<NotebookFile file={self.name}>"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<NotebookFile file={self.properties.name}>"
+        return f"<NotebookFile file={self.name}>"
 
     # ---------------------------------------------------------------------
     @property
@@ -36,7 +108,7 @@ class NotebookFile:
 
         :return: str - The name of the file.
         """
-        return self.properties.name.strip("/").split("/")[-1]
+        return self._definition.get("Name").strip("/").split("/")[-1]
 
     # ---------------------------------------------------------------------
     @property
@@ -62,18 +134,11 @@ class NotebookFile:
 
         :return: True if the file was renamed, False or an error if it was not.
         """
-        if self._is_agol:
-            url = f"{self._url}/move".replace("/azureblob/", f"/{self._username}/")
-        else:
-            url = f"{self._da._url}/{self._da._username}/notebookworkspace/move"
-        params = {
-            "f": "json",
-            "source": self.properties.name,
-            "target": name,
-            "targetUserName": self._da._username,
-            "token": self._da._gis._con.token,
-        }
-        return self._da._gis.session.post(url, params).json().get("status") == "success"
+        return _rename(
+            da=self._da,
+            folder_name=self.properties["Name"],
+            new_name=name,
+        )
 
     # ---------------------------------------------------------------------
     def download(self) -> str:
@@ -124,11 +189,11 @@ class NotebookFolder:
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<NotebookFolder name={self.name}>"
+        return f"<NotebookFolder: {self.name}>"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<NotebookFolder name={self.name}>"
+        return f"<NotebookFolder: {self.name}>"
 
     # ---------------------------------------------------------------------
     @property
@@ -137,30 +202,47 @@ class NotebookFolder:
         Get or set the name of the folder.
 
         ====================    ==========================================================================
-        **Argument**            **Description**
+        **Parameter**           **Description**
         --------------------    --------------------------------------------------------------------------
         new_name                Required String. The name of the folder. This will rename the folder.
         ====================    ==========================================================================
 
         :return: str - The name of the folder.
         """
-        return self._folder_name.strip("/").split("/")[-1]
+        return self._folder_name.strip("/").split("/")[-1] or "Home"
 
     # ---------------------------------------------------------------------
-    @name.setter
-    def name(self, new_name: str):
-        if not isinstance(new_name, str):
+    def rename(self, name: str) -> bool:
+        """
+        Rename the folder.
+        
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        name                 Required String. The new name of the folder.
+                             The name must be a simple, non-empty name without slashes.
+        ===================  ==========================================================================
+        
+        :return: True if the folder was renamed, False or an error if it was not.
+        """
+        if self.name == "Home":
+            raise ValueError("Cannot rename the root folder 'Home'. Please create a subfolder instead.")
+        if not isinstance(name, str):
             raise ValueError("Folder name must be a string.")
-        if "/" in new_name or new_name.strip() == "":
+        if "/" in name or name.strip() == "":
             raise ValueError(
                 "Folder name must be a simple, non-empty name without slashes."
             )
-
+        current_name = self._folder_name
         parts = self._folder_name.strip("/").split("/")
-        parts[-1] = new_name
+        parts[-1] = name
         self._folder_name = "/".join(parts) + "/"
 
-        # TODO: rename the folder on the server
+        return _rename(
+            da=self._da,
+            folder_name=current_name,
+            new_name=self._folder_name,
+        )
 
     # ---------------------------------------------------------------------
     @property
@@ -170,25 +252,10 @@ class NotebookFolder:
 
         :return: List[NotebookFolder] - A list of NotebookFolder objects representing the subfolders.
         """
-        if self._is_agol:
-            url = f"{self._url}/notebooksWorkspace"
-        else:
-            url = f"{self._url}/notebookworkspace"
-        params = {
-            "f": "json",
-            "restype": "container",
-            "comp": "list",
-            "prefix": self._folder_name,
-            "delimiter": "/",
-            "token": self._da._gis._con.token,
-        }
-        response = self._da._gis._con.get(url, params)
-        # When creating subfolders the name should always have the folder to which it belongs as the prefix
-        return [
-            NotebookFolder(f["Name"], self._da)
-            for f in response.get("Blobs", [])
-            if f["Properties"].get("ResourceType").lower() == "directory"
-        ]
+        return _get_folders(
+            da=self._da,
+            folder_name=self._folder_name,
+        )
 
     # ---------------------------------------------------------------------
     @property
@@ -226,20 +293,11 @@ class NotebookFolder:
 
         :return: True if the folder was created, False or an error if it was not.
         """
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/{self._da._username}/createFolder".replace(
-                "/azureblob", ""
-            )
-        else:
-            url = f"{self._url}/notebookworkspace/createFolder"
-        params = {
-            "f": "json",
-            "folderName": f"{self._folder_name}{folder_name}",
-            "token": self._gis._con.token,
-        }
-        result = self._gis._con.post(url, params)
-        if result.get("status") == "success":
-            return NotebookFolder(f"{self._folder_name}{folder_name}/", self._da)
+        return _create_folder(
+            da=self._da,
+            folder_path=self._folder_name,
+            folder_name=folder_name,
+        )
 
     # ---------------------------------------------------------------------
     def _resolve_files(self, fp):
@@ -326,53 +384,6 @@ class NotebookFolder:
 
 
 ###########################################################################
-class NotebookFolders:
-    """
-    Represents the folder manager for the ArcGIS Notebook Server.
-    This class allows you to manage folders in the notebook workspace directory of the user making the request.
-    """
-
-    _da = None
-
-    # ---------------------------------------------------------------------
-    def __init__(self, da: "NotebookDataAccess"):
-        self._da = da
-        self._gis = da._gis
-        self._is_agol = da._gis._is_arcgisonline
-        self._url = da._url
-
-    # ---------------------------------------------------------------------
-    def __str__(self):
-        return "<NotebookFolders>"
-
-    # ---------------------------------------------------------------------
-    def __repr__(self):
-        return "<NotebookFolders>"
-
-    # ---------------------------------------------------------------------
-    @property
-    def folders(self) -> List[NotebookFolder]:
-        if self._is_agol:
-            url = f"{self._url}/notebooksWorkspace"
-        else:
-            url = f"{self._url}/notebookworkspace"
-        params = {
-            "f": "json",
-            "restype": "container",
-            "comp": "list",
-            "delimiter": "/",
-            "token": self._gis._con.token,
-        }
-        # Get the list of folders in the workspace directory
-        # The response will contain a list of blobs, some of which are directories (folders)
-        return [
-            NotebookFolder(f["Name"], self._da)
-            for f in self._gis._con.get(url, params).get("Blobs", [])
-            if f["Properties"].get("ResourceType").lower() == "directory"
-        ]
-
-
-###########################################################################
 class NotebookDataAccess:
     """
     The Data Access Workspace Directory allows notebook authors to manage files used in their notebooks.
@@ -401,13 +412,16 @@ class NotebookDataAccess:
 
     # ---------------------------------------------------------------------
     @property
-    def notebook_folders(self) -> NotebookFolders:
+    def folders(self) -> List[NotebookFolder]:
         """
         Returns the folders in the workspace directory (/arcgis/home) of the user making the request.
 
-        :return: NotebookFolders - A NotebookFolders object containing the folders in the workspace.
+        :return: List[NotebookFolder] - A list of NotebookFolder objects containing the folders in the workspace.
         """
-        return NotebookFolders(self)
+        return _get_folders(
+            da=self,
+            folder_name=None,
+        )
 
     # ---------------------------------------------------------------------
     @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
@@ -580,6 +594,34 @@ class NotebookDataAccess:
         return self._gis._con.post(url, params).get("status") == "success"
 
     # ---------------------------------------------------------------------
+    def _download(self, filename: str) -> str:
+        """
+        downloads a file from the
+        """
+        url = f"{self._url}/notebookworkspace/downloadFile"
+        params = {
+            "f": "json",
+            "fileName": filename,
+        }
+        return self._gis._con.post(url, params)
+
+    # ---------------------------------------------------------------------
+    def _delete(self, filename: str) -> bool:
+        """
+        downloads a file from the
+        """
+        if self._gis._is_arcgisonline:
+            url = f"{self._url}/deleteFile".replace("/azureblob", f"/{self._username}")
+        else:
+            url = f"{self._url}/notebookworkspace/deleteFile"
+        params = {
+            "f": "json",
+            "fileName": filename,
+        }
+        return self._gis._con.post(url, params).get("status") == "success"
+
+
+    # ---------------------------------------------------------------------
     def _resolve_files(self, fp):
         if isinstance(fp, list):
             return [f for f in fp if os.path.isfile(f)]
@@ -663,30 +705,3 @@ class NotebookDataAccess:
         for file in files:
             responses.append(self._upload_single_file(file, folder))
         return responses
-
-    # ---------------------------------------------------------------------
-    def _download(self, filename: str) -> str:
-        """
-        downloads a file from the
-        """
-        url = f"{self._url}/notebookworkspace/downloadFile"
-        params = {
-            "f": "json",
-            "fileName": filename,
-        }
-        return self._gis._con.post(url, params)
-
-    # ---------------------------------------------------------------------
-    def _delete(self, filename: str) -> bool:
-        """
-        downloads a file from the
-        """
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/deleteFile".replace("/azureblob", f"/{self._username}")
-        else:
-            url = f"{self._url}/notebookworkspace/deleteFile"
-        params = {
-            "f": "json",
-            "fileName": filename,
-        }
-        return self._gis._con.post(url, params).get("status") == "success"
