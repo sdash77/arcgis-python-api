@@ -115,6 +115,43 @@ class NotebookFile:
 
         return self._da._rename(folder_name=current_path, new_name=new_path)
 
+    # ---------------------------------------------------------------------
+    def transfer_file(self, target_user: User | str | None = None) -> bool:
+        """
+        Transfer the file to another user in the organization. This can only be done by an administrator.
+        The file will be renamed to `_transferred_{file_name}` and moved to the target user's Home folder.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        target_user          Required User instance or string. The user or username to which the file will be transferred.
+                             If a string is provided, it should be the username of the target user.
+        ===================  ==========================================================================
+
+        :return: True if the file was transferred successfully, False or an error if it was not.
+        """
+        if isinstance(target_user, User):
+            target_username = target_user.username
+        else:
+            target_username = target_user
+
+        # Check the user has privileges to transfer folders and a workspace
+        if not self._da._check_user_has_privileges(self._da._gis.users.me):
+            raise ValueError(
+                "Only organization administrators can transfer user folders."
+            )
+        if not self._da._check_user_has_workspace(target_username):
+            raise ValueError(
+                f"Target user '{target_username}' does not have a notebook workspace in the organization."
+            )
+
+        new_name = f"_transferred_{self.name}"
+        return self._da._rename(
+            folder_name=self._folder_name,
+            new_name=f"{new_name}",
+            username=target_username,
+        )
+
 
 ###########################################################################
 class NotebookFolder:
@@ -377,12 +414,51 @@ class NotebookFolder:
         return self._da._rename(folder_name=self._folder_name, new_name=new_name)
 
     # ---------------------------------------------------------------------
+    def transfer_folder(self, target_user: User | str | None = None) -> bool:
+        """
+        Transfer the folder to another user in the organization. This can only be done by an administrator.
+        The folder will be renamed to `_transferred_{folder_name}` and moved to the target user's Home folder.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        target_user          Required User instance or string. The user or username to which the folder will be transferred.
+                             If a string is provided, it should be the username of the target user.
+        ===================  ==========================================================================
+
+        :return: True if the folder was transferred successfully, False or an error if it was not.
+        """
+        if isinstance(target_user, User):
+            target_username = target_user.username
+        else:
+            target_username = target_user
+
+        # Check the user has privileges to transfer folders and a workspace
+        if not self._da._check_user_has_privileges(self._da._gis.users.me):
+            raise ValueError(
+                "Only organization administrators can transfer user folders."
+            )
+        if not self._da._check_user_has_workspace(target_username):
+            raise ValueError(
+                f"Target user '{target_username}' does not have a notebook workspace in the organization."
+            )
+
+        new_name = f"_transferred_{self._folder_name.strip('/').split('/')[-1]}"
+        return self._da._rename(
+            folder_name=self._folder_name,
+            new_name=f"{new_name}",
+            username=target_username,
+        )
+
+    # ---------------------------------------------------------------------
     def delete(self) -> bool:
         """
         Deletes a folder and all content from the system. This will permanently delete the folder and content and the action cannot be undone.
 
         :return: True if the folder and content was deleted, False or an error if it was not.
         """
+        if self.name == "Home":
+            raise ValueError("Cannot delete the root folder 'Home'.")
         return self._da._delete(filename=self._folder_name)
 
 
@@ -454,30 +530,6 @@ class NotebookDataAccess:
         )
 
     # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
-    @property
-    def files(self) -> List[NotebookFile]:
-        """
-        Lists files that are located in the workspace directory (/arcgis/home) of the user making the request.
-
-        :return: List[NotebookFile] - List of NotebookFile objects
-        """
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/notebooksWorkspace"
-        else:
-            url = f"{self._url}/notebookworkspace"
-        params = {
-            "f": "json",
-            "restype": "container",
-            "comp": "list",
-            "token": self._gis._con.token,
-        }
-        return [
-            NotebookFile(f, self)
-            for f in self._gis._con.get(url, params).pop("Blobs", [])
-        ]
-
-    # ---------------------------------------------------------------------
     def _check_user_has_workspace(self, username: str) -> bool:
         """
         Checks if the user has a workspace in the organization.
@@ -494,6 +546,16 @@ class NotebookDataAccess:
 
         all_workspaces = res.get("Containers", [])
         return any(workspace.get("Name") == username for workspace in all_workspaces)
+
+    # ---------------------------------------------------------------------
+    def _check_user_has_privileges(self, user: User) -> bool:
+        privileges = user.privileges or []
+        return (
+            user.role == "org_admin"
+            if self._gis._is_agol
+            else "portal:admin:manageServers" in privileges
+            and "portal:admin:manageSecurity" in privileges
+        )
 
     # ---------------------------------------------------------------------
     def transfer_workspace(
@@ -523,15 +585,7 @@ class NotebookDataAccess:
         :return: True if the transfer was successful, False or an error if it was not.
         """
         ### Check if the user is an administrator and can transfer workspaces
-        me = self._gis.users.me
-        privileges = me.privileges or []
-        is_admin = (
-            me.role == "org_admin"
-            if self._gis._is_arcgisonline
-            else "portal:admin:manageServers" in privileges
-            and "portal:admin:manageSecurity" in privileges
-        )
-        if not is_admin:
+        if not self._check_user_has_privileges(self._gis.users.me):
             raise ValueError(
                 "Only organization administrators can transfer user workspaces."
             )
@@ -598,32 +652,6 @@ class NotebookDataAccess:
             raise ValueError(f"Unknown error during workspace transfer: {res}")
 
     # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
-    def create_folder(self, folder: str) -> bool:
-        """
-        Create a folder in your `/arcgis/home` notebook workspace directory.
-
-        ===================  ==========================================================================
-        **Parameter**         **Description**
-        -------------------  --------------------------------------------------------------------------
-        folder               Required String. The name of the folder to create. To create a folder in a subfolder,
-                             use the format `subfolder1/subfolder2/foldername`. If you want to create a folder
-                             in the root directory, use the format `foldername`.
-        ===================  ==========================================================================
-
-        """
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/{self._username}/createFolder".replace("/azureblob", "")
-        else:
-            url = f"{self._url}/notebookworkspace/createFolder"
-        params = {
-            "f": "json",
-            "folderName": folder,
-            "token": self._gis._con.token,
-        }
-        return self._gis._con.post(url, params).get("status") == "success"
-
-    # ---------------------------------------------------------------------
     def _download(self, filename: str) -> str:
         """
         downloads a file from the
@@ -651,7 +679,9 @@ class NotebookDataAccess:
         return self._gis._con.post(url, params).get("status") == "success"
 
     # ---------------------------------------------------------------------
-    def _rename(self, folder_name: str, new_name: str) -> bool:
+    def _rename(
+        self, folder_name: str, new_name: str, username: str | None = None
+    ) -> bool:
         """
         Renames a folder in the notebook workspace.
 
@@ -663,16 +693,68 @@ class NotebookDataAccess:
             url = f"{self._url}/move".replace("/azureblob/", f"/{self._username}/")
         else:
             url = f"{self._url}/{self._username}/notebookworkspace/move"
+
         params = {
             "f": "json",
             "source": folder_name,
             "target": new_name,
-            "targetUserName": self._username,
+            "targetUserName": username or self._username,
             "token": self._gis._con.token,
         }
         return self._gis.session.post(url, params).json().get("status") == "success"
 
     # ---------------------------------------------------------------------
+    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
+    @property
+    def files(self) -> List[NotebookFile]:
+        """
+        Lists files that are located in the workspace directory (/arcgis/home) of the user making the request.
+
+        :return: List[NotebookFile] - List of NotebookFile objects
+        """
+        if self._gis._is_arcgisonline:
+            url = f"{self._url}/notebooksWorkspace"
+        else:
+            url = f"{self._url}/notebookworkspace"
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "token": self._gis._con.token,
+        }
+        return [
+            NotebookFile(f, self)
+            for f in self._gis._con.get(url, params).pop("Blobs", [])
+        ]
+
+    # ---------------------------------------------------------------------
+    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
+    def create_folder(self, folder: str) -> bool:
+        """
+        Create a folder in your `/arcgis/home` notebook workspace directory.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        folder               Required String. The name of the folder to create. To create a folder in a subfolder,
+                             use the format `subfolder1/subfolder2/foldername`. If you want to create a folder
+                             in the root directory, use the format `foldername`.
+        ===================  ==========================================================================
+
+        """
+        if self._gis._is_arcgisonline:
+            url = f"{self._url}/{self._username}/createFolder".replace("/azureblob", "")
+        else:
+            url = f"{self._url}/notebookworkspace/createFolder"
+        params = {
+            "f": "json",
+            "folderName": folder,
+            "token": self._gis._con.token,
+        }
+        return self._gis._con.post(url, params).get("status") == "success"
+
+    # ---------------------------------------------------------------------
+    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
     def _resolve_files(self, fp):
         if isinstance(fp, list):
             return [f for f in fp if os.path.isfile(f)]
@@ -694,6 +776,7 @@ class NotebookDataAccess:
         )
 
     # ---------------------------------------------------------------------
+    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
     def _upload_single_file(self, file_path: str, folder: str | None = None) -> bool:
         if not os.path.isfile(file_path):
             raise ValueError(f"File {file_path} does not exist.")
