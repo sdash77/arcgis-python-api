@@ -3210,6 +3210,8 @@ class GeoAccessor(object):
                 sr = self.sr
             except Exception:
                 sr = None
+            wkt = None
+            wkid = None
             if sr and "wkid" in sr:
                 wkid = sr["wkid"]
             elif sr and "latestWkid" in sr:
