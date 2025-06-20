@@ -806,7 +806,7 @@ def edit_control_points(
 ###################################################################################################
 def generate_orthomosaic(
     mission,
-    out_ortho,
+    out_ortho=None,
     regen_seamlines: bool = True,
     recompute_color_correction: bool = True,
     context: Optional[dict[str, Any]] = None,
@@ -827,10 +827,11 @@ def generate_orthomosaic(
 
                                            The mission must exist.
     -----------------------------------    --------------------------------------------------------------------
-    out_ortho                               Required. This is the ortho-mosaicked image converted from the image
+    out_ortho                               Optional. This is the ortho-mosaicked image converted from the image
                                             collection after the block adjustment.
                                             It can be a url, uri, portal item, or string representing the name of output dem
                                             (either existing or to be created.)
+                                            If this product has already been created, the tool will overwrite it instead.
                                             Like Raster Analysis services, the service can be an existing multi-tenant service URL.
     -----------------------------------    --------------------------------------------------------------------
     regen_seamlines                        Optional, boolean.
@@ -909,6 +910,10 @@ def generate_orthomosaic(
 
     if not isinstance(mission, RMMission):
         raise TypeError("The mission parameter must be a RMMission object.")
+    
+    products = mission.products
+    if "ortho" in products:
+        out_ortho = products["ortho"]
 
     image_collection = mission.image_collection
 
@@ -1390,31 +1395,37 @@ def reconstruct_surface(
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     output_dsm_name                                                             Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
+                                                                                If this product has already been created, the tool will overwrite it instead.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     output_true_ortho_name                                                      Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
+                                                                                If this product has already been created, the tool will overwrite it instead.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     output_dsm_mesh_name                                                        Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
+                                                                                If this product has already been created, the tool will overwrite it instead.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     output_point_cloud_name                                                     Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
+                                                                                If this product has already been created, the tool will overwrite it instead.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     output_mesh_name                                                            Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
+                                                                                If this product has already been created, the tool will overwrite it instead.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     output_dtm_name                                                             Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
+                                                                                If this product has already been created, the tool will overwrite it instead.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -1488,6 +1499,26 @@ def reconstruct_surface(
         raise TypeError("The mission parameter must be a RMMission object.")
 
     image_collection = mission.image_collection
+    products = mission.products
+    
+    if output_dsm_name:
+        if "dsm" in products:
+            output_dsm_name = products["dsm"]
+    if output_true_ortho_name:
+        if "true_ortho" in products:
+            output_true_ortho_name = products["true_ortho"]
+    if output_dsm_mesh_name:
+        if "dsm_mesh" in products:
+            output_dsm_mesh_name = products["dsm_mesh"]
+    if output_point_cloud_name:
+        if "point_cloud" in products:
+            output_point_cloud_name = products["point_cloud"]
+    if output_mesh_name:
+        if "mesh" in products:
+            output_mesh_name = products["mesh"]    
+    if output_dtm_name:
+        if "dtm" in products:
+            output_dtm_name = products["dtm"]    
 
     if mission.workspace:
         if context:

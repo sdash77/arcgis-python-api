@@ -93,7 +93,8 @@ class RMMission:
             "DSM": "dsm",
             "trueOrtho": "true_ortho",
             "DSMMesh": "dsm_mesh",
-            "orthoMosaic": "ortho"
+            "orthoMosaic": "ortho",
+            "pointCloud": "point_cloud",
         }
 
         url = f"{self._reality_url}/missions/{self._mission_id}/dataproducts"
@@ -208,86 +209,6 @@ class RMMission:
         if resp is None:
             raise RuntimeError(f"Failed to retrieve settings.")
         return resp
-
-    def delete_product(self, product):
-        """
-        The ``delete_product`` method deletes the product specified by the product parameter.
-
-        ==================                   ====================================================================
-        **Parameter**                         **Description**
-        ------------------                   --------------------------------------------------------------------
-        product                              Required string, the product that needs to be deleted from the mission.
-                                             It could be one of "ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud"
-        ==================                   ====================================================================
-
-        :return: A boolean indicating whether the deletion was successful or not
-        """
-        if product.lower() not in [
-            "ortho",
-            "dsm",
-            "dsm_mesh",
-            "mesh",
-            "true_ortho",
-            "point_cloud",
-            "dtm",
-        ]:
-            raise RuntimeError("Invalid product type")
-
-        product = product.lower()
-        deleted = True
-        slpk_deleted = True
-        dp_deleted = True
-
-        products_dict = self.products
-        if not products_dict:
-            _LOGGER.warning("No products found in the mission.")
-            return False
-            
-        if product not in products_dict:
-            _LOGGER.warning(f"Product '{product}' not found in the mission.")
-            return False
-        
-        item_info = products_dict[product]
-        dp_id = self._prod_to_id_map.get(product)
-        if isinstance(item_info, dict):
-            if "itemId" in item_info:
-                item_object = self._gis.content.get(item_info["itemId"])
-                deleted = item_object.delete() if item_object else False
-            if "slpkItemId" in item_info:
-                item_object = self._gis.content.get(item_info["slpkItemId"])
-                slpk_deleted = item_object.delete() if item_object else False
-        elif item_info is None:
-            return False
-        
-        # attempt to delete from sitescan db
-        if dp_id is not None:
-            url = f"{self._reality_url}/dataproducts/{dp_id}/delete"
-            headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
-            resp = post_request(url, payload=None, headers=headers, is_delete_request=True)
-            if resp != "OK":
-                _LOGGER.warning("Failed to delete the product from mission.")
-                dp_deleted = False
-
-        if "slpkItemId" in item_info:
-            return deleted and dp_deleted and slpk_deleted
-        return deleted and dp_deleted
-
-    def _get_product_item(self, product, is_slpk=False):
-        item_id = None
-        item = None
-        item_dict = self._mission_json.get("items", {})
-
-        product_info = item_dict.get(product, {})
-        if isinstance(product_info, dict):
-            if is_slpk:
-                item_id = product_info.get("slpkItemId", None)
-            else:
-                item_id = product_info.get("itemId", None)
-
-        if item_id is not None:
-            item = self._gis.content.get(item_id)
-
-        return item
 
     def delete(self):
         """
