@@ -23,7 +23,9 @@ jobs:
         with:
           pixi-version: v0.46.0
           manifest-path: geosaurus/pixi.toml
-          environments: docs
+          environments: >-
+            docs
+            awscli
           frozen: true
       - run: |
             cd geosaurus && pixi run docs
@@ -35,3 +37,21 @@ jobs:
         with:
           name: arcgis-docs-json-${{ github.run_number }}-${{ github.sha }}
           path: geosaurus/docs/api_ref/build/json
+      - name: Deploy doc to s3
+      # https://esri-forge.python.geocloud.com/docs/$ARCGIS_DOCS_LABEL/json.zip
+      # https://esri-forge.python.geocloud.com/docs/$ARCGIS_DOCS_LABEL/html.zip
+        env:
+          # label:
+          # - branch name for docs built for successful builds or manually triggered workflows
+          # - pr/<number> for docs built for pull requests
+          ARCGIS_DOCS_LABEL: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.event_name == 'pull_request' && format('pr/{0}', github.event.pull_request.number) || github.event.workflow.run.head_branch }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_ESRI_FORGE }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_ESRI_FORGE }}
+          AWS_REGION: ${{ secrets.AWS_REGION_ESRI_FORGE }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION_ESRI_FORGE }}
+        run: |
+            cd geosaurus
+            pixi run docs:deploy:json build/${{ github.sha }}
+            pixi run docs:deploy:html build/${{ github.sha }}
+            pixi run docs:deploy:json $ARCGIS_DOCS_LABEL
+            pixi run docs:deploy:html $ARCGIS_DOCS_LABEL
