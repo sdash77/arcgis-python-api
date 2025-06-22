@@ -78,6 +78,8 @@ try:
 
     HAS_FASTAI = True
 except:
+    from dataclasses import dataclass
+
     HAS_FASTAI = False
 
 

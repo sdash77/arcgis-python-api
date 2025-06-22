@@ -1539,7 +1539,40 @@ class TabularDataObject(object):
         )
 
         # Vectorize consumes a lot of memory. Refer bug 11894. Alternative is to use applymap as below.
-        col_length = dataframe.astype(str).applymap(len).max(axis=0)
+        # col_length = dataframe.astype(str).applymap(len).max(axis=0)
+        col_length = {}
+        for col_name in dataframe.columns:
+            try:
+                # Convert only the current Series (column) to string, then calculate lengths
+                # .str.len() is more optimized than .apply(len) for string Series
+                current_col_max_len = dataframe[col_name].astype(str).str.len().max()
+                col_length[col_name] = current_col_max_len
+            except MemoryError as e:
+                # Fallback if a single column's string conversion is still too large
+                # This iterates item by item, which is very slow but memory-safe for problematic columns
+                max_len_for_problem_col = 0
+                for item in dataframe[col_name]:
+                    try:
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, len(str(item))
+                        )
+                    except Exception as item_e:
+                        # Decide how to handle unprocessable items (e.g., skip, or assign a default length)
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, 0
+                        )  # Assume length 0 if error
+                col_length[col_name] = max_len_for_problem_col
+            except Exception as e:
+                # Generic fallback for other errors
+                max_len_for_problem_col = 0
+                for item in dataframe[col_name]:
+                    try:
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, len(str(item))
+                        )
+                    except Exception:  # Catch all if above fails
+                        max_len_for_problem_col = max(max_len_for_problem_col, 0)
+                col_length[col_name] = max_len_for_problem_col
 
         unique_values = {}
         for i in dataframe.columns:
@@ -2519,12 +2552,20 @@ def show_local_interpretation(
                     explainer.expected_value, shap_values, processed_df, matplotlib=True
                 )
             else:
-                shap.plots.force(
-                    explainer.expected_value[0],
-                    shap_values[0][:, 0],
-                    processed_df,
-                    matplotlib=True,
-                )
+                try:
+                    shap.plots.force(
+                        explainer.expected_value[0],
+                        shap_values[0],
+                        processed_df,
+                        matplotlib=True,
+                    )
+                except:
+                    shap.plots.force(
+                        explainer.expected_value[0],
+                        shap_values[0][:, 0],
+                        processed_df,
+                        matplotlib=True,
+                    )
     elif method == "KernelRegressor":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
