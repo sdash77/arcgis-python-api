@@ -9,7 +9,7 @@ from utils.decorators import integration_test
 online_admin = GIS(profile="your_online_profile", verify_cert=False)
 
 # Item published from Service Directory
-sd_vector_tile_item = online_admin.content.get("c98c939d961d463095199140dd30a75c")
+sd_vector_tile_item = online_admin.content.get("90ff63ae7ecb4bfd9bc6aec2f88d5230")
 sd_tile_layer = VectorTileLayer.fromitem(sd_vector_tile_item)
 sd_vtl_manager = sd_tile_layer.manager
 
