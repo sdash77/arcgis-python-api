@@ -249,25 +249,33 @@ class NotebookFolder:
 
         :return: List[NotebookFile] - A list of NotebookFile objects representing the files in the folder.
         """
-        if self._is_agol:
-            url = f"{self._url}/notebooksWorkspace"
-        else:
-            url = f"{self._url}/notebookworkspace"
+        # Create the params dictionary for the request
         params = {
             "f": "json",
             "restype": "container",
             "comp": "list",
-            "delimiter": "/",
             "token": self._da._gis._con.token,
         }
+
+        # create urls
+        if self._is_agol:
+            url = f"{self._url}/{self._da._username}"
+            params["delimiter"] = "/"
+        else:
+            url = f"{self._url}/{self._da._username}/notebookworkspace"
         if self._folder_name:
             params["prefix"] = self._folder_name
         response = self._da._gis._con.get(url, params)
-        return [
-            NotebookFile(f, self._da)
-            for f in response.get("Blobs", [])
-            if f["Properties"].get("ResourceType").lower() == "file"
-        ]
+        # Filter files based on ResourceType
+        if self._is_agol:
+            return [
+                NotebookFile(f, self._da)
+                for f in response.get("Blobs", [])
+                if f["Properties"].get("ResourceType")
+                and f["Properties"].get("ResourceType").lower() == "file"
+            ]
+        else:
+            return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
 
     # ---------------------------------------------------------------------
     def create_folder(self, folder_name: str) -> "NotebookFolder":
@@ -472,10 +480,10 @@ class NotebookDataAccess:
     _gis = None
 
     # ---------------------------------------------------------------------
-    def __init__(self, url, gis):
+    def __init__(self, url, gis, username: str | None = None):
         self._url = url
         self._gis = gis
-        self._username = gis.users.me.username
+        self._username = username or gis.users.me.username
         if not self._check_user_has_workspace(self._username):
             raise ValueError(
                 f"User {self._username} does not have a notebook workspace in the organization."
@@ -483,18 +491,18 @@ class NotebookDataAccess:
 
     # --------------------------------------------------------------------
     def __repr__(self):
-        return "NotebookDataAccess"
+        return "Notebook Workspace for: " + self._username
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return "NotebookDataAccess"
+        return "Notebook Workspace for: " + self._username
 
     # ---------------------------------------------------------------------
     def _get_folders(self, parent_folder: str | None) -> List["NotebookFolder"]:
         if self._gis._is_agol:
-            url = f"{self._url}/notebooksWorkspace"
+            url = f"{self._url}/{self._username}"
         else:
-            url = f"{self._url}/notebookworkspace"
+            url = f"{self._url}/{self._username}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
@@ -506,16 +514,47 @@ class NotebookDataAccess:
             params["prefix"] = parent_folder
         response = self._gis._con.get(url, params)
         # When creating subfolders the name should always have the folder to which it belongs as the prefix
+
         folders = [
             NotebookFolder(f["Name"], self)
             for f in response.get("Blobs", [])
-            if f["Properties"].get("ResourceType").lower() == "directory"
+            if isinstance(f["Properties"].get("ResourceType"), str)
+            and f["Properties"].get("ResourceType").lower() == "directory"
         ]
 
         # Include root folder only if folder_name is None
         if parent_folder is None:
             folders.insert(0, NotebookFolder("", self))
         return folders
+
+    # ---------------------------------------------------------------------
+    def get_workspace(self, user: User | str) -> "NotebookDataAccess":
+        """
+        Returns the NotebookDataAccess object for the specified user. This is only available to organization administrators.
+
+        ====================    ==========================================================================
+        **Parameter**           **Description**
+        --------------------    --------------------------------------------------------------------------
+        user                    Required User instance or string. The user or username for which the workspace will be retrieved.
+        ====================    ==========================================================================
+
+        :return: NotebookDataAccess - A NotebookDataAccess object for the specified user.
+        """
+        # Check if the user is an administrator
+        if not self._check_user_has_privileges(self._gis.users.me):
+            raise ValueError(
+                "Only organization administrators can access other users' workspaces."
+            )
+        if isinstance(user, str):
+            user = self._gis.users.get(user)
+            if not user:
+                raise ValueError(f"User '{user}' not found in the organization.")
+        # Check if the user has a workspace
+        if not self._check_user_has_workspace(user.username):
+            raise ValueError(
+                f"User '{user.username}' does not have a notebook workspace in the organization."
+            )
+        return NotebookDataAccess(self._url, self._gis, username=user.username)
 
     # ---------------------------------------------------------------------
     @property
@@ -819,7 +858,7 @@ class NotebookDataAccess:
         ===================  ==========================================================================
 
         """
-        if self._gis._is_arcgisonline:
+        if self._gis._is_agol:
             url = f"{self._url}/{self._username}/createFolder".replace("/azureblob", "")
         else:
             url = f"{self._url}/notebookworkspace/createFolder"
@@ -860,14 +899,14 @@ class NotebookDataAccess:
 
         filename = os.path.basename(file_path)
 
-        if self._gis._is_arcgisonline:
+        if self._gis._is_agol:
             existing_files = self.files
             if any(f.properties.name == filename for f in existing_files):
                 raise ValueError(f"File {filename} already exists in the workspace.")
 
         full_path = f"{folder}/{filename}" if folder else filename
 
-        if self._gis._is_arcgisonline:
+        if self._gis._is_agol:
             url = f"{self._url}/{self._username}/{full_path}"
         else:
             url = f"{self._url}/notebookworkspace/{full_path}"
