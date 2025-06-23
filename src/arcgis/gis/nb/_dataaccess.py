@@ -271,8 +271,7 @@ class NotebookFolder:
             return [
                 NotebookFile(f, self._da)
                 for f in response.get("Blobs", [])
-                if f["Properties"].get("ResourceType")
-                and f["Properties"].get("ResourceType").lower() == "file"
+                if f["Properties"].get("ResourceType", "").lower() == "file"
             ]
         else:
             return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
