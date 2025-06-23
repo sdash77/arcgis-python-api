@@ -317,6 +317,7 @@ class MaskRCNN(ArcGISModel):
         if self._is_multispectral:
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
+        if self._is_multispectral or getattr(data, "_is_non8bit_rgb", False):
             scaled_mean_values = data._scaled_mean_values[data._extract_bands].tolist()
             scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
 
@@ -462,6 +463,10 @@ class MaskRCNN(ArcGISModel):
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
 
+        if getattr(data, "_is_non8bit_rgb", False):
+            model.transform.image_mean = scaled_mean_values
+            model.transform.image_std = scaled_std_values
+
         if pointrend:
             model = create_pointrend(model, data.c)
         else:
@@ -582,6 +587,15 @@ class MaskRCNN(ArcGISModel):
         return torchgeo_backbone
 
     @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        satlas_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+        return satlas_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return MaskRCNN._supported_backbones()
@@ -592,12 +606,14 @@ class MaskRCNN(ArcGISModel):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = MaskRCNN.transformer_backbones()
         torchgeo_backbone = MaskRCNN.torchgeo_backbones()
+        satlas_backbone = MaskRCNN.satlas_backbones()
 
         return (
             [*_resnet_family]
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
+            + satlas_backbone
         )
 
     @property

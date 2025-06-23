@@ -1,6 +1,7 @@
 import os
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 import json
 from fastai.vision.transform import rotate, brightness, contrast
 from arcgis.learn import (
@@ -112,7 +113,6 @@ class_mapping_psetae = {
 
 
 def setuposenviron():
-
     with open(authorization_path) as f:
         authorization_data = json.load(f)
     return authorization_data
@@ -1210,7 +1210,7 @@ data = {
                 [],
             ),
             "resize_to": (128, 64),
-            "dataset_type":"Imagenet"
+            "dataset_type": "Imagenet",
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1544,7 +1544,7 @@ data = {
         "model_test": "pix2pixhd_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pix2pix_data"),
-            "batch_size": None
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1601,7 +1601,7 @@ data = {
             "sample_input": "pass",
         },
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
-    }
+    },
 }
 
 
