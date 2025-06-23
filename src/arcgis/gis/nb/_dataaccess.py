@@ -238,7 +238,7 @@ class NotebookFolder:
         :return: List[NotebookFolder] - A list of NotebookFolder objects representing the subfolders.
         """
         return self._da._get_folders(
-            folder_name=self._folder_name,
+            parent_folder=self._folder_name,
         )
 
     # ---------------------------------------------------------------------
@@ -490,7 +490,7 @@ class NotebookDataAccess:
         return "NotebookDataAccess"
 
     # ---------------------------------------------------------------------
-    def _get_folders(self, folder_name: str | None) -> List["NotebookFolder"]:
+    def _get_folders(self, parent_folder: str | None) -> List["NotebookFolder"]:
         if self._gis._is_agol:
             url = f"{self._url}/notebooksWorkspace"
         else:
@@ -502,8 +502,8 @@ class NotebookDataAccess:
             "delimiter": "/",
             "token": self._gis._con.token,
         }
-        if folder_name:
-            params["prefix"] = folder_name
+        if parent_folder:
+            params["prefix"] = parent_folder
         response = self._gis._con.get(url, params)
         # When creating subfolders the name should always have the folder to which it belongs as the prefix
         folders = [
@@ -513,7 +513,7 @@ class NotebookDataAccess:
         ]
 
         # Include root folder only if folder_name is None
-        if folder_name is None:
+        if parent_folder is None:
             folders.insert(0, NotebookFolder("", self))
         return folders
 
@@ -526,8 +526,85 @@ class NotebookDataAccess:
         :return: List[NotebookFolder] - A list of NotebookFolder objects containing the folders in the workspace.
         """
         return self._get_folders(
-            folder_name=None,
+            parent_folder=None,
         )
+
+    # ---------------------------------------------------------------------
+    def get_folder(self, folder_name: str) -> NotebookFolder:
+        """
+        Returns a specific folder in the workspace directory (/arcgis/home) of the user making the request.
+        If you have multiple folders with the same name, this method will return the first one found.
+
+        ====================    ==========================================================================
+        **Parameter**           **Description**
+        --------------------    --------------------------------------------------------------------------
+        folder_name             Required String. The name of the folder to retrieve.
+                                The folder name must be a simple, non-empty name without slashes.
+        ====================    ==========================================================================
+
+        :return: NotebookFolder - A NotebookFolder object representing the requested folder.
+        """
+        if not isinstance(folder_name, str):
+            raise ValueError("folder_name must be a string.")
+        if not folder_name:
+            raise ValueError("folder_name cannot be empty.")
+
+        # Recursively search for the folder
+        def _find_folder(parent_folder):
+            folders = self._get_folders(parent_folder)
+            for folder in folders:
+                if folder.name == folder_name:
+                    return folder
+                # Recursively search subfolders
+                for folder in folders:
+                    if folder.name != "Home":  # Avoid infinite loop on root
+                        found = _find_folder(folder._folder_name)
+                        if found:
+                            return found
+            return None
+
+        result = _find_folder(None)
+        if result is None:
+            raise ValueError(f"Folder '{folder_name}' not found in the workspace.")
+        return result
+
+    # ---------------------------------------------------------------------
+    def get_file(self, file_name: str) -> NotebookFile:
+        """
+        Returns a specific file in the workspace directory (/arcgis/home) of the user making the request.
+        If you have multiple files with the same name, this method will return the first one found.
+
+        ====================    ==========================================================================
+        **Parameter**           **Description**
+        --------------------    --------------------------------------------------------------------------
+        file_name               Required String. The name of the file to retrieve.
+                                The file name must be a simple, non-empty name without slashes.
+        ====================    ==========================================================================
+
+        :return: NotebookFile - A NotebookFile object representing the requested file.
+        """
+        if not isinstance(file_name, str):
+            raise ValueError("file_name must be a string.")
+        if not file_name:
+            raise ValueError("file_name cannot be empty.")
+
+        if self._gis._is_agol:
+            url = f"{self._url}/notebooksWorkspace"
+        else:
+            url = f"{self._url}/notebookworkspace"
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "token": self._gis._con.token,
+        }
+        response = self._gis._con.get(url, params)
+        for f in response.get("Blobs", []):
+            if f["Properties"].get("ResourceType").lower() == "file" and f[
+                "Name"
+            ].endswith(file_name):
+                return NotebookFile(f, self)
+        return None
 
     # ---------------------------------------------------------------------
     def _check_user_has_workspace(self, username: str) -> bool:
