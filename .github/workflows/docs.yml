@@ -44,7 +44,7 @@ jobs:
           # label:
           # - branch name for docs built for successful builds or manually triggered workflows
           # - pr/<number> for docs built for pull requests
-          ARCGIS_DOCS_LABEL: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.event_name == 'pull_request' && format('pr/{0}', github.event.pull_request.number) || github.event.workflow.run.head_branch }}
+          ARCGIS_DOCS_LABEL: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.event_name == 'pull_request' && format('pr/{0}', github.event.pull_request.number) || github.ref_name }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_ESRI_FORGE }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_ESRI_FORGE }}
           AWS_REGION: ${{ secrets.AWS_REGION_ESRI_FORGE }}
