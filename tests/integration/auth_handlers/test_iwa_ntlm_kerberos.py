@@ -111,7 +111,7 @@ class TestLDAPAuth(unittest.TestCase):
     def test_get_server_list_system_services(self):
         url = f"{self.portal_url}/sharing/rest/portals/self?f=json"
         server_url = f"{self.portal_url}/sharing/rest/portals/self/servers?f=json"
-        auth = EsriBasicAuth(username=self.username, password=self.password, verify_cert=False)
+        auth = EsriBasicAuth(session=EsriSession(), username=self.username, password=self.password, verify_cert=False)
         with EsriSession(auth=auth, verify_cert=False) as session:
             resp = session.get(url)
             data = resp.json()
