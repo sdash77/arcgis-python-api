@@ -384,7 +384,6 @@ def estimate_batch_size(model, mode="train", **kwargs):
         batch_size = output(64, max_batchsize)
     else:
         if mode == "eval":
-            max_batchsize = max_batchsize
             batch_size = output(max_batchsize, max_batchsize)
         else:
             batch_size = output(max_batchsize, max_batchsize)
