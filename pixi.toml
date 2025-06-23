@@ -44,7 +44,6 @@ version = "0.1.0"
 "_docs:zip" = {cmd = "cd {{start_dir}} && minizip -i {{output}} {{path}}", description = "Create a zip archive of a directory", args = [{arg = "output"}, {arg = "path"}, {arg = "start_dir", default = "./docs/api_ref/build"}]}
 "_docs:zip:html" = {depends-on = [{task = "_docs:zip", environment = "docs", args = ["html.zip", "./html"]}], description = "Create a zip archive of docs html"}
 "_docs:zip:json" = {depends-on = [{task = "_docs:zip", environment = "docs", args = ["json.zip", "./json"]}], description = "Create a zip archive of docs json"}
-"_docs:deploy_file" = {cmd = "awscli aws s3 cp {{path}}/{{file}} s3://$DOCS_S3_BUCKET/docs/{{label}}/{{file}}", args = ["file", "label", {arg = "path", default = "./docs/api_ref/build"}]}
 
 [activation.env]
 DOCS_S3_BUCKET = "esri-forge-us-west-1"
@@ -138,6 +137,9 @@ channels = ["conda-forge"]
 [feature.awscli.dependencies]
 python = "~=3.13"
 awscli = ">=2,<3"
+
+[feature.awscli.tasks]
+"_docs:deploy_file" = {cmd = "awscli aws s3 cp {{path}}/{{file}} s3://$DOCS_S3_BUCKET/docs/{{label}}/{{file}}", args = ["file", "label", {arg = "path", default = "./docs/api_ref/build"}]}
 
 [environments]
 daily = { features = ["daily"] }
