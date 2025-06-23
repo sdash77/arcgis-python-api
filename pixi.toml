@@ -45,9 +45,6 @@ version = "0.1.0"
 "_docs:zip:html" = {depends-on = [{task = "_docs:zip", environment = "docs", args = ["html.zip", "./html"]}], description = "Create a zip archive of docs html"}
 "_docs:zip:json" = {depends-on = [{task = "_docs:zip", environment = "docs", args = ["json.zip", "./json"]}], description = "Create a zip archive of docs json"}
 
-[activation.env]
-DOCS_S3_BUCKET = "esri-forge-us-west-1"
-
 [dependencies]
 python = "~=3.13"
 pip = "*"
@@ -139,7 +136,7 @@ python = "~=3.13"
 awscli = ">=2,<3"
 
 [feature.awscli.tasks]
-"_docs:deploy_file" = {cmd = "aws s3 cp {{path}}/{{file}} s3://$DOCS_S3_BUCKET/docs/{{label}}/{{file}}", args = ["file", "label", {arg = "path", default = "./docs/api_ref/build"}]}
+"_docs:deploy_file" = {cmd = "aws s3 cp {{path}}/{{file}} s3://{{s3_bucket}}/docs/{{label}}/{{file}}", args = ["file", "label", {arg = "s3_bucket", default = "esri-forge-us-west-1"}, {arg = "path", default = "./docs/api_ref/build"}]}
 
 [environments]
 daily = { features = ["daily"] }
