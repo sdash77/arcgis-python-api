@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
- 
-DATA_FOLDER = os.environ.get('DATA_FOLDER')
+
+DATA_FOLDER = os.environ.get("DATA_FOLDER")
 data_path = Path(DATA_FOLDER)
- 
+
 input_data_path_ms = str(os.path.join(data_path, "input_data", "ms"))
 input_data_path_rgb = str(os.path.join(data_path, "input_data", "rgb"))
 output_gdb_folder = str(data_path)
@@ -11,7 +11,7 @@ saved_models_path = str(os.path.join(data_path, "models"))
 output_gdb = "inference_database.gdb"
 
 data_inferencing = {
-    'mtre_hourglass': {
+    "mtre_hourglass": {
         "name": "mtre_hourglass",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "mtre.tif"),
@@ -21,9 +21,10 @@ data_inferencing = {
         "output_filename_rgb": "segmentation_rgb_mtre_hourglass",
         "output_filename_ms": "segmentation_ms_mtre_hourglass",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;return_probability_raster False;threshold 0.5;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "vraj",
+        "model_args": "padding 32;batch_size 4;return_probability_raster False;threshold 0.5;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'mtre_linknet': {
+    "mtre_linknet": {
         "name": "mtre_linknet",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "mtre.tif"),
@@ -33,19 +34,23 @@ data_inferencing = {
         "output_filename_rgb": "segmentation_rgb_mtre_linknet",
         "output_filename_ms": "segmentation_ms_mtre_linknet",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;return_probability_raster False;threshold 0.5;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "vraj",
+        "model_args": "padding 32;batch_size 4;return_probability_raster False;threshold 0.5;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'psetae': {
+    "psetae": {
         "name": "psetae",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
-        "input_path_rgb": os.path.join(input_data_path_rgb, "sentineldatastore.gdb", "sentinelMultidimensional"),
+        "input_path_rgb": os.path.join(
+            input_data_path_rgb, "sentineldatastore.gdb", "sentinelMultidimensional"
+        ),
         "input_path_ms": False,
         "model_path_rgb": os.path.join(saved_models_path, "timesereis_mod111.dlpk"),
         "output_filename_rgb": "psetae_classified_raster",
         "should_test": True,
+        "owner": "sumanttyagi",
         "model_args": "padding 64;batch_size 4",
     },
-    'ssd': {
+    "ssd": {
         "name": "ssd",
         "inference_function": "DetectObjectsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "ssd_frcnn_ret_yolo.tif"),
@@ -55,9 +60,10 @@ data_inferencing = {
         "output_filename_rgb": "ssd_detections_rgb",
         "output_filename_ms": "ssd_detections_ms",
         "should_test": True,
+        "owner": "rohitthakur",
         "model_args": "padding 56;threshold 0.5;nms_overlap 0.1;batch_size 64;exclude_pad_detections True;test_time_augmentation False;tta_scales 1",
     },
-    'yolo': {
+    "yolo": {
         "name": "yolo",
         "inference_function": "DetectObjectsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "ssd_frcnn_ret_yolo.tif"),
@@ -67,9 +73,10 @@ data_inferencing = {
         "output_filename_rgb": "yolo_rgb_detections",
         "output_filename_ms": "yolo_ms_detections",
         "should_test": True,
+        "owner": "rohitthakur",
         "model_args": "padding 56;threshold 0.1;nms_overlap 0.1;batch_size 4;exclude_pad_detections True;test_time_augmentation False;tta_scales 1",
     },
-    'faster_rcnn': {
+    "faster_rcnn": {
         "name": "faster_rcnn",
         "inference_function": "DetectObjectsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "ssd_frcnn_ret_yolo.tif"),
@@ -79,9 +86,10 @@ data_inferencing = {
         "output_filename_rgb": "frcnn_rgb_detections",
         "output_filename_ms": "frcnn_ms_detections",
         "should_test": True,
+        "owner": "rohitthakur",
         "model_args": "padding 56;threshold 0.5;nms_overlap 0.1;batch_size 64;exclude_pad_detections True;test_time_augmentation False;tta_scales 1",
     },
-    'retina_net': {
+    "retina_net": {
         "name": "retina_net",
         "inference_function": "DetectObjectsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "ssd_frcnn_ret_yolo.tif"),
@@ -91,9 +99,10 @@ data_inferencing = {
         "output_filename_rgb": "retina_rgb_detections",
         "output_filename_ms": "retina_ms_detections",
         "should_test": True,
+        "owner": "rohitthakur",
         "model_args": "padding 56;threshold 0.5;nms_overlap 0.1;batch_size 64;exclude_pad_detections True;test_time_augmentation False;tta_scales 1",
     },
-    'cyclegan': {
+    "cyclegan": {
         "name": "cyclegan",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "CycleGAN.tif"),
@@ -103,9 +112,10 @@ data_inferencing = {
         "output_filename_rgb": "cyclegan_rgb_detections",
         "output_filename_ms": "cyclegan_rgb_detections_ms",
         "should_test": True,
+        "owner": "sbaloni",
         "model_args": "padding 56;batch_size 64;direction atob;tile_size 256;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'pix2pix': {
+    "pix2pix": {
         "name": "pix2pix",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "Pix2Pix.tif"),
@@ -115,9 +125,10 @@ data_inferencing = {
         "output_filename_rgb": "pix2pix_rgb_detections",
         "output_filename_ms": "pix2pix_rgb_detections_ms",
         "should_test": True,
+        "owner": "sbaloni",
         "model_args": "padding 56;batch_size 64;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'pix2pixHD': {
+    "pix2pixHD": {
         "name": "pix2pixHD",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "Pix2PixHD.tif"),
@@ -127,9 +138,10 @@ data_inferencing = {
         "output_filename_rgb": "pix2pixhd_rgb_detections",
         "output_filename_ms": "superresolution_rgb_detections_ms",
         "should_test": True,
+        "owner": "sbaloni",
         "model_args": "padding 56;batch_size 64;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'superresolution': {
+    "superresolution": {
         "name": "superresolution",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "SuperResolution.jpg"),
@@ -139,36 +151,46 @@ data_inferencing = {
         "output_filename_rgb": "superresolution_rgb_detections",
         "output_filename_ms": "superresolution_rgb_detections_ms",
         "should_test": True,
+        "owner": "sbaloni",
         "model_args": "padding 56;batch_size 64;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'textclassifier': {
+    "textclassifier": {
         "name": "textclassifier",
         "inference_function": "ClassifyTextUsingDeepLearning",
         "gdb_path": os.path.join(data_path, "text_data", "gdb", "text_data.gdb"),
         "input_filename": "country_classifier_csv",
-        "model_path": os.path.join(data_path, "text_data", "trained_models",  "infer_save.dlpk"),
-        "should_test": True, 
+        "model_path": os.path.join(
+            data_path, "text_data", "trained_models", "infer_save.dlpk"
+        ),
+        "should_test": True,
+        "owner": "rohitthakur",
         "input_path_ms": False,
     },
-    'entityrecognizer': {
+    "entityrecognizer": {
         "name": "entityrecognizer",
         "inference_function": "ExtractEntitiesUsingDeepLearning",
         "gdb_path": os.path.join(data_path, "text_data", "gdb", "text_data.gdb"),
         "input_filename": "cheshire_fire_csv",
-        "model_path": os.path.join(data_path, "text_data", "trained_models",  "qa_210.dlpk"),
-        "should_test": True, 
+        "model_path": os.path.join(
+            data_path, "text_data", "trained_models", "qa_210.dlpk"
+        ),
+        "should_test": True,
+        "owner": "rohitthakur",
         "input_path_ms": False,
     },
-    'sequence2sequence': {
+    "sequence2sequence": {
         "name": "sequence2sequence",
         "inference_function": "TransformTextUsingDeepLearning",
         "gdb_path": os.path.join(data_path, "text_data", "gdb", "text_data.gdb"),
         "input_filename": "address_data",
-        "model_path": os.path.join(data_path, "text_data", "trained_models", "fine-tuned.dlpk"),
-        "should_test": True, 
+        "model_path": os.path.join(
+            data_path, "text_data", "trained_models", "fine-tuned.dlpk"
+        ),
+        "should_test": True,
+        "owner": "rohitthakur",
         "input_path_ms": False,
     },
-    'unetclassifier': {
+    "unetclassifier": {
         "name": "unetclassifier",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "UnetClassifier.tif"),
@@ -178,9 +200,10 @@ data_inferencing = {
         "output_filename_rgb": "unet_classifier_output",
         "output_filename_ms": "unet_classifier_output_ms",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "spathak",
+        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'pspnetclassifier': {
+    "pspnetclassifier": {
         "name": "pspnetclassifier",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "PSPNetClassifier.tif"),
@@ -190,9 +213,10 @@ data_inferencing = {
         "output_filename_rgb": "pspnetnet_classifier_output",
         "output_filename_ms": "pspnet_classifier_output_ms",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "spathak",
+        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'deeplab': {
+    "deeplab": {
         "name": "deeplab",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "DeepLab.tif"),
@@ -202,9 +226,10 @@ data_inferencing = {
         "output_filename_rgb": "deeplab_classifier_output",
         "output_filename_ms": "deeplab_classifier_output_ms",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "spathak",
+        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'bdcnedgedetector': {
+    "bdcnedgedetector": {
         "name": "bdcnedgedetector",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "BDCNEdgeDetector.tif"),
@@ -214,9 +239,10 @@ data_inferencing = {
         "output_filename_rgb": "bdcnedge_classifier_output",
         "output_filename_ms": "bdcnedge_classifier_output_ms",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "spathak",
+        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'hededgedetector': {
+    "hededgedetector": {
         "name": "hededgedetector",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "HEDEdgeDetector.tif"),
@@ -226,9 +252,10 @@ data_inferencing = {
         "output_filename_rgb": "hededge_classifier_output",
         "output_filename_ms": "hededge_classifier_output_ms",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "spathak",
+        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'mmsegmentation': {
+    "mmsegmentation": {
         "name": "mmsegmentation",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "MMSegmentation.tif"),
@@ -238,9 +265,10 @@ data_inferencing = {
         "output_filename_rgb": "mmsegmentation_classifier_output",
         "output_filename_ms": "mmsegmentation_classifier_output_ms",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "kvarshney",
+        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'samlora': {
+    "samlora": {
         "name": "samlora",
         "inference_function": "ClassifyPixelsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "SamLoRA.tif"),
@@ -250,9 +278,10 @@ data_inferencing = {
         "output_filename_rgb": "samlora_classifier_output",
         "output_filename_ms": "samlora_classifier_output_ms",
         "should_test": True,
-        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128"
+        "owner": "ptuteja",
+        "model_args": "padding 32;batch_size 4;threshold 0.5;return_probability_raster False;test_time_augmentation False;merge_policy max;tile_size 128",
     },
-    'maskrcnn': {
+    "maskrcnn": {
         "name": "maskrcnn",
         "inference_function": "DetectObjectsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "MaskRCNN.tif"),
@@ -262,9 +291,10 @@ data_inferencing = {
         "output_filename_rgb": "maskrcnn_rgb_detections",
         "output_filename_ms": "maskrcnn_rgb_detections_ms",
         "should_test": True,
+        "owner": "ptuteja",
         "model_args": "padding 56;batch_size 64;threshold 0.5;nms_overlap 0.1;exclude_pad_detections True;test_time_augmentation False;tta_scales 1",
     },
-    'mmdetection': {
+    "mmdetection": {
         "name": "mmdetection",
         "inference_function": "DetectObjectsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "MMDetection.tif"),
@@ -274,9 +304,10 @@ data_inferencing = {
         "output_filename_rgb": "mmdetection_rgb_detections",
         "output_filename_ms": "mmdetection_rgb_detections_ms",
         "should_test": True,
+        "owner": "kvarshney",
         "model_args": "padding 56;batch_size 64;threshold 0.5;nms_overlap 0.1;exclude_pad_detections True;test_time_augmentation False;tta_scales 1",
     },
-    'rtdetr': {
+    "rtdetr": {
         "name": "rtdetr",
         "inference_function": "DetectObjectsUsingDeepLearning",
         "input_path_rgb": os.path.join(input_data_path_rgb, "RTDetrV2.jpg"),
@@ -286,9 +317,10 @@ data_inferencing = {
         "output_filename_rgb": "rtdetr_rgb_detections",
         "output_filename_ms": "rtdetr_rgb_detections_ms",
         "should_test": True,
+        "owner": "sumanttyagi",
         "model_args": "padding 56;batch_size 64;threshold 0.5;nms_overlap 0.1;exclude_pad_detections True;test_time_augmentation False;tta_scales 1",
     },
-    'ptv3det': {
+    "ptv3det": {
         "name": "ptv3det",
         "inference_function": "DetectObjectsFromPointCloudUsingTrainedModel",
         "input_path": os.path.join(input_data_path_rgb, "detection_3D.las"),
@@ -296,9 +328,10 @@ data_inferencing = {
         "model_path": os.path.join(saved_models_path, "ptv3det.dlpk"),
         "output_filename": "ptv3det_detections",
         "should_test": True,
+        "owner": "vraj",
         "batch_size": 64,
     },
-    'mm3d': {
+    "mm3d": {
         "name": "mm3d",
         "inference_function": "DetectObjectsFromPointCloudUsingTrainedModel",
         "input_path": os.path.join(input_data_path_rgb, "detection_3D.las"),
@@ -306,42 +339,117 @@ data_inferencing = {
         "model_path": os.path.join(saved_models_path, "mm3d.dlpk"),
         "output_filename": "mm3d_detections",
         "should_test": True,
+        "owner": "vraj",
         "batch_size": 64,
     },
-    'ptv3seg': {
+    "ptv3seg": {
         "name": "ptv3seg",
         "inference_function": "ClassifyPointCloudUsingTrainedModel",
         "input_path": os.path.join(input_data_path_rgb, "classification_3D.las"),
         "input_path_ms": False,
         "model_path": os.path.join(saved_models_path, "ptv3seg.dlpk"),
         "should_test": True,
+        "owner": "vraj",
         "batch_size": 64,
     },
-    'sqnseg': {
+    "sqnseg": {
         "name": "sqnseg",
         "inference_function": "ClassifyPointCloudUsingTrainedModel",
         "input_path": os.path.join(input_data_path_rgb, "classification_3D.las"),
         "input_path_ms": False,
         "model_path": os.path.join(saved_models_path, "sqnseg.dlpk"),
         "should_test": True,
+        "owner": "vraj",
         "batch_size": None,
     },
-    'randlanet': {
+    "randlanet": {
         "name": "randlanet",
         "inference_function": "ClassifyPointCloudUsingTrainedModel",
         "input_path": os.path.join(input_data_path_rgb, "classification_3D.las"),
         "input_path_ms": False,
         "model_path": os.path.join(saved_models_path, "randlanet.dlpk"),
         "should_test": True,
+        "owner": "vraj",
         "batch_size": None,
     },
-    'pointcnn': {
+    "pointcnn": {
         "name": "pointcnn",
         "inference_function": "ClassifyPointCloudUsingTrainedModel",
         "input_path": os.path.join(input_data_path_rgb, "classification_3D.las"),
         "input_path_ms": False,
         "model_path": os.path.join(saved_models_path, "pointcnn.dlpk"),
         "should_test": True,
+        "owner": "vraj",
         "batch_size": None,
     },
+    "autoML": {
+        "name": "autoML",
+        "inference_function": "PredictUsingAutoML",
+        "input_path": os.path.join(
+            input_data_path_rgb,
+            "autoML_predict_resource.gdb",
+            "autoML_test_feature_layer",
+        ),
+        "input_path_ms": False,
+        "model_path": os.path.join(saved_models_path, "trained_model_autoML.dlpk"),
+        "should_test": True,
+        "owner": "vraj",
+        "batch_size": None,
+        "output_filename": "output_AutoML",
+    },
+    "mlModel": {
+        "name": "mlModel",
+        "inference_function": "mlModelPredictAPI",
+        "input_path": os.path.join(input_data_path_rgb, "salary.csv"),
+        "input_path_ms": False,
+        "model_path_classification": os.path.join(
+            saved_models_path, "mlmodel_trained_classification.dlpk"
+        ),
+        "model_path_regression": os.path.join(
+            saved_models_path, "mlmodel_trained_regression.dlpk"
+        ),
+        "should_test": True,
+        "owner": "vraj",
+        "model_categories": ["classification", "regression"],
+    },
+    "fcn": {
+        "name": "fcn",
+        "inference_function": "fcnPredictAPI",
+        "training_item_id": "adaead8cb3174ac6a89f0c14ae70aadd",
+        "validation_item_id": "af78423949b94c1783fa43d707df6d45",
+        "input_path_ms": False,
+        "model_path_classification": os.path.join(
+            saved_models_path, "fcn_trained_classification.dlpk"
+        ),
+        "model_path_regression": os.path.join(
+            saved_models_path, "fcn_trained_regression.dlpk"
+        ),
+        "should_test": True,
+        "owner": "vraj",
+        "model_categories": ["classification", "regression"],
+    },
+    "autodl_objectdetection": {
+        "name": "autodl_objectdetection",
+        "inference_function": "TrainUsingAutoDL",
+        "input_path": os.path.join(input_data_path_rgb, "autodl_object_detection"),
+        "input_path_ms": False,
+        "model_path": os.path.join(saved_models_path, "test_autodl_object_detection"),
+        "should_test": True,
+        "batch_size": None,
+        "network_name": "SingleShotDetector",
+        "owner": "ptuteja",
+    },
+    "autodl_pixelclassification": {
+        "name": "autodl_pixelclassification",
+        "inference_function": "TrainUsingAutoDL",
+        "input_path": os.path.join(input_data_path_rgb, "autodl_pixel_classification"),
+        "input_path_ms": False,
+        "model_path": os.path.join(
+            saved_models_path, "test_autodl_pixel_classification"
+        ),
+        "should_test": True,
+        "batch_size": None,
+        "network_name": "DeepLab",
+        "owner": "ptuteja",
+    }
 }
