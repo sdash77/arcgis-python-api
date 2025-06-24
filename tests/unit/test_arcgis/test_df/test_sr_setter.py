@@ -98,19 +98,16 @@ class TestSRSetter_HasArcPy(_SRBase):
     """Exercises the branch where self._HASARCPY is True."""
 
     def setUp(self):
-        from arcgis._impl._geometry_engine import HAS_ARCPY
+
+        try:
+            from arcgis._impl._geometry_engine import HAS_ARCPY
+        except ImportError:
+            HAS_ARCPY = False
 
         if not HAS_ARCPY:
-            raise ModuleNotFoundError("ArcPy Not Installed")
+            raise unittest.SkipTest("Skipping tests because arcpy is not available.")
 
         super().setUp()
-        self._patcher = mock.patch.object(
-            type(self._tpl.spatial), "_HASARCPY", True, create=True
-        )
-        self._patcher.start()
-
-    def tearDown(self):
-        self._patcher.stop()
 
     def test_set_spatialreference(self):
         sdf = self._fresh()
@@ -123,17 +120,18 @@ class TestSRSetter_HasArcPy(_SRBase):
         }  # ArcGIS’s alias for Web-Mercator
         self.assertIn(sdf.spatial.sr["wkid"], wkid_expected)
 
+    def test_arcpy_available(self):
+        """arcpy should be visible to the GeoAccessor if it is installed"""
+        sdf = self._fresh()
+        sdf.spatial._check_geometry_engine()
+        self.assertTrue(sdf.spatial._HASARCPY)
 
-@mock.patch.dict("sys.modules", {"arcpy": None})
+
 class TestSRSetter_NoArcPy(_SRBase):
     """Same goal as variant 1, using a decorator."""
 
     def setUp(self):
         super().setUp()
-        self._flag_patch = mock.patch.object(
-            type(self._tpl.spatial), "_HASARCPY", False, create=True
-        )
-        self._flag_patch.start()
 
         geom_engine_mod = importlib.import_module("arcgis._impl._geometry_engine")
         self._has_arcpy_patch = mock.patch.object(
@@ -141,10 +139,25 @@ class TestSRSetter_NoArcPy(_SRBase):
         )
         self._has_arcpy_patch.start()
 
+        self._module_patch = mock.patch.dict("sys.modules", {"arcpy": None})
+        self._module_patch.start()
+
+        self._flag_patch = mock.patch.object(
+            type(self._tpl.spatial), "_HASARCPY", False, create=True
+        )
+        self._flag_patch.start()
+
     def tearDown(self):
         self._flag_patch.stop()
+        self._module_patch.stop()
         self._has_arcpy_patch.stop()
 
+    def test_arcpy_not_available(self):
+        """arcpy should not be visible to the GeoAccessor"""
+        sdf = self._fresh()
+        sdf.spatial._check_geometry_engine()
+        self.assertFalse(sdf.spatial._HASARCPY)
 
-if __name__ == "__main__":  # pragma: no cover
+
+if __name__ == "__main__":
     unittest.main(verbosity=2)
