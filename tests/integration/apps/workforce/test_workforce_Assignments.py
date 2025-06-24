@@ -5,50 +5,13 @@
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 import datetime
-
-# region PreCondition check
-test_skip = False
-class_skip = False
-module_skip = False
-
-r1 = PreconditionChecks.check_API_import()
-r2 = PreconditionChecks.check_Python_version()
-
-if r1 & r2:
-    print("## Precondition checks passed ##")
-    module_skip = False
-else:
-    module_skip = True
-    print("Pre condition checks failed. Quitting tests")
-    raise (exit())
-
-# Import the module after Precondition checks pass
-try:
-    from arcgis.apps.workforce import *
-    from arcgis.apps.workforce._schemas import *
-    from arcgis.apps.workforce.managers import *
-except ImportError:
-    print("API import error. Quitting test")
-    raise (exit())
-# endregion PreCondition Check
-
-# TestModule
-@unittest.skipIf(
-    module_skip, "Precondition check failed. Skipping tests in Workforce Assignments"
-)
-def setUpModule():
-    """
-    Run checks for host system
-    """
-    # Get environment status
-    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
-    print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
-    print("Host OS: " + PreconditionChecks.get_OS())
+from arcgis.apps.workforce import *
+from arcgis.apps.workforce.managers import *
 
 from utils.decorators import integration_test, profiles
 
 
-@profiles.admin_enterprise_and_agol
+@profiles.admin_agol
 @integration_test
 class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
     """
@@ -120,11 +83,15 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         self.project.assignment_types.add(name="Inspection")
 
     def add_dispatcher(self):
-        self.project.dispatchers.add(
-            user_id="ar_workforce_python_api2",
-            contact_number="123-456-7890",
-            name="ar_workforce_python_api2",
+        dispatcher = self.project.dispatchers.search(
+            where="name = 'ar_workforce_python_api'"
         )
+        if not dispatcher:
+            self.project.dispatchers.add(
+                user_id="ar_workforce_python_api",
+                contact_number="123-456-7890",
+                name="ar_workforce_python_api",
+            )
 
     def add_worker(self):
         self.project.workers.add(
@@ -139,13 +106,13 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.project.assignment_types.search()
         )
         self.project.workers.batch_delete(self.project.workers.search())
-        self.project.dispatchers.batch_delete(
-            self.project.dispatchers.search(
-                where="{} <> '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api"
-                )
-            )
-        )
+        # self.project.dispatchers.batch_delete(
+        #     self.project.dispatchers.search(
+        #         where="{} <> '{}'".format(
+        #             self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+        #         )
+        #     )
+        # )
 
     def setup_project(self):
         self.add_assignment_types()
@@ -164,7 +131,7 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         """
         t = datetime.datetime.now()
         cls.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
             str(t.year),
             str(t.month),
             str(t.day),
@@ -186,7 +153,7 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
 
         t = datetime.datetime.now()
         self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
             str(t.year),
             str(t.month),
             str(t.day),
@@ -412,49 +379,12 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
+@profiles.admin_agol
+@integration_test
 class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
     """
     Test to verify that assignments can be queried and added when there are no assignments in the project
     """
-
-    def reset_project(self):
-        self.project.assignments.batch_delete(self.project.assignments.search())
-        self.project.assignment_types.batch_delete(
-            self.project.assignment_types.search()
-        )
-        self.project.workers.batch_delete(self.project.workers.search())
-        self.project.dispatchers.batch_delete(
-            self.project.dispatchers.search(
-                where="{} <> '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api"
-                )
-            )
-        )
-
-    def add_dispatcher(self):
-        return self.project.dispatchers.add(
-            user_id="ar_workforce_python_api2",
-            contact_number="123-456-7890",
-            name="ar_workforce_python_api2",
-        )
-
-    def add_worker(self):
-        return self.project.workers.add(
-            user_id="ar_workforce_python_api2",
-            contact_number="123-456-7890",
-            name="ar_workforce_python_api2",
-        )
-
-    def add_assignment_types(self):
-        # Add an assignment type
-        self.repair = self.project.assignment_types.add(name="Removal")
-        self.inspection = self.project.assignment_types.add(name="Inspection")
-
-    def setup_project(self):
-        self.add_assignment_types()
-        self.add_worker()
-        self.worker = self.project.workers.get(user_id="ar_workforce_python_api2")
-        self.dispatcher = self.project.dispatchers.get(object_id=1)
 
     @classmethod
     def setUpClass(cls):
@@ -464,7 +394,7 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
         """
         t = datetime.datetime.now()
         cls.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            "Workforce-Ntgrtn-tst:{0}_{1}_{2}_{3}_{4}_{5}",
             str(t.year),
             str(t.month),
             str(t.day),
@@ -488,7 +418,7 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
 
         t = datetime.datetime.now()
         self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
             str(t.year),
             str(t.month),
             str(t.day),
@@ -498,16 +428,48 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
         )
         print("Time stamp: " + self.time_stamp)
 
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
+    def reset_project(self):
+        self.project.assignments.batch_delete(self.project.assignments.search())
+        self.project.assignment_types.batch_delete(
+            self.project.assignment_types.search()
+        )
+        self.project.workers.batch_delete(self.project.workers.search())
+        # self.project.dispatchers.batch_delete(
+        #     self.project.dispatchers.search(
+        #         where="{} <> '{}'".format(
+        #             self.project._dispatcher_schema.user_id, "ar_workforce_python_api"
+        #         )
+        #     )
+        # )
 
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cls.project.delete()
-        except Exception:
-            print("Failed to delete project successfully!")
-        print("\n==================================================================")
+    def add_dispatcher(self):
+        dispatcher = self.project.dispatchers.search(
+            where="name = 'ar_workforce_python_api'"
+        )
+        if not dispatcher:
+            return self.project.dispatchers.add(
+                user_id="ar_workforce_python_api",
+                contact_number="123-456-7890",
+                name="ar_workforce_python_api",
+            )
+
+    def add_worker(self):
+        return self.project.workers.add(
+            user_id="ar_workforce_python_api2",
+            contact_number="123-456-7890",
+            name="ar_workforce_python_api2",
+        )
+
+    def add_assignment_types(self):
+        # Add an assignment type
+        self.repair = self.project.assignment_types.add(name="Removal")
+        self.inspection = self.project.assignment_types.add(name="Inspection")
+
+    def setup_project(self):
+        self.add_assignment_types()
+        self.add_worker()
+        self.worker = self.project.workers.get(user_id="ar_workforce_python_api2")
+        self.dispatcher = self.project.dispatchers.get(object_id=1)
 
     def test_get_empty_assignments(self):
         try:
@@ -797,6 +759,18 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+
+    def tearDown(self):
+        print("------------------------------------------------------------------\n")
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception:
+            print("Failed to delete project successfully!")
+        print("\n==================================================================")
+
 
 if __name__ == "__main__":
     unittest.main()

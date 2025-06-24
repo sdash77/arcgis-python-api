@@ -2,57 +2,15 @@
 # Name:        Workforce Assignment Types tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import unittest
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_configs import DinoConfigs
-from configparser import ConfigParser
 import datetime
+import unittest
 
-# region PreCondition check
-test_skip = False
-class_skip = False
-module_skip = False
-
-r1 = PreconditionChecks.check_API_import()
-r2 = PreconditionChecks.check_Python_version()
-
-if r1 & r2:
-    print("## Precondition checks passed ##")
-    module_skip = False
-else:
-    module_skip = True
-    print("Pre condition checks failed. Quitting tests")
-    raise (exit())
-
-# Import the module after Precondition checks pass
-try:
-    from arcgis.gis import GIS, Group, User
-    from arcgis.features import Feature, FeatureLayer
-    from arcgis.apps.workforce import *
-    from arcgis.apps.workforce._schemas import *
-    from arcgis.apps.workforce.managers import *
-except ImportError:
-    print("API import error. Quitting test")
-    raise (exit())
-# endregion PreCondition Check
-
-# TestModule
-@unittest.skipIf(
-    module_skip,
-    "Precondition check failed. Skipping tests in Workforce Assignment Types",
-)
-def setUpModule():
-    """
-    Run checks for host system
-    """
-    # Get environment status
-    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
-    print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
-    print("Host OS: " + PreconditionChecks.get_OS())
-
-from utils.decorators import integration_test
+from arcgis.apps.workforce import *
+from arcgis.apps.workforce.managers import *
+from utils.decorators import integration_test, profiles
 
 
+@profiles.admin_agol
 @integration_test
 class Test_Workforce_Assignment_Types(unittest.TestCase):
     """
@@ -65,13 +23,7 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
         Check if ArcGIS.com can be reached
         :return:
         """
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader["workforce_ago"]["url"]
-        cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
-        cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         t = datetime.datetime.now()
         cls.time_stamp = str.format(
             "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
@@ -83,12 +35,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             str(t.second),
         )
         cls.project = create_project(cls.time_stamp)
-
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-        print("==================================================================")
-        print("Beginning tests in Test_Workforce_AssignmentManager class")
 
     def setup_project(self):
         self.project.assignment_types.add(name="Inspection")
@@ -116,17 +62,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             str(t.second),
         )
         print("Time stamp: " + self.time_stamp)
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cls.project.delete()
-        except Exception as e:
-            print("Failed to delete project successfully!")
-        print("\n==================================================================")
 
     def test_attachment_type_manager(self):
         try:
@@ -269,6 +204,17 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+
+    def tearDown(self):
+        print("------------------------------------------------------------------\n")
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception as e:
+            print("Failed to delete project successfully!")
+        print("\n==================================================================")
 
 
 if __name__ == "__main__":
