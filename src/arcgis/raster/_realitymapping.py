@@ -65,6 +65,8 @@ def _create_project(
     name: str,
     sensor_type: str = "Drone",
     scenario_type: str = "Drone",
+    settings: Optional[dict[str, Any]] = None,
+    out_sr: Optional[dict] = None,
     *,
     gis: Optional[GIS] = None,
     future: Optional[bool] = False,
@@ -89,9 +91,15 @@ def _create_project(
     ------------------     --------------------------------------------------------------------
     name                   Required string. The name of the project item to be created.
     ------------------     --------------------------------------------------------------------
-    definition             Optional dictionary.  The project definition dictionary.
-                        the definition contais the template informatios such as adjustSettings,
-                        processingStates, rasterType, information about the flights.
+    sensor_type            Optional string. The type of sensor used to collect the imagery.
+                           Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'.
+    ------------------     --------------------------------------------------------------------
+    scenario_type          Optional string. The type of scenario for the imagery.
+                           Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'.
+    ------------------     --------------------------------------------------------------------
+    settings               Optional dictionary.  The project definition dictionary.
+                           the definition contais the template informatios such as adjustSettings,
+                           processingStates, rasterType, information about the flights.
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -134,12 +142,17 @@ def _create_project(
         )
     if sensor_type and sensor_type.lower() == "satellite":
         scenario_type = ""
+    
+    if isinstance(out_sr, arcgis.geometry.SpatialReference):
+        out_sr = json.loads(out_sr.JSON)
+    elif isinstance(out_sr, int):
+        out_sr = {"wkid": out_sr}
+    elif isinstance(out_sr, str):
+        out_sr = {"wkt": out_sr}
 
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._util import _initialize_project
-    project_settings = _initialize_project(sensor_type, scenario_type, is_rm=True)
-    project_definition = {"name": name, "processing_settings": project_settings}
-    result = gis._tools.realitymapping.create_project(project_definition, future=future, **kwargs)
+    project_definition = {"name": name, "spatialReference": out_sr, "settings": settings}
+    result = gis._tools.realitymapping.create_project(project_definition, sensor_type, scenario_type, future=future, **kwargs)
     item = Item(gis=gis, itemid=result["reality_project"]["itemId"])
     return item
 
@@ -1600,9 +1613,9 @@ class RMProject:
     def __init__(
         self,
         project=None,
-        definition=None,
         sensor_type="Drone",
         scenario_type="Drone",
+        settings=None,
         *,
         gis: Optional[GIS] = None,
         **kwargs,
@@ -1613,6 +1626,7 @@ class RMProject:
                     name=project,
                     sensor_type=sensor_type,
                     scenario_type=scenario_type,
+                    settings=settings,
                     gis=gis,
                 )
             except:
@@ -1766,6 +1780,7 @@ class RMProject:
         raster_type_name=None,
         raster_type_params=None,
         out_sr=None,
+        settings=None,
         context=None,
         *,
         gis=None,
@@ -1798,6 +1813,8 @@ class RMProject:
         )
 
         mission_def = {"name": mission_name}
+        if settings is not None:
+            mission_def["settings"] = settings
         if context is None:
             context = {"workspace": image_collection_name}
         else:

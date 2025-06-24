@@ -9679,7 +9679,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         return final_job.result()
     
     # --------------------------------------------------------------------
-    def create_project(self, project_definition, gis=None, future=False, **kwargs):
+    def create_project(self, project_definition, sensor_type, scenario, gis=None, future=False, **kwargs):
         """
         The `create_project` method creates a Reality Mapping project on portal and sitescan
 
@@ -9687,7 +9687,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         """
         gis = self._gis
-        job = self._tbx.create_project(project_definition=project_definition, gis=gis, future=True)
+        job = self._tbx.create_project(
+            project_definition=project_definition,
+            sensor_type=sensor_type,
+            scenario=scenario,
+            gis=gis,
+            future=True)
 
         # job._is_reality = True
         job = RMJob(job)
