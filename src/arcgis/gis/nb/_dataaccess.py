@@ -23,7 +23,7 @@ class NotebookFile:
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<NotebookFile file={self.name}>"
+        return f"NotebookFile(name={self.name})"
 
     # ---------------------------------------------------------------------
     @property
@@ -177,7 +177,7 @@ class NotebookFolder:
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<NotebookFolder: {self.name}>"
+        return f"NotebookFolder(name={self.name})"
 
     # ---------------------------------------------------------------------
     @property
@@ -273,8 +273,7 @@ class NotebookFolder:
                 for f in response.get("Blobs", [])
                 if f["Properties"].get("ResourceType", "").lower() == "file"
             ]
-        else:
-            return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
+        return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
 
     # ---------------------------------------------------------------------
     def create_folder(self, folder_name: str) -> "NotebookFolder":
@@ -490,7 +489,7 @@ class NotebookDataAccess:
 
     # --------------------------------------------------------------------
     def __repr__(self):
-        return "Notebook Workspace for: " + self._username
+        return f"NotebookDataAccess(username={self._username})"
 
     # ---------------------------------------------------------------------
     def __str__(self):
@@ -517,8 +516,7 @@ class NotebookDataAccess:
         folders = [
             NotebookFolder(f["Name"], self)
             for f in response.get("Blobs", [])
-            if isinstance(f["Properties"].get("ResourceType"), str)
-            and f["Properties"].get("ResourceType").lower() == "directory"
+            if f["Properties"].get("ResourceType", "").lower() == "directory"
         ]
 
         # Include root folder only if folder_name is None
