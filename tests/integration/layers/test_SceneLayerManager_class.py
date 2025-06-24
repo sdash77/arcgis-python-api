@@ -11,12 +11,12 @@ online_admin = GIS(
     verify_cert=False,
 )
 # Scene Layer published from a Scene Layer Package
-scene_layer_item = online_admin.content.get("48a3165121584b49bff6cf5150c8cdc3")
+scene_layer_item = online_admin.content.get("d30897c3e97b4a1d8a9b3be7ee7599e6")
 scene_layer = SceneLayer(scene_layer_item.url, online_admin)
 manager = scene_layer.manager
 
 # Scene Layer published through a Feature Service
-fs_scene_layer_item = online_admin.content.get("ab5eddcefd024664bfa30e10d6027081")
+fs_scene_layer_item = online_admin.content.get("d30897c3e97b4a1d8a9b3be7ee7599e6")
 fs_scene_layer = SceneLayer(fs_scene_layer_item.url, online_admin)
 fs_manager = fs_scene_layer.manager
 
