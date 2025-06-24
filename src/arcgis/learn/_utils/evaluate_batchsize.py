@@ -85,9 +85,9 @@ def estimate_batch_size(model, mode="train", **kwargs):
                             which batch size is estimated. Supported 'train'
                             and 'eval' mode for calculating batch size in
                             training mode and evaluation mode respectively.
-                            Note: max_batchsize is capped at 1024 for train
-                            and eval mode and recommended_batchsize is
-                            capped at 64 for train mode.
+                            Note: In 'train' mode max_batchsize is capped at
+                            1024, and recommended_batchsize is capped
+                            at 64.
     =====================   ===========================================
 
     :return: Named tuple of recommended_batchsize and max_batchsize
