@@ -2,7 +2,6 @@
 # Name:        Workforce Assignment Attachments tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import datetime
 import unittest
 import uuid
 
@@ -25,7 +24,6 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
         Check if ArcGIS.com can be reached
         :return:
         """
-        t = datetime.datetime.now()
         cls.project_name = f"Workforce-ntgrtn-tst_{uuid.uuid4().hex[:5]}"
         cls.project = create_project(cls.project_name)
         cls.at = cls.project.assignment_types.add(name="test")
@@ -46,8 +44,7 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
         try:
             cls.project.delete(permanent=True)
         except Exception as e:
-            print("Failed to delete project successfully!")
-        print("\n==================================================================")
+            print("Failed to delete project")
 
     def test_attachment_manager(self):
         try:
@@ -55,13 +52,6 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
             self.assertIsInstance(
                 assignment.attachments, AssignmentAttachmentManager, "Incorrect Type"
             )
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -79,13 +69,6 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
                 "logo.png" in downloaded_paths[0], "Incorrect download filename"
             )
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -99,13 +82,6 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
             self.assertTrue(
                 "logo.png" in downloaded_path, "Incorrect download filename"
             )
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
