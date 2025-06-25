@@ -41,6 +41,11 @@ on:
         description: Install on Windows?
         required: false
         default: true
+      test-import:
+        type: boolean
+        description: Test import of arcgis after installation?
+        required: false
+        default: true
 
 
 jobs:
@@ -54,7 +59,7 @@ jobs:
         - name: Construct matrix
           id: set-matrix
           run: |
-            matrix=$(echo {} | jq '. |= {"os": [], "python_version": ["3.10", "3.11", "3.12"]}' | jq -r tostring)
+            matrix=$(echo {} | jq '. |= {"os": [], "python_version": ["3.10", "3.11", "3.12", "3.13"]}' | jq -r tostring)
             if [ "${{ github.event.inputs.linux }}" = 'true' ]; then
               echo "Running on Linux"
               matrix=$(echo $matrix | jq '.os += ["ubuntu-latest"]' | jq -r tostring)
@@ -96,6 +101,10 @@ jobs:
         if: github.event.inputs.conda == 'true'
         run: |
           conda install arcgis=${{ github.event.inputs.version }} ${{ needs.preflight.outputs.channels }} --yes
+      - name: Test arcgis import (conda)
+        if: github.event.inputs.conda == 'true' && github.event.inputs.test-import == 'true'
+        run: |
+          python -c "import arcgis; print(arcgis.__version__)"
       - name: Export environment
         if: github.event.inputs.conda == 'true'
         run: |
@@ -114,10 +123,22 @@ jobs:
           conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
           conda activate arcgis_pip && python -m pip install "arcgis==${{ github.event.inputs.version }}.*"
       - name: Install arcgis (pip from url)
-        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url != ''
+        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url != '' && github.event.inputs.pip-url != 'local'
         run: |
           conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
           conda activate arcgis_pip && python -m pip install ${{ github.event.inputs.pip-url }}
+      - name: Checkout repository (local pip install)
+        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url == 'local'
+        uses: actions/checkout@v4
+      - name: Install arcgis (pip from local)
+        if: github.event.inputs.pip == 'true' && github.event.inputs.pip-url == 'local'
+        run: |
+          conda create -n arcgis_pip python=${{ matrix.python_version }} --yes
+          conda activate arcgis_pip && python -m pip install ./src
+      - name: Test arcgis import (pip)
+        if: github.event.inputs.pip == 'true' && github.event.inputs.test-import == 'true'
+        run: |
+          conda activate arcgis_pip && python -c "import arcgis; print(arcgis.__version__)"
       - name: Export pip environment
         if: github.event.inputs.pip == 'true'
         run: |

@@ -91,7 +91,7 @@ class TestVectorTileLayerClass_enterprise(unittest.TestCase):
         assert vt
 
     def test_tile_sprite(self):
-        sprite = self.tl.tile_sprite()
+        sprite = self.tl.tile_sprite("sprite.json")
         assert sprite
         assert isinstance(sprite, dict)
 
