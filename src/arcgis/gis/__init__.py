@@ -4367,9 +4367,9 @@ class UserManager(object):
                     "defaultRoleForUser", None
                 )
         groups: list[str] | None = groups or default_settings.get("groups", [])
-        role: str = role or default_settings.get("role", None)
-        user_type: str = user_type or default_settings.get("userLicenseType", None)
-        categories: list[str] | None = default_settings.get("categories", None)
+        role: str = role or default_settings.get("role")
+        user_type: str = user_type or default_settings.get("userLicenseType")
+        categories: list[str] | None = default_settings.get("categories")
 
         if role is None and user_type is None:
             raise ValueError(
