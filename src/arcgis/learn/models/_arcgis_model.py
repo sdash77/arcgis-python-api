@@ -634,8 +634,12 @@ def get_backbone_func(backbone, data, **kwargs):
             bckbn = backbone.split(":")[1]
             from . import _hf_weightutils as hfwu
 
-            if "resnet" in bckbn:
+            supported_hf_backbones = {"resnet", "swin"}
+            if any(name in bckbn for name in supported_hf_backbones):
                 backbone = getattr(hfwu, bckbn)
+            else:
+                raise ValueError(f"Unsupported backbone: 'hf:{bckbn}'")
+
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
