@@ -2,19 +2,14 @@
 # Name:        Workforce Assignment Attachments tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import unittest
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_configs import DinoConfigs
-from configparser import ConfigParser
 import datetime
-import importlib_resources
-from arcgis.gis import GIS, Group, User
-from arcgis.features import Feature, FeatureLayer
+import unittest
+import uuid
+
 from arcgis.apps.workforce import *
-from arcgis.apps.workforce._schemas import *
 from arcgis.apps.workforce.managers import *
-from utils.decorators import integration_test, profiles
 from integration.config import get_resource_path
+from utils.decorators import integration_test, profiles
 
 
 @profiles.agol
@@ -31,16 +26,8 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
         :return:
         """
         t = datetime.datetime.now()
-        cls.time_stamp = str.format(
-            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        cls.project = create_project(cls.time_stamp)
+        cls.project_name = f"Workforce-ntgrtn-tst_{uuid.uuid4().hex[:5]}"
+        cls.project = create_project(cls.project_name)
         cls.at = cls.project.assignment_types.add(name="test")
         cls.assignment = cls.project.assignments.add(
             assignment_type=cls.at,
@@ -53,26 +40,6 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
         )
         thumbnail = get_resource_path("logo.png")
         cls.assignment.attachments.add(thumbnail)
-
-    def setUp(self):
-        # create project for each test
-        print("Test: " + self._testMethodName)
-        self.namePrefix = "dino_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
 
     @classmethod
     def tearDownClass(cls):

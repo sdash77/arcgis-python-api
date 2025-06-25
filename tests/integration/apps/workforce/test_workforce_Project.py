@@ -3,16 +3,14 @@
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
 import unittest
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_configs import DinoConfigs
-from configparser import ConfigParser
-import datetime
+import uuid
+
 from arcgis.auth.tools import LazyLoader
 
 arcgismapping = LazyLoader("arcgis.map")
 
-from arcgis.gis import GIS, Group, User, Item
-from arcgis.features import Feature, FeatureLayer
+from arcgis.gis import Group, User, Item
+from arcgis.features import FeatureLayer
 from arcgis.apps.workforce import *
 from arcgis.apps.workforce.managers import *
 
@@ -32,42 +30,16 @@ class Test_Workforce_Project(unittest.TestCase):
         Check if ArcGIS.com can be reached
         :return:
         """
-        t = datetime.datetime.now()
-        cls.time_stamp = str.format(
-            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        cls.project = create_project(cls.time_stamp)
+        project_name = f"Workforce-ntgrtn-tst_{uuid.uuid4().hex[:5]}"
+        cls.project = create_project(project_name)
         cls.project_id = cls.project.id
 
     def setUp(self):
         self.setup_project()
-        print("Test: " + self._testMethodName)
-        self.namePrefix = "dino_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
 
     @classmethod
     def tearDownClass(cls):
-        print("\n==================================================================")
+        cls.project.delete()
 
     def setup_project(self):
         project = Project(self.gis.content.get(self.project_id))
@@ -132,13 +104,6 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.workers_layer, FeatureLayer, "Incorrect type")
             self.assertIsInstance(project.workers_layer_url, str, "Incorrect type")
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -150,13 +115,6 @@ class Test_Workforce_Project(unittest.TestCase):
             # Re-get project to verify changes on server
             project2 = Project(self.gis.content.get(self.project_id))
             self.assertEqual(project2.summary, "A new summary")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())

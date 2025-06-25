@@ -4,7 +4,7 @@
 # -------------------------------------------------------------------------------
 import datetime
 import unittest
-
+import uuid
 from arcgis.apps.workforce import *
 from arcgis.apps.workforce.managers import *
 from utils.decorators import integration_test, profiles
@@ -23,18 +23,8 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
         Check if ArcGIS.com can be reached
         :return:
         """
-
-        t = datetime.datetime.now()
-        cls.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        cls.project = create_project(cls.time_stamp)
+        project_name = f"Workforce-ntgrtn-tst_{uuid.uuid4().hex[:5]}"
+        cls.project = create_project(project_name)
 
     def setup_project(self):
         self.project.assignment_types.add(name="Inspection")
@@ -46,35 +36,14 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
 
     def setUp(self):
         # reset project for each test
-        print("Test: " + self._testMethodName)
-        self.namePrefix = "dino_"
         self.reset_project()
         self.setup_project()
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
 
     def test_attachment_type_manager(self):
         try:
             assignment_types = self.project.assignment_types.search()
             self.assertIsInstance(assignment_types[0], AssignmentType, "Incorrect type")
             self.assertEqual(assignment_types[0].name, "Inspection", "Incorrect name")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -85,13 +54,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             assignment_type = self.project.assignment_types.search()[-1]
             self.assertEqual(assignment_type.name, "Removal", "Incorrect name")
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -101,13 +63,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             self.project.assignment_types.batch_add([assignment_type])
             assignment_type = self.project.assignment_types.search()[-1]
             self.assertEqual(assignment_type.name, "Removal", "Incorrect name")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -120,13 +75,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             self.assertEqual(
                 len(assignment_types), 0, "Incorrect number of assignment types"
             )
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -141,13 +89,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
                 "Incorrect number of assignment types",
             )
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -161,13 +102,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
                 assignment_type.name, "Repair", "Incorrect assignment type"
             )
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -180,13 +114,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
                 assignment_type.name, "Repair", "Incorrect assignment type"
             )
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -195,18 +122,8 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             with self.assertRaises(ValidationError):
                 self.project.assignment_types.add()
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
 
     @classmethod
     def tearDownClass(cls):
@@ -214,7 +131,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             cls.project.delete()
         except Exception as e:
             print("Failed to delete project successfully!")
-        print("\n==================================================================")
 
 
 if __name__ == "__main__":

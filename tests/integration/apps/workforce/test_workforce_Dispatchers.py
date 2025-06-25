@@ -2,8 +2,8 @@
 # Name:        Workforce Dispatchers tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import datetime
 import unittest
+import uuid
 
 from arcgis.auth.tools._util import detect_proxy
 
@@ -33,17 +33,6 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
                 name="ar_workforce_python_api5",
             )
 
-    def reset_project(self):
-        pass
-        # self.project.dispatchers.batch_delete(
-        #     self.project.dispatchers.search(
-        #         where="{} <> '{}'".format(
-        #             self.project._dispatcher_schema.user_id,
-        #             "ar_workforce_python_api",
-        #         )
-        #     )
-        # )
-
     def setup_project(self):
         self.add_dispatcher()
 
@@ -53,39 +42,11 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
         Check if ArcGIS.com can be reached
         :return:
         """
-        t = datetime.datetime.now()
-        cls.time_stamp = str.format(
-            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        cls.project = create_project(cls.time_stamp)
+        project_name = f"Workforce-ntgrtn-tst_{uuid.uuid4().hex[:5]}"
+        cls.project = create_project(project_name)
 
     def setUp(self):
-        # reset project for each test
-        self.reset_project()
         self.setup_project()
-        print("Test: " + self._testMethodName)
-        self.namePrefix = "dino_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Workforce-Ntgrtn-tst: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
 
     @classmethod
     def tearDownClass(cls):
@@ -93,7 +54,6 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
             cls.project.delete()
         except Exception as e:
             print("Failed to delete project successfully!")
-        print("\n==================================================================")
 
     def test_search_dispatcher(self):
         try:
