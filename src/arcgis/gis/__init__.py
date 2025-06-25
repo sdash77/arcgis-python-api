@@ -17302,6 +17302,8 @@ class Item(dict):
         max_scale: float,
         cache_info: Optional[dict[str, Any]] = None,
         build_cache: bool = False,
+        *,
+        extent: list[float] | None = None,
     ):
         """
         The ``create_tile_service`` method allows publishers and administrators to publish hosted feature
@@ -17361,7 +17363,7 @@ class Item(dict):
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
         original_cache_value: bool = copy.deepcopy(build_cache)
-        if build_cache == True and self._gis._portal.is_arcgisonline:
+        if build_cache == True:
             # build_cache needs to be false as of 4/16/2025 for ArcGIS Online
             # and cache built later in the process. Enterprise automatically
             # builds the cache.
@@ -17493,6 +17495,12 @@ class Item(dict):
                         },
                     ],
                 }
+            storage_format: str = "esriMapCacheStorageModeExploded"
+            if (
+                self._gis._is_kubernetes == False
+                and self._gis._is_arcgisonline == False
+            ):
+                storage_format: str = "esriMapCacheStorageModeCompactV2"
             pp = {
                 "minScale": min_scale,
                 "maxScale": max_scale,
@@ -17506,7 +17514,7 @@ class Item(dict):
                         "antialiasing": True,
                     },
                     "cacheStorageInfo": {
-                        "storageFormat": "esriMapCacheStorageModeExploded",
+                        "storageFormat": storage_format,
                         "packetSize": 128,
                     },
                 },
@@ -17514,6 +17522,13 @@ class Item(dict):
                 "cacheOnDemandMinScale": min_scale,
                 "capabilities": "Map,ChangeTracking",
             }
+            if (
+                self._gis._is_arcgisonline == False
+                and self._gis._is_kubernetes == False
+            ):
+                pp.pop("capabilities", None)
+                pp.pop("cacheOnDemandMinScale", None)
+                pp["cacheOnDemand"] = False
             params = {
                 "f": "json",
                 "outputType": "tiles",
@@ -17522,13 +17537,35 @@ class Item(dict):
                 "filetype": "featureService",
                 "publishParameters": json.dumps(pp),
             }
-            url = "%s/content/users/%s/publish" % (
+            url = "%scontent/users/%s/publish" % (
                 self._portal.resturl,
                 self._user_id,
             )
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res["services"], folder=None)
-            if self._gis._portal.is_arcgisonline and original_cache_value:
+            if original_cache_value and self._gis._is_arcgisonline == False:
+                from arcgis.layers import Service
+
+                ms_url = self._gis.content.get(serviceitem_id).url
+                ms = Service(ms_url, server=self._gis)
+                mgr = ms.manager
+                if extent is None:
+                    extent = " ".join(
+                        [
+                            str(ms.properties["fullExtent"]["xmin"]),
+                            str(ms.properties["fullExtent"]["ymin"]),
+                            str(ms.properties["fullExtent"]["xmax"]),
+                            str(ms.properties["fullExtent"]["ymax"]),
+                        ]
+                    )
+                lods = []
+                for lod in cache_info["lods"]:
+                    if lod["scale"] >= min_scale and lod["scale"] <= max_scale:
+                        lods.append(str(lod["scale"]))
+                levels = ";".join(lods)
+                mgr.build_cache(levels=levels, extent=extent)
+                return self._gis.content.get(serviceitem_id)
+            elif self._gis._portal.is_arcgisonline and original_cache_value:
                 from arcgis.layers import Service
 
                 ms_url = self._gis.content.get(serviceitem_id).url
