@@ -4044,10 +4044,7 @@ class UserManager(object):
                     "email_text",
                     "use_defaults",
                 }
-            params = {}
-            for k, v in kwargs.items():
-                if k in allowed_keys:
-                    params[k] = v
+            params = {k: v for k, v in kwargs.items() if k in allowed_keys}
             return self._create20251plus(**params)
         if self._gis.version >= [6, 4]:
             allowed_keys = {
