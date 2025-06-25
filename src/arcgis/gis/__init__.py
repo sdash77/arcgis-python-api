@@ -4403,8 +4403,7 @@ class UserManager(object):
             "viewplusedit": "iBBBBBBBBBBBBBBB",
         }
 
-        if groups is None:
-            groups = []
+        groups = groups or []
 
         if user_type.lower() in user_li_lu:
             user_type = user_li_lu[user_type.lower()]
