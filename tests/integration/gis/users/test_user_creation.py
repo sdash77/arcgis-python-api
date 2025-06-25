@@ -54,8 +54,7 @@ class TestUserManagerCreate(unittest.TestCase):
         """
         Test create user with thumbnail
         """
-        test_path = get_resource_path("staging_data/users", verify=False)
-        thumbnail_path = os.path.join(test_path, "Basemaps.png")
+        thumbnail_path = get_resource_path("staging_data/users/Basemaps.png")
         self.created_user = self.gis.users.create(
             self.username,
             self.password,
