@@ -74,8 +74,7 @@ class TestUserManagerCreate(unittest.TestCase):
         """
         if self.gis.version < [2025, 1]:
             self.skipTest("use_defaults param is only available in ArcGIS Enterprise 11.5+.")
-        test_path = get_resource_path("staging_data/users", verify=False)
-        thumbnail_path = os.path.join(test_path, "Basemaps.png")
+        thumbnail_path = get_resource_path("staging_data/users/Basemaps.png")
         self.created_user = self.gis.users.create(
             self.username,
             self.password,
