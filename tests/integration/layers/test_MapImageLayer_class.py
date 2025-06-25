@@ -3,40 +3,27 @@ import unittest
 from arcgis.features.layer import FeatureLayer
 from arcgis.layers import (
     MapImageLayer,
-    MapImageLayerManager,
     EnterpriseMapImageLayerManager,
 )
-from arcgis.gis import GIS, Item
-from utils.decorators import integration_test
-
-gis = GIS("https://dev0015021.esri.com/portal", verify_cert=False)
-
-# MapImageLayer
-try:
-    item = gis.content.search("South_Asia_Region", "Map Image Layer")[0]
-    layer = MapImageLayer.fromitem(item)
-    assert isinstance(item, Item)
-except:
-    fp = r"//qalab_server/pydata/v109/geosaurus/mapping_mod_MapImageLayer_cls/south_asia_region.sd"
-    host_server = gis.admin.servers.get(role="HOSTING_SERVER")[0]
-    res = host_server.publish_sd(sd_file=fp, folder="South_Asia", future=False)
-    item = gis.content.search("South_Asia_Region", "Map Image Layer")[0]
-    if not (item):
-        raise (
-            "Test data not published. Please configure Map Service for tests to pass."
-        )
-    else:
-        layer = MapImageLayer.fromitem(item)
-        print(layer)
+from arcgis.geometry import Geometry
+from utils.decorators import integration_test, profiles
 
 
+@profiles.enterprise
 @integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        item = cls.gis.content.get("e7981155f26a4156bd85a44e989f381e")  # South_Asia_Region
+        assert item, "Could not obtain item (South Asia Region - e7981155f26a4156bd85a44e989f381e)"
+        cls.layer = MapImageLayer.fromitem(item)
+
     def test_manager(self):
-        """ "
+        """
         Test manager property
         """
-        manager = layer.manager
+        manager = self.layer.manager
         assert isinstance(manager, EnterpriseMapImageLayerManager)
         assert "admin" in manager.url
 
@@ -45,7 +32,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test create_dynamic_layer
         """
         # Must check that supportDynamicLayers = True in layer properties
-        if not layer.properties.supportsDynamicLayers == True:
+        if not self.layer.properties.supportsDynamicLayers == True:
             raise (
                 "test_create_dynamic_layer failed. Layer does not support dynamic layers."
             )
@@ -61,29 +48,29 @@ class TestQueryFeatureLayer(unittest.TestCase):
             },
         }
 
-        dynamic = layer.create_dynamic_layer(layer=layer_to_add)
+        dynamic = self.layer.create_dynamic_layer(layer=layer_to_add)
         assert isinstance(dynamic, FeatureLayer)
 
     def test_properties(self):
         """
         Test properties
         """
-        kml = layer.kml
+        kml = self.layer.kml
         assert isinstance(kml, str)
         assert kml
 
-        info = layer.item_info
+        info = self.layer.item_info
         assert isinstance(info, dict)
         assert "description" in info
 
-        legend = layer.legend
+        legend = self.layer.legend
         assert isinstance(legend, dict)
         assert "layers" in legend
 
-        metadata = layer.metadata
+        metadata = self.layer.metadata
         assert isinstance(metadata, str)
 
-        thumbnail = layer.thumbnail()
+        thumbnail = self.layer.thumbnail()
         assert thumbnail
         assert isinstance(thumbnail, str)
 
@@ -91,14 +78,24 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test identify method with various parameters
         """
-        identify = layer.identify(
-            geometry={"xmin": 52, "ymin": 27.1, "xmax": 65.8, "ymax": 36},
+        identify = self.layer.identify(
+            geometry=Geometry({
+                "xmin": -13055810.007118689,
+                "ymin": 4028260.3648137297,
+                "xmax": -13039076.794074425,
+                "ymax": 4040181.123446847,
+                "spatialReference": {"wkid": 102100, "latestWkid": 3857},
+            }),
             geometry_type="Envelope",
             tolerance=2,
-            map_extent="59,-2,75,25",
+            map_extent="-13055810.0071187 4028260.36481373 -13039076.7940744 4040181.12344685",
             layers="all",
-            sr=4326,
+            sr=3857,
             image_display="600,550,96",
+        )
+        self.assertFalse(
+            "error" in identify,
+            f"An error occurred during Identify: {identify.get('error')}",
         )
         assert isinstance(identify, dict)
         assert "results" in identify
@@ -108,7 +105,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test find method
         """
-        find = layer.find(
+        find = self.layer.find(
             search_text="Iran",
             contains=True,
             search_fields="CNTRY_NAME",
@@ -128,7 +125,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         import tempfile
 
-        generate = layer.generate_kml(
+        generate = self.layer.generate_kml(
             save_location=tempfile.gettempdir(),
             name="map_service_generate_kml_test",
             layers="0",
@@ -142,14 +139,14 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Export tiles must be True in layer properties
         """
         try:
-            size = layer.estimate_export_tiles_size(
+            size = self.layer.estimate_export_tiles_size(
                 export_by="levelId", levels="5-6", asynchronous=False
             )
             assert isinstance(size, dict)
             assert isinstance(size["totalSize"], int)
             assert isinstance(size["totalTilesToExport"], int)
 
-            export = layer.export_tiles(
+            export = self.layer.export_tiles(
                 levels="18489297.737236-9244648.868618", export_by="scale"
             )
             assert isinstance(export, list)
