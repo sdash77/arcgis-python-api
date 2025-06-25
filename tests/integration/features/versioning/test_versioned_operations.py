@@ -6,9 +6,10 @@ from arcgis.gis import GIS
 from arcgis.features._version import VersionManager
 from arcgis.features.layer import FeatureLayer
 
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 
+@profiles.admin_enterprise
 @integration_test
 class TestVersionManagementSQL(unittest.TestCase):
     """Test VersionManagementServer methods"""
@@ -17,10 +18,6 @@ class TestVersionManagementSQL(unittest.TestCase):
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
         cls.base_server_url = "https://pythonapitestnb.dev.geocloud.com/server/rest/services/BranchVersionedFeatureService/"
-        cls.gis = GIS(
-            profile="your_ent_admin_profile",
-            verify_cert=False,
-        )
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
 
