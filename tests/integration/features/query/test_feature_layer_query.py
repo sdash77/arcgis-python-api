@@ -5,7 +5,7 @@ from arcgis.geometry import Envelope, Geometry
 from arcgis.geometry.filters import intersects
 
 
-@profiles.enterprise_and_agol
+@profiles.agol
 @integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
 
@@ -75,12 +75,17 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query result_offset
         """
+        base_query = result_offset_results = self.major_cities_layer.query(
+            return_all_records=False
+        )
+        count_base_records = len(base_query.features)
         result_offset_results = self.major_cities_layer.query(
             result_offset=100, return_all_records=False
         )
-        oid_field_name = self.major_cities_layer.properties.objectIdField
+        count_offset_records = len(result_offset_results.features)
+
         assert result_offset_results
-        assert result_offset_results.features[0].attributes[oid_field_name] == 101
+        assert (count_base_records - count_offset_records) == 100
 
     def test_query_object_ids(self):
         """
@@ -106,7 +111,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test return_distinct_values
         """
         fields = self.major_cities_layer.query(
-            out_fields=["class", "families", "females"]
+            out_fields=["POP_CLASS", "CLASS", "POPULATION"]
         )
         # ObjectId field always included
         assert len(fields.fields) == 4
@@ -129,7 +134,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with return_extent_only=True
         """
         extent = self.major_cities_layer.query(
-            where="st = 'ID'", return_extent_only=True
+            where="NAME = 'San Diego'", return_extent_only=True
         )
         assert extent["extent"]
         assert isinstance(extent, dict)
@@ -140,18 +145,18 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with order_by_fields=True
         """
         ordered = self.major_cities_layer.query(
-            out_fields=["class", "families", "females"],
-            order_by_fields="families ASC",
+            out_fields=["NAME", "POPULATION", "POP_CLASS"],
+            order_by_fields="POPULATION ASC",
             return_geometry=False,
         )
         assert ordered
         assert (
-            ordered.features[0].attributes["families"]
-            < ordered.features[1].attributes["families"]
+            ordered.features[0].attributes["POPULATION"]
+            < ordered.features[1].attributes["POPULATION"]
         )
         assert (
-            ordered.features[1].attributes["families"]
-            < ordered.features[2].attributes["families"]
+            ordered.features[1].attributes["POPULATION"]
+            < ordered.features[2].attributes["POPULATION"]
         )
 
     def test_query_return_m_and_z_and_centroid(self):
@@ -191,10 +196,10 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with sql_format
         """
         sql = self.major_cities_layer.query(
-            where="name like '%Park'", sql_format="standard"
+            where="name like '%Diego'", sql_format="standard"
         )
         assert sql
-        assert sql.features[0].attributes["name"].endswith("Park")
+        assert sql.features[0].attributes["NAME"].endswith("Diego")
         assert len(sql.features) < self.major_cities_layer.query(return_count_only=True)
 
     def test_query_units(self):
@@ -265,12 +270,12 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with group_by_field_for_statistics
         """
         group_field = self.major_cities_layer.query(
-            out_statistics=[{"statisticType": "avg", "onStatisticField": "females"}],
-            group_by_fields_for_statistics="pop_class",
+            out_statistics=[{"statisticType": "avg", "onStatisticField": "POPULATION"}],
+            group_by_fields_for_statistics="POPULATION",
         )
         assert group_field
         assert isinstance(group_field, FeatureSet)
-        assert len(group_field.features) == 6
+        assert len(group_field.features) == 2000
 
     def test_query_out_statistics(self):
         """
@@ -281,7 +286,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
             out_statistics=[
                 {
                     "statisticType": "sum",
-                    "onStatisticField": "females",
+                    "onStatisticField": "POPULATION",
                     "outStatisticFieldName": output_name,
                 }
             ]
