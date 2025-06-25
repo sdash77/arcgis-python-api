@@ -7,18 +7,14 @@ from utils.decorators import integration_test
 
 # Initialize manager
 online_admin = GIS(
-    profile="your_online_profile",
+    profile="your_online_api_data_owner_profile",
     verify_cert=False,
 )
-# Scene Layer published from a Scene Layer Package
-scene_layer_item = online_admin.content.get("48a3165121584b49bff6cf5150c8cdc3")
-scene_layer = SceneLayer(scene_layer_item.url, online_admin)
-manager = scene_layer.manager
 
 # Scene Layer published through a Feature Service
-fs_scene_layer_item = online_admin.content.get("ab5eddcefd024664bfa30e10d6027081")
-fs_scene_layer = SceneLayer(fs_scene_layer_item.url, online_admin)
-fs_manager = fs_scene_layer.manager
+scene_layer_item = online_admin.content.get("470d55b679304e45a9496a2d8f86fd8e")  # UrbanHouse
+scene_layer = SceneLayer(scene_layer_item.url, online_admin)
+manager = scene_layer.manager
 
 
 @integration_test
@@ -84,13 +80,13 @@ class TestSceneLayerManager(unittest.TestCase):
         )[0]["id"]
         res = manager.edit(item=source_item_id)
         assert res
-        assert res["status"] == "success"
+        assert res.get("status") == "success", res
 
     def test_rebuild_cache(self):
         """
         Test rebuild cache on a scene layer published from a feature service
         """
-        res = fs_manager.rebuild_cache("0")
+        res = manager.rebuild_cache("0")
         if res:
             # could be none
             assert res
