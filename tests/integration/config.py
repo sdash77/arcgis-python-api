@@ -40,6 +40,15 @@ def get_resource_path(relative_path, verify=True, unique_copy=False):
     return str(resource)
 
 
+def copy_as_tempfile(staging_data_path: str):
+    resource = pathlib.Path(staging_data_path)
+    temp_dir = tempfile.mkdtemp()
+    unique_name = f"{resource.stem}_{uuid.uuid4().hex}{resource.suffix}"
+    temp_resource_copy = pathlib.Path(temp_dir, unique_name)
+    shutil.copy(resource, temp_resource_copy)
+    return str(temp_resource_copy)
+
+
 def get_web_resource_path(relative_path, unique_copy=False):
     _resource_cache_path = f"_web/{relative_path}"
     try:

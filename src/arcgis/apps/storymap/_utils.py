@@ -140,7 +140,7 @@ def _get_thumbnail(gis) -> str:
         thumbnail = "https://storymaps.arcgis.com/static/images/item-default-thumbnails/item.jpg"
     else:
         thumbnail = (
-            gis._url + "/apps/storymaps/static/images/item-default-thumbnails/item.jpg"
+            gis.url + "/apps/storymaps/static/images/item-default-thumbnails/item.jpg"
         )
     return thumbnail
 

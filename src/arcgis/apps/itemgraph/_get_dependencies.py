@@ -290,8 +290,8 @@ def _get_related_item_dict(item, forward=True, reverse=True):
 
 
 def _parse_webmap(item):
-    items = []
-    services = []
+    items = set()
+    services = set()
     webmap_json = item.get_data()
 
     def process_op_layer(layer):
@@ -301,27 +301,25 @@ def _parse_webmap(item):
 
         else:
             if "itemId" in layer:
-                if layer["itemId"] not in items:
-                    items.append(layer["itemId"])
+                items.add(layer["itemId"])
             elif "url" in layer:
                 try:
                     sid = FeatureLayer(layer["url"]).properties["serviceItemId"]
-                    if sid not in items:
-                        items.append(sid)
+                    items.add(sid)
                 except:
-                    if layer["url"] not in services:
-                        services.append(layer["url"])
+                    services.add(layer["url"])
 
     for op_layer in webmap_json.get("operationalLayers"):
         process_op_layer(op_layer)
 
-    items.extend(services)
-    return items
+    items.update(services)
+    items.update(_find_regex(webmap_json, _REGEX_GUID, []))
+    return list(items)
 
 
 def _parse_dashboard(item):
     # shoutout Dan Yaw for first iteration of this function
-    deps = []
+    deps = set()
     structure = item.get_data()
     widgets1 = structure.get("widgets", [])
     widgets2 = structure.get("desktopView", {}).get("widgets", [])
@@ -329,45 +327,48 @@ def _parse_dashboard(item):
 
     for widget in widgets:
         if widget.get("type") == "mapWidget":
-            deps.append(widget.get("itemId"))
+            deps.add(widget.get("itemId"))
             continue
         try:
             for dataset in widget.get("datasets", []):
                 if dataset.get("type") == "serviceDataset":
                     data_source = dataset.get("dataSource", {})
                     if data_source.get("type") == "itemDataSource":
-                        deps.append(data_source.get("itemId"))
+                        deps.add(data_source.get("itemId"))
                     elif data_source.get("type") == "arcadeDataSource":
                         script = data_source.get("script")
-                        deps.extend(_find_regex(script, _REGEX_GUID, []))
+                        deps.update(_find_regex(script, _REGEX_GUID, []))
         except:
             pass
 
-    return deps
+    deps.update(_find_regex(structure, _REGEX_GUID, []))
+    return list(deps)
 
 
 def _parse_exb(item):
     pub_data = item.get_data()
     draft_data = item.resources.get("config/config.json")
 
-    itemids = []
+    itemids = set()
 
     for data in [pub_data, draft_data]:
         data_sources = data.get("dataSources", {})
         for ds in data_sources.values():
-            if "itemId" in ds and ds["itemId"] not in itemids:
-                itemids.append(ds["itemId"])
+            if "itemId" in ds:
+                itemids.add(ds["itemId"])
 
         widgets = data.get("widgets", [])
         try:
             for widg_dict in widgets.values():
                 config = widg_dict.get("config", {})
-                if "surveyItemId" in config and config["surveyItemId"] not in itemids:
-                    itemids.append(config["surveyItemId"])
+                if "surveyItemId" in config:
+                    itemids.add(config["surveyItemId"])
         except:
             pass
 
-    return itemids
+        itemids.update(_find_regex(data, _REGEX_GUID, []))
+
+    return list(itemids)
 
 
 def _parse_wma(item):
@@ -394,11 +395,12 @@ def _parse_wma(item):
     except:
         pass
 
+    itemids.update(_find_regex(data, _REGEX_GUID, []))
     return list(itemids)
 
 
 def _parse_storymap(item):
-    itemids = []
+    itemids = set()
     data_list = [item.get_data()]
     draft_name = None
     for res in item.resources.list():
@@ -429,12 +431,11 @@ def _parse_storymap(item):
             ]
         )
 
-        for ids in [web_maps, themes]:
-            for i in ids:
-                if i not in itemids:
-                    itemids.append(i)
+        itemids.update(web_maps)
+        itemids.update(themes)
+        itemids.update(_find_regex(draft, _REGEX_GUID, []))
 
-    return itemids
+    return list(itemids)
 
 
 def _parse_hub(item):
@@ -469,6 +470,7 @@ def _parse_hub(item):
     for data in [pub_data, draft_data]:
         if data:
             itemids.update(_parse_hub_sections(data))
+        itemids.update(_find_regex(data, _REGEX_GUID, []))
 
     return list(itemids)
 
@@ -488,6 +490,7 @@ def _parse_qc(item):
         deps.add(structure["basemap"]["itemId"])
         for ds in structure["dataSources"]:
             deps.add(ds["featureServiceItemId"])
+        deps.update(_find_regex(structure, _REGEX_GUID, []))
         return list(deps)
     except:
         return []

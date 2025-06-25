@@ -27,7 +27,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
 from functools import lru_cache
 from arcgis.features._async import EditFeatureJob
-
+from arcgis.geometry.functions import LengthUnits
 from .managers import (
     AttachmentManager,
     SyncManager,
@@ -1862,7 +1862,7 @@ class FeatureLayer(Layer):
         result_record_count: Optional[int] = None,
         object_ids: Optional[list[str]] = None,
         distance: Optional[int] = None,
-        units: Optional[str] = None,
+        units: str | LengthUnits | None = None,
         max_allowable_offset: Optional[int] = None,
         out_sr: Optional[Union[dict[str, Any], str]] = None,
         geometry_precision: Optional[int] = None,
@@ -1926,7 +1926,8 @@ class FeatureLayer(Layer):
                                             distance is 100, the query geometry is a point, units is set to
                                             meters, and all points within 100 meters of the point are returned.
         -------------------------------     --------------------------------------------------------------------
-        units                               Optional string. The unit for calculating the buffer distance.
+        units                               Optional string or LengthUnits. The unit for calculating the buffer
+                                            distance.
 
                                             * If unit is not specified, the unit is derived from the geometry's
                                               spatial reference.
@@ -1950,7 +1951,7 @@ class FeatureLayer(Layer):
                                                         ...
                                                     }
 
-                                            Values options:
+                                            String Values options:
 
                                             * *esriSRUnit_Meter*
                                             * *esriSRUnit_StatuteMile*
@@ -2286,9 +2287,42 @@ class FeatureLayer(Layer):
             >>> fres
             {'objectIdFieldName': 'FID', 'objectIds': [17, 18, 19, 20, 21]}
         """
+
+        if isinstance(units, str):
+            units = units.lower()
+        units_lu: dict = {
+            9001: "esriSRUnit_Meter",
+            9002: "esriSRUnit_Foot",
+            9030: "esriSRUnit_NauticalMile",
+            9036: "esriSRUnit_Kilometer",
+            9093: "esriSRUnit_StatuteMile",
+            109012: "esriSRUnit_USNauticalMile",
+            LengthUnits.METER: "esriSRUnit_Meter",
+            LengthUnits.FOOT: "esriSRUnit_Foot",
+            LengthUnits.STATUTEMILE: "esriSRUnit_StatuteMile",
+            LengthUnits.KILOMETER: "esriSRUnit_Kilometer",
+            LengthUnits.NAUTICALMILE: "esriSRUnit_NauticalMile",
+            LengthUnits.USNAUTICALMILE: "esriSRUnit_USNauticalMile",
+            "foot": "esriSRUnit_Foot",
+            "meter": "esriSRUnit_Meter",
+            "kilometer": "esriSRUnit_Kilometer",
+            "nauticalmile": "esriSRUnit_NauticalMile",
+            "statutemile": "esriSRUnit_StatuteMile",
+            "usnauticalmile": "esriSRUnit_USNauticalMile",
+            "esrisrunit_meter": "esriSRUnit_Meter",
+            "esrisrunit_statutemile": "esriSRUnit_StatuteMile",
+            "esrisrunit_foot": "esriSRUnit_Foot",
+            "esrisrunit_kilometer": "esriSRUnit_Kilometer",
+            "esrisrunit_nauticalmile": "esriSRUnit_NauticalMile",
+            "esrisrunit_usnauticalmile": "esriSRUnit_USNauticalMile",
+        }
         if statistic_filter:
             statistic_filter: list[dict] | dict = statistic_filter.filter
         # validate parameters
+        if units and units in units_lu:
+            units: str = units_lu[units]
+        elif units and not units in units_lu:
+            raise ValueError("The `units` value provided is not supported.")
         query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,

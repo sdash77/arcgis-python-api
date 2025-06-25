@@ -17277,6 +17277,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_value=None,
         dimension_description=None,
         dimension_unit=None,
+        update_statistics=True,
+        update_transpose=True,
         future=False,
         estimate=False,
         **kwargs,
@@ -17298,6 +17300,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_description: dimensionDescription (str). Optional parameter.
 
         dimension_unit: dimensionUnit (str). Optional parameter.
+
+        update_statistics: updateStatistics (bool). Optional parameter.
+
+        update_transpose: updateTranspose (bool). Optional parameter.
 
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
@@ -17333,19 +17339,38 @@ class _RasterAnalysisTools(BaseAnalytics):
             if manage_mode.lower() == element.lower():
                 manage_mode = element
 
-        gpjob = self._tbx.manage_multidimensional_raster(
-            target_multidimensional_raster=target_multidimensional_raster,
-            manage_mode=manage_mode,
-            variables=variables,
-            input_multidimensional_rasters=input_multidimensional_rasters,
-            dimension_name=dimension_name,
-            dimension_value=dimension_value,
-            dimension_description=dimension_description,
-            dimension_unit=dimension_unit,
-            gis=self._gis,
-            future=True,
-            estimate=estimate,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version < 11.5:
+                gpjob = self._tbx.manage_multidimensional_raster(
+                    target_multidimensional_raster=target_multidimensional_raster,
+                    manage_mode=manage_mode,
+                    variables=variables,
+                    input_multidimensional_rasters=input_multidimensional_rasters,
+                    dimension_name=dimension_name,
+                    dimension_value=dimension_value,
+                    dimension_description=dimension_description,
+                    dimension_unit=dimension_unit,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
+            elif (current_version is not None) and current_version >= 11.5:
+                gpjob = self._tbx.manage_multidimensional_raster(
+                    target_multidimensional_raster=target_multidimensional_raster,
+                    manage_mode=manage_mode,
+                    variables=variables,
+                    input_multidimensional_rasters=input_multidimensional_rasters,
+                    dimension_name=dimension_name,
+                    dimension_value=dimension_value,
+                    dimension_description=dimension_description,
+                    dimension_unit=dimension_unit,
+                    update_statistics=update_statistics,
+                    update_transpose=update_transpose,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
@@ -18260,7 +18285,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-        """
+        r"""
         Function can be used to train a deep learning model using the output from the
         export_training_data function.
         It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.

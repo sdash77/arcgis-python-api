@@ -1240,8 +1240,6 @@ def to_featureclass(
                 replace_mappings = {
                     pd.NA: None,
                     np.nan: None,
-                    np.NaN: None,
-                    np.NAN: None,
                     pd.NaT: None,
                 }
                 np.apply_along_axis(
@@ -1930,8 +1928,8 @@ def _handle_none_type_geometry(df, geom_type, geom_column):
                 if geom_type == "Point":
                     df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
                         {
-                            "x": np.NAN,
-                            "y": np.NAN,
+                            "x": np.nan,
+                            "y": np.nan,
                             "spatialReference": df.spatial.sr,
                         }
                     )

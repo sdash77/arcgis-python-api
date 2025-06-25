@@ -492,7 +492,7 @@ class _ImportPackage:
                             view_def["viewDefinitionQuery"] = query
                         view_layers[idx] = view_def
 
-            reqs = self.graph.get_node(item_id).requires("id")
+            reqs = self.graph.get_node(item_id).contains("id")
             if len(reqs) == 0:
                 raise RuntimeError("View Service does not have a valid data item.")
             elif len(reqs) == 1:
@@ -690,6 +690,34 @@ class _ImportPackage:
         folder: Folder | str = None,
         failure_rollback: bool = False,
     ):
+
+        if item_mapping != {}:
+            for og_id, new_id in item_mapping.items():
+                new_item = self.gis.content.get(new_id)
+                if new_item is None:
+                    warnings.warn(
+                        f"Item with id {new_id} not found in the portal. Skipping remapping.",
+                        RuntimeWarning,
+                    )
+                    continue
+                if og_id not in self.items:
+                    warnings.warn(
+                        f"Item with id {og_id} not found as a dependency. Skipping remapping.",
+                        RuntimeWarning,
+                    )
+                    continue
+                self.created_item_mapping[og_id] = new_id
+                og_folder = os.path.join(self._temp_package, og_id)
+                with open(os.path.join(og_folder, "properties.json"), "r") as prop_file:
+                    og_props = json.load(prop_file)
+                self._name_mapping[og_id] = (og_props["title"], new_item.title)
+                self._service_mapping[og_id] = (og_props["url"], new_item.url)
+                with open(
+                    os.path.join(og_folder, "relationships.json"), "r"
+                ) as rel_file:
+                    relationships = json.load(rel_file)
+                self._item_relationships[og_id] = relationships["related_items"]
+
         if len(items) == 0:
             nodes = set(self.graph.all_items())
         else:

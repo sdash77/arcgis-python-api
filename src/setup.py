@@ -15,7 +15,7 @@ from setuptools.command.egg_info import egg_info as _egg_info
 
 # To use a consistent encoding
 from codecs import open
-from os import path
+from os import environ, path
 import sys
 from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
@@ -51,44 +51,33 @@ def _get_rel_site_packages_dir():
             pass
 
 
-# Conda uses this setup file, but we want to suppress some functionality
-if "--conda-install-mode" in sys.argv:
-    sys.argv.remove("--conda-install-mode")
-    conda_install_mode = True
-else:
-    conda_install_mode = False
-
-if conda_install_mode:
-    # conda handles its own dependencies, so don't specify any pip-dependencies
-    dependencies = []
-else:
-    dependencies = [
-        "pillow",
-        "urllib3>=2.1.0,<3",
-        "cachetools",
-        "lxml",
-        "cryptography",
-        "pandas >=2.0.0,<2.3.0",
-        "numpy >=1.21.6,<2",
-        "matplotlib",
-        "keyring >=23.3.0",
-        "pylerc",
-        "ujson >=3",
-        "truststore>=0.10.0",
-        'pywin32 >=223;platform_system=="Windows"',
-        "geomet",
-        "requests >=2.32.3,<3",
-        "requests-oauthlib",
-        "requests_toolbelt",
-        "pyspnego >=0.8.0",
-        "dask[dataframe] >=2024.12.1,<2025.1.0",
-        "matplotlib-inline",
-        "pyarrow >=16,<17",
-        "puremagic >=1.15,<2",
-        "pydantic >=2.8.2, <3",
-        "networkx >=3.3, <4",
-        "websocket-client >=1.2.3, <2.0.0",
-    ]
+dependencies = [
+    "pillow",
+    "urllib3>=2.1.0,<3",
+    "cachetools",
+    "lxml",
+    "cryptography",
+    "pandas >=2.0.0,<2.4.0",
+    "numpy >=2.2.0,<3",
+    "matplotlib",
+    "keyring >=23.3.0",
+    "pylerc",
+    "ujson >=3",
+    "truststore>=0.10.0",
+    'pywin32 >=223;platform_system=="Windows"',
+    "geomet",
+    "requests >=2.32.3,<3",
+    "requests-oauthlib",
+    "requests_toolbelt",
+    "pyspnego >=0.8.0",
+    "dask[dataframe] >=2024.12.1,<2025.1.0",
+    "matplotlib-inline",
+    "pyarrow >=17,<20",
+    "puremagic >=1.15,<2",
+    "pydantic >=2.8.2, <3",
+    "networkx >=3.3, <4",
+    "websocket-client >=1.2.3, <2.0.0",
+]
 
 
 def _post_install():
@@ -141,20 +130,8 @@ except:
 
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
-    MAJOR = "2"
-    MINOR = "4"
-    try:
-        import os
-
-        def __path(filename):
-            return os.path.join(os.path.dirname(__file__), filename)
-
-        MICRO = "1"
-        if os.path.exists(__path("build.info")):
-            MICRO = open(__path("build.info")).read().strip()
-    except:
-        MICRO = "1"
-    return f"{MAJOR}.{MINOR}.{MICRO}"
+    ARCGIS_PYTHON_API_VERSION = "2.4.2"
+    return environ.get("ARCGIS_PYTHON_API_VERSION") or ARCGIS_PYTHON_API_VERSION
 
 
 kwargs = {
@@ -197,6 +174,7 @@ kwargs = {
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "
@@ -208,7 +186,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
-    "python_requires": ">=3.10, <3.13",
+    "python_requires": ">=3.10, <3.14",
     "include_package_data": True,
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's

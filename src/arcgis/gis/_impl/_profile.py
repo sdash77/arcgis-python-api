@@ -999,7 +999,7 @@ class ProfileManager(object):
 
         """
 
-        url = gis._url
+        url = gis.url
         u = gis._username
         p = gis._password
         kf = gis._key_file
