@@ -1274,7 +1274,23 @@ class GIS(object):
             for server in res["servers"]:
                 if server["serverFunction"].lower() == "notebookserver":
                     try:
-                        nbs = NotebookServer(server["adminUrl"] + "/admin", self)
+                        if (
+                            self._is_kubernetes
+                            and self._use_private_url_only == False
+                            and "adminPublicUrl" in server
+                            and server.get("adminPublicUrl")
+                        ):
+                            url: str = f"{server.get('adminPublicUrl')}/admin"
+                        elif "adminUrl" in server and server.get("adminUrl"):
+                            url: str = f"{server.get('adminUrl')}/admin"
+                        elif "url" in server and server.get("url"):
+                            url: str = f"{server.get('url')}/admin"
+                        else:
+                            raise Exception(
+                                "The server information provided by the system is incorrect, please contact and administrator."
+                            )
+
+                        nbs = NotebookServer(url, self)
                         nbs.properties
                         notebooks.append(nbs)
                     except Exception as ex:
