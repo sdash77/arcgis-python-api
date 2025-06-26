@@ -3,9 +3,10 @@ from utils.decorators import integration_test, profiles
 from arcgis.features import FeatureSet
 from arcgis.geometry import Envelope, Geometry
 from arcgis.geometry.filters import intersects
+from arcgis.gis import GIS
 
 
-@profiles.agol
+# @profiles.enterprise_and_agol
 @integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
 
@@ -14,6 +15,10 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         get test data
         """
+        proxies = {"http": "http://127.0.0.1:8999", "https": "http://127.0.0.1:8999"}
+        cls.gis = GIS(
+            profile="your_enterprise_profile", verify_cert=False, proxy=proxies
+        )
         major_cities_item = cls.gis.content.search(
             "{item} tags:{tag}".format(item="major_cities", tag="integration_testing"),
             "Feature Layer",
@@ -110,9 +115,10 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with limited out_fields indicated
         Test return_distinct_values
         """
-        fields = self.major_cities_layer.query(
-            out_fields=["POP_CLASS", "CLASS", "POPULATION"]
-        )
+        field_names = ["population", "class", "pop_class"]
+        if self.gis._is_arcgisonline:
+            field_names = [n.upper() for n in field_names]
+        fields = self.major_cities_layer.query(out_fields=field_names)
         # ObjectId field always included
         assert len(fields.fields) == 4
 
@@ -144,19 +150,24 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with order_by_fields=True
         """
+        population_field_name = "population"
+        field_names = ["population", "name", "pop_class"]
+        if self.gis._is_arcgisonline:
+            population_field_name = population_field_name.upper()
+            field_names = [n.upper() for n in field_names]
         ordered = self.major_cities_layer.query(
-            out_fields=["NAME", "POPULATION", "POP_CLASS"],
-            order_by_fields="POPULATION ASC",
+            out_fields=field_names,
+            order_by_fields=f"{population_field_name} ASC",
             return_geometry=False,
         )
         assert ordered
         assert (
-            ordered.features[0].attributes["POPULATION"]
-            < ordered.features[1].attributes["POPULATION"]
+            ordered.features[0].attributes[population_field_name]
+            < ordered.features[1].attributes[population_field_name]
         )
         assert (
-            ordered.features[1].attributes["POPULATION"]
-            < ordered.features[2].attributes["POPULATION"]
+            ordered.features[1].attributes[population_field_name]
+            < ordered.features[2].attributes[population_field_name]
         )
 
     def test_query_return_m_and_z_and_centroid(self):
@@ -195,11 +206,14 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with sql_format
         """
+        name_field_name = "name"
+        if self.gis._is_arcgisonline:
+            name_field_name = name_field_name.upper()
         sql = self.major_cities_layer.query(
             where="name like '%Diego'", sql_format="standard"
         )
         assert sql
-        assert sql.features[0].attributes["NAME"].endswith("Diego")
+        assert sql.features[0].attributes[name_field_name].endswith("Diego")
         assert len(sql.features) < self.major_cities_layer.query(return_count_only=True)
 
     def test_query_units(self):
@@ -269,9 +283,15 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with group_by_field_for_statistics
         """
+        population_field_name = "population"
+        if self.gis._is_arcgisonline:
+            population_field_name = population_field_name.upper()
+
         group_field = self.major_cities_layer.query(
-            out_statistics=[{"statisticType": "avg", "onStatisticField": "POPULATION"}],
-            group_by_fields_for_statistics="POPULATION",
+            out_statistics=[
+                {"statisticType": "avg", "onStatisticField": population_field_name}
+            ],
+            group_by_fields_for_statistics=population_field_name,
         )
         assert group_field
         assert isinstance(group_field, FeatureSet)
@@ -281,18 +301,25 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with out_statistics
         """
-        output_name = "sum_females"
+        output_name = "sum_population"
+        population_field_name = "population"
+
+        if self.gis._is_arcgisonline:
+            population_field_name = population_field_name.lower()
+
         out_stats = self.major_cities_layer.query(
             out_statistics=[
                 {
                     "statisticType": "sum",
-                    "onStatisticField": "POPULATION",
+                    "onStatisticField": population_field_name,
                     "outStatisticFieldName": output_name,
                 }
             ]
         )
         assert out_stats
-        assert out_stats.fields[0]["name"] == output_name
+        assert (
+            out_stats.fields[0]["name"] == output_name
+        ), f"Expected 'sum_population' got {output_name}"
 
 
 if __name__ == "__main__":
