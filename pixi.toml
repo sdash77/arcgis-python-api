@@ -91,8 +91,8 @@ protobuf = "*"
 pywin32-security = "*"
 
 [pypi-dependencies]
-sphinx = ">=7, <8"
-sphinx-rtd-theme = ">=2, <3"
+sphinx = ">=8, <9"
+sphinx-rtd-theme = ">=3, <4"
 autodoc-pydantic = ">=2, <3"
 coverage = "*"
 nose2 = "*"
@@ -115,6 +115,7 @@ channels = ["conda-forge"]
 # https://github.com/explosion/spaCy/issues/13658#issuecomment-2886370190
 # docs seem to build without fastai
 # fastai = {channel = "fastai"}
+fastprogress = {channel = "conda-forge"}
 pytorch = {channel = "conda-forge"}
 timm = {channel = "esri", version = "~=0.4.12"}
 torchvision = {channel = "conda-forge"}

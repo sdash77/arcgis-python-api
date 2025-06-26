@@ -727,6 +727,8 @@ class TestInferencing(unittest.TestCase):
 
     @parameterized.expand(autodl_params, skip_on_empty=True)
     def test_autodl(self, name, input_path, model, network_name, owner):
+        if os.path.exists(model):
+            shutil.rmtree(model)
         AutoDL_tests(name, input_path, model, network_name, owner)
 
     @classmethod
