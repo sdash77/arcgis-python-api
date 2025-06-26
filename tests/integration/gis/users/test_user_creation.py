@@ -70,7 +70,7 @@ class TestUserManagerCreate(unittest.TestCase):
 
     def test_create_user_user_defaults_false(self):
         """
-        Test create user with thumbnail
+        Test create user with defaults false
         """
         if self.gis.version < [2025, 1]:
             self.skipTest("use_defaults param is only available in ArcGIS Enterprise 11.5+.")
