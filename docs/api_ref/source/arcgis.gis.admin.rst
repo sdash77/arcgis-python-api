@@ -249,6 +249,48 @@ KubeService
     :members:
     :undoc-members:
     :show-inheritance:
+
+HealthCheckManager
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.HealthCheckManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+SuitesManager
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.SuitesManager
+    :members:
+    :undoc-members:
+    :show-inheritance:	
+
+Suite
+^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Suite
+    :members:
+    :undoc-members:
+    :show-inheritance:	
+
+ReportManager
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.ReportManager
+    :members:
+    :undoc-members:
+    :show-inheritance:	
+
+Report
+^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Report
+    :members:
+    :undoc-members:
+    :show-inheritance:	
+
+ReportJob
+^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.ReportJob
+    :members:
+    :undoc-members:
+    :show-inheritance:	
     
 GPJobManager
 ^^^^^^^^^^^^
@@ -333,6 +375,13 @@ UsageStatistics
     :members:
     :undoc-members:
     :show-inheritance:
+
+AboutManager
+------------
+.. autoclass:: arcgis.gis.admin.AboutManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
     
 AGOLUsageReports
 ---------------
@@ -407,6 +456,27 @@ DataStoreTimeUnit
 DataStoreMetric
 -----------------------
 .. autoclass:: arcgis.gis.admin.DataStoreMetric
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DeveloperCredential
+-------------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.DeveloperCredential
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DeveloperCredentialManager
+--------------------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.DeveloperCredentialManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+TokenPrivilege
+--------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.TokenPrivilege
     :members:
     :undoc-members:
     :show-inheritance:

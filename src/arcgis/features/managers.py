@@ -683,7 +683,7 @@ class AttachmentManager(object):
             del row
         return results
 
-    def get_list(self, oid: str):
+    def get_list(self, oid: str | int):
         """
         Get the list of attachments for a given OBJECT ID
 
@@ -697,7 +697,7 @@ class AttachmentManager(object):
             A list of attachments
 
         """
-        return self._layer._list_attachments(oid)["attachmentInfos"]
+        return self._layer._list_attachments(oid, self._version)["attachmentInfos"]
 
     def download(
         self,
@@ -2838,12 +2838,7 @@ class FeatureLayerCollectionManager(_GISResource):
         item = content.get(itemid=self.properties["serviceItemId"])
         fs = features.FeatureLayerCollection(url=item.url, gis=gis)
 
-        # check if the service is a view
-        rest_url = (
-            gis.url + "/sharing/rest"
-            if "sharing/rest" not in gis.url.lower()
-            else gis.resturl
-        )
+        rest_url = gis.resturl
 
         # get the owner of the service
         user = item["owner"] if "owner" in item else gis.users.me.username

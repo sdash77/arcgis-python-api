@@ -1,13 +1,15 @@
 import os
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 import sys
 from pathlib import Path
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
- 
-ARCGIS_FOLDER = os.environ.get('ARCGIS_FOLDER')
+
+ARCGIS_FOLDER = os.environ.get("ARCGIS_FOLDER")
 if ARCGIS_FOLDER:
     custom_arcgis_path = Path(ARCGIS_FOLDER)
     if str(custom_arcgis_path) not in sys.path:
@@ -23,11 +25,13 @@ from arcgis.learn import (
     FasterRCNN,
     RetinaNet,
     SingleShotDetector,
+    AutoML,
 )
-DATA_FOLDER = os.environ.get('DATA_FOLDER')
+
+DATA_FOLDER = os.environ.get("DATA_FOLDER")
 data_path = Path(DATA_FOLDER)
- 
- 
+
+
 data_folder = str(os.path.join(data_path, "bacbone_data", "rgb"))
 data_folder_ms = str(os.path.join(data_path, "bacbone_data", "ms"))
 data_folder_tabular = str(os.path.join(data_path, "tabular_data"))
@@ -47,10 +51,15 @@ data = {
             "path": os.path.join(data_folder_ms, "fc_singleLabel"),
             "batch_size": None,
         },
-        "backbones": ["dofa_base", "timm:swin_base_window12", "hf:resnet18_landsat_etm_sr_moco"],
+        "backbones": [
+            "dofa_base",
+            "timm:swin_base_window12",
+            "hf:resnet18_landsat_etm_sr_moco",
+        ],
         "wavelengths_ms": [0.65, 0.55, 0.45, 0.85],
         "wavelengths_rgb": [0.49, 0.56, 0.665],
         "should_test": True,
+        "owner": "sumanttyagi",
         "test_feature_layer": False,
         "regression_parameter": "confusion_matrix",
         "regression_test_score": 0.40,
@@ -70,10 +79,15 @@ data = {
             "path": os.path.join(data_folder_ms, "fc_multiLabel"),
             "batch_size": None,
         },
-        "backbones": ["dofa_base", "timm:swin_base_window12", "hf:resnet18_landsat_etm_sr_moco"],
+        "backbones": [
+            "dofa_base",
+            "timm:swin_base_window12",
+            "hf:resnet18_landsat_etm_sr_moco",
+        ],
         "wavelengths_ms": [0.65, 0.55, 0.45, 0.85],
         "wavelengths_rgb": [0.49, 0.56, 0.665],
         "should_test": True,
+        "owner": "sumanttyagi",
         "test_feature_layer": False,
         "regression_parameter": "confusion_matrix",
         "regression_test_score": 0.40,
@@ -97,6 +111,7 @@ data = {
         "wavelengths_ms": [0.665, 0.56, 0.49, 0.85],
         "wavelengths_rgb": [0.665, 0.56, 0.49],
         "should_test": True,
+        "owner": "ptuteja",
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
@@ -120,6 +135,7 @@ data = {
         "wavelengths_ms": [0.665, 0.56, 0.49, 0.85],
         "wavelengths_rgb": [0.665, 0.56, 0.49],
         "should_test": True,
+        "owner": "spathak",
         "test_feature_layer": False,
         "regression_parameter": "edge_detection",
         "regression_test_score": 0.40,
@@ -143,6 +159,7 @@ data = {
         "wavelengths_ms": [0.665, 0.56, 0.49, 0.85],
         "wavelengths_rgb": [0.665, 0.56, 0.49],
         "should_test": True,
+        "owner": "spathak",
         "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
@@ -166,6 +183,7 @@ data = {
         "wavelengths_ms": [0.65, 0.55, 0.45, 0.85],
         "wavelengths_rgb": [0.65, 0.55, 0.45],
         "should_test": True,
+        "owner": "rohitthakur",
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
@@ -189,6 +207,7 @@ data = {
         "wavelengths_ms": [0.65, 0.55, 0.45, 0.85],
         "wavelengths_rgb": [0.65, 0.55, 0.45],
         "should_test": True,
+        "owner": "rohitthakur",
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
@@ -212,6 +231,7 @@ data = {
         "wavelengths_ms": [0.65, 0.55, 0.45, 0.85],
         "wavelengths_rgb": [0.65, 0.55, 0.45],
         "should_test": True,
+        "owner": "rohitthakur",
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
@@ -231,10 +251,34 @@ data = {
         "wavelengths_ms": False,
         "wavelengths_rgb": False,
         "should_test": True,
+        "owner": "sbanik",
         "test_feature_layer": True,
         "regression_parameter": "automl_score",
         "regression_test_score": 0.4,
         "regression_epochs": 1,
+        "model_categories": ["classification", "regression"],
+    },
+    "automl_fairness": {
+        "model_name": "automl_fairness",
+        "datapath": "automl_data",
+        "datapath_ms": False,
+        "model": AutoML,
+        "model_test": "automl_test",
+        "prepare_tabular_data": {
+            "path": os.path.join(
+                data_folder_tabular, "automl_data", "solar_power_train.csv"
+            )
+        },
+        "prepare_data_ms": False,
+        "backbones": False,
+        "wavelengths_ms": False,
+        "wavelengths_rgb": False,
+        "should_test": True,
+        "test_feature_layer": True,
+        "regression_parameter": "automl_score",
+        "regression_test_score": 0.4,
+        "regression_epochs": 1,
+        "owner": "sbanik",
         "model_categories": ["classification", "regression"],
     },
 }

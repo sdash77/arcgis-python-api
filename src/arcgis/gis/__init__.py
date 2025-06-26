@@ -46,7 +46,7 @@ from arcgis.gis._impl._dataclasses._sfilters import (
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
-from arcgis.gis._impl._content_manager.folder import Folder
+from arcgis.gis._impl._content_manager.folder import Folder, Job
 
 try:
     import pandas as pd
@@ -58,6 +58,7 @@ import concurrent.futures
 from cachetools import cached, TTLCache
 
 from arcgis.auth import EsriSession
+from arcgis.gis._impl._con import _is_http_url
 
 
 arcgis_env = LazyLoader("arcgis.env")
@@ -567,6 +568,7 @@ class GIS(object):
                 )
         self.resturl = _create_base_url(url)
         self._url = url.replace("http://", "https://")
+        self._url = self._url.rstrip("/")
         self._username = username
         self._password = password
         self._key_file = key_file
@@ -2031,6 +2033,7 @@ class OfflineContentManager(object):
         preserve_ids: bool = False,
         folder: Folder | str = None,
         failure_rollback: bool = False,
+        item_mapping: dict = None,
     ) -> list:
         """
         Reads a `.contentexport` file (see
@@ -2105,6 +2108,7 @@ class OfflineContentManager(object):
         return ip.import_items(
             items=item_ids,
             preserve_ids=preserve_ids,
+            item_mapping=item_mapping,
             folder=folder,
             failure_rollback=failure_rollback,
         )
@@ -4441,8 +4445,17 @@ class UserManager(object):
                     _log.error("Unable to create " + username)
                     return None
                 else:
-                    new_user = self.get(username)
 
+                    new_user = self.get(username)
+                    if thumbnail:
+                        if _is_http_url(thumbnail):
+                            thumbnail = self._gis._con.get(thumbnail)
+                        if os.path.isfile(thumbnail):
+                            ret = new_user.update(thumbnail=thumbnail)
+                            if not ret:
+                                _log.error(
+                                    "Unable to update the thumbnail for  " + username
+                                )
                     if (
                         self.user_settings
                         and "userType" in new_user
@@ -6142,9 +6155,9 @@ class GroupManager(object):
                                   tags = "new, group, USA",
                                   description = "a new group in the USA",
                                   access = "public")
-            >>> job = gis_destination.groups.clone([group], offline=True, save_folder=r"c:\storage", file_name="groups)
+            >>> job = gis_destination.groups.clone([group], offline=True, save_folder="/path/to/storage", file_name="groups")
             >>> job.result()
-            c:\storage\groups.GROUP_CLONER
+            /path/to/storage/groups.GROUP_CLONER
 
         """
         return self._cloner.clone(
@@ -7584,7 +7597,8 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         service_description        Optional string. Description of the service.
         -----------------------    -------------------------------------------------------------
-        has_static_data            Optional boolean. Indicating whether the data can change.  Default is True, data is not allowed to change.
+        has_static_data            Optional boolean. Indicating whether the data can change.
+                                   Default is False.
         -----------------------    -------------------------------------------------------------
         max_record_count           Optional integer. Maximum number of records in query operations.
         -----------------------    -------------------------------------------------------------
@@ -7673,6 +7687,8 @@ class ContentManager(object):
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Language and country information.
         =================  =====================================================================
+
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/create-service/#description
 
         :return:
              The :class:`~arcgis.gis.Item` for the service if successfully created, None if unsuccessful.
@@ -9715,7 +9731,7 @@ class CategorySchemaManager(object):
             current_path = ""
         for category in schema_dict:
             title = category["title"]
-            new_path = f"{current_path}\{title}" if current_path else title
+            new_path = f"{current_path}\\{title}" if current_path else title
             paths.append(
                 new_path.replace("\\", "/")
             )  # Replace backslashes with forward slashes
@@ -11170,7 +11186,7 @@ class Group(dict):
         title               Optional string. The new name of the group.
         ------------------  ---------------------------------------------------------
         tags                Optional string. A comma-delimited list of new tags, or
-                            a list of tags as strings.
+                            a list of tags as strings. To remove tags, pass in an empty string or list.
         ------------------  ---------------------------------------------------------
         description         Optional string. The new description for the group.
         ------------------  ---------------------------------------------------------
@@ -11264,7 +11280,9 @@ class Group(dict):
             max_file_size = 1024000
         if users_update_items is None:
             users_update_items = False
-        if tags is not None:
+        if tags == [] or tags == "":
+            tags = ","
+        elif tags is not None:
             if isinstance(tags, list):
                 tags = ",".join(tags)
         if (
@@ -13796,7 +13814,7 @@ class Item(dict):
         """
         if self._gis._is_agol:
             try:
-                self.subInfo or 0
+                return self.subInfo or 0
             except:
                 return None
         return None
@@ -14173,6 +14191,7 @@ class Item(dict):
                                .. note::
                                    See `Organization verification <https://doc.arcgis.com/en/arcgis-online/administer/configure-general.htm#VERIFY_ORG>`_
                                    for requirements to use *public_authoritative* status.
+                                   Also, `authoritative` will be converted to `org_authoritative` status.
         ==================     ====================================================================
 
         .. code-block:: python
@@ -14449,7 +14468,7 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
+            >>> item.download("C:\\ARCGIS\\Projects\\", "hurricane_data")
 
         """
         data_path: str = f"content/items/" + self.itemid + "/data"
@@ -18789,10 +18808,19 @@ class Item(dict):
         def _replace_related_items(item, item_mapping):
             return
 
-        if not force:
-            for k, v in item_mapping.items():
+        # _replace_related_items(self, item_mapping)
+        expanded_dict = copy.deepcopy(item_mapping)
+        for k, v in item_mapping.items():
+            try:
                 orig_item = self._gis.content.get(k)
+            except:
+                orig_item = None
+            try:
                 new_item = self._gis.content.get(v)
+            except:
+                new_item = None
+
+            if not force:
                 if new_item is None:
                     raise ValueError(
                         f"Replacement item with id {v} does not exist in the GIS. Please use the force parameter to bypass this check."
@@ -18806,11 +18834,6 @@ class Item(dict):
                         f"Items with ids {k} and {v} are not of the same type."
                     )
 
-        # _replace_related_items(self, item_mapping)
-        expanded_dict = copy.deepcopy(item_mapping)
-        for k, v in item_mapping.items():
-            orig_item = self._gis.content.get(k)
-            new_item = self._gis.content.get(v)
             if orig_item and new_item:
                 expanded_dict[orig_item.title] = new_item.title
 
