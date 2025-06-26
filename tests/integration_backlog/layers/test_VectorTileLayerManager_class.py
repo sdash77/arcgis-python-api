@@ -6,10 +6,10 @@ from arcgis.layers import VectorTileLayer, VectorTileLayerManager
 from utils.decorators import integration_test
 
 # Initialize manager
-online_admin = GIS(profile="your_online_profile", verify_cert=False)
+online_admin = GIS(profile="your_online_admin_profile", verify_cert=False)
 
 # Item published from Service Directory
-sd_vector_tile_item = online_admin.content.get("c98c939d961d463095199140dd30a75c")
+sd_vector_tile_item = online_admin.content.get("90ff63ae7ecb4bfd9bc6aec2f88d5230")
 sd_tile_layer = VectorTileLayer.fromitem(sd_vector_tile_item)
 sd_vtl_manager = sd_tile_layer.manager
 
@@ -20,7 +20,7 @@ fs_vtl_manager = fs_tile_layer.manager
 
 
 @integration_test
-class TestVectorTileLayerManager(unittest.TestCase):
+class TestVectorTileLayerManager_SD(unittest.TestCase):
     def test_refresh(self):
         """
         Test refresh
@@ -28,15 +28,10 @@ class TestVectorTileLayerManager(unittest.TestCase):
         sd_res = sd_vtl_manager.refresh()
         assert sd_res
 
-        fs_res = fs_vtl_manager.refresh()
-        assert fs_res
-
     @SkipTest
     def test_status(self):
         sd_status = sd_vtl_manager.status()
         assert sd_status
-
-        fs_status = fs_vtl_manager.status()
 
     def test_update_tiles(self):
         """
@@ -44,9 +39,6 @@ class TestVectorTileLayerManager(unittest.TestCase):
         """
         sd_update = sd_vtl_manager.update_tiles(merge_bundle=False)
         assert sd_update
-
-        fs_update = fs_vtl_manager.update_tiles()
-        assert fs_update
 
     def test_jobs(self):
         """
@@ -86,6 +78,47 @@ class TestVectorTileLayerManager(unittest.TestCase):
                 )
             )
 
+    def test_edit_tile_service(self):
+        """
+        Test edit tile service.
+        """
+        source_item_id = sd_vtl_manager.related_items(
+            rel_type="Service2Data", direction="forward"
+        )[0]["id"]
+        sd_res = sd_vtl_manager.edit_tile_service(
+            source_item_id=source_item_id,
+            export_tiles_allowed=True,
+            max_export_tile_count=5000,
+        )
+        assert sd_res
+        assert sd_res["status"] == "success"
+
+
+@integration_test
+class TestVectorTileLayerManager_FS(unittest.TestCase):
+    def test_refresh(self):
+        """
+        Test refresh
+        """
+        fs_res = fs_vtl_manager.refresh()
+        assert fs_res
+
+    @SkipTest
+    def test_status(self):
+        fs_status = fs_vtl_manager.status()
+        assert fs_status
+
+    def test_update_tiles(self):
+        """
+        Test update tiles
+        """
+        fs_update = fs_vtl_manager.update_tiles()
+        assert fs_update
+
+    def test_jobs(self):
+        """
+        Test various job functions
+        """
         ############ Test for FS VTL ###############
         jobs = fs_vtl_manager.jobs()
         assert jobs
@@ -124,17 +157,6 @@ class TestVectorTileLayerManager(unittest.TestCase):
         """
         Test edit tile service.
         """
-        source_item_id = sd_vtl_manager.related_items(
-            rel_type="Service2Data", direction="forward"
-        )[0]["id"]
-        sd_res = sd_vtl_manager.edit_tile_service(
-            source_item_id=source_item_id,
-            export_tiles_allowed=True,
-            max_export_tile_count=5000,
-        )
-        assert sd_res
-        assert sd_res["status"] == "success"
-
         fs_res = fs_vtl_manager.edit_tile_service(max_zoom=23)
         assert fs_res
         assert fs_res["status"] == "success"

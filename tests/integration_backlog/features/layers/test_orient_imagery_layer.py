@@ -6,13 +6,11 @@ from arcgis.gis._impl._dataclasses._contentds import (
 )
 from utils.decorators import integration_test, profiles
 from integration.config import QALAB_ROOT_PATH
-from utils.data_utils import cleanup_published_items
+from utils.data_utils import cleanup_published_items, publish_test_item
 from utils._logging import enable_verbose_logging
+from integration.config import get_resource_path
 
 enable_verbose_logging()
-
-QA_LABS = QALAB_ROOT_PATH + r"\oriented_image_layer"
-DATASET = "OI_sample.gdb.zip"
 
 
 @profiles.enterprise_and_agol
@@ -20,20 +18,16 @@ DATASET = "OI_sample.gdb.zip"
 class TestOrientedImageryLayer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        PDATA = os.path.join(QA_LABS, DATASET)
-        name = f"FGDB_{uuid.uuid4().hex[: 4]}"
-        ip = ItemProperties(
-            **{
-                "item_type": ItemTypeEnum.FILE_GEODATABASE,
-                "title": name,
-                "tags": "ntgrtn-tst",
-            }
-        )
-        cls.items = []
-        cls.pitems = []
+        fgdb = get_resource_path("staging_data/oriented_imagery/OI_sample.gdb.zip")
+        name = f"Oriented_Imagery_test_{uuid.uuid4().hex[: 4]}"
 
-        item = cls.gis.content.add(item_properties=ip, data=PDATA)
-        cls.published_item = item.publish({"name": name, "tags": "ntgrtn-tst"})
+        cls.published_item = publish_test_item(
+            cls.gis,
+            name,
+            fgdb,
+            item_type=ItemTypeEnum.FILE_GEODATABASE,
+            prep_for_editing=False,
+        )
 
     def test_fromitem(self):
         """tests the from"""
