@@ -1,1 +1,0 @@
-See the previous directory's `README.md` file for information on how to run tests in this directory. See `./ABOUT.md` to see information about this directory and the previous `README.md` file contents.
