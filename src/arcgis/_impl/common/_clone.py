@@ -5732,7 +5732,9 @@ class _FormDefinition(_ItemDefinition):
             zip_file.close()
 
             # Upload the zip to the item
-            rand_suffix = '_'.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+            rand_suffix = "_".join(
+                random.choices(string.ascii_uppercase + string.digits, k=5)
+            )
             new_form = shutil.copy2(
                 form_zip,
                 os.path.join(temp_dir, new_item["id"] + rand_suffix + ".zip"),
