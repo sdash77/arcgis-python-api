@@ -6,7 +6,7 @@ from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.raster import Raster, ImageryLayer
 import arcgis
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 from arcgis.raster.analytics import copy_raster
 from integration.config import QALAB_ROOT_PATH
@@ -24,19 +24,19 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_ent_admin_profile']
+# profiles = ['your_ent_admin_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@profiles.admin_enterprise
 @integration_test
 class TestImageRasterService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.gis = GIS(profile=profiles[0], verify_cert=False, proxy=PROXIES)
-        uuid.uuid4().hex[:5]
         cls.item = copy_raster(
-            input_raster=QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif",
+            input_raster=QALAB_ROOT_PATH
+            + r"\esri_requests\raster_data\Clip_090160.tif",
             output_name=f"output_{uuid.uuid4().hex[:5]}_layer",
             gis=cls.gis,
         )

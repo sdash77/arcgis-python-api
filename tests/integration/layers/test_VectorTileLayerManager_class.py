@@ -9,12 +9,12 @@ from utils.decorators import integration_test
 online_admin = GIS(profile="your_online_admin_profile", verify_cert=False)
 
 # Item published from Service Directory
-sd_vector_tile_item = online_admin.content.get("ef1265cb6e0248a691e85c71d9414fb4")
+sd_vector_tile_item = online_admin.content.get("90ff63ae7ecb4bfd9bc6aec2f88d5230")
 sd_tile_layer = VectorTileLayer.fromitem(sd_vector_tile_item)
 sd_vtl_manager = sd_tile_layer.manager
 
 # Item published from FeatureService
-fs_vector_tile_item = online_admin.content.get("ef1265cb6e0248a691e85c71d9414fb4")
+fs_vector_tile_item = online_admin.content.get("90ff63ae7ecb4bfd9bc6aec2f88d5230")
 fs_tile_layer = VectorTileLayer.fromitem(fs_vector_tile_item)
 fs_vtl_manager = fs_tile_layer.manager
 
