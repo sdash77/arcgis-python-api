@@ -1280,7 +1280,7 @@ class GIS(object):
                             and "adminPublicUrl" in server
                             and server.get("adminPublicUrl")
                         ):
-                            url: str = f"{server.get('adminPublicUrl')}/admin"
+                            url: str = f"{server.get('adminPublicUrl')}/admin/notebooks"
                         elif "adminUrl" in server and server.get("adminUrl"):
                             url: str = f"{server.get('adminUrl')}/admin"
                         elif "url" in server and server.get("url"):
