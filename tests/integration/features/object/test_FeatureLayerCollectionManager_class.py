@@ -9,7 +9,7 @@ from utils.data_utils import publish_test_item, cleanup_published_items
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 
 
-@profiles.enterprise_and_agol
+@profiles.all
 @integration_test
 class TestFeatureLayerCollectionManager(unittest.TestCase):
     """
