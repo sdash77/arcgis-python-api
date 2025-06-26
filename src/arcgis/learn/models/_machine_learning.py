@@ -58,7 +58,9 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
-_FAIRNESS_CLASSIFICATION_SUPPORT = "This method only supports binary classification and regression currently."
+_FAIRNESS_CLASSIFICATION_SUPPORT = (
+    "This method only supports binary classification and regression currently."
+)
 _FAIRNESS_NOT_APPLIED = "Obtaining fairness score needs the ground truth and hence this method is not supported when model is instantiated for inferencing. "
 _FAIRNESS_NOT_SUPPORTED = "Fairness is not supported with this model type"
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
