@@ -14,7 +14,7 @@ from arcgis.auth.tools import LazyLoader
 arcgismapping = LazyLoader("arcgis.map")
 
 
-@profiles.enterprise_and_agol
+@profiles.all
 @integration_test
 class Test_Feature_class(unittest.TestCase):
     """

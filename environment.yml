@@ -56,8 +56,8 @@ dependencies:
 - protobuf
 - pip:
   # ---- sphinx/docs build ----
-  - sphinx >=7,<8
-  - sphinx_rtd_theme>=2,<3
+  - sphinx >=8,<9
+  - sphinx_rtd_theme>=3,<4
   - autodoc_pydantic>=2,<3
   # ---- automated testing ----
   - coverage
