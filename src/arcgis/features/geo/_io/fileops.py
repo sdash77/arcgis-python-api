@@ -754,27 +754,33 @@ def from_featureclass(filename, **kwargs):
 
 
 def _http_workflow(filename):
-    r = requests.get(filename)
+    if arcgis.env.active_gis:
+        r = arcgis.env.active_gis._con.get(filename)
+    else:
+        r = requests.get(filename)
+    df_array = []
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.zip")
         with open(archive_path, "wb") as f:
             f.write(r.content)
 
-        shutil.unpack_archive(archive_path, temp_dir)
+        try:
+            shutil.unpack_archive(archive_path, temp_dir)
+        except:
+            raise ValueError(
+                "The provided URL is not accessible with current credentials."
+            )
         shp_path = None
         for root, dirs, files in os.walk(temp_dir):
             for file in files:
                 if file.endswith(".shp"):
                     shp_path = os.path.join(root, file)
-                    break
-            if shp_path:
-                break
+                    df = _gdal_to_sedf(file_path=shp_path)
+                    df.spatial._meta.source = filename
+                    df_array.append(df)
         if not shp_path:
             raise ValueError("No accessible shapefile found at the input URL.")
-
-        df = _gdal_to_sedf(file_path=shp_path)
-    df.spatial._meta.source = filename
-    return df
+    return df_array
 
 
 def _gdal_workflow(filename, **kwargs):
