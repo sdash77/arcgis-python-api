@@ -115,6 +115,7 @@ channels = ["conda-forge"]
 # https://github.com/explosion/spaCy/issues/13658#issuecomment-2886370190
 # docs seem to build without fastai
 # fastai = {channel = "fastai"}
+fastprogress = {channel = "conda-forge"}
 pytorch = {channel = "conda-forge"}
 timm = {channel = "esri", version = "~=0.4.12"}
 torchvision = {channel = "conda-forge"}
