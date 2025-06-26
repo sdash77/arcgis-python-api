@@ -11,10 +11,16 @@ online_admin = GIS(
     verify_cert=False,
 )
 
-# Scene Layer published through a Feature Service
-scene_layer_item = online_admin.content.get("470d55b679304e45a9496a2d8f86fd8e")  # UrbanHouse
+# Scene Layer published from a Scene Layer Package
+scene_layer_item = online_admin.content.get("d30897c3e97b4a1d8a9b3be7ee7599e6")
 scene_layer = SceneLayer(scene_layer_item.url, online_admin)
 manager = scene_layer.manager
+
+# Scene Layer published through a Feature Service
+fs_scene_layer_item = online_admin.content.get("d30897c3e97b4a1d8a9b3be7ee7599e6")
+fs_scene_layer = SceneLayer(fs_scene_layer_item.url, online_admin)
+fs_manager = fs_scene_layer.manager
+
 
 
 @integration_test
