@@ -4279,6 +4279,7 @@ class UserManager(object):
         groups=None,
         level=None,
         email_text=None,
+        use_defaults=True,
     ):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
