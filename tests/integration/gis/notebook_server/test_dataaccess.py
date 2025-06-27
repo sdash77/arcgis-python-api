@@ -71,11 +71,11 @@ class TestNotebookDataAccess(unittest.TestCase):
         ]
         if len(users) < 2:
             self.skipTest(
-                "Not enough users with workspaces to test transfer_workspace."
+                "Not enough users with workspaces to test transfer."
             )
         source = users[0]
         target = users[1]
-        result = self.da.transfer_workspace(source, target)
+        result = self.da.transfer(source, target)
         self.assertTrue(result)
 
 

@@ -74,7 +74,12 @@ class NotebookFile:
         return self._da._download(filename=self._definition.get("Name"))
 
     # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
+    @deprecated(
+        deprecated_in="2.4.2",
+        removed_in="2.5.0",
+        current_version="2.4.2",
+        details="Use the delete method instead.",
+    )
     def erase(self) -> bool:
         """
         Deletes a file from the system
@@ -116,7 +121,7 @@ class NotebookFile:
         return self._da._rename(folder_name=current_path, new_name=new_path)
 
     # ---------------------------------------------------------------------
-    def transfer_file(self, target_user: User | str | None = None) -> bool:
+    def transfer(self, target_user: User | str | None = None) -> bool:
         """
         Transfer the file to another user in the organization. This can only be done by an administrator.
         The file will be renamed to `_transferred_{file_name}` and moved to the target user's Home folder.
@@ -420,7 +425,7 @@ class NotebookFolder:
         return self._da._rename(folder_name=self._folder_name, new_name=new_name)
 
     # ---------------------------------------------------------------------
-    def transfer_folder(self, target_user: User | str | None = None) -> bool:
+    def transfer(self, target_user: User | str | None = None) -> bool:
         """
         Transfer the folder to another user in the organization. This can only be done by an administrator.
         The folder will be renamed to `_transferred_{folder_name}` and moved to the target user's Home folder.
@@ -671,7 +676,7 @@ class NotebookDataAccess:
         )
 
     # ---------------------------------------------------------------------
-    def transfer_workspace(
+    def transfer(
         self,
         source_user: User | str,
         target_user: User | str | None = None,
@@ -817,7 +822,12 @@ class NotebookDataAccess:
         return self._gis.session.post(url, params).json().get("status") == "success"
 
     # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
+    @deprecated(
+        deprecated_in="2.4.2",
+        removed_in="2.5.0",
+        current_version="2.4.2",
+        details="Use the files property found in a NotebookFolder instead or the get_file method.",
+    )
     @property
     def files(self) -> List[NotebookFile]:
         """
@@ -825,23 +835,36 @@ class NotebookDataAccess:
 
         :return: List[NotebookFile] - List of NotebookFile objects
         """
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/notebooksWorkspace"
-        else:
-            url = f"{self._url}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
             "comp": "list",
             "token": self._gis._con.token,
         }
-        return [
-            NotebookFile(f, self)
-            for f in self._gis._con.get(url, params).pop("Blobs", [])
-        ]
+
+        # create urls
+        if self._is_agol:
+            url = f"{self._url}/{self._username}"
+            params["delimiter"] = "/"
+        else:
+            url = f"{self._url}/{self._username}/notebookworkspace"
+        response = self._gis._con.get(url, params)
+        # Filter files based on ResourceType
+        if self._is_agol:
+            return [
+                NotebookFile(f, self)
+                for f in response.get("Blobs", [])
+                if f["Properties"].get("ResourceType", "").lower() == "file"
+            ]
+        return [NotebookFile(f, self) for f in response.get("Blobs", [])]
 
     # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
+    @deprecated(
+        deprecated_in="2.4.2",
+        removed_in="2.5.0",
+        current_version="2.4.2",
+        details="Use the create_folder method found in a NotebookFolder instead. The first folder in the list of folders is the Home folder.",
+    )
     def create_folder(self, folder: str) -> bool:
         """
         Create a folder in your `/arcgis/home` notebook workspace directory.
@@ -921,7 +944,12 @@ class NotebookDataAccess:
         return 200 <= resp.status_code < 300
 
     # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
+    @deprecated(
+        deprecated_in="2.4.2",
+        removed_in="2.5.0",
+        current_version="2.4.2",
+        details="Use the upload method found in a NotebookFolder instead.",
+    )
     def upload(self, fp: str | list[str], folder: str | None = None) -> list[bool]:
         """
         Uploads a file to the Notebook Server
