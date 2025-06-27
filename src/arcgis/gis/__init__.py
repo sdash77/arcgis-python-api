@@ -1273,18 +1273,21 @@ class GIS(object):
             res = self.servers
             for server in res["servers"]:
                 if server["serverFunction"].lower() == "notebookserver":
+                    if self._is_kubernetes:  # notebook endpoint for kubernetes
+                        base_url: str = "/admin/notebooks"
+                    else:  # default endpoint of URI
+                        base_url: str = "/admin"
                     try:
                         if (
-                            self._is_kubernetes
-                            and self._use_private_url_only == False
+                            self._use_private_url_only == False
                             and "adminPublicUrl" in server
                             and server.get("adminPublicUrl")
                         ):
-                            url: str = f"{server.get('adminPublicUrl')}/admin/notebooks"
+                            url: str = f"{server.get('adminPublicUrl')}{base_url}"
                         elif "adminUrl" in server and server.get("adminUrl"):
-                            url: str = f"{server.get('adminUrl')}/admin"
+                            url: str = f"{server.get('adminUrl')}{base_url}"
                         elif "url" in server and server.get("url"):
-                            url: str = f"{server.get('url')}/admin"
+                            url: str = f"{server.get('url')}{base_url}"
                         else:
                             raise Exception(
                                 "The server information provided by the system is incorrect, please contact and administrator."
@@ -1295,7 +1298,7 @@ class GIS(object):
                         notebooks.append(nbs)
                     except Exception as ex:
                         _log.warning(ex)
-                        nbs = NotebookServer(server["url"] + "/admin", self)
+                        nbs = NotebookServer(server["url"] + base_url, self)
                         nbs.properties
                         notebooks.append(nbs)
             return notebooks
