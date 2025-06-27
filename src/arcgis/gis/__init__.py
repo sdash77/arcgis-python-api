@@ -2033,7 +2033,7 @@ class OfflineContentManager(object):
         preserve_ids: bool = False,
         folder: Folder | str = None,
         failure_rollback: bool = False,
-        item_mapping: dict = None,
+        item_mapping: dict = {},
     ) -> list:
         """
         Reads a `.contentexport` file (see
