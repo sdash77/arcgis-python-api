@@ -383,7 +383,17 @@ class ViewLayerDefParameter:
         if self.query_definition:
             data["viewDefinitionQuery"] = self.query_definition
         if self.spatial_filter:
-            data["viewLayerDefinition"] = {"filter": self.spatial_filter.as_json()}
+            spatial_filter: dict = self.spatial_filter.as_json()
+            sfilter: dict = {
+                "operator": spatial_filter.get(
+                    "spatialRel", "esriSpatialRelIntersects"
+                ),
+                "value": {
+                    "geometryType": spatial_filter.get("geometryType"),
+                    "geometry": spatial_filter.get("geometry"),
+                },
+            }
+            data["viewLayerDefinition"] = {"filter": sfilter}
         if self.fields:
             data["fields"] = self.fields
         self._dict_data = data
