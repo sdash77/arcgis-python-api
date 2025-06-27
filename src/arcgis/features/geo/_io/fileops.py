@@ -778,7 +778,7 @@ def _http_workflow(filename):
                     df = _gdal_to_sedf(file_path=shp_path)
                     df.spatial._meta.source = filename
                     df_array.append(df)
-        if not shp_path:
+        if not df_array:
             raise ValueError("No accessible shapefile found at the input URL.")
     return df_array
 
