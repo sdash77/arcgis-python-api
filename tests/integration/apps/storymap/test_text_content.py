@@ -25,7 +25,6 @@ class TestTextContent(unittest.TestCase):
         button = self.story.add(btn)
 
         assert button
-        print(btn.properties)
         assert btn.properties
 
     def test_add_text(self):
@@ -44,7 +43,6 @@ class TestTextContent(unittest.TestCase):
 
         assert heading
         assert quote
-        print(welcome.properties)
         assert welcome.properties
         assert park_quote.properties
 
