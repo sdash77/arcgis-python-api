@@ -57,7 +57,7 @@ def delete_all_items(
     item_count = 0
     for item in all_items:
         # Delete items from the last n days
-        if item.modified > timestamp_previous_date:
+        if item.modified < timestamp_previous_date:
             print("=====================================")
             print(f"Target {item.title} for delete...")
             if item.can_delete:
@@ -105,8 +105,8 @@ if __name__ == "__main__":
     )
 
     delete_all_items(
-        gis_agol, username="arcgis_python", day_difference=27, test_only=True
+        gis_agol, username="arcgis_python", day_difference=7, test_only=True
     )
     delete_all_items(
-        gis_ent, username="arcgis_python", day_difference=27, test_only=True
+        gis_ent, username="arcgis_python", day_difference=7, test_only=True
     )
