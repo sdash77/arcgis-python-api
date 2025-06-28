@@ -36,6 +36,7 @@ def delete_all_items(
     :param test_only: bool: Run the function without deleting the items.
     :return: void
     """
+    print(f"Delete Items for user {username} on {gis.url} - Test only: {test_only}")
     timestamp_previous_date = (
         datetime.now() - timedelta(days=day_difference)
     ).timestamp() * 1000
@@ -57,31 +58,37 @@ def delete_all_items(
     for item in all_items:
         # Delete items from the last n days
         if item.modified > timestamp_previous_date:
+            print("=====================================")
+            print(f"Target {item.title} for delete...")
             if item.can_delete:
-                print(f"Deleting {item.title}")
                 try:
-                    source_item = item.related_items("Service2Data", "forward")[0]
-                    if source_item:
+                    related_items = item.related_items("Service2Data", "forward")
+                    if len(related_items) > 0:
+                        print(
+                            f"\t{item.title} has {len(related_items)} related items..."
+                        )
                         if not test_only:
-                            source_item.delete(permanent=True)
+                            for rl in related_items:
+                                rl.delete(permanent=True)
+                                print(
+                                    f"\tDeleted related item: {item.title} -> {item.type}"
+                                )
                             item.delete(permanent=True)
-                        print(f"\tDeleted source item: {item.title}")
+                            print(f"\tDeleted source item: {item.title}")
                         item_count += 1
-                except IndexError as ie:
-                    try:
+                    else:
                         if not test_only:
-                            item.delete(permanent=True)
-                        print(f"\tDeleted item: {item.title}")
-                        item_count += 1
-                    except Exception as ex:
-                        if "Unable to delete item" in str(
-                            ex
-                        ) and "(Error Code: 500)" in str(ex):
                             pass
-                        print(ex)
+                            item.delete(permanent=True)
+                            print(f"\tDeleted standalone item: {item.title}")
+                        item_count += 1
                 except Exception as ex:
+                    if "Unable to delete item" in str(
+                        ex
+                    ) and "(Error Code: 500)" in str(ex):
+                        pass
                     print(f"\tFailed to delete item: {item} -> {str(ex)}")
-    print(f"Deleted {item_count} items from {gis.url}")
+    print(f"Processed {item_count} items from {gis.url}")
 
 
 if __name__ == "__main__":
@@ -97,7 +104,9 @@ if __name__ == "__main__":
         verify_cert=False,
     )
 
-    print("Delete Items from geosaurus.maps.arcgis.com")
-    delete_all_items(gis_agol, day_difference=7, test_only=True)
-    print("Delete Items from pythonapitestnb.dev.geocloud.com")
-    delete_all_items(gis_ent, day_difference=7, test_only=True)
+    delete_all_items(
+        gis_agol, username="arcgis_python", day_difference=27, test_only=True
+    )
+    delete_all_items(
+        gis_ent, username="arcgis_python", day_difference=27, test_only=True
+    )
