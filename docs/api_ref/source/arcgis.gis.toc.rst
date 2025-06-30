@@ -111,6 +111,12 @@ Folder
     :undoc-members:
     :show-inheritance:
 
+Job 
+---
+.. autoclass:: arcgis.gis._impl._content_manager.folder.core.Job
+    :members:
+    :undoc-members:
+
 UserManager
 ----------------------
 .. autoclass:: arcgis.gis.UserManager

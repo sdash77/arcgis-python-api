@@ -90,3 +90,7 @@ tests/.coverage*
 # separate packages
 /src/arcgis/map
 
+
+# pixi environments
+.pixi
+*.egg-info

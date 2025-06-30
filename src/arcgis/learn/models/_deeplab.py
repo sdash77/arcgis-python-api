@@ -463,6 +463,26 @@ class DeepLab(ArcGISModel):
         return torchgeo_backbone
 
     @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        swin_keys = [
+            attr
+            for attr in dir(Swin_Weights)
+            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
+        ]
+
+        satlas_backbone = list(
+            map(
+                lambda m: "hf:" + m,
+                resnet_keys + swin_keys,
+            )
+        )
+        return satlas_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(
             [
@@ -480,12 +500,14 @@ class DeepLab(ArcGISModel):
 
         transformer_backbone = DeepLab.transformer_backbones()
         torchgeo_backbone = DeepLab.torchgeo_backbones()
+        satlas_backbone = DeepLab.satlas_backbones()
 
         return (
             [*_resnet_family, *_densenet_family, *_vgg_family]
             + timm_backbones
             + transformer_backbone
             + torchgeo_backbone
+            + satlas_backbone
         )
 
     @property

@@ -3210,6 +3210,8 @@ class GeoAccessor(object):
                 sr = self.sr
             except Exception:
                 sr = None
+            wkt = None
+            wkid = None
             if sr and "wkid" in sr:
                 wkid = sr["wkid"]
             elif sr and "latestWkid" in sr:
@@ -3239,13 +3241,9 @@ class GeoAccessor(object):
                 elif isinstance(ref, int):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
-                    self._data[self.name].apply(
-                        lambda x: (
-                            x.update({"spatialReference": ref})
-                            if pd.notnull(x)
-                            else None
-                        )
-                    )
+                    mask = self._data[self.name].notna()
+                    for d in self._data.loc[mask, self.name]:
+                        d["spatialReference"] = ref
 
     # ----------------------------------------------------------------------
     def to_featureset(self):
@@ -4179,7 +4177,11 @@ class GeoAccessor(object):
                 self._data[self.name] = vals
                 return True
 
-            elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
+            elif isinstance(spatial_reference, (int, str, dict)) and HASPYPROJ:
+                if isinstance(spatial_reference, int):
+                    spatial_reference = {"wkid": spatial_reference}
+                elif isinstance(spatial_reference, str):
+                    spatial_reference = {"wkt": spatial_reference}
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference,

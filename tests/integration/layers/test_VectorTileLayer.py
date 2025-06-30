@@ -13,7 +13,7 @@ class TestVectorTileLayerClass_online(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.vtl_id = "d720f1fc7b17466bac18b4533db25e03"
+        cls.vtl_id = "90ff63ae7ecb4bfd9bc6aec2f88d5230"
         cls.gis = GIS(profile="your_online_profile")
 
         cls.vtl_item = cls.gis.content.get(cls.vtl_id)
@@ -66,7 +66,7 @@ class TestVectorTileLayerClass_enterprise(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.vtl_id = "b9fc667bd61540f6832e9a74139d640c"
+        cls.vtl_id = "10750a9d2e2b400aa8f004e908a5e81e"
         cls.gis = GIS(
             profile="your_enterprise_profile", verify_cert=False, trust_env=True
         )
@@ -91,7 +91,7 @@ class TestVectorTileLayerClass_enterprise(unittest.TestCase):
         assert vt
 
     def test_tile_sprite(self):
-        sprite = self.tl.tile_sprite()
+        sprite = self.tl.tile_sprite("sprite.json")
         assert sprite
         assert isinstance(sprite, dict)
 

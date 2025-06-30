@@ -176,9 +176,11 @@ class MyFasterRCNN:
             )
         )
 
-        if data._is_multispectral:
+        if data._is_multispectral or data._is_non8bit_rgb:
             model.transform.image_mean = [0] * len(data._extract_bands)
             model.transform.image_std = [1] * len(data._extract_bands)
+
+        self._is_non8bit_rgb = data._is_non8bit_rgb
 
         model.roi_heads.nms_thresh = 0.1
         model.roi_heads.score_thresh = 0.2
@@ -230,7 +232,7 @@ class MyFasterRCNN:
         target_list = []
 
         # denormalize from imagenet_stats
-        if not learn.data._is_multispectral:
+        if not (learn.data._is_multispectral or self._is_non8bit_rgb):
             imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
             mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(
                 model_input_batch.device
@@ -298,15 +300,16 @@ class MyFasterRCNN:
         self.model.roi_heads.score_thresh = thresh
 
         # denormalize from imagenet_stats
-        imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
-        mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(
-            xb.device
-        )
-        std = self.torch.tensor(imagenet_stats[1], dtype=self.torch.float32).to(
-            xb.device
-        )
+        if not self._is_non8bit_rgb:
+            imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
+            mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(
+                xb.device
+            )
+            std = self.torch.tensor(imagenet_stats[1], dtype=self.torch.float32).to(
+                xb.device
+            )
 
-        xb = (xb.permute(0, 2, 3, 1) * std + mean).permute(0, 3, 1, 2)
+            xb = (xb.permute(0, 2, 3, 1) * std + mean).permute(0, 3, 1, 2)
 
         return list(xb)  # model input require in the formate of list
 
@@ -691,6 +694,26 @@ class FasterRCNN(ModelExtension):
         return torchgeo_backbone
 
     @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        swin_keys = [
+            attr
+            for attr in dir(Swin_Weights)
+            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
+        ]
+
+        satlas_backbone = list(
+            map(
+                lambda m: "hf:" + m,
+                resnet_keys + swin_keys,
+            )
+        )
+        return satlas_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return FasterRCNN._supported_backbones()
@@ -701,12 +724,14 @@ class FasterRCNN(ModelExtension):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = FasterRCNN.transformer_backbones()
         torchgeo_backbone = FasterRCNN.torchgeo_backbones()
+        satlas_backbone = FasterRCNN.satlas_backbones()
 
         return (
             [*_resnet_family]
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
+            + satlas_backbone
         )
 
     @property

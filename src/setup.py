@@ -57,7 +57,7 @@ dependencies = [
     "cachetools",
     "lxml",
     "cryptography",
-    "pandas >=2.0.0,<2.3.0",
+    "pandas >=2.0.0,<2.4.0",
     "numpy >=2.2.0,<3",
     "matplotlib",
     "keyring >=23.3.0",
