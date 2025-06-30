@@ -1,8 +1,13 @@
+import sys
+
+sys.path.insert(0, r"C:\workspace\geosaurus\tests")
+sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import os
 import unittest
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
 from utils.decorators import integration_test
+
 
 
 RUN = os.path.dirname(os.path.realpath(__file__))

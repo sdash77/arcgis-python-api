@@ -282,7 +282,14 @@ def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None, **kw
 
 def _ensure_path_string(input_path):
     """Provide hander to facilitate file path inputs to be Path object instances."""
-    return str(input_path) if isinstance(input_path, Path) else input_path
+    if isinstance(input_path, Path):
+        return str(input_path)
+    if isinstance(input_path, str):
+        return input_path
+    raise ValueError(
+        "Input path must be a string or a Path object. "
+        "Received type: {}".format(type(input_path))
+    )
 
 
 def from_url(url: str) -> list:
