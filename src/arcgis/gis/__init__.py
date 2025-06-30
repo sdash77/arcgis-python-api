@@ -2033,6 +2033,7 @@ class OfflineContentManager(object):
         preserve_ids: bool = False,
         folder: Folder | str = None,
         failure_rollback: bool = False,
+        item_mapping: dict = {},
     ) -> list:
         """
         Reads a `.contentexport` file (see
@@ -2107,6 +2108,7 @@ class OfflineContentManager(object):
         return ip.import_items(
             items=item_ids,
             preserve_ids=preserve_ids,
+            item_mapping=item_mapping,
             folder=folder,
             failure_rollback=failure_rollback,
         )
@@ -6730,22 +6732,6 @@ class ContentManager(object):
             "f": "json",
         }
         return self._gis._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def dependency_manager(self) -> "DependencyManager":
-        """
-        Provides users the ability to manage the Enterprise's Item Dependencies Database.
-
-        Available in ArcGIS Enterprise 10.9.1+
-
-        :returns: :class:`~arcgis.gis.sharing.DependencyManager` or None for ArcGIS Online.
-        """
-        if self._depmgr is None and self._gis._portal.is_arcgisonline is False:
-            from arcgis.gis.sharing._dependency import DependencyManager
-
-            self._depmgr = DependencyManager(gis=self._gis)
-        return self._depmgr
 
     # ----------------------------------------------------------------------
     @property

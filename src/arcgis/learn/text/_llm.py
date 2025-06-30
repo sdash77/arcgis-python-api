@@ -28,7 +28,6 @@ from .._utils.llm_utils import (
 )
 from .._utils.common import _get_device_id
 from ._prompt_schema import textclassifierprompt, nerprompt, seqtoseqprompt
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from string import Template
 from copy import deepcopy
 
@@ -130,6 +129,8 @@ class llm_base(AbstractLLM):
             }
             self.API_BASE = f"https://api.openai.com/v1/chat/completions"
         else:
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+
             model_path = Path.home() / "AppData\Local\ESRI\DeepLearning\Mistral"
             if not os.path.exists(model_path):
                 raise FileNotFoundError(
