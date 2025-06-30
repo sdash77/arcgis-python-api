@@ -149,11 +149,21 @@ def _create_project(
         out_sr = {"wkid": out_sr}
     elif isinstance(out_sr, str):
         out_sr = {"wkt": out_sr}
+    else:
+        out_sr = {}
 
     gis = arcgis.env.active_gis if gis is None else gis
+    
     project_definition = {"name": name, "spatialReference": out_sr, "settings": settings}
-    result = gis._tools.realitymapping.create_project(project_definition, sensor_type, scenario_type, future=future, **kwargs)
-    item = Item(gis=gis, itemid=result["reality_project"]["itemId"])
+    result = gis._tools.realitymapping.create_project(
+        project_definition,
+        sensor_type,
+        scenario_type,
+        future=future,
+        **kwargs
+    )
+    
+    item = Item(gis=gis, itemid=result["realityProject"]["itemId"])
     return item
 
 
@@ -682,6 +692,10 @@ def compute_control_points(
         raise TypeError("The mission parameter must be a RMMission object.")
 
     image_collection = mission.image_collection
+    if context:
+        context["mission"]  = mission.mission_id
+    else:
+        context = {"mission": mission.mission_id}
 
     return gis._tools.realitymapping.compute_control_points(
         image_collection=image_collection,
@@ -805,11 +819,13 @@ def edit_control_points(
         raise TypeError("The mission parameter must be a RMMission object.")
 
     image_collection = mission.image_collection
+    context = {"mission": mission.mission_id}
 
     return gis._tools.realitymapping.edit_control_points(
         image_collection=image_collection,
         input_control_points=control_points,
         future=future,
+        context=context,
         **kwargs,
     )
 

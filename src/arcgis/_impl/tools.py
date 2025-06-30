@@ -9679,7 +9679,15 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         return final_job.result()
     
     # --------------------------------------------------------------------
-    def create_project(self, project_definition, sensor_type, scenario, gis=None, future=False, **kwargs):
+    def create_project(
+        self,
+        project_definition,
+        sensor_type,
+        scenario,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
         The `create_project` method creates a Reality Mapping project on portal and sitescan
 
