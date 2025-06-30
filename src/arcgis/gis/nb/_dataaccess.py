@@ -822,13 +822,13 @@ class NotebookDataAccess:
         return self._gis.session.post(url, params).json().get("status") == "success"
 
     # ---------------------------------------------------------------------
+    @property
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
         current_version="2.4.2",
         details="Use the files property found in a NotebookFolder instead or the get_file method.",
     )
-    @property
     def files(self) -> List[NotebookFile]:
         """
         Lists files that are located in the workspace directory (/arcgis/home) of the user making the request.
@@ -843,14 +843,14 @@ class NotebookDataAccess:
         }
 
         # create urls
-        if self._is_agol:
+        if self._gis._is_agol:
             url = f"{self._url}/{self._username}"
             params["delimiter"] = "/"
         else:
             url = f"{self._url}/{self._username}/notebookworkspace"
         response = self._gis._con.get(url, params)
         # Filter files based on ResourceType
-        if self._is_agol:
+        if self._gis._is_agol:
             return [
                 NotebookFile(f, self)
                 for f in response.get("Blobs", [])
@@ -963,20 +963,10 @@ class NotebookDataAccess:
         -------------------     --------------------------------------------------------------------------
         folder                  Optional String. The name of the folder to upload the file to. If not provided,
                                 the file will be uploaded to the root directory of the notebook workspace.
-                                Example: `folder1` or `folder1/folder2`.
+                                Example: `folder1`
         ===================     ==========================================================================
 
         :return: List of booleans. True if the file was uploaded, False or an error if it was not.
         """
-        # Get files as a list
-        files = self._resolve_files(fp)
-
-        if not files:
-            raise ValueError(
-                "No valid files found to upload. Please provide a valid file path or directory."
-            )
-
-        responses = []
-        for file in files:
-            responses.append(self._upload_single_file(file, folder))
-        return responses
+        folder = self.get_folder(folder) if folder else self.folders[0]
+        return folder.upload(fp)
