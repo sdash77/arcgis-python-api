@@ -890,60 +890,6 @@ class NotebookDataAccess:
         return self._gis._con.post(url, params).get("status") == "success"
 
     # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
-    def _resolve_files(self, fp):
-        if isinstance(fp, list):
-            return [f for f in fp if os.path.isfile(f)]
-
-        if os.path.isdir(fp):
-            # If the path is a directory, get all files in the directory
-            return [
-                os.path.join(fp, f)
-                for f in os.listdir(fp)
-                if os.path.isfile(os.path.join(fp, f))
-            ]
-
-        if os.path.isfile(fp):
-            # If the path is a file, return it as a list
-            return [fp]
-
-        raise ValueError(
-            f"Invalid file path: {fp}. It must be a file or a directory containing files."
-        )
-
-    # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
-    def _upload_single_file(self, file_path: str, folder: str | None = None) -> bool:
-        if not os.path.isfile(file_path):
-            raise ValueError(f"File {file_path} does not exist.")
-
-        filename = os.path.basename(file_path)
-
-        if self._gis._is_agol:
-            existing_files = self.files
-            if any(f.properties.name == filename for f in existing_files):
-                raise ValueError(f"File {filename} already exists in the workspace.")
-
-        full_path = f"{folder}/{filename}" if folder else filename
-
-        if self._gis._is_agol:
-            url = f"{self._url}/{self._username}/{full_path}"
-        else:
-            url = f"{self._url}/notebookworkspace/{full_path}"
-
-        headers = {
-            "Content-Type": "application/octet-stream",
-            "Content-Length": str(os.path.getsize(file_path)),
-            "x-ms-blob-type": "BlockBlob",
-            "x-ms-version": "2020-10-02",  # Consider making this configurable
-        }
-
-        resp = self._gis._con.put_raw(
-            url, data=open(file_path, "rb"), additional_headers=headers
-        )
-        return 200 <= resp.status_code < 300
-
-    # ---------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
