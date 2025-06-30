@@ -692,7 +692,7 @@ class Query:
             self.parameters.get("returnExtentOnly")
         ):
             return result
-        elif self.parameters.get("outStatistics", None) and self.parameters.get(
+        elif self.parameters.get("outStatistics", None) or self.parameters.get(
             "groupByFieldsForStatistics", None
         ):
             if self.as_df:
