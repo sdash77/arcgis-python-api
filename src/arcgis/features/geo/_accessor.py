@@ -3,6 +3,7 @@ Holds Delegate and Accessor Logic
 """
 
 from __future__ import annotations
+import json
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -3336,9 +3337,18 @@ class GeoAccessor(object):
                 fld["domain"] = None
                 fld["defaultValue"] = None
                 fld["nullable"] = True
-        if drawing_info is None:
-            import json
-
+        if (
+            drawing_info is None
+            and self._data.copy().spatial.geometry_type[0].lower()
+            == self._data.spatial._meta.geometry_type.lower()
+        ):
+            di = {"renderer": json.loads(self._data.spatial.renderer.json)}
+        elif (
+            drawing_info is None
+            and self._data.copy().spatial.geometry_type[0].lower()
+            != self._data.spatial._meta.geometry_type.lower()
+        ):
+            self._data.spatial.renderer = None
             di = {"renderer": json.loads(self._data.spatial.renderer.json)}
         else:
             di = drawing_info
