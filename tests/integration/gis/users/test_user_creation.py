@@ -1,7 +1,7 @@
 import unittest
 import uuid
 import os
-from arcgis.gis import User, GIS
+from arcgis.gis import User
 from utils.decorators import integration_test, profiles
 from config import get_resource_path
 
