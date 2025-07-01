@@ -3724,7 +3724,7 @@ class UserManager(object):
         idp_username: Optional[str] = None,
         level: int = 2,
         thumbnail: Optional[str] = None,
-        user_type: Optional[str] = None,
+        user_type: str | None = None,
         credits: float = -1,
         groups: Optional[list[Group]] = None,
         email_text: Optional[str] = None,
@@ -4025,7 +4025,7 @@ class UserManager(object):
                 "level",
                 "email_text",
             }
-            if self._gis._is_kubernetes == False:
+            if self._gis._is_kubernetes or self._gis.properties.isPortal:
                 allowed_keys = {
                     "username",
                     "password",
@@ -4397,7 +4397,6 @@ class UserManager(object):
             "org_user": "org_user",
             "publisher": "org_publisher",
             "org_publisher": "org_publisher",
-            "creator": "org_publisher",
             "view_only": "tLST9emLCNfFcejK",
             "org_viewer": "iAAAAAAAAAAAAAAA",
             "viewer": "iAAAAAAAAAAAAAAA",
