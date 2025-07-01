@@ -286,7 +286,7 @@ class WorkflowManagerAdmin:
         diagram_ids: Optional[list[str]] = None,
         include_other_configs: bool = True,
         passphrase: Optional[str] = None,
-        run_async: Optional[bool] = False,
+        run_async: bool = False,
         save_path: Optional[str] = None,
         export_mapping: Optional[bool] = None,
     ) -> str | ItemExecution:
@@ -340,7 +340,7 @@ class WorkflowManagerAdmin:
             item = gis.content.search('title:"Python Sample"')[0]
             export_execution = workflow_manager_admin.export_item(item,
                                                                   run_async=True,
-                                                                  save_path='C:\\Users\\exampleUser\\Desktop\\',
+                                                                  save_path='/path/to/item',
                                                                   export_mapping=True)
             # result() blocks execution until the asynchronous work is finished and returns the last message received.
             result = export_execution.result()
@@ -369,22 +369,22 @@ class WorkflowManagerAdmin:
             return self._export_item_async(
                 item, params, save_path, export_mapping is True
             )
-        else:
-            url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
-            return_obj = self._gis._con.post(
-                url,
-                params=params,
-                try_json=False,
-                json_encode=False,
-                post_json=True,
-                out_folder=save_path,
-            )
 
-            if "error" in return_obj:
-                return_obj = json.loads(return_obj)
-                self._gis._con._handle_json_error(return_obj["error"], 0)
+        url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
+        return_obj = self._gis._con.post(
+            url,
+            params=params,
+            try_json=False,
+            json_encode=False,
+            post_json=True,
+            out_folder=save_path,
+        )
 
-            return return_obj
+        if "error" in return_obj:
+            return_obj = json.loads(return_obj)
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+
+        return return_obj
 
     def _export_item_async(
         self,
@@ -405,7 +405,7 @@ class WorkflowManagerAdmin:
 
         try:
             # Call the actual endpoint
-            url = "{base}/admin/{id}/exportAsync".format(base=self._url, id=item.id)
+            url = f"{self._url}/admin/{item.id}/exportAsync"
 
             return_obj = self._gis._con.post(
                 url,
@@ -446,13 +446,13 @@ class WorkflowManagerAdmin:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         ie._export_location = return_obj
 
-        if export_mapping is True:
+        if export_mapping:
             # Get the configuration mapping file
             logger.debug(f"Retrieving mapping file for completed export {export_id}")
             return_mapping_obj = self._gis._con.get(
                 url, {"fileType": "json"}, out_folder=save_path
             )
-            if "error" in return_mapping_obj:
+            if '"error"' in return_mapping_obj:
                 return_mapping_obj = json.loads(return_mapping_obj)
                 self._gis._con._handle_json_error(return_mapping_obj["error"], 0)
             ie._export_mapping_location = return_mapping_obj
