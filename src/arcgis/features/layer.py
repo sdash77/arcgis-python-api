@@ -741,10 +741,10 @@ class FeatureLayer(Layer):
         return res
 
     # ----------------------------------------------------------------------
-    def _list_attachments(self, oid):
+    def _list_attachments(self, oid, version=None):
         """list attachments for a given OBJECT ID"""
 
-        params = {"f": "json"}
+        params = {"f": "json", "gdbVersion": version}
         if self._dynamic_layer is not None:
             url = self.url.split("?")[0] + "/%s/attachments" % oid
             params["layer"] = self._dynamic_layer
@@ -2627,6 +2627,7 @@ class FeatureLayer(Layer):
         *,
         return_messages: Optional[bool] = None,
         future: bool = False,
+        gdb_version: str = None,
     ):
         """
         The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
@@ -2748,6 +2749,11 @@ class FeatureLayer(Layer):
                                    not be returned.  This alters the output to be a tuple consisting of
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
+        gdb_version                Optional string.  Introduced at 11.5 for use by reference feature
+                                   services. Sets the target geodatabase version. Values for this parameter
+                                   must be a branch version. If the gdbVersion parameter is not specified,
+                                   this operation will target the default version.
+        ------------------------   --------------------------------------------------------------------
         future                     Optional boolean.
 
                                    * If *True*, method runs asynchronously and a future object will be
@@ -2782,11 +2788,17 @@ class FeatureLayer(Layer):
             hasattr(self._gis, "_portal") and self._gis._portal.is_logged_in == False
         ) or (hasattr(self._gis, "is_logged_in") and self._gis.is_logged_in == False):
             raise Exception("Authentication required to perform append.")
-        if self.properties.supportsAppend == False:
+        if not hasattr(self.properties, "supportsAppend"):
             raise Exception(
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+        if hasattr(self.properties, "supportsAppend"):
+            if not self.properties.supportsAppend:
+                raise Exception(
+                    "Append is not supported on this layer, please "
+                    + "update service definition capabilities."
+                )
         upload_formats = self.properties.supportedAppendFormats
         if upload_format not in upload_formats:
             raise ValueError(
@@ -2824,7 +2836,14 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-
+        if (
+            gdb_version
+            and not self._gis._is_arcgisonline
+            and self._gis.version[0] < 2025
+        ):
+            raise ValueError(
+                f"Cannot specify `gdb_version` at this ArcGIS Enterprise release: {self._gis.version}"
+            )
         cparams = copy.copy(params)
         for k, v in cparams.items():
             if v is None:
@@ -4910,6 +4929,7 @@ class FeatureLayerCollection(_GISResource):
         return_z: bool = False,
         return_m: bool = False,
         out_sr: Optional[int] = None,
+        gdb_version: str = None,
     ):
         """
          Queries the current :class:`~arcgis.features.FeatureLayerCollection` based on ``sql``
@@ -4953,6 +4973,10 @@ class FeatureLayerCollection(_GISResource):
         -------------------------------     --------------------------------------------------------------------
         out_sr                              Optional Integer. The ``WKID`` for the spatial reference of the returned
                                             geometry.
+        -------------------------------     --------------------------------------------------------------------
+        gdb_version                         Optional string. The geodatabase version to query. This parameter applies
+                                            only if the hasVersionedData property of the service and the isDataVersioned
+                                            property of the layers queried are true.
         ===============================     ====================================================================
 
         :return:
@@ -4968,6 +4992,7 @@ class FeatureLayerCollection(_GISResource):
             "returnCountOnly": return_count_only,
             "returnZ": return_z,
             "returnM": return_m,
+            "gdbVersion": gdb_version,
         }
         if layer_defs_filter is not None and isinstance(layer_defs_filter, dict):
             params["layerDefs"] = layer_defs_filter

@@ -13,7 +13,7 @@ class TestVectorTileLayerClass_online(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.vtl_id = "ef1265cb6e0248a691e85c71d9414fb4"
+        cls.vtl_id = "90ff63ae7ecb4bfd9bc6aec2f88d5230"
         cls.gis = GIS(profile="your_online_profile")
 
         cls.vtl_item = cls.gis.content.get(cls.vtl_id)
@@ -66,7 +66,7 @@ class TestVectorTileLayerClass_enterprise(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.vtl_id = "318ba5e09f57453d9c87ee4ac6af9810"
+        cls.vtl_id = "10750a9d2e2b400aa8f004e908a5e81e"
         cls.gis = GIS(
             profile="your_enterprise_profile", verify_cert=False, trust_env=True
         )

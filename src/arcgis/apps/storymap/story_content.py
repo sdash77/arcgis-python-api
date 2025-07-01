@@ -3344,7 +3344,7 @@ class Swipe:
         >>> swipe = Swipe()
 
         # Method 2: Use the get method in story
-        >>> swipe = my_story.get(node = <node_id>)
+        >>> swipe = my_story.content_list[3] # if swipe at index 3
 
     """
 
@@ -3840,7 +3840,7 @@ class Sidecar:
         .. code-block:: python
 
             # Get sidecar from story and see the properties
-            sc = story.get(<sidecar_node_id>)
+            sc = story.content_list[3] # if sidecar at index 3
             sc.properties
             >> returns a dictionary structure of the sidecar
 
@@ -3856,7 +3856,7 @@ class Sidecar:
             sc.edit(im2, 2)
 
             # OPTION 2 (only applicable if content is of same type as existing)
-            im2 = sc.get(im.node_id)
+            im2 = sc.content_list[4]
             im2.image = <img_url_or_path>
 
         """
