@@ -141,11 +141,9 @@ def from_featureset(fset, sr=None):
             df.loc[df["SHAPE"] == np.nan, "SHAPE"] = None
             df.spatial.set_geometry("SHAPE")
             df.spatial.sr = sr
-            for i in range(len(df)):
-                shape = df.loc[i]["SHAPE"]
-                # Check if NaN by comparing to self.
-                if shape != shape:
-                    df.iat[i, df.columns.get_loc("SHAPE")] = None
+            mask_na = df["SHAPE"].isna()
+            df.loc[mask_na, "SHAPE"] = None
+
         if pandas_dtypes:
             try:
                 df = df.astype(pandas_dtypes)
