@@ -63,6 +63,7 @@ class TestUserManagerCreate(unittest.TestCase):
         self.assertEqual(
             self.created_user.userLicenseTypeId,
             self.gis.users.user_settings["userLicenseType"],
+            "User license type ID not set correctly for user_type argument.",
         )
         if self.gis.users.user_settings.get("groups"):
             for group_id in self.gis.users.user_settings["groups"]:

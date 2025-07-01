@@ -4025,7 +4025,7 @@ class UserManager(object):
                 "level",
                 "email_text",
             }
-            if self._gis._is_kubernetes or self._gis.properties.isPortal:
+            if self._gis._is_kubernetes == False: 
                 allowed_keys = {
                     "username",
                     "password",
