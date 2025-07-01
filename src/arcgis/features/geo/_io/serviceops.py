@@ -196,9 +196,7 @@ def from_layer(layer, query="1=1"):
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
     sdf = layer.query(where=query, as_df=True)
     sdf.spatial._meta.source = layer.url
-    sdf.spatial._meta.geometry_type = g_lu[
-        dict(layer.properties).get("geometryType", None)
-    ]
+    sdf.spatial._meta.geometry_type = g_lu[dict(layer.properties).get("geometryType")]
     if "drawingInfo" in layer.properties:
         sdf.spatial.renderer = dict(layer.properties.drawingInfo.renderer)
     else:
