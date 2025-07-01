@@ -1,7 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\workspace\geosaurus\tests")
-sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import os
 import unittest
 import pandas as pd
