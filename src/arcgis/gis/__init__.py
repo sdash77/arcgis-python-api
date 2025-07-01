@@ -4664,19 +4664,77 @@ class UserManager(object):
                 if role is None:
                     if (
                         self.user_settings
-                        and "userLicenseType" in self.user_settings
+                        and "role" in self.user_settings
                         and role is None
                     ):
                         role = self.user_settings["role"]
+            else:
+                if role is None:
+                    if "defaultRoleForUser" in self._gis.admin.security.config:
+                        role = self._gis.admin.security.config["defaultRoleForUser"]
+                    elif (
+                        self.user_settings
+                        and "role" in self.user_settings
+                        and role is None
+                    ):
+                        role = self.user_settings["role"]
+                    else:
+                        raise ValueError(
+                            "A `role` default is not set on the Enterprise, so it must be provided by the user."
+                        )
+                if user_type is None:
+                    if "defaultUserTypeIdForUser" in self._gis.admin.security.config:
+                        user_type = self._gis.admin.security.config[
+                            "defaultUserTypeIdForUser"
+                        ]
+                    elif (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and user_type is None
+                    ):
+                        user_type = self.user_settings["userLicenseType"]
+                    else:
+                        raise ValueError(
+                            "A `user_type` default is not set on the Enterprise, so it must be provided by the user."
+                        )
 
         else:
             if self._gis.version >= [7, 1]:
+
                 if user_type is None and role is None:
                     if "defaultUserTypeIdForUser" in self._gis.admin.security.config:
                         user_type = self._gis.admin.security.config[
                             "defaultUserTypeIdForUser"
                         ]
                         role = self._gis.admin.security.config["defaultRoleForUser"]
+                elif role is None:
+                    if "defaultRoleForUser" in self._gis.admin.security.config:
+                        role = self._gis.admin.security.config["defaultRoleForUser"]
+                    elif (
+                        self.user_settings
+                        and "role" in self.user_settings
+                        and role is None
+                    ):
+                        role = self.user_settings["role"]
+                    else:
+                        raise ValueError(
+                            "A `role` default is not set on the Enterprise, so it must be provided by the user."
+                        )
+                elif user_type is None:
+                    if "defaultUserTypeIdForUser" in self._gis.admin.security.config:
+                        user_type = self._gis.admin.security.config[
+                            "defaultUserTypeIdForUser"
+                        ]
+                    elif (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and user_type is None
+                    ):
+                        user_type = self.user_settings["userLicenseType"]
+                    else:
+                        raise ValueError(
+                            "`user_type` default is not set on the Enterprise, so it must be provided by the user."
+                        )
         if role is None and user_type is None:
             raise ValueError(
                 "The user must supply a role and user_type when defaults are not present."
@@ -4712,7 +4770,7 @@ class UserManager(object):
         if groups is None:
             groups = []
 
-        if user_type.lower() in user_li_lu:
+        if user_type and user_type.lower() in user_li_lu:
             user_type = user_li_lu[user_type.lower()]
 
         if isinstance(role, Role):
