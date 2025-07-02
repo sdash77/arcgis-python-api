@@ -1264,8 +1264,10 @@ class GIS(object):
 
                 url = f"https://{url[0]}/admin"
                 return [AGOLNotebookManager(url=url, gis=self)]
-        elif self._portal.is_arcgisonline == False and (
-            hasattr(self, "admin") and getattr(self, "admin")
+        elif (
+            self._portal.is_arcgisonline == False
+            and self._is_kubernetes == False
+            and (hasattr(self, "admin") and getattr(self, "admin"))
         ):
             from arcgis.gis.nb import NotebookServer
 
@@ -1273,10 +1275,6 @@ class GIS(object):
             res = self.servers
             for server in res["servers"]:
                 if server["serverFunction"].lower() == "notebookserver":
-                    if self._is_kubernetes:  # notebook endpoint for kubernetes
-                        base_url: str = "/admin/notebooks"
-                    else:  # default endpoint of URI
-                        base_url: str = "/admin"
                     try:
                         if (
                             self._use_private_url_only == False
@@ -1302,7 +1300,11 @@ class GIS(object):
                         nbs.properties
                         notebooks.append(nbs)
             return notebooks
-
+        elif self._is_kubernetes and self.admin:
+            if getattr(self.admin, "notebooks", None):
+                admin = self.admin
+                admin._gis.properties
+                return [admin.notebooks]
         return []
 
     @property
