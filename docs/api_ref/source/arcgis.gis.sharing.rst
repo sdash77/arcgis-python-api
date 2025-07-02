@@ -17,13 +17,6 @@ Invitation
     :undoc-members:
     :show-inheritance:
 
-DependencyManager
----------------------------
-.. autoclass:: arcgis.gis.sharing.DependencyManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 MarketPlaceManager
 ---------------------------
 .. autoclass:: arcgis.gis.sharing.MarketPlaceManager
