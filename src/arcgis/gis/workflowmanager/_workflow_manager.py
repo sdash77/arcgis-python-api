@@ -4,6 +4,7 @@ import datetime
 import functools
 import json
 import logging
+import os
 import sys
 import threading
 import urllib.parse
@@ -463,6 +464,8 @@ class WorkflowManagerAdmin:
         config_file,
         passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
+        overwrite_configuration: Optional[bool] = True,
+        import_mapping_file: Optional[str] = None
     ) -> bool | ItemExecution:
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
@@ -473,20 +476,27 @@ class WorkflowManagerAdmin:
         and will need the value updated. Importing will fail if any jobs exist in the destination item.
         Excess scheduled tasks will be dropped based on the portal limit.
 
-        ==================  =========================================================
-        **Argument**        **Description**
-        ------------------  ---------------------------------------------------------
-        item                Required Item. The Workflow Manager Item that to import the configuration to.
-        ------------------  ---------------------------------------------------------
-        config_file         Required. The file path to the Workflow Manager configuration file.
-        ------------------  ---------------------------------------------------------
-        passphrase          Optional. If importing encrypted user defined settings, specify the same passphrase
-                            used when exporting the configuration file. If no passphrase is specified, the keys for
-                            encrypted user defined settings will be imported without their values.
-        ------------------  ---------------------------------------------------------
-        run_async           Optional. A boolean indicating whether to run import item asynchronously. If set to true,
-                            import_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`
-        ==================  =========================================================
+        =======================  =========================================================
+        **Argument**             **Description**
+        -----------------------  ---------------------------------------------------------
+        item                     Required Item. The Workflow Manager Item that to import the configuration to.
+        -----------------------  ---------------------------------------------------------
+        config_file              Required. The file path to the Workflow Manager configuration file.
+        -----------------------  ---------------------------------------------------------
+        passphrase               Optional. If importing encrypted user defined settings, specify the same passphrase
+                                 used when exporting the configuration file. If no passphrase is specified, the keys for
+                                 encrypted user defined settings will be imported without their values.
+        -----------------------  ---------------------------------------------------------
+        run_async                Optional. A boolean indicating whether to run import item asynchronously. If set to true,
+                                 import_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`
+        -----------------------  ---------------------------------------------------------
+        overwrite_configuration  Optional. A boolean indicating whether to overwrite the current item's contents. 
+                                 When set to true, the current item must not have existing jobs, and its contents will 
+                                 be deleted and replaced by the contents of the imported configuration file. By 
+                                 default this setting is true.
+        -----------------------  ---------------------------------------------------------
+        import_mapping_file      Optional. The file path to the Workflow Manager mapping file to be used during the import process.
+        =======================  =========================================================
 
         :return:
             bool if run_async is False or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
@@ -524,13 +534,20 @@ class WorkflowManagerAdmin:
         """
 
         data = {}
+        files = {
+            "file": (
+                os.path.basename(config_file),
+                open(config_file, "rb"),
+                "application/zip"
+            )
+        }
         if passphrase is not None:
             data["passphrase"] = passphrase
 
-        def call_post(url, config_file, data):
-            return_obj = self._gis._con.post(
+        def call_post(url, files, data):
+            return_obj = self._gis._con.post_multipart(
                 url,
-                files={"file": config_file},
+                files=files,
                 params=data,
                 try_json=False,
                 json_encode=False,
@@ -555,7 +572,15 @@ class WorkflowManagerAdmin:
             # Call the actual endpoint
             url = "{base}/admin/{id}/importAsync".format(base=self._url, id=item.id)
             try:
-                return_obj = call_post(url, config_file, data)
+                data["overwriteConfiguration"] = overwrite_configuration
+
+                if import_mapping_file is not None:
+                    files["mappingFile"] = (
+                        os.path.basename(import_mapping_file),
+                        open(import_mapping_file, "rb"),
+                        "application/json"
+                    )
+                return_obj = call_post(url, files, data)
                 if return_obj is False:
                     raise Exception("Unexpected error when importing configuration")
             except:
