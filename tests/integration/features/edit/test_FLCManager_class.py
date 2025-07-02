@@ -6,6 +6,7 @@ import os
 import uuid
 import arcgis._impl.common._utils as _common_utils
 from utils.decorators import integration_test, profiles
+from utils.data_utils import cleanup_published_items
 
 point_data = [
     {
@@ -2066,75 +2067,81 @@ tbl_data = [
 class TestFeatureLayerCollectionManagerInsert(unittest.TestCase):
     """tests the insert_layer on the FeatureLayerCollectionManager when creating a feature layer or table"""
 
+    @classmethod
+    def setUpClass(cls):
+        cls.published_items = []
+
     def test_insert_layer(self):
         """tests creating a feature layer and inserting it into an existing feature service"""
-        point_item = None
-        try:
-            # add point layer to portal
-            sdf = pd.DataFrame(point_data)
-            point_item = self.gis.content.import_data(
-                sdf, title="insert_layer", tags="ntgrtn-tst"
-            )
+        uid = uuid.uuid4().hex[:5]
 
-            # create a new temp file and write point data
-            df = pd.DataFrame(point_data)
-            temp_dir = os.path.join(tempfile.gettempdir(), "test_insert_layer")
-            # set up temporary zip to be used in directory
-            # os.makedirs(temp_dir)
-            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid.uuid4().hex[:5]))
-            location = os.path.join(temp_dir, "test_insert_layer.shp")
-            zip_loc = temp_dir
-            # writes the df to file as features
-            df.spatial.to_featureclass(location=location)
+        # add point layer to portal
+        sdf = pd.DataFrame(point_data)
+        point_item = self.gis.content.import_data(
+            sdf, title=f"insert_layer_{uid}", tags="ntgrtn-tst"
+        )
+        self.assertIsNotNone(point_item, "Point Item was not imported")
+        self.published_items.append(point_item)
 
-            # zip it
-            zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
+        # create a new temp file and write point data
+        df = pd.DataFrame(point_data)
+        temp_dir = os.path.join(tempfile.gettempdir(), "test_insert_layer")
+        # set up temporary zip to be used in directory
+        # os.makedirs(temp_dir)
+        temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid.uuid4().hex[:5]))
+        location = os.path.join(temp_dir, "test_insert_layer.shp")
+        zip_loc = temp_dir
+        # writes the df to file as features
+        df.spatial.to_featureclass(location=location)
 
-            # Basis Assertions
-            assert point_item.layers[0]
-            assert point_item.layers[0].properties.geometryType == "esriGeometryPoint"
-            num_layers = len(point_item.layers)
+        # zip it
+        zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
 
-            # Insert
-            flc_manager = FeatureLayerCollection.fromitem(point_item).manager
-            updated_item = flc_manager.insert_layer(zip_file, "Test Layer")
+        self.assertIsNotNone(point_item.layers[0], "Point Item layer not found")
+        self.assertTrue(
+            point_item.layers[0].properties.geometryType == "esriGeometryPoint",
+            "Incorrect geometry type",
+        )
+        num_layers = len(point_item.layers)
 
-            # Check to see if different layer but same service
-            assert point_item.id == updated_item.id
-            assert num_layers + 1 == len(updated_item.layers)
-        finally:
-            # clean up
-            if point_item:
-                pnt_rel_items = point_item.related_items("Service2Data")
-                for item in pnt_rel_items:
-                    item.delete()
-                point_item.delete()
+        # Insert
+        flc_manager = FeatureLayerCollection.fromitem(point_item).manager
+        updated_item = flc_manager.insert_layer(zip_file, "Test Layer")
+
+        # Check to see if different layer but same service
+        self.assertEqual(updated_item.id, point_item.id, "Incorrect updated item ID")
+        self.assertEqual(
+            num_layers + 1,
+            len(updated_item.layers),
+            "Incorrect quantity of updated layers",
+        )
 
     def test_insert_table(self):
         # add point tbl to portal
         df = pd.DataFrame(tbl_data)
         xlsx_file_path = tempfile.mkstemp(suffix=".xlsx")[1]
         df.to_excel(xlsx_file_path, index=False)
-        try:
-            # add the excel to the org
-            excel_item = self.gis.content.add(
-                {"tags": "integration-test"}, data=xlsx_file_path
-            )
-            assert excel_item
-            # publish as a table
-            table_item = excel_item.publish({"tags": "integration-test"})
-            assert table_item
 
-            flc_manager = FeatureLayerCollection.fromitem(table_item).manager
-            # insert the same table again for sake of testing
-            updated_item = flc_manager.insert_layer(xlsx_file_path, "Test Table")
-            assert updated_item.tables
-            assert len(updated_item.tables) == 2
-        finally:
-            related = table_item.related_items("Service2Data")
-            for item in related:
-                item.delete()
-            table_item.delete()
+        # add the excel to the org
+        excel_item = self.gis.content.add(
+            {"tags": "integration-test"}, data=xlsx_file_path
+        )
+        self.assertIsNotNone(excel_item, "Excel Item was not added")
+
+        # publish as a table
+        table_item = excel_item.publish({"tags": "integration-test"})
+        self.assertIsNotNone(table_item, "Table Item was not added")
+        self.published_items.append(table_item)
+
+        flc_manager = FeatureLayerCollection.fromitem(table_item).manager
+        # insert the same table again for sake of testing
+        updated_item = flc_manager.insert_layer(xlsx_file_path, "Test Table")
+        self.assertIsNotNone(updated_item.tables, "Updated item is None")
+        self.assertTrue(len(updated_item.tables) == 2, "Incorrect quantity of tables")
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.published_items)
 
 
 if __name__ == "__main__":
