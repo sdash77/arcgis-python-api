@@ -39,7 +39,13 @@ class TestUserManagerCreate(unittest.TestCase):
         Test create user with user defaults; use_defaults is True by default
         """
         if self.gis.version < [2025, 1]:
-            self.skipTest("use_defaults param is only available in ArcGIS Enterprise 11.5+.")
+            self.skipTest(
+                "use_defaults param is only available in ArcGIS Enterprise 11.5+."
+            )
+        if not self.gis.users.user_settings:
+            self.skipTest(
+                "New Member Defaults not set. user_type and role are required."
+            )
         self.created_user = self.gis.users.create(
             self.username,
             self.password,
@@ -49,6 +55,23 @@ class TestUserManagerCreate(unittest.TestCase):
             use_defaults=True,
         )
         self.assertIsInstance(self.created_user, User)
+        self.assertIn(
+            self.gis.users.user_settings["role"],
+            [self.created_user.role, self.created_user.roleId],
+            "Role not set correctly.",
+        )
+        self.assertEqual(
+            self.created_user.userLicenseTypeId,
+            self.gis.users.user_settings["userLicenseType"],
+            "User license type ID not set correctly for user_type argument.",
+        )
+        if self.gis.users.user_settings.get("groups"):
+            for group_id in self.gis.users.user_settings["groups"]:
+                self.assertIn(
+                    group_id,
+                    [g.id for g in self.created_user.groups],
+                    "Group not found in user groups",
+                )
 
     def test_create_user_with_thumbnail(self):
         """
@@ -56,24 +79,39 @@ class TestUserManagerCreate(unittest.TestCase):
         """
         thumbnail_path = get_resource_path("staging_data/users/Basemaps.png")
         self.created_user = self.gis.users.create(
-            self.username,
-            self.password,
-            self.firstname,
-            self.lastname,
-            self.email,
-            self.role,
-            self.user_type,
+            username=self.username,
+            password=self.password,
+            firstname=self.firstname,
+            lastname=self.lastname,
+            email=self.email,
+            user_type=self.user_type,
+            role=self.role,
             thumbnail=thumbnail_path,
         )
         self.assertIsInstance(self.created_user, User)
-        self.assertIsNotNone(self.created_user.get_thumbnail(), "Thumbnail object was not found for the new user")
+        self.assertIsNotNone(
+            self.created_user.get_thumbnail(),
+            "Thumbnail object was not found for the new user",
+        )
+        self.assertEqual(
+            self.created_user.role,
+            "org_publisher",
+            "Role value does not match role argument.",
+        )
+        self.assertEqual(
+            self.created_user.userLicenseTypeId,
+            "creatorUT",
+            "User license type ID does not match user_type.",
+        )
 
     def test_create_user_user_defaults_false(self):
         """
         Test create user with defaults false
         """
         if self.gis.version < [2025, 1]:
-            self.skipTest("use_defaults param is only available in ArcGIS Enterprise 11.5+.")
+            self.skipTest(
+                "use_defaults param is only available in ArcGIS Enterprise 11.5+."
+            )
         thumbnail_path = get_resource_path("staging_data/users/Basemaps.png")
         self.created_user = self.gis.users.create(
             self.username,
@@ -84,9 +122,19 @@ class TestUserManagerCreate(unittest.TestCase):
             role="org_user",
             user_type="GISProfessionalStdUT",
             use_defaults=False,
+            thumbnail=thumbnail_path,
         )
         self.assertIsInstance(self.created_user, User)
-        self.assertEqual(self.created_user.role, "org_user", "Thumbnail object was not found for the new user")
+        self.assertEqual(
+            self.created_user.role,
+            "org_user",
+            "Role value does not match role argument",
+        )
+        self.assertEqual(self.created_user.userLicenseTypeId, "GISProfessionalStdUT")
+        self.assertIsNotNone(
+            self.created_user.get_thumbnail(),
+            "Thumbnail object was not found for the new user",
+        )
 
 
 if __name__ == "__main__":
