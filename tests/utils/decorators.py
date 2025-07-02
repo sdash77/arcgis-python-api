@@ -417,6 +417,7 @@ class profiles:
         "enterprise_admin",
         "your_ent_admin_profile",
     )
+    _enterprise_devent_admin_profile_parameters = ("devent_admin", "your_devent_admin_profile")
     _k8s_profile_parameters = ("k8s", "your_kubernetes_profile")
     _k8s_admin_profile_parameters = (
         "k8s_admin",
@@ -562,6 +563,11 @@ class profiles:
             cls._enterprise_admin_profile_parameters,
             cls._k8s_admin_profile_parameters,
         )
+
+    @classproperty
+    def admin_devent(cls):
+        """Run tests for devent admin profile"""
+        return cls._get_profile_parameterized_class(cls._enterprise_devent_admin_profile_parameters)
 
     @classproperty
     def utility_network(cls):
