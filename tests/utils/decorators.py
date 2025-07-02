@@ -417,7 +417,7 @@ class profiles:
         "enterprise_admin",
         "your_ent_admin_profile",
     )
-    _enterprise_devent_admin_profile_parameters = ("devent_admin", "your_devent_admin_profile")
+    _enterprise_devent_admin_profile_parameters = ("devent_admin", "your_dev_ent_admin_profile")
     _k8s_profile_parameters = ("k8s", "your_kubernetes_profile")
     _k8s_admin_profile_parameters = (
         "k8s_admin",
