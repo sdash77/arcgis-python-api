@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\svn\geosaurus_issue_13340\src")
-sys.path.insert(1, r"C:\svn\geosaurus_issue_13340\tests")
 import json
 import os, uuid
 import tempfile
