@@ -1,12 +1,12 @@
 import os
 import time
 import unittest
-from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
-from arcgis.gis import Item
+from arcgis.gis import Item, GIS
 from arcgis.features.managers import FeatureLayerCollectionManager
 from utils.data_utils import publish_test_item, cleanup_published_items
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
+from integration.config import get_resource_path
 
 
 @profiles.all
@@ -28,14 +28,8 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         :return:
         """
         cls.uid = int(time.time())
-
-        cls.qalab_base_path = QALAB_ROOT_PATH
-        cls.qalab_cls_path = os.path.join(
-            cls.qalab_base_path, "features_mod_FeatureLayerCollectionManager_cls_short"
-        )
-
         # Hold all Items for cleanup
-        cls.items = []
+        cls.published_items = []
 
     def test_create_FeatureLayerCollectionManager_object(self):
         """
@@ -43,8 +37,11 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         :return:
         """
         # region Publish the feature layer if it does not exist
-        layer_name = f"dino_FLC_basic_{self.uid}"
-        data_path = os.path.join(self.qalab_cls_path, "simple_points.csv")
+        layer_name = f"test_flc_object_{self.uid}"
+        data_path = get_resource_path(
+            "staging_data/feature_object/simple_points.csv", unique_copy=True
+        )
+
         published_item = publish_test_item(
             gis=self.gis,
             layer_name=layer_name,
@@ -52,8 +49,8 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             item_type=ItemTypeEnum.CSV,
             prep_for_editing=False,
         )
-        self.assertIsInstance(published_item, Item)
-        self.items.append(published_item)
+        self.assertIsInstance(published_item, Item, "Incorrect item type")
+        self.published_items.append(published_item)
 
         # check a FeatureLayerCollectionManager object can be created from url
         flcm_url = FeatureLayerCollectionManager(published_item.url, self.gis)
@@ -78,8 +75,11 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         Ensure the contents are updated, itemid remains same.
         :return:
         """
-        data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_csv.csv")
         layer_name = f"overwrite_HFS_csv_{self.uid}"
+        data_path = get_resource_path(
+            "staging_data/feature_object/overwrite_HFS_csv.csv", unique_copy=True
+        )
+
         published_item = publish_test_item(
             gis=self.gis,
             layer_name=layer_name,
@@ -87,8 +87,8 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             item_type=ItemTypeEnum.CSV,
             prep_for_editing=False,
         )
-        self.assertIsInstance(published_item, Item)
-        self.items.append(published_item)
+        self.assertIsInstance(published_item, Item, "Incorrect item type")
+        self.published_items.append(published_item)
 
         # delete all features in feature layer
         flayer = published_item.layers[0]
@@ -105,9 +105,11 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
         # overwrite the feature layer
-        new_data_path = os.path.join(
-            self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_csv.csv"
+        temp_new_data_path = get_resource_path(
+            "staging_data/feature_object/overwrite/overwrite_HFS_csv.csv",
+            unique_copy=True,
         )
+        new_data_path = self.rename_overwrite_filename(data_path, temp_new_data_path)
         overwrite_result = flc_mgr.overwrite(new_data_path)
         self.assertIsNotNone(
             overwrite_result, "Calling publish with overwrite True returns None"
@@ -136,8 +138,10 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         *Note: does not work if hosted table
         :return:
         """
-        data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_excel.xlsx")
         layer_name = f"overwrite_HFS_excel_{self.uid}"
+        data_path = get_resource_path(
+            "staging_data/feature_object/overwrite_HFS_excel.xlsx", unique_copy=True
+        )
         published_item = publish_test_item(
             gis=self.gis,
             layer_name=layer_name,
@@ -145,8 +149,8 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             item_type=ItemTypeEnum.MICROSOFT_EXCEL,
             prep_for_editing=False,
         )
-        self.assertIsInstance(published_item, Item)
-        self.items.append(published_item)
+        self.assertIsInstance(published_item, Item, "Incorrect item type")
+        self.published_items.append(published_item)
 
         # region delete all features in feature layer
         flayer = published_item.layers[0]
@@ -163,9 +167,11 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
         # overwrite the feature layer
-        new_data_path = os.path.join(
-            self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_excel.xlsx"
+        temp_new_data_path = get_resource_path(
+            "staging_data/feature_object/overwrite/overwrite_HFS_excel.xlsx",
+            unique_copy=True,
         )
+        new_data_path = self.rename_overwrite_filename(data_path, temp_new_data_path)
         overwrite_result = flc_mgr.overwrite(new_data_path)
         self.assertIsNotNone(
             overwrite_result, "Calling publish with overwrite True returns None"
@@ -194,8 +200,10 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         :return:
         """
         # region publish feature layer
-        data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_fgdb.gdb.zip")
         layer_name = f"overwrite_HFS_fgdb_{self.uid}"
+        data_path = get_resource_path(
+            "staging_data/feature_object/overwrite_HFS_fgdb.gdb.zip", unique_copy=True
+        )
         published_item = publish_test_item(
             gis=self.gis,
             layer_name=layer_name,
@@ -203,8 +211,8 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             item_type=ItemTypeEnum.FILE_GEODATABASE,
             prep_for_editing=False,
         )
-        self.assertIsInstance(published_item, Item)
-        self.items.append(published_item)
+        self.assertIsInstance(published_item, Item, "Incorrect item type")
+        self.published_items.append(published_item)
         # endregion
 
         # region delete all features in feature layer
@@ -223,10 +231,12 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
         # overwrite the feature layer
-        new_fgdb_path = os.path.join(
-            self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_fgdb.gdb.zip"
+        temp_new_data_path = get_resource_path(
+            "staging_data/feature_object/overwrite/overwrite_HFS_fgdb.gdb.zip",
+            unique_copy=True,
         )
-        overwrite_result = flc_mgr.overwrite(new_fgdb_path)
+        new_data_path = self.rename_overwrite_filename(data_path, temp_new_data_path)
+        overwrite_result = flc_mgr.overwrite(new_data_path)
         self.assertIsNotNone(
             overwrite_result, "Calling publish with overwrite True returns None"
         )
@@ -253,8 +263,10 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         Ensure the contents are updated, itemid remains same.
         :return:
         """
-        data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_shp.zip")
         layer_name = f"overwrite_HFS_shp_{self.uid}"
+        data_path = get_resource_path(
+            "staging_data/feature_object/overwrite_HFS_shp.zip", unique_copy=True
+        )
         published_item = publish_test_item(
             gis=self.gis,
             layer_name=layer_name,
@@ -262,8 +274,8 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             item_type=ItemTypeEnum.SHAPEFILE,
             prep_for_editing=False,
         )
-        self.assertIsInstance(published_item, Item)
-        self.items.append(published_item)
+        self.assertIsInstance(published_item, Item, "Incorrect item type")
+        self.published_items.append(published_item)
         # endregion
 
         # region delete all features in feature layer
@@ -282,9 +294,11 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
         # overwrite the feature layer
-        new_data_path = os.path.join(
-            self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_shp.zip"
+        temp_new_data_path = get_resource_path(
+            "staging_data/feature_object/overwrite/overwrite_HFS_shp.zip",
+            unique_copy=True,
         )
+        new_data_path = self.rename_overwrite_filename(data_path, temp_new_data_path)
         overwrite_result = flc_mgr.overwrite(new_data_path)
         self.assertIsNotNone(
             overwrite_result, "Calling publish with overwrite True returns None"
@@ -315,7 +329,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         sd_file_name = "overwrite_HFS_sd.sd"
         if self.gis._is_agol:
             sd_file_name = "overwrite_HFS_sd_agol.sd"
-        data_path = os.path.join(self.qalab_cls_path, sd_file_name)
+        data_path = get_resource_path(
+            f"staging_data/feature_object/{sd_file_name}", unique_copy=True
+        )
         layer_name = f"overwrite_HFS_sd_{self.uid}"
         published_item = publish_test_item(
             gis=self.gis,
@@ -324,8 +340,8 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             item_type=ItemTypeEnum.SERVICE_DEFINITION,
             prep_for_editing=False,
         )
-        self.assertIsInstance(published_item, Item)
-        self.items.append(published_item)
+        self.assertIsInstance(published_item, Item, "Incorrect item type")
+        self.published_items.append(published_item)
         # endregion
 
         # region delete all features in feature layer
@@ -347,7 +363,11 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
         # overwrite the feature layer
-        new_data_path = os.path.join(self.qalab_cls_path, "overwrite_wfl", sd_file_name)
+        temp_new_data_path = get_resource_path(
+            f"staging_data/feature_object/overwrite/{sd_file_name}",
+            unique_copy=True,
+        )
+        new_data_path = self.rename_overwrite_filename(data_path, temp_new_data_path)
         overwrite_result = flc_mgr.overwrite(new_data_path)
         self.assertIsNotNone(
             overwrite_result, "Calling publish with overwrite True returns None"
@@ -369,8 +389,24 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         )
 
     @classmethod
+    def rename_overwrite_filename(cls, original_path, overwrite_file_path):
+        original_filename = os.path.basename(original_path)
+        overwrite_dirname = os.path.dirname(overwrite_file_path)
+        new_overwrite_file_path = os.path.join(overwrite_dirname, original_filename)
+        try:
+            os.rename(overwrite_file_path, new_overwrite_file_path)
+            if not os.path.exists(new_overwrite_file_path):
+                raise FileNotFoundError(
+                    f"Could not find file: {new_overwrite_file_path}"
+                )
+            return new_overwrite_file_path
+        except Exception as ex:
+            print(ex)
+            return None
+
+    @classmethod
     def tearDownClass(cls):
-        cleanup_published_items(cls.items)
+        cleanup_published_items(cls.published_items)
 
 
 if __name__ == "__main__":

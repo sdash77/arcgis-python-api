@@ -50,22 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-      run-tests: ${{ github.event_name != 'pull_request' || steps.changed-files.outputs.any_changed }}
     steps:
-      - uses: tj-actions/changed-files@v41
-        name: Check changed files
-        if: github.event_name == 'pull_request'
-        id: changed-files
-        with:
-          files: |
-            .github/workflows/*.yaml
-            .github/workflows/*.yml
-            environment.yml
-            build/arcgis/meta.yaml
-            src/**/*.*
-            tests/smoke/**/*.*
-            tests/unit/**/*.*
-            tests/utils/**/*.*
       - name: Get parameters or defaults
         id: get-parameters
         # defaults to running linux and python 3.11 on pull requests
@@ -116,7 +101,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     needs: [preflight]
-    if: needs.preflight.outputs.run-tests == 'true'
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.preflight.outputs.matrix)}}

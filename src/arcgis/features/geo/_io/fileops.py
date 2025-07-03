@@ -308,11 +308,17 @@ def from_url(url: str) -> list:
     :return: List[pd.DataFrame]
 
     """
-    if not HAS_GDAL and not HAS_PYSHP == False:
+    if not HAS_GDAL and not HAS_PYSHP:
         raise Exception("GDAL or pyshp is required to read hosted shapefiles.")
 
-    if HAS_GDAL:
-        return from_featureclass(url)
+    # unless we specify pyshp, default to GDAL
+    if not USE_PYSHP and HAS_GDAL:
+        return _http_workflow(url)
+
+    # this is the case where a user picks gdal or arcpy but they're not available
+    # have to import shapefile here since it hasn't been done yet
+    if not USE_PYSHP:
+        import shapefile
 
     r = requests.get(url)
     with closing(r), zipfile.ZipFile(io.BytesIO(r.content)) as archive:
@@ -331,7 +337,8 @@ def from_url(url: str) -> list:
         # build readers
         readers = []
         for key in datasets.keys():
-            if list(datasets[key].keys()) >= ["shp", "dbf"]:
+            shp_keys = list(datasets[key].keys())
+            if "shp" in shp_keys and "dbf" in shp_keys:
                 shx = None
                 if datasets[key].get("shx", None):
                     shx = io.BytesIO()
@@ -344,6 +351,10 @@ def from_url(url: str) -> list:
                 readers.append(shapefile.Reader(shp=shp, shx=shx, dbf=dbf))
         # construct SeDF from URL based datasets
         sdfs = []
+        if readers == []:
+            raise ValueError(
+                "No valid shapefile datasets found in the zip file. Please check the URL."
+            )
         for reader in readers:
             records = []
             fields = [field[0] for field in reader.fields if field[0] != "DeletionFlag"]
@@ -729,7 +740,7 @@ def from_featureclass(filename, **kwargs):
 
     """
     if isinstance(filename, str) and ("http://" in filename or "https://" in filename):
-        return _http_workflow(filename)
+        return from_url(filename)
 
     filename = _ensure_path_string(filename)
 
@@ -750,17 +761,33 @@ def from_featureclass(filename, **kwargs):
 
 
 def _http_workflow(filename):
-    r = requests.get(filename)
+    if arcgis.env.active_gis:
+        r = arcgis.env.active_gis._con.get(filename)
+    else:
+        r = requests.get(filename)
+    df_array = []
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.zip")
         with open(archive_path, "wb") as f:
             f.write(r.content)
 
-        shutil.unpack_archive(archive_path, temp_dir)
-
-        df = _gdal_to_sedf(file_path=temp_dir)
-    df.spatial._meta.source = filename
-    return df
+        try:
+            shutil.unpack_archive(archive_path, temp_dir)
+        except:
+            raise ValueError(
+                "The provided URL is not accessible with current credentials."
+            )
+        shp_path = None
+        for root, dirs, files in os.walk(temp_dir):
+            for file in files:
+                if file.endswith(".shp"):
+                    shp_path = os.path.join(root, file)
+                    df = _gdal_to_sedf(file_path=shp_path)
+                    df.spatial._meta.source = filename
+                    df_array.append(df)
+        if not df_array:
+            raise ValueError("No accessible shapefile found at the input URL.")
+    return df_array
 
 
 def _gdal_workflow(filename, **kwargs):
