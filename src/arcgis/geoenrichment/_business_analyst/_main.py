@@ -532,7 +532,19 @@ class Country(AOI):
     def _geography_levels_gis(self):
         """GIS implementation of geography levels."""
         # unpack the geoenrichment url from the properties
-        enrich_url = self.source.properties.helperServices.geoenrichment.url
+
+        enrich_url = self.source.properties.helperServices.geoenrichment["url"]
+        if self.source._is_hosted_nb_home or (
+            hasattr(self._source, "_use_private_url_only")
+            and self._source._use_private_url_only
+        ):
+            res = self.source._private_service_url(enrich_url)
+
+            enrich_url = (
+                res["privateServiceUrl"]
+                if "privateServiceUrl" in res
+                else res["serviceUrl"]
+            )
 
         # construct the url to the standard geography levels
         url = f"{enrich_url}/Geoenrichment/standardgeographylevels"
@@ -740,6 +752,15 @@ class BusinessAnalyst(object):
                     if "privateServiceUrl" in res
                     else res["serviceUrl"]
                 )
+            elif hasattr(in_source, "_use_private_url_only"):
+                res = self._source._private_service_url(self._base_url)
+
+                # if there is a private service url returned in the response, change the url being used to this
+                self._base_url = (
+                    res["privateServiceUrl"]
+                    if "privateServiceUrl" in res
+                    else res["serviceUrl"]
+                )
 
     @lazy_property
     @local_vs_gis
@@ -825,7 +846,10 @@ class BusinessAnalyst(object):
 
         # extract out the geoenrichment url
         ge_url = self.source.properties.helperServices.geoenrichment["url"]
-        if self.source._is_hosted_nb_home:
+        if self.source._is_hosted_nb_home or (
+            hasattr(self._source, "_use_private_url_only")
+            and self._source._use_private_url_only
+        ):
             res = self.source._private_service_url(ge_url)
             ge_url = (
                 res["privateServiceUrl"]
@@ -890,8 +914,12 @@ class BusinessAnalyst(object):
 
         # extract out the geoenrichment url
         ge_url = self.source.properties.helperServices.geoenrichment["url"]
-        if self.source._is_hosted_nb_home:
+        if self.source._is_hosted_nb_home or (
+            hasattr(self._source, "_use_private_url_only")
+            and self._source._use_private_url_only
+        ):
             res = self.source._private_service_url(ge_url)
+
             ge_url = (
                 res["privateServiceUrl"]
                 if "privateServiceUrl" in res
@@ -2054,7 +2082,7 @@ class BusinessAnalyst(object):
             params["useData"] = json.dumps(use_data)
 
         # get the maximum batch size to ensure is not less than best practices set above
-        svc_lmt_url = f'{self.source.properties.helperServices("geoenrichment").url}/Geoenrichment/ServiceLimits'
+        svc_lmt_url = f"{self._base_url}/Geoenrichment/ServiceLimits"
         svc_lmt_res = self.source._con.get(svc_lmt_url)
 
         max_batch_size = [
