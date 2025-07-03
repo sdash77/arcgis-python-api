@@ -235,7 +235,9 @@ class KubeSnapshotManager(object):
                 "privateAccess": access,
             }
 
-            params["notebookJSON"] = notebook_json or ""
+            with open(item.get_data(), "r") as reader:
+                params["notebookJSON"] = reader.read()
+
             url = f"{self._url}/create"
             return self._gis._con.post(url, params)
         else:
