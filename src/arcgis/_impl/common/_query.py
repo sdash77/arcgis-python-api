@@ -692,7 +692,7 @@ class Query:
             self.parameters.get("returnExtentOnly")
         ):
             return result
-        elif self.parameters.get("outStatistics", None) and self.parameters.get(
+        elif self.parameters.get("outStatistics", None) or self.parameters.get(
             "groupByFieldsForStatistics", None
         ):
             if self.as_df:
@@ -962,6 +962,11 @@ class Query:
                 df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.layer.renderer
                 df.spatial._meta.source = self.layer
+                df.spatial._meta.geometry_type = (
+                    self.layer.properties["geometryType"]
+                    .replace("esriGeometry", "")
+                    .lower()
+                )
 
             return pd.DataFrame([], columns=columns).astype(columns)
         sr = None
@@ -975,7 +980,12 @@ class Query:
         # set based on layer
         df.spatial.renderer = self.layer.renderer
         df.spatial._meta.source = self.layer.url
-
+        if "geometryType" in dict(self.layer.properties):
+            df.spatial._meta.geometry_type = (
+                self.layer.properties["geometryType"]
+                .replace("esriGeometry", "")
+                .lower()
+            )
         if "SHAPE" in df.columns:
             df.loc[df.SHAPE.isna(), "SHAPE"] = None
             df.spatial.set_geometry("SHAPE")

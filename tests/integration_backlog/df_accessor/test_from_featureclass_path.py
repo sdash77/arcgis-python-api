@@ -5,6 +5,7 @@ from arcgis.features import GeoAccessor, GeoSeriesAccessor
 from utils.decorators import integration_test
 
 
+
 RUN = os.path.dirname(os.path.realpath(__file__))
 
 @unittest.skipIf(RUN == False, "missing data")

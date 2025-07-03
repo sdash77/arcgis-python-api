@@ -182,6 +182,12 @@ def get_helper_service_url(gis: GIS, service_key: str) -> str:
     )
     assert service_key in gis.properties.helperServices, err_msg
     url = gis.properties.helperServices[service_key]["url"]
+    if isinstance(gis, GIS) and gis._use_private_url_only:
+        data: dict = gis._private_service_url(url)
+        if "privateServiceUrl" in data:
+            url = data.get("privateServiceUrl")
+        else:
+            url = data.get("serviceUrl")
     assert len(url), err_msg
     return url
 

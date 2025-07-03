@@ -6735,22 +6735,6 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     @property
-    def dependency_manager(self) -> "DependencyManager":
-        """
-        Provides users the ability to manage the Enterprise's Item Dependencies Database.
-
-        Available in ArcGIS Enterprise 10.9.1+
-
-        :returns: :class:`~arcgis.gis.sharing.DependencyManager` or None for ArcGIS Online.
-        """
-        if self._depmgr is None and self._gis._portal.is_arcgisonline is False:
-            from arcgis.gis.sharing._dependency import DependencyManager
-
-            self._depmgr = DependencyManager(gis=self._gis)
-        return self._depmgr
-
-    # ----------------------------------------------------------------------
-    @property
     def marketplace(self) -> "MarketPlaceManager":
         """
         Provides users the ability to manage the content's presence on the marketplace.

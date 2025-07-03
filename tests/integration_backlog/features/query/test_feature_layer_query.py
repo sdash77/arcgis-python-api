@@ -6,7 +6,7 @@ from arcgis.geometry.filters import intersects
 from arcgis.gis import GIS
 
 
-# @profiles.enterprise_and_agol
+@profiles.enterprise_and_agol
 @integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
 
@@ -15,10 +15,6 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         get test data
         """
-        proxies = {"http": "http://127.0.0.1:8999", "https": "http://127.0.0.1:8999"}
-        cls.gis = GIS(
-            profile="your_enterprise_profile", verify_cert=False, proxy=proxies
-        )
         major_cities_item = cls.gis.content.search(
             "{item} tags:{tag}".format(item="major_cities", tag="integration_testing"),
             "Feature Layer",
