@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import time
 import uuid
 import logging
 import unittest
@@ -13,7 +14,7 @@ from arcgis.gis.agonb.runtime import RuntimeManager
 from arcgis.gis.agonb.nb import NotebookManager
 from arcgis.gis.agonb.containers import Container, ContainerManager
 from arcgis.gis.agonb.snapshot import SnapShot, SnapshotManager
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 __logger__ = logging.getLogger()
 
@@ -26,11 +27,6 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_api_data_owner_profile']
-# profiles = ['your_online_admin_profile']
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-
 notebook_json = {
     "cells": [
         {
@@ -41,8 +37,7 @@ notebook_json = {
         {
             "cell_type": "markdown",
             "metadata": {},
-            "source": "#### Run this cell to connect to your GIS and get "
-            "started:",
+            "source": "#### Run this cell to connect to your GIS and get " "started:",
         },
         {
             "cell_type": "code",
@@ -112,18 +107,17 @@ notebook_json = {
 }
 
 
+@profiles.admin_agol
 @integration_test
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls._gis = GIS(profile=profiles[0], verify_cert=False, proxy=PROXIES)
-
         d = tempfile.gettempdir()
         fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
         writer = open(fp, "w")
         writer.write(json.dumps(notebook_json))
         writer.close()
-        cls._item = cls._gis.content.add(
+        cls._item = cls.gis.content.add(
             {
                 "type": "Notebook",
                 "tags": "delete me",
@@ -137,11 +131,11 @@ class TestAGOLNotebookManager(unittest.TestCase):
         )
 
     def test_access_agonb(self):
-        assert self._gis.notebook_server
-        assert isinstance(self._gis.notebook_server[0], AGOLNotebookManager)
+        assert self.gis.notebook_server
+        assert isinstance(self.gis.notebook_server[0], AGOLNotebookManager)
 
     def test_access_properties(self):
-        nb = self._gis.notebook_server[0]
+        nb = self.gis.notebook_server[0]
         assert isinstance(nb, AGOLNotebookManager)
         assert nb.containers
         assert nb.instance_preferences
@@ -150,7 +144,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert nb.snaphots
 
     def test_access_instsance_pref(self):
-        nb = self._gis.notebook_server[0]
+        nb = self.gis.notebook_server[0]
         assert isinstance(nb, AGOLNotebookManager)
         ip = nb.instance_preferences
         isinstance(ip, InstancePreference)
@@ -158,47 +152,65 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert ip.instances
 
     def test_notebooksmanager(self):
-        nb = self._gis.notebook_server[0]
+        nb = self.gis.notebook_server[0]
         assert isinstance(nb, AGOLNotebookManager)
         nbm = nb.notebooksmanager
         assert isinstance(nbm, NotebookManager)
 
     def test_runtimes(self):
-        nb = self._gis.notebook_server[0]
+        nb = self.gis.notebook_server[0]
         assert isinstance(nb, AGOLNotebookManager)
         runtimes = nb.runtimes
         assert runtimes
         isinstance(runtimes, RuntimeManager)
         r = runtimes.list()
         assert isinstance(r, list)
-        assert runtimes.manifest(r[1]['id'])
+        assert runtimes.manifest(r[1]["id"])
 
-    def test_containers(self):
-        nb = self._gis.notebook_server[0]
+    def test_start_single_container(self):
+        nb = self.gis.notebook_server[0]
         assert isinstance(nb, AGOLNotebookManager)
         cm = nb.containers
         assert isinstance(cm, ContainerManager)
         r = cm.list()
-        nb.runtimes.list()[0]
-        start = cm.start(runtime=nb.runtimes.list()[0]['id'])
+
+        start = cm.start(runtime=nb.runtimes.list()[0]["id"]).result()
         assert start
         r = cm.list()
+        self.assertIsNotNone(r["containers"], "No containers found")
+
+    def test_containers(self):
+        nb = self.gis.notebook_server[0]
+        assert isinstance(nb, AGOLNotebookManager)
+        cm = nb.containers
+        assert isinstance(cm, ContainerManager)
+        r = cm.list()
+        self.assertIsNotNone(r["containers"], "Could not list of ContainerManagers")
+        start = cm.start(runtime=nb.runtimes.list()[0]["id"]).result()
+        self.assertTrue(start, "Could not start Container Manager")
+        r = cm.list()
+        self.assertIsNotNone(r["containers"], "Could not list of ContainerManagers")
         if "containers" in r and len(r["containers"]) > 0:
-            container_id = r['containers'][0]['id']
+            container_id = r["containers"][0]["id"]
             container = cm.get(container_id)
             container.shutdown()
+            runtimes = nb.runtimes.list()[0]["id"]
             start = cm.start(
-                runtime=nb.runtimes.list()[0]['id'],
-            )
+                runtime=runtimes,
+            ).result()
+            self.assertTrue(start, "Could not start Container Manager")
             r = cm.list()
-            container_id = r['containers'][0]['id']
+            self.assertIsNotNone(r["containers"], "Could not list of ContainerManagers")
+            container_id = r["containers"][0]["id"]
             container = cm.get(container_id)
             assert container.properties
-            container.notebooks
+            cn = container.notebooks
             container.shutdown()
+        else:
+            self.fail("Could not start or access initial notebook objects")
 
     def test_snapshots(self):
-        nb = self._gis.notebook_server[0]
+        nb = self.gis.notebook_server[0]
         item = self._item
         assert isinstance(nb, AGOLNotebookManager)
         snapmgr = nb.snaphots
@@ -210,7 +222,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
         snapshot = snapmgr.list(item)[0]
         assert isinstance(snapshot, SnapShot)
 
-        saved_item = listed[0].save_as_item(title='snapshotcopy')
+        saved_item = listed[0].save_as_item(title="snapshotcopy")
         assert saved_item
         assert saved_item.delete()
         assert snapshot.delete()
