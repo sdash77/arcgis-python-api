@@ -11,6 +11,7 @@ from ._adaptors import WebAdaptorManager
 from ._license import LicenseManager
 from typing import List, Dict, Any, Tuple, Optional
 from arcgis.gis.admin import LivingAtlas
+from arcgis.auth import EsriSession
 
 
 class Server(_BaseKube):
@@ -436,6 +437,15 @@ class SystemManager:
 
     # ----------------------------------------------------------------------
     @property
+    def enterprise_functions(self) -> "EnterpriseFunctions":
+        """
+        Returns the manager for working with enterprise functions.
+        """
+        url: str = f"{self._url}/enterprisefunctions"
+        return EnterpriseFunctions(url, gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
     def tasks(self) -> TaskManager:
         """
         This resource returns a list of tasks (CleanGPJobs, BackupRetentionCleaner, CreateBackup) that exist within your deployment.
@@ -541,13 +551,51 @@ class SystemManager:
         return self._sm
 
 
-class EnterpriseFunctions(_BaseKube):
+class EnterpriseFunctions:
     """
     The EnterpriseFunctions resource returns the premium capabilities that
     are enabled for an organization. Currently, administrators can enable
     it if the organization has been licensed to use these premium
     capabilities.
     """
+
+    _url: str | None = None
+    _gis: "GIS" | None = None
+    url: str
+    session: EsriSession
+
+    def __init__(self, url: str, gis: "GIS" = None) -> None:
+        """class initializer"""
+        super()
+        self._gis = gis
+        self.session = gis.session
+        self.url = url
+        self._url = url
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self) -> Dict[str, Any]:
+        """
+        returns the object properties
+        """
+
+        resp = self.session.get(
+            url=self.url,
+            params={
+                "f": "json",
+            },
+        )
+        resp.raise_for_status()
+        self._properties = resp.json()
+        return self._properties
 
     @property
     def enabled_functions(self) -> list[str]:
@@ -560,7 +608,16 @@ class EnterpriseFunctions(_BaseKube):
         return self.properties["enterpriseFunctionsLicensed"]
 
     def disable(self, function: str) -> dict:
-        """disables licensed functionality on a kubernetes deployment"""
+        """
+        Disables licensed functionality on a kubernetes deployment
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        function            Required String. The service function to disable on the kubernetes site.
+        ===============     ====================================================================
+
+        """
 
         if function in self.licensed and not function in self.enabled_functions:
             raise Exception(f"The function {function} is already disabled.")
@@ -573,14 +630,14 @@ class EnterpriseFunctions(_BaseKube):
             "enterpriseFunction": function,
         }
         status_ends = ["COMPLETED", "FAILED", "ERROR"]
-        req = self._gis.session.post(url, data=params)
+        req = self.session.post(url, data=params)
         req.raise_for_status()
         response: dict = req.json()
         if "jobsUrl" in response:
             job_url: str = response.get("jobsUrl")
             if not job_url:
-                raise Exception(job_url)
-            status_response = self._gis.session.get(job_url, params={"f": "json"})
+                raise Exception(response)
+            status_response = self.session.get(job_url, params={"f": "json"})
             i: int = 1
             import time
 
@@ -588,13 +645,22 @@ class EnterpriseFunctions(_BaseKube):
                 time.sleep(i)
                 if i <= 10:
                     i += 1
-                status_response = self._gis.session.get(job_url, params={"f": "json"})
+                status_response = self.session.get(job_url, params={"f": "json"})
             return status_response.json()
         else:
             return response
 
     def enable(self, function: str) -> dict:
-        """Enables the select licensed functionality"""
+        """
+        Enables the select licensed functionality
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        function            Required String. The service function to enable on the kubernetes site.
+        ===============     ====================================================================
+
+        """
         if function in self.licensed and function in self.enabled_functions:
             raise Exception(f"The function {function} is already enabled.")
         elif not function in self.licensed:
@@ -606,14 +672,14 @@ class EnterpriseFunctions(_BaseKube):
             "enterpriseFunction": function,
         }
         status_ends = ["COMPLETED", "FAILED", "ERROR"]
-        req = self._gis.session.post(url, data=params)
+        req = self.session.post(url, data=params)
         req.raise_for_status()
         response: dict = req.json()
         if "jobsUrl" in response:
             job_url: str = response.get("jobsUrl")
             if not job_url:
-                raise Exception(job_url)
-            status_response = self._gis.session.get(job_url, params={"f": "json"})
+                raise Exception(response)
+            status_response = self.session.get(job_url, params={"f": "json"})
             i: int = 1
             import time
 
@@ -621,7 +687,7 @@ class EnterpriseFunctions(_BaseKube):
                 time.sleep(i)
                 if i <= 10:
                     i += 1
-                status_response = self._gis.session.get(job_url, params={"f": "json"})
+                status_response = self.session.get(job_url, params={"f": "json"})
             return status_response.json()
         else:
             return response

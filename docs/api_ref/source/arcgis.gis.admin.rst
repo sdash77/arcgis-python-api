@@ -312,6 +312,13 @@ Container
     :members:
     :undoc-members:
     :show-inheritance:
+
+EnterpriseFunctions
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin._system.EnterpriseFunctions
+    :members:
+    :undoc-members:
+    :show-inheritance:
     
 Indexer
 ^^^^^^^
@@ -320,6 +327,62 @@ Indexer
     :undoc-members:
     :show-inheritance:
 
+KuberenetesNotebook
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks.KuberenetesNotebook
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeNotebookDataAccess
+^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._dataaccess.KubeNotebookDataAccess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeNotebookFile
+^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._dataaccess.KubeNotebookFile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeNotebook
+^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._nbm.KubeNotebook
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeNotebookManager
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._nbm.KubeNotebookManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeRuntime
+^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._nbm.KubeRuntime
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeSnapShot
+^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._snapshot.KubeSnapShot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeSnapshotManager
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._snapshot.KubeSnapshotManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+ 
 Server
 ^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.Server
