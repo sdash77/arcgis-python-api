@@ -539,3 +539,89 @@ class SystemManager:
         if self._sm is None:
             self._sm = ServerManager(url=f"{self._url}/servers", gis=self._gis)
         return self._sm
+
+
+class EnterpriseFunctions(_BaseKube):
+    """
+    The EnterpriseFunctions resource returns the premium capabilities that
+    are enabled for an organization. Currently, administrators can enable
+    it if the organization has been licensed to use these premium
+    capabilities.
+    """
+
+    @property
+    def enabled_functions(self) -> list[str]:
+        """returns a list of enabled functionality on the deployment"""
+        return self.properties["enterpriseFunctionsEnabled"]
+
+    @property
+    def licensed(self) -> list[str]:
+        """returns a list of available licensed functionality"""
+        return self.properties["enterpriseFunctionsLicensed"]
+
+    def disable(self, function: str) -> dict:
+        """disables licensed functionality on a kubernetes deployment"""
+
+        if function in self.licensed and not function in self.enabled_functions:
+            raise Exception(f"The function {function} is already disabled.")
+        elif not function in self.licensed:
+            raise ValueError(f"The value must be {','.join(self.licensed)}")
+
+        url: str = f"{self._url}/remove"
+        params: dict = {
+            "f": "json",
+            "enterpriseFunction": function,
+        }
+        status_ends = ["COMPLETED", "FAILED", "ERROR"]
+        req = self._gis.session.post(url, data=params)
+        req.raise_for_status()
+        response: dict = req.json()
+        if "jobsUrl" in response:
+            job_url: str = response.get("jobsUrl")
+            if not job_url:
+                raise Exception(job_url)
+            status_response = self._gis.session.get(job_url, params={"f": "json"})
+            i: int = 1
+            import time
+
+            while not status_response.json().get("status") in status_ends:
+                time.sleep(i)
+                if i <= 10:
+                    i += 1
+                status_response = self._gis.session.get(job_url, params={"f": "json"})
+            return status_response.json()
+        else:
+            return response
+
+    def enable(self, function: str) -> dict:
+        """Enables the select licensed functionality"""
+        if function in self.licensed and function in self.enabled_functions:
+            raise Exception(f"The function {function} is already enabled.")
+        elif not function in self.licensed:
+            raise ValueError(f"The value must be {','.join(self.licensed)}")
+
+        url: str = f"{self._url}/add"
+        params: dict = {
+            "f": "json",
+            "enterpriseFunction": function,
+        }
+        status_ends = ["COMPLETED", "FAILED", "ERROR"]
+        req = self._gis.session.post(url, data=params)
+        req.raise_for_status()
+        response: dict = req.json()
+        if "jobsUrl" in response:
+            job_url: str = response.get("jobsUrl")
+            if not job_url:
+                raise Exception(job_url)
+            status_response = self._gis.session.get(job_url, params={"f": "json"})
+            i: int = 1
+            import time
+
+            while not status_response.json().get("status") in status_ends:
+                time.sleep(i)
+                if i <= 10:
+                    i += 1
+                status_response = self._gis.session.get(job_url, params={"f": "json"})
+            return status_response.json()
+        else:
+            return response
