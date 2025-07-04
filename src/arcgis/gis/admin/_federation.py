@@ -145,32 +145,33 @@ class Federation(BasePortalAdmin):
         :return: Dictionary indicating 'success' or 'error'
 
         """
-        role_allow = [
+        role_allow = {
             "FEDERATED_SERVER",
             "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
             "HOSTING_SERVER",
-        ]
-        function_allow = [
+        }
+        function_allow = {
             "GeoAnalytics",
             "RasterAnalytics",
             "ImageHosting",
             "NotebookServer",
             "MissionServer",
             "WorkflowManager",
-        ]
+        }
         if role.upper() in role_allow:
             role = role.upper()
         else:
             raise ValueError("Invalid role type")
-        if function and isinstance(function, list):
-            # Ensure all functions in the list are allowed and convert to string list
-            for f in function:
-                if f not in function_allow:
-                    raise ValueError("Invalid function type: {}".format(f))
-            function = [f for f in function if f in function_allow]
-            function = ",".join(function)  # Convert list to a comma-separated string
-        elif function and function not in function_allow:
-            raise ValueError("Invalid function type")
+        if function:
+            if isinstance(function, list):
+                # Remove duplicates and validate all functions
+                function_set = set(function)
+                invalid = function_set - function_allow
+                if invalid:
+                    raise ValueError(f"Invalid function type(s): {', '.join(invalid)}")
+                function = ",".join(sorted(function_set & function_allow))
+            elif function not in function_allow:
+                raise ValueError("Invalid function type")
         params = {
             "f": "json",
             "serverRole": role,
