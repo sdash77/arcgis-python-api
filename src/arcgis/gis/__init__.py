@@ -17228,7 +17228,7 @@ class Item(dict):
             and self._gis._portal.is_arcgisonline
             and fileType.lower() in ["tilepackage", "compacttilepackage"]
         ):
-            from ..mapping._types import MapImageLayer
+            from ..layers import MapImageLayer
             from ..raster._layer import ImageryLayer
 
             if len(ret) > 0 and "success" in ret[0] and ret[0]["success"] is False:
