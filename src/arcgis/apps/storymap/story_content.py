@@ -5459,7 +5459,12 @@ class BriefingSlide:
                 "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double, flexible, titleless-flexible."
             )
 
-        if self._layout in ["double", "titleless-double", "flexible", "titleless-flexible"]:
+        if self._layout in [
+            "double",
+            "titleless-double",
+            "flexible",
+            "titleless-flexible",
+        ]:
             if sublayout and sublayout in SlideSubLayout.__members__.values():
                 self._sublayout: str = sublayout.value
             elif sublayout and sublayout in ["3-7", "7-3", "1-1"]:
@@ -5712,10 +5717,8 @@ class BriefingSlide:
     def sublayout(self, sublayout: str | SlideSubLayout):
         if self.layout in ["flexible", "titleless-flexible"]:
             # TODO: Ability to change sublayout in flexible layout
-            raise Exception(
-                "Changing the sublayout is not supported at this time."
-            )
-        
+            raise Exception("Changing the sublayout is not supported at this time.")
+
         if sublayout not in SlideSubLayout.__members__.values() and not isinstance(
             sublayout, str
         ):
