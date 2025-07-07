@@ -58,6 +58,7 @@ import concurrent.futures
 from cachetools import cached, TTLCache
 
 from arcgis.auth import EsriSession
+from arcgis.gis._impl._con import _is_http_url
 
 
 arcgis_env = LazyLoader("arcgis.env")
@@ -2032,6 +2033,7 @@ class OfflineContentManager(object):
         preserve_ids: bool = False,
         folder: Folder | str = None,
         failure_rollback: bool = False,
+        item_mapping: dict = {},
     ) -> list:
         """
         Reads a `.contentexport` file (see
@@ -2106,6 +2108,7 @@ class OfflineContentManager(object):
         return ip.import_items(
             items=item_ids,
             preserve_ids=preserve_ids,
+            item_mapping=item_mapping,
             folder=folder,
             failure_rollback=failure_rollback,
         )
@@ -4442,8 +4445,17 @@ class UserManager(object):
                     _log.error("Unable to create " + username)
                     return None
                 else:
-                    new_user = self.get(username)
 
+                    new_user = self.get(username)
+                    if thumbnail:
+                        if _is_http_url(thumbnail):
+                            thumbnail = self._gis._con.get(thumbnail)
+                        if os.path.isfile(thumbnail):
+                            ret = new_user.update(thumbnail=thumbnail)
+                            if not ret:
+                                _log.error(
+                                    "Unable to update the thumbnail for  " + username
+                                )
                     if (
                         self.user_settings
                         and "userType" in new_user
@@ -6720,22 +6732,6 @@ class ContentManager(object):
             "f": "json",
         }
         return self._gis._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def dependency_manager(self) -> "DependencyManager":
-        """
-        Provides users the ability to manage the Enterprise's Item Dependencies Database.
-
-        Available in ArcGIS Enterprise 10.9.1+
-
-        :returns: :class:`~arcgis.gis.sharing.DependencyManager` or None for ArcGIS Online.
-        """
-        if self._depmgr is None and self._gis._portal.is_arcgisonline is False:
-            from arcgis.gis.sharing._dependency import DependencyManager
-
-            self._depmgr = DependencyManager(gis=self._gis)
-        return self._depmgr
 
     # ----------------------------------------------------------------------
     @property
@@ -18796,10 +18792,19 @@ class Item(dict):
         def _replace_related_items(item, item_mapping):
             return
 
-        if not force:
-            for k, v in item_mapping.items():
+        # _replace_related_items(self, item_mapping)
+        expanded_dict = copy.deepcopy(item_mapping)
+        for k, v in item_mapping.items():
+            try:
                 orig_item = self._gis.content.get(k)
+            except:
+                orig_item = None
+            try:
                 new_item = self._gis.content.get(v)
+            except:
+                new_item = None
+
+            if not force:
                 if new_item is None:
                     raise ValueError(
                         f"Replacement item with id {v} does not exist in the GIS. Please use the force parameter to bypass this check."
@@ -18813,11 +18818,6 @@ class Item(dict):
                         f"Items with ids {k} and {v} are not of the same type."
                     )
 
-        # _replace_related_items(self, item_mapping)
-        expanded_dict = copy.deepcopy(item_mapping)
-        for k, v in item_mapping.items():
-            orig_item = self._gis.content.get(k)
-            new_item = self._gis.content.get(v)
             if orig_item and new_item:
                 expanded_dict[orig_item.title] = new_item.title
 

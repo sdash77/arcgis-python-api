@@ -26,7 +26,7 @@ dependencies:
 - nbconvert
 - networkx >=3.3, <4
 - numpy >=2.2.0,<3
-- pandas >=2.0.0,<2.3.0
+- pandas >=2.0.0,<2.4.0
 - pillow
 - puremagic >=1.15,<2
 - pyarrow >=16,<20
@@ -56,8 +56,8 @@ dependencies:
 - protobuf
 - pip:
   # ---- sphinx/docs build ----
-  - sphinx >=7,<8
-  - sphinx_rtd_theme>=2,<3
+  - sphinx >=8,<9
+  - sphinx_rtd_theme>=3,<4
   - autodoc_pydantic>=2,<3
   # ---- automated testing ----
   - coverage
