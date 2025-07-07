@@ -115,6 +115,40 @@ class Federation(BasePortalAdmin):
         return False
 
     # ----------------------------------------------------------------------
+    def _build_update_params(self, role, function):
+        role_allow = {
+            "FEDERATED_SERVER",
+            "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
+            "HOSTING_SERVER",
+        }
+        function_allow = {
+            "GeoAnalytics",
+            "RasterAnalytics",
+            "ImageHosting",
+            "NotebookServer",
+            "MissionServer",
+            "WorkflowManager",
+        }
+        role = role.upper()
+        if role not in role_allow:
+            raise ValueError(f"Invalid role type: {role}")
+        if function:
+            if not isinstance(function, list):
+                function = [function]
+            function = set(function)
+            invalid = function - function_allow
+            if invalid:
+                raise ValueError(f"Invalid function type(s): {', '.join(invalid)}")
+            function = ",".join(sorted(function))
+        params = {
+            "f": "json",
+            "serverRole": role,
+        }
+        if function:
+            params["serverFunction"] = function
+        return params
+
+    # ----------------------------------------------------------------------
     def update(
         self, server_id: str, role: str, function: str | list[str] | None = None
     ):
@@ -145,38 +179,7 @@ class Federation(BasePortalAdmin):
         :return: Dictionary indicating 'success' or 'error'
 
         """
-        role_allow = {
-            "FEDERATED_SERVER",
-            "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
-            "HOSTING_SERVER",
-        }
-        function_allow = {
-            "GeoAnalytics",
-            "RasterAnalytics",
-            "ImageHosting",
-            "NotebookServer",
-            "MissionServer",
-            "WorkflowManager",
-        }
-        role = role.upper()
-        if not role in role_allow:
-            raise ValueError(f"Invalid role type: {role}")
-        if function:
-            if not isinstance(function, list):
-                function = [function]
-            # Remove duplicates and validate all functions
-            function = set(function)
-            invalid = function - function_allow
-            if invalid:
-                raise ValueError(f"Invalid function type(s): {', '.join(invalid)}")
-            # convert validated result to comma-separated string
-            function = ",".join(sorted(function))
-        params = {
-            "f": "json",
-            "serverRole": role,
-        }
-        if function:
-            params["serverFunction"] = function
+        params = self._build_update_params(role, function)
         url = "%s/servers/%s/update" % (self._url, server_id)
         return self._con.post(url, params)
 
