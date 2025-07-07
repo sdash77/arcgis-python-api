@@ -482,17 +482,28 @@ class Image:
         """
         Get/Set display for image.
 
-        Values: `small` | `wide` | `full` | `float`
+        Values for Storymap: `small` | `wide` | `full` | `float`
+        Values for Briefings: `fill` | `fit`
         """
-        if self._existing is True:
+        if self._existing is True and isinstance(self._story, story.StoryMap):
             return self._story._properties["nodes"][self.node]["config"].get("size")
+        elif self._existing is True and isinstance(self._story, briefing.Briefing):
+            return (
+                self._story._properties["nodes"][self.node]["config"]
+                .get("placement", {})
+                .get("type")
+            )
 
     # ----------------------------------------------------------------------
     @display.setter
     def display(self, display):
-        if self._existing is True:
+        if self._existing is True and isinstance(self._story, story.StoryMap):
             self._story._properties["nodes"][self.node]["config"]["size"] = display
-            return self.display
+        elif self._existing is True and isinstance(self._story, briefing.Briefing):
+            # For briefings, display is set in placement
+            self._story._properties["nodes"][self.node]["config"]["placement"][
+                "type"
+            ] = display
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -526,11 +537,20 @@ class Image:
                 "caption": "" if caption is None else caption,
                 "alt": "" if alt_text is None else alt_text,
             },
-            "config": {"size": "" if display is None else display},
         }
+        if isinstance(self._story, story.StoryMap):
+            self._story._properties["nodes"][self.node]["config"] = {
+                "size": "" if display is None else display
+            }
+        elif isinstance(self._story, briefing.Briefing):
+            self._story._properties["nodes"][self.node]["config"]["placement"] = {
+                "type": "fit",
+                "fill": {"x": 0.5, "y": 0.5},
+                "fit": {"color": "backgroundColor"},
+            }
 
         # Create resource node. Different if file path or url
-        width, height = self._get_image_dimensions(self._path)
+        width, height = self._get_image_dimensions(self._path) or (400, 300)
         if self._is_url is False:
             # Get image properties and create the resourceId that corresponds to the resource added
             self._story._properties["resources"][self.resource_node] = {
@@ -579,7 +599,11 @@ class Image:
                 # Read the first few bytes to identify the image format
                 header = image_file.read(32)
 
-                if header.startswith(b"\xff\xd8\xff\xe0\x00\x10JFIF"):  # JPEG
+                if header.startswith(
+                    b"\xff\xd8\xff\xe0\x00\x10JFIF"
+                ) or header.startswith(
+                    b"\x00\x00\x00 ftypavif\x00\x00\x00\x00avifmif1miafMA1B"
+                ):  # JPEG
                     # Extract dimensions from the APP0 segment
                     width, height = struct.unpack(">HH", header[7:11])
                     return width, height
