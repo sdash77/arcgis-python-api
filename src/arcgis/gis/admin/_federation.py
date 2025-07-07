@@ -158,10 +158,9 @@ class Federation(BasePortalAdmin):
             "MissionServer",
             "WorkflowManager",
         }
-        if role.upper() in role_allow:
-            role = role.upper()
-        else:
-            raise ValueError("Invalid role type")
+        role = role.upper()
+        if not role in role_allow:
+            raise ValueError(f"Invalid role type: {role}")
         if function:
             if not isinstance(function, list):
                 function = [function]
