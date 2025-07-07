@@ -190,6 +190,60 @@ class TestWorkflowManager(unittest.TestCase):
         finally:
             self.connection.workflow_manager_admin.delete_item(item_two)
 
+    def test_import_item_async_with_mapping_file_returns_successfully(self):
+        # Act
+        item = self.connection.workflow_item
+        item_two = self.connection._gis.content.get(item_id_two)
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                export_item_exec = self.connection.workflow_manager_admin.export_item(
+                    item, include_other_configs=True, run_async=True, save_path=temp_dir, export_mapping=True
+                )
+
+                export_item_exec.result()
+                exported_file = export_item_exec.export_location  # config file
+                mapping_file = export_item_exec.export_mapping_location
+                item_id_two = self.connection.workflow_manager_admin.create_item(
+                    "Testing_Import_Item2_" + str(datetime.datetime.now())
+                )
+            
+                importItemExec = self.connection.workflow_manager_admin.import_item(
+                    item_two, exported_file, run_async=True, overwrite_configuration=False, mapping_file=mapping_file
+                )
+                
+                # Assert
+                self.assertTrue(importItemExec.running(), "Import is not still running")
+                result = importItemExec.result()
+                self.assertIsInstance(result, Notification, "Result is not a Notification")
+                self.assertTrue(importItemExec.done(), "Import is not done")
+        finally:
+            self.connection.workflow_manager_admin.delete_item(item_two)
+
+    def test_import_item_async_with_mapping_file_that_does_not_exist_returns_failure(self):
+        # Act
+        item_two = self.connection._gis.content.get(item_id_two)
+        exception_thrown = False
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                exported_file = 'fake/madeup/path'  # config file
+                mapping_file = 'fake/madeup/path2'
+                item_id_two = self.connection.workflow_manager_admin.create_item(
+                    "Testing_Import_Item2_" + str(datetime.datetime.now())
+                )
+            
+                importItemExec = self.connection.workflow_manager_admin.import_item(
+                    item_two, exported_file, run_async=True, overwrite_configuration=False, mapping_file=mapping_file
+                )
+                
+                # Assert
+                importItemExec.result()
+        except Exception as _:
+            exception_thrown = True
+        finally:
+            self.connection.workflow_manager_admin.delete_item(item_two)
+
+            self.assertTrue(exception_thrown, "No exception was thrown")
+
     # endregion
 
     # region Export Item
