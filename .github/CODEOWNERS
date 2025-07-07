@@ -1,5 +1,6 @@
 *       @achapkowski @jyaistmap
 /src/arcgis    @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
+/src/arcgis/apps @ManushiM @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /src/arcgis/apps/storymap @PraetorianRP @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /src/arcgis/apps/survey123 @Zachary-Sutherby @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /src/arcgis/features @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap @kgalliher
@@ -13,9 +14,10 @@
 /src/arcgis/notebook @xlt208 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /src/arcgis/raster       @rhea-j @kreetichandran @ppoply @vetha-21 @nanaeaubry @nparavicini7 @jtroe @achapkowski @jyaistmap
 /build      @jtroe @cariashuang0417
-/tests      @jtroe @cariashuang0417 @kgalliher
+/tests      @jyaistmap @jtroe @cariashuang0417 @kgalliher
+/tests/integration/apps @ManushiM @jyaistmap @jtroe @cariashuang0417 @kgalliher
 /tests/integration/arcgis_learn @karthikdutt @priyankatuteja @rohitgeo @vikashranjan26 @SurajBaloni
-/tests/integration/gis/notebook_server @xlt208 @jtroe @cariashuang0417 @kgalliher
-/tests/integration/notebook @xlt208 @jtroe @cariashuang0417 @kgalliher
+/tests/integration/gis/notebook_server @xlt208 @jyaistmap @jtroe @cariashuang0417 @kgalliher
+/tests/integration/notebook @xlt208 @jyaistmap @jtroe @cariashuang0417 @kgalliher
 /.github    @jtroe @cariashuang0417
 /.jenkins   @jtroe @cariashuang0417
