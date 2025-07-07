@@ -170,7 +170,7 @@ class Federation(BasePortalAdmin):
             invalid = function - function_allow
             if invalid:
                 raise ValueError(f"Invalid function type(s): {', '.join(invalid)}")
-            # convert validated result to comma-separated string 
+            # convert validated result to comma-separated string
             function = ",".join(sorted(function))
         params = {
             "f": "json",
