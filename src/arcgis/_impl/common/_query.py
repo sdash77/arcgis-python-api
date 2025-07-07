@@ -672,9 +672,13 @@ class Query:
         try:
             encoded_parameters = _encode_params(self.parameters)
             # Perform the initial query
-            result = self.layer._con._session.get(
-                self.url, params=encoded_parameters
-            ).json()
+            url_length: int = len(json.dumps(encoded_parameters) + self.url) + 1
+            session = self.layer._con._session
+            if url_length <= 2000:
+
+                result = session.get(self.url, params=encoded_parameters).json()
+            else:
+                result = session.post(self.url, params=encoded_parameters).json()
             return self._process_query_result(result, raw)
         except Exception as query_exception:
             return self._handle_query_exception(query_exception)
@@ -764,9 +768,16 @@ class Query:
             # len of features is the new offset each time
             self.parameters["resultOffset"] = len(features) + original_offset
             encoded_parameters = _encode_params(self.parameters)
-            result = self.layer._con._session.get(
-                self.url, params=encoded_parameters
-            ).json()
+            url_length: int = len(json.dumps(encoded_parameters) + self.url) + 1
+            if url_length < 2000:
+
+                result = self.layer._con._session.get(
+                    self.url, params=encoded_parameters
+                ).json()
+            else:
+                result = self.layer._con._session.post(
+                    self.url, params=encoded_parameters
+                ).json()
             features += result.get("features", [])
 
         return features
