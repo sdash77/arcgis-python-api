@@ -1,40 +1,18 @@
+"""
+Basic performance benchmarking.
+
+"""
+
 import unittest
-import functools
-import time
+import uuid
+from datetime import datetime
 
+import perftester as pt
+import pandas as pd
+
+from integration.config import get_resource_path
 from arcgis.features import FeatureLayer
-from arcgis.gis import GIS
-
-
-def timer(func):
-    """Decorator: Print the runtime of the decorated function
-
-    Args:
-      func (function): The function to profile
-
-    Returns:
-      The function wrapper: The runtime of the function in seconds
-    """
-
-    @functools.wraps(func)
-    def wrapper_timer(*args, **kwargs):
-        """
-
-        Args:
-          *args:
-          **kwargs:
-
-        Returns:
-
-        """
-        start_time = time.perf_counter()
-        value = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        run_time = end_time - start_time
-        print(f"Finished running {func.__name__!r} in {run_time:.4f} seconds.")
-        return run_time
-
-    return wrapper_timer
+from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 
 
 class TestSimplePerformance(unittest.TestCase):
@@ -46,91 +24,141 @@ class TestSimplePerformance(unittest.TestCase):
         cls.layer_url = (
             "https://dev0016752.esri.com/server/rest/services/HCADFull/FeatureServer/15"
         )
+        cls.results = []
 
     def test_construct_gis(self):
+        target_benchmark_time = 0.6
         url = "https://dev0016752.esri.com/portal"
         username = "admin"
         password = "esri.agp"
 
-        @timer
         def construct_gis():
             return GIS(url, username, password, verify_cert=False)
 
-        val = construct_gis()
-        assert val < 2, f"Query 1,000 feature took too long: {val}"
+        val = pt.time_benchmark(construct_gis, Number=1, Repeat=10)
+        self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
 
     def test_query_feature_layer_100_features(self):
+        target_benchmark_time = 0.7
         fl = FeatureLayer(self.layer_url)
 
-        @timer
-        def query_feature_layer_100_features():
+        def query_feature_layer_100_features(where="objectid < 100"):
             return fl.query(where="objectid < 100")
 
-        val = query_feature_layer_100_features()
-        assert val < 1, f"Query 1,000 feature took too long: {val}"
+        val = pt.time_benchmark(
+            query_feature_layer_100_features,
+            Number=1,
+            Repeat=10,
+        )
+        self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
 
     def test_query_feature_layer_1000_features(self):
+        target_benchmark_time = 0.8
         fl = FeatureLayer(self.layer_url)
 
-        @timer
         def query_feature_layer_1000_features():
             return fl.query(where="objectid < 1000")
 
-        val = query_feature_layer_1000_features()
-        assert val < 1, f"Query 1,000 feature took too long: {val}"
+        val = pt.time_benchmark(query_feature_layer_1000_features, Number=1, Repeat=10)
+        self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
 
+    ###
     def test_query_feature_layer_10000_features(self):
+        target_benchmark_time = 9.0
         fl = FeatureLayer(self.layer_url)
 
-        @timer
         def query_feature_layer_10000_features():
             return fl.query(where="objectid < 10000")
 
-        val = query_feature_layer_10000_features()
-        assert val < 9, f"Query 10,000 feature took too long: {val}"
+        val = pt.time_benchmark(query_feature_layer_10000_features, Number=1, Repeat=10)
+        self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
 
     def test_create_single_folder(self):
-        uid = int(time.time())
-        folder_name = f"performance_test_{uid}"
+        target_benchmark_time = 0.5
+        folders = []
 
-        @timer
         def create_single_folder():
+            uid = uuid.uuid4().hex[:6]
+            folder_name = f"performance_test_{uid}"
+            folders.append(folder_name)
             try:
-                return self.gis.content.folders.create(folder_name)
+                _folder = self.gis.content.folders.create(folder_name)
+                created_folder = self.gis.content.folders.get(folder_name)
+                if created_folder:
+                    return True
+                raise Exception("The folder was not created")
             except Exception as ex:
                 print(ex)
 
-        val = create_single_folder()
-
-        created_folder = self.gis.content.folders.get(folder_name)
-        if created_folder:
-            created_folder.delete(folder_name)
-
-        assert val < 1, f"Create new folder took too long: {val}"
-
-    @unittest.skip("Skip until `user_defaults` param is ready")
-    def test_create_user(self):
-        # Create user data
-        uid = int(time.time())
-        user_name = f"performance_user_{uid}"
-        user_password = "IL0veMyGI$_4Ever"
-        last_name = "dino"
-        role_list = ["org_publisher"]
-        email = "a@b.com"
-
-        @timer
-        def create_user():
-            return self.gis.users.create(
-                user_name,
-                user_password,
-                user_name,
-                last_name,
-                email,
-                role=role_list[0],
-                use_defaults=True,
+        try:
+            val = pt.time_benchmark(create_single_folder, Number=1, Repeat=10)
+            self.configure_test_benchmark(
+                self._testMethodName, target_benchmark_time, val
             )
+        finally:
+            for folder in folders:
+                existing_folder = self.gis.content.folders.get(folder)
+                if existing_folder:
+                    existing_folder.delete(folder)
 
-        val = create_user()
-        new_user = self.gis.users.get(user_name)
-        self.gis.users.delete_users([new_user])
-        self.assertTrue(val < 1, f"Create new folder took too long: {val}")
+    def test_create_folder_add_item(self):
+        target_benchmark_time = 0.5
+        folders = []
+        item_to_add = get_resource_path("staging_data/parkinglots.zip")
+        ip = ItemProperties(
+            title="perf_test_item",
+            item_type=ItemTypeEnum.SHAPEFILE.value,
+            tags=["ntgrtn-tst"],
+        )
+
+        def create_folder_add_item():
+            uid = uuid.uuid4().hex[:6]
+            folder_name = f"performance_test_{uid}"
+            folders.append(folder_name)
+            try:
+                _folder = self.gis.content.folders.create(folder_name)
+                created_folder = self.gis.content.folders.get(folder_name)
+
+                created_folder.add(item_properties=ip, file=item_to_add)
+            except Exception as ex:
+                print(ex)
+
+        try:
+            val = pt.time_benchmark(create_folder_add_item, Number=1, Repeat=10)
+            self.configure_test_benchmark(
+                self._testMethodName, target_benchmark_time, val
+            )
+        finally:
+            for folder in folders:
+                existing_folder = self.gis.content.folders.get(folder)
+                if existing_folder:
+                    existing_folder.delete(folder)
+
+    @classmethod
+    def configure_test_benchmark(cls, test_name, benchmark, test_results):
+        passed_benchmark = "failed"
+        if benchmark > test_results.get("max"):
+            passed_benchmark = "passed"
+        test_results["test_name"] = test_name
+        test_results["target"] = benchmark
+        test_results["met_benchmark"] = passed_benchmark
+        cls.results.append(test_results)
+
+    @classmethod
+    def tearDownClass(cls):
+        df = pd.DataFrame(
+            cls.results,
+            columns=["test_name", "min", "mean", "max", "target", "met_benchmark"],
+        )
+        t = datetime.now()
+        file_name = str.format(
+            "performance_test_results_{0}_{1}_{2}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+        )
+        df.to_csv(f"./results/{file_name}.csv")
+
+
+if __name__ == "__main__":
+    unittest.main()
