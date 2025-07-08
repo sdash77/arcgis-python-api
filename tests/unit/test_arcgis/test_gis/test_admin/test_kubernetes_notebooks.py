@@ -3,7 +3,7 @@ import unittest
 import types
 import sys
 
-from arcgis.gis.kubernetes._admin.notebooks._snapshot import KubeSnapShot, KubeSnapshotManager
+from arcgis.gis.kubernetes._admin.notebooks._snapshot import KubeSnapshot, KubeSnapshotManager
 from arcgis.gis.kubernetes._admin.notebooks._dataaccess import KubeNotebookFile
 
 
@@ -35,7 +35,7 @@ class TestKubernetesNotebooks(unittest.TestCase):
             item.__class__ = sys.modules["arcgis.gis"].Item  # Fakes the type check
             sm = KubeSnapshotManager(url="http://dummy/snapshots", gis=MockGIS())
             props = {"properties": {"name": "snap1"}, "resourceKey": "rk1"}
-            snap = KubeSnapShot(item, sm, props)
+            snap = KubeSnapshot(item, sm, props)
             self.assertEqual(str(snap), "<SnapShot snap1>")
             self.assertEqual(repr(snap), "<SnapShot snap1>")
 

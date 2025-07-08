@@ -369,9 +369,9 @@ KubeRuntime
     :undoc-members:
     :show-inheritance:
 
-KubeSnapShot
+KubeSnapshot
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._snapshot.KubeSnapShot
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._snapshot.KubeSnapshot
     :members:
     :undoc-members:
     :show-inheritance:

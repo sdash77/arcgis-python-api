@@ -3,7 +3,7 @@ from typing import Optional
 from arcgis.gis import Item
 
 
-class KubeSnapShot(object):
+class KubeSnapshot(object):
     """
     A single snapshot instance for a Notebook item.
     """
@@ -18,11 +18,11 @@ class KubeSnapShot(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"< KubeSnapShot {self.properties['properties']['name']}>"
+        return f"< KubeSnapshot {self.properties['properties']['name']}>"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return f"< KubeSnapShot {self.properties['properties']['name']}>"
+        return f"< KubeSnapshot {self.properties['properties']['name']}>"
 
     # ----------------------------------------------------------------------
     def download(self):
@@ -276,7 +276,7 @@ class KubeSnapshotManager(object):
             ):
 
                 return [
-                    KubeSnapShot(item=item, sm=self, properties=snap)
+                    KubeSnapshot(item=item, sm=self, properties=snap)
                     for snap in res["snapshots"]
                 ]
             else:

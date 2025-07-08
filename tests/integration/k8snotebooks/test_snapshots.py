@@ -10,7 +10,7 @@ from arcgis.gis.nb import _snapshot as _entsnapshot
 from arcgis.notebook import list_snapshots, create_snapshot
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
-from arcgis.gis.kubernetes._admin.notebooks._snapshot import  KubeSnapShot
+from arcgis.gis.kubernetes._admin.notebooks._snapshot import  KubeSnapshot
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging()
 
@@ -92,7 +92,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
         if self.gis._is_agol:
             assert isinstance(res, _agosnapshot.SnapShot)
         elif self.gis._is_kubernetes:
-            assert isinstance(res, KubeSnapShot)
+            assert isinstance(res, KubeSnapshot)
         else:
             assert isinstance(res, _entsnapshot.SnapShot)
 
