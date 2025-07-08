@@ -99,6 +99,7 @@ nose2 = "*"
 parameterized = "*"
 requests-mock = "*"
 unittest-xml-reporting = "*"
+perftester = "*"
 
 [feature.daily]
 channels = ["https://esri-forge.python.geocloud.com"]

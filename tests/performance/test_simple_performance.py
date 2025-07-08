@@ -6,6 +6,7 @@ Basic performance benchmarking.
 import unittest
 import uuid
 from datetime import datetime
+import os
 
 import perftester as pt
 import pandas as pd
@@ -14,26 +15,31 @@ from integration.config import get_resource_path
 from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 
+def get_config():
+    return {
+        "portal_url": os.getenv("ARCGIS_TEST_PORTAL_URL", "https://dev0016752.esri.com/portal"),
+        "username": os.getenv("ARCGIS_TEST_PORTAL_USERNAME", "admin"),
+        "password": os.getenv("ARCGIS_TEST_PORTAL_PASSWORD", "esri.agp"),
+        "feature_layer_url": os.getenv("ARCGIS_TEST_PORTAL_FEATURE_LAYER_URL", "https://dev0016752.esri.com/server/rest/services/HCADFull/FeatureServer/15")
+    }
 
 class TestSimplePerformance(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.config = get_config()
         cls.gis = GIS(
-            "https://dev0016752.esri.com/portal", "admin", "esri.agp", verify_cert=False
+            cls.config["portal_url"], cls.config["username"], cls.config["password"], verify_cert=False
         )
         cls.layer_url = (
-            "https://dev0016752.esri.com/server/rest/services/HCADFull/FeatureServer/15"
+            cls.config["feature_layer_url"]
         )
         cls.results = []
 
     def test_construct_gis(self):
         target_benchmark_time = 0.6
-        url = "https://dev0016752.esri.com/portal"
-        username = "admin"
-        password = "esri.agp"
 
         def construct_gis():
-            return GIS(url, username, password, verify_cert=False)
+            return GIS(self.config["portal_url"], self.config["username"], self.config["password"], verify_cert=False)
 
         val = pt.time_benchmark(construct_gis, Number=1, Repeat=10)
         self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
