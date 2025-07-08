@@ -1272,7 +1272,7 @@ class GIS(object):
             notebooks: list[NotebookServer] = []
             res = self.servers
             for server in res["servers"]:
-                if server["serverFunction"].lower() == "notebookserver":
+                if "notebookserver" in server["serverFunction"].lower():
                     try:
                         nbs = NotebookServer(server["adminUrl"] + "/admin", self)
                         nbs.properties
