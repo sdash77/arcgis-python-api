@@ -7,11 +7,11 @@ from arcgis.auth import EsriSession
 from ._dataaccess import KubeNotebookDataAccess
 from ._nbm import KubeNotebookManager
 
-__all__ = ["KuberenetesNotebook"]
+__all__ = ["KubernetesNotebook"]
 
 
 ########################################################################
-class KuberenetesNotebook:
+class KubernetesNotebook:
     """
     Provides access to the notebook functionality on a kubernetes site
     """

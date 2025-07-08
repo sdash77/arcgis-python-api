@@ -327,9 +327,9 @@ Indexer
     :undoc-members:
     :show-inheritance:
 
-KuberenetesNotebook
-^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.gis.kubernetes._admin.notebooks.KuberenetesNotebook
+KubernetesNotebook
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks.KubernetesNotebook
     :members:
     :undoc-members:
     :show-inheritance:

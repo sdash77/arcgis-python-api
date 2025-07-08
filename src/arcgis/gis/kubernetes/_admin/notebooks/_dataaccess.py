@@ -49,12 +49,8 @@ class KubeNotebookFile:
 
         :return: True if the file was renamed, False or an error if it was not.
         """
-        if self._da._gis._is_arcgisonline:
-            url = f"{self._da._url}/move".replace(
-                "/azureblob/", f"/{self._da._username}/"
-            )
-        else:
-            url = f"{self._da._url}/{self._da._username}/notebookworkspace/move"
+
+        url = f"{self._da._url}/{self._da._username}/notebookworkspace/move"
         params = {
             "f": "json",
             "source": self.properties.get("name"),
@@ -72,16 +68,6 @@ class KubeNotebookFile:
         :return: str as file path
         """
         return self._da._download(filename=self.properties["Name"])
-
-    # ---------------------------------------------------------------------
-    @deprecated(deprecated_in="2.4.2", removed_in="2.5.0", current_version="2.4.2")
-    def erase(self) -> bool:
-        """
-        Deletes a file from the system
-
-        :return: Boolean
-        """
-        return self.delete()
 
     # ---------------------------------------------------------------------
     def delete(self) -> bool:
@@ -114,7 +100,7 @@ class KubeNotebookDataAccess:
 
     # --------------------------------------------------------------------
     def __repr__(self):
-        return "< KubeNotebookDataAccess >"
+        return f"KubeNotebookDataAccess(user={self._username})"
 
     # ---------------------------------------------------------------------
     def __str__(self):
@@ -128,10 +114,8 @@ class KubeNotebookDataAccess:
 
         :return: List[KubeNotebookFile] - List of KubeNotebookFile objects
         """
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/notebooksWorkspace"
-        else:
-            url = f"{self._url}/notebookworkspace"
+
+        url = f"{self._url}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
@@ -245,10 +229,8 @@ class KubeNotebookDataAccess:
             "targetFoldername": folder_name,
             "userName": source_username,
         }
-        if self._gis._is_arcgisonline:
-            params["targetUserName"] = target_username
-        else:
-            params["targetUsername"] = target_username
+
+        params["targetUsername"] = target_username
         try:
             res = self._gis.session.post(url, params).json()
         except Exception as ex:
@@ -277,10 +259,8 @@ class KubeNotebookDataAccess:
         ===================  ==========================================================================
 
         """
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/{self._username}/createFolder".replace("/azureblob", "")
-        else:
-            url = f"{self._url}/notebookworkspace/createFolder"
+
+        url = f"{self._url}/notebookworkspace/createFolder"
         params = {
             "f": "json",
             "folderName": folder,
@@ -316,17 +296,9 @@ class KubeNotebookDataAccess:
 
         filename = os.path.basename(file_path)
 
-        if self._gis._is_arcgisonline:
-            existing_files = self.files
-            if any(f.properties.name == filename for f in existing_files):
-                raise ValueError(f"File {filename} already exists in the workspace.")
-
         full_path = f"{folder}/{filename}" if folder else filename
 
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/{self._username}/{full_path}"
-        else:
-            url = f"{self._url}/notebookworkspace/{full_path}"
+        url = f"{self._url}/notebookworkspace/{full_path}"
 
         headers = {
             "Content-Type": "application/octet-stream",
@@ -389,10 +361,8 @@ class KubeNotebookDataAccess:
         """
         downloads a file from the
         """
-        if self._gis._is_arcgisonline:
-            url = f"{self._url}/deleteFile".replace("/azureblob", f"/{self._username}")
-        else:
-            url = f"{self._url}/notebookworkspace/deleteFile"
+
+        url = f"{self._url}/notebookworkspace/deleteFile"
         params = {
             "f": "json",
             "fileName": filename,

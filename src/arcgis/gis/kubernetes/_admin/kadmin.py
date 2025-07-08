@@ -21,7 +21,7 @@ from arcgis.gis.admin._livingatlas import (
 )
 from arcgis.gis.admin._classification import ClassificationManager
 from ._healthcheck import HealthCheckManager
-from .notebooks import KuberenetesNotebook
+from .notebooks import KubernetesNotebook
 
 
 class KubernetesAdmin(_BaseKube):
@@ -64,7 +64,7 @@ class KubernetesAdmin(_BaseKube):
     _collaborations = None
     _classification: ClassificationManager | None = None
     _healthcheck: HealthCheckManager | None = None
-    _knb: KuberenetesNotebook | None = None
+    _knb: KubernetesNotebook | None = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
@@ -78,7 +78,7 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def version(self) -> list[int]:
-        """returns the current version of the kubernete software"""
+        """returns the current version of the kubernetes software"""
         if "fullVersion" in self.properties:
             v = [int(i) for i in self.properties["fullVersion"].split(".")]
         elif "currentVersion" in self.properties:
@@ -112,15 +112,15 @@ class KubernetesAdmin(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def notebooks(self) -> KuberenetesNotebook | None:
+    def notebooks(self) -> KubernetesNotebook | None:
         """
-        Provides access to the :class:`~arcgis.gis.kubernetes._admin.notebooks.KuberenetesNotebook`
+        Provides access to the :class:`~arcgis.gis.kubernetes._admin.notebooks.KubernetesNotebook`
         resource to access information about the notebook operations.
 
         `None` will be returned if the notebook server is not configured or the
         kubernetes site doesn't support notebooks. This is only available at `12.0.0`+
 
-        :return: :class:`~arcgis.gis.kubernetes._admin.notebooks.KuberenetesNotebook` or None
+        :return: :class:`~arcgis.gis.kubernetes._admin.notebooks.KubernetesNotebook` or None
 
         """
         if self.version < [12, 0, 0]:
@@ -128,7 +128,7 @@ class KubernetesAdmin(_BaseKube):
         if self._knb is None:
             url: str = f"{self.url}/notebooks"
             self._gis.properties
-            self._knb = KuberenetesNotebook(url=url, gis=self._gis)
+            self._knb = KubernetesNotebook(url=url, gis=self._gis)
         return self._knb
 
     # ----------------------------------------------------------------------

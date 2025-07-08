@@ -1256,6 +1256,11 @@ class GIS(object):
         with the organization or enterprise.
         :return: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
         """
+
+        if self._is_kubernetes:
+            base_url = "/admin/notebooks"
+        else:
+            base_url = "/admin"
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
             url = urls.get("urls", {}).get("notebooks", {}).get("https", None)

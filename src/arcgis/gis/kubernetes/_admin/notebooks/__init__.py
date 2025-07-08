@@ -1,3 +1,3 @@
-from .api import KuberenetesNotebook
+from .api import KubernetesNotebook
 
-__all__ = ["KuberenetesNotebook"]
+__all__ = ["KubernetesNotebook"]

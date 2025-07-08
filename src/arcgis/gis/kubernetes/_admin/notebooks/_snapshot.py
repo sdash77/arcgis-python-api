@@ -1,4 +1,4 @@
-from collections import namedtuple
+import json
 from typing import Optional
 from arcgis.gis import Item
 
@@ -18,11 +18,11 @@ class KubeSnapShot(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<SnapShot {self.properties['properties']['name']}>"
+        return f"< KubeSnapShot {self.properties['properties']['name']}>"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return f"<SnapShot {self.properties['properties']['name']}>"
+        return f"< KubeSnapShot {self.properties['properties']['name']}>"
 
     # ----------------------------------------------------------------------
     def download(self):
@@ -234,9 +234,13 @@ class KubeSnapshotManager(object):
                 "description": description or "",
                 "privateAccess": access,
             }
-
-            with open(item.get_data(), "r") as reader:
-                params["notebookJSON"] = reader.read()
+            if notebook_json is None:
+                with open(item.get_data(), "r") as reader:
+                    params["notebookJSON"] = reader.read()
+            elif isinstance(notebook_json, dict):
+                params["notebookJSON"] = json.dumps(notebook_json)
+            else:
+                params["notebookJSON"] = notebook_json
 
             url = f"{self._url}/create"
             return self._gis._con.post(url, params)
@@ -270,7 +274,7 @@ class KubeSnapshotManager(object):
                 and res["status"] == "success"
                 and len(res["snapshots"]) > 0
             ):
-                snaptuple = namedtuple("SnapshotInfo", res["snapshots"][0])
+
                 return [
                     KubeSnapShot(item=item, sm=self, properties=snap)
                     for snap in res["snapshots"]

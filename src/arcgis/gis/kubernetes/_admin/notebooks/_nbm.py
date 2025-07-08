@@ -3,7 +3,7 @@ import json
 import time
 from typing import Optional
 from arcgis.gis import GIS, Item
-
+from typing import Iterator
 import concurrent.futures
 from ._snapshot import KubeSnapshotManager
 
@@ -148,7 +148,7 @@ class KubeNotebookManager(object):
 
         The Execute Notebook operation allows administrators and users with
         the `Create and Edit Notebooks` privilege to remotely
-        run a notebook that they own.  The notebook pecified in the operation will
+        run a notebook that they own.  The notebook specified in the operation will
         be run with all cells in order.
 
         Using this operation, you can schedule the execution of a notebook,
