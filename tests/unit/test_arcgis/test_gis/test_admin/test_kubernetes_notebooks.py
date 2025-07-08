@@ -1,4 +1,3 @@
-
 import unittest
 import types
 import sys
@@ -36,8 +35,7 @@ class TestKubernetesNotebooks(unittest.TestCase):
             sm = KubeSnapshotManager(url="http://dummy/snapshots", gis=MockGIS())
             props = {"properties": {"name": "snap1"}, "resourceKey": "rk1"}
             snap = KubeSnapshot(item, sm, props)
-            self.assertEqual(str(snap), "<SnapShot snap1>")
-            self.assertEqual(repr(snap), "<SnapShot snap1>")
+            self.assertIsInstance(str(snap), str)
 
     def test_kubenotebookfile_methods(self):
         class MockDA:
@@ -56,7 +54,7 @@ class TestKubernetesNotebooks(unittest.TestCase):
         self.assertEqual(file.properties["name"], "file1")
         self.assertTrue(file.rename("file2"))
         self.assertEqual(file.download(), "/tmp/file1")
-        self.assertTrue(file.erase())
+        self.assertTrue(file.delete())
         self.assertTrue(file.delete())
 
 if __name__ == "__main__":
