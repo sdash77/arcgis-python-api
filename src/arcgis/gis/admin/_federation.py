@@ -2,8 +2,7 @@
 Updates the Federation Settings to Portal
 """
 
-from typing import Optional
-from .. import GIS
+from arcgis.gis import GIS
 from ._base import BasePortalAdmin
 
 ########################################################################
@@ -115,7 +114,8 @@ class Federation(BasePortalAdmin):
         return False
 
     # ----------------------------------------------------------------------
-    def _build_update_params(self, role, function):
+    @classmethod
+    def _build_update_params(cls, role, function):
         role_allow = {
             "FEDERATED_SERVER",
             "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
@@ -179,7 +179,7 @@ class Federation(BasePortalAdmin):
         :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = self._build_update_params(role, function)
+        params = self.__class__._build_update_params(role, function)
         url = "%s/servers/%s/update" % (self._url, server_id)
         return self._con.post(url, params)
 
