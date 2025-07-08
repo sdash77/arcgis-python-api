@@ -592,7 +592,7 @@ class WorkflowManagerAdmin:
             return ie
         else:
             url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
-            return call_post(url, config_file, data)
+            return call_post(url, files, data)
 
 
 class JobManager:
