@@ -84,6 +84,7 @@ class RMMission:
         :return: A list of products of the mission
         """
         mission_products = {}
+        self._prod_to_id_map = {}
         dataprod_mapping = {
             "orthoDEM": "dem",
             "qualityReport": "report",
@@ -330,14 +331,18 @@ class RMMission:
 
 
         """
-        flight_json_details = {}
-        if isinstance(self, RMMission):
-            mission = self
-            image_collection = self.image_collection
+        image_collection = self.image_collection
 
         from arcgis.raster.analytics import add_image
 
         gis = self._gis
+
+        if context is None:
+            context = {"mission": self.mission_id, "workspace": self.workspace}
+        else:
+            context["mission"] = self.mission_id
+            context["workspace"] = self.workspace
+
         gpjob = add_image(
             image_collection=image_collection,
             input_rasters=input_rasters,
@@ -348,156 +353,6 @@ class RMMission:
             future=True,
         )
 
-        while not gpjob.done():
-            continue
-
-        if gpjob.done():
-            try:
-                gps_data = []
-                gps_info_list = ["name", "lat", "long", "alt", "acq"]
-
-                # if "gps" in raster_type_params:
-                #    for ele in raster_type_params["gps"]:
-                #        dict_gps = dict(zip(gps_info_list, ele))
-                #        gps_data.append(dict_gps)
-                if not gps_data:
-                    try:
-                        lyr = image_collection.layers[0]
-                        gps_info = lyr.query_gps_info()["images"]
-                        for img_info in gps_info:
-                            from arcgis.raster._util import _to_datetime
-
-                            acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
-                            gps = img_info["gps"]
-                            name = img_info["name"]
-                            lat = gps["latitude"]
-                            long = gps["longitude"]
-                            alt = gps["altitude"]
-                            gps_val = [name, lat, long, alt, acq]
-                            dict_gps = dict(zip(gps_info_list, gps_val))
-                            gps_data.append(dict_gps)
-                    except:
-                        if "gps" in raster_type_params:
-                            gps_data = []
-                            for ele in raster_type_params["gps"]:
-                                dict_gps = dict(zip(gps_info_list, ele))
-                                gps_data.append(dict_gps)
-                            mission_json = mission._mission_json
-                            gps_data_existing = mission_json["sourceData"]["gps"]
-                            gps_data = gps_data + gps_data_existing
-                        pass
-
-                from datetime import datetime
-
-                lyr = image_collection.layers[0]
-
-                image_count = lyr.query(return_count_only=True)
-                mission_json = mission._mission_json
-                mission_json["sourceData"]["gps"] = gps_data
-                mission_json["sourceData"]["imageCount"] = image_count
-
-                ## Set extent
-                try:
-                    gcs_extent = {}
-                    extent_arr = image_collection.extent
-                    if extent_arr is not None:
-                        gcs_extent = {
-                            "xmin": extent_arr[0][0],
-                            "ymin": extent_arr[0][1],
-                            "xmax": extent_arr[1][0],
-                            "ymax": extent_arr[1][1],
-                            "spatialReference": {"wkid": 4326},
-                        }
-                except:
-                    gcs_extent = {}
-
-                projected_extent = {}
-                try:
-                    projected_extent = dict(lyr.extent)
-                except:
-                    projected_extent = {}
-
-                mission_json.update(
-                    {"gcsExtent": gcs_extent, "projectedExtent": projected_extent}
-                )
-
-                try:
-                    coverage_area = image_collection.layers[0].query_boundary()["area"]
-                    mission_json.update({"coverage": coverage_area})
-                except:
-                    pass
-
-                try:
-                    import json
-
-                    job_messages = gpjob.messages
-                    rm = mission._project_item.resources
-                    # mission_json = mission._mission_json
-                    resource = mission._resource_info
-                    resource_name = resource["resource"]
-
-                    start_time = (
-                        gpjob._gpjob._start_time.isoformat(timespec="milliseconds")
-                        + "Z"
-                    )
-                    end_time = (
-                        gpjob._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
-                    )
-                    job_id = gpjob._gpjob._jobid
-
-                    mission_json["jobs"].update(
-                        {
-                            "addImages": {
-                                "messages": job_messages,
-                                "checked": True,
-                                "progress": 100,
-                                "success": True,
-                                "startTime": start_time,
-                                "completionTime": end_time,
-                                "jobId": job_id,
-                            }
-                        }
-                    )
-                    resource_props = resource["properties"]
-                    properties = json.loads(resource["properties"])
-
-                    properties.update({"imageCount": image_count})
-
-                    import tempfile, uuid, os
-
-                    fname = resource_name.split("/")[1]
-                    temp_dir = tempfile.gettempdir()
-                    temp_file = os.path.join(temp_dir, fname)
-                    with open(temp_file, "w") as writer:
-                        json.dump(mission_json, writer)
-                    del writer
-
-                    try:
-                        rm.update(
-                            file=temp_file,
-                            text=mission_json,
-                            folder_name="flights",
-                            file_name=fname,
-                            properties=properties,
-                        )
-                    except:
-                        raise RuntimeError("Error updating the mission resource")
-
-                    prj_data = mission._project_item.get_data()
-
-                    project_properties = mission._project_item.properties
-
-                    project_properties["imageCount"] = image_count
-                    mission._project_item.update(
-                        item_properties={"properties": project_properties},
-                        data=json.dumps(prj_data),
-                    )
-
-                    # project_item.update(data=json.dumps(prj_data))
-                except:
-                    raise RuntimeError("Error adding the mission")
-            except:
-                raise RuntimeError("Error updating the mission JSON")
         return image_collection.url
 
     def delete_image(self, where: str):
@@ -516,169 +371,22 @@ class RMMission:
 
         """
 
-        flight_json_details = {}
-        if isinstance(self, RMMission):
-            mission = self
-            image_collection = self.image_collection
+        image_collection = self.image_collection
+
+        from arcgis.raster.analytics import delete_image
 
         gis = self._gis
-        from arcgis.raster.analytics import delete_image
+
+        if context is None:
+            context = {"mission": self.mission_id}
+        else:
+            context["mission"] = self.mission_id
 
         gpjob = delete_image(
             image_collection=image_collection, where=where, gis=gis, future=True
         )
 
-        while not gpjob.done():
-            continue
-
-        if gpjob.done():
-            try:
-                gps_data = []
-                gps_info_list = ["name", "lat", "long", "alt", "acq"]
-                if not gps_data:
-                    try:
-                        lyr = image_collection.layers[0]
-                        gps_info = lyr.query_gps_info()["images"]
-                        for img_info in gps_info:
-                            from arcgis.raster._util import _to_datetime
-
-                            acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
-                            gps = img_info["gps"]
-                            name = img_info["name"]
-                            lat = gps["latitude"]
-                            long = gps["longitude"]
-                            alt = gps["altitude"]
-                            gps_val = [name, lat, long, alt, acq]
-                            dict_gps = dict(zip(gps_info_list, gps_val))
-                            gps_data.append(dict_gps)
-                    except:
-                        gps_data = mission_json["sourceData"]["gps"]
-
-                from datetime import datetime
-
-                lyr = image_collection.layers[0]
-
-                image_count = lyr.query(return_count_only=True)
-                mission_json = mission._mission_json
-                mission_json["sourceData"]["gps"] = gps_data
-                mission_json["sourceData"]["imageCount"] = image_count
-
-                ## Set extent
-                try:
-                    gcs_extent = {}
-                    extent_arr = image_collection.extent
-                    if extent_arr is not None:
-                        gcs_extent = {
-                            "xmin": extent_arr[0][0],
-                            "ymin": extent_arr[0][1],
-                            "xmax": extent_arr[1][0],
-                            "ymax": extent_arr[1][1],
-                            "spatialReference": {"wkid": 4326},
-                        }
-                except:
-                    gcs_extent = {}
-
-                projected_extent = {}
-                try:
-                    projected_extent = dict(lyr.extent)
-                except:
-                    projected_extent = {}
-
-                mission_json.update(
-                    {"gcsExtent": gcs_extent, "projectedExtent": projected_extent}
-                )
-
-                try:
-                    coverage_area = image_collection.layers[0].query_boundary()["area"]
-                    mission_json.update({"coverage": coverage_area})
-                except:
-                    pass
-
-                try:
-                    import json
-
-                    job_messages = gpjob.messages
-                    rm = mission._project_item.resources
-                    # mission_json = mission._mission_json
-                    resource = mission._resource_info
-                    resource_name = resource["resource"]
-
-                    start_time = (
-                        gpjob._gpjob._start_time.isoformat(timespec="milliseconds")
-                        + "Z"
-                    )
-                    end_time = (
-                        gpjob._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
-                    )
-
-                    job_id = gpjob._gpjob._jobid
-                    mission_json["jobs"].update(
-                        {
-                            "deleteImages": {
-                                "messages": job_messages,
-                                "checked": True,
-                                "progress": 100,
-                                "success": True,
-                                "startTime": start_time,
-                                "completionTime": end_time,
-                                "jobId": job_id,
-                            }
-                        }
-                    )
-                    resource_props = resource["properties"]
-                    properties = json.loads(resource["properties"])
-
-                    properties.update({"imageCount": image_count})
-
-                    import tempfile, uuid, os
-
-                    fname = resource_name.split("/")[1]
-                    temp_dir = tempfile.gettempdir()
-                    temp_file = os.path.join(temp_dir, fname)
-                    with open(temp_file, "w") as writer:
-                        json.dump(mission_json, writer)
-                    del writer
-
-                    try:
-                        rm.update(
-                            file=temp_file,
-                            text=mission_json,
-                            folder_name="flights",
-                            file_name=fname,
-                            properties=properties,
-                        )
-                    except:
-                        raise RuntimeError("Error updating the mission resource")
-
-                    prj_data = mission._project_item.get_data()
-
-                    project_properties = mission._project_item.properties
-
-                    project_properties["imageCount"] = image_count
-                    mission._project_item.update(
-                        item_properties={"properties": project_properties},
-                        data=json.dumps(prj_data),
-                    )
-
-                    # project_item.update(data=json.dumps(prj_data))
-                except:
-                    raise RuntimeError("Error adding the mission")
-            except:
-                raise RuntimeError("Error updating the mission JSON")
         return image_collection.url
-
-    def _resource_info(self, name):
-        res_manager = self._project._project_item.resources
-        res_list = res_manager.list()
-        for resource in res_list:
-            full_res_name = resource["resource"]
-            res_name = full_res_name[
-                full_res_name.find("/") + 1 : full_res_name.find(".")
-            ]
-            if name == res_name:
-                return resource
-
-        return {}
 
     def __repr__(self):
         return "<%s - %s>" % (type(self).__name__, self._mission_name)

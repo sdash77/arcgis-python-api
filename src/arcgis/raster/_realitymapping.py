@@ -940,10 +940,6 @@ def generate_orthomosaic(
     if not isinstance(mission, RMMission):
         raise TypeError("The mission parameter must be a RMMission object.")
     
-    products = mission.products
-    if "ortho" in products:
-        out_ortho = products["ortho"]
-
     image_collection = mission.image_collection
 
     if mission.workspace:
@@ -951,6 +947,16 @@ def generate_orthomosaic(
             context["workspace"] = mission.workspace
         else:
             context = {"workspace": mission.workspace}
+
+    products = mission.products
+    if "ortho" in products:
+        out_ortho = products["ortho"]
+        context["dataproduct_id"] = mission._prod_to_id_map["ortho"]
+
+    context["mission"] = mission.mission_id
+    groups = mission._project.groups
+    groups = [group.id for group in groups]
+    context["groups"] = groups
 
     if kwargs is not None:
         if "folder" in kwargs:
@@ -1554,6 +1560,16 @@ def reconstruct_surface(
             context["workspace"] = mission.workspace
         else:
             context = {"workspace": mission.workspace}
+
+    context["mission"] = mission.mission_id
+    groups = mission._project.groups
+    groups = [group.id for group in groups]
+    context["groups"] = groups
+
+    # products = mission.products
+    # prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]
+    # dataproduct_ids = {k: v for k, v in mission._prod_to_id_map.items() if k in prod_types}
+    # context["dataproduct_id"] = dataproduct_ids
 
     if kwargs is not None:
         if "folder" in kwargs:
