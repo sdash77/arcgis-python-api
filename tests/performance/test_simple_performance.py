@@ -167,7 +167,7 @@ class TestSimplePerformance(unittest.TestCase):
         output_filename = f"./performance/results/{file_name}.csv"
         df.to_csv(output_filename)
         print(f"{'='*20}\nPerformance test results saved to {output_filename}:")
-        print(cls.results)
+        print(df[["test_name", "met_benchmark", "mean", "max", "target"]])
 
 
 if __name__ == "__main__":
