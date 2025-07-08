@@ -1,9 +1,11 @@
 from __future__ import annotations
 from typing import Union, Optional, Any, Literal
 from datetime import datetime
+
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from arcgis._impl.common._filters import GeometryFilter, StatisticFilter
 from arcgis._impl.common._utils import _date_handler
+from arcgis.auth import EsriSession
 from arcgis.geometry import Geometry
 import concurrent.futures
 import copy
@@ -667,18 +669,26 @@ class Query:
             url = "%s/query" % self.layer._url.split("?")[0]
         self.url = url
 
+    def _content_length(self, encoded_parameters: dict) -> int:
+        return len(json.dumps(encoded_parameters) + self.url) + 1
+
+    def _send_request(
+        self, session: EsriSession, url: str, encoded_parameters: dict
+    ) -> dict:
+        url_length: int = self._content_length(encoded_parameters)
+        if url_length <= 2000:
+            result = session.get(self.url, params=encoded_parameters).json()
+        else:
+            result = session.post(self.url, params=encoded_parameters).json()
+        return result
+
     def _query(self, raw=False):
         """Returns results of the query for the provided layer and URL."""
         try:
             encoded_parameters = _encode_params(self.parameters)
             # Perform the initial query
-            url_length: int = len(json.dumps(encoded_parameters) + self.url) + 1
             session = self.layer._con._session
-            if url_length <= 2000:
-
-                result = session.get(self.url, params=encoded_parameters).json()
-            else:
-                result = session.post(self.url, params=encoded_parameters).json()
+            result: dict = self._send_request(session, self.url, encoded_parameters)
             return self._process_query_result(result, raw)
         except Exception as query_exception:
             return self._handle_query_exception(query_exception)
@@ -768,16 +778,11 @@ class Query:
             # len of features is the new offset each time
             self.parameters["resultOffset"] = len(features) + original_offset
             encoded_parameters = _encode_params(self.parameters)
-            url_length: int = len(json.dumps(encoded_parameters) + self.url) + 1
-            if url_length < 2000:
-
-                result = self.layer._con._session.get(
-                    self.url, params=encoded_parameters
-                ).json()
-            else:
-                result = self.layer._con._session.post(
-                    self.url, params=encoded_parameters
-                ).json()
+            result: dict = self._send_request(
+                session=self.layer._con._session,
+                url=self.url,
+                encoded_parameters=encoded_parameters,
+            )
             features += result.get("features", [])
 
         return features
@@ -791,9 +796,11 @@ class Query:
         count_params["returnCountOnly"] = True
         count_params["returnAllRecords"] = False  # must be false when above True
         count_params = _encode_params(count_params)
-        count_result = self.layer._con._session.get(
-            self.url, params=count_params
-        ).json()
+        count_result: dict = self._send_request(
+            session=self.layer._con._session,
+            url=self.url,
+            encoded_parameters=count_params,
+        )
         self._cached_record_count = count_result.get("count")
         return self._cached_record_count
 
@@ -815,9 +822,11 @@ class Query:
         # Perform query until all ids are fetched
         while True:
             encoded_params = _encode_params(id_params)
-            result = self.layer._con._session.get(
-                self.url, params=encoded_params
-            ).json()
+            result: dict = self._send_request(
+                session=self.layer._con._session,
+                url=self.url,
+                encoded_parameters=encoded_params,
+            )
             ids.extend(result.get("objectIds", []))
 
             if len(ids) >= total_count:
@@ -844,7 +853,12 @@ class Query:
                 del page_params["resultRecordCount"]
             page_params["objectIds"] = ids_subset
             page_params = _encode_params(page_params)
-            return self.layer._con._session.get(self.url, params=page_params)
+
+            return self._send_request(
+                session=self.layer._con._session,
+                url=self.url,
+                encoded_parameters=page_params,
+            )
 
         # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
