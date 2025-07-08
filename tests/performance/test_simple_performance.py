@@ -20,7 +20,8 @@ def get_config():
         "portal_url": os.getenv("ARCGIS_TEST_PORTAL_URL", "https://dev0016752.esri.com/portal"),
         "username": os.getenv("ARCGIS_TEST_PORTAL_USERNAME", "admin"),
         "password": os.getenv("ARCGIS_TEST_PORTAL_PASSWORD", "esri.agp"),
-        "feature_layer_url": os.getenv("ARCGIS_TEST_PORTAL_FEATURE_LAYER_URL", "https://dev0016752.esri.com/server/rest/services/HCADFull/FeatureServer/15")
+        "feature_layer_url": os.getenv("ARCGIS_TEST_PORTAL_FEATURE_LAYER_URL", "https://dev0016752.esri.com/server/rest/services/HCADFull/FeatureServer/15"),
+        "repetitions": int(os.getenv("ARCGIS_TEST_REPETITIONS", "10")),
     }
 
 class TestSimplePerformance(unittest.TestCase):
@@ -41,7 +42,7 @@ class TestSimplePerformance(unittest.TestCase):
         def construct_gis():
             return GIS(self.config["portal_url"], self.config["username"], self.config["password"], verify_cert=False)
 
-        val = pt.time_benchmark(construct_gis, Number=1, Repeat=10)
+        val = pt.time_benchmark(construct_gis, Number=1, Repeat=self.config["repetitions"])
         self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
 
     def test_query_feature_layer_100_features(self):
@@ -54,7 +55,7 @@ class TestSimplePerformance(unittest.TestCase):
         val = pt.time_benchmark(
             query_feature_layer_100_features,
             Number=1,
-            Repeat=10,
+            Repeat=self.config["repetitions"],
         )
         self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
 
@@ -65,7 +66,7 @@ class TestSimplePerformance(unittest.TestCase):
         def query_feature_layer_1000_features():
             return fl.query(where="objectid < 1000")
 
-        val = pt.time_benchmark(query_feature_layer_1000_features, Number=1, Repeat=10)
+        val = pt.time_benchmark(query_feature_layer_1000_features, Number=1, Repeat=self.config["repetitions"])
         self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
 
     ###
@@ -76,7 +77,7 @@ class TestSimplePerformance(unittest.TestCase):
         def query_feature_layer_10000_features():
             return fl.query(where="objectid < 10000")
 
-        val = pt.time_benchmark(query_feature_layer_10000_features, Number=1, Repeat=10)
+        val = pt.time_benchmark(query_feature_layer_10000_features, Number=1, Repeat=self.config["repetitions"])
         self.configure_test_benchmark(self._testMethodName, target_benchmark_time, val)
 
     def test_create_single_folder(self):
@@ -97,7 +98,7 @@ class TestSimplePerformance(unittest.TestCase):
                 print(ex)
 
         try:
-            val = pt.time_benchmark(create_single_folder, Number=1, Repeat=10)
+            val = pt.time_benchmark(create_single_folder, Number=1, Repeat=self.config["repetitions"])
             self.configure_test_benchmark(
                 self._testMethodName, target_benchmark_time, val
             )
@@ -130,7 +131,7 @@ class TestSimplePerformance(unittest.TestCase):
                 print(ex)
 
         try:
-            val = pt.time_benchmark(create_folder_add_item, Number=1, Repeat=10)
+            val = pt.time_benchmark(create_folder_add_item, Number=1, Repeat=self.config["repetitions"])
             self.configure_test_benchmark(
                 self._testMethodName, target_benchmark_time, val
             )
@@ -163,7 +164,10 @@ class TestSimplePerformance(unittest.TestCase):
             str(t.month),
             str(t.day),
         )
-        df.to_csv(f"./results/{file_name}.csv")
+        output_filename = f"./performance/results/{file_name}.csv"
+        df.to_csv(output_filename)
+        print(f"{'='*20}\nPerformance test results saved to {output_filename}:")
+        print(cls.results)
 
 
 if __name__ == "__main__":
