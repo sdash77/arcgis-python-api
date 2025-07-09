@@ -2,53 +2,16 @@
 # Name:        Workforce Assignments tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import unittest
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 import datetime
+import unittest
+import uuid
 
-# region PreCondition check
-test_skip = False
-class_skip = False
-module_skip = False
-
-r1 = PreconditionChecks.check_API_import()
-r2 = PreconditionChecks.check_Python_version()
-
-if r1 & r2:
-    print("## Precondition checks passed ##")
-    module_skip = False
-else:
-    module_skip = True
-    print("Pre condition checks failed. Quitting tests")
-    raise (exit())
-
-# Import the module after Precondition checks pass
-try:
-    from arcgis.apps.workforce import *
-    from arcgis.apps.workforce._schemas import *
-    from arcgis.apps.workforce.managers import *
-except ImportError:
-    print("API import error. Quitting test")
-    raise (exit())
-# endregion PreCondition Check
-
-# TestModule
-@unittest.skipIf(
-    module_skip, "Precondition check failed. Skipping tests in Workforce Assignments"
-)
-def setUpModule():
-    """
-    Run checks for host system
-    """
-    # Get environment status
-    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
-    print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
-    print("Host OS: " + PreconditionChecks.get_OS())
-
+from arcgis.apps.workforce import *
+from arcgis.apps.workforce.managers import *
 from utils.decorators import integration_test, profiles
 
 
-@profiles.admin_enterprise_and_agol
+@profiles.admin_agol
 @integration_test
 class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
     """
@@ -120,11 +83,15 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         self.project.assignment_types.add(name="Inspection")
 
     def add_dispatcher(self):
-        self.project.dispatchers.add(
-            user_id="ar_workforce_python_api2",
-            contact_number="123-456-7890",
-            name="ar_workforce_python_api2",
+        dispatcher = self.project.dispatchers.search(
+            where="name = 'ar_workforce_python_api'"
         )
+        if not dispatcher:
+            self.project.dispatchers.add(
+                user_id="ar_workforce_python_api",
+                contact_number="123-456-7890",
+                name="ar_workforce_python_api",
+            )
 
     def add_worker(self):
         self.project.workers.add(
@@ -139,13 +106,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.project.assignment_types.search()
         )
         self.project.workers.batch_delete(self.project.workers.search())
-        self.project.dispatchers.batch_delete(
-            self.project.dispatchers.search(
-                where="{} <> '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api"
-                )
-            )
-        )
 
     def setup_project(self):
         self.add_assignment_types()
@@ -162,42 +122,13 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         Check if ArcGIS.com can be reached
         :return:
         """
-        t = datetime.datetime.now()
-        cls.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        cls.project = create_project(cls.time_stamp)
-
-        print("==================================================================")
-        print("Beginning tests in Test_Workforce_AssignmentManager class")
+        project_name = f"Workforce-ntgrtn-tst_{uuid.uuid4().hex[:5]}"
+        cls.project = create_project(project_name)
 
     def setUp(self):
         # reset project for each test
         self.reset_project()
         self.setup_project()
-        print("Test: " + self._testMethodName)
-        self.namePrefix = "dino_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
 
     @classmethod
     def tearDownClass(cls):
@@ -223,13 +154,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.assertEqual(assignment.description, "Updated", "Incorrect description")
             self.assertEqual(assignment.status, "assigned", "Incorrect status")
             self.assertEqual(assignment.worker.id, self.worker.id, "Incorrect worker")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -270,13 +194,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             assignments = self.project.assignments.search()
             self.assertEqual(len(assignments), 1, "Incorrect number of assignments")
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -287,13 +204,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.project.assignments.batch_delete(assignments)
             assignments = self.project.assignments.search()
             self.assertEqual(len(assignments), 0, "Incorrect number of assignments")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -349,13 +259,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
                 assignment.worker.id, self.worker.id, "Incorrect worker id"
             )
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
@@ -401,21 +304,29 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
                 assignment.worker.id, self.worker.id, "Incorrect worker id"
             )
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
 
+@profiles.admin_agol
+@integration_test
 class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
     """
     Test to verify that assignments can be queried and added when there are no assignments in the project
     """
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Check if ArcGIS.com can be reached
+        :return:
+        """
+        project_name = f"Workforce-ntgrtn-tst_{uuid.uuid4().hex[:5]}"
+        cls.project = create_project(project_name)
+
+    def setUp(self):
+        self.reset_project()
+        self.setup_project()
 
     def reset_project(self):
         self.project.assignments.batch_delete(self.project.assignments.search())
@@ -423,20 +334,17 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
             self.project.assignment_types.search()
         )
         self.project.workers.batch_delete(self.project.workers.search())
-        self.project.dispatchers.batch_delete(
-            self.project.dispatchers.search(
-                where="{} <> '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api"
-                )
-            )
-        )
 
     def add_dispatcher(self):
-        return self.project.dispatchers.add(
-            user_id="ar_workforce_python_api2",
-            contact_number="123-456-7890",
-            name="ar_workforce_python_api2",
+        dispatcher = self.project.dispatchers.search(
+            where="name = 'ar_workforce_python_api'"
         )
+        if not dispatcher:
+            return self.project.dispatchers.add(
+                user_id="ar_workforce_python_api",
+                contact_number="123-456-7890",
+                name="ar_workforce_python_api",
+            )
 
     def add_worker(self):
         return self.project.workers.add(
@@ -456,72 +364,12 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
         self.worker = self.project.workers.get(user_id="ar_workforce_python_api2")
         self.dispatcher = self.project.dispatchers.get(object_id=1)
 
-    @classmethod
-    def setUpClass(cls):
-        """
-        Check if ArcGIS.com can be reached
-        :return:
-        """
-        t = datetime.datetime.now()
-        cls.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        cls.project = create_project(cls.time_stamp)
-
-        r1 = PreconditionChecks.can_ping_portal(cls.gis.url)
-        if not r1:
-            cls.class_skip = True
-        print("==================================================================")
-        print("Beginning tests in Test_Workforce_AssignmentManager class")
-
-    def setUp(self):
-        self.reset_project()
-        self.setup_project()
-        print("Test: " + self._testMethodName)
-        self.namePrefix = "dino_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cls.project.delete()
-        except Exception:
-            print("Failed to delete project successfully!")
-        print("\n==================================================================")
-
     def test_get_empty_assignments(self):
         try:
             assignment = self.project.assignments.get(object_id=0)
             self.assertFalse(assignment)  # no assignments
             assignment = self.project.assignments.get(object_id=1)
             self.assertFalse(assignment)  # no assignments
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -551,13 +399,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
             self.assertEqual(downloaded_assignment.geometry["x"], 123)
             self.assertEqual(downloaded_assignment.geometry["y"], 456)
             self.assertEqual(downloaded_assignment.dispatcher.id, self.dispatcher.id)
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -594,13 +435,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
             self.assertEqual(downloaded_assignment.dispatcher.id, self.dispatcher.id)
             self.assertEqual(downloaded_assignment.worker.id, self.worker.id)
             self.assertEqual(downloaded_assignment.assigned_date.date(), now.date())
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -643,9 +477,9 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                 [assignment, assignment2, assignment3]
             )
             # test fetching the new assignment
-            assignments = self.project.assignments.search("3>1")
-            downloaded_assignment1 = assignments[0]
-            downloaded_assignment2 = assignments[1]
+            searched_assignments = self.project.assignments.search("3>1")
+            downloaded_assignment1 = searched_assignments[0]
+            downloaded_assignment2 = searched_assignments[1]
             self.assertIsInstance(downloaded_assignment1, Assignment, "Incorrect Type")
             self.assertEqual(downloaded_assignment1.status, "assigned")
             self.assertEqual(downloaded_assignment1.location, "A location")
@@ -663,13 +497,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
             self.assertEqual(downloaded_assignment1.geometry["x"], 123)
             self.assertEqual(downloaded_assignment1.geometry["y"], 456)
             self.assertEqual(downloaded_assignment2.dispatcher.id, self.dispatcher.id)
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
@@ -788,15 +615,16 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                     declined_date=datetime.datetime.now(),
                 )
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception:
+            print("Failed to delete project successfully!")
+
 
 if __name__ == "__main__":
     unittest.main()

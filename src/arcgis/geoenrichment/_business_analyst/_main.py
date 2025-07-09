@@ -104,9 +104,14 @@ class AOI(object):
         """GIS implementation of enrich_variables property."""
         # if the AOI has an iso3 property, then is a Country, and should be added as part of the request
         iso3 = self.__dict__["iso3"] if hasattr(self, "iso3") else None
+        derivative_variables = (
+            self.__dict__["derivative_variables"]
+            if hasattr(self, "derivative_variables")
+            else False
+        )
 
         # get the enrich variables
-        ev = self._ba._get_enrich_variables_gis(iso3)
+        ev = self._ba._get_enrich_variables_gis(iso3, derivative_variables)
 
         return ev
 
@@ -335,10 +340,13 @@ class Country(AOI):
         iso3: str,
         source: Optional[Union[str, GIS]] = None,
         year: Optional[int] = None,
+        derivative_variables: Optional[bool] = False,
         **kwargs,
     ) -> None:
         # invoke the AOI init method - mostly just sets the _ba property
         super().__init__(source, **kwargs)
+
+        self.derivative_variables = derivative_variables
 
         # set the iso3 property based on the iso3
         self.iso3 = self._ba._standardize_country_str(iso3)
@@ -524,7 +532,19 @@ class Country(AOI):
     def _geography_levels_gis(self):
         """GIS implementation of geography levels."""
         # unpack the geoenrichment url from the properties
-        enrich_url = self.source.properties.helperServices.geoenrichment.url
+
+        enrich_url = self.source.properties.helperServices.geoenrichment["url"]
+        if self.source._is_hosted_nb_home or (
+            hasattr(self._source, "_use_private_url_only")
+            and self._source._use_private_url_only
+        ):
+            res = self.source._private_service_url(enrich_url)
+
+            enrich_url = (
+                res["privateServiceUrl"]
+                if "privateServiceUrl" in res
+                else res["serviceUrl"]
+            )
 
         # construct the url to the standard geography levels
         url = f"{enrich_url}/Geoenrichment/standardgeographylevels"
@@ -732,6 +752,15 @@ class BusinessAnalyst(object):
                     if "privateServiceUrl" in res
                     else res["serviceUrl"]
                 )
+            elif hasattr(in_source, "_use_private_url_only"):
+                res = self._source._private_service_url(self._base_url)
+
+                # if there is a private service url returned in the response, change the url being used to this
+                self._base_url = (
+                    res["privateServiceUrl"]
+                    if "privateServiceUrl" in res
+                    else res["serviceUrl"]
+                )
 
     @lazy_property
     @local_vs_gis
@@ -817,7 +846,10 @@ class BusinessAnalyst(object):
 
         # extract out the geoenrichment url
         ge_url = self.source.properties.helperServices.geoenrichment["url"]
-        if self.source._is_hosted_nb_home:
+        if self.source._is_hosted_nb_home or (
+            hasattr(self._source, "_use_private_url_only")
+            and self._source._use_private_url_only
+        ):
             res = self.source._private_service_url(ge_url)
             ge_url = (
                 res["privateServiceUrl"]
@@ -882,8 +914,12 @@ class BusinessAnalyst(object):
 
         # extract out the geoenrichment url
         ge_url = self.source.properties.helperServices.geoenrichment["url"]
-        if self.source._is_hosted_nb_home:
+        if self.source._is_hosted_nb_home or (
+            hasattr(self._source, "_use_private_url_only")
+            and self._source._use_private_url_only
+        ):
             res = self.source._private_service_url(ge_url)
+
             ge_url = (
                 res["privateServiceUrl"]
                 if "privateServiceUrl" in res
@@ -956,7 +992,12 @@ class BusinessAnalyst(object):
 
         return iso3_str
 
-    def get_country(self, iso3: str, year: Optional[int] = None) -> Country:
+    def get_country(
+        self,
+        iso3: str,
+        year: Optional[int] = None,
+        derivative_variables: Optional[bool] = False,
+    ) -> Country:
         """
         Get a Country object instance.
         =============================       ====================================================================
@@ -967,6 +1008,9 @@ class BusinessAnalyst(object):
         year                                Optional integer explicitly specifying the year to reference.
                                             This is only honored if using local resources and the specified
                                             year is available.
+        -----------------------------       --------------------------------------------------------------------
+        derivative_variables                Optional boolean. Support derivative variables.
+                                            Return a data collection with the additional variables: percent,index,average.
         =============================       ====================================================================
 
         Returns:
@@ -1043,7 +1087,9 @@ class BusinessAnalyst(object):
         iso3 = self._standardize_country_str(iso3)
 
         # create a iso3 object instance
-        cntry = Country(iso3, year=year, enrichment=self)
+        cntry = Country(
+            iso3, year=year, enrichment=self, derivative_variables=derivative_variables
+        )
 
         return cntry
 
@@ -1061,7 +1107,9 @@ class BusinessAnalyst(object):
         return ev
 
     @lru_cache(maxsize=255)
-    def _get_enrich_variables_gis(self, iso3: Optional[str] = None) -> pd.DataFrame:
+    def _get_enrich_variables_gis(
+        self, iso3: Optional[str] = None, derivative_variables: Optional[bool] = False
+    ) -> pd.DataFrame:
         """Provide method to return enrich variables at both the BusinessAnalyst and AOI (Country) levels."""
         # construct the url with the option to simply not explicitly specify a iso3
         url = f"{self._base_url}/Geoenrichment/DataCollections/"
@@ -1069,7 +1117,13 @@ class BusinessAnalyst(object):
             url = f"{url}{iso3}"
 
         # get the data collections from the GIS enrichment REST endpoint
-        res = self.source._con.get(url, params={"f": "json"})
+        if derivative_variables:
+            res = self.source._con.get(
+                url, params={"f": "json", "addDerivativeVariables": "all"}
+            )
+        else:
+            res = self.source._con.get(url, params={"f": "json"})
+
         msg_dc = (
             "Could not retrieve enrichment enrich_variables (DataCollections) from "
             "the GIS instance."
@@ -1082,16 +1136,41 @@ class BusinessAnalyst(object):
         # iterate the data collections
         for col in res["DataCollections"]:
             # create a dataframe of the enrich_variables, keep only needed columns, and add the data collection name
-            coll_df = pd.json_normalize(col["data"])[
-                ["id", "alias", "description", "vintage", "units"]
-            ]
+            if derivative_variables:
+                coll_df = pd.json_normalize(col["data"])[
+                    ["id", "alias", "description", "vintage", "units", "derivative"]
+                ]
+            else:
+                coll_df = pd.json_normalize(col["data"])[
+                    ["id", "alias", "description", "vintage", "units"]
+                ]
             coll_df["data_collection"] = col["dataCollectionID"]
 
             # schema cleanup
             coll_df.rename(columns={"id": "name"}, inplace=True)
-            coll_df = coll_df[
-                ["name", "alias", "data_collection", "description", "vintage", "units"]
-            ]
+            if derivative_variables:
+                coll_df = coll_df[
+                    [
+                        "name",
+                        "alias",
+                        "data_collection",
+                        "description",
+                        "vintage",
+                        "units",
+                        "derivative",
+                    ]
+                ]
+            else:
+                coll_df = coll_df[
+                    [
+                        "name",
+                        "alias",
+                        "data_collection",
+                        "description",
+                        "vintage",
+                        "units",
+                    ]
+                ]
 
             # append the list
             mstr_lst.append(coll_df)
@@ -1181,14 +1260,15 @@ class BusinessAnalyst(object):
         if "country" in kwargs.keys():
             cntry: Country = kwargs["country"]
             iso3 = cntry.iso3
+            derivative_variables = cntry.derivative_variables
             ba = cntry._ba
         else:
-            cntry, iso3 = None, None
+            cntry, iso3, derivative_variables = None, None, False
             ba = self
 
         # based on the source, get the available enrichment variables
         if isinstance(ba.source, GIS):
-            ev = ba._get_enrich_variables_gis(iso3)
+            ev = ba._get_enrich_variables_gis(iso3, derivative_variables)
         else:
             ev = cntry.enrich_variables
 
@@ -2002,7 +2082,7 @@ class BusinessAnalyst(object):
             params["useData"] = json.dumps(use_data)
 
         # get the maximum batch size to ensure is not less than best practices set above
-        svc_lmt_url = f'{self.source.properties.helperServices("geoenrichment").url}/Geoenrichment/ServiceLimits'
+        svc_lmt_url = f"{self._base_url}/Geoenrichment/ServiceLimits"
         svc_lmt_res = self.source._con.get(svc_lmt_url)
 
         max_batch_size = [

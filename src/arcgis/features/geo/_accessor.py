@@ -3,6 +3,7 @@ Holds Delegate and Accessor Logic
 """
 
 from __future__ import annotations
+import json
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -3210,6 +3211,8 @@ class GeoAccessor(object):
                 sr = self.sr
             except Exception:
                 sr = None
+            wkt = None
+            wkid = None
             if sr and "wkid" in sr:
                 wkid = sr["wkid"]
             elif sr and "latestWkid" in sr:
@@ -3239,13 +3242,9 @@ class GeoAccessor(object):
                 elif isinstance(ref, int):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
-                    self._data[self.name].apply(
-                        lambda x: (
-                            x.update({"spatialReference": ref})
-                            if pd.notnull(x)
-                            else None
-                        )
-                    )
+                    mask = self._data[self.name].notna()
+                    for d in self._data.loc[mask, self.name]:
+                        d["spatialReference"] = ref
 
     # ----------------------------------------------------------------------
     def to_featureset(self):
@@ -3338,12 +3337,18 @@ class GeoAccessor(object):
                 fld["domain"] = None
                 fld["defaultValue"] = None
                 fld["nullable"] = True
+        geom_type = str(self._data.spatial._meta.geometry_type).lower()  # handles None
+        data_copy = self._data.copy()
+        sdf_geom_type = data_copy.spatial.geometry_type[0].lower()
         if drawing_info is None:
-            import json
-
-            di = {"renderer": json.loads(self._data.spatial.renderer.json)}
+            if sdf_geom_type == geom_type:
+                di = {"renderer": json.loads(data_copy.spatial.renderer.json)}
+            else:
+                self._data.spatial.renderer = None
+                di = {"renderer": json.loads(self._data.spatial.renderer.json)}
         else:
             di = drawing_info
+
         layer = {
             "layerDefinition": {
                 "currentVersion": 10.7,

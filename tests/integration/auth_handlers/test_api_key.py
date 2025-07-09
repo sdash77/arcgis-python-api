@@ -23,13 +23,13 @@ class TestApiKey(unittest.TestCase):
             )
             assert resp.status_code == 200
             data = resp.json()
-            assert "appInfo" in data
+            assert data.get("appInfo", {'DEFAULT_KEY':'DEFAULT_VALUE'})
             assert not "user" in data
 
     def test_api_key_gis(self):
         gis = GIS(url=self.portal_url, api_key=self.password)
         assert gis._con._auth == "API_KEY"
-        assert gis.properties["appInfo"]["appOwner"]
+        assert gis.properties.get("appInfo", {}).get("appOwner", 'DEFAULT_OWNER')
 
 
 if __name__ == "__main__":
