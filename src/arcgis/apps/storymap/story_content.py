@@ -499,9 +499,14 @@ class Image:
             self._story._properties["nodes"][self.node]["config"]["size"] = display
         elif self._existing is True and isinstance(self._story, _story_mod.Briefing):
             # For briefings, display is set in placement
-            self._story._properties["nodes"][self.node]["config"]["placement"][
-                "type"
-            ] = display
+            if "config" not in self._story._properties["nodes"][self.node]:
+                self._story._properties["nodes"][self.node]["config"] = {
+                    "placement": {"type": display}
+                }
+            else:
+                self._story._properties["nodes"][self.node]["config"]["placement"][
+                    "type"
+                ] = display
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -541,6 +546,10 @@ class Image:
                 "size": "" if display is None else display
             }
         elif isinstance(self._story, _story_mod.Briefing):
+            if "config" not in self._story._properties["nodes"][self.node]:
+                self._story._properties["nodes"][self.node]["config"] = {
+                    "placement": {}
+                }
             self._story._properties["nodes"][self.node]["config"]["placement"] = {
                 "type": "fit",
                 "fill": {"x": 0.5, "y": 0.5},
