@@ -1566,10 +1566,10 @@ def reconstruct_surface(
     groups = [group.id for group in groups]
     context["groups"] = groups
 
-    # products = mission.products
-    # prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]
-    # dataproduct_ids = {k: v for k, v in mission._prod_to_id_map.items() if k in prod_types}
-    # context["dataproduct_id"] = dataproduct_ids
+    products = mission.products
+    prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]
+    dataproduct_ids = {k: v for k, v in mission._prod_to_id_map.items() if k in prod_types}
+    context["dataproduct_id"] = dataproduct_ids
 
     if kwargs is not None:
         if "folder" in kwargs:
