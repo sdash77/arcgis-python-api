@@ -571,7 +571,7 @@ class NotebookDataAccess:
         )
 
     # ---------------------------------------------------------------------
-    def get_folder(self, folder_name: str) -> NotebookFolder:
+    def _get_folder(self, folder_name: str) -> NotebookFolder:
         """
         Returns a specific folder in the workspace directory (/arcgis/home) of the user making the request.
         If you have multiple folders with the same name, this method will return the first one found.
@@ -610,7 +610,7 @@ class NotebookDataAccess:
         return result
 
     # ---------------------------------------------------------------------
-    def get_file(self, file_name: str) -> NotebookFile:
+    def _get_file(self, file_name: str) -> NotebookFile:
         """
         Returns a specific file in the workspace directory (/arcgis/home) of the user making the request.
         If you have multiple files with the same name, this method will return the first one found.
@@ -646,6 +646,28 @@ class NotebookDataAccess:
             ].endswith(file_name):
                 return NotebookFile(f, self)
         return None
+
+    # ---------------------------------------------------------------------
+    def get(self, name: str, is_folder=True) -> NotebookFolder | NotebookFile:
+        """
+        Get a notebook folder or file by name.
+
+        ====================    ==========================================================================
+        **Parameter**           **Description**
+        --------------------    --------------------------------------------------------------------------
+        name                    Required String. The name of the folder or file to retrieve.
+                                If is_folder is True, it retrieves a folder; otherwise, it retrieves a file.
+        ---------------------    --------------------------------------------------------------------------
+        is_folder               Optional Boolean. If True, retrieves a folder; if False, retrieves a file.
+                                Default is True.
+        ====================    ==========================================================================
+
+        :return: NotebookFolder or NotebookFile - The requested folder or file.
+        """
+        if is_folder:
+            return self._get_folder(name)
+        else:
+            return self._get_file(name)
 
     # ---------------------------------------------------------------------
     def _check_user_has_workspace(self, username: str) -> bool:
@@ -914,5 +936,5 @@ class NotebookDataAccess:
 
         :return: List of booleans. True if the file was uploaded, False or an error if it was not.
         """
-        folder = self.get_folder(folder) if folder else self.folders[0]
+        folder = self._get_folder(folder) if folder else self.folders[0]
         return folder.upload(fp)
