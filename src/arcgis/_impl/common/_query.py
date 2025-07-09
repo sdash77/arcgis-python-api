@@ -672,15 +672,13 @@ class Query:
     def _content_length(self, encoded_parameters: dict) -> int:
         return len(json.dumps(encoded_parameters) + self.url) + 1
 
-    def _send_request(
-        self, session: EsriSession, url: str, encoded_parameters: dict
-    ) -> dict:
+    def _send_request(self, session: EsriSession, encoded_parameters: dict) -> dict:
         url_length: int = self._content_length(encoded_parameters)
         if url_length <= 2000:
-            result = session.get(self.url, params=encoded_parameters).json()
+            response = session.get(self.url, params=encoded_parameters)
         else:
-            result = session.post(self.url, params=encoded_parameters).json()
-        return result
+            response = session.post(self.url, params=encoded_parameters)
+        return response.json()
 
     def _query(self, raw=False):
         """Returns results of the query for the provided layer and URL."""
@@ -688,7 +686,7 @@ class Query:
             encoded_parameters = _encode_params(self.parameters)
             # Perform the initial query
             session = self.layer._con._session
-            result: dict = self._send_request(session, self.url, encoded_parameters)
+            result: dict = self._send_request(session, encoded_parameters)
             return self._process_query_result(result, raw)
         except Exception as query_exception:
             return self._handle_query_exception(query_exception)
@@ -780,7 +778,6 @@ class Query:
             encoded_parameters = _encode_params(self.parameters)
             result: dict = self._send_request(
                 session=self.layer._con._session,
-                url=self.url,
                 encoded_parameters=encoded_parameters,
             )
             features += result.get("features", [])
@@ -798,7 +795,6 @@ class Query:
         count_params = _encode_params(count_params)
         count_result: dict = self._send_request(
             session=self.layer._con._session,
-            url=self.url,
             encoded_parameters=count_params,
         )
         self._cached_record_count = count_result.get("count")
@@ -824,7 +820,6 @@ class Query:
             encoded_params = _encode_params(id_params)
             result: dict = self._send_request(
                 session=self.layer._con._session,
-                url=self.url,
                 encoded_parameters=encoded_params,
             )
             ids.extend(result.get("objectIds", []))
@@ -856,7 +851,6 @@ class Query:
 
             return self._send_request(
                 session=self.layer._con._session,
-                url=self.url,
                 encoded_parameters=page_params,
             )
 
@@ -871,7 +865,9 @@ class Query:
 
             # Step 4: Process the results
             for future in concurrent.futures.as_completed(futures):
-                result = future.result().json()
+                result = future.result()
+                if not isinstance(result, dict):
+                    result = result.json()
                 features += result.get("features", [])
         return features
 
