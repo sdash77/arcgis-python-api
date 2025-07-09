@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ._overlay import overlay
 from ._select import select
 from ._ops import contains, crosses

@@ -2,6 +2,7 @@
 Provides functions to gather usage statistics for Portal/ArcGIS Online
 """
 
+from __future__ import annotations
 import os
 import time
 import datetime
