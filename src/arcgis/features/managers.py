@@ -2907,14 +2907,16 @@ class FeatureLayerCollectionManager(_GISResource):
             return False
 
         def create_layer_definition(layer, fs, data=None):
+            layer_id: int = layer.manager.properties["id"]
             return {
+                "id": layer_id,
                 "adminLayerInfo": {
                     "popupInfo": (
                         data.get("popupInfo") if data and "popupInfo" in data else None
                     ),
                     "viewLayerDefinition": {
                         "sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
-                        "sourceLayerId": layer.manager.properties["id"],
+                        "sourceLayerId": layer_id,
                         "sourceLayerFields": "*",
                     },
                 },
@@ -2922,11 +2924,12 @@ class FeatureLayerCollectionManager(_GISResource):
             }
 
         def create_table_definition(table, fs):
+            layer_id: int = table.manager.properties["id"]
             return {
                 "adminLayerInfo": {
                     "viewLayerDefinition": {
                         "sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
-                        "sourceLayerId": table.manager.properties["id"],
+                        "sourceLayerId": layer_id,
                         "sourceLayerFields": "*",
                     },
                 },
