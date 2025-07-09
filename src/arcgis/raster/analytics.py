@@ -4417,6 +4417,7 @@ def add_image(
 def delete_image(
     image_collection: Item,
     where: str,
+    context: Optional[dict] = None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -4465,6 +4466,7 @@ def delete_image(
         where=where,
         future=future,
         estimate=estimate,
+        context=context,
         **kwargs,
     )
 

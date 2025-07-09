@@ -377,13 +377,10 @@ class RMMission:
 
         gis = self._gis
 
-        if context is None:
-            context = {"mission": self.mission_id}
-        else:
-            context["mission"] = self.mission_id
+        context = {"mission": self.mission_id}
 
         gpjob = delete_image(
-            image_collection=image_collection, where=where, gis=gis, future=True
+            image_collection=image_collection, where=where, gis=gis, future=True, context=context
         )
 
         return image_collection.url

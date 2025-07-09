@@ -12101,7 +12101,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def delete_image(
-        self, image_collection, where, future=False, estimate=False, **kwargs
+        self, image_collection, where, future=False, estimate=False, context=None, **kwargs
     ):
         """
         delete_image allows users to remove existing images from the image collection (mosaic dataset).
@@ -12132,6 +12132,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob = self._tbx.delete_image(
             image_collection=image_collection,
             where=where,
+            context=context,
             gis=self._gis,
             future=True,
             estimate=estimate,
