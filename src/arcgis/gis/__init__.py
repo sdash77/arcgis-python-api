@@ -1257,6 +1257,11 @@ class GIS(object):
         with the organization or enterprise.
         :return: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
         """
+
+        if self._is_kubernetes:
+            base_url = "/admin/notebooks"
+        else:
+            base_url = "/admin"
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
             url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
@@ -1265,8 +1270,10 @@ class GIS(object):
 
                 url = f"https://{url[0]}/admin"
                 return [AGOLNotebookManager(url=url, gis=self)]
-        elif self._portal.is_arcgisonline == False and (
-            hasattr(self, "admin") and getattr(self, "admin")
+        elif (
+            self._portal.is_arcgisonline == False
+            and self._is_kubernetes == False
+            and (hasattr(self, "admin") and getattr(self, "admin"))
         ):
             from arcgis.gis.nb import NotebookServer
 
@@ -1275,16 +1282,35 @@ class GIS(object):
             for server in res["servers"]:
                 if "notebookserver" in server["serverFunction"].lower():
                     try:
-                        nbs = NotebookServer(server["adminUrl"] + "/admin", self)
+                        if (
+                            self._use_private_url_only == False
+                            and "adminPublicUrl" in server
+                            and server.get("adminPublicUrl")
+                        ):
+                            url: str = f"{server.get('adminPublicUrl')}{base_url}"
+                        elif "adminUrl" in server and server.get("adminUrl"):
+                            url: str = f"{server.get('adminUrl')}{base_url}"
+                        elif "url" in server and server.get("url"):
+                            url: str = f"{server.get('url')}{base_url}"
+                        else:
+                            raise Exception(
+                                "The server information provided by the system is incorrect, please contact and administrator."
+                            )
+
+                        nbs = NotebookServer(url, self)
                         nbs.properties
                         notebooks.append(nbs)
                     except Exception as ex:
                         _log.warning(ex)
-                        nbs = NotebookServer(server["url"] + "/admin", self)
+                        nbs = NotebookServer(server["url"] + base_url, self)
                         nbs.properties
                         notebooks.append(nbs)
             return notebooks
-
+        elif self._is_kubernetes and self.admin:
+            if getattr(self.admin, "notebooks", None):
+                admin = self.admin
+                admin._gis.properties
+                return [admin.notebooks]
         return []
 
     @property
