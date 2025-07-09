@@ -180,7 +180,7 @@ class Federation(BasePortalAdmin):
         :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = self.__class__._build_update_params(role, function)
+        params = self._build_update_params(role, function)
         url = "%s/servers/%s/update" % (self._url, server_id)
         return self._con.post(url, params)
 
