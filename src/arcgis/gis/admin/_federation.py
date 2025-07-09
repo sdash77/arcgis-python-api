@@ -2,8 +2,7 @@
 Updates the Federation Settings to Portal
 """
 
-from typing import Optional
-from .. import GIS
+from arcgis.gis import GIS
 from ._base import BasePortalAdmin
 
 ########################################################################
@@ -115,7 +114,44 @@ class Federation(BasePortalAdmin):
         return False
 
     # ----------------------------------------------------------------------
-    def update(self, server_id: str, role: str, function: Optional[str] = None):
+    @classmethod
+    def _build_update_params(cls, role, function):
+        role_allow = {
+            "FEDERATED_SERVER",
+            "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
+            "HOSTING_SERVER",
+        }
+        function_allow = {
+            "GeoAnalytics",
+            "RasterAnalytics",
+            "ImageHosting",
+            "NotebookServer",
+            "MissionServer",
+            "WorkflowManager",
+        }
+        role = role.upper()
+        if role not in role_allow:
+            raise ValueError(f"Invalid role type: {role}")
+        if function:
+            if not isinstance(function, list):
+                function = [function]
+            function = set(function)
+            invalid = function - function_allow
+            if invalid:
+                raise ValueError(f"Invalid function type(s): {', '.join(invalid)}")
+            function = ",".join(sorted(function))
+        params = {
+            "f": "json",
+            "serverRole": role,
+        }
+        if function:
+            params["serverFunction"] = function
+        return params
+
+    # ----------------------------------------------------------------------
+    def update(
+        self, server_id: str, role: str, function: str | list[str] | None = None
+    ):
         """
         This operation allows you to set an ArcGIS Server federated with
         Portal for ArcGIS as the hosting server or to enforce fine-grained
@@ -136,38 +172,14 @@ class Federation(BasePortalAdmin):
                                         FEDERATED_SERVER, FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
                                         or HOSTING_SERVER.
         ---------------------------     --------------------------------------------------------------------
-        function                        Optional string. This is the purpose of the ArcGIS Server.
+        function                        Optional string or list of strings. This is the purpose of the ArcGIS Server.
                                         Values are: GeoAnalytics, RasterAnalytics, ImageHosting, NotebookServer, MissionServer, WorkflowManager, or None
         ===========================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
 
         """
-        role_allow = [
-            "FEDERATED_SERVER",
-            "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
-            "HOSTING_SERVER",
-        ]
-        function_allow = [
-            "GeoAnalytics",
-            "RasterAnalytics",
-            "ImageHosting",
-            "NotebookServer",
-            "MissionServer",
-            "WorkflowManager",
-        ]
-        if role.upper() in role_allow:
-            role = role.upper()
-        else:
-            raise ValueError("Invalid role type")
-        if function and function not in function_allow:
-            raise ValueError("Invalid function")
-        params = {
-            "f": "json",
-            "serverRole": role,
-        }
-        if function:
-            params["serverFunction"] = function
+        params = self._build_update_params(role, function)
         url = "%s/servers/%s/update" % (self._url, server_id)
         return self._con.post(url, params)
 

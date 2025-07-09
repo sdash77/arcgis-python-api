@@ -21,6 +21,7 @@ from arcgis.gis.admin._livingatlas import (
 )
 from arcgis.gis.admin._classification import ClassificationManager
 from ._healthcheck import HealthCheckManager
+from .notebooks import KubernetesNotebook
 
 
 class KubernetesAdmin(_BaseKube):
@@ -63,6 +64,7 @@ class KubernetesAdmin(_BaseKube):
     _collaborations = None
     _classification: ClassificationManager | None = None
     _healthcheck: HealthCheckManager | None = None
+    _knb: KubernetesNotebook | None = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
@@ -72,6 +74,21 @@ class KubernetesAdmin(_BaseKube):
         self._gis = gis
         self._con = gis._con
         self._init(gis._con)
+
+    # ----------------------------------------------------------------------
+    @property
+    def version(self) -> list[int]:
+        """returns the current version of the kubernetes software"""
+        if "fullVersion" in self.properties:
+            v = [int(i) for i in self.properties["fullVersion"].split(".")]
+        elif "currentVersion" in self.properties:
+            v = [int(i) for i in self.properties["currentVersion"].split(".")]
+
+        else:
+            v = self._gis.version
+        while len(v) < 3:
+            v.append(0)
+        return v
 
     # ----------------------------------------------------------------------
     def _init(self, connection=None):
@@ -92,6 +109,27 @@ class KubernetesAdmin(_BaseKube):
         except:
             self._json_dict = {}
             self._properties = InsensitiveDict({})
+
+    # ----------------------------------------------------------------------
+    @property
+    def notebooks(self) -> KubernetesNotebook | None:
+        """
+        Provides access to the :class:`~arcgis.gis.kubernetes._admin.notebooks.KubernetesNotebook`
+        resource to access information about the notebook operations.
+
+        `None` will be returned if the notebook server is not configured or the
+        kubernetes site doesn't support notebooks. This is only available at `12.0.0`+
+
+        :return: :class:`~arcgis.gis.kubernetes._admin.notebooks.KubernetesNotebook` or None
+
+        """
+        if self.version < [12, 0, 0]:
+            return None
+        if self._knb is None:
+            url: str = f"{self.url}/notebooks"
+            self._gis.properties
+            self._knb = KubernetesNotebook(url=url, gis=self._gis)
+        return self._knb
 
     # ----------------------------------------------------------------------
     @property
