@@ -11,6 +11,7 @@ import urllib.parse
 from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Callable
+from contextlib import ExitStack
 
 logger = logging.getLogger(__name__)
 
@@ -464,7 +465,7 @@ class WorkflowManagerAdmin:
         config_file,
         passphrase: Optional[str] = None,
         run_async: Optional[bool] = False,
-        overwrite_configuration: Optional[bool] = True,
+        overwrite_configuration: bool = True,
         import_mapping_file: Optional[str] = None
     ) -> bool | ItemExecution:
         """
@@ -490,12 +491,13 @@ class WorkflowManagerAdmin:
         run_async                Optional. A boolean indicating whether to run import item asynchronously. If set to true,
                                  import_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`
         -----------------------  ---------------------------------------------------------
-        overwrite_configuration  Optional. A boolean indicating whether to overwrite the current item's contents. 
+        overwrite_configuration  A boolean indicating whether to overwrite the current item's contents. 
                                  When set to true, the current item must not have existing jobs, and its contents will 
-                                 be deleted and replaced by the contents of the imported configuration file. By 
-                                 default this setting is true.
+                                 be deleted and replaced by the contents of the imported configuration file. When set to False,
+                                 importing merges the source configuration with the current item. By default this setting is true.
         -----------------------  ---------------------------------------------------------
-        import_mapping_file      Optional. The file path to the Workflow Manager mapping file to be used during the import process.
+        import_mapping_file      Optional. Should only be used when run_async is True. The file path to the Workflow Manager
+                                 mapping file to be used during the import process.
         =======================  =========================================================
 
         :return:
@@ -512,8 +514,9 @@ class WorkflowManagerAdmin:
 
             # Path to location of .wmc file from a previous exported item.
             filepath = 'C:\\Users\\exampleUser\\Desktop\\test.wmc'
+            mappingfilepath = 'C:\\Users\\exampleUser\\Desktop\\testmappingfile.json'
 
-            import_execution = workflow_manager_admin.import_item(new_item, filepath, run_async=True)
+            import_execution = workflow_manager_admin.import_item(new_item, filepath, run_async=True, overwrite_configuration=False, import_mapping_file=mappingfilepath)
 
             # result() blocks execution until the asynchronous work is finished and returns the last message received.
             result = export_execution.result()
@@ -532,18 +535,6 @@ class WorkflowManagerAdmin:
                 print(f'{m.message} ')
 
         """
-
-        data = {}
-        files = {
-            "file": (
-                os.path.basename(config_file),
-                open(config_file, "rb"),
-                "application/zip"
-            )
-        }
-        if passphrase is not None:
-            data["passphrase"] = passphrase
-
         def call_post(url, files, data):
             return_obj = self._gis._con.post_multipart(
                 url,
@@ -561,38 +552,56 @@ class WorkflowManagerAdmin:
                 return return_obj["success"]
             return return_obj
 
-        if run_async:
-            # Create a ItemExecution object
-            ie = ItemExecution(item, ExecutionType.IMPORT)
-            # Subscribe to this job
-            nm = NotificationManager(item, self, ie._callback)
+        data = {}
 
-            nm.connect()
+        with ExitStack() as stack:
+            # Set up file handles
+            wmc_fh = stack.enter_context(open(config_file, "rb"))
+            maybe_mapping_fh = stack.enter_context(open(import_mapping_file, "rb")) if import_mapping_file is not None else None
+        
+            files = {
+                "file": (
+                    os.path.basename(config_file),
+                    wmc_fh,
+                    "application/zip"
+                )
+            }
 
-            # Call the actual endpoint
-            url = "{base}/admin/{id}/importAsync".format(base=self._url, id=item.id)
-            try:
-                data["overwriteConfiguration"] = overwrite_configuration
+            if passphrase is not None:
+                data["passphrase"] = passphrase
 
-                if import_mapping_file is not None:
-                    files["mappingFile"] = (
-                        os.path.basename(import_mapping_file),
-                        open(import_mapping_file, "rb"),
-                        "application/json"
-                    )
-                return_obj = call_post(url, files, data)
-                if return_obj is False:
-                    raise Exception("Unexpected error when importing configuration")
-            except:
-                nm.disconnect()
-                raise
+            if run_async:
+                # Create a ItemExecution object
+                ie = ItemExecution(item, ExecutionType.IMPORT)
+                # Subscribe to this job
+                nm = NotificationManager(item, self, ie._callback)
 
-            # If it succeeds, return the JobExecution
-            ie._started()
-            return ie
-        else:
-            url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
-            return call_post(url, files, data)
+                nm.connect()
+
+                # Call the actual endpoint
+                url = "{base}/admin/{id}/importAsync".format(base=self._url, id=item.id)
+                try:
+                    data["overwriteConfiguration"] = overwrite_configuration
+
+                    if maybe_mapping_fh is not None:
+                        files["mappingFile"] = (
+                            os.path.basename(import_mapping_file),
+                            maybe_mapping_fh,
+                            "application/json"
+                        )
+                    return_obj = call_post(url, files, data)
+                    if return_obj is False:
+                        raise Exception("Unexpected error when importing configuration")
+                except:
+                    nm.disconnect()
+                    raise
+
+                # If it succeeds, return the JobExecution
+                ie._started()
+                return ie
+            else:
+                url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+                return call_post(url, files, data)
 
 
 class JobManager:
