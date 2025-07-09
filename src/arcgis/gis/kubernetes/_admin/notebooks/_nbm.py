@@ -1,14 +1,15 @@
 from __future__ import annotations
-import os
+import json
 import time
 from typing import Optional
 from arcgis.gis import GIS, Item
-from arcgis._impl.common._mixins import PropertyMap
+from typing import Iterator
 import concurrent.futures
+from ._snapshot import KubeSnapshotManager
 
 
 ########################################################################
-class NotebookManager(object):
+class KubeNotebookManager(object):
     """
     Provides access to managing a site's notebooks. An object of this
     class can be created using :attr:`~arcgis.gis.nb.NotebookServer.notebooks` property of the
@@ -38,9 +39,9 @@ class NotebookManager(object):
         try:
             params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
-            self._properties = PropertyMap(res)
-        except:
-            self._properties = PropertyMap({})
+            self._properties = res
+        except Exception as ex:
+            raise Exception(str(ex))
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -59,7 +60,7 @@ class NotebookManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def list(self):
+    def list(self) -> list[KubeNotebook]:
         """
         Returns a list of notebook instances on the Notebook Server
 
@@ -67,13 +68,13 @@ class NotebookManager(object):
 
         """
         return [
-            Notebook(url=self._url, item_id=nbs["id"], properties=nbs)
-            for nbs in self.properties.notebooks
+            KubeNotebook(url=self._url, item_id=nbs["id"], properties=nbs)
+            for nbs in self.properties.get("notebooks", [])
         ]
 
     # ----------------------------------------------------------------------
     @property
-    def runtimes(self):
+    def runtimes(self) -> Iterator[KubeRuntime]:
         """
         Returns a list of all runtimes
 
@@ -82,41 +83,21 @@ class NotebookManager(object):
         url = self._url + "/runtimes"
         params = {"f": "json"}
         res = self._con.get(url, params)
-        if "runtimes" in res:
-            return [
-                Runtime(url=url + "/{rid}".format(rid=r["id"]), gis=self._gis)
-                for r in res["runtimes"]
-            ]
-        return []
+        for r in res.get("runtimes", []):
+            yield KubeRuntime(url=url + "/{rid}".format(rid=r["id"]), gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
-    def snapshots(self):
+    def snapshots(self) -> KubeNotebookManager:
         """
         Provides access to managing Notebook's snapshots
 
-        :return: :class:`~arcgis.gis.nb.SnapshotManager`
+        :return: :class:`~arcgis.gis.nb.KubeSnapshotManager`
         """
         if self._snapshot is None:
-            from ._snapshot import SnapshotManager
-
             url = self._url + "/snapshots"
-            self._snapshot = SnapshotManager(url=url, gis=self._gis)
+            self._snapshot = KubeSnapshotManager(url=url, gis=self._gis)
         return self._snapshot
-
-    # ----------------------------------------------------------------------
-    def restore_runtime(self):
-        """
-        This operation restores the two default notebook runtimes in ArcGIS
-        Notebook Server - ArcGIS Notebook Python 3 Standard and ArcGIS
-        Notebook Python 3 Advanced - to their original settings.
-        """
-        url = self._url + "/runtimes/restore"
-        params = {"f": "json"}
-        res = self._con.post(url, params)
-        if "status" in res:
-            return res["status"] == "success"
-        return res
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -300,7 +281,7 @@ class NotebookManager(object):
 
             start_job = self._gis._con.post(url, params)
             if "jobUrl" in start_job:
-                return NotebookManager._future_job(
+                return KubeNotebookManager._future_job(
                     fn=_fn,
                     task_name="Execute Notebook",
                     task_url=start_job["jobUrl"],
@@ -395,7 +376,7 @@ class NotebookManager(object):
         }
         url = self._url + "/openNotebook"
         if future:
-            return NotebookManager._future_job(
+            return KubeNotebookManager._future_job(
                 fn=_fn,
                 task_name="Open Notebook",
                 gis=self._gis,
@@ -415,61 +396,9 @@ class NotebookManager(object):
                 return job_res
             return res
 
-    # ----------------------------------------------------------------------
-    def _add_runtime(
-        self,
-        name,
-        image_id,
-        version="10.7",
-        container_type="docker",
-        image_pull_string="",
-        max_cpu=1.0,
-        max_memory=4.0,
-        max_memory_unit="g",
-        max_swap_memory="",
-        max_swap_unit="g",
-        shared_memory=None,
-        shared_memory_unit="m",
-        docker_runtime="",
-        manifest=None,
-        **kwargs,
-    ):
-        """
-        **WARNING: private method, this will change in future releases**
-
-        Added a new docker image to the notebook server.
-        """
-        url = self._url + "/runtimes/register"
-        params = {
-            "f": "json",
-            "name": name,
-            "version": version,
-            "imageId": image_id,
-            "containerType": container_type,
-            "imagePullString": image_pull_string,
-            "maxCpu": float(max_cpu),
-            "maxMemory": float(max_memory),
-            "maxMemoryUnit": max_memory_unit,
-            "maxSwapMemory": max_swap_memory,
-            "maxSwapMemoryUnit": max_swap_unit,
-            "sharedMemory": shared_memory,
-            "sharedMemoryUnit": shared_memory_unit,
-            "dockerRuntime": docker_runtime,
-            "f": "json",
-        }
-
-        for k, v in kwargs.items():
-            params[k] = v
-        res = self._con.post(
-            url,
-            params,
-            files={"manifestFile": manifest},
-        )
-        return res
-
 
 ########################################################################
-class Runtime(object):
+class KubeRuntime(object):
     """
     Provides information about the properties of a specific notebook runtime in your ArcGIS Notebook Server site
     """
@@ -494,9 +423,9 @@ class Runtime(object):
         try:
             params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
-            self._properties = PropertyMap(res)
-        except:
-            self._properties = PropertyMap({})
+            self._properties = res
+        except Exception as ex:
+            raise Exception(str(ex))
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -578,8 +507,8 @@ class Runtime(object):
             "containerType": container_type,
             "imagePullString": pull_string,
             "requiresAdvancedPrivileges": require_advanced_priv,
-            "maxCpu": max_cpu or float(self.properties.maxCpu),
-            "maxMemory": max_memory or float(self.properties.maxMemory),
+            "maxCpu": max_cpu or float(self.properties.get("maxCpu")),
+            "maxMemory": max_memory or float(self.properties.get("maxMemory")),
             "maxMemoryUnit": memory_unit or "g",
             "maxSwapMemory": max_swap_memory or "",
             "maxSwapMemoryUnit": swap_memory_unit or "g",
@@ -588,7 +517,6 @@ class Runtime(object):
             "dockerRuntime": docker_runtime,
             "f": "json",
         }
-        import json
 
         for k in list(params.keys()):
             if params[k] is None and k in self.properties:
@@ -629,7 +557,7 @@ class Runtime(object):
 
 
 ###########################################################################
-class Notebook(object):
+class KubeNotebook(object):
     """
     This represents an individual notebook resource in the notebook server.
     """
@@ -657,9 +585,9 @@ class Notebook(object):
         try:
             params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
-            self._properties = PropertyMap(res)
-        except:
-            self._properties = PropertyMap({})
+            self._properties = res
+        except Exception as ex:
+            raise Exception(str(ex))
 
     # ----------------------------------------------------------------------
     def __str__(self):
