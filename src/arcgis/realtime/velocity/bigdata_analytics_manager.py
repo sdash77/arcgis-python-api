@@ -1,4 +1,5 @@
-from typing import Optional, Dict, Union, List
+from __future__ import annotations
+from typing import List
 
 from arcgis import GIS
 

@@ -2,6 +2,7 @@
 IO operations for Feature Classes
 """
 
+from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 import io
 import os

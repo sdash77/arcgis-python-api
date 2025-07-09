@@ -1,6 +1,7 @@
 """ Defines store functions for working with assignments.
 """
 
+from __future__ import annotations
 from ... import workforce
 from .dispatchers import query_dispatchers
 from .utils import add_features, remove_features, update_features, validate

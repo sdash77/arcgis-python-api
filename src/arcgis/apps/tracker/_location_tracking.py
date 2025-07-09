@@ -1,3 +1,4 @@
+from __future__ import annotations
 import arcgis
 import datetime as _dt
 from arcgis._impl.common._utils import _lazy_property

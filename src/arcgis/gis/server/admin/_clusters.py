@@ -4,6 +4,7 @@ site. The Create Cluster operation lets you define a new cluster
 configuration.
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 import json

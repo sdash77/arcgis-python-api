@@ -3,6 +3,7 @@ Generates Layer Types from the given inputs.
 
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 import os
 from arcgis.auth.tools import LazyLoader

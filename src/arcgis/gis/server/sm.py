@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 import arcgis
 from arcgis import gis

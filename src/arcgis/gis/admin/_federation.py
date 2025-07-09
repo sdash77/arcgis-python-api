@@ -2,6 +2,7 @@
 Updates the Federation Settings to Portal
 """
 
+from __future__ import annotations
 from arcgis.gis import GIS
 from ._base import BasePortalAdmin
 
