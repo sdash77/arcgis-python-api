@@ -3194,7 +3194,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         params = {
             "f": "json",
-            "updateDefinition": json.dumps(obj=definition, separators=(",", ":")),
+            "updateDefinition": json.dumps(definition),
             "async": json.dumps(future),
         }
         u_url = self._url + "/updateDefinition"

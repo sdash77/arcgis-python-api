@@ -19936,11 +19936,7 @@ class ViewManager:
             assert isinstance(layer, arcgis.features.FeatureLayer)
             if "isView" in lyrdef.layer.properties and lyrdef.layer.properties.isView:
                 results.append(
-                    {
-                        layer._url: layer.container.manager.update_definition(
-                            lyrdef.as_json()
-                        )
-                    }
+                    {layer._url: layer.manager.update_definition(lyrdef.as_json())}
                 )
             else:
                 raise ValueError("The layer is not a view.")
