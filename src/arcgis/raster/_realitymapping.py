@@ -1832,7 +1832,13 @@ class RMProject:
         
         from datetime import datetime
         if image_collection_name:
-            if isinstance(image_collection_name, dict):
+            if isinstance(image_collection_name, str):
+                service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                image_collection_name = {
+                    "service_name": service_name,
+                    "portal_name": image_collection_name,
+                }
+            elif isinstance(image_collection_name, dict):
                 service_name = image_collection_name.get("service_name", None)
                 portal_name = image_collection_name.get("portal_name", None)
                 if not portal_name and not service_name:
