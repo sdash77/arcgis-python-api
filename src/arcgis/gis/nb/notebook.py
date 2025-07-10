@@ -2,6 +2,7 @@
 This is the ArcGIS Notebook Server API Framework
 """
 
+from __future__ import annotations
 import os
 import copy
 import warnings

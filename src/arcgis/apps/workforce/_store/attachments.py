@@ -1,6 +1,7 @@
 """ Defines store functions for working with Attachments.
 """
 
+from __future__ import annotations
 from ... import workforce
 
 

@@ -3,6 +3,8 @@
 cached_property() - computed once per instance, cached as attribute
 """
 
+from __future__ import annotations
+
 __all__ = ("cached_property",)
 
 # Standard Library

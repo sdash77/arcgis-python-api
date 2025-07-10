@@ -23,6 +23,7 @@ are one of the dataset types contained in a :class:`~arcgis.gis.Datastore`.
     as entities with a property sheet or popups.
 """
 
+from __future__ import annotations
 from .feature import Feature, FeatureSet, FeatureCollection
 from .layer import (
     FeatureLayer,

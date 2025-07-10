@@ -2,6 +2,7 @@
 Wrapper for implementing Spatial Indexing for DataFrames
 """
 
+from __future__ import annotations
 from .quadtree import Index as QIndex
 
 try:

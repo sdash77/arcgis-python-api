@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.auth.tools import parse_url
 from arcgis.auth.tools._adapter import EsriTrustStoreAdapter
 from arcgis.gis import GIS
