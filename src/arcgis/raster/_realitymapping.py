@@ -856,10 +856,13 @@ def generate_orthomosaic(
 
                                            The mission must exist.
     -----------------------------------    --------------------------------------------------------------------
-    out_ortho                               Optional. This is the ortho-mosaicked image converted from the image
+    out_ortho                               Optional String or dict. This is the ortho-mosaicked image converted from the image
                                             collection after the block adjustment.
                                             It can be a url, uri, portal item, or string representing the name of output dem
                                             (either existing or to be created.)
+                                            If passed as a dict, the following keys can be set:
+                                            - service_name: The name for the output ortho-mosaicked image service.
+                                            - portal_name: The name for the portal item for this image service.
                                             If this product has already been created, the tool will overwrite it instead.
                                             Like Raster Analysis services, the service can be an existing multi-tenant service URL.
     -----------------------------------    --------------------------------------------------------------------
@@ -1808,6 +1811,7 @@ class RMProject:
     def create_mission(
         self,
         image_list,
+        image_collection_name=None,
         mission_name=None,
         raster_type_name=None,
         raster_type_params=None,
@@ -1822,10 +1826,40 @@ class RMProject:
         gis = arcgis.env.active_gis if gis is None else gis
         project_item = {"itemId": self._project_item.itemid}
 
+        workspace = None
         if mission_name is None:
             mission_name = "mission_" + _id_generator()
+        
         from datetime import datetime
-        image_collection_name = f"{mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        if image_collection_name:
+            if isinstance(image_collection_name, dict):
+                service_name = image_collection_name.get("service_name", None)
+                portal_name = image_collection_name.get("portal_name", None)
+                if not portal_name and not service_name:
+                    raise RuntimeError(
+                        "Please provide either a service_name or portal_name in the image_collection_name dictionary."
+                    )
+                if portal_name and not service_name:
+                    service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    image_collection_name["service_name"] = service_name
+                elif service_name and not portal_name:
+                    portal_name = f"Image Collection for {mission_name}"
+                    image_collection_name["portal_name"] = portal_name
+                if service_name:
+                    ok = gis.content.is_service_name_available(image_collection_name["service_name"], "Image Service")
+                if not ok:
+                    raise RuntimeError(
+                        f"The service name {service_name} is not available. Please choose a different name."
+                    )
+                workspace = service_name
+        else:
+            service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            portal_name = f"Image Collection for {mission_name}"
+            image_collection_name = {
+                "service_name": service_name,
+                "portal_name": portal_name,
+            }
+            workspace = service_name
 
         if raster_type_name is None:
             raster_type_name = "UAV/UAS"
@@ -1848,10 +1882,10 @@ class RMProject:
         if settings is not None:
             mission_def["settings"] = settings
         if context is None:
-            context = {"workspace": image_collection_name}
+            context = {"workspace": workspace}
         else:
             if "workspace" not in context:
-                context["workspace"] = image_collection_name
+                context["workspace"] = workspace
         context["group"] = self.groups[0].id
 
         mission = gis._tools.realitymapping.create_mission(

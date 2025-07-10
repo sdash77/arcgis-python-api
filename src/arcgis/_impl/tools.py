@@ -10144,6 +10144,20 @@ class _RasterAnalysisTools(BaseAnalytics):
         elif isinstance(output_name, Item):
             output_service = output_name
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
+        elif isinstance(output_name, dict):
+            output_service = self._create_output_image_service(
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
+            )
+            output_raster = {
+                "serviceProperties": {
+                    "name": output_name["portal_name"],
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
 
@@ -10239,7 +10253,14 @@ class _RasterAnalysisTools(BaseAnalytics):
         self, output_name, task, folder=None, output_properties=None
     ):
         gis = self._gis
-
+        
+        title = output_name
+        if isinstance(output_name, dict):
+            if "portal_name" in output_name:
+                title = output_name["portal_name"]
+            if "service_name" in output_name:
+                output_name = output_name["service_name"]
+        
         ok = gis.content.is_service_name_available(
             output_name.replace(" ", "_"), "Image Service"
         )
@@ -10275,7 +10296,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             create_params=create_parameters,
             service_type="imageService",
             folder=folder,
-            item_properties={"title": output_name},
+            item_properties={"title": title if title is not None else output_name},
         )
         if output_service is None:
             raise RuntimeError("Unable to create service")
@@ -10560,6 +10581,16 @@ class _RasterAnalysisTools(BaseAnalytics):
                         task=task,
                         output_properties=kwargs,
                     )
+        elif isinstance(image_collection, dict):
+            if "service_name" in image_collection and "portal_name" in image_collection:
+                (
+                    image_collection,
+                    output_service,
+                ) = self._set_output_raster(
+                    output_name=image_collection,
+                    task=task,
+                    output_properties=kwargs,
+                )
 
         if out_sr is not None:
             if isinstance(out_sr, int):
@@ -10772,6 +10803,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             }
         elif isinstance(output_name, Item):
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
+        elif isinstance(output_name, dict):
+            output_raster = {
+                "serviceProperties": {"name": output_name["portal_name"]},
+                "itemProperties": {},
+            }
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
 
