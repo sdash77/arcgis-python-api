@@ -31,7 +31,7 @@ from arcgis._impl._geometry_engine import (
     HAS_PYSHP,
 )
 
-USE_ARCPY = USE_FIONA = USE_GDAL = USE_PYSHP = False
+USE_ARCPY = USE_GDAL = USE_PYSHP = False
 
 if SELECTED_ENGINE == GeometryEngine.SHAPEFILE:
     import shapefile
@@ -42,10 +42,6 @@ elif SELECTED_ENGINE == GeometryEngine.GDAL:
     from osgeo import ogr, osr
 
     USE_GDAL = True
-elif SELECTED_ENGINE == GeometryEngine.FIONA:
-    import fiona
-
-    USE_FIONA = True
 elif SELECTED_ENGINE == GeometryEngine.ARCPY:
     import arcpy
 
@@ -751,13 +747,8 @@ def from_featureclass(filename, **kwargs):
         return _gdal_workflow(filename, **kwargs)
     if USE_PYSHP and filename.lower().endswith(".shp"):
         return _shapefile_workflow(filename)
-    if USE_FIONA and (
-        filename.lower().endswith(".shp")
-        or os.path.dirname(filename).lower().endswith(".gdb")
-    ):
-        return _fiona_workflow(filename)
     raise Exception(
-        "Unsupported data format or missing required libraries. Please ensure you either have arcpy, shapely, fiona, or GDAL installed."
+        "Unsupported data format or missing required libraries. Please ensure you either have arcpy, shapely, or GDAL installed."
     )
 
 
@@ -921,38 +912,6 @@ def _shapefile_workflow(filename):
     sdf.reset_index(inplace=True)
     sdf.spatial._meta.source = filename
     return sdf
-
-
-def _fiona_workflow(filename):
-    from arcgis.geometry import _types
-
-    is_gdb = ".gdb" in os.path.dirname(filename).lower()
-
-    def _create_df(source):
-        geom_mapping = []
-        atts = []
-        cols = list(source.schema["properties"].keys())
-        for _, row in source.items():
-            geom_mapping.append(_types.Geometry(row["geometry"]))
-            atts.append(list(row["properties"].values()))
-        df = pd.DataFrame(data=atts, columns=cols)
-        df.spatial.set_geometry(geom_mapping)
-        df.spatial._meta.source = filename
-        return df
-
-        # file geodatabase workflow
-
-    with fiona.Env():
-        if is_gdb:
-            # file geodatabase workflow
-            fp = os.path.dirname(filename)
-            fn = os.path.basename(filename)
-            with fiona.open(fp, layer=fn) as source:
-                return _create_df(source)
-        else:
-            # shapefile workflow
-            with fiona.open(filename) as source:
-                return _create_df(source)
 
 
 # --------------------------------------------------------------------------
