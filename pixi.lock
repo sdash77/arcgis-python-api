@@ -4546,6 +4546,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/libthrift-0.15.0-h1795dd8_2.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/libtiff-4.7.0-hde9077f_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/libuuid-1.41.5-h5eee18b_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/libuv-1.44.2-h5eee18b_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/libwebp-base-1.3.2-h5eee18b_1.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/libxcb-1.17.0-h9b100fa_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/libxkbcommon-1.9.1-h69220b7_0.tar.bz2
@@ -4577,6 +4578,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/ncurses-6.4-h6a678d5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/nest-asyncio-1.6.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/networkx-3.4.2-py313h06a4308_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/linux-64/nodejs-18.18.2-h2d74bed_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/notebook-shim-0.2.4-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/numexpr-2.10.1-py313h3c60e43_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/numpy-2.2.5-py313h8d96ed3_0.tar.bz2
@@ -4887,6 +4889,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/libssh2-1.11.1-h3a17b82_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/libthrift-0.15.0-h70b4b81_2.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/libtiff-4.7.0-h2dfa3ea_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/libuv-1.44.2-h6c40b1e_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/libwebp-base-1.3.2-h46256e1_1.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/libxml2-2.13.8-h6070cd6_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/libxslt-1.1.41-ha190046_0.tar.bz2
@@ -4912,6 +4915,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/ncurses-6.4-hcec6c5f_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/nest-asyncio-1.6.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/networkx-3.4.2-py313hecd8cb5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-64/nodejs-18.18.2-he8a3799_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/notebook-shim-0.2.4-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/numexpr-2.10.1-py313hc59c7be_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/numpy-2.2.5-py313hea2f92b_0.tar.bz2
@@ -5200,6 +5204,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/libssh2-1.11.1-h3e2b118_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/libthrift-0.15.0-h73c2103_2.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/libtiff-4.7.0-h91aec0a_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/libuv-1.44.2-h80987f9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/libwebp-base-1.3.2-h80987f9_1.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/libxml2-2.13.8-h0b34f26_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/libxslt-1.1.41-hf4d3faa_0.tar.bz2
@@ -5225,6 +5230,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/ncurses-6.4-h313beb8_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/nest-asyncio-1.6.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/networkx-3.4.2-py313hca03da5_0.tar.bz2
+      - conda: https://conda.anaconda.org/main/osx-arm64/nodejs-18.18.2-h62f6fdd_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/notebook-shim-0.2.4-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/numexpr-2.10.1-py313h5d9532f_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/numpy-2.2.5-py313hdcf7240_0.tar.bz2
@@ -5532,6 +5538,7 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/nbformat-5.10.4-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/nest-asyncio-1.6.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/win-64/networkx-3.4.2-py313_1.conda
+      - conda: https://conda.anaconda.org/main/win-64/nodejs-18.18.2-haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/notebook-shim-0.2.4-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/esri/win-64/numexpr-2.10.2-py313_1.conda
       - conda: https://conda.anaconda.org/esri/win-64/numpy-2.2.0-py313_1.conda
@@ -19995,6 +20002,29 @@ packages:
   purls: []
   size: 293576
   timestamp: 1748305181284
+- conda: https://conda.anaconda.org/main/linux-64/libuv-1.44.2-h5eee18b_0.tar.bz2
+  sha256: 45c40b7fe8a2636485dc9bbfec79b7fa454e82866bbda2674a9daa46511a617d
+  md5: 38d0241e44b98801852916b56825115a
+  depends:
+  - libgcc-ng >=11.2.0
+  license: MIT
+  license_family: MIT
+  size: 1012659
+  timestamp: 1677079467117
+- conda: https://conda.anaconda.org/main/osx-64/libuv-1.44.2-h6c40b1e_0.tar.bz2
+  sha256: a27aa8f1a335971c6184da9fef481c6e26002fb9f4996466efcd51d2eed2f5f0
+  md5: 67fd80127242ad9ecbe7ae55c0935623
+  license: MIT
+  license_family: MIT
+  size: 455102
+  timestamp: 1677079541458
+- conda: https://conda.anaconda.org/main/osx-arm64/libuv-1.44.2-h80987f9_0.tar.bz2
+  sha256: d316a14304b2722d149aa24189be25071505efa8bc1a2a9c875b1f168ee06d4d
+  md5: 684a0eae5f758129c0a433868c24c0c2
+  license: MIT
+  license_family: MIT
+  size: 475620
+  timestamp: 1677079532595
 - conda: https://conda.anaconda.org/conda-forge/linux-64/libwebp-base-1.5.0-h851e524_0.conda
   sha256: c45283fd3e90df5f0bd3dbcd31f59cdd2b001d424cf30a07223655413b158eaf
   md5: 63f790534398730f59e1b899c3644d4a
@@ -22643,6 +22673,59 @@ packages:
   purls: []
   size: 26232097
   timestamp: 1737384238153
+- conda: https://conda.anaconda.org/main/linux-64/nodejs-18.18.2-h2d74bed_0.tar.bz2
+  sha256: e95b7186282140749b283f74f90023ade55fd028a37b3999e16ea41b5e9a1cc2
+  md5: b269f93d530bff8dec23e5ddf938dc3a
+  depends:
+  - icu >=73.1,<74.0a0
+  - libgcc-ng >=11.2.0
+  - libstdcxx-ng >=11.2.0
+  - libuv >=1.44.2,<1.45.0a0
+  - openssl >=3.0.12,<4.0a0
+  - zlib >=1.2.13,<1.3.0a0
+  license: MIT
+  license_family: MIT
+  size: 17445294
+  timestamp: 1702977757530
+- conda: https://conda.anaconda.org/main/osx-64/nodejs-18.18.2-he8a3799_0.tar.bz2
+  sha256: fd8ac15f3b8f78226e5a28b982dc0be9caa228dc38198038ee778f245cdc0588
+  md5: 688ec56d8ef9c2d16bbc0d346903245d
+  depends:
+  - icu >=73.1,<74.0a0
+  - libcxx >=14.0.6
+  - libuv >=1.44.2,<1.45.0a0
+  - openssl >=3.0.12,<4.0a0
+  - zlib >=1.2.13,<1.3.0a0
+  constrains:
+  - __osx >=10.14
+  license: MIT
+  license_family: MIT
+  size: 13307369
+  timestamp: 1702975775109
+- conda: https://conda.anaconda.org/main/osx-arm64/nodejs-18.18.2-h62f6fdd_0.tar.bz2
+  sha256: be51cd1ed69cab1348f298092528144723e0f03cd07b8a118d8b273b06022db7
+  md5: afc0686713cab42fb7c1275e924b1059
+  depends:
+  - icu >=73.1,<74.0a0
+  - libcxx >=14.0.6
+  - libuv >=1.44.2,<1.45.0a0
+  - openssl >=3.0.12,<4.0a0
+  - zlib >=1.2.13,<1.3.0a0
+  constrains:
+  - __osx >=10.15
+  license: MIT
+  license_family: MIT
+  size: 12906476
+  timestamp: 1702974863541
+- conda: https://conda.anaconda.org/main/win-64/nodejs-18.18.2-haa95532_0.tar.bz2
+  sha256: d4da849d9625b44f06d5971f6b464702ff9fbdc6e74d2f1ff20a98c5bcc4fc68
+  md5: 78bd3a5c28297923f0e501823e9e2253
+  depends:
+  - icu >=73.1,<74.0a0
+  license: MIT
+  license_family: MIT
+  size: 26952906
+  timestamp: 1702974310487
 - conda: https://conda.anaconda.org/main/osx-arm64/nomkl-3.0-0.tar.bz2
   sha256: 67e794f7bae9f5c698a67258a67bbf36697287e57f79eea3697316c0f3488c13
   md5: 07d0f1932fdc9b9d3b13fb5b0063f6eb
