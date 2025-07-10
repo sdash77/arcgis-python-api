@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis._impl.common._mixins import PropertyMap
 from collections import OrderedDict
 from arcgis.geocoding import geocode

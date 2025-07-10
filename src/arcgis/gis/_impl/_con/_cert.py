@@ -1,3 +1,4 @@
+from __future__ import annotations
 import contextlib
 import OpenSSL.crypto
 import os

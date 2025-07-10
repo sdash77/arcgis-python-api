@@ -18,6 +18,7 @@ def setup_profiles(
     kube_name="your_kubernetes_profile",
     kube_admin_name="your_kubernetes_admin_profile",
     devext_admin_name="your_dev_online_profile",
+    devent_admin_name="your_dev_ent_admin_profile",
     utility_network_name="your_utility_network_profile",
     workflow_manager_name="your_workflow_manager_profile",
     reset=False,
@@ -34,6 +35,7 @@ def setup_profiles(
         kube_name,
         kube_admin_name,
         devext_admin_name,
+        devent_admin_name,
         utility_network_name,
         workflow_manager_name,
     ]
@@ -143,6 +145,18 @@ def setup_profiles(
         )
         print(f"Created profile {devext_admin_name}")
 
+    if not devent_admin_name in updated_list:
+        pm.create(
+            profile=devent_admin_name,
+            url="https://devent.esri.com/gis",
+            username="administrator",
+            password="esri.agp1",
+            key_file=None,
+            cert_file=None,
+            client_id=None,
+        )
+        print(f"Created profile {devent_admin_name}")
+
     if not utility_network_name in updated_list:
         pm.create(
             utility_network_name,
@@ -172,6 +186,7 @@ def setup_profiles(
     print(pm.get(kube_name))
     print(pm.get(kube_admin_name))
     print(pm.get(devext_admin_name))
+    print(pm.get(devent_admin_name))
     print(pm.get(utility_network_name))
     print(pm.get(workflow_manager_name))
     print("------------------")
