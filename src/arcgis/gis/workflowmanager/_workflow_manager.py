@@ -464,7 +464,7 @@ class WorkflowManagerAdmin:
         item,  # TODO TypeHint removed in order to avoid import
         config_file,
         passphrase: Optional[str] = None,
-        run_async: Optional[bool] = False,
+        run_async: bool = False,
         overwrite_configuration: bool = True,
         import_mapping_file: Optional[str] = None
     ) -> bool | ItemExecution:
