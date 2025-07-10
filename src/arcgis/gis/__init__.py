@@ -14401,8 +14401,9 @@ class Item(dict):
                         lyr._fn = rendering_rule
                         lyr._fnra = rendering_rule
                         lyr._rendering_rule_from_item = True
-                    if lyr._mosaic_rule is None:
-                        lyr._mosaic_rule = item_data.get("mosaicRule", None)
+                    mosaic_rule = item_data.get("mosaicRule", None)
+                    if mosaic_rule:
+                        lyr._mosaic_rule = mosaic_rule
                 except Exception:
                     pass
                 layers.append(lyr)
