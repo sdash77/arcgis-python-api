@@ -7,6 +7,8 @@ from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 import warnings
 
+from arcgis.gis._impl._con._puremagic_ext import find_puremagic_ext
+
 
 arcgis = LazyLoader("arcgis")
 _imports = LazyLoader("arcgis._impl.imports")
@@ -498,15 +500,9 @@ class Image:
         if self._existing is True and isinstance(self._story, _story_mod.StoryMap):
             self._story._properties["nodes"][self.node]["config"]["size"] = display
         elif self._existing is True and isinstance(self._story, _story_mod.Briefing):
-            # For briefings, display is set in placement
-            if "config" not in self._story._properties["nodes"][self.node]:
-                self._story._properties["nodes"][self.node]["config"] = {
-                    "placement": {"type": display}
-                }
-            else:
-                self._story._properties["nodes"][self.node]["config"]["placement"][
-                    "type"
-                ] = display
+            self._story._properties["nodes"][self.node].setdefault(
+                "config", {}
+            ).setdefault("placement", {})["type"] = display
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -546,11 +542,9 @@ class Image:
                 "size": "" if display is None else display
             }
         elif isinstance(self._story, _story_mod.Briefing):
-            if "config" not in self._story._properties["nodes"][self.node]:
-                self._story._properties["nodes"][self.node]["config"] = {
-                    "placement": {}
-                }
-            self._story._properties["nodes"][self.node]["config"]["placement"] = {
+            self._story._properties["nodes"][self.node].setdefault("config", {})[
+                "placement"
+            ] = {
                 "type": "fit",
                 "fill": {"x": 0.5, "y": 0.5},
                 "fit": {"color": "backgroundColor"},
