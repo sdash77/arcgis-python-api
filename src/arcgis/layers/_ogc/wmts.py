@@ -1,3 +1,4 @@
+from __future__ import annotations
 import requests
 import uuid
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, ParseResult

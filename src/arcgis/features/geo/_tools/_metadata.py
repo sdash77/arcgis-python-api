@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict

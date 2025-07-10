@@ -2,6 +2,7 @@
 Modifies a local portal's system settings.
 """
 
+from __future__ import annotations
 import json
 import requests
 from typing import Optional, Any

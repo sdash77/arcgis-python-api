@@ -1,6 +1,7 @@
 """ Defines store functions for working with Projects.
 """
 
+from __future__ import annotations
 import arcgis
 from arcgis.gis import Item
 from arcgis.apps import workforce

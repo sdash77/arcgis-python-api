@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import List, Dict, Any
