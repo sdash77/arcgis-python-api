@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 from arcgis.features import FeatureLayer
 from utils.decorators import integration_test, profiles
-from datetime import datetime
+import datetime as _dt
 
 # Use World Countries Feature Layer item: 2ef6f1c2b2e04e68b30c54899d82d123
 ###########################################################################
@@ -21,8 +21,8 @@ class TestQueryAnalytics(unittest.TestCase):
         """Tests the simple query analytics call"""
         url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
         fl = FeatureLayer(url, gis=self.gis)
-        start_time = datetime(2025, 1, 1)
-        end_time = datetime.now()
+        start_time = _dt.datetime(2025, 1, 1)
+        end_time = _dt.datetime.now()
         time_range = [start_time, end_time]
         result = fl.query(where='1=1', time_filter=time_range, as_df=True)
         assert isinstance(result, pd.DataFrame)

@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import Union, Optional, Any, Literal
-from datetime import datetime
+from typing import Any, Literal
+import datetime as _dt
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from arcgis._impl.common._filters import GeometryFilter, StatisticFilter
@@ -75,7 +75,7 @@ class QueryParameters(BaseModel):
         alias="text",
         description="Optional String. A literal search text. If the layer has a display field associated with it, the server searches for this text in this field. Only used when querying a Map Feature Layer.",
     )
-    time_filter: list[datetime] | str | None = Field(
+    time_filter: list[_dt.datetime] | str | None = Field(
         None,
         alias="timeFilter",
         description="""Optional list. The format is of [<startTime>, <endTime>] using
@@ -340,7 +340,7 @@ class QueryParameters(BaseModel):
         alias="resultType",
         description="Optional string. The result_type parameter can be used to control the number of features returned by the query operation.",
     )
-    historic_moment: int | datetime | None = Field(
+    historic_moment: int | _dt.datetime | None = Field(
         None,
         alias="historicMoment",
         description="""Optional integer. The historic moment to query. This parameter
