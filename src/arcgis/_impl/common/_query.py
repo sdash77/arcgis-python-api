@@ -57,7 +57,7 @@ class QueryParameters(BaseModel):
                     COLUMN_NAME BETWEEN LITERAL_VALUE AND LITERAL_VALUE
                     """,
     )
-    out_fields: Optional[Union[str, list[str]]] = Field(
+    out_fields: str | list[str] | None = Field(
         "*",
         alias="outFields",
         description="""Optional list of fields to be included in the returned result set.
@@ -70,12 +70,12 @@ class QueryParameters(BaseModel):
                         as True, do not specify this parameter in order to avoid errors.
                     """,
     )
-    text: Optional[str] = Field(
+    text: str | None = Field(
         None,
         alias="text",
         description="Optional String. A literal search text. If the layer has a display field associated with it, the server searches for this text in this field. Only used when querying a Map Feature Layer.",
     )
-    time_filter: Optional[list[datetime]] = Field(
+    time_filter: list[datetime] | str | None = Field(
         None,
         alias="timeFilter",
         description="""Optional list. The format is of [<startTime>, <endTime>] using
@@ -85,17 +85,17 @@ class QueryParameters(BaseModel):
                             milliseconds.
                     """,
     )
-    geometry_filter: Optional[dict] = Field(
+    geometry_filter: dict | None = Field(
         None,
         alias="geometryFilter",
         description="Optional from :attr:`~arcgis.geometry.filters`. Allows for the information to be filtered on spatial relationship with another geometry.",
     )
-    return_geometry: Optional[bool] = Field(
+    return_geometry: bool | None = Field(
         True,
         alias="returnGeometry",
         description="Optional boolean. If true, geometry is returned with the query.",
     )
-    return_count_only: Optional[bool] = Field(
+    return_count_only: bool | None = Field(
         False,
         alias="returnCountOnly",
         strict=True,
@@ -107,7 +107,7 @@ class QueryParameters(BaseModel):
                     the extent.
                     """,
     )
-    return_ids_only: Optional[bool] = Field(
+    return_ids_only: bool | None = Field(
         False,
         alias="returnIdsOnly",
         description="""Optional boolean. Default is False.  If true, the response only
@@ -116,7 +116,7 @@ class QueryParameters(BaseModel):
                                             true is invalid.
                     """,
     )
-    return_distinct_values: Optional[bool] = Field(
+    return_distinct_values: bool | None = Field(
         False,
         alias="returnDistinctValues",
         description="""Optional boolean.  If true, it returns distinct values based on the
@@ -130,7 +130,7 @@ class QueryParameters(BaseModel):
                         Otherwise, reliable results will not be returned.
                     """,
     )
-    return_extent_only: Optional[bool] = Field(
+    return_extent_only: bool | None = Field(
         False,
         alias="returnExtentOnly",
         description="""Optional boolean. If true, the response only includes the extent of
@@ -141,7 +141,7 @@ class QueryParameters(BaseModel):
                     `supportsReturningQueryExtent` property of the layer is true.
                     """,
     )
-    group_by_fields_for_statistics: Optional[str] = Field(
+    group_by_fields_for_statistics: str | None = Field(
         None,
         alias="groupByFieldsForStatistics",
         description="""Optional string. One or more field names on which the values need to
@@ -163,7 +163,7 @@ class QueryParameters(BaseModel):
                     sf.filter
                     """,
     )
-    result_offset: Optional[int] = Field(
+    result_offset: int | None = Field(
         None,
         alias="resultOffset",
         description="""Optional integer. This option can be used for fetching query results
@@ -172,7 +172,7 @@ class QueryParameters(BaseModel):
                     if return_all_records is True (i.e. by default).
                     """,
     )
-    result_record_count: Optional[int] = Field(
+    result_record_count: int | None = Field(
         None,
         alias="resultRecordCount",
         description="""Optional integer. This option can be used for fetching query results
@@ -183,7 +183,7 @@ class QueryParameters(BaseModel):
                     return_all_records is True (i.e. by default).
                     """,
     )
-    object_ids: Optional[Union[list[str], str]] = Field(
+    object_ids: list[str] | str | None = Field(
         None,
         alias="objectIds",
         description="""Optional string. The object IDs of this layer or table to be queried.
@@ -195,7 +195,7 @@ class QueryParameters(BaseModel):
                         1,000 object_ids are specified.
                     """,
     )
-    distance: Optional[int] = Field(
+    distance: int | None = Field(
         None,
         alias="distance",
         description="""Optional integer. The buffer distance for the input geometries.
@@ -204,7 +204,7 @@ class QueryParameters(BaseModel):
                     meters, and all points within 100 meters of the point are returned.
                     """,
     )
-    units: Optional[
+    units: (
         Literal[
             "esriSRUnit_Meter",
             "esriSRUnit_StatuteMile",
@@ -213,7 +213,8 @@ class QueryParameters(BaseModel):
             "esriSRUnit_NauticalMile",
             "esriSRUnit_USNauticalMile",
         ]
-    ] = Field(
+        | None
+    ) = Field(
         None,
         alias="units",
         description="""Optional string. The unit for calculating the buffer distance. If
@@ -223,7 +224,7 @@ class QueryParameters(BaseModel):
                     This parameter only applies if `supportsQueryWithDistance` is true.
                     """,
     )
-    max_allowable_offset: Optional[int] = Field(
+    max_allowable_offset: int | None = Field(
         None,
         alias="maxAllowableOffset",
         description="""Optional float. This option can be used to specify the
@@ -234,12 +235,12 @@ class QueryParameters(BaseModel):
                     spatial reference of the layer.
                     """,
     )
-    out_sr: Optional[Union[dict[str, Any], str, int]] = Field(
+    out_sr: dict[str, Any] | str | int | None = Field(
         None,
         alias="outSR",
         description="Optional Integer. The WKID for the spatial reference of the returned geometry.",
     )
-    geometry_precision: Optional[int] = Field(
+    geometry_precision: int | None = Field(
         None,
         alias="geometryPrecision",
         description="""Optional Integer. This option can be used to specify the number of
@@ -248,7 +249,7 @@ class QueryParameters(BaseModel):
                     This applies to X and Y values only (not m or z-values).
                     """,
     )
-    gdb_version: Optional[str] = Field(
+    gdb_version: str | None = Field(
         None,
         alias="gdbVersion",
         description="""Optional string. The geodatabase version to query. This parameter
@@ -257,7 +258,7 @@ class QueryParameters(BaseModel):
                     map's version.
                     """,
     )
-    order_by_fields: Optional[str] = Field(
+    order_by_fields: list[str] | None = Field(
         None,
         alias="orderByFields",
         description="""Optional string. One or more field names on which the
@@ -271,7 +272,7 @@ class QueryParameters(BaseModel):
                         as True, do not specify this parameter in order to avoid errors.
                     """,
     )
-    out_statistics: Optional[list[dict[str, Any]]] = Field(
+    out_statistics: list[dict[str, Any]] | None = Field(
         None,
         alias="outStatistics",
         description="""Optional list of dictionaries. The definitions for one or more field-based
@@ -293,27 +294,27 @@ class QueryParameters(BaseModel):
                     ]
                     """,
     )
-    return_z: Optional[bool] = Field(
+    return_z: bool | None = Field(
         False,
         alias="returnZ",
         description="Optional boolean. If true, Z values are included in the results if the features have Z values. Otherwise, Z values are not returned.",
     )
-    return_m: Optional[bool] = Field(
+    return_m: bool | None = Field(
         False,
         alias="returnM",
         description="Optional boolean. If true, M values are included in the results if the features have M values. Otherwise, M values are not returned.",
     )
-    multipatch_option: Optional[tuple] = Field(
+    multipatch_option: tuple | None = Field(
         None,
         alias="multipatchOption",
         description="Optional x/y footprint. This option dictates how the geometry of a multipatch feature will be returned.",
     )
-    quantization_parameters: Optional[dict[str, Any]] = Field(
+    quantization_parameters: dict[str, Any] | None = Field(
         None,
         alias="quantizationParameters",
         description="Optional dict. Used to project the geometry onto a virtual grid, likely representing pixels on the screen.",
     )
-    return_centroid: Optional[bool] = Field(
+    return_centroid: bool | None = Field(
         False,
         alias="returnCentroid",
         description="""Optional boolean. Used to return the geometry centroid associated
@@ -322,7 +323,7 @@ class QueryParameters(BaseModel):
                     polygon geometry type.
                     """,
     )
-    return_all_records: Optional[bool] = Field(
+    return_all_records: bool | None = Field(
         True,
         alias="returnAllRecords",
         description="""Optional boolean. When True, the query operation will call the
@@ -334,12 +335,12 @@ class QueryParameters(BaseModel):
                     specified, the default is True.
                     """,
     )
-    result_type: Optional[Literal["standard", "tile"]] = Field(
+    result_type: Literal["standard", "tile"] | None = Field(
         None,
         alias="resultType",
         description="Optional string. The result_type parameter can be used to control the number of features returned by the query operation.",
     )
-    historic_moment: Optional[Union[int, datetime]] = Field(
+    historic_moment: int | datetime | None = Field(
         None,
         alias="historicMoment",
         description="""Optional integer. The historic moment to query. This parameter
@@ -351,7 +352,7 @@ class QueryParameters(BaseModel):
                     current features.
                     """,
     )
-    sql_format: Optional[Literal["standard", "native"]] = Field(
+    sql_format: Literal["standard", "native"] | None = Field(
         None,
         alias="sqlFormat",
         description="""Optional string.  The sql_format parameter can be either standard
@@ -360,7 +361,7 @@ class QueryParameters(BaseModel):
                     depends on useStandardizedQuery parameter.
                     """,
     )
-    return_true_curves: Optional[bool] = Field(
+    return_true_curves: bool | None = Field(
         False,
         alias="returnTrueCurves",
         description="""Optional boolean. When set to true, returns true curves in output
@@ -368,7 +369,7 @@ class QueryParameters(BaseModel):
                     polylines or polygons.
                     """,
     )
-    return_exceeded_limit_features: Optional[bool] = Field(
+    return_exceeded_limit_features: bool | None = Field(
         None,
         alias="returnExceededLimitFeatures",
         description="""Optional boolean. Optional parameter which is true by default. When
@@ -381,7 +382,7 @@ class QueryParameters(BaseModel):
                     limit is no longer exceeded without making multiple calls.
                     """,
     )
-    datum_transformation: Optional[Union[int, dict[str, Any]]] = Field(
+    datum_transformation: int | dict[str, Any] | None = Field(
         None,
         alias="datumTransformation",
         description="""Optional Integer/Dictionary.  This parameter applies a datum transformation while
@@ -408,7 +409,7 @@ class QueryParameters(BaseModel):
                         ===========     ===================================
                     """,
     )
-    range_values: Optional[dict[str, Any]] = Field(
+    range_values: dict[str, Any] | None = Field(
         None,
         alias="rangeValues",
         description="""Optional List. Allows you to filter features from the layer that are
@@ -449,7 +450,7 @@ class QueryParameters(BaseModel):
                                                 ]
                     """,
     )
-    parameter_values: Optional[dict[str, Any]] = Field(
+    parameter_values: dict[str, Any] | None = Field(
         None,
         alias="parameterValues",
         description="""Optional Dict. Allows you to filter the layers by specifying
@@ -466,7 +467,7 @@ class QueryParameters(BaseModel):
                         for details on parameterized filters.
                     """,
     )
-    format_3d_objects: Optional[
+    format_3d_objects: (
         Literal[
             "3D_dae",
             "3D_dwg",
@@ -480,7 +481,8 @@ class QueryParameters(BaseModel):
             "3D_usdc",
             "3D_usdz",
         ]
-    ] = Field(
+        | None
+    ) = Field(
         None,
         alias="formatOf3DObjects",
         description="""Optional string. Specifies the 3D format that will be used to request
@@ -496,7 +498,7 @@ class QueryParameters(BaseModel):
                     asset mapping will be missing.
                     """,
     )
-    time_reference_unknown_client: Optional[bool] = Field(
+    time_reference_unknown_client: bool | None = Field(
         None,
         alias="timeReferenceUnknownClient",
         description="""Optional boolean. Setting `time_reference_unknown_client` as True
