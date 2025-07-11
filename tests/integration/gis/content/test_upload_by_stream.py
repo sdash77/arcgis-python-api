@@ -36,6 +36,8 @@ class TestFolderStreamingAdd(unittest.TestCase):
             file=os.path.join(self.QA_LABS_FOLDER, self.dataset),
             item_id=None,
         )
+        assert isinstance(job.running(), bool)
+        assert isinstance(job.done(), bool)
         item = job.result()
         assert item
         assert job
