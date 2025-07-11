@@ -17436,7 +17436,7 @@ class Item(dict):
                 if output_type is None:
                     output_type = "VectorTiles"
             elif self["type"] == "Scene Package":
-                fileType = "scenePackage"
+                fileType = "scenepackage"
             elif self["type"] == "Tile Package":
                 fileType = "tilePackage"
             elif self["type"] == "3DTiles Package":
@@ -17462,7 +17462,8 @@ class Item(dict):
             folder = self.ownerFolder
         except Exception:
             folder = None
-
+        if output_type is None and self["type"] in ["Scene Package"]:
+            output_type = "sceneService"
         if publish_parameters is None:
             if fileType == "shapefile" and not overwrite:
                 publish_parameters = {
@@ -17562,7 +17563,7 @@ class Item(dict):
                 output_type = "VectorTiles"
                 buildInitialCache = True
 
-            elif fileType == "scenePackage":
+            elif fileType.lower() == "scenepackage":
                 name = re.sub(r"[\W_]+", "_", self["title"])
                 buildInitialCache = True
                 publish_parameters = {"name": name, "maxRecordCount": 2000}
