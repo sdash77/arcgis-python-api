@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 from utils.decorators import integration_test, profiles
-from arcgis.gis.nb._dataaccess import NotebookDataAccess, NotebookFolder, NotebookFile
+from arcgis.gis.nb._dataaccess import DATAACCESSTYPE, NotebookDataAccess, NotebookFolder, NotebookFile
 
 
 @profiles.admin_enterprise_and_agol
@@ -24,6 +24,10 @@ class TestNotebookDataAccess(unittest.TestCase):
         new_folder = home.create_folder("testfolder")
         self.assertIsInstance(new_folder, NotebookFolder)
         self.assertEqual(new_folder.name, "testfolder")
+        # Test getting the folder
+        fetched_folder = self.da.get("testfolder", DATAACCESSTYPE.FOLDER)
+        self.assertIsInstance(fetched_folder, NotebookFolder)
+        self.assertEqual(fetched_folder.name, "testfolder")
         # Rename
         renamed = new_folder.rename("testfolder_renamed")
         self.assertTrue(renamed)
@@ -44,6 +48,10 @@ class TestNotebookDataAccess(unittest.TestCase):
         # Check file exists in files
         files = home.files
         self.assertTrue(any(f.name == "test_upload.txt" for f in files))
+        # Test getting the file
+        file_obj = self.da.get("test_upload.txt", DATAACCESSTYPE.FILE)
+        self.assertIsInstance(file_obj, NotebookFile)
+        self.assertEqual(file_obj.name, "test_upload.txt")
         # Download and delete
         file_obj = next(f for f in files if f.name == "test_upload.txt")
         local_path = file_obj.download()
