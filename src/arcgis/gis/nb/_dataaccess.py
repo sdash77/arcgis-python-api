@@ -1,8 +1,18 @@
+from enum import Enum
 import os
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import List, Dict, Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import User
+
+
+class DATAACCESSTYPE(Enum):
+    """
+    Enum for data access types.
+    """
+
+    FOLDER = "folder"
+    FILE = "file"
 
 
 ###########################################################################
@@ -648,7 +658,9 @@ class NotebookDataAccess:
         return None
 
     # ---------------------------------------------------------------------
-    def get(self, name: str, is_folder=True) -> NotebookFolder | NotebookFile:
+    def get(
+        self, name: str, type: DATAACCESSTYPE | str = DATAACCESSTYPE.FOLDER
+    ) -> NotebookFolder | NotebookFile:
         """
         Get a notebook folder or file by name.
 
@@ -656,15 +668,17 @@ class NotebookDataAccess:
         **Parameter**           **Description**
         --------------------    --------------------------------------------------------------------------
         name                    Required String. The name of the folder or file to retrieve.
-                                If is_folder is True, it retrieves a folder; otherwise, it retrieves a file.
+                                If type is DATAACCESSTYPE.FOLDER, it retrieves a folder; otherwise, it retrieves a file.
         ---------------------    --------------------------------------------------------------------------
-        is_folder               Optional Boolean. If True, retrieves a folder; if False, retrieves a file.
-                                Default is True.
+        type                    Optional DATAACCESSTYPE. If DATAACCESSTYPE.FOLDER, retrieves a folder; if DATAACCESSTYPE.FILE, retrieves a file.
+                                Default is DATAACCESSTYPE.FOLDER.
         ====================    ==========================================================================
 
         :return: NotebookFolder or NotebookFile - The requested folder or file.
         """
-        if is_folder:
+        if type == DATAACCESSTYPE.FOLDER or (
+            isinstance(type, str) and type.lower() == "folder"
+        ):
             return self._get_folder(name)
         else:
             return self._get_file(name)

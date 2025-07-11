@@ -143,6 +143,13 @@ NotebookFolder
     :undoc-members:
     :show-inheritance:
 
+DATAACCESSTYPE
+----------------
+.. autoclass:: arcgis.gis.nb._dataaccess.DATAACCESSTYPE
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 NBServicesManager
 -----------------
 .. autoclass:: arcgis.gis.nb._services.NBServicesManager
