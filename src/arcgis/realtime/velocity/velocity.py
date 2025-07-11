@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis import GIS
 
 from .bigdata_analytics_manager import BigDataAnalyticsManager

@@ -47,6 +47,7 @@ from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
 from arcgis.gis._impl._content_manager.folder import Folder, Job
+from arcgis.gis._impl._con import _is_http_url
 
 try:
     import pandas as pd
@@ -1256,6 +1257,11 @@ class GIS(object):
         with the organization or enterprise.
         :return: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
         """
+
+        if self._is_kubernetes:
+            base_url = "/admin/notebooks"
+        else:
+            base_url = "/admin"
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
             url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
@@ -1264,26 +1270,47 @@ class GIS(object):
 
                 url = f"https://{url[0]}/admin"
                 return [AGOLNotebookManager(url=url, gis=self)]
-        elif self._portal.is_arcgisonline == False and (
-            hasattr(self, "admin") and getattr(self, "admin")
+        elif (
+            self._portal.is_arcgisonline == False
+            and self._is_kubernetes == False
+            and (hasattr(self, "admin") and getattr(self, "admin"))
         ):
             from arcgis.gis.nb import NotebookServer
 
             notebooks: list[NotebookServer] = []
             res = self.servers
             for server in res["servers"]:
-                if server["serverFunction"].lower() == "notebookserver":
+                if "notebookserver" in server["serverFunction"].lower():
                     try:
-                        nbs = NotebookServer(server["adminUrl"] + "/admin", self)
+                        if (
+                            self._use_private_url_only == False
+                            and "adminPublicUrl" in server
+                            and server.get("adminPublicUrl")
+                        ):
+                            url: str = f"{server.get('adminPublicUrl')}{base_url}"
+                        elif "adminUrl" in server and server.get("adminUrl"):
+                            url: str = f"{server.get('adminUrl')}{base_url}"
+                        elif "url" in server and server.get("url"):
+                            url: str = f"{server.get('url')}{base_url}"
+                        else:
+                            raise Exception(
+                                "The server information provided by the system is incorrect, please contact and administrator."
+                            )
+
+                        nbs = NotebookServer(url, self)
                         nbs.properties
                         notebooks.append(nbs)
                     except Exception as ex:
                         _log.warning(ex)
-                        nbs = NotebookServer(server["url"] + "/admin", self)
+                        nbs = NotebookServer(server["url"] + base_url, self)
                         nbs.properties
                         notebooks.append(nbs)
             return notebooks
-
+        elif self._is_kubernetes and self.admin:
+            if getattr(self.admin, "notebooks", None):
+                admin = self.admin
+                admin._gis.properties
+                return [admin.notebooks]
         return []
 
     @property
@@ -2033,7 +2060,7 @@ class OfflineContentManager(object):
         preserve_ids: bool = False,
         folder: Folder | str = None,
         failure_rollback: bool = False,
-        item_mapping: dict = None,
+        item_mapping: dict = {},
     ) -> list:
         """
         Reads a `.contentexport` file (see
@@ -3723,10 +3750,11 @@ class UserManager(object):
         idp_username: Optional[str] = None,
         level: int = 2,
         thumbnail: Optional[str] = None,
-        user_type: Optional[str] = None,
+        user_type: str | None = None,
         credits: float = -1,
-        groups: Optional[list[str]] = None,
+        groups: Optional[list[Group]] = None,
         email_text: Optional[str] = None,
+        use_defaults: Optional[bool] = True,
     ):
         """
         The ``create`` operation is used to create built-in or pre-create organization-specific identity
@@ -3889,6 +3917,14 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email_text        Optional string. Custom text to include in the invitation email. This text will
                           be appended to the top of the default email text. `ArcGIS Online` only.
+        ----------------  -------------------------------------------------------------------------------
+        use_defaults      Optional bool. Introduced at Enterprise 11.5. Determines if new member defaults
+                          (the user type, member role, add-on licenses, and group memberships that are
+                          assigned to new users by default) should be applied to the new user. If
+                          specified as true, new member defaults are applied to the user. This parameter
+                          can still be set to true even if there are no new member defaults configured
+                          for the organization. If set to false, the new member defaults are not applied.
+                          The default value is `True`.
         ================  ===============================================================================
 
         :return:
@@ -3995,7 +4031,47 @@ class UserManager(object):
             "credits": credits,
             "groups": groups,
             "email_text": email_text,
+            "use_defaults": use_defaults,
         }
+        if self._gis.version >= [2025, 1]:
+            allowed_keys = {
+                "username",
+                "password",
+                "firstname",
+                "lastname",
+                "email",
+                "description",
+                "role",
+                "provider",
+                "idp_username",
+                "user_type",
+                "thumbnail",
+                "credits",
+                "groups",
+                "level",
+                "email_text",
+            }
+            if self._gis._is_kubernetes == False:
+                allowed_keys = {
+                    "username",
+                    "password",
+                    "firstname",
+                    "lastname",
+                    "email",
+                    "description",
+                    "role",
+                    "provider",
+                    "idp_username",
+                    "user_type",
+                    "thumbnail",
+                    "credits",
+                    "groups",
+                    "level",
+                    "email_text",
+                    "use_defaults",
+                }
+            params = {k: v for k, v in kwargs.items() if k in allowed_keys}
+            return self._create20251plus(**params)
         if self._gis.version >= [6, 4]:
             allowed_keys = {
                 "username",
@@ -4014,6 +4090,25 @@ class UserManager(object):
                 "level",
                 "email_text",
             }
+            if self._gis.version >= [2025, 1] and self._gis._is_kubernetes == False:
+                allowed_keys = {
+                    "username",
+                    "password",
+                    "firstname",
+                    "lastname",
+                    "email",
+                    "description",
+                    "role",
+                    "provider",
+                    "idp_username",
+                    "user_type",
+                    "thumbnail",
+                    "credits",
+                    "groups",
+                    "level",
+                    "email_text",
+                    "use_defaults",
+                }
             params = {}
             for k, v in kwargs.items():
                 if k in allowed_keys:
@@ -4193,7 +4288,7 @@ class UserManager(object):
             return user
 
     # ----------------------------------------------------------------------
-    def _create64plus(
+    def _create20251plus(
         self,
         username,
         password,
@@ -4210,6 +4305,7 @@ class UserManager(object):
         groups=None,
         level=None,
         email_text=None,
+        use_defaults=True,
     ):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
@@ -4281,9 +4377,308 @@ class UserManager(object):
             The user if successfully created, None if unsuccessful.
 
         """
+
+        # map role parameter of a viewer to the internal value for org viewer.
+        if self._gis._is_authenticated is False:
+            raise Exception(
+                "A user must be authenticated and an administrator to create new accounts."
+            )
+        if self._gis._is_agol or self._gis._is_kubernetes:
+            default_settings: dict = self.user_settings
+
+        else:
+            # enterprise only, not kubernetes
+            default_settings: dict = self.user_settings
+            if dict(self._gis.admin.security.config).get("defaultRoleForUser", None):
+                default_settings["role"] = dict(self._gis.admin.security.config).get(
+                    "defaultRoleForUser", None
+                )
+        groups: list[str] | None = groups or default_settings.get("groups", [])
+        role: str = role or default_settings.get("role")
+        user_type: str = user_type or default_settings.get("userLicenseType")
+        categories: list[str] | None = default_settings.get("categories")
+
+        if role is None and user_type is None:
+            raise ValueError(
+                "The user must supply a role and user_type when defaults are not present."
+            )
+
+        user_li_lu = {
+            "creatorUT": "creatorUT",
+            "creator": "creatorUT",
+            "contributor": "editorUT",
+            "editor": "editorUT",
+            "editorUT": "editorUT",
+            "GISProfessionalAdvUT": "GISProfessionalAdvUT",
+            "viewerUT": "viewerUT",
+            "fieldworker": "fieldWorkerUT",
+            "fieldWorkerUT": "fieldWorkerUT",
+            "professional": "GISProfessionalStdUT",
+            "professional plus": "GISProfessionalAdvUT",
+        }
+        role_lookup = {
+            "admin": "org_admin",
+            "org_admin": "org_admin",
+            "user": "org_user",
+            "org_user": "org_user",
+            "publisher": "org_publisher",
+            "org_publisher": "org_publisher",
+            "view_only": "tLST9emLCNfFcejK",
+            "org_viewer": "iAAAAAAAAAAAAAAA",
+            "viewer": "iAAAAAAAAAAAAAAA",
+            "viewplusedit": "iBBBBBBBBBBBBBBB",
+        }
+
+        groups = groups or []
+
+        if user_type.lower() in user_li_lu:
+            user_type = user_li_lu[user_type.lower()]
+
+        if isinstance(role, Role):
+            role = role.role_id
+        elif role and role.lower() in role_lookup:
+            role = role_lookup[role.lower()]
+        elif isinstance(role, str):
+            # lookup the role id to see if it exists, else set to ""
+            try:
+                # uses role id to get the role
+                role = self._gis.users.roles.get_role(role)
+                role = role.role_id
+            except Exception:
+                # maybe user passed in role name instead of id
+                if self._gis.users.roles.exists(role):
+                    all_roles = self._gis.users.roles.all()
+                    for r in all_roles:
+                        if r.name.lower() == role.lower():
+                            role = r.role_id
+                            break
+                else:
+                    role = ""
+        else:
+            role = ""
+
+        if self._gis._is_arcgisonline:
+            if (
+                credits == -1
+                and self._gis.properties["defaultUserCreditAssignment"] != -1
+            ):  # get the credits
+                credits: int = self._gis.properties["defaultUserCreditAssignment"]
+            params: dict = {
+                "f": "json",
+                "invitationList": {
+                    "invitations": [
+                        {
+                            "username": username,
+                            "firstname": firstname,
+                            "lastname": lastname,
+                            "fullname": firstname + " " + lastname,
+                            "email": email,
+                            "role": role,
+                            "userLicenseType": user_type,
+                            "groups": ",".join([g for g in groups if g]),
+                            "userCreditAssignment": credits,
+                        }
+                    ],
+                    "apps": [],
+                    "appBundles": [],
+                },
+            }
+            if email_text:
+                params["message"] = email_text
+            if idp_username is not None:
+                if provider is None:
+                    provider = "enterprise"
+                params["invitationList"]["invitations"][0][
+                    "targetUserProvider"
+                ] = provider
+                params["invitationList"]["invitations"][0]["idpUsername"] = idp_username
+            if password is not None:
+                params["invitationList"]["invitations"][0]["password"] = password
+            params["invitationList"] = json.dumps(params["invitationList"])
+            from requests import Response
+
+            resp: Response = self._gis.session.post(
+                url=f"{self._gis.url}/sharing/rest/portals/self/invite", data=params
+            )
+            resp.raise_for_status()
+            resp: dict = resp.json()
+
+            if resp and resp.get("success"):
+                if username in resp["notInvited"]:
+                    print("Unable to create " + username)
+                    _log.error("Unable to create " + username)
+                    return None
+                else:
+                    new_user = self.get(username)
+                if thumbnail:
+                    if _is_http_url(thumbnail):
+                        thumbnail = self._gis._con.get(thumbnail)
+                    if os.path.isfile(thumbnail):
+                        ret = new_user.update(thumbnail=thumbnail)
+                        if not ret:
+                            _log.error(
+                                "Unable to update the thumbnail for  " + username
+                            )
+                if (
+                    self.user_settings
+                    and "userType" in new_user
+                    and not new_user.esri_access == "arcgisonly"
+                ):
+                    new_user.esri_access = self.user_settings["userType"]
+                if categories:
+                    new_user.update(categories=categories)
+                return new_user
+            return None
+        else:  # enterprise/kubernetes workflows
+            if self._gis._is_kubernetes:
+
+                url: str = (
+                    f"{self._gis.url}/admin/orgs/0123456789ABCDEF/security/users/createUser"
+                )
+            else:
+                url: str = f"{self._gis.url}/portaladmin/security/users/createUser"
+            params = {
+                "f": "json",
+                "username": username,
+                "password": password,
+                "firstname": firstname,
+                "lastname": lastname,
+                "email": email,
+                "description": description,
+                "role": role,
+                "provider": provider,
+                "idpUsername": idp_username,
+                "userLicenseTypeId": user_type,
+            }
+            resp: Response = self._gis.session.post(url, data=params)
+            resp.raise_for_status()
+            data: dict = resp.json()
+            if data.get("success", False):
+                return
+            if params["username"].find("\\") > -1:
+                d = params["username"].split("\\")
+                d.reverse()
+                username = "@".join(d)
+            user = self.get(username)
+            for grp in [self._gis.groups.get(g) for g in groups]:
+                grp.add_users([username])
+            if thumbnail is not None:
+                ret = user.update(thumbnail=thumbnail)
+                if not ret:
+                    _log.error("Unable to update the thumbnail for  " + username)
+            if categories:
+                user.update(categories=categories)
+            return user
+
+    # ----------------------------------------------------------------------
+    def _create64plus(
+        self,
+        username,
+        password,
+        firstname,
+        lastname,
+        email,
+        description=None,
+        role="org_user",
+        provider="arcgis",
+        idp_username=None,
+        user_type="creator",
+        thumbnail=None,
+        credits=None,
+        groups=None,
+        level=None,
+        email_text=None,
+        use_defaults=None,
+    ):
+        """
+        This operation is used to pre-create built-in or enterprise accounts within the portal,
+        or built-in users in an ArcGIS Online organization account. Only an administrator
+        can call this method.
+
+        To create a viewer account, choose role='org_viewer' and level='viewer'
+
+        .. note:
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
+
+        ================  ===============================================================================
+        **Parameter**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        username          Required string. The user name, which must be unique in the Portal, and
+                          6-24 characters long.
+        ----------------  -------------------------------------------------------------------------------
+        password          Required string. The password for the user.  It must be at least 8 characters.
+                          This is a required parameter only if the provider is arcgis; otherwise, the
+                          password parameter is ignored.
+                          If creating an account in an ArcGIS Online org, it can be set as None to let
+                          the user set their password by clicking on a link that is emailed to him/her.
+        ----------------  -------------------------------------------------------------------------------
+        firstname         Required string. The first name for the user
+        ----------------  -------------------------------------------------------------------------------
+        lastname          Required string. The last name for the user
+        ----------------  -------------------------------------------------------------------------------
+        email             Required string. The email address for the user. This is important to have correct.
+        ----------------  -------------------------------------------------------------------------------
+        description       Optional string. The description of the user account.
+        ----------------  -------------------------------------------------------------------------------
+        thumbnail         Optional string. The URL to user's image.
+        ----------------  -------------------------------------------------------------------------------
+        role              Optional string. The role for the user account. The default value is org_user.
+                          Other possible values are org_user, org_publisher, org_admin, viewer,
+                          view_only, viewplusedit or a custom role object (from gis.users.roles).
+
+                          .. note::
+                            It is recommended to pass in role_id when assigning a custome role to a user. The
+                            role name can be used for multiple roles and can lead to issues if more than one
+                            custom role has the same role name. Access the role_id through property on the Role class.
+        ----------------  -------------------------------------------------------------------------------
+        provider          Optional string. The provider for the account. The default value is arcgis.
+                          The other possible value is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        idp_username      Optional string. The name of the user as stored by the enterprise user store.
+                          This parameter is only required if the provider parameter is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        user_type         Required string. The account user type. This can be creator or viewer.  The
+                          type effects what applications a user can use and what actions they can do in
+                          the organization.
+                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+        ----------------  -------------------------------------------------------------------------------
+        credits           Optional Float. The number of credits to assign a user.  The default is None,
+                          which means unlimited.
+        ----------------  -------------------------------------------------------------------------------
+        groups            Optional List. An array of Group objects to provide access to for a given user.
+        ----------------  -------------------------------------------------------------------------------
+        email_text        Optional string. Custom text to include in the invitation email. This text will
+                          be appended to the default email text. ArcGIS Online only.
+        ----------------  -------------------------------------------------------------------------------
+        use_defaults      Optional bool. Introduced at 11.5. Determines if new member defaults (the user
+                          type, member role, add-on licenses, and group memberships that are assigned to
+                          new users by default) should be applied to the new user. If specified as true,
+                          new member defaults are applied to the user. This parameter can still be set to
+                          true even if there are no new member defaults configured for the organization.
+                          If set to false, the new member defaults are not applied. The default value is
+                          true. This parameter is ignored on `Kubernetes` deployments.
+        ================  ===============================================================================
+
+        :return:
+            The user if successfully created, None if unsuccessful.
+
+        """
         # map role parameter of a viewer to the internal value for org viewer.
         if self._gis.version >= [7, 2]:
-            if self._gis._is_agol:
+            if (
+                self._gis._is_agol
+                or self._gis._is_kubernetes
+                or (
+                    self._gis._is_arcgisonline == False
+                    and self._gis._is_kubernetes == False
+                    and self._gis.version >= [2025, 1]
+                )
+            ):
                 if user_type is None:
                     if (
                         self.user_settings
@@ -4294,19 +4689,77 @@ class UserManager(object):
                 if role is None:
                     if (
                         self.user_settings
-                        and "userLicenseType" in self.user_settings
+                        and "role" in self.user_settings
                         and role is None
                     ):
                         role = self.user_settings["role"]
+            else:
+                if role is None:
+                    if "defaultRoleForUser" in self._gis.admin.security.config:
+                        role = self._gis.admin.security.config["defaultRoleForUser"]
+                    elif (
+                        self.user_settings
+                        and "role" in self.user_settings
+                        and role is None
+                    ):
+                        role = self.user_settings["role"]
+                    else:
+                        raise ValueError(
+                            "A `role` default is not set on the Enterprise, so it must be provided by the user."
+                        )
+                if user_type is None:
+                    if "defaultUserTypeIdForUser" in self._gis.admin.security.config:
+                        user_type = self._gis.admin.security.config[
+                            "defaultUserTypeIdForUser"
+                        ]
+                    elif (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and user_type is None
+                    ):
+                        user_type = self.user_settings["userLicenseType"]
+                    else:
+                        raise ValueError(
+                            "A `user_type` default is not set on the Enterprise, so it must be provided by the user."
+                        )
 
         else:
             if self._gis.version >= [7, 1]:
+
                 if user_type is None and role is None:
                     if "defaultUserTypeIdForUser" in self._gis.admin.security.config:
                         user_type = self._gis.admin.security.config[
                             "defaultUserTypeIdForUser"
                         ]
                         role = self._gis.admin.security.config["defaultRoleForUser"]
+                elif role is None:
+                    if "defaultRoleForUser" in self._gis.admin.security.config:
+                        role = self._gis.admin.security.config["defaultRoleForUser"]
+                    elif (
+                        self.user_settings
+                        and "role" in self.user_settings
+                        and role is None
+                    ):
+                        role = self.user_settings["role"]
+                    else:
+                        raise ValueError(
+                            "A `role` default is not set on the Enterprise, so it must be provided by the user."
+                        )
+                elif user_type is None:
+                    if "defaultUserTypeIdForUser" in self._gis.admin.security.config:
+                        user_type = self._gis.admin.security.config[
+                            "defaultUserTypeIdForUser"
+                        ]
+                    elif (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and user_type is None
+                    ):
+                        user_type = self.user_settings["userLicenseType"]
+                    else:
+                        raise ValueError(
+                            "`user_type` default is not set on the Enterprise, so it must be provided by the user."
+                        )
         if role is None and user_type is None:
             raise ValueError(
                 "The user must supply a role and user_type when defaults are not present."
@@ -4342,7 +4795,7 @@ class UserManager(object):
         if groups is None:
             groups = []
 
-        if user_type.lower() in user_li_lu:
+        if user_type and user_type.lower() in user_li_lu:
             user_type = user_li_lu[user_type.lower()]
 
         if isinstance(role, Role):
@@ -4516,9 +4969,13 @@ class UserManager(object):
                 "idpUsername": idp_username,
                 "userLicenseTypeId": user_type,
             }
+            if self._gis.version >= [2025, 1]:
+                params["applyDefaults"] = use_defaults
             if "password" in params and params["password"] is None:
                 params.pop("password", None)
-            self._portal.con.post(createuser_url, params)
+            resp = self._portal.con.post(createuser_url, params)
+            if "username" in resp:
+                username = resp.get("username", None)
             if params["username"].find("\\") > -1:
                 d = params["username"].split("\\")
                 d.reverse()
@@ -6732,22 +7189,6 @@ class ContentManager(object):
             "f": "json",
         }
         return self._gis._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def dependency_manager(self) -> "DependencyManager":
-        """
-        Provides users the ability to manage the Enterprise's Item Dependencies Database.
-
-        Available in ArcGIS Enterprise 10.9.1+
-
-        :returns: :class:`~arcgis.gis.sharing.DependencyManager` or None for ArcGIS Online.
-        """
-        if self._depmgr is None and self._gis._portal.is_arcgisonline is False:
-            from arcgis.gis.sharing._dependency import DependencyManager
-
-            self._depmgr = DependencyManager(gis=self._gis)
-        return self._depmgr
 
     # ----------------------------------------------------------------------
     @property
@@ -13960,8 +14401,9 @@ class Item(dict):
                         lyr._fn = rendering_rule
                         lyr._fnra = rendering_rule
                         lyr._rendering_rule_from_item = True
-                    if lyr._mosaic_rule is None:
-                        lyr._mosaic_rule = item_data.get("mosaicRule", None)
+                    mosaic_rule = item_data.get("mosaicRule", None)
+                    if mosaic_rule:
+                        lyr._mosaic_rule = mosaic_rule
                 except Exception:
                     pass
                 layers.append(lyr)
@@ -16994,7 +17436,7 @@ class Item(dict):
                 if output_type is None:
                     output_type = "VectorTiles"
             elif self["type"] == "Scene Package":
-                fileType = "scenePackage"
+                fileType = "scenepackage"
             elif self["type"] == "Tile Package":
                 fileType = "tilePackage"
             elif self["type"] == "3DTiles Package":
@@ -17020,7 +17462,8 @@ class Item(dict):
             folder = self.ownerFolder
         except Exception:
             folder = None
-
+        if output_type is None and self["type"] in ["Scene Package"]:
+            output_type = "sceneService"
         if publish_parameters is None:
             if fileType == "shapefile" and not overwrite:
                 publish_parameters = {
@@ -17120,7 +17563,7 @@ class Item(dict):
                 output_type = "VectorTiles"
                 buildInitialCache = True
 
-            elif fileType == "scenePackage":
+            elif fileType.lower() == "scenepackage":
                 name = re.sub(r"[\W_]+", "_", self["title"])
                 buildInitialCache = True
                 publish_parameters = {"name": name, "maxRecordCount": 2000}
@@ -19495,11 +19938,7 @@ class ViewManager:
             assert isinstance(layer, arcgis.features.FeatureLayer)
             if "isView" in lyrdef.layer.properties and lyrdef.layer.properties.isView:
                 results.append(
-                    {
-                        layer._url: layer.container.manager.update_definition(
-                            lyrdef.as_json()
-                        )
-                    }
+                    {layer._url: layer.manager.update_definition(lyrdef.as_json())}
                 )
             else:
                 raise ValueError("The layer is not a view.")

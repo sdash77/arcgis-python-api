@@ -99,7 +99,7 @@ class TestSecurityManager(unittest.TestCase):
         assert isinstance(self.security, SecurityManager)
 
     def test_get_configuration(self):
-        """test get security configuration through notebook server Security Manager """
+        """test get security configuration through notebook server Security Manager"""
         assert isinstance(self.security.configuration, (dict, PropertyMap))
 
     def test_set_configuration(self):
@@ -162,15 +162,15 @@ class TestMachineManager(unittest.TestCase):
         m = self.machine.list()[0]
         assert isinstance(m, Machine)
         cert = m.create_self_signed_cert(
-                alias="aliastest",
-                keysize=2048,
-                common_name="common",
-                org_unit="org_unit",
-                organization="orgtest",
-                city="city",
-                state="state",
-                country="US",
-            )
+            alias="aliastest",
+            keysize=2048,
+            common_name="common",
+            org_unit="org_unit",
+            organization="orgtest",
+            city="city",
+            state="state",
+            country="US",
+        )
         assert "success" in cert
 
 
@@ -228,9 +228,9 @@ class TestSystemManager(unittest.TestCase):
     def test_job_details(self):
         """tests getting the job details"""
         if not self.system.jobs:
-          self.skipTest("No notebook server system jobs configured.")
+            self.skipTest("No notebook server system jobs configured.")
         job = self.system.jobs[0]
-        job_details = self.system.job_details(job_id=job['jobId'])
+        job_details = self.system.job_details(job_id=job["jobId"])
         assert isinstance(job_details, dict)
         assert job_details
 
@@ -240,13 +240,18 @@ class TestSystemManager(unittest.TestCase):
             self.skipTest("Portal version must be 10.8.1 or higher")
 
         assert self.system.recent_statistics
-        assert "machineName" in self.system.recent_statistics.get("mostRecentStatistics")[0].keys()
+        assert (
+            "machineName"
+            in self.system.recent_statistics.get("mostRecentStatistics")[0].keys()
+        )
 
     def test_list_jobs(self):
         """tests list_jobs method, enterprise must be 10.9+"""
         if self.gis.version < [10, 9]:
             self.skipTest("Portal version must be 10.9 or higher")
 
+        if not self.system.jobs:
+            self.skipTest("No notebook server system jobs configured.")
         assert isinstance(self.system.list_jobs(), list)
 
         jobs = self.system.list_jobs(details=False)
@@ -283,6 +288,9 @@ class TestWebAdaptorManager(unittest.TestCase):
         assert isinstance(wa, WebAdaptor)
 
 
+from arcgis.gis import GIS
+
+
 @profiles.admin_enterprise
 @integration_test
 class TestDirectoryManager(unittest.TestCase):
@@ -307,9 +315,15 @@ class TestDirectoryManager(unittest.TestCase):
         if len(d) > 0:
             self.directory.unregister(d[0])
 
+        full_path = [
+            p
+            for p in self.directory.properties.directories
+            if "arcgisjobs" in p["path"]
+        ]
+        path = full_path[0]["path"].replace("/arcgisjobs", "/")
         assert self.directory.register(
             name="amazingdirtest",
-            path=r"/net/FILESERVER/gisdata/notebookserver/directories/directories/",
+            path=f"{path}",
             directory_type="DATA",
         )
 

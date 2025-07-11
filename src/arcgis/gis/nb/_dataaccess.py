@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 import os
 from arcgis._impl.common._isd import InsensitiveDict

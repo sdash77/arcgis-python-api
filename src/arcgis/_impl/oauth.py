@@ -2,6 +2,7 @@
 The root of all OAuth2 resources and operations.
 """
 
+from __future__ import annotations
 import os
 import json
 

@@ -3,6 +3,7 @@ Modified from requests_toolbelt's GuesAuth to handle NTLM and Kerbos
 
 """
 
+from __future__ import annotations
 from requests import auth, Session
 from requests import cookies
 

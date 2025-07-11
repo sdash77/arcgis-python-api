@@ -4,6 +4,7 @@ The ``Symbology`` class generates Symbol Types for the :class:`~arcgis.gis.GIS` 
 
 """
 
+from __future__ import annotations
 import requests
 import arcgis
 from typing import Any

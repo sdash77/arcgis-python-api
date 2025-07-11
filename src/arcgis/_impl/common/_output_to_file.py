@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import requests
 from requests_toolbelt.downloadutils import stream
