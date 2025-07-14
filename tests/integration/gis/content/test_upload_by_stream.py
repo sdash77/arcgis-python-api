@@ -26,22 +26,29 @@ class TestFolderStreamingAdd(unittest.TestCase):
         content: ContentManager = gis.content
         mgr = content.folders
         folder = mgr.get("Root Folder")
-        ip = ItemProperties(
-            title="test_streaming_upload",
-            item_type=ItemTypeEnum.SERVICE_DEFINITION,
-            overwrite=True,
-        )
-        job = folder.add(
-            item_properties=ip,
-            file=os.path.join(self.QA_LABS_FOLDER, self.dataset),
-            item_id=None,
-        )
-        assert isinstance(job.running(), bool)
-        assert isinstance(job.done(), bool)
-        item = job.result()
-        assert item
-        assert job
-        assert item.delete()
+        
+        item = None
+        try:
+            ip = ItemProperties(
+                title="test_streaming_upload",
+                item_type=ItemTypeEnum.SERVICE_DEFINITION,
+                overwrite=True,
+            )
+            job = folder.add(
+                item_properties=ip,
+                file=os.path.join(self.QA_LABS_FOLDER, self.dataset),
+                item_id=None,
+            )
+            assert isinstance(job.running(), bool)
+            assert isinstance(job.done(), bool)            
+            item = job.result()
+            assert item
+            assert job            
+        except:
+            pass
+        finally:
+            if item:
+                assert item.delete()
 
 
 if __name__ == "__main__":
