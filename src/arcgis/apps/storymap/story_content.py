@@ -4650,41 +4650,6 @@ class MapTour:
         return self._places
 
     # ----------------------------------------------------------------------
-    @property
-    def category_field(self):
-        """
-        Get the field name that is used to categorize the places in the map tour.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        field_name          Optional String. The field name that is used to categorize the places in the map tour.
-        ===============     ====================================================================
-
-        :return: The field name that is used to categorize the places in the map tour.
-        """
-        if self._subtype != "categorized":
-            return None
-        return self._story._properties["nodes"][self.node]["data"]["dataDriven"].get(
-            "categoryFieldName"
-        )
-
-    # ----------------------------------------------------------------------
-    @category_field.setter
-    def category_field(self, field_name: str):
-        """
-        Set the field name that is used to categorize the places in the map tour.
-        """
-        if self._subtype == "categorized":
-            self._story._properties["nodes"][self.node]["data"]["dataDriven"][
-                "categoryFieldName"
-            ] = field_name
-        else:
-            raise ValueError(
-                "Category field can only be set for categorized map tours."
-            )
-
-    # ----------------------------------------------------------------------
     def get(self, node_id: str):
         """
         The get method is used to get the node that will be edited. Use `maptour.properties` to
