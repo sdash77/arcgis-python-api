@@ -284,13 +284,13 @@ class WorkflowManagerAdmin:
     def export_item(
         self,
         item,  # TODO TypeHint removed in order to avoid import
-        job_template_ids: Optional[list[str]] = None,
-        diagram_ids: Optional[list[str]] = None,
+        job_template_ids: list[str] | None = None,
+        diagram_ids: list[str] | None = None,
         include_other_configs: bool = True,
-        passphrase: Optional[str] = None,
+        passphrase: str | None = None,
         run_async: bool = False,
-        save_path: Optional[str] = None,
-        export_mapping: Optional[bool] = None,
+        save_path: str | None = None,
+        export_mapping: bool | None = None,
     ) -> str | ItemExecution:
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
@@ -392,7 +392,7 @@ class WorkflowManagerAdmin:
         self,
         item,
         params,
-        save_path: Optional[str] = None,
+        save_path: str | None = None,
         export_mapping: bool = False,
     ):
         # Create a ItemExecution object
@@ -432,7 +432,7 @@ class WorkflowManagerAdmin:
         return ie
 
     def _retrieve_completed_export(
-        self, item, ie: ItemExecution, save_path: Optional[str], export_mapping: bool
+        self, item, ie: ItemExecution, save_path: str | None, export_mapping: bool
     ):
         export_id = ie._export_id
         logger.debug(f"Retrieving completed export {export_id}")
@@ -463,10 +463,10 @@ class WorkflowManagerAdmin:
         self,
         item,  # TODO TypeHint removed in order to avoid import
         config_file,
-        passphrase: Optional[str] = None,
+        passphrase: str | None = None,
         run_async: bool = False,
         overwrite_configuration: bool = True,
-        import_mapping_file: Optional[str] = None
+        import_mapping_file: str | None = None
     ) -> bool | ItemExecution:
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
@@ -679,21 +679,21 @@ class JobManager:
         self,
         template: str,
         count: int = 1,
-        name: Optional[str] = None,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-        priority: Optional[str] = None,
-        description: Optional[str] = None,
-        owner: Optional[str] = None,
-        group: Optional[str] = None,
-        assigned: Optional[str] = None,
-        complete: Optional[str] = None,
-        notes: Optional[str] = None,
-        parent: Optional[str] = None,
+        name: str | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        priority: str | None = None,
+        description: str | None = None,
+        owner: str | None = None,
+        group: str | None = None,
+        assigned: str | None = None,
+        complete: str | None = None,
+        notes: str | None = None,
+        parent: str | None = None,
         location: Optional = None,  # TODO TypeHint removed in order to avoid import
-        extended_properties: Optional[dict] = None,
-        related_properties: Optional[dict] = None,
-        job_id: Optional[str] = None,
+        extended_properties: dict | None = None,
+        related_properties: dict | None = None,
+        job_id: str | None = None,
     ):
         """
         Adds a job to the Workflow Manager instance given a user-defined template
@@ -893,11 +893,11 @@ class JobManager:
 
     def search(
         self,
-        query: Optional[str] = None,
-        search_string: Optional[str] = None,
-        fields: Optional[str] = None,
-        display_names: Optional[str] = [],
-        sort_by: Optional[str] = [],
+        query: str | None = None,
+        search_string: str | None = None,
+        fields: str | None = None,
+        display_names: str | None = [],
+        sort_by: str | None = [],
         num: int = 10,
         start_num: int = 0,
     ):
@@ -943,11 +943,11 @@ class JobManager:
 
     def statistics(
         self,
-        query: Optional[str] = None,
-        search_str: Optional[str] = None,
-        group_by: Optional[str] = None,
-        spatial_extent: Optional[str] = None,
-        has_location: Optional[bool] = None,
+        query: str | None = None,
+        search_str: str | None = None,
+        group_by: str | None = None,
+        spatial_extent: str | None = None,
+        has_location: bool | None = None,
     ):
         """
         Runs a search against the jobs stored inside the Workflow Manager instance
@@ -1015,7 +1015,7 @@ class JobManager:
         self,
         job_id: str,
         update_object: dict,
-        allow_running_step_id: Optional[str] = None,
+        allow_running_step_id: str | None = None,
     ):
         """
         Updates a job object by ID
@@ -1263,7 +1263,7 @@ class WorkflowManager:
     def evaluate_arcade(
         self,
         expression: str,
-        context: Optional[str] = None,
+        context: str | None = None,
         context_type: str = "BaseContext",
         mode: str = "Standard",
     ):
@@ -1404,7 +1404,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def searches(self, search_type: Optional[str] = None):
+    def searches(self, search_type: str | None = None):
         """
         Returns a list of all saved searches.
 
@@ -1878,8 +1878,8 @@ class WorkflowManager:
         category: str = "",
         job_duration: int = 0,
         assigned_to: str = "",
-        default_due_date: Optional[str] = None,
-        default_start_date: Optional[str] = None,
+        default_due_date: str | None = None,
+        default_start_date: str | None = None,
         start_date_type: str = "CreationDate",
         diagram_id: str = "",
         diagram_name: str = "",
@@ -1888,7 +1888,7 @@ class WorkflowManager:
         default_description: str = "",
         state: str = "Draft",
         last_updated_by: str = "",
-        last_updated_date: Optional[str] = None,
+        last_updated_date: str | None = None,
         extended_property_table_definitions: list = [],
     ):
         """
@@ -2016,7 +2016,7 @@ class WorkflowManager:
         active: bool = False,
         annotations: list = [],
         data_sources: list = [],
-        diagram_id: Optional[str] = None,
+        diagram_id: str | None = None,
         centralized_data_references: list = [],
         use_centralized_data_references: bool = False,
     ):
@@ -2658,7 +2658,7 @@ class WorkflowManager:
         template_type: str,
         template_name: str,
         template_details: dict,
-        template_id: Optional[str] = None,
+        template_id: str | None = None,
     ):
         """
         Returns the newly created template id.
@@ -2869,11 +2869,11 @@ class SavedSearchesManager:
         self,
         name: str,
         search_type: str,
-        folder: Optional[str] = None,
-        definition: Optional[str] = None,
-        color_ramp: Optional[str] = None,
-        sort_index: Optional[str] = None,
-        search_id: Optional[str] = None,
+        folder: str | None = None,
+        definition: str | None = None,
+        color_ramp: str | None = None,
+        sort_index: str | None = None,
+        search_id: str | None = None,
     ):
         """
         Create a saved search or chart by specifying the search parameters in the json body.
@@ -3206,7 +3206,7 @@ class Job(object):
         return return_obj
 
     def add_attachment(
-        self, attachment: str, alias: Optional[str] = None, folder: Optional[str] = None
+        self, attachment: str, alias: str | None = None, folder: str | None = None
     ):
         """
         Adds an attachment to the job
@@ -3422,10 +3422,10 @@ class Job(object):
 
     def add_hold(
         self,
-        step_ids: Optional[list],
-        dependent_job_id: Optional[str] = None,
-        dependent_step_id: Optional[str] = None,
-        hold_scheduled_release: Optional[str] = None,
+        step_ids: list | None,
+        dependent_job_id: str | None = None,
+        dependent_step_id: str | None = None,
+        hold_scheduled_release: str | None = None,
     ):
         """
         Applies a hold or a dependency to a step. The Run and Finish actions cannot be performed
@@ -3491,9 +3491,9 @@ class Job(object):
 
     def release_hold(
         self,
-        step_ids: Optional[list],
-        dependent_job_id: Optional[str] = None,
-        dependent_step_id: Optional[str] = None,
+        step_ids: list | None,
+        dependent_job_id: str | None = None,
+        dependent_step_id: str | None = None,
     ):
         """
         Releases a hold from a step, allowing the Run and Finish actions to be once again performed on the step.
@@ -3741,7 +3741,7 @@ class Job(object):
         }
         return return_obj
 
-    def _execute_step(self, step_ids: Optional[list], execution_type: ExecutionType):
+    def _execute_step(self, step_ids: list | None, execution_type: ExecutionType):
         # Create a JobExecution object
         je = JobExecution(self, execution_type)
         # Subscribe to this job
@@ -3784,7 +3784,7 @@ class Job(object):
         je._started()
         return je
 
-    def run(self, step_ids: Optional[list] = None):
+    def run(self, step_ids: list | None = None):
         """
         Starts running the current step(s). Running a step marks it as finished, if the step is set to proceed to next.
 
@@ -3829,7 +3829,7 @@ class Job(object):
         """
         return self._execute_step(step_ids, execution_type=ExecutionType.RUN)
 
-    def stop(self, step_ids: Optional[list] = None):
+    def stop(self, step_ids: list | None = None):
         """
         Stops the current running step(s). The step(s) can be Run again or Finish can be used to complete it. In case of
         GP step and question step, the processing of the step is cancelled. In case of manual and open app step,
@@ -3877,7 +3877,7 @@ class Job(object):
         """
         return self._execute_step(step_ids, execution_type=ExecutionType.STOP)
 
-    def finish(self, step_ids: Optional[list] = None):
+    def finish(self, step_ids: list | None = None):
         """
         Finishes the current step(s).
 
@@ -3967,7 +3967,7 @@ class WorkflowManagerExecution:
             else ExecutionStatus.RUNNING
         )
 
-    def result(self, timeout: Optional[int] = 300):
+    def result(self, timeout: int | None = 300):
         """
         Returns the last :class:`~arcgis.gis.workflowmanager.Notification` message received at the end of the execution
 
@@ -4155,7 +4155,7 @@ class ItemExecution(WorkflowManagerExecution):
             nm.disconnect()
 
     @property
-    def export_id(self) -> Optional[str]:
+    def export_id(self) -> str | None:
         """
         Get the export id from executing the item export.
 
@@ -4168,7 +4168,7 @@ class ItemExecution(WorkflowManagerExecution):
         return None
 
     @property
-    def export_location(self) -> Optional[str]:
+    def export_location(self) -> str | None:
         """
         Get the exported file location on the local machine. If the save_path optional parameter was specified
         in :func:`~arcgis.gis.workflowmanageradmin.export_item`, the file was exported to that directory location.
@@ -4183,7 +4183,7 @@ class ItemExecution(WorkflowManagerExecution):
         return None
 
     @property
-    def export_mapping_location(self) -> Optional[str]:
+    def export_mapping_location(self) -> str | None:
         """
         Get the exported mapping file location on the local machine. If the save_path optional parameter was specified
         in :func:`~arcgis.gis.workflowmanageradmin.export_item`, the file was exported to that directory location.
