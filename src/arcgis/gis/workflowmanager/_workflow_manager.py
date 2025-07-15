@@ -315,7 +315,7 @@ class WorkflowManagerAdmin:
         ---------------------  ---------------------------------------------------------
         passphrase             Optional. If exporting encrypted user defined settings, define a passphrase.
                                If no passphrase is specified, the keys for encrypted user defined settings will be
-                               exported without their values.
+                               exported without their values. Starting at 12.0, this property is deprecated.
         ---------------------  ---------------------------------------------------------
         run_async              Optional. A boolean indicating whether to run export item asynchronously. If set to true,
                                export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`. The download
@@ -486,7 +486,7 @@ class WorkflowManagerAdmin:
         -----------------------  ---------------------------------------------------------
         passphrase               Optional. If importing encrypted user defined settings, specify the same passphrase
                                  used when exporting the configuration file. If no passphrase is specified, the keys for
-                                 encrypted user defined settings will be imported without their values.
+                                 encrypted user defined settings will be imported without their values. This 
         -----------------------  ---------------------------------------------------------
         run_async                Optional. A boolean indicating whether to run import item asynchronously. If set to true,
                                  import_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`
