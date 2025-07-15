@@ -3606,42 +3606,92 @@ class Polygon(Geometry):
 
     @classmethod
     def _from_geojson(cls, data, sr=None):
+        """
+        Convert a GeoJSON Polygon / MultiPolygon into an Esri JSON Polygon.
+
+        Parameters
+        ----------
+        data : dict
+            GeoJSON geometry (RFC 7946) of type "Polygon" or "MultiPolygon".
+        sr : dict, optional
+            Esri spatialReference object to copy into the output.
+
+        Returns
+        -------
+        dict
+            Esri-JSON polygon with keys: rings, hasZ, hasM,
+            and optionally spatialReference.
+        """
+
+        def _is_clockwise_np(coords):
+            """
+            True: vertices are clockwise, False: counter-clockwise.
+            Accepts any sequence of (x, y).
+
+            z/m are ignored in this operation according to OGC specification:
+            https://portal.opengeospatial.org/files/?artifact_id=18241
+            """
+            xy = np.asarray(coords, dtype=np.float64)
+
+            # build two views, each just a stride-shift:
+            x, y = xy[:, 0], xy[:, 1]
+            xp, yp = np.roll(x, 1), np.roll(y, 1)  # previous vertex (x_{i-1}, y_{i-1})
+
+            # 2*area = \Sum (x_i − x_{i-1})(y_i + y_{i-1})
+            area2 = np.dot(x - xp, y + yp)  # single BLAS call
+
+            return area2 > 0
+
+        def _close(r):
+            """Ensure first point is repeated at the end."""
+            return r if r[0] == r[-1] else r + [r[0]]
+
         sr = sr or {"wkid": 4326}
+        gtype = data.get("type")
+        if gtype == "Polygon":
+            polys = [data["coordinates"]]  # wrap as multipolygon
+        elif gtype == "MultiPolygon":
+            polys = data["coordinates"]
+        else:
+            raise ValueError(f"Unsupported geometry type: {gtype!r}")
 
-        coordinates = data["coordinates"]
-        part_list = []
+        rings = []  # flat list of all rings for Esri JSON
+        max_dim = 2  # keep track of the largest coord length
 
-        if data["type"].lower() == "multipolygon":
-            for polygon in coordinates:  # Iterate over individual polygons
-                polygon_rings = []
-                for ring in polygon:  # Outer + inner rings
-                    polygon_rings.append(
-                        [tuple(coord) for coord in ring]
-                    )  # Convert to tuple
-                part_list.append(
-                    polygon_rings
-                )  # Append entire polygon as a separate entry
-        elif data["type"].lower() == "polygon":
-            polygon_rings = [
-                [tuple(coord) for coord in coordinates[0]]
-            ]  # Ensure consistent list structure
-            part_list.append(polygon_rings)  # Keep same nesting level as MultiPolygon
+        for poly in polys:
+            if not poly:
+                continue  # skip empty parts
 
-        return cls({"rings": part_list, "spatialReference": sr})
+            # ---- outer ring ----------------------------------------------------
+            outer = _close(poly[0])
+            if not _is_clockwise_np(outer):  # GeoJSON outer is CCW -> flip
+                outer = outer[::-1]
+            rings.append(outer)
+            max_dim = max(max_dim, max(len(p) for p in outer))
+
+            # ---- holes ---------------------------------------------------------
+            for hole in poly[1:]:
+                hole = _close(hole)
+                if _is_clockwise_np(hole):  # GeoJSON hole is CW -> flip
+                    hole = hole[::-1]
+                rings.append(hole)
+                max_dim = max(max_dim, max(len(p) for p in hole))
+
+        esri = {
+            "rings": rings,
+            "hasZ": max_dim >= 3,  # by default assume the third dim is z
+            "hasM": max_dim >= 4,
+            "spatialReference": sr,
+        }
+
+        return esri
 
     @property
     def __geo_interface__(self) -> dict:
         """Returns the geometry in valid GeoJSON format as either Polygon or MultiPolygon."""
-        rings = self["rings"]
+        from _impl.common._arcgis2geojson import convertRingsToGeoJSON
 
-        # Ensure the structure is correct (list of lists of coordinates)
-        col = [[tuple(pt) for pt in ring] for ring in rings]
-
-        # Check if it's a MultiPolygon
-        if len(rings) > 1:
-            return {"type": "MultiPolygon", "coordinates": [col]}  # Wrap in extra list
-        else:
-            return {"type": "Polygon", "coordinates": col}
+        return convertRingsToGeoJSON(self["rings"])
 
 
 ########################################################################
