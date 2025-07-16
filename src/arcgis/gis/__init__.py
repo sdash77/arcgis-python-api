@@ -32,14 +32,17 @@ import copy
 from arcgis.auth.tools import LazyLoader
 
 _imports = LazyLoader("arcgis._impl.imports")
-from arcgis.gis._impl._dataclasses._contentds import (
-    ItemProperties,
-)
+from arcgis.gis._impl._dataclasses._contentds import ItemProperties, ItemTypeEnum
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
+from arcgis.gis._impl._dataclasses._sfilters import (
+    SpatialFilter,
+    SpatialRelationship,
+)
+from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
-from arcgis.gis._impl._content_manager.folder import Folder
+from arcgis.gis._impl._content_manager.folder import Folder, Job
 from arcgis.gis._impl._con import _is_http_url
 
 try:
