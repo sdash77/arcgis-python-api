@@ -1,4 +1,4 @@
-import arcgis
+from __future__ import annotations
 
 
 class Header(object):

@@ -87,6 +87,13 @@ _JSON_ITEMS: list[str] = [
 
 
 class Job:
+    """
+    Represents a *job* that is created when adding an item to a *folder*.
+    Objects of this class should not be initialized directly but instead
+    are returned by calling the :meth:`~arcgis.gis._impl._content_manager.folder.core.Folder.add`
+    method of a :class:`~arcgis.gis._impl._content_manager.folder.core.Folder`.
+    """
+
     _item: _arcgis_gis.Item | None = None
 
     def __init__(
@@ -114,7 +121,17 @@ class Job:
     def __repr__(self) -> str:
         return self.__str__()
 
+    def done(self) -> bool:
+        return all([future.done() for future in self.futures])
+
+    def running(self) -> bool:
+        return all([future.running() for future in self.futures])
+
     def result(self) -> _arcgis_gis.Item:
+        """
+        Returns the :class:`item <arcgis.gis.Item>` that was added by this
+        job.
+        """
         if self._item:
             return self._item
         results = []
@@ -675,13 +692,14 @@ class Folder:
         item_id: str | None = None,
         stream: bool = True,
         upload_file_size: int | None = None,
-    ) -> concurrent.futures.Future | Job:
+    ) -> Job:
         """
         Adds an :class:`~arcgis.gis.Item` to the current folder.
 
         .. note::
-            This method returns a :class:`concurrent.futures.Future` object. To
-            obtain *item*, use :meth:`concurrent.future.Future.result` method.
+            This method returns a :class:`~arcgis.gis._impl._content_manager.folder.core.Job` object.
+            To obtain the *item*, use the
+            :meth:`~arcgis.gis._impl._content_manager.folder.core.Job.result` method.
 
         =================     ====================================================================
         **Parameter**          **Description**
@@ -694,8 +712,10 @@ class Folder:
 
                                   >>> from arcgis.gis import ItemProperties, ItemTypeEnum
 
-                                  >>> item_props = ItemProperties(title="<item_title>",
-                                                                  item_type=ItemTypeEnum.SHAPEFILE.value)
+                                  >>> item_props = ItemProperties(
+                                                    title="<item_title>",
+                                                    item_type=ItemTypeEnum.SHAPEFILE.value
+                                                   )
         -----------------     --------------------------------------------------------------------
         file                  Optional string, io.StringIO, or io.BytesIO. Provide the data to the
                               item.
@@ -724,7 +744,14 @@ class Folder:
                               If the `item_id` is already being used, an error will be raised
                               during the `add` operation.
 
-                              Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+                              .. code-block:: python
+
+                                  # Code example:
+                                  >>> add_job = gis_folder.add(
+                                  >>>                ...
+                                  >>>                item_id="9311d21a9a2047d19c0faaebd6f2cca6"
+                                  >>>                ...
+                                  >>>           )
         -----------------     --------------------------------------------------------------------
         stream                Optional bool. This parameter is used to override the default streaming
                               upload methods for the ArcGIS API for Python. This should only be used
@@ -738,7 +765,10 @@ class Folder:
         =================     ====================================================================
 
         :returns:
-            :class:`concurrent.futures.Future` object
+            A :class:`~arcgis.gis._impl._content_manager.folder.core.Job` object
+            specific to the :class:`~arcgis.gis.Item` that was added. It can be
+            used to get the resulting *item* by calling the
+            :meth:`~arcgis.gis._impl._content_manager.folder.core.Job.result` method.
 
         .. code-block:: python
 

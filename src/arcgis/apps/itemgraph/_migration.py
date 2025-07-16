@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ._item_graph import ItemGraph, ItemNode, load_from_file
 from ._get_dependencies import _get_related_item_dict
 from arcgis.gis import GIS
@@ -492,7 +493,7 @@ class _ImportPackage:
                             view_def["viewDefinitionQuery"] = query
                         view_layers[idx] = view_def
 
-            reqs = self.graph.get_node(item_id).requires("id")
+            reqs = self.graph.get_node(item_id).contains("id")
             if len(reqs) == 0:
                 raise RuntimeError("View Service does not have a valid data item.")
             elif len(reqs) == 1:

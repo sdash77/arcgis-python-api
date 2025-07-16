@@ -2,6 +2,7 @@
 Controls the local portal's security settings
 """
 
+from __future__ import annotations
 from typing import Optional
 from .._impl._con import Connection
 from .. import GIS
