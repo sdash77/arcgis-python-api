@@ -1,3 +1,4 @@
+__all__ = ["ArcGISLoginError", "EsriHttpResponseError"]
 from .api import EsriSession
 from ._auth import (
     EsriAPIKeyAuth,

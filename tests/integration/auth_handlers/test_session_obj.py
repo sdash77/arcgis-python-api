@@ -36,7 +36,7 @@ class TestBasicEsriSession(unittest.TestCase):
 
     def test_es_verify_cert(self):
         es = EsriSession()
-        assert isinstance(es.verify_cert, bool)
+        assert isinstance(es.verify, bool)
 
     def test_mount(self):
         es = EsriSession()

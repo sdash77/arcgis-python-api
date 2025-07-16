@@ -5,9 +5,8 @@ to subscribe to the streamed feature data or to broadcast updates and alerts.
 
 """
 
-from arcgis.gis import *
-from arcgis.features import *
-
+from __future__ import annotations
+from arcgis.gis import Layer
 from urllib.parse import urlencode
 
 
@@ -79,8 +78,7 @@ class StreamLayer(Layer):
 
         """
         try:
-            import sys
-            import ssl
+
             from twisted.internet import reactor
             from twisted.python import log
 

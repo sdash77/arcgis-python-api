@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class LocationTrackingError(Exception):
     """
     Location Tracking Error Class

@@ -4,6 +4,7 @@ The ``Filters`` modules contain functions to filter query results by a spatial r
 layers.
 """
 
+from __future__ import annotations
 from typing import Union
 from arcgis.geometry._types import Geometry, SpatialReference
 
