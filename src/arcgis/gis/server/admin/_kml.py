@@ -3,6 +3,7 @@ This resource is a container for all the KMZ files created on the
 server.s
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer

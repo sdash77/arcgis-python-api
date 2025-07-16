@@ -2,6 +2,7 @@
 Modifies a local portal's system settings.
 """
 
+from __future__ import annotations
 import json
 import requests
 from typing import Optional, Any
@@ -75,6 +76,29 @@ class Indexer(BasePortalAdmin):
         if "status" in res:
             return res["status"] in ["success", "suceess"]
         return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def mismatch(self) -> dict:
+        """
+        The status resource returns the current status of the indexing
+        service and the number of users, groups, and search items in both
+        the database (store) and the index.
+
+        If, in the response, the database and index values do not match,
+        indexing is either in progress or there is a problem with the
+        index. If indexing is in progress, you can view the status by
+        refreshing the page. If indexing is complete and there is a problem
+        with the index, perform the Reindex to correct any issues.
+
+        :returns: dict
+
+        """
+        url: str = f"{self._url}/status/mismatch"
+        params: dict = {
+            "f": "json",
+        }
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def reconfigure(self) -> bool:
@@ -513,6 +537,25 @@ class System(BasePortalAdmin):
         """
 
         url = "%s/indexer/status" % self._url
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def mismatch(self) -> dict:
+        """
+        The mismatch operation returns whether there is a discrepancy in
+        the count of an organization's users, groups, and items, wherein
+        the content is present in the database count but is missing in the
+        index count. If content is present in both the database and the
+        index, the operation returns a success response. If there are
+        inconsistencies between the database and the index, this
+        operation's response returns arrays that contain the index count,
+        the database count, and the username, group ID, and item ID of the
+        missing users, groups, and items, respectively.
+
+        :returns: dict
+        """
+        url = "%s/indexer/status/mismatch" % self._url
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 

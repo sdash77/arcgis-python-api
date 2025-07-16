@@ -357,8 +357,24 @@ class UnetClassifier(ArcGISModel):
         """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
         return torchgeo_backbone
+
+    @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        swin_keys = [
+            attr
+            for attr in dir(Swin_Weights)
+            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
+        ]
+
+        satlas_backbone = list(map(lambda m: "hf:" + m, resnet_keys + swin_keys))
+        return satlas_backbone
 
     @staticmethod
     def backbones():
@@ -380,8 +396,9 @@ class UnetClassifier(ArcGISModel):
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         torchgeo_backbone = UnetClassifier.torchgeo_backbones()
+        satlas_backbone = UnetClassifier.satlas_backbones()
 
-        return [*_resnet_family] + timm_backbones + torchgeo_backbone
+        return [*_resnet_family] + timm_backbones + torchgeo_backbone + satlas_backbone
 
     @property
     def supported_datasets(self):

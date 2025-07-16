@@ -9277,7 +9277,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def query_exif_info(self, input_images, gis=None, future=False, **kwargs):
-        """
+        r"""
         The `query_exif_info` reads the Exif header metadata from single or
         multiple images in shared data store. The Exif metadata is usually stored
         in drone image files. Some common Exif metadata information are GPS
@@ -10962,172 +10962,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.1")
-    def calculate_distance(
-        self,
-        input_source_raster_or_features,  #
-        output_distance_name=None,
-        maximum_distance=None,
-        output_cell_size=None,
-        output_direction_name=None,
-        output_allocation_name=None,
-        allocation_field=None,
-        distance_method="PLANAR",
-        input_barrier_raster_or_features=None,
-        output_back_direction_name=None,
-        context=None,
-        future=False,
-        estimate=False,
-        **kwargs,
-    ):
-        """
-           input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
-
-           output_name: outputDistanceName (str). Required parameter.
-
-           maximum_distance: maximumDistance (LinearUnit). Optional parameter.
-
-           output_cell_size: outputCellSize (LinearUnit). Optional parameter.
-
-           output_direction_name: outputDirectionName (str). Optional parameter.
-
-           output_allocation_name: outputAllocationName (str). Optional parameter.
-
-           allocation_field: allocationField (str). Optional parameter.
-
-           context: context (str). Optional parameter.
-
-           gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-           future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
-
-
-        Returns the following as a named tuple:
-           output_distance_raster - outputDistanceRaster as a str
-           output_direction_raster - outputDirectionRaster as a str
-           output_allocation_raster - outputAllocationRaster as a str
-        """
-        task = "CalculateDistance"
-        gis = self._gis
-
-        context_param = {}
-        _set_raster_context(context_param, context)
-        if "context" in context_param.keys():
-            context = context_param["context"]
-
-        if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_source_raster_or_features = self._feature_input(
-                input_source_raster_or_features
-            )
-        elif isinstance(input_source_raster_or_features, Item):
-            input_source_raster_or_features = {
-                "itemId": input_source_raster_or_features.itemid
-            }
-        else:
-            input_source_raster_or_features = self._layer_input(
-                input_source_raster_or_features
-            )
-
-        if input_barrier_raster_or_features:
-            if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
-                input_barrier_raster_or_features = self._feature_input(
-                    input_barrier_raster_or_features
-                )
-            elif isinstance(input_barrier_raster_or_features, Item):
-                input_barrier_raster_or_features = {
-                    "itemId": input_source_raster_or_features.itemid
-                }
-            else:
-                input_barrier_raster_or_features = self._layer_input(
-                    input_barrier_raster_or_features
-                )
-
-        (
-            output_distance_raster,
-            output_distance_service,
-        ) = self._set_output_raster(
-            output_name=output_distance_name,
-            task=task,
-            output_properties=kwargs,
-            estimate=estimate,
-        )
-        output_direction_raster = None
-        if output_direction_name is not None:
-            (
-                output_direction_raster,
-                output_direction_service,
-            ) = self._set_output_raster(
-                output_name=output_direction_name,
-                task=task,
-                output_properties=kwargs,
-                estimate=estimate,
-            )
-
-        output_allocation_raster = None
-        if output_allocation_name is not None:
-            (
-                output_allocation_raster,
-                out_allocation_service,
-            ) = self._set_output_raster(
-                output_name=output_allocation_name,
-                task=task,
-                output_properties=kwargs,
-                estimate=estimate,
-            )
-
-        output_back_direction_raster = None
-        if output_back_direction_name is not None:
-            (
-                output_back_direction_raster,
-                out_back_direction_service,
-            ) = self._set_output_raster(
-                output_name=output_back_direction_name,
-                task=task,
-                output_properties=kwargs,
-                estimate=estimate,
-            )
-
-        if (
-            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
-        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
-            gpjob = self._tbx.calculate_distance(
-                input_source_raster_or_features=input_source_raster_or_features,
-                output_distance_name=output_distance_raster,
-                maximum_distance=maximum_distance,
-                output_cell_size=output_cell_size,
-                output_direction_name=output_direction_raster,
-                output_allocation_name=output_allocation_raster,
-                allocation_field=allocation_field,
-                distance_method=distance_method,
-                input_barrier_raster_or_features=input_barrier_raster_or_features,
-                output_back_direction_name=output_back_direction_raster,
-                context=context,
-                gis=self._gis,
-                future=True,
-                estimate=estimate,
-            )
-        else:
-            gpjob = self._tbx.calculate_distance(
-                input_source_raster_or_features=input_source_raster_or_features,
-                output_distance_name=output_distance_raster,
-                maximum_distance=maximum_distance,
-                output_cell_size=output_cell_size,
-                output_direction_name=output_direction_raster,
-                output_allocation_name=output_allocation_raster,
-                allocation_field=allocation_field,
-                context=context,
-                gis=self._gis,
-                future=True,
-                estimate=estimate,
-            )
-        gpjob._is_ra = True
-        gpjob._item_properties = True
-        if future:
-            return RAJob(gpjob)
-        return RAJob(gpjob).result()
-
-    # ----------------------------------------------------------------------
     def calculate_statistics(
         self,
         image_collection,
@@ -12737,7 +12571,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         estimate=False,
         **kwargs,
     ):
-        """
+        r"""
         Function is designed to generate training sample image chips from the input imagery data with
         labeled vector data or classified images. The output of this service tool is the data store string
         where the output image chips, labels and metadata files are going to be stored.
@@ -17277,6 +17111,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_value=None,
         dimension_description=None,
         dimension_unit=None,
+        update_statistics=True,
+        update_transpose=True,
         future=False,
         estimate=False,
         **kwargs,
@@ -17298,6 +17134,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_description: dimensionDescription (str). Optional parameter.
 
         dimension_unit: dimensionUnit (str). Optional parameter.
+
+        update_statistics: updateStatistics (bool). Optional parameter.
+
+        update_transpose: updateTranspose (bool). Optional parameter.
 
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
@@ -17333,19 +17173,38 @@ class _RasterAnalysisTools(BaseAnalytics):
             if manage_mode.lower() == element.lower():
                 manage_mode = element
 
-        gpjob = self._tbx.manage_multidimensional_raster(
-            target_multidimensional_raster=target_multidimensional_raster,
-            manage_mode=manage_mode,
-            variables=variables,
-            input_multidimensional_rasters=input_multidimensional_rasters,
-            dimension_name=dimension_name,
-            dimension_value=dimension_value,
-            dimension_description=dimension_description,
-            dimension_unit=dimension_unit,
-            gis=self._gis,
-            future=True,
-            estimate=estimate,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version < 11.5:
+                gpjob = self._tbx.manage_multidimensional_raster(
+                    target_multidimensional_raster=target_multidimensional_raster,
+                    manage_mode=manage_mode,
+                    variables=variables,
+                    input_multidimensional_rasters=input_multidimensional_rasters,
+                    dimension_name=dimension_name,
+                    dimension_value=dimension_value,
+                    dimension_description=dimension_description,
+                    dimension_unit=dimension_unit,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
+            elif (current_version is not None) and current_version >= 11.5:
+                gpjob = self._tbx.manage_multidimensional_raster(
+                    target_multidimensional_raster=target_multidimensional_raster,
+                    manage_mode=manage_mode,
+                    variables=variables,
+                    input_multidimensional_rasters=input_multidimensional_rasters,
+                    dimension_name=dimension_name,
+                    dimension_value=dimension_value,
+                    dimension_description=dimension_description,
+                    dimension_unit=dimension_unit,
+                    update_statistics=update_statistics,
+                    update_transpose=update_transpose,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
@@ -18260,7 +18119,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-        """
+        r"""
         Function can be used to train a deep learning model using the output from the
         export_training_data function.
         It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.
@@ -23317,7 +23176,7 @@ class _Tools(object):
                 )
             else:
                 svcurl = self._gis.properties["helperServices"]["symbols"]["url"]
-            from arcgis.layers._vtl._vector_tile_layers import SymbolService
+            from arcgis.layers import SymbolService
 
             self._symbolservice = SymbolService(svcurl, self._gis)
             return self._symbolservice

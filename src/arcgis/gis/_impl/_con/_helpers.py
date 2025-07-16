@@ -2,6 +2,7 @@
 urllib parsing helpers to help figure out of the URL returns a file.
 """
 
+from __future__ import annotations
 import os
 import re
 import unicodedata
@@ -233,8 +234,8 @@ def _filename_from_url(url):
 
 # --------------------------------------------------------------------------
 def _get_file_name(s: dict) -> str:
-    """stips the filename from content-disposition using regex"""
-    fname = re.findall("filename\*=([^;]+)", s, flags=re.IGNORECASE)
+    """strips the filename from content-disposition using regex"""
+    fname = re.findall(r"filename\*=([^;]+)", s, flags=re.IGNORECASE)
     if not fname:
         fname = re.findall("filename=([^;]+)", s, flags=re.IGNORECASE)
     if "utf-8''" in fname[0].lower():

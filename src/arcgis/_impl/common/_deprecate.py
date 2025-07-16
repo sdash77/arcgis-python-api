@@ -6,13 +6,14 @@ notation with some required parameters to given unified deprecation warnings/exc
 Module is a fork of project: https://github.com/briancurtin/deprecation under Apache 2.0 License
 """
 
+from __future__ import annotations
 import collections
 import functools
 import textwrap
 import warnings
 import re
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 
 # This is mostly here so automodule docs are ordered more ideally.
 __all__ = [
@@ -109,7 +110,7 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None, detail
         * Raises a :class:`~DeprecatedWarning`
           via the :mod:`warnings` module, which is a subclass of the built-in
           :class:`DeprecationWarning`. Note that built-in
-          :class:`DeprecationWarning`\s are ignored by default, so for users
+          instances of :class:`DeprecationWarning` are ignored by default, so for users
           to be informed of said warnings they will need to enable them--see
           the :mod:`warnings` module documentation for more details.
 

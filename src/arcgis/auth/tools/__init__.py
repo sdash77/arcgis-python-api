@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ._lazy import LazyLoader
 from ._util import parse_url, assemble_url
 from ._adapter import EsriTrustStoreAdapter

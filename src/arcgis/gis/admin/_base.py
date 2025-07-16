@@ -2,7 +2,7 @@
 Contains the base class that all portaladmin object inherit from.
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 import json
 from ...gis._impl._con import Connection
 from ...gis import GIS

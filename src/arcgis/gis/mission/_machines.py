@@ -344,12 +344,12 @@ class Machine(object):
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
 
-        :return: Boolean
+        :return: String stating "success" or error message.
 
         """
         params = {"f": "json"}
         url = self._url + "/sslCertificates/{cert}/delete".format(cert=certificate)
-        res = self._con.get(path=url, params=params)
+        res = self._con.post(path=url, params=params)
         if isinstance(res, dict) and "status" in res:
             return res["status"]
         else:

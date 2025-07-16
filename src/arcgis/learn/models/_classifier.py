@@ -441,8 +441,30 @@ class FeatureClassifier(ArcGISModel):
         """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+
         return torchgeo_backbone
+
+    @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        swin_keys = [
+            attr
+            for attr in dir(Swin_Weights)
+            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
+        ]
+
+        satlas_backbone = list(
+            map(
+                lambda m: "hf:" + m,
+                resnet_keys + swin_keys,
+            )
+        )
+        return satlas_backbone
 
     @staticmethod
     def _supported_backbones():
@@ -451,12 +473,14 @@ class FeatureClassifier(ArcGISModel):
         transformer_backbones = FeatureClassifier.transformer_backbones()
         torchgeo_backbone = FeatureClassifier.torchgeo_backbones()
         foundation_model = FeatureClassifier.foundation_model_backbones()
+        satlas_backbone = FeatureClassifier.satlas_backbones()
 
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
             timm_backbones
             + transformer_backbones
             + torchgeo_backbone
             + foundation_model
+            + satlas_backbone
         )
 
     @property

@@ -1,6 +1,6 @@
-from . import *
-from dataclasses import dataclass, asdict, field
-from typing import Dict, Union, Optional, Any, ClassVar, TypeVar
+from __future__ import annotations
+from dataclasses import dataclass, field
+from typing import Union, Optional, ClassVar, TypeVar
 
 
 # common keys used in the format configuration

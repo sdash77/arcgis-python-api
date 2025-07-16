@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import re
 import xml.etree.ElementTree as ET
@@ -271,28 +272,6 @@ def _init_schema(
         view_tables=survey._ssi.tables,
         description=f"Feature service view of form for the survey {survey._si.id}",
     )
-    _form_flcm = arcgis.features.managers.FeatureLayerCollectionManager(
-        url=form_view.url.replace("/rest/services", "/rest/admin/services"),
-        gis=survey._gis,
-        fs=form_view,
-    )
-    try:
-        _form_flcm.update_definition(
-            {
-                "editorTrackingInfo": {
-                    "enableEditorTracking": True,
-                    "enableOwnershipAccessControl": True,
-                    "allowOthersToUpdate": False,
-                    "allowOthersToDelete": False,
-                    "allowOthersToQuery": False,
-                    "allowAnonymousToQuery": False,
-                    "allowAnonymousToUpdate": False,
-                    "allowAnonymousToDelete": False,
-                }
-            }
-        )
-    except AttributeError:
-        pass
     form_view.move(survey._si.ownerFolder)
     form_view.update(
         {

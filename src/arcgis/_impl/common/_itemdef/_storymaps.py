@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import uuid
 import copy
@@ -292,9 +293,21 @@ class _StoryMapDefinition(CloneNode):
                                 webmap_mapper[theme] = new_id
                                 continue
 
+                    if self._search_existing:
+                        # check if theme exists in target org
+                        exist_item = _search_org_for_existing_item(
+                            self.target, theme_to_copy
+                        )
+                        if exist_item:
+                            webmap_mapper[theme] = exist_item.id
+                            continue
                     # otherwise, clone
                     cloned_theme = self.target.content.clone_items(
-                        [theme_to_copy], search_existing_items=False
+                        [theme_to_copy],
+                        search_existing_items=False,
+                        folder=self.folder,
+                        owner=self.owner,
+                        preserve_item_id=self._preserve_item_id,
                     )
                     if cloned_theme:
                         for theme in cloned_theme:

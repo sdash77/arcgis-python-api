@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ._base import BaseEsriAuth
 from ._pki import EsriPKIAuth
 from ._winauth import EsriKerberosAuth, EsriWindowsAuth

@@ -5,9 +5,14 @@ about:
   summary: ArcGIS API for Python
 build:
   number: {{ environ.get('BUILD_NUMBER', '0') }}
+  script: |
+    python ./build/manage_binaries.py copy --conda --python {{ PY_VER }}
+    if errorlevel 1 exit 1 # [win]
+    python -m pip install --no-deps --no-build-isolation ./src
+    if errorlevel 1 exit 1 # [win]
 package:
   name: arcgis
-  version: 2.4.1
+  version: 2.4.2
 requirements:
   build:
   - python
@@ -24,11 +29,11 @@ requirements:
   - lxml
   - matplotlib
   - matplotlib-inline
-  - numpy >=1.21.6,<2
-  - pandas >=2.0.0,<2.3.0
+  - numpy >=2.2.0,<3
+  - pandas >=2.0.0,<2.4.0
   - pillow
   - puremagic >=1.15,<2
-  - pyarrow >=14,<17
+  - pyarrow >=16,<20
   - pylerc
   - pyspnego >=0.8.0
   - pywin32-security [win]
@@ -43,10 +48,15 @@ requirements:
   - pydantic >=2.8.2, <3
   - networkx >=3.3, <4
   - websocket-client >=1.2.3, <2.0.0
+  test:
+  - pip
 source:
-  git_url: ../..
+  path: ../..
 test:
+  commands:
+  # skipping Windows due to complexity with pywin32/pywin32-security
+  - pip check # [not win]
   imports:
   - arcgis.gis
 extra:
-  build_string: {{ GIT_BUILD_STR }}
+  build_string: {{ environ.get('GITHUB_SHA', 'manual_build') }}

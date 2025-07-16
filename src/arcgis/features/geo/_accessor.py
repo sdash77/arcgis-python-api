@@ -3,6 +3,7 @@ Holds Delegate and Accessor Logic
 """
 
 from __future__ import annotations
+import json
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -1194,8 +1195,6 @@ class GeoAccessor(object):
         * *gdal* - for the `Open Source Geospatial Foundation gdal <https://gdal.org/en/stable/>`_ translator
           library. A good balance of performance and compatibility with multiple GIS formats. Ideal
           for working with large datasets and open-source workflows.
-        * *fiona* - for the `fiona <https://github.com/Toblerity/Fiona>`_ simple feature data streaming
-          library. Can only be used to read in feature classes.
 
         To set environment at the top of the script, add:
 
@@ -2505,7 +2504,10 @@ class GeoAccessor(object):
         :return:
             Spatially Enabled DataFrame
 
+        Usage:
 
+        >>> df = pd.DataFrame(data={"geom": polygon_data, "oid": [1, 2, 3]})
+        >>> sdf = pd.DataFrame.spatial.from_df(df, geometry_column="geom")
 
 
         NOTE: Credits will be consumed for batch_geocoding, from
@@ -2710,7 +2712,6 @@ class GeoAccessor(object):
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
-            * `"fiona"`
 
             If not set, the first available library in the environment will be used.
 
@@ -2951,8 +2952,6 @@ class GeoAccessor(object):
         replace_mappings = {
             pd.NA: None,
             np.nan: None,
-            np.NaN: None,
-            np.NAN: None,
             pd.NaT: None,
         }
         df = self._data.copy()
@@ -3187,7 +3186,7 @@ class GeoAccessor(object):
             data = [
                 g.spatial_reference
                 for g in self._data[self.name]
-                if g not in [None, np.NaN, np.nan, "", {}] and isinstance(g, dict)
+                if g not in [None, np.nan, "", {}] and isinstance(g, dict)
             ]
             srs = [
                 _geometry.SpatialReference(sr)
@@ -3209,6 +3208,8 @@ class GeoAccessor(object):
                 sr = self.sr
             except Exception:
                 sr = None
+            wkt = None
+            wkid = None
             if sr and "wkid" in sr:
                 wkid = sr["wkid"]
             elif sr and "latestWkid" in sr:
@@ -3238,13 +3239,9 @@ class GeoAccessor(object):
                 elif isinstance(ref, int):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
-                    self._data[self.name].apply(
-                        lambda x: (
-                            x.update({"spatialReference": ref})
-                            if pd.notnull(x)
-                            else None
-                        )
-                    )
+                    mask = self._data[self.name].notna()
+                    for d in self._data.loc[mask, self.name]:
+                        d["spatialReference"] = ref
 
     # ----------------------------------------------------------------------
     def to_featureset(self):
@@ -3337,12 +3334,18 @@ class GeoAccessor(object):
                 fld["domain"] = None
                 fld["defaultValue"] = None
                 fld["nullable"] = True
+        geom_type = str(self._data.spatial._meta.geometry_type).lower()  # handles None
+        data_copy = self._data.copy()
+        sdf_geom_type = data_copy.spatial.geometry_type[0].lower()
         if drawing_info is None:
-            import json
-
-            di = {"renderer": json.loads(self._data.spatial.renderer.json)}
+            if sdf_geom_type == geom_type:
+                di = {"renderer": json.loads(data_copy.spatial.renderer.json)}
+            else:
+                self._data.spatial.renderer = None
+                di = {"renderer": json.loads(self._data.spatial.renderer.json)}
         else:
             di = drawing_info
+
         layer = {
             "layerDefinition": {
                 "currentVersion": 10.7,
@@ -4178,7 +4181,11 @@ class GeoAccessor(object):
                 self._data[self.name] = vals
                 return True
 
-            elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
+            elif isinstance(spatial_reference, (int, str, dict)) and HASPYPROJ:
+                if isinstance(spatial_reference, int):
+                    spatial_reference = {"wkid": spatial_reference}
+                elif isinstance(spatial_reference, str):
+                    spatial_reference = {"wkt": spatial_reference}
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference,

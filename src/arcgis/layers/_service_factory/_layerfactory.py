@@ -3,6 +3,7 @@ Generates Layer Types from the given inputs.
 
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 import os
 from arcgis.auth.tools import LazyLoader
@@ -77,7 +78,7 @@ class _DataServiceUrlFactory(type):
             elif data["type"] == "CSV":
                 from .._ogc import CSVLayer
 
-                return CSVLayer(url_or_item=url, gis=gis)
+                return CSVLayer(url=url, gis=gis)
         else:
             raise ValueError("Invalid URL. The URL for this factory must end in /data")
 

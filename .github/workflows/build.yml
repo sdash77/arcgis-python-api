@@ -1,0 +1,150 @@
+name: Build
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * *' # Run every day at 12PM UTC
+
+env:
+  BUILD_NUMBER: ${{ github.run_number }}
+
+jobs:
+  build-pip:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'schedule' || vars.SCHEDULED_BUILDS_ENABLED == '1' }}
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          environment-file: build.environment.yml
+      - name: Configure conda
+        run: |
+          conda remove -n base conda-anaconda-telemetry -y && echo "conda-anaconda-telemetry removed..." || echo "conda-anaconda-telemetry not installed..."
+      - name: Stage binary dependencies
+        run: |
+          python ./build/manage_binaries.py copy
+      - name: Build wheel
+        working-directory: ./src
+        run: |
+          python -m build --wheel --outdir dist .
+      - name: Build sdist
+        working-directory: ./src
+        run: |
+          python -m build --sdist --outdir dist .
+      - name: Upload pacakges
+        uses: actions/upload-artifact@v4
+        with:
+          name: arcgis-pypi-build-${{ github.run_number }}-${{ github.sha }}
+          path: |
+            src/dist/**/*.whl
+            src/dist/**/*.tar.gz
+          retention-days: 90
+  build-conda:
+    runs-on: ${{ matrix.os }}
+    if: ${{ github.event_name != 'schedule' || vars.SCHEDULED_BUILDS_ENABLED == '1' }}
+    strategy:
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+        # TODO use self-hosted runners
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          environment-file: build.environment.yml
+      - name: Configure conda
+        run: |
+          conda remove -n base conda-anaconda-telemetry -y && echo "conda-anaconda-telemetry removed..." || echo "conda-anaconda-telemetry not installed..."
+      - name: Build conda package
+        working-directory: ./build
+        run: |
+          conda build arcgis --override-channels -c esri -c esri-build -c defaults --python ${{ matrix.python }} --package-format .conda --output-folder ./output --no-test
+      - name: Test conda package
+        working-directory: ./build/output
+        run: |
+          export CONDA_SUBDIR="${{ runner.os == 'macOS' && 'osx-arm64' || (runner.os == 'Windows' && 'win-64' || 'linux-64') }}"
+          export ARCGIS_CONDA_PKG=$(find $CONDA_SUBDIR -name "*.conda")
+          conda build --test --override-channels -c esri -c esri-build -c defaults $ARCGIS_CONDA_PKG || {
+            # test failure is a warning
+            echo "::warning file=$ARCGIS_CONDA_PKG::Conda package test failed. Please review the logs."
+          }
+      - name: Convert conda package
+        # convert to osx-arm64 to osx-64
+        if: ${{ runner.os == 'macOS' }}
+        working-directory: ./build/output
+        run: |
+          # transmute to .tar.bz2
+          # conda-convert still requires package to be in .tar.bz2 format
+          cph transmute $(find . -name *.conda) .tar.bz2
+          # convert to osx-64
+          conda convert -f -p osx-64 $(find ./osx-arm64 -name *.tar.bz2) -o .
+          # transmute converted package to .conda
+          cph transmute $(find ./osx-64 -name *.tar.bz2) .conda
+      - name: Upload pacakges
+        uses: actions/upload-artifact@v4
+        with:
+          name: arcgis-conda-build-${{ github.run_number }}-${{ github.sha }}-${{ runner.os }}-${{ matrix.python }}
+          path: |
+            build/output/**/*.conda
+  deploy-conda:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    needs: [build-conda]
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_ESRI_FORGE }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_ESRI_FORGE }}
+      AWS_REGION: ${{ vars.AWS_REGION_ESRI_FORGE }}
+      S3_ENDPOINT_URL: https://s3.${{ vars.AWS_REGION_ESRI_FORGE }}.amazonaws.com
+      # channel for default branch: s3://<bucket>
+      # channel for non-default branch: s3://<bucket>/label/<branch>
+      CONDA_CHANNEL: s3://${{ vars.AWS_BUCKET_ESRI_FORGE }}${{ github.ref_name != github.event.repository.default_branch && '/label/' || '' }}${{ github.ref_name != github.event.repository.default_branch && github.ref_name || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            build.environment.yml
+          sparse-checkout-cone-mode: false
+      - name: Setup conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          environment-file: build.environment.yml
+      - name: Download conda packages
+        uses: actions/download-artifact@v4
+        with:
+          path: ./condapkg
+          pattern: arcgis-conda-build-${{ github.run_number }}-${{ github.sha }}-*
+          merge-multiple: true
+      - name: Upload conda packages to S3
+        run: |
+          # Upload to S3
+          rattler-build upload s3 \
+            --channel $CONDA_CHANNEL \
+            --endpoint-url $S3_ENDPOINT_URL \
+            --region $AWS_REGION \
+            ./condapkg/**/*.conda
+      - name: Index s3 conda packages using rattler-index
+        env:
+          S3_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_ESRI_FORGE }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_ESRI_FORGE }}
+          S3_REGION: ${{ vars.AWS_REGION_ESRI_FORGE }}
+          S3_FORCE_PATH_STYLE: true
+        run: |
+          rattler-index s3 $CONDA_CHANNEL

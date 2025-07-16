@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import ClassVar
 
 from arcgis.realtime.velocity.feeds.mqtt import MQTT

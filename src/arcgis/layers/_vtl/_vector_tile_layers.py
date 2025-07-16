@@ -1,11 +1,8 @@
 from __future__ import absolute_import, annotations
 
 import re
-import os
 import uuid
-import tempfile
 import urllib.parse
-from contextlib import contextmanager
 from typing import Any
 from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
@@ -563,143 +560,6 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             resp.raise_for_status()
             return resp.json()
         return None
-
-
-###########################################################################
-class SymbolService:
-    """
-    Symbol service is an ArcGIS Server utility service that provides access
-    to operations to build and generate images for Esri symbols to be
-    consumed by internal and external web applications.
-    """
-
-    _url = None
-    _gis = None
-    _properties = None
-
-    def __init__(self, url: str, gis: arcgis.gis.GIS = None):
-        self._url = url
-        if gis is None:
-            gis = arcgis.env.active_gis
-        self._gis = gis
-        self._session = gis.session
-
-    @property
-    def properties(self) -> dict[str, Any]:
-        """returns the service's properties"""
-        if self._properties is None:
-            self._properties = self._session.get(
-                url=self._url, params={"f": "json"}
-            ).json()
-        return self._properties
-
-    def generate_symbol(self, svg: str) -> dict:
-        """converts an SVG Image to a CIM Compatible Image"""
-        url = f"{self._url}/generateSymbol"
-        params = {"f": "json"}
-        files = {"svgImage": svg}
-        resp: requests.Response = self._session.post(url=url, data=params, files=files)
-        resp.raise_for_status()
-        return resp.json()
-
-    def generate_image(
-        self,
-        item: Item,
-        name: str | None = None,
-        dict_features: dict[str, Any] | None = None,
-        size: str = "200,200",
-        scale: float = 1,
-        anchor: bool = False,
-        image_format: str = "png",
-        dpi: int = 96,
-        file_path: str | pathlib.Path = None,
-    ) -> str:
-        """
-        Returns a single symbol based on a web style item.
-
-        ============================    ===================================================================================================================
-        **Parameter**                    **Description**
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        item                            Required Item. The web style ArcGIS Enterprise portal item ID. The web style must belong to the same organization
-                                        the ArcGIS Server is federated to.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        name                            Optional String. The web style ArcGIS Enterprise portal item ID. The web style must belong to the same organization
-                                        the ArcGIS Server is federated to.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        dict_features                   Optional dict[str, Any]. The attributes and configuration key and value pairs for dictionary-based styles.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        size                            Optional String. The size (width and height) of the exported image in pixels. If the size is not specified, the
-                                        image will be constrained by the requested symbol's size.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        scale                           Optional Float. A value of 1.0 implies the symbol is not scaled. Setting the value to 1.5 scales the image to 50
-                                        percent more than the image's original size. Settings the value to 0.5 reduces the image's original size by 50
-                                        percent.
-                                        If both the size and scale parameters are specified, both changes will be honored; the symbol will be scaled to the
-                                        value set for scale and resized to the value set for the size parameter.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        anchor                          Optional Bool. The symbol placement in the image. When set to true, the original symbol anchor point placement in
-                                        the image is honored. When set to false, the symbol is centered to the image. Having the image centered can be
-                                        useful if you want to preview the whole symbol without taking symbol offset or anchor points into account. The
-                                        default value is false.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        image_format                    Optional String. The output image format. The default format is png. The allowed values are: png, png8, png24,
-                                        png32, jpg, bmp, gif, svg, and svgz.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        dpi                             Optional Int. The device resolution of the exported image (dots per inch). If the dpi value is not specified, an
-                                        image with a default DPI of 96 will be exported.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        file_path                       Optional String | pathlib.Path. The full save path with the file name to the save location.  The folder must exist.
-        ============================    ===================================================================================================================
-
-        :return: String
-
-        """
-        save_file_name: str = None
-        save_folder: str = None
-        if file_path:
-            save_folder, save_file_name = os.path.dirname(file_path), os.path.basename(
-                file_path
-            )
-        else:
-            save_folder, save_file_name = (
-                tempfile.gettempdir(),
-                f"symbol_file.{image_format}",
-            )
-        if name is None and dict_features is None:
-            raise ValueError("A name or dict_features must be provided.")
-        image_formats: list[str] = [
-            "png",
-            "png8",
-            "png24",
-            "png32",
-            "jpg",
-            "bmp",
-            "gif",
-            "svg",
-            "svgz",
-        ]
-        if image_format.lower() not in image_formats:
-            raise ValueError(f"Invalid image format: {image_format}")
-        params: dict[str, Any] = {
-            "webstyle": item.itemid,
-            "symbolName": name or "",
-            "dictionaryFeatures": dict_features or "",
-            "size": size,
-            "scaleFactor": scale,
-            "centerAnchorPoint": anchor,
-            "dpi": dpi,
-            "f": "image",
-            "imageFormat": image_format,
-        }
-        url: str = f"{self._url}/generateImage"
-        resp: requests.Response = self._session.get(
-            url=url,
-            params=params,
-            file_name=save_file_name,
-            out_folder=save_folder,
-        )
-        resp.raise_for_status()
-        return resp.json()
 
 
 ###########################################################################

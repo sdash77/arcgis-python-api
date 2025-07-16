@@ -210,8 +210,18 @@ class HEDEdgeDetector(ModelExtension):
         """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
         return torchgeo_backbone
+
+    @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        satlas_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
+        return satlas_backbone
 
     @staticmethod
     def _supported_backbones():
@@ -233,12 +243,14 @@ class HEDEdgeDetector(ModelExtension):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = HEDEdgeDetector.transformer_backbones()
         torchgeo_backbone = HEDEdgeDetector.torchgeo_backbones()
+        satlas_backbone = HEDEdgeDetector.satlas_backbones()
 
         return (
             [*_resnet_family, *_vgg_family]
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
+            + satlas_backbone
         )
 
     @property

@@ -634,8 +634,12 @@ def get_backbone_func(backbone, data, **kwargs):
             bckbn = backbone.split(":")[1]
             from . import _hf_weightutils as hfwu
 
-            if "resnet" in bckbn:
+            supported_hf_backbones = {"resnet", "swin"}
+            if any(name in bckbn for name in supported_hf_backbones):
                 backbone = getattr(hfwu, bckbn)
+            else:
+                raise ValueError(f"Unsupported backbone: 'hf:{bckbn}'")
+
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
@@ -1129,7 +1133,7 @@ class ArcGISModel(object):
 
         _stored_matplotlib_backend = matplotlib.get_backend()
 
-        if not _is_notebook_server and _is_linux:
+        if not _is_notebook_server() and _is_linux():
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
 
@@ -1273,7 +1277,7 @@ class ArcGISModel(object):
                     mixed_precision=mixed_precision,
                     **kwargs,
                 )
-            if not _is_notebook_server and _is_linux:
+            if not _is_notebook_server() and _is_linux():
                 matplotlib.use(_stored_matplotlib_backend)
                 import matplotlib.pyplot as plt
 
@@ -1430,7 +1434,14 @@ class ArcGISModel(object):
 
         # Check if model is Multispectral and dump parameters for that
         _emd_template["IsMultispectral"] = getattr(self, "_is_multispectral", False)
-        if _emd_template.get("IsMultispectral", False):
+        # Check if data is not 8 bit RGB then don't use imagenet normalization
+        _emd_template["IsImageNetNormalization"] = not getattr(
+            self._data, "_is_non8bit_rgb", False
+        )
+        if (
+            _emd_template.get("IsMultispectral", False)
+            or not _emd_template["IsImageNetNormalization"]
+        ):
             _emd_template["Bands"] = self._data._bands
             _emd_template["ImageryType"] = self._data._imagery_type
             if getattr(self._data, "_dataset_type", None) != "ChangeDetection":
@@ -2419,7 +2430,6 @@ class ArcGISModel(object):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
-                                Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
 

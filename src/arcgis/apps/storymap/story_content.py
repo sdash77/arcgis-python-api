@@ -114,6 +114,8 @@ class SlideLayout(Enum):
     FULL = "full"
     SECTIONDOUBLE = "section-double"
     SECTIONSINGLE = "section-single"
+    TITLELESSFLEXIBLE = "titleless-flexible"
+    FLEXIBLE = "flexible"
 
 
 class SlideSubLayout(Enum):
@@ -211,7 +213,7 @@ class Separator:
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Separator"
+        return "Separator()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(self, story=None, **kwargs):
@@ -296,11 +298,7 @@ class Image:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Image: {self.caption}"
-        else:
-            return "Image"
+        return f"Image(path='{self._path}')"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -740,11 +738,7 @@ class Video:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Video: {self.caption}"
-        else:
-            return "Video"
+        return f"Video(path={self._path})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1082,11 +1076,7 @@ class Audio:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Audio: {self.caption}"
-        else:
-            return "Audio"
+        return f"Audio(path={self._path})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1406,7 +1396,7 @@ class Embed:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Embed: {self.link}"
+        return f"Embed(link={self.link})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1735,7 +1725,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return self._type
+        return f"Map(item={self._path}, type={self._type})"
 
     # ----------------------------------------------------------------------
     @property
@@ -1811,6 +1801,38 @@ class Map:
         if self._existing is True:
             return self._map_layers
         return []
+
+    # ----------------------------------------------------------------------
+    def update_map_layers(self, layer_id: str | int, visible: bool):
+        """
+        Update the visibility of the map layers.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        layer_id            Required String or integer index. The id of the layer to update. You can find the id in the map layers property.
+        ------------------  ----------------------------------------
+        visible             Required Boolean. True if the layer should be visible, False otherwise.
+        ==================  ========================================
+
+        :return:
+            The updated map layers that are being used.
+        """
+        if self._existing is True:
+            for i, layer in enumerate(
+                self._story._properties["resources"][self.resource_node]["data"][
+                    "mapLayers"
+                ]
+            ):
+                if layer["id"] == layer_id:
+                    self._story._properties["resources"][self.resource_node]["data"][
+                        "mapLayers"
+                    ][i]["visible"] = visible
+                    break
+        self._map_layers = self._story._properties["resources"][self.resource_node][
+            "data"
+        ]["mapLayers"]
+        return self._map_layers
 
     # ----------------------------------------------------------------------
     def _calculate_z_value(self, scale: int = None):
@@ -2547,10 +2569,7 @@ class Text:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.text:
-            return f"Text: {self._style}"
-        else:
-            return "Text"
+        return f"Text(text={self._text or ''})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -2912,7 +2931,7 @@ class Button:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Button: {self.text}"
+        return f"Button(link={self._link}, text={self._text})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -3051,7 +3070,7 @@ class Gallery:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Image Gallery"
+        return "ImageGallery()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -3312,7 +3331,7 @@ class Swipe:
         >>> swipe = Swipe()
 
         # Method 2: Use the get method in story
-        >>> swipe = my_story.get(node = <node_id>)
+        >>> swipe = my_story.content_list[3] # if swipe at index 3
 
     """
 
@@ -3373,7 +3392,7 @@ class Swipe:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Swipe: {self._media_type}"
+        return f"Swipe(type={self._media_type})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -3664,11 +3683,11 @@ class Sidecar:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Sidecar"
+        return "Sidecar()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Sidecar"
+        return "Sidecar()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(
@@ -3808,7 +3827,7 @@ class Sidecar:
         .. code-block:: python
 
             # Get sidecar from story and see the properties
-            sc = story.get(<sidecar_node_id>)
+            sc = story.content_list[3] # if sidecar at index 3
             sc.properties
             >> returns a dictionary structure of the sidecar
 
@@ -3824,7 +3843,7 @@ class Sidecar:
             sc.edit(im2, 2)
 
             # OPTION 2 (only applicable if content is of same type as existing)
-            im2 = sc.get(im.node_id)
+            im2 = sc.content_list[4]
             im2.image = <img_url_or_path>
 
         """
@@ -4268,11 +4287,11 @@ class Timeline:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Timeline"
+        return "Timeline()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Timeline"
+        return "Timeline()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(
@@ -4575,11 +4594,11 @@ class MapTour:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Tour"
+        return f"MapTour(type={self._type}, subtype={self._subtype})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Map Tour"
+        return f"MapTour(type={self._type}, subtype={self._subtype})"
 
     # ----------------------------------------------------------------------
     @property
@@ -4693,11 +4712,11 @@ class MediaAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Media Action"
+        return "MediaAction()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Media Action"
+        return "MediaAction()"
 
     # ----------------------------------------------------------------------
     @property
@@ -4892,11 +4911,11 @@ class MapAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Action"
+        return "MapAction()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Map Action"
+        return "MapAction()"
 
     # ----------------------------------------------------------------------
     @property
@@ -5043,11 +5062,11 @@ class ExpressMap:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "ExpressMap"
+        return "ExpressMap()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "ExpressMap"
+        return "ExpressMap()"
 
     # ----------------------------------------------------------------------
     @property
@@ -5190,7 +5209,7 @@ class Code:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Code: {self.language}"
+        return f"Code(language={self.language})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -5382,6 +5401,12 @@ class BriefingSlide:
             else:
                 self._title: Text | None = None
 
+            display_title = node_data.get("displayTitle", None)
+            if display_title:
+                self._display_title: str = display_title
+            else:
+                self._display_title: str | None = None
+
             self._section_position: str | None = node_data.get("sectionPosition", None)
 
     def _initialize_new_slide(
@@ -5398,8 +5423,10 @@ class BriefingSlide:
             self._title: Text = (
                 Text(title, TextStyles.SUBHEADING) if isinstance(title, str) else title
             )
+            self._display_title: str = title if isinstance(title, str) else title.text
         else:
             self._title: Text | None = None
+            self._display_title: str | None = None
 
         # set subtitle
         if subtitle:
@@ -5423,14 +5450,21 @@ class BriefingSlide:
             "full",
             "section-single",
             "section-double",
+            "titleless-flexible",
+            "flexible",
         ]:
             self._layout: str = layout
         else:
             raise ValueError(
-                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double"
+                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double, flexible, titleless-flexible."
             )
 
-        if self._layout in ["double", "titleless-double"]:
+        if self._layout in [
+            "double",
+            "titleless-double",
+            "flexible",
+            "titleless-flexible",
+        ]:
             if sublayout and sublayout in SlideSubLayout.__members__.values():
                 self._sublayout: str = sublayout.value
             elif sublayout and sublayout in ["3-7", "7-3", "1-1"]:
@@ -5499,7 +5533,7 @@ class BriefingSlide:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Briefing Slide: {self.layout}"
+        return f"BriefingSlide(layout={self.layout})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -5625,6 +5659,31 @@ class BriefingSlide:
 
     # ----------------------------------------------------------------------
     @property
+    def display_title(self) -> str | None:
+        """
+        Get/Set the display title of the slide. This is the title that will be shown in the
+        briefing when the slide is displayed.
+
+        :return:
+            A string of the display title if it exists, otherwise None.
+        """
+        return self._display_title
+
+    # ----------------------------------------------------------------------
+    @display_title.setter
+    def display_title(self, title: str):
+        """
+        Set the display title of the slide. This is the title that will be shown in the
+        briefing when the slide is displayed.
+
+        :param title: A string of the display title.
+        """
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["displayTitle"] = title
+        self._display_title = title
+
+    # ----------------------------------------------------------------------
+    @property
     def layout(self) -> str:
         """
         Get the layout of the slide.
@@ -5656,6 +5715,10 @@ class BriefingSlide:
     # ----------------------------------------------------------------------
     @sublayout.setter
     def sublayout(self, sublayout: str | SlideSubLayout):
+        if self.layout in ["flexible", "titleless-flexible"]:
+            # TODO: Ability to change sublayout in flexible layout
+            raise Exception("Changing the sublayout is not supported at this time.")
+
         if sublayout not in SlideSubLayout.__members__.values() and not isinstance(
             sublayout, str
         ):
@@ -5799,23 +5862,7 @@ class Block:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self._index == "0" and self._slide.layout in [
-            "single",
-            "titleless-single",
-            "full",
-            "section-double",
-        ]:
-            return "Block"
-        elif self._index == "0" and self._slide.layout in [
-            "double",
-            "titleless-double",
-        ]:
-            return "Left Block"
-        elif self._index == "1" and self._slide.layout in [
-            "double",
-            "titleless-double",
-        ]:
-            return "Right Block"
+        return f"Block(content={self.content}, index={self._index})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -6076,7 +6123,7 @@ class Table:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Table"
+        return "Table()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -6139,7 +6186,7 @@ class Cover:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Cover"
+        return "Cover()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -6229,13 +6276,27 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        type                Optional string or CoverType enum. The type of story cover to be used in the story.
+        type                Optional string or :class:`~arcgis.apps.storymap.story_content.CoverType`
+                            enumeration. The type of story cover to be used in the story.
 
-                            ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal" | "card" | "split" | "top"``
-                            ``Values for Collection: "grid" | "magazine" | "journal"``
+                            * Values for :class:`~arcgis.apps.storymap.story.StoryMap`
+                              and :class:`~arcgis.apps.storymap.briefing.Briefing`:
+                             * *full*
+                             * *sidebyside*
+                             * *minimal*
+                             * *card*
+                             * *split*
+                             * *top*
+
+                            * Values for :class:`~arcgis.apps.storymap.collection.Collection`:
+
+                             * *grid*
+                             * *magazine*
+                             * *journal*
 
                             .. note::
-                                As of Enterprise 11.4 only "full", "sidebyside", and "minimal" are supported for Storymap and Briefing.
+                                As of Enterprise 11.4 only "full", "sidebyside", and "minimal" are
+                                supported for Storymap and Briefing.
         ===============     ====================================================================
 
         :return:
@@ -6536,7 +6597,7 @@ class Navigation:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Navigation"
+        return "Navigation()"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -6603,7 +6664,7 @@ class CollectionNavigation:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Collection Navigation"
+        return "CollectionNavigation()"
 
     def __repr__(self) -> str:
         return self.__str__()
