@@ -66,7 +66,7 @@ class BaseCloneGroup:
             gis = arcgis.env.active_gis
         self._gis: GIS = gis
 
-    def clone(self, **kwags) -> Group:
+    def clone(self, **kwargs) -> Group:
         """
         Override the clone operation in order performs the cloning logic
         """

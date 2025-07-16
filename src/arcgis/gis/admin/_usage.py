@@ -7,13 +7,11 @@ import os
 import time
 import datetime
 from typing import Optional
-from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
 from ..._impl.common._utils import (
     local_time_to_online,
     timestamp_to_datetime,
 )
-from ...gis import GIS
 from ._base import BasePortalAdmin
 from cachetools import cached, TTLCache
 
