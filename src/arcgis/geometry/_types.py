@@ -3619,32 +3619,10 @@ class Polygon(Geometry):
         Returns
         -------
         dict
-            Esri-JSON polygon with keys: rings, hasZ, hasM,
-            and optionally spatialReference.
+            Esri-JSON polygon with keys: "rings", "hasZ", "hasM",
+            and optionally "spatialReference".
         """
-
-        def _is_clockwise_np(coords):
-            """
-            True: vertices are clockwise, False: counter-clockwise.
-            Accepts any sequence of (x, y).
-
-            z/m are ignored in this operation according to OGC specification:
-            https://portal.opengeospatial.org/files/?artifact_id=18241
-            """
-            xy = np.asarray(coords, dtype=np.float64)
-
-            # build two views, each just a stride-shift:
-            x, y = xy[:, 0], xy[:, 1]
-            xp, yp = np.roll(x, 1), np.roll(y, 1)  # previous vertex (x_{i-1}, y_{i-1})
-
-            # 2*area = \Sum (x_i − x_{i-1})(y_i + y_{i-1})
-            area2 = np.dot(x - xp, y + yp)  # single BLAS call
-
-            return area2 > 0
-
-        def _close(r):
-            """Ensure first point is repeated at the end."""
-            return r if r[0] == r[-1] else r + [r[0]]
+        from _impl.common._arcgis2geojson import ringIsClockwise, closeRing
 
         sr = sr or {"wkid": 4326}
         gtype = data.get("type")
@@ -3663,16 +3641,16 @@ class Polygon(Geometry):
                 continue  # skip empty parts
 
             # ---- outer ring ----------------------------------------------------
-            outer = _close(poly[0])
-            if not _is_clockwise_np(outer):  # GeoJSON outer is CCW -> flip
+            outer = closeRing(poly[0])
+            if not ringIsClockwise(outer):  # GeoJSON outer is CCW -> flip
                 outer = outer[::-1]
             rings.append(outer)
             max_dim = max(max_dim, max(len(p) for p in outer))
 
             # ---- holes ---------------------------------------------------------
             for hole in poly[1:]:
-                hole = _close(hole)
-                if _is_clockwise_np(hole):  # GeoJSON hole is CW -> flip
+                hole = closeRing(hole)
+                if ringIsClockwise(hole):  # GeoJSON hole is CW -> flip
                     hole = hole[::-1]
                 rings.append(hole)
                 max_dim = max(max_dim, max(len(p) for p in hole))
