@@ -13,7 +13,7 @@ from ..._impl.common._utils import (
     local_time_to_online,
     timestamp_to_datetime,
 )
-from ..._gis import GIS
+from arcgis.gis import GIS
 from ._base import BasePortalAdmin
 from cachetools import cached, TTLCache
 
