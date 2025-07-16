@@ -8,8 +8,10 @@ import tempfile
 
 from datetime import datetime
 from typing import Optional, Any, Iterator
-from ...gis import Item, User
+from .._impl._con import Connection
+from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
+from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 from ._dsmgr import DataStoreMetricsManager
 from ._partnercollab import PartneredCollabManager

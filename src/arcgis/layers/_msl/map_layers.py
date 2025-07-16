@@ -7,6 +7,7 @@ from typing import Any, Optional, Union
 from arcgis._impl.common import _query
 from arcgis._impl.common._filters import (
     StatisticFilter,
+    TimeFilter,
     GeometryFilter,
 )
 from arcgis._impl.common._mixins import PropertyMap

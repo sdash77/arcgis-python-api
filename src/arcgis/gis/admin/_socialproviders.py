@@ -3,6 +3,7 @@ Configures Social Providers for a Portal or ArcGIS Online
 """
 
 from __future__ import annotations
+from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
 

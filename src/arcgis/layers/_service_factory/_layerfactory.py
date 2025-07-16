@@ -17,6 +17,7 @@ from arcgis.features.layer import (
     Table,
 )
 from arcgis.geocoding import Geocoder
+from arcgis.geoprocessing._tool import Toolbox
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
