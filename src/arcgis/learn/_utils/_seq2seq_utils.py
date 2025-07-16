@@ -322,7 +322,6 @@ class SequenceToSequenceLearner(Learner):
                 for i, x in enumerate(encoding.get("num_truncated_tokens", []))
                 if x > 0
             ]
-        print(f"Truncated Indices: {truncated_indices}")
         return truncated_indices
 
 
