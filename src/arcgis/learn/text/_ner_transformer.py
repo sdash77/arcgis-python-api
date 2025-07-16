@@ -812,6 +812,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                 temp_df = temp_df.groupby(["main_index"]).agg(
                     lambda x: list(OrderedDict.fromkeys(x))
                 )  # added this in place of the set because of order
+                temp_df = temp_df.explode("Address") # other fields are submsumed. Adress needs to be split into multiple rows
                 temp_df.drop(columns=["auxillary_index"], inplace=True)
                 temp_df.reset_index(drop=True, inplace=True)
                 # convert all the list into string
