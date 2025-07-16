@@ -9,7 +9,7 @@ import warnings
 import traceback
 import pandas as pd
 from functools import partial
-from typing import List, Union
+from typing import List, Union, Dict, AnyStr
 
 HAS_FASTAI = True
 try:
@@ -69,7 +69,7 @@ class SequenceToSequenceDataBunch(TextDataBunch):
         backwards=False,
         val_bs=None,
         collate_fn=None,
-        **dl_kwargs
+        **dl_kwargs,
     ):
         "Function that transform the `datasets` in a `DataBunch`. Passes `**dl_kwargs` on to `DataLoader()`"
         device = dl_kwargs.pop("device", None)
@@ -88,7 +88,7 @@ class SequenceToSequenceDataBunch(TextDataBunch):
             batch_size=bs,
             sampler=train_sampler,
             drop_last=True,
-            **dl_kwargs
+            **dl_kwargs,
         )
         dataloaders = [train_dl]
         for i, ds in enumerate(datasets[1:]):
@@ -103,7 +103,7 @@ class SequenceToSequenceDataBunch(TextDataBunch):
             path=path,
             collate_fn=collate_fn,
             no_check=no_check,
-            device=device
+            device=device,
         )
 
 
@@ -184,80 +184,71 @@ class SequenceToSequenceLearner(Learner):
         text_list: Union[List, str],
         batch_size: int,
         show_progress: bool,
-        **kwargs: dict
-    ) -> Union[pd.DataFrame, List]:  # num_beams=4, max_len=50):
+        **kwargs: Dict,
+    ) -> Union[List]:
         tok = self.model._tokenizer
         num_beams = kwargs.get("num_beams", 1)
         max_length = kwargs.get("max_length", 20)
         min_length = kwargs.get("min_length", 10)
 
-        if isinstance(text_list, list):
-            decoded_output = []
-            for i in progress_bar(
-                range(0, len(text_list), batch_size), display=show_progress
-            ):
-                # Intercept and validate the length
-                batch = text_list[i : i + batch_size]
-                truncated_indices = self.get_truncated_indices(batch)
-                offset = 0
-                main_index = []
-                auxillary_index = []
-                for sen_index in range(len(batch)):
-                    if sen_index in truncated_indices:
-                        split_sentences = self._sliding_window_split(
-                            batch[sen_index + offset], self.model._max_seq_len
-                        )
-                        # insert in the batch the split sentences
-                        batch = (
-                            batch[: sen_index + offset]
-                            + split_sentences
-                            + batch[sen_index + offset + 1 :]
-                        )
-                        main_index.extend([sen_index] * len(split_sentences))
-                        auxillary_index.extend(
-                            [
-                                sen_index + offset + i
-                                for i in range(len(split_sentences))
-                            ]
-                        )
-                        offset += len(split_sentences) - 1
-
-                    else:
-                        main_index.append(sen_index)
-                        auxillary_index.append(sen_index + offset)
-
-                # Now we have the batch with the split sentences
-                for mini_batch_index in range(0, len(batch), batch_size):
-                    batch_text = batch[mini_batch_index : mini_batch_index + batch_size]
-                    decoded_output_batch, encoded_output_batch = self.predict_batch(
-                        batch_text,
-                        num_beams=num_beams,
-                        max_length=max_length,
-                        min_length=min_length,
-                    )
-                    decoded_output.extend(decoded_output_batch)
-                # use pandas based merging based on main_index and auxillary_index
-                df = pd.DataFrame.from_dict(
-                    {
-                        "main_index": main_index,
-                        "auxillary_index": auxillary_index,
-                        "decoded_output": decoded_output,
-                    }
-                )
-                df = df.groupby("main_index")["decoded_output"].agg(list)
-                df = df.apply(lambda x: " ".join(x) if isinstance(x, list) else x)
-                return df
-        else:
-            encoded_input = text_list
-            # encoded_input.unsqueeze_(0)
-            encoded_output = self.model._transformer.generate(
-                encoded_input.to(self.model._transformer.device.type),
-                num_beams=num_beams,
-                max_length=max_length,
-                min_length=min_length,
+        if isinstance(
+            text_list, str
+        ):  # convert single string to list to leverage batch processing
+            text_list = [text_list]
+        decoded_output = []
+        for i in progress_bar(
+            range(0, len(text_list), batch_size), display=show_progress
+        ):
+            # Intercept and validate the length
+            batch = text_list[i : i + batch_size]
+            truncated_indices = self.get_truncated_indices(
+                batch, max_len=self.model._max_seq_len
             )
-            decoded_output = tok.batch_decode(encoded_output, skip_special_tokens=True)
-        return decoded_output
+            offset = 0
+            main_index = []
+            auxillary_index = []
+            for sen_index in range(len(batch)):
+                if sen_index in truncated_indices:
+                    split_sentences = self._sliding_window_split(
+                        batch[sen_index + offset], self.model._max_seq_len
+                    )
+                    # insert in the batch the split sentences
+                    batch = (
+                        batch[: sen_index + offset]
+                        + split_sentences
+                        + batch[sen_index + offset + 1 :]
+                    )
+                    main_index.extend([sen_index] * len(split_sentences))
+                    auxillary_index.extend(
+                        [sen_index + offset + i for i in range(len(split_sentences))]
+                    )
+                    offset += len(split_sentences) - 1
+
+                else:
+                    main_index.append(sen_index)
+                    auxillary_index.append(sen_index + offset)
+
+            # Now we have the batch with the split sentences
+            for mini_batch_index in range(0, len(batch), batch_size):
+                batch_text = batch[mini_batch_index : mini_batch_index + batch_size]
+                decoded_output_batch, encoded_output_batch = self.predict_batch(
+                    batch_text,
+                    num_beams=num_beams,
+                    max_length=max_length,
+                    min_length=min_length,
+                )
+                decoded_output.extend(decoded_output_batch)
+            # use pandas based merging based on main_index and auxillary_index
+            df = pd.DataFrame.from_dict(
+                {
+                    "main_index": main_index,
+                    "auxillary_index": auxillary_index,
+                    "decoded_output": decoded_output,
+                }
+            )
+            df = df.groupby("main_index")["decoded_output"].agg(list)
+            df = df.apply(lambda x: " ".join(x) if isinstance(x, list) else x)
+            return df.tolist()
 
     def _sliding_window_split(self, sentence: str, max_len: int) -> list:
         """
@@ -293,7 +284,7 @@ class SequenceToSequenceLearner(Learner):
 
         return tokens
 
-    def get_truncated_indices(self, sentences: list):
+    def get_truncated_indices(self, sentences: list, max_len: int = 256) -> List[int]:
         """
         Identify indices of sentences that are truncated by the tokenizer.
 
@@ -306,8 +297,7 @@ class SequenceToSequenceLearner(Learner):
         # Tokenize with overflow tracking
         encoding = self.model._tokenizer(
             sentences,
-            # max_length=self.learn.model._max_seq_len,
-            max_length=10,
+            max_length=max_len,
             truncation=True,
             return_overflowing_tokens=True,
             return_attention_mask=False,
@@ -332,6 +322,7 @@ class SequenceToSequenceLearner(Learner):
                 for i, x in enumerate(encoding.get("num_truncated_tokens", []))
                 if x > 0
             ]
+        print(f"Truncated Indices: {truncated_indices}")
         return truncated_indices
 
 
