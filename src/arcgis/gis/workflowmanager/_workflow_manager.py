@@ -491,7 +491,7 @@ class WorkflowManagerAdmin:
         run_async                Optional. A boolean indicating whether to run import item asynchronously. If set to true,
                                  import_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`
         -----------------------  ---------------------------------------------------------
-        overwrite_configuration  A boolean indicating whether to overwrite the current item's contents. 
+        overwrite_configuration  Optional. A boolean indicating whether to overwrite the current item's contents. 
                                  When set to true, the current item must not have existing jobs, and its contents will 
                                  be deleted and replaced by the contents of the imported configuration file. When set to False,
                                  importing merges the source configuration with the current item. By default this setting is true.
