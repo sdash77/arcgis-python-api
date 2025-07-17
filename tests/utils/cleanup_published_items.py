@@ -14,50 +14,74 @@ Set 'test_only' to print out what is to be deleted without deleting
 
 """
 
-from arcgis.gis import GIS
+from arcgis.gis import GIS, Item
 from datetime import datetime, timedelta
+from utils._logging import enable_verbose_logging
+import logging
+
+enable_verbose_logging(log_level=logging.INFO, log_name="cleanup_published_items.log")
 
 
-def delete_all_items(
-    gis: GIS,
-    username: str = "arcgis_python",
-    tags: str = None,
-    search_str: str = None,
-    day_difference: int = 90,
-    test_only=True,
-):
-    """
-    Get all portal items owned by a specific user and delete them if they are not delete protected and older than a specified number of days.
-    :param gis: GIS: The GIS
-    :param username: str: The name of the user whose items should be deleted: Default is arcgis_python
-    :param tags: str: An optional comma separated string of tags to limit the search
-    :param search_str: str: An option search string e.g. `title:my_tile` or `type:CSV`
-    :param day_difference: int: Difference in days from current date. Default is 90
-    :param test_only: bool: Run the function without deleting the items.
-    :return: void
-    """
-    print(f"Delete Items for user {username} on {gis.url} - Test only: {test_only}")
-    timestamp_previous_date = (
-        datetime.now() - timedelta(days=day_difference)
-    ).timestamp() * 1000
+class CleanupTestData:
+    username = None
 
-    query = f"owner:{username}"
-    if tags:
-        query = f"owner:{username} AND tags:{tags}"
-    if search_str:
-        query = f"owner:{username} AND {search_str}"
-    if tags and search_str:
-        query = f"owner:{username} AND tags: {tags} AND {search_str}"
-    all_items = gis.content.search(
-        query=query,
-        max_items=10000,
-        sort_field="created",
-        sort_order="asc",
-    )
-    item_count = 0
-    for item in all_items:
-        # Delete items from the last n days
-        if item.modified < timestamp_previous_date:
+    def __init__(
+        self,
+        gis,
+        username="arcgis_python",
+        tags: str = None,
+        search_str: str = None,
+        day_difference: int = 7,
+        test_only: bool = True,
+    ):
+        """
+        Get all portal items owned by a specific user and delete them if they are not delete protected and older than a specified number of days.
+        :param gis: GIS: The GIS
+        :param username: str: The name of the user whose items should be deleted: Default is arcgis_python
+        :param tags: str: An optional comma separated string of tags to limit the search
+        :param search_str: str: An option search string e.g. `title:my_tile` or `type:CSV`
+        :param day_difference: int: Difference in days from current date. Default is 90
+        :param test_only: bool: Run the function without deleting the items.
+        :return: void
+        """
+        self.gis = gis
+        self.username = username
+        self.tags = tags
+        self.search_str = search_str
+        self.day_difference = day_difference
+        self.test_only = test_only
+
+    def delete_all_items(self):
+        print("*************************")
+        print(
+            f"Delete Items for user {self.username} on {self.gis.url} - Test only: {self.test_only}"
+        )
+        timestamp_previous_date = (
+            datetime.now() - timedelta(days=self.day_difference)
+        ).timestamp() * 1000
+
+        query = f"owner:{self.username}"
+        if self.tags:
+            query = f"owner:{self.username} AND tags:{self.tags}"
+        if self.search_str:
+            query = f"owner:{self.username} AND {self.search_str}"
+        if self.tags and self.search_str:
+            query = f"owner:{self.username} AND tags: {self.tags} AND {self.search_str}"
+        all_items = self.gis.content.search(
+            query=query,
+            max_items=10000,
+            sort_field="created",
+            sort_order="asc",
+        )
+
+        item_count = 0
+        items_to_process = [
+            i for i in all_items if i.modified > timestamp_previous_date
+        ]
+
+        print(f"Search found {len(items_to_process)} items...")
+        for item in items_to_process:
+            # Delete items from the last n days
             print("=====================================")
             print(f"Target {item.title} for delete...")
             if item.can_delete:
@@ -67,46 +91,49 @@ def delete_all_items(
                         print(
                             f"\t{item.title} has {len(related_items)} related items..."
                         )
-                        if not test_only:
-                            for rl in related_items:
+
+                        for rl in related_items:
+                            item_count += 1
+                            if not self.test_only:
                                 rl.delete(permanent=True)
                                 print(
-                                    f"\tDeleted related item: {item.title} -> {item.type}"
+                                    f"\tDeleted related item: {self.print_item_data(rl)}"
                                 )
-                            item.delete(permanent=True)
-                            print(f"\tDeleted source item: {item.title}")
-                        item_count += 1
+                                item.delete(permanent=True)
+                                print(
+                                    f"\tDeleted source item: {self.print_item_data(item)}"
+                                )
+
                     else:
-                        if not test_only:
-                            pass
+                        if not self.test_only:
                             item.delete(permanent=True)
-                            print(f"\tDeleted standalone item: {item.title}")
+                            print(
+                                f"\tDeleted standalone item: {self.print_item_data(item)}"
+                            )
                         item_count += 1
                 except Exception as ex:
                     if "Unable to delete item" in str(
                         ex
                     ) and "(Error Code: 500)" in str(ex):
                         pass
-                    print(f"\tFailed to delete item: {item} -> {str(ex)}")
-    print(f"Processed {item_count} items from {gis.url}")
+                    print(
+                        f"\tFailed to delete item: {self.print_item_data(item)} -> {str(ex)}"
+                    )
+        print(f"Processed {item_count} items from {self.gis.url}")
+        print("*************************")
+
+    @classmethod
+    def print_item_data(cls, item: Item):
+        return f"{item.title} -> {item.type}, {item.itemid}, {cls.username}, {item.url}"
 
 
 if __name__ == "__main__":
-    gis_agol = GIS(
-        url="https://geosaurus.maps.arcgis.com/",
-        username="arcgispyapibot",
-        password="geosaurus_automation123",
-    )
-    gis_ent = GIS(
-        url="https://pythonapitestnb.dev.geocloud.com/portal",
-        username="arcgispyapibot",
-        password="geosaurus_automation123",
-        verify_cert=False,
-    )
 
-    delete_all_items(
-        gis_agol, username="arcgis_python", day_difference=7, test_only=True
-    )
-    delete_all_items(
-        gis_ent, username="arcgis_python", day_difference=7, test_only=True
-    )
+    ent_gis = GIS(profile="your_enterprise_profile")
+    ago_gis = GIS(profile="your_online_profile")
+    connections = [ent_gis, ago_gis]
+    for gis_ in connections:
+        cleanup = CleanupTestData(
+            gis=gis_, username="arcgis_python", day_difference=7, test_only=True
+        )
+        cleanup.delete_all_items()
