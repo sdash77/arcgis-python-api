@@ -123,6 +123,9 @@ nodejs = {channel = "conda-forge", version = "~=22.0"}
 minizip = ">=4,<5" # for zipping up docs
 
 [feature.local]
+[feature.local.dependencies]
+nodejs = "~=18.0"
+
 [feature.local.target.win-64.activation]
 scripts = ["pixi.local.bat"]
 

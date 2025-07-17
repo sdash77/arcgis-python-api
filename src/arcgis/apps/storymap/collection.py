@@ -256,52 +256,6 @@ class Collection(object):
         return utils.show(self._item, width, height)
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.4.0",
-        removed_in="2.4.2",
-        details="Use the `arcgis.apps.storymap.Cover` class that is accessed in the cover property.",
-    )
-    def cover(
-        self,
-        title: Optional[str] = None,
-        type: str = None,
-        summary: Optional[str] = None,
-        by_line: Optional[str] = None,
-    ):
-        """
-        A collection's cover is the first slide.
-        This method allows the cover to be edited by updating the title, byline, media, and more.
-        Changing one part of the collection cover will not change the rest of the cover. If just the
-        media is passed in then only the media will change.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the Collection cover.
-        ---------------     --------------------------------------------------------------------
-        type                Optional string. The type of collection cover to be used in the story.
-
-                            ``Values: "full" | "sidebyside" | "minimal"``
-        ---------------     --------------------------------------------------------------------
-        summary             Optional string. The description of the story.
-        ---------------     --------------------------------------------------------------------
-        by_line             Optional string. Crediting the author(s).
-        ===============     ====================================================================
-
-        :return: True if the cover was updated successfully.
-
-        .. code-block:: python
-
-            collection = Collection(<collection item>)
-            collection.cover(title="My Collection Title", type="sidebyside", summary="My little summary", by_line="python_dev")
-            collection.save()
-
-        """
-        # call method to update cover
-        utils.cover(self, title, type, summary, by_line)
-        return True
-
-    # ----------------------------------------------------------------------
     def get_theme(self) -> str:
         """
         Get the theme name or the theme item that is used in the collection.

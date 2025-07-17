@@ -6,6 +6,8 @@ http://code.google.com/p/pyrtree/
 
 """
 
+from __future__ import annotations
+
 __all__ = ["RTree", "Rect", "Rtree", "RTreeError"]
 
 MAXCHILDREN = 10

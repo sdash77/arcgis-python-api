@@ -3,6 +3,7 @@ Holds Delegate and Accessor Logic
 """
 
 from __future__ import annotations
+import json
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -1194,8 +1195,6 @@ class GeoAccessor(object):
         * *gdal* - for the `Open Source Geospatial Foundation gdal <https://gdal.org/en/stable/>`_ translator
           library. A good balance of performance and compatibility with multiple GIS formats. Ideal
           for working with large datasets and open-source workflows.
-        * *fiona* - for the `fiona <https://github.com/Toblerity/Fiona>`_ simple feature data streaming
-          library. Can only be used to read in feature classes.
 
         To set environment at the top of the script, add:
 
@@ -2713,7 +2712,6 @@ class GeoAccessor(object):
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
-            * `"fiona"`
 
             If not set, the first available library in the environment will be used.
 
@@ -3336,12 +3334,18 @@ class GeoAccessor(object):
                 fld["domain"] = None
                 fld["defaultValue"] = None
                 fld["nullable"] = True
+        geom_type = str(self._data.spatial._meta.geometry_type).lower()  # handles None
+        data_copy = self._data.copy()
+        sdf_geom_type = data_copy.spatial.geometry_type[0].lower()
         if drawing_info is None:
-            import json
-
-            di = {"renderer": json.loads(self._data.spatial.renderer.json)}
+            if sdf_geom_type == geom_type:
+                di = {"renderer": json.loads(data_copy.spatial.renderer.json)}
+            else:
+                self._data.spatial.renderer = None
+                di = {"renderer": json.loads(self._data.spatial.renderer.json)}
         else:
             di = drawing_info
+
         layer = {
             "layerDefinition": {
                 "currentVersion": 10.7,
