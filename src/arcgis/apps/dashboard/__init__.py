@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.apps.dashboard.dashboard import Dashboard
 from arcgis.apps.dashboard._serialchart._serial_chart import SerialChart
 from arcgis.apps.dashboard._header._header import Header

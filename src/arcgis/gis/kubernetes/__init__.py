@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ._sharing import KbertnetesPy
 from ._admin import KubernetesAdmin
 from ._admin import WebAdaptorManager, ArchitectureManager

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, Table
 from arcgis.geometry import Geometry

@@ -2,6 +2,7 @@
 These functions help you use elevation analysis
 """
 
+from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 
 _util = LazyLoader("arcgis._impl.common._utils")

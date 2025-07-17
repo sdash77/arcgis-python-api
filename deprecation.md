@@ -130,3 +130,6 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `StoryMap.navigation` - deprecated in **2.4.0** removed in future major release. Use the Navigation class.
 - `Briefing.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
 - `Collection.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+### Packages
+
+- `fiona` - removed in **2.4.2**. 
