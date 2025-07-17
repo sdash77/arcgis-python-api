@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 import arcgis
 from .._utils._basewidget import _BaseWidget

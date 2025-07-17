@@ -14401,8 +14401,9 @@ class Item(dict):
                         lyr._fn = rendering_rule
                         lyr._fnra = rendering_rule
                         lyr._rendering_rule_from_item = True
-                    if lyr._mosaic_rule is None:
-                        lyr._mosaic_rule = item_data.get("mosaicRule", None)
+                    mosaic_rule = item_data.get("mosaicRule", None)
+                    if mosaic_rule:
+                        lyr._mosaic_rule = mosaic_rule
                 except Exception:
                     pass
                 layers.append(lyr)
@@ -17435,7 +17436,7 @@ class Item(dict):
                 if output_type is None:
                     output_type = "VectorTiles"
             elif self["type"] == "Scene Package":
-                fileType = "scenePackage"
+                fileType = "scenepackage"
             elif self["type"] == "Tile Package":
                 fileType = "tilePackage"
             elif self["type"] == "3DTiles Package":
@@ -17461,7 +17462,8 @@ class Item(dict):
             folder = self.ownerFolder
         except Exception:
             folder = None
-
+        if output_type is None and self["type"] in ["Scene Package"]:
+            output_type = "sceneService"
         if publish_parameters is None:
             if fileType == "shapefile" and not overwrite:
                 publish_parameters = {
@@ -17561,7 +17563,7 @@ class Item(dict):
                 output_type = "VectorTiles"
                 buildInitialCache = True
 
-            elif fileType == "scenePackage":
+            elif fileType.lower() == "scenepackage":
                 name = re.sub(r"[\W_]+", "_", self["title"])
                 buildInitialCache = True
                 publish_parameters = {"name": name, "maxRecordCount": 2000}
@@ -19936,11 +19938,7 @@ class ViewManager:
             assert isinstance(layer, arcgis.features.FeatureLayer)
             if "isView" in lyrdef.layer.properties and lyrdef.layer.properties.isView:
                 results.append(
-                    {
-                        layer._url: layer.container.manager.update_definition(
-                            lyrdef.as_json()
-                        )
-                    }
+                    {layer._url: layer.manager.update_definition(lyrdef.as_json())}
                 )
             else:
                 raise ValueError("The layer is not a view.")

@@ -15,6 +15,7 @@ from arcgis.geometry import Geometry
 import pandas as pd
 from pandas.core.internals import ExtensionBlock
 from arcgis.auth.tools import LazyLoader
+
 arcgismapping = LazyLoader("arcgis.map")
 
 try:
@@ -33,12 +34,6 @@ try:
     import shapefile
 except:
     HASPYSHP = False
-try:
-    import fiona
-
-    HASFIONA = True
-except:
-    HASFIONA = False
 
 USERNAME = None
 PASSWORD = None
@@ -181,7 +176,7 @@ class DataframeSpatialTests(unittest.TestCase):
             df.spatial.set_geometry("FISH")
         except ValueError as e:
             assert str(e) in [
-                'The input column does not exist on the DataFrame.',
+                "The input column does not exist on the DataFrame.",
                 "Column FISH does not exist",
             ]
 
@@ -252,7 +247,6 @@ class DataframeSpatialTests(unittest.TestCase):
     #### to/from feature classses
     ####   - Using ArcPy  ## To Feature Class Done using Arcpy
     ####   - Using pyshp  ## Done
-    ####   - Using fiona  ## Done
     #### to/from services
     #### to_feature_collection ## Done
     #### __geo_interface__  ## Done
@@ -275,9 +269,7 @@ class DataframeSpatialTests(unittest.TestCase):
             )
         ] * len(geoms)
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         item = gis.content.import_data(df)
         assert item
@@ -296,9 +288,7 @@ class DataframeSpatialTests(unittest.TestCase):
             )
         ] * len(geoms)
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         fc = df.spatial.to_feature_collection("name")
         assert isinstance(fc, FeatureCollection)
@@ -318,12 +308,8 @@ class DataframeSpatialTests(unittest.TestCase):
                     }
                 )
             ] * len(geoms)
-            data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(
-                geoms
-            )
-            df = pd.DataFrame(
-                data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-            )
+            data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
+            df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
             df.spatial.set_geometry(g)
             fc = df.spatial.to_featureclass(
                 os.path.join(arcpy.env.scratchGDB, "loasgadfg")
@@ -352,9 +338,7 @@ class DataframeSpatialTests(unittest.TestCase):
             )
         ] * len(geoms)
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         save_dataset = os.path.join(wrksp, shp)
         fc = df.spatial.to_featureclass(save_dataset)
@@ -373,9 +357,7 @@ class DataframeSpatialTests(unittest.TestCase):
             )
         ] * len(geoms)
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         gjson = df.spatial.__geo_interface__
         assert isinstance(gjson, str)
@@ -393,9 +375,7 @@ class DataframeSpatialTests(unittest.TestCase):
             )
         ] * len(geoms)
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         res = df.spatial.__feature_set__
         assert isinstance(res, dict)
@@ -419,9 +399,7 @@ class DataframeSpatialTests(unittest.TestCase):
     def test_full_extent(self):
         """test the full dataset extent property"""
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(geoms)
         assert isinstance(df.spatial.full_extent, tuple)
 
@@ -440,9 +418,7 @@ class DataframeSpatialTests(unittest.TestCase):
             )
         ] * len(geoms)
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         assert df.spatial.sr == SpatialReference({"wkid": 4326})
 
@@ -478,12 +454,8 @@ class DataframeSpatialTests(unittest.TestCase):
         try:
 
             g = geoms
-            data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(
-                geoms
-            )
-            df = pd.DataFrame(
-                data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-            )
+            data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
+            df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
             df.spatial.set_geometry(g)
             s = df.spatial.project(3857)
             assert s == True
@@ -495,9 +467,7 @@ class DataframeSpatialTests(unittest.TestCase):
         """returns the bounding box as a polygon"""
         g = [Geometry({"x": 1, "y": 2, "spatialReference": {"wkid": 4326}})]
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]]
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         bbox = df.spatial.bbox
         assert bbox._repr_svg_()
@@ -506,9 +476,7 @@ class DataframeSpatialTests(unittest.TestCase):
     def test_geometry_type(self):
         g = geoms
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(
-            data=data, columns=["Alpha", "Beta", "Gamma", "Delta"]
-        )
+        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         gt = df.spatial.geometry_type
         assert isinstance(gt, list)
@@ -546,44 +514,6 @@ class DataframeSpatialTests(unittest.TestCase):
             assert sdf.spatial.geometry_type[0].lower() == "polygon"
 
     # --------------------------------------------------------------------------
-    def test_from_fc_fiona(self):
-        """tests reading a SHP/FGDB from fiona"""
-        fc = r"./testdata.gdb/world30"
-        if _io.fileops.HASFIONA == False:
-            return
-        oval_pyshp = copy.copy(_io.fileops.HASPYSHP)
-        oval_arcpy = copy.copy(_io.fileops.HASARCPY)
-        _io.fileops.HASPYSHP = False
-        _io.fileops.HASARCPY = False
-        sdf = from_featureclass(fc)
-        assert sdf.spatial.geometry_type[0].lower() == "polygon"
-        _io.fileops.HASARCPY = oval_arcpy
-        _io.fileops.HASPYSHP = oval_pyshp
-
-    # --------------------------------------------------------------------------
-    def test_from_fc_fiona_shp(self):
-        """tests reading a SHP/FGDB from fiona"""
-        try:
-            import shapefile
-
-            fc = r"./world30.shp"
-
-            if _io.fileops.HASFIONA == False:
-                return
-            oval_pyshp = copy.copy(_io.fileops.HASPYSHP)
-            oval_arcpy = copy.copy(_io.fileops.HASARCPY)
-            _io.fileops.HASPYSHP = False
-            _io.fileops.HASARCPY = False
-            sdf = from_featureclass(fc)
-            assert sdf.spatial.geometry_type[0].lower() == "polygon"
-            _io.fileops.HASARCPY = oval_arcpy
-            _io.fileops.HASPYSHP = oval_pyshp
-        except shapefile.ShapefileException:
-            print("Could not find dataset")
-        except:
-            pass
-
-    # --------------------------------------------------------------------------
     def test_from_fc_pyshp(self):
         """tests reading a SHP from arcpy"""
         fc = r"./world30.shp"
@@ -591,12 +521,10 @@ class DataframeSpatialTests(unittest.TestCase):
             return
         if os.path.isfile(fc) == False:
             return
-        oval_fiona = copy.copy(_io.fileops.HASFIONA)
         oval_arcpy = copy.copy(_io.fileops.HASARCPY)
         sdf = from_featureclass(fc)
         assert sdf.spatial.geometry_type[0].lower() == "polygon"
         _io.fileops.HASARCPY = oval_arcpy
-        _io.fileops.HASFIONA = oval_fiona
 
     # --------------------------------------------------------------------------
     def test_from_fc_staticmethod(self):

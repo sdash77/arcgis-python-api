@@ -2,6 +2,7 @@
 Connection Object that uses Python Requests
 """
 
+from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Union
 from arcgis.auth.tools._util import check_module_exists
