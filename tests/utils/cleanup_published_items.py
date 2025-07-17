@@ -94,18 +94,18 @@ class CleanupTestData:
                         for rel_item in related_items:
                             item_count += 1
                             if not self.test_only:
-                                # rl.delete(permanent=True)
+                                rel_item.delete(permanent=True)
                                 print(
                                     f"\tDeleted related item: {self.print_item_data(rel_item, self.username)}"
                                 )
-                                # item.delete(permanent=True)
+                                item.delete(permanent=True)
                                 print(
                                     f"\tDeleted source item: {self.print_item_data(item, self.username)}"
                                 )
 
                     else:
                         if not self.test_only:
-                            # item.delete(permanent=True)
+                            item.delete(permanent=True)
                             print(
                                 f"\tDeleted standalone item: {self.print_item_data(item, self.username)}"
                             )
@@ -132,5 +132,5 @@ if __name__ == "__main__":
     ago_gis = GIS(profile="your_online_profile")
     connections = [ent_gis, ago_gis]
     for gis_ in connections:
-        cleanup = CleanupTestData(gis=gis_, day_difference=7, test_only=False)
+        cleanup = CleanupTestData(gis=gis_, day_difference=7, test_only=True)
         cleanup.delete_all_items()
