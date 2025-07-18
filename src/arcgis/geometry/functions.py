@@ -149,7 +149,7 @@ def areas_and_lengths(
     area_unit: str | AreaUnits,
     calculation_type: str,
     spatial_ref: int = 4326,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1146,68 +1146,93 @@ def label_points(
 
 
 def lengths(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
-    polylines: Polyline,
-    length_unit: str | LengthUnits,
+    spatial_ref: int | SpatialReference | dict[str, Any],
+    polylines: list[Polyline],
+    length_unit: str | int | LengthUnits,
     calculation_type: str,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
-    The ``lengths`` function calculates the` 2D Euclidean` or `geodesic` lengths of
+    The ``lengths`` function calculates the `2D Euclidean` or `geodesic` lengths of
     each :class:`~arcgis.geometry.Polyline` specified in the input array.
 
-    ================  ===============================================================================
-    **Keys**          **Description**
-    ----------------  -------------------------------------------------------------------------------
-    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` object or the well-known ID of
-                      the spatial reference of the input *polygons*.
-    ----------------  -------------------------------------------------------------------------------
-    polylines         The list of :class:`~arcgis.geometry.Polyline` objects to compute.
-    ----------------  -------------------------------------------------------------------------------
-    length_unit       The length unit in which the lengths are calculated.
+    ================    ================================================================================
+    **Keys**            **Description**
+    ----------------    -------------------------------------------------------------------------------
+    spatial_ref         A :class:`~arcgis.geometry.SpatialReference` object or the well-known ID of
+                        the spatial reference of the input *polygons*.
+    ----------------    -------------------------------------------------------------------------------
+    polylines           The list of :class:`~arcgis.geometry.Polyline` objects to compute.
 
-                      * If *calculation_type* is *planar* - value can be any `esriUnits` constant
+                        Example: [<polyline1>, <polyline2>, ..., <polylineN>]
+    ----------------    -------------------------------------------------------------------------------
+    length_unit         The length unit in which the lengths are calculated.
+
+                        * If *calculation_type* is *planar* - value can be any `esriUnits` constant
 
                         * If *calculation_type* is *planar* and argument not provided, the units
-                          are derived from ``spatial_ref``.
+                        are derived from ``spatial_ref``.
 
-                      * If *calculationType* is *not* planar, then must be a
+                        * If *calculationType* is *not* planar, then must be a
                         :class:`~arcgis.geometry.functions.LengthUnits` value, such as
                         *LengthUnits.METER* or *LengthUnits.SURVEYMILE*
-                      * If *calculationType* is *not* planar and argument not provided, the value is
+
+                        * If *calculationType* is *not* planar and argument not provided, the value is
                         *meters*
-    ----------------  -------------------------------------------------------------------------------
-    calculation_type  The length calculation type used for the operation. Can be one of the following:
+
+                        See valid list of units: `esriSRUnitTypeConstants <https://resources.arcgis.com/en/help/arcobjects-cpp/componenthelp/index.html#/esriSRUnitType_Constants/000w00000042000000/>`_
+    ----------------    -------------------------------------------------------------------------------
+    calculation_type    The length calculation type used for the operation. Can be one of the following:
 
 
-                          * *planar* - uses 2D Euclidean distance to calculate length. Only use this
+                        * *planar* - uses 2D Euclidean distance to calculate length. Only use this
                              if the length needs to be calculated in the given *spatial_ref*,
                              otherwise use *preserveShape*
 
-                          * *geodesic* - uses only the vertices of the *polygon* and defines the
+                        * *geodesic* - uses only the vertices of the *polygon* and defines the
                              lines between the vertices as geodesic independent of the actual shape of
                              the :class:`~arcgis.geometry.Polyline`. This segment is the shortest path
                              between two points on an ellipsoid.
 
-                          * *preserveShape* - uses the surface of the earth ellipsoid to calculate
+                        * *preserveShape* - uses the surface of the earth ellipsoid to calculate
                              the length. The shape of the geometry in its coordinate system is preserved.
-    ----------------  -------------------------------------------------------------------------------
-    future            Optional boolean.
+    ----------------    -------------------------------------------------------------------------------
+    future              Optional boolean.
 
-                      * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
+                        * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
-                      * If *False*, the process waits for the operation to complete before returning
+                        * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
 
-                      .. note::
-                          If *future=True*, there is a limitation of 6500 geometries that can be
-                          processed in one call.
-    ================  ===============================================================================
+                        .. note::
+                            If *future=True*, there is a limitation of 6500 geometries that can be
+                            processed in one call.
+    ================    ===============================================================================
 
     :returns:
         If *future = False*, a list of 2D-Euclidean or geodesic lengths in *float* format, or if
         *future = True*, a :class:`~arcgis.geometry.GeometryJob` object.
+
+    .. code-block:: python
+        # Example Usage:
+        from arcgis.geometry import Polyline
+        from arcgis.geometry import lengths
+        simple_polyline = Polyline({
+            "paths": [[[-95.5, 30.2], [-95.6, 30.3]]],
+            "spatialReference": {"wkid": 4326}
+        })
+        print(type(simple_polyline))
+        print(simple_polyline)
+        usFeet_simple = lengths(
+            spatial_ref=4326,
+            polylines=[simple_polyline],
+            length_unit=9001,
+            calculation_type='geodesic',
+            gis=gis
+        )
+        print(usFeet_simple)
+        >>> [14680.602962612653]
     """
     if gis is None:
         gis = arcgis.env.active_gis
