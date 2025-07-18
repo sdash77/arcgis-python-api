@@ -619,18 +619,18 @@ class FeatureLayer(Layer):
         }
         if self._gis.version > [7, 3] and keywords:
             params["keywords"] = keywords
-        
+
         # Determine the URL for adding attachments
         if self._dynamic_layer:
             attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
             params["layer"] = self._dynamic_layer
         else:
             attach_url = self._url + "/%s/addAttachment" % oid
-        
+
         # Two options depending on file size
         # If the file is less than 10MB, we can upload it directly
-        if (
-            os.path.getsize(file_path) < 10e6
+        if (os.path.getsize(file_path) < 10e6) or (
+            self._gis._is_agol is False and [2024, 1] < self._gis.version < [2025, 2]
         ):
             files = {"attachment": file_path}
             return self._con.post(path=attach_url, postdata=params, files=files)
@@ -5738,13 +5738,13 @@ class FeatureLayerCollection(_GISResource):
 
     # ----------------------------------------------------------------------
     def _delete_upload(self, item_id):
-        """commits an upload by parts upload"""
+        """deletes an upload by parts upload"""
         b_url = "%s/uploads/%s" % (self._url, item_id)
         delete_part_url = "%s/delete" % b_url
         params = {
             "f": "json",
         }
-        res = self._con.post(delete_part_url, params)
+        res = self._con._session.post(delete_part_url, params).json()
         if "error" in res:
             raise Exception(res)
         else:
