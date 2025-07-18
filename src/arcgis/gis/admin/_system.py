@@ -541,6 +541,25 @@ class System(BasePortalAdmin):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
+    def mismatch(self) -> dict:
+        """
+        The mismatch operation returns whether there is a discrepancy in
+        the count of an organization's users, groups, and items, wherein
+        the content is present in the database count but is missing in the
+        index count. If content is present in both the database and the
+        index, the operation returns a success response. If there are
+        inconsistencies between the database and the index, this
+        operation's response returns arrays that contain the index count,
+        the database count, and the username, group ID, and item ID of the
+        missing users, groups, and items, respectively.
+
+        :returns: dict
+        """
+        url = "%s/indexer/status/mismatch" % self._url
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
     def reindex(self, mode: str = "FULL", includes: Optional[str] = None):
         """
         This operation allows you to generate or update the indexes for
