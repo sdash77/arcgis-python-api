@@ -2,6 +2,7 @@
 Utility functions useful for Business Analyst - the glue functions not fitting neatly anywhere else.
 """
 
+from __future__ import annotations
 import asyncio
 from functools import wraps, lru_cache
 import importlib

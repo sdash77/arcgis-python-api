@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 from arcgis.layers._symbol import create_symbol
 from ._base import BaseOGC

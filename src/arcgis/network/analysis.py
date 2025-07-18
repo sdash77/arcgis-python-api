@@ -1,5 +1,5 @@
 "Network analysis tools."
-
+from __future__ import annotations
 from ._vrp import (
     solve_vehicle_routing_problem,
     edit_vehicle_routing_problem,

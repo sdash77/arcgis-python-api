@@ -10,6 +10,7 @@ env:
 jobs:
   build-pip:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'schedule' || vars.SCHEDULED_BUILDS_ENABLED == '1' }}
     defaults:
       run:
         shell: bash -el {0}
@@ -46,6 +47,7 @@ jobs:
           retention-days: 90
   build-conda:
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event_name != 'schedule' || vars.SCHEDULED_BUILDS_ENABLED == '1' }}
     strategy:
       matrix:
         python: ["3.10", "3.11", "3.12", "3.13"]
