@@ -1167,7 +1167,7 @@ def lengths(
 
                         Example: [<polyline1>, <polyline2>, ..., <polylineN>]
     ----------------    -------------------------------------------------------------------------------
-    length_unit         The length unit in which the lengths are calculated.
+    length_unit         An instance of :class:`~arcgis.geometry.functions.LengthUnits` in which the lengths are calculated.
 
                         * If *calculation_type* is *planar* - value can be any `esriUnits` constant
 
@@ -1217,7 +1217,7 @@ def lengths(
     .. code-block:: python
         # Example Usage:
         from arcgis.geometry import Polyline
-        from arcgis.geometry import lengths
+        from arcgis.geometry import lengths, LengthUnits
         simple_polyline = Polyline({
             "paths": [[[-95.5, 30.2], [-95.6, 30.3]]],
             "spatialReference": {"wkid": 4326}
@@ -1227,7 +1227,7 @@ def lengths(
         usFeet_simple = lengths(
             spatial_ref=4326,
             polylines=[simple_polyline],
-            length_unit=9001,
+            length_unit=LengthUnits.FOOT,
             calculation_type='geodesic',
             gis=gis
         )
