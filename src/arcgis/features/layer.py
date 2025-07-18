@@ -587,7 +587,7 @@ class FeatureLayer(Layer):
         keywords=None,
         return_moment=False,
         version=None,
-    ):
+    ) -> dict:
         """
         Adds an attachment to a feature service
 
@@ -611,42 +611,35 @@ class FeatureLayer(Layer):
         :return: A JSON Dictionary indicating 'success' or 'error'
 
         """
+        # Create params
+        params = {
+            "f": "json",
+            "gdbVersion": version,
+            "returnEditMoment": return_moment,
+        }
+        if self._gis.version > [7, 3] and keywords:
+            params["keywords"] = keywords
+        
+        # Determine the URL for adding attachments
+        if self._dynamic_layer:
+            attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+            params["layer"] = self._dynamic_layer
+        else:
+            attach_url = self._url + "/%s/addAttachment" % oid
+        
+        # Two options depending on file size
+        # If the file is less than 10MB, we can upload it directly
         if (
             os.path.getsize(file_path) < 10e6
-        ):  # (os.path.getsize(file_path) >> 20) <= 9:
-            params = {
-                "f": "json",
-                "gdbVersion": version,
-                "returnEditMoment": return_moment,
-            }
-            if self._gis.version > [7, 3] and keywords:
-                params["keywords"] = keywords
-            if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
-                params["layer"] = self._dynamic_layer
-            else:
-                attach_url = self._url + "/%s/addAttachment" % oid
+        ):
             files = {"attachment": file_path}
-            res = self._con.post(path=attach_url, postdata=params, files=files)
-            return res
+            return self._con.post(path=attach_url, postdata=params, files=files)
         else:
-            params = {
-                "f": "json",
-                "gdbVersion": version,
-                "returnEditMoment": return_moment,
-            }
-            if self._gis.version > [7, 3] and keywords:
-                params["keywords"] = keywords
             container = self.container
             itemid = container.upload(file_path)
-            if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
-                params["layer"] = self._dynamic_layer
-            else:
-                attach_url = self._url + "/%s/addAttachment" % oid
             params["uploadId"] = itemid
             res = self._con.post(attach_url, params)
-            if res["addAttachmentResult"]["success"] == True:
+            if res["addAttachmentResult"]["success"] is True:
                 container._delete_upload(itemid)
             return res
 
