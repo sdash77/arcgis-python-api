@@ -125,7 +125,10 @@ class AIServiceConnection:
             if "parameterName" in auth_prop and "token" in auth_secret:
                 param_name = auth_prop["parameterName"]
                 uuid = auth_secret["token"]
-                credential = keyring.get_password(uuid, param_name)
+                credential = None
+                if (param_name != "" and uuid != ""):
+                    credential = keyring.get_password(uuid, param_name)
+
                 if credential != None:
                     out_dict["authenticationSecrets"]["token"] = credential
 
