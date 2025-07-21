@@ -3634,7 +3634,6 @@ class Polygon(Geometry):
             raise ValueError(f"Unsupported geometry type: {gtype!r}")
 
         rings = []  # flat list of all rings for Esri JSON
-        max_dim = 2  # keep track of the largest coord length
 
         for poly in polys:
             if not poly:
@@ -3645,7 +3644,6 @@ class Polygon(Geometry):
             if not ringIsClockwise(outer):  # GeoJSON outer is CCW -> flip
                 outer = outer[::-1]
             rings.append(outer)
-            max_dim = max(max_dim, max(len(p) for p in outer))
 
             # ---- holes ---------------------------------------------------------
             for hole in poly[1:]:
@@ -3653,7 +3651,8 @@ class Polygon(Geometry):
                 if ringIsClockwise(hole):  # GeoJSON hole is CW -> flip
                     hole = hole[::-1]
                 rings.append(hole)
-                max_dim = max(max_dim, max(len(p) for p in hole))
+
+        max_dim = len(polys[0][0][0]) if polys else 2
 
         esri = {
             "rings": rings,
@@ -3667,9 +3666,9 @@ class Polygon(Geometry):
     @property
     def __geo_interface__(self) -> dict:
         """Returns the geometry in valid GeoJSON format as either Polygon or MultiPolygon."""
-        from _impl.common._arcgis2geojson import convertRingsToGeoJSON
+        from _impl.common._arcgis2geojson import convertRingsToGeoJSONUnchecked
 
-        return convertRingsToGeoJSON(self["rings"])
+        return convertRingsToGeoJSONUnchecked(self["rings"])
 
 
 ########################################################################
