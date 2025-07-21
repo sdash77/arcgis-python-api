@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Union, Optional, ClassVar
 from dataclasses import field, dataclass
 

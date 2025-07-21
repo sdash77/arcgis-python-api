@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.auth.api import LazyLoader
 
 hub = LazyLoader("arcgis.apps.hub")

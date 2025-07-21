@@ -3,26 +3,33 @@ import sys
 import datetime
 import unittest
 from concurrent.futures import Future
+import uuid
 
 import pandas as pd
-from arcgis.gis import GIS, Item
+from arcgis.gis import Item
 from arcgis.geometry import Geometry
 from arcgis.features import FeatureLayer
 from utils.decorators import integration_test, profiles
+from utils.data_utils import cleanup_published_items
 
 
-@profiles.enterprise_and_agol
+@profiles.all
 @integration_test
 class TestAddUpdateDeleteDef(unittest.TestCase):
     """
     Tests the Add, Update and Delete from Definitions
     """
 
+    @classmethod
+    def setUpClass(cls):
+        cls.published_items = []
+
     def test_add_to_def_fl(self):
         """
         Tests the Feature Layer Manager Add to Definition.
         A future object is returned.
         """
+        uid = uuid.uuid4().hex[:5]
         add_field = {
             "fields": [
                 {
@@ -41,17 +48,22 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
             Geometry({"x": -118.35, "y": 33.90, "spatialReference": {"wkid": 4326}}),
             Geometry({"x": -118.45, "y": 33.95, "spatialReference": {"wkid": 4326}}),
         ]
-        data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(g)
+        data = [[1, str(datetime.datetime.now()), True, "BLAHBLAH"]] * len(g)
         df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
+        if self.gis._is_arcgisonline:
+            df["Beta"] = pd.to_datetime(df["Beta"], dayfirst=True)
         df.spatial.set_geometry(g)
-        item = self.gis.content.import_data(df)
+        item = self.gis.content.import_data(df, title=f"add_to_def_fl_{uid}")
+        self.assertIsNotNone(item, "Could not import dataframe")
+        self.published_items.append(item)
+
         source_item = item.related_items("Service2Data", "forward")[0]
         for i in [item, source_item]:
             i.update({"tags": item.tags + ["ntgrtn-tst"]})
-        assert item
-        assert isinstance(item, Item)
+        self.assertIsNotNone(item, "Could not import dataframe")
+        self.assertIsInstance(item, Item, "Incorrect Item type")
         fl = item.layers[0]
-        assert isinstance(fl, FeatureLayer)
+        self.assertIsInstance(fl, FeatureLayer)
         orig_fields_len = len(fl.properties.fields)
         future = fl.manager.add_to_definition(json_dict=add_field, future=True)
         if isinstance(future, Future):
@@ -62,14 +74,13 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
             len(fl.properties.fields),
             "Field length values are the same when they should differ.",
         )
-        item.delete(permanent=True)
-        source_item.delete(permanent=True)
 
     def test_delete_to_def_fl(self):
         """
         Tests the Delete Definition to the Feature Layer
         Works with a Future object.
         """
+        uid = uuid.uuid4().hex[:5]
         add_field = {
             "fields": [
                 {
@@ -89,17 +100,23 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
             Geometry({"x": -118.35, "y": 33.90, "spatialReference": {"wkid": 4326}}),
             Geometry({"x": -118.45, "y": 33.95, "spatialReference": {"wkid": 4326}}),
         ]
-        data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(g)
+        data = [[1, str(datetime.datetime.now()), True, "BLAHBLAH"]] * len(g)
         df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
+        if self.gis._is_arcgisonline:
+            df["Beta"] = pd.to_datetime(df["Beta"], dayfirst=True)
+
         df.spatial.set_geometry(g)
-        item = self.gis.content.import_data(df)
+        item = self.gis.content.import_data(df, title=f"del_to_def_fl_{uid}")
+        self.assertIsNotNone(item, "Could not import dataframe")
+        self.published_items.append(item)
+
         source_item = item.related_items("Service2Data", "forward")[0]
-        assert item
-        assert isinstance(item, Item)
+        self.assertIsNotNone(source_item, "Source item(s) not found")
+        self.assertIsInstance(item, Item, "Incorrect item type")
         for i in [item, source_item]:
             i.update({"tags": item.tags + ["ntgrtn-tst"]})
         fl = item.layers[0]
-        assert isinstance(fl, FeatureLayer)
+        self.assertIsInstance(fl, FeatureLayer, "Item is not FeatureLayer")
         fl = item.layers[0]
         orig_fields_len = len(fl.properties.fields)
         future = fl.manager.add_to_definition(json_dict=add_field, future=False)
@@ -120,18 +137,17 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
             orig_fields_len,
             len(fl.properties.fields),
         )
-        item.delete(permanent=True)
-        source_item.delete(permanent=True)
 
     def test_update_to_def_fl(self):
         """
         Tests the Update Definition to the Feature Layer
         Works with a Future object.
         """
+        uid = uuid.uuid4().hex[:5]
         add_field = {
             "fields": [
                 {
-                    "name": "sdfasdf",
+                    "name": "update_field",
                     "type": "esriFieldTypeString",
                     "alias": "safa",
                     "nullable": True,
@@ -143,7 +159,7 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
         up_field = {
             "fields": [
                 {
-                    "name": "sdfasdf",
+                    "name": "update_field",
                     "type": "esriFieldTypeString",
                     "alias": "dogcat",
                     "nullable": True,
@@ -158,17 +174,24 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
             Geometry({"x": -118.35, "y": 33.90, "spatialReference": {"wkid": 4326}}),
             Geometry({"x": -118.45, "y": 33.95, "spatialReference": {"wkid": 4326}}),
         ]
-        data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(g)
+        data = [[1, str(datetime.datetime.now()), True, "BLAHBLAH"]] * len(g)
         df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
-        item = self.gis.content.import_data(df)
+        if self.gis._is_arcgisonline:
+            df["Beta"] = pd.to_datetime(df["Beta"], dayfirst=True)
+
+        item = self.gis.content.import_data(df, title=f"update_to_def_fl_{uid}")
+        self.assertIsNotNone(item, "Could not import dataframe")
+        self.published_items.append(item)
+
         source_item = item.related_items("Service2Data", "forward")[0]
-        assert item
-        assert isinstance(item, Item)
+        self.assertIsNotNone(source_item, "Source item(s) not found")
+        self.assertIsInstance(item, Item, "Incorrect item type")
+
         for i in [item, source_item]:
             i.update({"tags": item.tags + ["ntgrtn-tst"]})
         fl = item.layers[0]
-        assert isinstance(fl, FeatureLayer)
+        self.assertIsInstance(fl, FeatureLayer, "Item is not FeatureLayer")
         orig_fields_len = len(fl.properties.fields)
         res = fl.manager.add_to_definition(json_dict=add_field, future=False)
         fl._refresh()
@@ -180,11 +203,16 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
         future = fl.manager.update_definition(json_dict=up_field, future=True)
         if isinstance(future, Future):
             res = future.result()
-        self.assertEqual(len(fl.properties.fields), 6)
+        self.assertEqual(len(fl.properties.fields), 5)
         fl._refresh()
-        assert "dogcat" in [fld["alias"] for fld in fl.properties.fields]
-        item.delete(permanent=True)
-        source_item.delete(permanent=True)
+        self.assertTrue(
+            "dogcat" in [fld["alias"] for fld in fl.properties.fields],
+            "Could not find field alias",
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.published_items)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 try:
     import pandas as pd
     from arcgis.features.geo._accessor import GeoAccessor

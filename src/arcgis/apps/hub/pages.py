@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import GIS, Item, ItemProperties, ItemTypeEnum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict

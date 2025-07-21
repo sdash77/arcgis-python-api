@@ -1,3 +1,4 @@
+from __future__ import annotations
 from functools import lru_cache
 from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._deprecate import deprecated
