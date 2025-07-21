@@ -403,7 +403,7 @@ def buffer(
             >>> from arcgis.gis import GIS
             >>> from arcgis.geometry import Point, buffer, LengthUnits, AreaUnits
 
-            >>> gis = GIS(profile="my_entertprise_user")
+            >>> gis = GIS(profile="my_enterprise_user")
 
             >>> flyr_item = gis.content.get("<item_id>")
 

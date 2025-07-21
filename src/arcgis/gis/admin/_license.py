@@ -71,7 +71,7 @@ class LicenseManager(BasePortalAdmin):
         return_client_ids: bool = False,
     ) -> list:
         """
-        Allows administrators to manage a user's list of provsional Add-On Licenses.
+        Allows administrators to manage a user's list of provisional Add-On Licenses.
 
         """
 
@@ -212,7 +212,7 @@ class LicenseManager(BasePortalAdmin):
         """
         Administrators can get/set the disconnect settings for the ArcGIS Pro licensing.
         A value of True means that a user can check out a license from the enterprise
-        inorder to use it in a disconnected setting.  By setting `offline_pro` to False,
+        in order to use it in a disconnected setting.  By setting `offline_pro` to False,
         the enterprise users cannot check out licenses to work in a disconnected setting
         for ArcGIS Pro.
 
@@ -788,7 +788,7 @@ class License(object):
         username            Required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlments         Required list of strings or string, a list of entitlements values,
+        entitlements        Required list of strings or string, a list of entitlements values,
                             if * is given, all entitlements will be revoked
         ---------------     ----------------------------------------------------
         suppress_email      Optional boolean, if True, the org will not notify
