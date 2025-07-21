@@ -3656,7 +3656,9 @@ class GeoAccessor(object):
             for _, new_r in new_rows.iterrows():
                 found_match = False
                 for _, old_r in old_rows.iterrows():
-                    cols_to_compare = [col for col in old_df.columns if col != match_field]
+                    cols_to_compare = [
+                        col for col in old_df.columns if col != match_field
+                    ]
                     if all(old_r[col] == new_r[col] for col in cols_to_compare):
                         found_match = True
                         break
