@@ -13897,6 +13897,21 @@ class User(dict):
             [i.delete() for i in self.recyclebin.content]
         return self._portal.delete_user(self._user_id, reassign_to)
 
+    def _check_existance(self, username: str) -> bool:
+        """checks if a username exists"""
+        gis: GIS = self._gis
+        session: EsriSession = gis.session
+        url: str = f"{gis.url}/sharing/rest/community/users/{username}"
+        params: dict = {
+            "f": "json",
+        }
+        resp: requests.Response = session.get(url, params=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+        if data.get("error"):
+            return False
+        return True
+
     def reassign_to(self, target_username: str):
         """
         The ``reassign_to`` method reassigns all of this user's items and groups to another user.
@@ -13927,29 +13942,46 @@ class User(dict):
 
 
         """
+        if (
+            isinstance(target_username, str)
+            and self._check_existance(username=target_username) == False
+        ):
+            raise ValueError(f"The destination user {target_username} does not exist.")
         if isinstance(target_username, User):
             target_username = target_username.username
+
         # currently issue with REST API method, so we try/except for it
-        try:
-            return self._portal.reassign_user(self._user_id, target_username)
-        except Exception:
-            # variables to ensure that every item & group is assigned
-            # issue with dependencies for these methods too, so try/except/pass
-            items_success = True
-            group_success = True
-            for item in self.items():
-                try:
-                    if not item.reassign_to(target_username):
-                        items_success = False
-                except Exception:
-                    pass
-            for group in self.groups:
-                try:
-                    if not group.reassign_to(target_username):
-                        group_success = False
-                except Exception:
-                    pass
-            return items_success and group_success
+
+        params: dict = {
+            "f": "json",
+        }
+        params["targetUsername"] = target_username
+        url: str = (
+            f"{self._gis.url}/sharing/rest/community/users/{self.username}/reassign"
+        )
+
+        resp: requests.Response = self._gis.session.post(url, data=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+        if "error" in data:
+            raise Exception(data.get("error"))
+        else:
+            status = data.get("success")
+            # validate all items are moved:
+            if status == True:
+
+                checker_items = [
+                    item.reassign_to(target_username) for item in self.items()
+                ]
+                checker_groups = [
+                    group.reassign_to(target_username) for group in self.groups
+                ]
+                if len(checker_items) > 0:
+                    assert all(checker_items)
+                if len(checker_groups) > 0:
+                    assert all(checker_groups)
+            return status
+        return False
 
     def get_thumbnail(self):
         """
