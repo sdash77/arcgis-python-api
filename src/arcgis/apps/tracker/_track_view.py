@@ -1,3 +1,4 @@
+from __future__ import annotations
 import arcgis
 from arcgis._impl.common._utils import _lazy_property
 from arcgis.apps.tracker import LocationTrackingError

@@ -7,6 +7,7 @@ administrative operations such as adding and removing machines from a
 site are still available in READ_ONLY mode.
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer

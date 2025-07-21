@@ -1,4 +1,5 @@
-from arcgis.gis import GIS, Item
+from __future__ import annotations
+from arcgis.gis import Item
 from arcgis.features import FeatureLayer
 import itertools
 import re

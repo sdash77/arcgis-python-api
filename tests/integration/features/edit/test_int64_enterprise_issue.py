@@ -578,16 +578,14 @@ test_data = {
 }
 
 
-@profiles.enterprise_and_agol_and_agol_dev
+@profiles.all
 @integration_test
 class TestIssueInt64(unittest.TestCase):
     """tests the fact that int64 is only accepted on Online(November2023) and Enterprise 11.2+"""
 
-    @classmethod
-    def setUpClass(cls): ...
-
     def test_create_sdf_with_int64(self):
         """Create a spatially enabled dataframe and publish an item with it to different portals."""
+        item = None
         try:
             sdf = pd.DataFrame(test_data)
             sdf.SHAPE = sdf.SHAPE.apply(lambda x: Geometry(x))
@@ -597,10 +595,10 @@ class TestIssueInt64(unittest.TestCase):
             item = self.gis.content.import_data(sdf, tags="ntgrtn-tst")
             assert item
         except Exception as e:
-            print(e)
+            self.fail(e)
         finally:
             if item:
-                item.delete()
+                item.delete(permanent=True)
 
 
 if __name__ == "__main__":
