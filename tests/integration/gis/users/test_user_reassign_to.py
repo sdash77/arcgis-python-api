@@ -18,19 +18,7 @@ from utils._logging import enable_verbose_logging
 
 enable_verbose_logging()
 
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
-# enable_verbose_logging(__logger__)
 
 
 @profiles.admin_enterprise_and_agol
@@ -43,9 +31,15 @@ class TestContentManagerReassignTo(unittest.TestCase):
 
         user_mgr = self.gis.users
         test_user = user_mgr.search(test_user_name)[0]
-        reassign_to_nobody = test_user.reassign_to("non_existent_username")
 
-        self.assertFalse(reassign_to_nobody, "Assigning to non-existent user was True")
+        with self.assertRaises(ValueError) as err:
+            test_user.reassign_to("non_existent_username")
+        self.assertTrue(
+            str(err.exception).startswith(
+                "The destination user non_existent_username does not exist"
+            ),
+            f"Unexpected error message: {err.exception}",
+        )
 
     def test_reassign_to(self):
         """tests the re-assign logic in enterprise"""
