@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\svn\geosaurus_issue_13498\src")
-sys.path.insert(1, r"C:\svn\geosaurus_issue_13498\tests")
 import unittest
 from utils.decorators import profiles, integration_test
 from arcgis.gis.admin import AGOLAdminManager, PortalAdminManager
