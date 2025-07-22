@@ -88,7 +88,6 @@ class NotebookFile:
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
-        current_version="2.4.2",
         details="Use the delete method instead.",
     )
     def erase(self) -> bool:
@@ -869,7 +868,6 @@ class NotebookDataAccess:
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
-        current_version="2.4.2",
         details="Use the files property found in a NotebookFolder instead or the get_file method.",
     )
     def files(self) -> list[NotebookFile]:
@@ -905,7 +903,6 @@ class NotebookDataAccess:
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
-        current_version="2.4.2",
         details="Use the create_folder method found in a NotebookFolder instead. The first folder in the list of folders is the Home folder.",
     )
     def create_folder(self, folder: str) -> bool:
@@ -936,7 +933,6 @@ class NotebookDataAccess:
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
-        current_version="2.4.2",
         details="Use the upload method found in a NotebookFolder instead.",
     )
     def upload(self, fp: str | list[str], folder: str | None = None) -> list[bool]:
