@@ -2,6 +2,7 @@
 This is the ArcGIS Notebook Server API Framework
 """
 
+from __future__ import annotations
 import os
 import copy
 import warnings
@@ -39,7 +40,7 @@ class NotebookServer(object):
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
-        if url.lower().endswith("/admin") == False:
+        if url.lower().endswith("/admin") == False and not gis._is_kubernetes:
             url += "/admin"
         self._url = url
         if isinstance(gis, GIS):

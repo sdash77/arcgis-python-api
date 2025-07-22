@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis import GIS
 from typing import Optional, Dict, Union, List
 from ._task import Task

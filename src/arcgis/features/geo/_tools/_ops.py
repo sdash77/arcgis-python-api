@@ -3,6 +3,7 @@ Allows for dataset to dataset comparisons by passing in DataFrames or
 Geometries.
 """
 
+from __future__ import annotations
 import math
 from functools import reduce
 

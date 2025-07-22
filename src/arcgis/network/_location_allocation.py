@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 import logging as _logging
 from typing import Optional
 import arcgis

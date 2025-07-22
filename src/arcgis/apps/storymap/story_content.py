@@ -114,6 +114,8 @@ class SlideLayout(Enum):
     FULL = "full"
     SECTIONDOUBLE = "section-double"
     SECTIONSINGLE = "section-single"
+    TITLELESSFLEXIBLE = "titleless-flexible"
+    FLEXIBLE = "flexible"
 
 
 class SlideSubLayout(Enum):
@@ -211,7 +213,7 @@ class Separator:
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Separator"
+        return "Separator()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(self, story=None, **kwargs):
@@ -296,11 +298,7 @@ class Image:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Image: {self.caption}"
-        else:
-            return "Image"
+        return f"Image(path='{self._path}')"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -765,11 +763,7 @@ class Video:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Video: {self.caption}"
-        else:
-            return "Video"
+        return f"Video(path={self._path})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1107,11 +1101,7 @@ class Audio:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Audio: {self.caption}"
-        else:
-            return "Audio"
+        return f"Audio(path={self._path})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1431,7 +1421,7 @@ class Embed:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Embed: {self.link}"
+        return f"Embed(link={self.link})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1760,7 +1750,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return self._type
+        return f"Map(item={self._path}, type={self._type})"
 
     # ----------------------------------------------------------------------
     @property
@@ -2604,10 +2594,7 @@ class Text:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.text:
-            return f"Text: {self._style}"
-        else:
-            return "Text"
+        return f"Text(text={self._text or ''})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -2972,7 +2959,7 @@ class Button:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Button: {self.text}"
+        return f"Button(link={self._link}, text={self._text})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -3111,7 +3098,7 @@ class Gallery:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Image Gallery"
+        return "ImageGallery()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -3433,7 +3420,7 @@ class Swipe:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Swipe: {self._media_type}"
+        return f"Swipe(type={self._media_type})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -3724,11 +3711,11 @@ class Sidecar:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Sidecar"
+        return "Sidecar()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Sidecar"
+        return "Sidecar()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(
@@ -4328,11 +4315,11 @@ class Timeline:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Timeline"
+        return "Timeline()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Timeline"
+        return "Timeline()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(
@@ -4635,11 +4622,11 @@ class MapTour:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Tour"
+        return f"MapTour(type={self._type}, subtype={self._subtype})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Map Tour"
+        return f"MapTour(type={self._type}, subtype={self._subtype})"
 
     # ----------------------------------------------------------------------
     @property
@@ -4753,11 +4740,11 @@ class MediaAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Media Action"
+        return "MediaAction()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Media Action"
+        return "MediaAction()"
 
     # ----------------------------------------------------------------------
     @property
@@ -4952,11 +4939,11 @@ class MapAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Action"
+        return "MapAction()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Map Action"
+        return "MapAction()"
 
     # ----------------------------------------------------------------------
     @property
@@ -5103,11 +5090,11 @@ class ExpressMap:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "ExpressMap"
+        return "ExpressMap()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "ExpressMap"
+        return "ExpressMap()"
 
     # ----------------------------------------------------------------------
     @property
@@ -5250,7 +5237,7 @@ class Code:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Code: {self.language}"
+        return f"Code(language={self.language})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -5491,14 +5478,21 @@ class BriefingSlide:
             "full",
             "section-single",
             "section-double",
+            "titleless-flexible",
+            "flexible",
         ]:
             self._layout: str = layout
         else:
             raise ValueError(
-                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double"
+                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double, flexible, titleless-flexible."
             )
 
-        if self._layout in ["double", "titleless-double"]:
+        if self._layout in [
+            "double",
+            "titleless-double",
+            "flexible",
+            "titleless-flexible",
+        ]:
             if sublayout and sublayout in SlideSubLayout.__members__.values():
                 self._sublayout: str = sublayout.value
             elif sublayout and sublayout in ["3-7", "7-3", "1-1"]:
@@ -5567,7 +5561,7 @@ class BriefingSlide:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Briefing Slide: {self.layout}"
+        return f"BriefingSlide(layout={self.layout})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -5749,6 +5743,10 @@ class BriefingSlide:
     # ----------------------------------------------------------------------
     @sublayout.setter
     def sublayout(self, sublayout: str | SlideSubLayout):
+        if self.layout in ["flexible", "titleless-flexible"]:
+            # TODO: Ability to change sublayout in flexible layout
+            raise Exception("Changing the sublayout is not supported at this time.")
+
         if sublayout not in SlideSubLayout.__members__.values() and not isinstance(
             sublayout, str
         ):
@@ -5892,23 +5890,7 @@ class Block:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self._index == "0" and self._slide.layout in [
-            "single",
-            "titleless-single",
-            "full",
-            "section-double",
-        ]:
-            return "Block"
-        elif self._index == "0" and self._slide.layout in [
-            "double",
-            "titleless-double",
-        ]:
-            return "Left Block"
-        elif self._index == "1" and self._slide.layout in [
-            "double",
-            "titleless-double",
-        ]:
-            return "Right Block"
+        return f"Block(content={self.content}, index={self._index})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -6169,7 +6151,7 @@ class Table:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Table"
+        return "Table()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -6232,7 +6214,7 @@ class Cover:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Cover"
+        return "Cover()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -6643,7 +6625,7 @@ class Navigation:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Navigation"
+        return "Navigation()"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -6710,7 +6692,7 @@ class CollectionNavigation:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Collection Navigation"
+        return "CollectionNavigation()"
 
     def __repr__(self) -> str:
         return self.__str__()

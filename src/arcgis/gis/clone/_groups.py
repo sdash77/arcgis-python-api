@@ -374,7 +374,7 @@ class GroupCloner(BaseCloneGroup):
 
         """
         self._tracker: dict[str, Any] = {}
-        ## 1). Check Existance and setup project
+        ## 1). Check Existence and setup project
         ##
         if offline:
             params = {
