@@ -14,8 +14,9 @@ from arcgis.gis import (
 )
 from integration.config import get_resource_path
 from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
-__logger__ = logging.getLogger()
+enable_verbose_logging()
 
 
 def enable_verbose_logging(root):
