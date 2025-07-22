@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, r"C:\svn\geosaurus_issue_13498\src")
+sys.path.insert(1, r"C:\svn\geosaurus_issue_13498\tests")
 import unittest
 from utils.decorators import profiles, integration_test
 from arcgis.gis.admin import AGOLAdminManager, PortalAdminManager
@@ -35,6 +38,9 @@ class TestLicenseClass(unittest.TestCase):
         for lic in licenses:
             assert isinstance(lic.report, pd.DataFrame)
 
+    def test_expired_license(self):
+        assert self.admin.license.expired_licenses
+
     def test_check(self):
         licenses = self.admin.license.all()
         for lic in licenses:
@@ -49,6 +55,8 @@ class TestLicenseClass(unittest.TestCase):
         user = self.gis.users.me
         lm = self.admin.license
         lic = lm.get("ArcGIS Pro")
+        if lic is None:
+            self.skipTest("The ArcGIS Pro license is not available, skipping.")
         assert lic.check(user) == lic.user_entitlement(user)['entitlements']
 
 
