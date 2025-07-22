@@ -58,6 +58,10 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
+_FAIRNESS_CLASSIFICATION_SUPPORT = (
+    "This method only supports binary classification and regression currently."
+)
+_FAIRNESS_NOT_APPLIED = "Obtaining fairness score needs the ground truth and hence this method is not supported when model is instantiated for inferencing. "
 _FAIRNESS_NOT_SUPPORTED = "Fairness is not supported with this model type"
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
@@ -269,13 +273,15 @@ class MLModel(object):
             self.protected_class = kwargs.get("protected_class")
 
             if self._fairness and self._data._is_classification:
-                self.fairness_label_encoder = LabelEncoder()
-                self._training_labels = self.fairness_label_encoder.fit_transform(
-                    self._training_labels
-                )
-                self._validation_labels = self.fairness_label_encoder.transform(
-                    self._validation_labels
-                )
+                self.fairness_label_encoder = self._data._fairness_encoder
+
+                if self._training_data is not None:
+                    self._training_labels = self.fairness_label_encoder.fit_transform(
+                        self._training_labels
+                    )
+                    self._validation_labels = self.fairness_label_encoder.transform(
+                        self._validation_labels
+                    )
 
         else:
             model = _get_model_type(model_type)
@@ -485,6 +491,8 @@ class MLModel(object):
         visualize=False,
     ):
         """
+        As of now we support only binary classification in fairness evaluation.
+
         Shows sample fairness score and plots for the model.
 
         =====================   ===========================================
@@ -513,14 +521,22 @@ class MLModel(object):
         =====================   ===========================================
         :return: dataframe
         """
+        if self._training_data is None:
+            raise ValueError(_FAIRNESS_NOT_APPLIED)
 
         if sensitive_feature not in self._data._categorical_variables:
             raise ValueError(_SENSITIVE_FEATURE_ERROR)
 
         self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
         if not self._fairness and self._data._is_classification:
-            labelEncoder = LabelEncoder()
+            if self._fairness:
+                labelEncoder = self.fairness_label_encoder
+            else:
+                labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
+            if len(np.unique(train_labels)) > 2:
+                raise ValueError(_FAIRNESS_CLASSIFICATION_SUPPORT)
+
             y_true = labelEncoder.transform(self._validation_labels)
             y_pred = self._predict(self._data._ml_data[2])
 
@@ -756,6 +772,11 @@ class MLModel(object):
 
         MLModel._save_encoders(self._data._encoder_mapping, path, base_file_name)
 
+        if self._fairness:
+            MLModel._save_encoders(
+                self.fairness_label_encoder, path, base_file_name + "_fairness"
+            )
+
         if self._data._procs:
             MLModel._save_transforms(self._data._procs, path, base_file_name)
 
@@ -945,6 +966,16 @@ class MLModel(object):
                 with open(encoder_path, "rb") as f:
                     encoder_mapping = pickle.loads(f.read())
 
+        _fairness_encoder = None
+        if fairness:
+            fairness_encoder_path = os.path.join(
+                os.path.dirname(emd_path),
+                os.path.basename(emd_path).split(".")[0] + "_fairness_encoders.pkl",
+            )
+            if os.path.exists(fairness_encoder_path):
+                with open(fairness_encoder_path, "rb") as f:
+                    _fairness_encoder = pickle.loads(f.read())
+
         column_transformer = None
         transforms_path = os.path.join(
             os.path.dirname(emd_path),
@@ -966,6 +997,8 @@ class MLModel(object):
             data._cell_sizes = cell_sizes
 
         data._emd = emd
+        if _fairness_encoder:
+            data._fairness_encoder = _fairness_encoder
 
         model_file = os.path.join(os.path.dirname(emd_path), emd["ModelFile"])
         with open(model_file, "rb") as f:

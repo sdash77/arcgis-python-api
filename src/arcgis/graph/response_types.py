@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, Any
 from pydantic import BaseModel, model_serializer, model_validator, Field
 from pydantic.alias_generators import to_camel

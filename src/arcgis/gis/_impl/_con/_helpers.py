@@ -2,6 +2,7 @@
 urllib parsing helpers to help figure out of the URL returns a file.
 """
 
+from __future__ import annotations
 import os
 import re
 import unicodedata

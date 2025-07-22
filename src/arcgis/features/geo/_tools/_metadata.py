@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
@@ -10,6 +11,7 @@ class _Metadata(object):
 
     _source = None
     _renderer = None
+    _geometry_type: str = None
 
     # ----------------------------------------------------------------------
     def __init__(self):
@@ -42,6 +44,18 @@ class _Metadata(object):
     def source(self, value):
         """gets/sets the source data pointer"""
         self._source = value
+
+    # ----------------------------------------------------------------------
+    @property
+    def geometry_type(self):
+        """gets/sets the source data pointer"""
+        return self._geometry_type
+
+    # ----------------------------------------------------------------------
+    @geometry_type.setter
+    def geometry_type(self, value):
+        """gets/sets the source data pointer"""
+        self._geometry_type = value
 
     # ----------------------------------------------------------------------
     @property

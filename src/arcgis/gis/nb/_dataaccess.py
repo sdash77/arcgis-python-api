@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import List, Dict, Any
@@ -289,6 +290,58 @@ class NotebookDataAccess:
         return self._gis._con.post(url, params).get("status") == "success"
 
     # ---------------------------------------------------------------------
+    def _resolve_files(self, fp):
+        if isinstance(fp, list):
+            return [f for f in fp if os.path.isfile(f)]
+
+        if os.path.isdir(fp):
+            # If the path is a directory, get all files in the directory
+            return [
+                os.path.join(fp, f)
+                for f in os.listdir(fp)
+                if os.path.isfile(os.path.join(fp, f))
+            ]
+
+        if os.path.isfile(fp):
+            # If the path is a file, return it as a list
+            return [fp]
+
+        raise ValueError(
+            f"Invalid file path: {fp}. It must be a file or a directory containing files."
+        )
+
+    # ---------------------------------------------------------------------
+    def _upload_single_file(self, file_path: str, folder: str | None = None) -> bool:
+        if not os.path.isfile(file_path):
+            raise ValueError(f"File {file_path} does not exist.")
+
+        filename = os.path.basename(file_path)
+
+        if self._gis._is_arcgisonline:
+            existing_files = self.files
+            if any(f.properties.name == filename for f in existing_files):
+                raise ValueError(f"File {filename} already exists in the workspace.")
+
+        full_path = f"{folder}/{filename}" if folder else filename
+
+        if self._gis._is_arcgisonline:
+            url = f"{self._url}/{self._username}/{full_path}"
+        else:
+            url = f"{self._url}/notebookworkspace/{full_path}"
+
+        headers = {
+            "Content-Type": "application/octet-stream",
+            "Content-Length": str(os.path.getsize(file_path)),
+            "x-ms-blob-type": "BlockBlob",
+            "x-ms-version": "2020-10-02",  # Consider making this configurable
+        }
+
+        resp = self._gis._con.put_raw(
+            url, data=open(file_path, "rb"), additional_headers=headers
+        )
+        return 200 <= resp.status_code < 300
+
+    # ---------------------------------------------------------------------
     def upload(self, fp: str | list[str], folder: str | None = None) -> list[bool]:
         """
         Uploads a file to the Notebook Server
@@ -307,73 +360,17 @@ class NotebookDataAccess:
 
         :return: List of booleans. True if the file was uploaded, False or an error if it was not.
         """
-        # if the fp is a folder, get all the files in the folder
-        if not isinstance(fp, list) and os.path.isdir(fp):
-            # get all the files in the folder
-            files = [
-                os.path.join(fp, f)
-                for f in os.listdir(fp)
-                if os.path.isfile(os.path.join(fp, f))
-            ]
-            # if the file is a folder and no folder was given, create one
-            if folder is None:
-                folder = os.path.basename(fp)
-                try:
-                    self.create_folder(folder)
-                except Exception as e:
-                    if "folder already exists" in str(e):
-                        # if the folder already exists, ignore the error
-                        pass
-                    else:
-                        raise e
+        # Get files as a list
+        files = self._resolve_files(fp)
 
-            # upload each file
-            return all([self.upload(f, folder) for f in files])
-
-        if not isinstance(fp, list):
-            # if the fp is not a list, make it a list
-            fp = [fp]
+        if not files:
+            raise ValueError(
+                "No valid files found to upload. Please provide a valid file path or directory."
+            )
 
         responses = []
-        for file in fp:
-            # check if the file exists
-            if not os.path.isfile(file):
-                raise ValueError(f"File {file} does not exist.")
-
-            # Check if file already exists, enterprise does this automatically
-            if self._gis._is_arcgisonline:
-                # check the file is not already in the workspace
-                existing_files = self.files
-                if any(
-                    f.properties.name == os.path.basename(file) for f in existing_files
-                ):
-                    raise ValueError(
-                        f"File {os.path.basename(file)} already exists in the workspace."
-                    )
-
-            # get the name of the file
-            filename = os.path.basename(file)
-
-            # if a folder is provided, add it to the path
-            if folder:
-                # the path will be of style: folder/filename
-                full_fp = folder + "/" + filename
-
-            if self._gis._is_arcgisonline:
-                url = f"{self._url}/{self._username}/{full_fp}"
-            else:
-                url = f"{self._url}/notebookworkspace/{os.path.basename(file)}"
-
-            additional_headers = {
-                "Content-Type": "application/octet-stream",
-                "Content-Length": f"{os.path.getsize(file)}",
-                "x-ms-blob-type": "BlockBlob",
-                "x-ms-version": "2020-10-02",
-            }
-            resp = self._gis._con.put_raw(
-                url, data=open(file, "rb"), additional_headers=additional_headers
-            )
-            responses.append(resp.status_code >= 200 and resp.status_code < 300)
+        for file in files:
+            responses.append(self._upload_single_file(file, folder))
         return responses
 
     # ---------------------------------------------------------------------

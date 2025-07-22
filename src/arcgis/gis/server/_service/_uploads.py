@@ -2,6 +2,7 @@
 Controls the Uploads of file to AGS/AGO
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 from typing import Optional
 from urllib.parse import urlparse, urlencode

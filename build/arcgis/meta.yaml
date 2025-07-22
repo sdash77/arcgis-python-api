@@ -30,7 +30,7 @@ requirements:
   - matplotlib
   - matplotlib-inline
   - numpy >=2.2.0,<3
-  - pandas >=2.0.0,<2.3.0
+  - pandas >=2.0.0,<2.4.0
   - pillow
   - puremagic >=1.15,<2
   - pyarrow >=16,<20

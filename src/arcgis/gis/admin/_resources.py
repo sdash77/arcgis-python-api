@@ -2,6 +2,7 @@
 Provides class, methods and functions to manage resources for a given GIS.
 """
 
+from __future__ import annotations
 import os
 import json
 import tempfile
