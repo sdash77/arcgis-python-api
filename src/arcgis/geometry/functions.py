@@ -149,7 +149,7 @@ def areas_and_lengths(
     area_unit: str | AreaUnits,
     calculation_type: str,
     spatial_ref: int = 4326,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -404,7 +404,7 @@ def buffer(
             >>> from arcgis.gis import GIS
             >>> from arcgis.geometry import Point, buffer, LengthUnits, AreaUnits
 
-            >>> gis = GIS(profile="my_entertprise_user")
+            >>> gis = GIS(profile="my_enterprise_user")
 
             >>> flyr_item = gis.content.get("<item_id>")
 
@@ -1147,7 +1147,7 @@ def label_points(
 
 def lengths(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
-    polylines: Polyline,
+    polylines: list[Polyline],
     length_unit: str | LengthUnits,
     calculation_type: str,
     gis: Optional[arcgis_gis.GIS] = None,

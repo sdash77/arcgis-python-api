@@ -717,7 +717,7 @@ class MapFeatureLayer(Layer):
 
                                             .. code-block:: python
 
-                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+                                                >>> group_by_fields_for_statistics = "STATE_NAME, GENDER"
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional List. The definitions for one or more field-based
                                             statistics to be calculated.
@@ -1364,7 +1364,7 @@ class MapTable(MapFeatureLayer):
 
                                                 >>> import _dt.datetime as dt
 
-                                                >>> time_filter = [dt._dt.datetime(2022, 1, 1), dt.dateime(2022, 1, 12)]
+                                                >>> time_filter = [dt._dt.datetime(2022, 1, 1), dt.datetime(2022, 1, 12)]
 
         -------------------------------     --------------------------------------------------------------------
         gdb_version                         Optional string. The geodatabase version to query. This parameter
@@ -1404,7 +1404,7 @@ class MapTable(MapFeatureLayer):
 
                                             .. code-block:: python
 
-                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+                                                >>> group_by_fields_for_statistics = "STATE_NAME, GENDER"
 
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional string. The definitions for one or more field-based
@@ -2859,7 +2859,7 @@ class MapImageLayer(_gis.Layer):
                                those layers. Definition expression for a layer that is
                                published with the service will be always honored.
         ------------------     --------------------------------------------------------------------
-        return_geometry        Optional boolean. If true, the resultset will include the geometries
+        return_geometry        Optional boolean. If true, the result set will include the geometries
                                associated with each result. The default is true.
         ------------------     --------------------------------------------------------------------
         max_offset             Optional integer. This option can be used to specify the maximum

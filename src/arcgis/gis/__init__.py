@@ -33,15 +33,17 @@ import copy
 from arcgis.auth.tools import LazyLoader
 
 _imports = LazyLoader("arcgis._impl.imports")
-from arcgis.gis._impl._dataclasses._contentds import (
-    ItemProperties,
-    ItemTypeEnum,
-)
+from arcgis.gis._impl._dataclasses._contentds import ItemProperties, ItemTypeEnum
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
 from arcgis.gis._impl._dataclasses._sfilters import (
     SpatialFilter,
     SpatialRelationship,
+)
+from arcgis.gis._impl._content_manager.sharing import (
+    SharingLevel,
+    SharingGroupManager,
+    SharingManager,
 )
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
@@ -1507,7 +1509,7 @@ class GIS(object):
 
         :returns:
             * ArcGIS Online: list of :class:`~arcgis.gis.agoserver.AGOLServicesDirectory` objects
-            * ArcGIS Enteprise and ArcGIS Enterprise on Kubernetes: list of :class:`~arcgis.gis.server.catalog.ServicesDirectory` objects.
+            * ArcGIS Enterprise and ArcGIS Enterprise on Kubernetes: list of :class:`~arcgis.gis.server.catalog.ServicesDirectory` objects.
 
         .. code-block:: python
 
@@ -1665,7 +1667,7 @@ class GIS(object):
         """
         The ``map`` method creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
-        using the GIS's configured geocoders. Provided a match is found, the geographic
+        using the GIS's configured geocoder. Provided a match is found, the geographic
         extent of the matched address is used as the extent of the map.
         See :class:`~arcgis.map.Map` for more information.
 
@@ -1704,12 +1706,6 @@ class GIS(object):
         :return:
           A :class:`map<arcgis.map.Map>` or :class:`scene<arcgis.map.Scene>`.
         """
-        try:
-            from arcgis.geocoding import get_geocoders, geocode, Geocoder
-        except Error as err:
-            _log.error("ipywidgets packages is required for the map widget.")
-            _log.error("Please install it:\n\tconda install ipywidgets")
-
         arcgismapping = _imports.get_arcgis_map_mod(True)
 
         if isinstance(location, Item) and location.type == "Web Map":
@@ -5579,8 +5575,7 @@ class UserManager(object):
             for k, v in inputs.items():
                 if k in allowed_keys:
                     kwargs[k] = v
-            import concurrent.futures
-            import math, copy
+            import math
 
             num = 10
             steps = range(math.ceil(max_items / num))
@@ -7241,7 +7236,7 @@ class ContentManager(object):
 
 
         """
-        from typing import Iterator, Tuple
+        from typing import Tuple
         from io import BytesIO
 
         def chunk_by_file_size(
@@ -14913,7 +14908,7 @@ class Item(dict):
             >>> item.download("C:\\ARCGIS\\Projects\\", "hurricane_data")
 
         """
-        data_path: str = f"content/items/" + self.itemid + "/data"
+        data_path: str = "content/items/" + self.itemid + "/data"
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -17687,7 +17682,7 @@ class Item(dict):
             and self._gis._portal.is_arcgisonline
             and fileType.lower() in ["tilepackage", "compacttilepackage"]
         ):
-            from ..layers import MapImageLayer
+            from ..layers._msl import MapImageLayer
             from ..raster._layer import ImageryLayer
 
             if len(ret) > 0 and "success" in ret[0] and ret[0]["success"] is False:
@@ -20439,6 +20434,5 @@ class Layer(_GISResource):
 
 
 from arcgis.gis._impl._profile import ProfileManager
-from ._impl import SharingLevel
 
 login_profiles = ProfileManager()
