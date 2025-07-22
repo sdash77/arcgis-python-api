@@ -7,6 +7,7 @@ A FeatureLayerCollection is a collection of feature layers and tables, with the 
 """
 
 from __future__ import annotations
+import mimetypes
 from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
 from datetime import datetime
@@ -633,12 +634,25 @@ class FeatureLayer(Layer):
             self._gis._is_agol is False and [2024, 1] < self._gis.version < [2025, 2]
         ):
             files = {"attachment": file_path}
-            return self._con.post(path=attach_url, postdata=params, files=files)
+            if files:
+                fields = {}
+                if isinstance(files, dict):
+                    for k, v in files.items():
+                        if isinstance(v, (list, tuple)):
+                            fields[k] = v
+                        else:
+                            buffer_reader = open(v, "rb")
+                            fields[k] = (
+                                os.path.basename(v),
+                                buffer_reader,
+                                mimetypes.guess_type(v)[0],
+                            )
+            return self._gis.session.post(path=attach_url, data=params, files=files)
         else:
             container = self.container
             itemid = container.upload(file_path)
             params["uploadId"] = itemid
-            res = self._con.post(attach_url, params)
+            res = self._gis.session.post(attach_url, params).json()
             if res["addAttachmentResult"]["success"] is True:
                 container._delete_upload(itemid)
             return res
@@ -5730,7 +5744,7 @@ class FeatureLayerCollection(_GISResource):
         b_url = "%s/uploads/%s" % (self._url, item_id)
         commit_part_url = "%s/commit" % b_url
         params = {"f": "json", "parts": self._uploaded_parts(itemid=item_id)}
-        res = self._con.post(commit_part_url, params)
+        res = self._gis.session.post(commit_part_url, params).json()
         if "error" in res:
             raise Exception(res)
         else:
@@ -5744,7 +5758,7 @@ class FeatureLayerCollection(_GISResource):
         params = {
             "f": "json",
         }
-        res = self._con._session.post(delete_part_url, params).json()
+        res = self._gis.session.post(delete_part_url, params).json()
         if "error" in res:
             raise Exception(res)
         else:
