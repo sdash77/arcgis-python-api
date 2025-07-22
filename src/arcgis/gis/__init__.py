@@ -13897,7 +13897,7 @@ class User(dict):
             [i.delete() for i in self.recyclebin.content]
         return self._portal.delete_user(self._user_id, reassign_to)
 
-    def _check_existance(self, username: str) -> bool:
+    def _check_existence(self, username: str) -> bool:
         """checks if a username exists"""
         gis: GIS = self._gis
         session: EsriSession = gis.session
@@ -13944,7 +13944,7 @@ class User(dict):
         """
         if (
             isinstance(target_username, str)
-            and self._check_existance(username=target_username) == False
+            and self._check_existence(username=target_username) == False
         ):
             raise ValueError(f"The destination user {target_username} does not exist.")
         if isinstance(target_username, User):
