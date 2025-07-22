@@ -3,11 +3,13 @@ Entry point to working with licensing on Portal or ArcGIS Online
 """
 
 from __future__ import annotations
-import datetime
+import datetime as _dt
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS, User
 from ._base import BasePortalAdmin
+from arcgis.auth import EsriSession
+import requests
 import logging
 
 _LOG = logging.getLogger()
@@ -132,23 +134,82 @@ class LicenseManager(BasePortalAdmin):
         return None
 
     # ----------------------------------------------------------------------
-    def all(self) -> list:
+    @property
+    def expired_licenses(self) -> dict:
         """
-        Returns all Licenses registered with an organization
+        Returns the organization's expired licenses and trials
+
+        :returns: dict
+        """
+        values: dict = self._list_licenses(status="expired")
+        expired: dict = {}
+        now = _dt.datetime.now()
+        for key in values.keys():
+            expired[key] = []
+            for value in values[key]:
+                end_date: int = value["provision"].get("endDate", -1)
+                if end_date > -1 and now > _dt.datetime.fromtimestamp(end_date / 1000):
+                    expired[key].append(value)
+        return expired
+
+    # ----------------------------------------------------------------------
+    def _list_licenses(self, status: str | None = None) -> dict:
+        """
+        Returns the licenses for the AGO Organization based on `status`
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        status              Optional string. The status of the listings to be returned.
+                            The default value is active. Accepted values are:
+
+                            - active: Only listings that are currently active will be returned
+                            - expired: Only listings that have already expired will be returned
+                            - all: Both active and expired listings will be returned
+
+        ===============     ====================================================================
+
+        :returns: dictionary
+
+        """
+        if status is None:
+            status: str = "active"
+        elif isinstance(status, str) and not status.lower() in [
+            "active",
+            "expired",
+            "all",
+        ]:
+            raise ValueError(
+                "The allowed `status` values are `None`, `active`, `expired`, and `all`"
+            )
+        session: EsriSession = self._gis.session
+        params: dict = {"f": "json", "status": status}
+        result: requests.Response = session.get(url=self._url, params=params)
+        result.raise_for_status()
+        return result.json()
+
+    # ----------------------------------------------------------------------
+    def all(self) -> list[License]:
+        """
+        Returns all active Licenses registered with an organization
 
         :return:
            List of :class:`~arcgis.gis.admin.License` objects
 
         """
-        licenses = []
-        if self._properties is None:
-            self._init()
-        if "purchases" in self.properties:
-            purchases = self.properties["purchases"]
+        status: str = "active"
+        licenses: list[License] = []
+        properties: dict = self._list_licenses(status=status)
+        if "purchases" in properties:
+            purchases = properties["purchases"]
             for purchase in purchases:
                 try:
-
-                    licenses.append(License(gis=self._gis, info=purchase))
+                    if purchase["provision"][
+                        "endDate"
+                    ] > -1 and _dt.datetime.now() <= _dt.datetime.fromtimestamp(
+                        purchase["provision"]["endDate"] / 1000
+                    ):
+                        licenses.append(License(gis=self._gis, info=purchase))
                 except Exception as ex:
                     _LOG.warning(
                         str(ex)
@@ -156,12 +217,16 @@ class LicenseManager(BasePortalAdmin):
                         + str(purchase["listing"]["title"])
                         + ". License may be expired or is inaccessible."
                     )
-        if "trials" in self.properties:
-            purchases = self.properties["trials"]
+        if "trials" in properties:
+            purchases = properties["trials"]
             for purchase in purchases:
                 try:
-
-                    licenses.append(License(gis=self._gis, info=purchase))
+                    if purchase["provision"][
+                        "endDate"
+                    ] > -1 and _dt.datetime.now() <= _dt.datetime.fromtimestamp(
+                        purchase["provision"]["endDate"] / 1000
+                    ):
+                        licenses.append(License(gis=self._gis, info=purchase))
                 except Exception as ex:
                     _LOG.warning(
                         str(ex)
@@ -466,8 +531,6 @@ class License(object):
         self._gis = gis
         self._con = gis._con
         self._properties = PropertyMap(info)
-        # set the user entitlements property
-        self._get_entitlements()
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -519,6 +582,7 @@ class License(object):
                 res = self._con.get(url, params)
                 user_entitlements += res["userEntitlements"]
         self._entitlements = user_entitlements
+        return self._entitlements
 
     # ----------------------------------------------------------------------
     @property
@@ -548,7 +612,7 @@ class License(object):
                     if k in u["entitlements"]:
                         counter += 1
                         if u["lastLogin"] not in [None, -1]:
-                            last_used = datetime.datetime.fromtimestamp(
+                            last_used = _dt.datetime.fromtimestamp(
                                 u["lastLogin"] / 1000
                             ).strftime("%B %d, %Y")
                         else:
@@ -588,8 +652,8 @@ class License(object):
         returns a list of all usernames and their entitlements for this license
         """
         self._entitlements = None
-        self._get_entitlements()
-        return self._entitlements
+        entitlements = self._get_entitlements()
+        return entitlements
 
     # ----------------------------------------------------------------------
     def check(self, user: str) -> list:
@@ -680,8 +744,8 @@ class License(object):
         """
         if hasattr(username, "username"):
             username: str = username.username
-        self._get_entitlements()
-        for u in self._entitlements:
+        entitlements = self._get_entitlements()
+        for u in entitlements:
             if u["username"].lower() == username.lower():
                 return self._get_user_entitlement(username).get("userEntitlements", {})
         return {}
@@ -699,7 +763,8 @@ class License(object):
 
         data = []
         columns = ["Username", "Disconnected"]
-        for u in self._entitlements:
+        entitlements = self._get_entitlements()
+        for u in entitlements:
             try:
                 row = [u["username"], u["disconnected"]]
                 data.append(row)
