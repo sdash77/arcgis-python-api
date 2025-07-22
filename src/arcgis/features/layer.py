@@ -633,20 +633,17 @@ class FeatureLayer(Layer):
         if (os.path.getsize(file_path) < 10e6) or (
             self._gis._is_agol is False and [2024, 1] < self._gis.version < [2025, 2]
         ):
-            files = {"attachment": file_path}
-            if files:
-                fields = {}
-                if isinstance(files, dict):
-                    for k, v in files.items():
-                        if isinstance(v, (list, tuple)):
-                            fields[k] = v
-                        else:
-                            buffer_reader = open(v, "rb")
-                            fields[k] = (
-                                os.path.basename(v),
-                                buffer_reader,
-                                mimetypes.guess_type(v)[0],
-                            )
+            files = {}
+            for k, v in {"attachment": file_path}.items():
+                if isinstance(v, (list, tuple)):
+                    files[k] = v
+                else:
+                    buffer_reader = open(v, "rb")
+                    files[k] = (
+                        os.path.basename(v),
+                        buffer_reader,
+                        mimetypes.guess_type(v)[0],
+                    )
             return self._gis.session.post(path=attach_url, data=params, files=files)
         else:
             container = self.container
