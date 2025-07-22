@@ -1,6 +1,5 @@
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\tests")
 import unittest
+import json
 from utils.decorators import integration_test, profiles
 
 @profiles.admin_enterprise_and_agol
@@ -16,8 +15,8 @@ class TestUserResourceManagerIntegration(unittest.TestCase):
         resources = self.gis.users.me.resources
         # Add a small text resource
         test_file_name = "test_resource.txt"
-        test_text = "{'file': 'integration test resource content'}"
-        add_result = resources.add(file_name=test_file_name, text=test_text)
+        test_text = {"file": "integration test resource content"}
+        add_result = resources.add(file_name=test_file_name, text=json.dumps(test_text))
         self.assertTrue(add_result.get("success"))
         # List resources and check our file is present
         resource_list = list(resources.list())

@@ -10389,7 +10389,7 @@ class ResourceManager(object):
         return resp
 
     def _add_user_resource(self, file, file_name, text, access):
-        if not file or not text:
+        if not file and not text:
             raise ValueError("Please provide a valid bytes file or JSON text.")
         if not file_name:
             raise ValueError("Please provide a valid file_name for user resources.")
