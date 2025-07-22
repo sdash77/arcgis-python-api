@@ -24,7 +24,7 @@ class NotebookFile:
     _definition = None
 
     # ---------------------------------------------------------------------
-    def __init__(self, definition: Dict[str, Any], da: "NotebookDataAccess"):
+    def __init__(self, definition: Dict[str, Any], da: NotebookDataAccess):
         self._definition = definition
         self._da = da
 
@@ -109,7 +109,7 @@ class NotebookFile:
         return self._da._delete(filename=self._definition.get("Name"))
 
     # ---------------------------------------------------------------------
-    def move(self, target_folder: "NotebookFolder") -> bool:
+    def move(self, target_folder: NotebookFolder) -> bool:
         """
         Moves the file to another NotebookFolder.
 
@@ -181,7 +181,7 @@ class NotebookFolder:
     _files = None
 
     # ---------------------------------------------------------------------
-    def __init__(self, folder_name: str, da: "NotebookDataAccess"):
+    def __init__(self, folder_name: str, da: NotebookDataAccess):
         self._folder_name = folder_name
         self._da = da
         self._url = da._url
@@ -247,7 +247,7 @@ class NotebookFolder:
 
     # ---------------------------------------------------------------------
     @property
-    def folders(self) -> List["NotebookFolder"]:
+    def folders(self) -> List[NotebookFolder]:
         """
         Returns the subfolders in the folder.
 
@@ -270,7 +270,7 @@ class NotebookFolder:
             "f": "json",
             "restype": "container",
             "comp": "list",
-            "token": self._da._gis._con.token,
+            "token": self._da._gis.session.auth.token,
         }
 
         # create urls
@@ -281,7 +281,7 @@ class NotebookFolder:
             url = f"{self._url}/{self._da._username}/notebookworkspace"
         if self._folder_name:
             params["prefix"] = self._folder_name
-        response = self._da._gis._con.get(url, params)
+        response = self._da._gis.session.get(url, params=params).json()
         # Filter files based on ResourceType
         if self._is_agol:
             return [
@@ -292,7 +292,7 @@ class NotebookFolder:
         return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
 
     # ---------------------------------------------------------------------
-    def create_folder(self, folder_name: str) -> "NotebookFolder":
+    def create_folder(self, folder_name: str) -> NotebookFolder:
         """
         Create a subfolder in the current folder.
 
@@ -314,9 +314,9 @@ class NotebookFolder:
         params = {
             "f": "json",
             "folderName": f"{self._folder_name}{folder_name}",
-            "token": self._da._gis._con.token,
+            "token": self._da._gis.session.auth.token,
         }
-        result = self._da._gis._con.post(url, params)
+        result = self._da._gis.session.post(url, data=params).json()
         if result.get("status") == "success":
             return NotebookFolder(f"{self._folder_name}{folder_name}/", self._da)
 
@@ -405,7 +405,7 @@ class NotebookFolder:
         return responses
 
     # ---------------------------------------------------------------------
-    def move(self, target_folder: "NotebookFolder") -> bool:
+    def move(self, target_folder: NotebookFolder) -> bool:
         """
         Move the folder to another folder in the notebook workspace.
 
@@ -512,7 +512,7 @@ class NotebookDataAccess:
         return "Notebook Workspace for: " + self._username
 
     # ---------------------------------------------------------------------
-    def _get_folders(self, parent_folder: str | None) -> List["NotebookFolder"]:
+    def _get_folders(self, parent_folder: str | None) -> List[NotebookFolder]:
         if self._gis._is_agol:
             url = f"{self._url}/{self._username}"
         else:
@@ -522,11 +522,11 @@ class NotebookDataAccess:
             "restype": "container",
             "comp": "list",
             "delimiter": "/",
-            "token": self._gis._con.token,
+            "token": self._gis.session.auth.token,
         }
         if parent_folder:
             params["prefix"] = parent_folder
-        response = self._gis._con.get(url, params)
+        response = self._gis.session.get(url, params=params).json()
         # When creating subfolders the name should always have the folder to which it belongs as the prefix
 
         folders = [
@@ -541,7 +541,7 @@ class NotebookDataAccess:
         return folders
 
     # ---------------------------------------------------------------------
-    def get_workspace(self, user: User | str) -> "NotebookDataAccess":
+    def get_workspace(self, user: User | str) -> NotebookDataAccess:
         """
         Returns the NotebookDataAccess object for the specified user. This is only available to organization administrators.
 
@@ -648,9 +648,9 @@ class NotebookDataAccess:
             "f": "json",
             "restype": "container",
             "comp": "list",
-            "token": self._gis._con.token,
+            "token": self._gis.session.auth.token,
         }
-        response = self._gis._con.get(url, params)
+        response = self._gis.session.get(url, params=params).json()
         for f in response.get("Blobs", []):
             if f["Properties"].get("ResourceType").lower() == "file" and f[
                 "Name"
@@ -816,7 +816,7 @@ class NotebookDataAccess:
             "f": "json",
             "fileName": filename,
         }
-        return self._gis._con.post(url, params)
+        return self._gis.session.post(url, data=params).json()
 
     # ---------------------------------------------------------------------
     def _delete(self, filename: str) -> bool:
@@ -831,7 +831,9 @@ class NotebookDataAccess:
             "f": "json",
             "fileName": filename,
         }
-        return self._gis._con.post(url, params).get("status") == "success"
+        return (
+            self._gis.session.post(url, data=params).json().get("status") == "success"
+        )
 
     # ---------------------------------------------------------------------
     def _rename(
@@ -854,7 +856,7 @@ class NotebookDataAccess:
             "source": folder_name,
             "target": new_name,
             "targetUserName": username or self._username,
-            "token": self._gis._con.token,
+            "token": self._gis.session.auth.token,
         }
         return self._gis.session.post(url, params).json().get("status") == "success"
 
@@ -876,7 +878,7 @@ class NotebookDataAccess:
             "f": "json",
             "restype": "container",
             "comp": "list",
-            "token": self._gis._con.token,
+            "token": self._gis.session.auth.token,
         }
 
         # create urls
@@ -885,7 +887,7 @@ class NotebookDataAccess:
             params["delimiter"] = "/"
         else:
             url = f"{self._url}/{self._username}/notebookworkspace"
-        response = self._gis._con.get(url, params)
+        response = self._gis.session.get(url, params=params).json()
         # Filter files based on ResourceType
         if self._gis._is_agol:
             return [
@@ -922,9 +924,9 @@ class NotebookDataAccess:
         params = {
             "f": "json",
             "folderName": folder,
-            "token": self._gis._con.token,
+            "token": self._gis.session.auth.token,
         }
-        return self._gis._con.post(url, params).get("status") == "success"
+        return self._gis.session.post(url, params).json().get("status") == "success"
 
     # ---------------------------------------------------------------------
     @deprecated(
