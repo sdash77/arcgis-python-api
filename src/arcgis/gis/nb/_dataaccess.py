@@ -2,7 +2,7 @@ from __future__ import annotations
 from enum import Enum
 import os
 from arcgis._impl.common._isd import InsensitiveDict
-from typing import List, Dict, Any
+from typing import Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import User
 
@@ -24,7 +24,7 @@ class NotebookFile:
     _definition = None
 
     # ---------------------------------------------------------------------
-    def __init__(self, definition: Dict[str, Any], da: NotebookDataAccess):
+    def __init__(self, definition: dict[str, Any], da: NotebookDataAccess):
         self._definition = definition
         self._da = da
 
@@ -247,11 +247,11 @@ class NotebookFolder:
 
     # ---------------------------------------------------------------------
     @property
-    def folders(self) -> List[NotebookFolder]:
+    def folders(self) -> list[NotebookFolder]:
         """
         Returns the subfolders in the folder.
 
-        :return: List[NotebookFolder] - A list of NotebookFolder objects representing the subfolders.
+        :return: list[NotebookFolder] - A list of NotebookFolder objects representing the subfolders.
         """
         return self._da._get_folders(
             parent_folder=self._folder_name,
@@ -259,11 +259,11 @@ class NotebookFolder:
 
     # ---------------------------------------------------------------------
     @property
-    def files(self) -> List[NotebookFile]:
+    def files(self) -> list[NotebookFile]:
         """
         Returns the files in the folder.
 
-        :return: List[NotebookFile] - A list of NotebookFile objects representing the files in the folder.
+        :return: list[NotebookFile] - A list of NotebookFile objects representing the files in the folder.
         """
         # Create the params dictionary for the request
         params = {
@@ -349,8 +349,7 @@ class NotebookFolder:
         filename = os.path.basename(file_path)
 
         if self._is_agol:
-            existing_files = self.files
-            if any(f.name == filename for f in existing_files):
+            if any(f.name == filename for f in self.files):
                 raise ValueError(f"File {filename} already exists in the workspace.")
 
         # Add folder path unless root folder
@@ -369,10 +368,15 @@ class NotebookFolder:
             "x-ms-blob-type": "BlockBlob",
             "x-ms-version": "2020-10-02",  # Consider making this configurable
         }
-
+        token = self._gis.session.auth.token
+        if token:
+            headers["X-Esri-Authorization"] = f"Bearer {token}"
         with open(file_path, "rb") as file_data:
-            resp = self._da._gis._con.put_raw(
-                url, data=file_data, additional_headers=headers
+            resp = self._session.put(
+                url=url,
+                data=file_data,
+                verify=True,
+                headers=self._session.headers,
             )
         return 200 <= resp.status_code < 300
 
@@ -389,7 +393,7 @@ class NotebookFolder:
                                 the files in the folder will be uploaded under the folder name.
         ===================     ==========================================================================
 
-        :return: List of booleans. True if the file was uploaded, False or an error if it was not.
+        :return: list of booleans. True if the file was uploaded, False or an error if it was not.
         """
         # Get files as a list
         files = self._resolve_files(fp)
@@ -512,7 +516,7 @@ class NotebookDataAccess:
         return "Notebook Workspace for: " + self._username
 
     # ---------------------------------------------------------------------
-    def _get_folders(self, parent_folder: str | None) -> List[NotebookFolder]:
+    def _get_folders(self, parent_folder: str | None) -> list[NotebookFolder]:
         if self._gis._is_agol:
             url = f"{self._url}/{self._username}"
         else:
@@ -571,11 +575,11 @@ class NotebookDataAccess:
 
     # ---------------------------------------------------------------------
     @property
-    def folders(self) -> List[NotebookFolder]:
+    def folders(self) -> list[NotebookFolder]:
         """
         Returns the folders in the workspace directory (/arcgis/home) of the user making the request.
 
-        :return: List[NotebookFolder] - A list of NotebookFolder objects containing the folders in the workspace.
+        :return: list[NotebookFolder] - A list of NotebookFolder objects containing the folders in the workspace.
         """
         return self._get_folders(
             parent_folder=None,
@@ -868,11 +872,11 @@ class NotebookDataAccess:
         current_version="2.4.2",
         details="Use the files property found in a NotebookFolder instead or the get_file method.",
     )
-    def files(self) -> List[NotebookFile]:
+    def files(self) -> list[NotebookFile]:
         """
-        Lists files that are located in the workspace directory (/arcgis/home) of the user making the request.
+        lists files that are located in the workspace directory (/arcgis/home) of the user making the request.
 
-        :return: List[NotebookFile] - List of NotebookFile objects
+        :return: list[NotebookFile] - list of NotebookFile objects
         """
         params = {
             "f": "json",
@@ -951,7 +955,7 @@ class NotebookDataAccess:
                                 Example: `folder1`
         ===================     ==========================================================================
 
-        :return: List of booleans. True if the file was uploaded, False or an error if it was not.
+        :return: list of booleans. True if the file was uploaded, False or an error if it was not.
         """
         folder = self._get_folder(folder) if folder else self.folders[0]
         return folder.upload(fp)
