@@ -27,10 +27,6 @@ class TestIWAConnections(unittest.TestCase):
             self.gis = GIS(
                 url=self.portal_url,
                 verify_cert=False,
-                proxy={
-                    "http": "http://127.0.0.1:8999",
-                    "https": "http://127.0.0.1:8999",
-                },
             )
             print("ddd")
         except requests.exceptions.RequestException:
