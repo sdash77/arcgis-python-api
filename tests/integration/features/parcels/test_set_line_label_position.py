@@ -25,7 +25,12 @@ class TestSetLineLabelPosition(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/Redlands/"
         )
-        cls.gis = GIS("https://dev0016752.esri.com/portal/", "admin", "esri.agp", verify_cert=False)
+        cls.gis = GIS(
+            "https://dev0016752.esri.com/portal/",
+            "admin",
+            "esri.agp",
+            verify_cert=False,
+        )
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(
@@ -104,7 +109,7 @@ class TestSetLineLabelPosition(unittest.TestCase):
                     )
 
                 # Check that one feature is now retired
-                updated_lines = feature_utils.query_service(
+                updated_lines = pfutils.query_service(
                     url=self.service_urls["FeatureServer"],
                     fl_id=14,
                     gis=self.gis,
@@ -122,6 +127,10 @@ class TestSetLineLabelPosition(unittest.TestCase):
                 )
             except Exception as ex:
                 print(ex)
+
+    @classmethod
+    def tearDownClass(cls):
+        pfutils.clean_up_versions(cls.vms)
 
 
 if __name__ == "__main__":
