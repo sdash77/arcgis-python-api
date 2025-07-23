@@ -650,8 +650,10 @@ class FeatureLayer(Layer):
             itemid = container.upload(file_path)
             params["uploadId"] = itemid
             res = self._gis.session.post(attach_url, params).json()
-            if res["addAttachmentResult"]["success"] is True:
+            if res.get("addAttachmentResult", {}).get("success") is True:
                 container._delete_upload(itemid)
+            elif res.get("error"):
+                return res.get("error")
             return res
 
     # ----------------------------------------------------------------------
