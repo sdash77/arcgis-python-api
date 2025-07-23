@@ -1144,11 +1144,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         geom_cls = _geojson_type_to_esri_type(shapely_geometry.geom_type)
 
         # Use wkt if possible, this solves issues occurring with polygons and multipolygons
-        if hasattr(shapely_geometry, "wkt"):
-            geom = geom_cls(shapely_geometry.wkt)
-            if spatial_reference:
-                geom["spatialReference"] = spatial_reference
-            return geom
+        # if hasattr(shapely_geometry, "wkt"):
+        #     geom = geom_cls(shapely_geometry.wkt)
+        #     if spatial_reference:
+        #         geom["spatialReference"] = spatial_reference
+        #     return geom
 
         # If no wkt is available, use the mapping function to convert to GeoJSON
         # Convert Shapely geometry to GeoJSON
@@ -3661,7 +3661,7 @@ class Polygon(Geometry):
             "spatialReference": sr,
         }
 
-        return esri
+        return cls(esri)
 
     @property
     def __geo_interface__(self) -> dict:
