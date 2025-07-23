@@ -130,7 +130,8 @@ def coordinatesContainCoordinates(outer, inner):
 
 def _ring_bbox(ring):
     """Bounding box of a closed ring."""
-    xs, ys = zip(*ring)
+    axes = list(zip(*ring))  # xs, ys, zs (optional), ms (optional)
+    xs, ys = axes[0], axes[1]
     return (min(xs), min(ys), max(xs), max(ys))
 
 
