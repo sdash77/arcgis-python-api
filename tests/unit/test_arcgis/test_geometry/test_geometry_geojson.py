@@ -1,5 +1,6 @@
 #######################################################################
 import unittest
+import ujson
 
 
 import arcgis
@@ -32,6 +33,9 @@ class TestGeoJSONWithShapely(unittest.TestCase):
                 shapely_geometry=shape, spatial_reference={"wkid": 2154}
             )
             assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
             assert arcgis_geom.has_z == True
             assert arcgis_geom.WKT
 
@@ -50,6 +54,9 @@ class TestGeoJSONWithShapely(unittest.TestCase):
                 shapely_geometry=shape, spatial_reference={"wkid": 4326}
             )
             assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
             assert arcgis_geom.has_z == False
 
     def test_multipolygon_2D(self):
@@ -61,6 +68,9 @@ class TestGeoJSONWithShapely(unittest.TestCase):
                 shapely_geometry=shape, spatial_reference={"wkid": 4326}
             )
             assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
             assert arcgis_geom.has_z == False
 
     def test_polygon_3D(self):
@@ -73,6 +83,9 @@ class TestGeoJSONWithShapely(unittest.TestCase):
             )
 
             assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
             assert arcgis_geom.has_z == True
 
     def test_point_3D(self):
@@ -85,6 +98,9 @@ class TestGeoJSONWithShapely(unittest.TestCase):
             )
             assert arcgis_geom.has_z
             assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
 
     def test_point_2D(self):
 
@@ -97,6 +113,9 @@ class TestGeoJSONWithShapely(unittest.TestCase):
             )
             assert arcgis_geom.has_z == False
             assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
 
     def test_multipoint_3D(self):
         MULTIPOINTWKT_3D = "MULTIPOINT ((10 40 5), (40 30 10), (20 20 15), (30 10 20))"
@@ -108,6 +127,9 @@ class TestGeoJSONWithShapely(unittest.TestCase):
             )
 
             assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
             assert arcgis_geom.has_z == True
 
     def test_multipoint_2D(self):
@@ -120,6 +142,9 @@ class TestGeoJSONWithShapely(unittest.TestCase):
             )
 
             assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
             assert arcgis_geom.has_z == False
 
 
