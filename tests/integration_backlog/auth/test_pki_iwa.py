@@ -81,61 +81,61 @@ class TestIWAConnections(unittest.TestCase):
         cleanup_published_items(cls.published_items)
 
 
-# @integration_test
-# @credentials.enterprise_all_pki
-# class TestPKIConnections(unittest.TestCase):
-#     """Tests PKI access to portal/server"""
-#
-#     @classmethod
-#     def setUpClass(cls):
-#         cls.published_items = []
-#         cls.fp = get_resource_path("staging_data/auth/dataset_test_123a.zip")
-#
-#     def setUp(self):
-#         self.gis = GIS(
-#             url=self.portal_url,
-#             cert_file=self.cert,
-#             password=self.password,
-#             verify_cert=False,
-#         )
-#
-#     def test_login(self):
-#         assert self.gis
-#         assert self.gis.users.me
-#
-#     def test_publish_fgdb(self):
-#         """tests publishing an item via PKI"""
-#         assert self.gis
-#         assert self.gis.users.me
-#
-#         uid = uuid.uuid4().hex[:5]
-#         published_item = publish_test_item(
-#             gis=self.gis,
-#             layer_name=f"miwa_layer_{uid}",
-#             source_data_path=self.fp,
-#             item_type=ItemTypeEnum.FILE_GEODATABASE,
-#             prep_for_editing=False,
-#         )
-#         self.assertTrue(published_item, "Item not published correctly")
-#         self.published_items.append(published_item)
-#         assert published_item
-#         assert published_item.layers
-#         assert published_item.layers[0].properties
-#
-#     def test_geocoding(self):
-#         """tests using geocoding with PKI"""
-#         assert self.gis
-#         from arcgis.geocoding import get_geocoders
-#
-#         geocoders = get_geocoders(self.gis)
-#         if len(geocoders) == 0:
-#             self.skipTest("No geocoders available")
-#
-#         assert geocoders[0]._geocode(address="12 york street, camden, NJ")
-#
-#     @classmethod
-#     def tearDownClass(cls):
-#         cleanup_published_items(cls.published_items)
+@integration_test
+@credentials.enterprise_all_pki
+class TestPKIConnections(unittest.TestCase):
+    """Tests PKI access to portal/server"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.published_items = []
+        cls.fp = get_resource_path("staging_data/auth/dataset_test_123a.zip")
+
+    def setUp(self):
+        self.gis = GIS(
+            url=self.portal_url,
+            cert_file=self.cert,
+            password=self.password,
+            verify_cert=False,
+        )
+
+    def test_login(self):
+        assert self.gis
+        assert self.gis.users.me
+
+    def test_publish_fgdb(self):
+        """tests publishing an item via PKI"""
+        assert self.gis
+        assert self.gis.users.me
+
+        uid = uuid.uuid4().hex[:5]
+        published_item = publish_test_item(
+            gis=self.gis,
+            layer_name=f"miwa_layer_{uid}",
+            source_data_path=self.fp,
+            item_type=ItemTypeEnum.FILE_GEODATABASE,
+            prep_for_editing=False,
+        )
+        self.assertTrue(published_item, "Item not published correctly")
+        self.published_items.append(published_item)
+        assert published_item
+        assert published_item.layers
+        assert published_item.layers[0].properties
+
+    def test_geocoding(self):
+        """tests using geocoding with PKI"""
+        assert self.gis
+        from arcgis.geocoding import get_geocoders
+
+        geocoders = get_geocoders(self.gis)
+        if len(geocoders) == 0:
+            self.skipTest("No geocoders available")
+
+        assert geocoders[0]._geocode(address="12 york street, camden, NJ")
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.published_items)
 
 
 if __name__ == "__main__":
