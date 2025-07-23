@@ -10276,30 +10276,26 @@ class CategorySchemaManager(object):
 
 class ResourceManager(object):
     """
-    The ``ResourceManager`` class is a helper class for managing resource files of an item.
+    The ``ResourceManager`` class is a helper class for managing resource files of an item or user.
     An instance of this class is available as a property of the :class:`~arcgis.gis.Item` object
-    (See :attr:`~arcgis.gis.Item.resources` for more information on this property).
-    Users call methods on this :attr:`~arcgis.gis.Item.resources` object to manage
-    (add, remove, update, list, get) item resources.
+    (See :attr:`~arcgis.gis.Item.resources` for more information on this property) or :class:`~arcgis.gis.User` object.
+
+    Users call methods on this class to manage (add, remove, update, list, get) item or user resources.
 
     .. note::
-        Users do not create this class directly.
+        Users do not create this class directly. Use the `resources` property to create the class instance.
     """
 
-    _user_id = None
+    _username = None
 
-    def __init__(self, item, gis):
+    def __init__(
+        self, item: Item | None = None, gis: GIS | None = None, user: User | None = None
+    ):
         self._gis = gis
         self._portal = gis._portal
-        self._item = item
-
-        owner = self._item.owner
-        user = gis.users.get(owner)
-        if (hasattr(user, "id")) and (user.id != "null"):
-            self._user_id = user.username
-            # self._user_id = user.id
-        else:
-            self._user_id = user.username
+        self._item = item  # this can be None
+        self._user = user or gis.users.get(self._item.owner)
+        self._username = user.username
 
     def export(
         self,
@@ -10307,20 +10303,30 @@ class ResourceManager(object):
         file_name: Optional[str] = None,
     ):
         """
-        The ``export`` method export's the data's resources as a zip file
+        This method exports all resources as a zip file to the specified path.
+
+        .. note ::
+            Only supported for item resources, not user resources.
+
 
         .. code-block:: python
 
             # Usage Example
 
-            >>> Item.resources.export("file_name")
+            >>> Item.resources.export(
+                save_path = "C:\my_path\my_folder",
+                file_name = "my_resources")
 
         :return:
-            A .zip file containing the data's resources
+            A string to the '.zip' file.
         """
+        if self._item is None:
+            raise ValueError(
+                "This method is not supported for User resources, only Item resources."
+            )
         url = (
             "content/users/"
-            + self._user_id
+            + self._username
             + "/items/"
             + self._item.itemid
             + "/resources/export"
@@ -10345,88 +10351,15 @@ class ResourceManager(object):
         )
         return resources
 
-    def add(
-        self,
-        file: Optional[str] = None,
-        folder_name: Optional[str] = None,
-        file_name: Optional[str] = None,
-        text: Optional[str] = None,
-        archive: bool = False,
-        access: Optional[str] = None,
-        properties: Optional[dict] = None,
+    # -----------------------------------------------------------------------
+    def _add_item_resource(
+        self, file, folder_name, file_name, text, archive, access, properties
     ):
-        """
-        The ``add`` operation adds new file resources to an existing item. For example, an image that is
-        used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
-        resources use storage space from your quota and are scanned for viruses. The item size is updated to
-        include the size of added resource files.
-
-        .. note::
-            Each file added should be no more than 25 Mb.
-
-        Supported item types that allow adding file resources are: Vector Tile Service, Vector Tile Package,
-        Style, Code Attachment, Report Template, Web Mapping Application, Feature Service, Web Map,
-        Statistical Data Collection, Scene Service, and Web Scene.
-
-        Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, MP3, MP4, and ZIP.
-        This operation is only available to the item owner and the organization administrator.
-
-        ================  ===============================================================
-        **Parameter**      **Description**
-        ----------------  ---------------------------------------------------------------
-        file              Optional string. The path to the file that needs to be added.
-        ----------------  ---------------------------------------------------------------
-        folder_name       Optional string. Provide a folder name if the file has to be
-                          added to a folder under resources.
-        ----------------  ---------------------------------------------------------------
-        file_name         Optional string. The file name used to rename an existing file
-                          resource uploaded, or to be used together with text as file name for it.
-        ----------------  ---------------------------------------------------------------
-        text              Optional string. Text input to be added as a file resource,
-                          used together with file_name. If this resource is used, then
-                          file_name becomes required.
-        ----------------  ---------------------------------------------------------------
-        archive           Optional boolean. Default is False.  If True, file resources
-                          added are extracted and files are uploaded to respective folders.
-        ----------------  ---------------------------------------------------------------
-        access            Optional String. Set file resource to be private regardless of
-                          the item access level, or revert it by setting it to `inherit`
-                          which makes the item resource have the same access as the item.
-
-                          Supported values: `private` or `inherit`.
-        ----------------  ---------------------------------------------------------------
-        properties        Optional Dictionary. Set the properties for the resources such
-                          as the `editInfo`.
-        ================  ===============================================================
-
-        :return:
-            Python dictionary in the following format (if successful):
-            {
-                "success": True,
-                "itemId": "<item id>",
-                "owner": "<owner username>",
-                "folder": "<folder id>"}
-
-            else like the following if it failed:
-            {"error": {
-                        "code": 400,
-                        "messageCode": "CONT_0093",
-                        "message": "File type not allowed for addResources",
-                        "details": []
-                        }}
-
-         .. code-block:: python
-
-            # Usage Example
-
-            >>> Item.resources.add("file_path", "folder_name", "file_name", access = "private")
-
-        """
         if not file and (not text or not file_name):
             raise ValueError("Please provide a valid file or text/file_name.")
         query_url = (
             "content/users/"
-            + self._user_id
+            + self._username
             + "/items/"
             + self._item.itemid
             + "/addResources"
@@ -10455,6 +10388,161 @@ class ResourceManager(object):
         resp = self._portal.con.post(query_url, params, files=files, compress=False)
         return resp
 
+    def _add_user_resource(self, file, file_name, text, access):
+        if not file and not text:
+            raise ValueError("Please provide a valid bytes file or JSON text.")
+        if not file_name:
+            raise ValueError("Please provide a valid file_name for user resources.")
+
+        url = f"{self._gis.resturl}community/users/{self._username}/addResource"
+        params = {
+            "f": "json",
+            "key": file_name,
+        }
+
+        if file:
+            if not os.path.isfile(os.path.abspath(file)):
+                raise RuntimeError("File(" + file + ") not found.")
+            params["file"] = file
+        if text:
+            if isinstance(text, str):
+                params["text"] = text
+
+        if access:
+            if access not in [
+                "userappprivate",
+                "allorgusersprivateapp",
+                "public",
+                "userprivateallapps",
+            ]:
+                raise ValueError(
+                    "Invalid access type. Supported values are: "
+                    "'userappprivate', 'allorgusersprivateapp', 'public', 'userprivateallapps'."
+                )
+            params["access"] = access
+
+        resp = self._gis.session.post(url, params=params).json()
+        return resp
+
+    def add(
+        self,
+        file: Optional[str] = None,
+        folder_name: Optional[str] = None,
+        file_name: Optional[str] = None,
+        text: Optional[str] = None,
+        archive: bool = False,
+        access: Optional[str] = None,
+        properties: Optional[dict] = None,
+    ):
+        """
+        The ``add`` operation adds new file resources to an existing item's or user's resources. For example, an image that is
+        used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
+        resources use storage space from your quota and are scanned for viruses. For an item, the item size is updated to
+        include the size of added resource files.
+
+        .. note::
+            Each file added should be no more than 25 Mb.
+
+        Supported item types that allow adding file resources are: Vector Tile Service, Vector Tile Package,
+        Style, Code Attachment, Report Template, Web Mapping Application, Feature Service, Web Map,
+        Statistical Data Collection, Scene Service, and Web Scene.
+
+        Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, MP3, MP4, and ZIP.
+        This operation is only available to the item owner and the organization administrator.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        file              Optional string. The path to the file that needs to be added.
+
+                          For user resources, this is a binary file.
+        ----------------  ---------------------------------------------------------------
+        folder_name       Optional string. Provide a folder name if the file has to be
+                          added to a folder under resources.
+                          Not applicable for user resources, only item resources.
+        ----------------  ---------------------------------------------------------------
+        file_name         Optional string. The file name used to rename an existing file
+                          resource uploaded, or to be used together with text as file name for it.
+                          Applicable to user and item resources. Required for user resources.
+        ----------------  ---------------------------------------------------------------
+        text              Optional string. Text input to be added as a file resource,
+                          used together with file_name. For an item, if this resource is used, then
+                          file_name becomes required.
+        ----------------  ---------------------------------------------------------------
+        archive           Optional boolean. Default is False.  If True, file resources
+                          added are extracted and files are uploaded to respective folders.
+                          Only applicable for item resources.
+        ----------------  ---------------------------------------------------------------
+        access            Optional String. Set file resource to be private regardless of
+                          the item access level, or revert it by setting it to `inherit`
+                          which makes the item resource have the same access as the item.
+
+                          Supported values for item resources: `private` or `inherit`.
+
+                          Supported values for user resources: `userappprivate` | `allorgusersprivateapp` | `public` | `userprivateallapps`
+
+                           * userappprivate: resource is available only to the user through the app from which the resource was uploaded.
+                           * allorgusersprivateapp: resource is available to all members of the organization where the resource owner is part of and through the app where the resource was uploaded.
+                           * public: resource is available to everyone (including anonymous access) through any app.
+                           * userprivateallapps: resource is available through any app but only to the user that uploaded the resource.`private`, `inherit`, or `public`.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
+                          Only applicable for item resources.
+        ================  ===============================================================
+
+        :return:
+        For User resources:
+            A Python dictionary in the following format (if successful):
+            {
+                "success": True,
+            }
+        For Item resources:
+            Python dictionary in the following format (if successful):
+            {
+                "success": True,
+                "itemId": "<item id>",
+                "owner": "<owner username>",
+                "folder": "<folder id>"}
+
+        For Both:
+            A Python dictionary in the following format (if it failed):
+            {"error": {
+                        "code": 400,
+                        "messageCode": "CONT_0093",
+                        "message": "File type not allowed for addResources",
+                        "details": []
+                        }}
+
+         .. code-block:: python
+
+            # Usage Example: Item Resources
+
+            >>> Item.resources.add("file_path", "folder_name", "file_name", access = "private")
+
+            # Usage Example: User Resources
+            >>> User.resources.add(file="file_path", file_name="file_name")
+        """
+        if self._item:
+            # Item resources workflow
+            return self._add_item_resource(
+                file=file,
+                folder_name=folder_name,
+                file_name=file_name,
+                text=text,
+                archive=archive,
+                access=access,
+                properties=properties,
+            )
+
+        # User resources workflow
+        return self._add_user_resource(
+            file=file,
+            file_name=file_name,
+            text=text,
+            access=access,
+        )
+
     def update(
         self,
         file: Optional[str] = None,
@@ -10469,6 +10557,9 @@ class ResourceManager(object):
 
         Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, and ZIP.
         This operation is only available to the item owner and the organization administrator.
+
+        .. note ::
+            Only supported for item resources, not user resources.
 
         ================  ===============================================================
         **Parameter**      **Description**
@@ -10519,7 +10610,7 @@ class ResourceManager(object):
 
         query_url = (
             "content/users/"
-            + self._user_id
+            + self._username
             + "/items/"
             + self._item.itemid
             + "/updateResources"
@@ -10545,16 +10636,20 @@ class ResourceManager(object):
         resp = self._portal.con.post(query_url, params, files=files)
         return resp
 
-    def list(self):
+    def list(self, as_list=True):
         """
         The ``list`` method provides a lists all file resources of an existing item.
 
-        .. note::
-            This resource is only available to
-            the item owner and the organization administrator.
+        ================    ===============================================================
+        **Parameter**       **Description**
+        ----------------    ---------------------------------------------------------------
+        as_list             Optional boolean. If True, returns a Python list of dictionaries.
+                            If False, returns a Iterator.
+                            Default is True.
+        ================    ===============================================================
 
         :return:
-            A Python list of dictionaries of the form:
+            For item resources a Python list of dictionaries of the form:
             [
                 {
                   "resource": "<resource1>"
@@ -10566,30 +10661,56 @@ class ResourceManager(object):
                   "resource": "<resource3>"
                 }
             ]
+
+            For user resources, a Python list of dictionaries of the form:
+            [
+                {
+                    "key": "<resource1>",
+                    "size": <size in bytes>,
+                    "clientId": "<client id>",
+                    "created": "<creation date>",
+                    "access": "<access type>",
+                }
+            ]
         """
-        query_url = "content/items/" + self._item.itemid + "/resources"
-        params = {"f": "json", "num": 500}
-        resp = self._portal.con.get(query_url, params)
-        resp_resources = resp.get("resources")
-        count = int(resp.get("num"))
-        next_start = int(
-            resp.get("nextStart", -999)
-        )  # added for back support for portal (10.4.1)
 
-        # loop through pages
-        while next_start > 0:
-            params2 = {"f": "json", "num": 500, "start": next_start}
+        def resource_generator():
+            if self._item:
+                query_url = "content/items/" + self._item.itemid + "/resources"
+            else:
+                query_url = (
+                    f"{self._gis.resturl}community/users/{self._username}/resources"
+                )
 
-            resp2 = self._portal.con.get(query_url, params2)
-            resp_resources.extend(resp2.get("resources"))
-            count += int(resp2.get("num"))
-            next_start = int(
-                resp2.get("nextStart", -999)
-            )  # added for back support for portal (10.4.1)
-            if next_start == -999:
-                break
+            params = {"f": "json", "num": 500}
+            resp = self._gis.session.get(query_url, params=params).json()
+            resp_resources = (
+                resp.get("resources", [])
+                if self._item
+                else resp.get("userResources", [])
+            )
+            for res in resp_resources:
+                yield res
+            next_start = int(resp.get("nextStart", -999))
+            while next_start > 0:
+                params2 = {"f": "json", "num": 500, "start": next_start}
+                resp2 = self._gis.session.get(query_url, params=params2).json()
+                resources2 = (
+                    resp2.get("resources")
+                    if self._item
+                    else resp2.get("userResources", [])
+                )
+                for res in resources2:
+                    yield res
+                next_start = int(resp2.get("nextStart", -999))
+                if next_start == -999:
+                    break
 
-        return resp_resources
+        gen = resource_generator()
+        if as_list:
+            return list(gen)
+        else:
+            return gen
 
     def get(
         self,
@@ -10599,10 +10720,10 @@ class ResourceManager(object):
         out_file_name: Optional[str] = None,
     ):
         """
-        The ``get`` method retrieves a specific file resource of an existing item.
+        The ``get`` method retrieves a specific resource of an existing item or user.
 
         .. note::
-            This operation is only available to the item owner and the organization administrator.
+            This operation is only available to the user, item owner, and the organization administrator.
 
         ================  ===============================================================
         **Parameter**      **Description**
@@ -10611,6 +10732,7 @@ class ResourceManager(object):
                           For files in the root, just specify the file name. For files in
                           folders (prefixes), specify using the format
                           <foldername>/<foldername>./../<filename>
+                          For a user resource this is the key name.
         ----------------  ---------------------------------------------------------------
         try_json          Optional boolean. If True, will attempt to convert JSON files to
                           Python dictionary objects. Default is True.
@@ -10634,14 +10756,21 @@ class ResourceManager(object):
 
             >>> Item.resources.get("file_path", try_json=True, out_folder="out_folder_name")
 
+            >>> User.resources.get("file_name", try_json=True, out_folder="out_folder_name")
+
         """
         out_folder: str = out_folder or tempfile.gettempdir()
         safe_file_format: str = file.replace(r"\\", "/")
         safe_file_format: str = safe_file_format.replace("//", "/")
 
-        query_url: str = (
-            "content/items/" + self._item.itemid + "/resources/" + safe_file_format
-        )
+        if self._item:
+            query_url: str = (
+                "content/items/" + self._item.itemid + "/resources/" + safe_file_format
+            )
+        else:
+            query_url: str = (
+                f"{self._gis.resturl}community/users/{self._username}/resources/{safe_file_format}"
+            )
 
         resp: requests.Response = self._portal.con.get(
             query_url,
@@ -10694,22 +10823,75 @@ class ResourceManager(object):
         else:
             raise Exception("Resource does not exist or is inaccessible.")
 
+    def _remove_item_resource(self, file: Optional[str] = None):
+        safe_file_format = ""
+        delete_all = "false"
+        if file:
+            safe_file_format = file.replace(r"\\", "/")
+            safe_file_format = safe_file_format.replace("//", "/")
+        else:
+            delete_all = "true"
+
+        query_url = (
+            "content/users/"
+            + self._username
+            + "/items/"
+            + self._item.itemid
+            + "/removeResources"
+        )
+        params = {
+            "f": "json",
+            "resource": safe_file_format if safe_file_format else "",
+            "deleteAll": delete_all,
+        }
+        res = self._portal.con.post(query_url, postdata=params)
+        if "success" in res:
+            return res["success"]
+        return res
+
+    def _remove_user_resource(self, file_name: Optional[str]):
+        # If no file_name provided, remove all user resources
+        if file_name is None:
+            # get all the key names
+            user_resources = self.list()
+            file_names = [res["key"] for res in user_resources]
+            if not file_names:
+                return {"success": True}
+        else:
+            file_name = [file_name]
+
+        url = f"{self._gis.resturl}community/users/{self._username}/removeResource"
+        for name in file_name:
+            params = {
+                "f": "json",
+                "key": name,
+            }
+            try:
+                res = self._gis.session.post(url, params=params).json()
+            except Exception as e:
+                raise RuntimeError(f"Failed to remove resource '{name}': {str(e)}")
+        if "success" in res:
+            return res["success"]
+        return res
+
     def remove(self, file: Optional[str] = None):
         """
-        The ``remove`` method removes a single resource file or all resources. The item size is updated once
+        The ``remove`` method removes a single resource file or all resources. For an Item resource, the item size is updated once
         resource files are deleted.
 
         .. note::
-            This operation is only available to the item owner
+            This operation is only available to the user, item owner,
             and the organization administrator.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        file              Optional string. The path to the file to be removed.
+        file              Optional string. For an Item resource, the path to the file to be removed.
                           For files in the root, just specify the file name. For files in
                           folders (prefixes), specify using the format
                           <foldername>/<foldername>./../<filename>
+
+                          For a User resource, the file name of the resource to be removed.
 
                           If not specified, all resource files will be removed.
         ================  ===============================================================
@@ -10730,30 +10912,12 @@ class ResourceManager(object):
 
             >>> Item.resources.remove("file_path")
         """
-        safe_file_format = ""
-        delete_all = "false"
-        if file:
-            safe_file_format = file.replace(r"\\", "/")
-            safe_file_format = safe_file_format.replace("//", "/")
-        else:
-            delete_all = "true"
+        if self._item:
+            # Item resources workflow
+            return self._remove_item_resource(file=file)
 
-        query_url = (
-            "content/users/"
-            + self._user_id
-            + "/items/"
-            + self._item.itemid
-            + "/removeResources"
-        )
-        params = {
-            "f": "json",
-            "resource": safe_file_format if safe_file_format else "",
-            "deleteAll": delete_all,
-        }
-        res = self._portal.con.post(query_url, postdata=params)
-        if "success" in res:
-            return res["success"]
-        return res
+        # User resources workflow
+        return self._remove_user_resource(file_name=file)
 
 
 class Group(dict):
@@ -12197,6 +12361,15 @@ class User(dict):
 
             return RecycleBin(gis=self._gis, user=self.username)
         return None
+
+    # ----------------------------------------------------------------------
+    @property
+    def resources(self) -> ResourceManager:
+        """
+        Creates a :class:`~arcgis.gis.ResourceManager` object for the user.
+        You can use the methods and properties in this class to work with user app resources.
+        """
+        return ResourceManager(gis=self._gis, user=self)
 
     # ----------------------------------------------------------------------
     def user_types(self):
@@ -14331,13 +14504,13 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @_lazy_property
-    def resources(self):
+    def resources(self) -> ResourceManager:
         """
         The ``resources`` property returns the Item's Resource Manager
 
         :return: A :class:`~arcgis.gis.ResourceManager` object
         """
-        return ResourceManager(self, self._gis)
+        return ResourceManager(item=self, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
