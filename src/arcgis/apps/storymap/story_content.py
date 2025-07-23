@@ -4614,7 +4614,9 @@ class MapTour:
             self._subtype = self._story._properties["nodes"][self.node]["data"][
                 "subtype"
             ]
-            self._places = self._story._properties["nodes"][self.node]["data"]["places"]
+            self._places = self._story._properties["nodes"][self.node]["data"].get(
+                "places"
+            ) or self._story._properties["nodes"][self.node]["data"].get("dataDriven")
         else:
             raise ValueError(
                 "You cannot create a Map Tour from scratch at this time. Please use an existing Map Tour."
@@ -4633,14 +4635,15 @@ class MapTour:
     def _children(self) -> list:
         """private method to gather all children of a map tour from places data"""
         children = [self.map]
-        for place in self.places:
-            if "children" in place and place["contents"]:
-                for content in place["contents"]:
-                    children.append(content)
-            if "media" in place and place["media"]:
-                children.append(place["media"])
-            if "title" in place and place["title"]:
-                children.append(place["title"])
+        if isinstance(self._places, list):
+            for place in self.places:
+                if "children" in place and place["contents"]:
+                    for content in place["contents"]:
+                        children.append(content)
+                if "media" in place and place["media"]:
+                    children.append(place["media"])
+                if "title" in place and place["title"]:
+                    children.append(place["title"])
         return children
 
     # ----------------------------------------------------------------------
@@ -4659,7 +4662,7 @@ class MapTour:
         """
         List all places on the map
         """
-        return self._story._properties["nodes"][self.node]["data"]["places"]
+        return self._places
 
     # ----------------------------------------------------------------------
     def get(self, node_id: str):
