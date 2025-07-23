@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.geometry import Geometry
 
 import numpy as np

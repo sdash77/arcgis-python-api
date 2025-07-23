@@ -2,6 +2,7 @@
 Utils for importing modules cleanly and determining if they are available from optional namespace packages.
 """
 
+from __future__ import annotations
 from functools import lru_cache
 
 

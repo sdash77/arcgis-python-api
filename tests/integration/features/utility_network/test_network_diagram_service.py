@@ -3,9 +3,7 @@ from arcgis.features._network_diagram import NetworkDiagramManager, Diagram
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
 
-diagram_service_url = (
-    "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer"
-)
+diagram_service_url = "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric31_SQLServer/NetworkDiagramServer"
 
 enable_verbose_logging()
 
@@ -26,7 +24,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert diagrams
 
         # Get one diagram
-        diagram = net_diag_ser.diagram("Basic_ppp1")
+        diagram = net_diag_ser.diagram("Electric Transmission_138 kV")
         assert diagram
         assert isinstance(diagram, Diagram)
 
