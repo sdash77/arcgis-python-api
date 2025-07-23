@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from arcgis.gis import GIS
 from arcgis.auth.tools import LazyLoader

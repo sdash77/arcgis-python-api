@@ -6,6 +6,7 @@ notation with some required parameters to given unified deprecation warnings/exc
 Module is a fork of project: https://github.com/briancurtin/deprecation under Apache 2.0 License
 """
 
+from __future__ import annotations
 import collections
 import functools
 import textwrap

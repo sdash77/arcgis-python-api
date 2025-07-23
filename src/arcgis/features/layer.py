@@ -4280,6 +4280,8 @@ class FeatureLayerCollection(_GISResource):
     _vermgr = None
 
     def __init__(self, url, gis=None):
+        if gis is None:
+            gis = _arcgis.env.active_gis
         super(FeatureLayerCollection, self).__init__(url, gis)
 
         try:

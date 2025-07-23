@@ -2,6 +2,7 @@
 Configures Social Providers for a Portal or ArcGIS Online
 """
 
+from __future__ import annotations
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -78,7 +79,7 @@ class SocialProviders(object):
         ---------------------  ---------------------------------------------------------------------
         signUpMode             optional string. Invitation or Automatic.
         ---------------------  ---------------------------------------------------------------------
-        providers              required string. This is a list of strings seperated by a comma. The
+        providers              required string. This is a list of strings separated by a comma. The
                                allowed values are: facebook and google
         ---------------------  ---------------------------------------------------------------------
         role                   optional string. This is the default role setup when users login to
@@ -90,7 +91,7 @@ class SocialProviders(object):
         userCreditAssignment   optional integer. The default is -1, which means infinite credit
                                usage. The
         ---------------------  ---------------------------------------------------------------------
-        groups                 optional string. A comma seperated list of group ids to assign new
+        groups                 optional string. A comma separated list of group ids to assign new
                                users to when they login to using a social provider.
         ---------------------  ---------------------------------------------------------------------
         user_type              optional string. A default user license type.
