@@ -4459,6 +4459,10 @@ class UserManager(object):
                 and self._gis.properties["defaultUserCreditAssignment"] != -1
             ):  # get the credits
                 credits: int = self._gis.properties["defaultUserCreditAssignment"]
+
+            groups: list[str] = [
+                grp.id if isinstance(grp, Group) else grp for grp in groups
+            ]
             params: dict = {
                 "f": "json",
                 "invitationList": {
@@ -4556,8 +4560,11 @@ class UserManager(object):
                 d.reverse()
                 username = "@".join(d)
             user = self.get(username)
-            for grp in [self._gis.groups.get(g) for g in groups]:
-                grp.add_users([username])
+            for grp in [
+                self._gis.groups.get(g) if isinstance(g, str) else g for g in groups
+            ]:
+                if grp:
+                    grp.add_users([username])
             if thumbnail is not None:
                 ret = user.update(thumbnail=thumbnail)
                 if not ret:
