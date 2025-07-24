@@ -218,7 +218,7 @@ class DeveloperCredential:
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         slot              Optional int. API keys support 2 API tokens.  The `slot` allows
-                          users to specifiy which API Key to create or regenerate. The
+                          users to specify which API Key to create or regenerate. The
                           values can be 1 or 2. The default is 1.
         ----------------  ---------------------------------------------------------------
         expiration        Optional datetime.datetime. The time when the expiration expires.
@@ -365,7 +365,7 @@ class DeveloperCredentialManager:
     def create(
         self,
         title: str,
-        privileges: List[Union[TokenPrivilege, str]],
+        privileges: list[Union[TokenPrivilege, str]],
         referers: list[str],
         expiration: _dt.datetime,
         items: list[Item] | None = None,

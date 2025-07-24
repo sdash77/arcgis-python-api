@@ -694,7 +694,6 @@ def create_symbol(
 
     """
     import numpy as np
-    import matplotlib.pyplot as plt
 
     alpha = kwargs.pop("alpha", 1)
     symbol = kwargs.pop("symbol", None)

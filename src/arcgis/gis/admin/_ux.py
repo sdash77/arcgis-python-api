@@ -454,7 +454,7 @@ class UX(object):
         """
         Gets/Sets the featured content group information.
 
-        If you set the featured content, reinstantiate to update the gis properties and see the updated
+        If you set the featured content, re-instantiate to update the gis properties and see the updated
         list of featured_content.
 
         ================  ===============================================================
@@ -3088,7 +3088,7 @@ class UtilityServicesSettings:
         self._portal_resources = gis.admin.resources
 
     # ----------------------------------------------------------------------
-    def add_from_online(self, services: list[str], gis: _gis.GIS, folder=None):
+    def add_from_online(self, services: list[str], gis: _arcgis_gis.GIS, folder=None):
         """
         Set the Enterprise routing service to that of an ArcGIS Online routing service.
 
