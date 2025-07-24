@@ -12256,7 +12256,7 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     modified                 The date the user was last modified. Shown in milliseconds since the Unix epoch.
     ---------------------    ---------------------------------------------------------
-    groups                   A JSON array of groups the user belongs to. See Group for properties of a group.
+    groups                   A list of groups the user belongs to as `Group` classes.
     ---------------------    ---------------------------------------------------------
     provider                 The identity provider for the organization.<br>Values: arcgis (for built-in users) ,enterprise (for external users managed by an enterprise identity store), facebook (for public accounts in ArcGIS Online), google (for public accounts in ArcGIS Online)
     ---------------------    ---------------------------------------------------------
