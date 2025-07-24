@@ -12,7 +12,7 @@ from arcgis.auth import EsriSession
 from datetime import datetime
 import json
 import os
-from re import S, search
+from re import search
 import time
 import concurrent.futures
 from typing import Any, Optional, Union
@@ -41,6 +41,7 @@ from arcgis.gis._impl._util import _get_item_url
 from arcgis._impl.common._utils import _validate_url
 
 _arcgis = LazyLoader("arcgis")
+_uploads = LazyLoader(" arcgis.features._uploads.upload")
 
 
 @lru_cache(maxsize=255)
@@ -106,7 +107,7 @@ class FeatureLayer(Layer):
             return False
 
     @property
-    def _upload_manager(self) -> "UploadManager":
+    def _upload_manager(self) -> _uploads.UploadManager | None:
         """Provides the upload endpoint for a feature layer"""
 
         if self._umgr is None:
@@ -114,9 +115,8 @@ class FeatureLayer(Layer):
                 "capabilities" in self.container.properties
                 and self.container.properties["capabilities"].find("Uploads") > -1
             ):
-                from ._uploads.upload import UploadManager
 
-                self._umgr = UploadManager(layer=self)
+                self._umgr = _uploads.UploadManager(layer=self)
             else:
                 return None
         return self._umgr
@@ -216,7 +216,7 @@ class FeatureLayer(Layer):
 
         :return:
             ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -1383,11 +1383,7 @@ class FeatureLayer(Layer):
             max_records = 1000
 
         jobs = {}
-        failed = {}
-        retry_count = 0
-        records = []
         parts = []
-        df = None
         if count > max_records:
             oid_info = self.query(
                 where=params.get("where", "1=1"),
@@ -1457,8 +1453,6 @@ class FeatureLayer(Layer):
         def _process_result(featureset_dict):
             """converts the Dictionary to an SeDF"""
             import pandas as pd
-            import arcgis
-            import numpy as np
             from datetime import datetime as _datetime
 
             _fld_lu = {
@@ -1511,7 +1505,6 @@ class FeatureLayer(Layer):
 
             df = None
             dtypes = None
-            geom = None
             names = None
             dfields = []
             rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
@@ -1664,13 +1657,13 @@ class FeatureLayer(Layer):
                                                 If `outAnalyticFieldName` is empty or missing, the server assigns
                                                 a field name to the returned analytic field.
 
-                                            The argument should be a list of dictionaries that define analystics.
+                                            The argument should be a list of dictionaries that define analytics.
                                             An analytic definition specifies:
 
                                             * the type of analytic - key: `analyticType`
                                             * the field or expression on which it is to be computed - key: `onAnalyticField`
                                             * the resulting output field name -key: `outAnalyticFieldName`
-                                            * the analytic specifications - `analysticParameters`
+                                            * the analytic specifications - `analyticParameters`
 
                                             See `Overview <https://developers.arcgis.com/rest/services-reference/enterprise/query-analytic.htm#GUID-1713C237-B155-4CFE-8470-FEB3255B7C60>`_
                                             for details.
@@ -2742,7 +2735,7 @@ class FeatureLayer(Layer):
                                    feature service. It is used to map a source layer to a destination
                                    layer. Only one source can be mapped to a layer.
 
-                                    Syntax: layerMappings=[{"id": <layerID>, "sourceId": <layer id>}]
+                                    Syntax: layer_mappings=[{"id": <layerID>, "sourceId": <layer id>}]
         ------------------------   --------------------------------------------------------------------
         return_messages            Optional Boolean.  When set to `True`, the messages returned from
                                    the append will be returned. If `False`, the response messages will
@@ -2832,9 +2825,9 @@ class FeatureLayer(Layer):
             and self._gis._portal.is_arcgisonline == False
         ):
             params["token"] = self._gis._con.token
-        if not upsert_matching_field is None:
+        if upsert_matching_field is not None:
             params["upsertMatchingField"] = upsert_matching_field
-        if not skip_inserts is None:
+        if skip_inserts is not None:
             params["skipInserts"] = skip_inserts
         if (
             gdb_version
@@ -3067,7 +3060,7 @@ class FeatureLayer(Layer):
         ]
         time.sleep(0.5)
         status = con.get(url, params, ignore_error_key=ignore_error)
-        if not "status" in status and ignore_error:
+        if "status" not in status and ignore_error:
             return status
         while (
             status["status"].lower() in status_allowed
