@@ -4,6 +4,7 @@ import re
 import uuid
 import urllib.parse
 from typing import Any
+from functools import lru_cache
 from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
 import requests
@@ -22,6 +23,7 @@ arcgis = LazyLoader("arcgis")
 _gis = LazyLoader("arcgis.gis")
 _geometry = LazyLoader("arcgis.geometry")
 _layers = LazyLoader("arcgis.layers")
+from arcgis.gis.server.admin._services import Service as _AdminService
 
 
 ###########################################################################
@@ -45,6 +47,11 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         super(EnterpriseVectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
         self._is_hosted = self.properties["portalProperties"]["isHosted"]
+
+    @lru_cache(maxsize=255)
+    def _admin_service(self) -> _AdminService:
+        """returns the server admin endpoints for the manager"""
+        return _AdminService(self.url, self._gis)
 
     # ----------------------------------------------------------------------
     def edit(self, service_dictionary):
@@ -93,13 +100,13 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         :return: boolean
         """
-        vtl_service = _layers.Service(self.url, self._gis)
+        vtl_service = self._admin_service()
         return vtl_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """This operation starts a service and loads the service's configuration."""
-        vtl_service = _layers.Service(self.url, self._gis)
+        vtl_service = self._admin_service()
         return vtl_service.start()
 
     # ----------------------------------------------------------------------
@@ -110,7 +117,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         operation will stop the respective servers, terminating all pods
         that run this service.
         """
-        vtl_service = _layers.Service(self.url, self._gis)
+        vtl_service = self._admin_service()
         return vtl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -138,7 +145,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         """
         if provider in ["ArcObjects11", "DMaps"]:
-            vtl_service = _layers.Service(self.url, self._gis)
+            vtl_service = self._admin_service()
             return vtl_service.change_provider(provider)
         return False
 
@@ -148,7 +155,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         This operation deletes an individual service, stopping the service
         and removing all associated resources and configurations.
         """
-        vtl_service = _layers.Service(self.url, self._gis)
+        vtl_service = self._admin_service()
         return vtl_service.delete()
 
     # ----------------------------------------------------------------------
