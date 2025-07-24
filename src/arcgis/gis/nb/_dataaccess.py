@@ -367,7 +367,7 @@ class NotebookFolder:
             "x-ms-blob-type": "BlockBlob",
             "x-ms-version": "2020-10-02",  # Consider making this configurable
         }
-        token = self._gis.session.auth.token
+        token = self._da._gis.session.auth.token
         if token:
             headers["X-Esri-Authorization"] = f"Bearer {token}"
         with open(file_path, "rb") as file_data:
