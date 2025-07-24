@@ -644,7 +644,7 @@ class FeatureLayer(Layer):
                         buffer_reader,
                         mimetypes.guess_type(v)[0],
                     )
-            return self._gis.session.post(path=attach_url, data=params, files=files)
+            return self._gis.session.post(url=attach_url, data=params, files=files)
         else:
             container = self.container
             itemid = container.upload(file_path)
