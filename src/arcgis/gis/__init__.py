@@ -10293,6 +10293,7 @@ class ResourceManager(object):
         self, item: Item | None = None, gis: GIS | None = None, user: User | None = None
     ):
         self._gis = gis
+        self._portal = gis._portal
         self._item = item
         owner = self._item.owner
         user = gis.users.get(owner)
