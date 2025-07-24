@@ -10286,16 +10286,25 @@ class ResourceManager(object):
         Users do not create this class directly. Use the `resources` property to create the class instance.
     """
 
-    _username = None
+    _user_id = None
+    _user = None
 
     def __init__(
         self, item: Item | None = None, gis: GIS | None = None, user: User | None = None
     ):
         self._gis = gis
-        self._portal = gis._portal
-        self._item = item  # this can be None
-        self._user = user or gis.users.get(self._item.owner)
-        self._username = user.username
+        self._item = item
+        owner = self._item.owner
+        user = gis.users.get(owner)
+        # DO NOT REMOVE THIS CHECK, it is necessary even though looks redundant.
+        # This is the way...
+        if (hasattr(user, "id")) and (user.id != "null"):
+            self._user_id = user.username
+            self._user = user
+            # self._user_id = user.id
+        else:
+            self._user_id = user.username
+            self._user = user
 
     def export(
         self,
@@ -10326,7 +10335,7 @@ class ResourceManager(object):
             )
         url = (
             "content/users/"
-            + self._username
+            + self._user_id
             + "/items/"
             + self._item.itemid
             + "/resources/export"
@@ -10359,7 +10368,7 @@ class ResourceManager(object):
             raise ValueError("Please provide a valid file or text/file_name.")
         query_url = (
             "content/users/"
-            + self._username
+            + self._user_id
             + "/items/"
             + self._item.itemid
             + "/addResources"
@@ -10394,7 +10403,7 @@ class ResourceManager(object):
         if not file_name:
             raise ValueError("Please provide a valid file_name for user resources.")
 
-        url = f"{self._gis.resturl}community/users/{self._username}/addResource"
+        url = f"{self._gis.resturl}community/users/{self._user_id}/addResource"
         params = {
             "f": "json",
             "key": file_name,
@@ -10610,7 +10619,7 @@ class ResourceManager(object):
 
         query_url = (
             "content/users/"
-            + self._username
+            + self._user_id
             + "/items/"
             + self._item.itemid
             + "/updateResources"
@@ -10676,10 +10685,12 @@ class ResourceManager(object):
 
         def resource_generator():
             if self._item:
-                query_url = "content/items/" + self._item.itemid + "/resources"
+                query_url = (
+                    f"{self._gis.resturl}content/items/{self._item.itemid}/resources"
+                )
             else:
                 query_url = (
-                    f"{self._gis.resturl}community/users/{self._username}/resources"
+                    f"{self._gis.resturl}community/users/{self._user_id}/resources"
                 )
 
             params = {"f": "json", "num": 500}
@@ -10765,11 +10776,11 @@ class ResourceManager(object):
 
         if self._item:
             query_url: str = (
-                "content/items/" + self._item.itemid + "/resources/" + safe_file_format
+                f"{self._gis.resturl}content/items/{self._item.itemid}/resources/{safe_file_format}"
             )
         else:
             query_url: str = (
-                f"{self._gis.resturl}community/users/{self._username}/resources/{safe_file_format}"
+                f"{self._gis.resturl}community/users/{self._user_id}/resources/{safe_file_format}"
             )
 
         resp: requests.Response = self._portal.con.get(
@@ -10832,13 +10843,7 @@ class ResourceManager(object):
         else:
             delete_all = "true"
 
-        query_url = (
-            "content/users/"
-            + self._username
-            + "/items/"
-            + self._item.itemid
-            + "/removeResources"
-        )
+        query_url = f"{self._gis.resturl}content/users/{self._user_id}/items/{self._item.itemid}/removeResources"
         params = {
             "f": "json",
             "resource": safe_file_format if safe_file_format else "",
@@ -10860,7 +10865,7 @@ class ResourceManager(object):
         else:
             file_name = [file_name]
 
-        url = f"{self._gis.resturl}community/users/{self._username}/removeResource"
+        url = f"{self._gis.resturl}community/users/{self._user_id}/removeResource"
         for name in file_name:
             params = {
                 "f": "json",
