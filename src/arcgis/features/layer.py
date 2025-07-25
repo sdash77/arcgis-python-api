@@ -41,7 +41,7 @@ from arcgis.gis._impl._util import _get_item_url
 from arcgis._impl.common._utils import _validate_url
 
 _arcgis = LazyLoader("arcgis")
-_uploads = LazyLoader(" arcgis.features._uploads.upload")
+_uploads = LazyLoader("arcgis.features._uploads.upload")
 
 
 @lru_cache(maxsize=255)
