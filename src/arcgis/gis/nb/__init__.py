@@ -14,6 +14,12 @@ from ._site import SiteManager
 from ._logs import LogManager
 from ._machines import MachineManager, Machine
 from ._security import SecurityManager
+from ._dataaccess import (
+    DATAACCESSTYPE,
+    NotebookDataAccess,
+    NotebookFile,
+    NotebookFolder,
+)
 
 
 __all__ = [
@@ -34,4 +40,8 @@ __all__ = [
     "MachineManager",
     "Machine",
     "SecurityManager",
+    "DATAACCESSTYPE",
+    "NotebookDataAccess",
+    "NotebookFile",
+    "NotebookFolder",
 ]
