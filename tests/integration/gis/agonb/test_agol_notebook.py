@@ -7,7 +7,7 @@ import logging
 import unittest
 import tempfile
 from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
+from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 from arcgis.gis.agonb import AGOLNotebookManager
 from arcgis.gis.agonb.instpref import InstancePreference
 from arcgis.gis.agonb.runtime import RuntimeManager
@@ -85,7 +85,7 @@ notebook_json = {
     "metadata": {
         "esriNotebookRuntime": {
             "notebookRuntimeName": "ArcGIS Notebook " "Python 3 " "Advanced",
-            "notebookRuntimeVersion": "5.0",
+            "notebookRuntimeVersion": "11.0",
         },
         "kernelspec": {
             "display_name": "Python 3",
@@ -117,18 +117,22 @@ class TestAGOLNotebookManager(unittest.TestCase):
         writer = open(fp, "w")
         writer.write(json.dumps(notebook_json))
         writer.close()
-        cls._item = cls.gis.content.add(
-            {
-                "type": "Notebook",
-                "tags": "delete me",
-                "title": f"item_{uuid.uuid4().hex[:6]}",
-                "properties": {
+
+        cls.root_folder = cls.gis.content.folders.get()
+
+        cls._item = cls.root_folder.add(
+            item_properties= ItemProperties(
+                title=f"test_item_{uuid.uuid4().hex[:6]}",
+                item_type=ItemTypeEnum.NOTEBOOK,
+                snippet="Test item for AGOL Notebook Manager.",
+                description="This is a test item for AGOL Notebook Manager.",
+                properties={
                     "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "5.0",
-                },
-            },
-            data=fp,
-        )
+                    "notebookRuntimeVersion": "11.0",
+                }
+            ),
+            file=fp
+        ).result()
 
     def test_access_agonb(self):
         assert self.gis.notebook_server
@@ -141,9 +145,9 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert nb.instance_preferences
         assert nb.notebooksmanager
         assert nb.runtimes
-        assert nb.snaphots
+        assert nb.snapshots
 
-    def test_access_instsance_pref(self):
+    def test_access_instance_pref(self):
         nb = self.gis.notebook_server[0]
         assert isinstance(nb, AGOLNotebookManager)
         ip = nb.instance_preferences
@@ -213,9 +217,9 @@ class TestAGOLNotebookManager(unittest.TestCase):
         nb = self.gis.notebook_server[0]
         item = self._item
         assert isinstance(nb, AGOLNotebookManager)
-        snapmgr = nb.snaphots
+        snapmgr = nb.snapshots
         assert isinstance(snapmgr, SnapshotManager)
-        res = snapmgr.create(item=item, name="testsnapeshot")
+        res = snapmgr.create(item=item, name="testsnapshot")
         assert res
         listed = snapmgr.list(item)
 
