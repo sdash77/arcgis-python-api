@@ -21,6 +21,7 @@ def setup_profiles(
     devent_admin_name="your_dev_ent_admin_profile",
     utility_network_name="your_utility_network_profile",
     workflow_manager_name="your_workflow_manager_profile",
+    parcel_fabric_name="your_parcel_fabric_profile",
     reset=False,
 ):
     """create profiles"""
@@ -38,6 +39,7 @@ def setup_profiles(
         devent_admin_name,
         utility_network_name,
         workflow_manager_name,
+        parcel_fabric_name,
     ]
 
     pm = ProfileManager()
@@ -175,6 +177,15 @@ def setup_profiles(
         )
         print(f"Created profile {workflow_manager_name}")
 
+    if not parcel_fabric_name in updated_list:
+        pm.create(
+            parcel_fabric_name,
+            url="https://dev0016752.esri.com/portal",
+            username="admin",
+            password="esri.agp",
+        )
+        print(f"Created profile {parcel_fabric_name}")
+
     print("------------------")
     print(pm.get(online_name))
     print(pm.get(online_admin_name))
@@ -189,6 +200,7 @@ def setup_profiles(
     print(pm.get(devent_admin_name))
     print(pm.get(utility_network_name))
     print(pm.get(workflow_manager_name))
+    print(pm.get(parcel_fabric_name))
     print("------------------")
 
 

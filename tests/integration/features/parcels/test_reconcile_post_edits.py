@@ -4,10 +4,11 @@ import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features._parcel import ParcelFabricManager
 from arcgis.features.layer import FeatureLayerCollection
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from . import parcel_fabric_utils as pfutils
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestVersionManager(unittest.TestCase):
     """Reassign parcels to a different record"""
@@ -26,12 +27,7 @@ class TestVersionManager(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/WashingtonCountyLSA/"
         )
-        cls.gis = GIS(
-            "https://dev0016752.esri.com/portal/",
-            "admin",
-            "esri.agp",
-            verify_cert=False,
-        )
+
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(
