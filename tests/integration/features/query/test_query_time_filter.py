@@ -16,7 +16,6 @@ class TestQueryAnalytics(unittest.TestCase):
     FeatureLayer
     """
 
-    # ----------------------------------------------------------------------
     def test_query_time_filter(self):
         """Tests the simple query analytics call"""
         url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
@@ -24,11 +23,10 @@ class TestQueryAnalytics(unittest.TestCase):
         start_time = _dt.datetime(2025, 1, 1)
         end_time = _dt.datetime.now()
         time_range = [start_time, end_time]
-        result = fl.query(where='1=1', time_filter=time_range, as_df=True)
+        result = fl.query(where="1=1", time_filter=time_range, as_df=True)
         assert isinstance(result, pd.DataFrame)
         assert len(result) >= 0
 
 
-###########################################################################
 if __name__ == "__main__":
     unittest.main()

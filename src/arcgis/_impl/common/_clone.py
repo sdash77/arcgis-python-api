@@ -5568,9 +5568,18 @@ class _FormDefinition(_ItemDefinition):
                                             os.path.join(zip_dir, path),
                                             field_mapping,
                                         )
-
+                        try:
+                            connect_version = original_item["properties"][
+                                "websiteVersion"
+                            ]
+                        except:
+                            connect_version = original_item["properties"].get(
+                                "connectVersion", None
+                            )
                         SurveyManager._xform2webform(
-                            os.path.join(zip_dir, path), self.target.url
+                            os.path.join(zip_dir, path),
+                            self.target.url,
+                            connect_version,
                         )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
