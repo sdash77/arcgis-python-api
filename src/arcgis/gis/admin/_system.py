@@ -445,7 +445,7 @@ class System(BasePortalAdmin):
         (DBMS) that contains all of the portal's configuration and
         relationship rules. This resource also returns the name and version
         of the database server currently running in the portal.
-        You can use the properety to update database accounts
+        You can use the property to update database accounts
         """
         url = "%s/database" % self._url
         params = {"f": "json"}

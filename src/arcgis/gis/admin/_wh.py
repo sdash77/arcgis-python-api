@@ -1,6 +1,4 @@
 from __future__ import annotations
-import os
-import json
 from typing import Optional, Union
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
@@ -69,7 +67,7 @@ class WebhookManager(object):
         notificationAttempts               Required Integer. This will determine how many attempts will be made to deliver
                                            a payload.
         ---------------------------------  -------------------------------------------------------------------------------
-        otificationTimeOutInSeconds        Required Integer. The length of time (in seconds) that Portal will wait to
+        notificationTimeOutInSeconds       Required Integer. The length of time (in seconds) that Portal will wait to
                                            receive a response. The max response is 60.
         ---------------------------------  -------------------------------------------------------------------------------
         notificationElapsedTimeInSeconds   Required Integer. The amount of time between each payload delivery attempt. By
@@ -133,7 +131,7 @@ class WebhookManager(object):
         ---------------------------------  -------------------------------------------------------------------------------
         url                                Required String. This is the URL to which the webhook will deliver payloads to.
         ---------------------------------  -------------------------------------------------------------------------------
-        events                             Otional List or String.  The events accepts a list or all events can be
+        events                             Optional List or String.  The events accepts a list or all events can be
                                            monitored. This is done by passing "ALL" in as the events.  If a list is
                                            provided, a specific endpoint can be monitored.
 
@@ -444,7 +442,7 @@ class Webhook(object):
         ---------------------------------  -------------------------------------------------------------------------------
         url                                Required String. This is the URL to which the webhook will deliver payloads to.
         ---------------------------------  -------------------------------------------------------------------------------
-        events                             Otional List or String.  The events accepts a list of all events that can be
+        events                             Optional List or String.  The events accepts a list of all events that can be
                                            monitored. This is done by passing "ALL" in as the events.  If a list is
                                            provided, a specific endpoint can be monitored.
 

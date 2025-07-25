@@ -258,7 +258,7 @@ class QueryParameters(BaseModel):
                     map's version.
                     """,
     )
-    order_by_fields: list[str] | None = Field(
+    order_by_fields: list[str] | str | None = Field(
         None,
         alias="orderByFields",
         description="""Optional string. One or more field names on which the
@@ -548,6 +548,12 @@ class QueryParameters(BaseModel):
 
     @field_validator("out_fields", mode="before")
     def validate_out_fields(cls, value):
+        if isinstance(value, (list, tuple)):
+            return ",".join(value)
+        return value
+
+    @field_validator("order_by_fields", mode="before")
+    def validate_order_by_fields(cls, value):
         if isinstance(value, (list, tuple)):
             return ",".join(value)
         return value
