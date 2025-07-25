@@ -4,10 +4,11 @@ import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from . import parcel_fabric_utils as pfutils
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestDivideParcels(unittest.TestCase):
     """Tests the Divide function from the parcel fabric SOE"""
@@ -25,22 +26,15 @@ class TestDivideParcels(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/Divide1091/"
         )
-        cls.gis = GIS(
-            "https://dev0016752.esri.com/portal/",
-            "admin",
-            "esri.agp",
-            verify_cert=False,
-        )
+
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(
             cls.service_urls["FeatureServer"], cls.gis
         )
         cls.vms = cls.parcel_fabric_flc.versions
-        
-        cls.tax_lyr_info = pfutils.basic_lyr_info(
-            cls.parcel_fabric_flc, "Tax_Div"
-        )[0]
+
+        cls.tax_lyr_info = pfutils.basic_lyr_info(cls.parcel_fabric_flc, "Tax_Div")[0]
         cls.tax_lyr_id = cls.tax_lyr_info.lyr_id
 
         cls.tax_line_info = pfutils.basic_lyr_info(
@@ -929,7 +923,7 @@ class TestDivideParcels(unittest.TestCase):
             except Exception as ex:
                 print(ex)
                 self.fail(f"Divide failed: {ex}")
-                
+
     def test_equal_width_merge_remainder_junk_values(self):
         fq_version_name = pfutils.create_version(self.vms)
         divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"

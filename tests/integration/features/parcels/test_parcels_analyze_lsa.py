@@ -4,10 +4,11 @@ import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
 import arcgis.features
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from . import parcel_fabric_utils as pfutils
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestAnalyzeLSA(unittest.TestCase):
     """Analyze LSA with and without parcelFeatures param on a small fabric.  Test sync and async"""
@@ -23,12 +24,7 @@ class TestAnalyzeLSA(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/ParcelFabric_LSA/"
         )
-        cls.gis = GIS(
-            "https://dev0016752.esri.com/portal",
-            "admin",
-            "esri.agp",
-            verify_cert=False,
-        )
+
         cls.services = [
             "FeatureServer",
             "ParcelFabricServer",

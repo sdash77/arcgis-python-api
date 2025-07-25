@@ -19,10 +19,6 @@ class TestQueryTableLayer(unittest.TestCase):
         get test data
         """
         uid = int(time.time())
-        cls.qalab_base_path = QALAB_ROOT_PATH
-        cls.qalab_cls_path = os.path.join(
-            cls.qalab_base_path, "features_mod_FeatureLayer_cls"
-        )
         source_data_path = get_resource_path(
             "mapping/restaurants.xlsx", unique_copy=True
         )
