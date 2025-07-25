@@ -258,7 +258,7 @@ class QueryParameters(BaseModel):
                     map's version.
                     """,
     )
-    order_by_fields: list[str] | None = Field(
+    order_by_fields: str | None = Field(
         None,
         alias="orderByFields",
         description="""Optional string. One or more field names on which the
