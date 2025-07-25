@@ -3615,7 +3615,7 @@ class Polygon(Geometry):
             Esri-JSON polygon with keys: "rings", "hasZ", "hasM",
             and optionally "spatialReference".
         """
-        from _impl.common._arcgis2geojson import ringIsClockwise, closeRing
+        from arcgis._impl.common._arcgis2geojson import ringIsClockwise, closeRing
 
         sr = sr or {"wkid": 4326}
         gtype = data.get("type")
@@ -3659,7 +3659,7 @@ class Polygon(Geometry):
     @property
     def __geo_interface__(self) -> dict:
         """Returns the geometry in valid GeoJSON format as either Polygon or MultiPolygon."""
-        from _impl.common._arcgis2geojson import convertRingsToGeoJSONUnchecked
+        from arcgis._impl.common._arcgis2geojson import convertRingsToGeoJSONUnchecked
 
         return convertRingsToGeoJSONUnchecked(self["rings"])
 
