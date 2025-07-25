@@ -40,7 +40,9 @@ from arcgis.gis import Item, Layer, _GISResource
 from arcgis.geometry import Geometry, SpatialReference
 from arcgis.gis._impl._util import _get_item_url
 from arcgis._impl.common._utils import _validate_url
+import logging
 
+log = logging.getLogger()
 _arcgis = LazyLoader("arcgis")
 
 
@@ -656,8 +658,8 @@ class FeatureLayer(Layer):
                 except:
                     # The server will fail with error 500 for this operation at times.
                     # Since it is just part of the cleanup we can ignore it.
-                    self._gis.logger.warning(
-                        "Failed to delete upload item %s. This is not an error, just a warning."
+                    log.warning(
+                        "Failed to delete upload item %s. Attachment cleanup failed due to server error."
                         % itemid
                     )
                     pass
