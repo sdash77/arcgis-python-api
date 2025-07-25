@@ -77,7 +77,7 @@ class IdentityProviderManager(object):
         Gets, updates, or Adds a SAML provider
 
         ======================  =======================================================================================
-        **Arguement**           **Value**
+        **Argument**            **Value**
         ----------------------  ---------------------------------------------------------------------------------------
         value                   required dictionary.  This property sets, updates or deletes an IDP
                                 configuration for a given GIS.
@@ -98,7 +98,7 @@ class IdentityProviderManager(object):
 
                                 idp.configuration = None
 
-                                Everytime the IDP configuration is updated, the changes can be seen
+                                Every time the IDP configuration is updated, the changes can be seen
                                 by calling the 'configuration' property and the new results will be
                                 returned as a dictionary.
         ======================  =======================================================================================
@@ -184,7 +184,7 @@ class IdentityProviderManager(object):
     # ----------------------------------------------------------------------
     def _add(self, **kwargs):
         """
-        registers the inital idp configuration
+        registers the initial idp configuration
         """
         if "name" not in kwargs:
             import uuid

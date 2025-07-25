@@ -1,10 +1,6 @@
 from __future__ import annotations
-import os
-import json
-from collections import namedtuple
 from typing import Optional
 from arcgis.gis import GIS, Item
-from arcgis._impl.common._mixins import PropertyMap
 
 
 class SnapShot(object):
