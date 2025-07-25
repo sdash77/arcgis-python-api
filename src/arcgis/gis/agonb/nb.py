@@ -84,7 +84,7 @@ class AGOLNotebookManager:
         return self._runtimes
 
     @property
-    def snaphots(self) -> SnapshotManager:
+    def snapshots(self) -> SnapshotManager:
         """
         Returns tools to work with snapshots on notebooks
 

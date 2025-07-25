@@ -6,19 +6,9 @@ from arcgis.gis.server.catalog import ServicesDirectory
 from arcgis.features import FeatureLayerCollection
 from utils.decorators import integration_test
 
-__logger__ = logging.getLogger()
+from utils._logging import enable_verbose_logging
 
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    root.addHandler(handler)
-
-
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 
 @integration_test
@@ -26,8 +16,8 @@ class TestQueryDataElements(unittest.TestCase):
     def test_query_data_elements(self):
         sd = ServicesDirectory(
             url="https://sampleserver7.arcgisonline.com/server/rest/services",
-            username='viewer01',
-            password='I68VGU^nMurF',
+            username="viewer01",
+            password="I68VGU^nMurF",
         )
         services = sd.list("UtilityNetwork")
         for service in services:
