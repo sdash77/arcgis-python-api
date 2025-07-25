@@ -651,7 +651,16 @@ class FeatureLayer(Layer):
             params["uploadId"] = itemid
             res = self._gis.session.post(attach_url, params).json()
             if res.get("addAttachmentResult", {}).get("success") is True:
-                container._delete_upload(itemid)
+                try:
+                    container._delete_upload(itemid)
+                except:
+                    # The server will fail with error 500 for this operation at times.
+                    # Since it is just part of the cleanup we can ignore it.
+                    self._gis.logger.warning(
+                        "Failed to delete upload item %s. This is not an error, just a warning."
+                        % itemid
+                    )
+                    pass
             elif res.get("error"):
                 return res.get("error")
             return res
