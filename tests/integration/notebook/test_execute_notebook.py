@@ -65,7 +65,7 @@ notebook_json = {
     "metadata": {
         "esriNotebookRuntime": {
             "notebookRuntimeName": "ArcGIS Notebook " "Python 3 " "Advanced",
-            "notebookRuntimeVersion": "8.0",
+            "notebookRuntimeVersion": "12.0",
         },
         "kernelspec": {
             "display_name": "Python 3",
@@ -103,9 +103,9 @@ class TestAGOLNotebookManager(unittest.TestCase):
         writer.write(json.dumps(notebook_json))
         writer.close()
         if cls.gis._is_agol:
-            notebookRuntimeVersion = "8.0"
+            notebookRuntimeVersion = cls.gis.notebook_server[0].runtimes.properties["currentRuntimeVersion"]
         else:
-            notebookRuntimeVersion = "9.0"
+            notebookRuntimeVersion = cls.gis.notebook_server[0].notebooks.runtimes[0].properties["version"]
 
         cls._item = cls._gis.content.add(
             {
