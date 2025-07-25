@@ -1860,7 +1860,7 @@ class FeatureLayer(Layer):
         out_sr: dict[str, Any] | str | None = None,
         geometry_precision: int | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict[str, Any]] | None = None,
         return_z: bool = False,
         return_m: bool = False,
@@ -2018,11 +2018,11 @@ class FeatureLayer(Layer):
                                             The default is false. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is true.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
+        order_by_fields                     Optional string or list of strings. One or more field names on which the
                                             features/records need to be ordered. Use ASC or DESC for ascending
                                             or descending, respectively, following every field to control the
                                             ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+                                            example: "STATE_NAME ASC, RACE DESC" GENDER or ["STATE_NAME ASC", "RACE DESC"]
 
                                             .. note::
                                                 If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
@@ -3652,7 +3652,7 @@ class FeatureLayer(Layer):
         geometry_filter: Geometry | dict | None = None,
         gdb_version: str | None = None,
         return_distinct_values: bool | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         group_by_fields_for_statistics: str | None = None,
         out_statistics: list[dict] | None = None,
         result_offset: int | None = None,
@@ -3736,11 +3736,11 @@ class FeatureLayer(Layer):
                                                 Make sure to set return_geometry to False if this is set to True.
                                                 Otherwise, reliable results will not be returned.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
+        order_by_fields                     Optional string or list of strings. One or more field names on which the
                                             features/records need to be ordered. Use ASC or DESC for ascending
                                             or descending, respectively, following every field to control the
                                             ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+                                            example: "STATE_NAME ASC, RACE DESC, GENDER" or ["STATE_NAME ASC", "RACE DESC", "GENDER"]
 
                                             .. note::
                                                 If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
@@ -4001,7 +4001,7 @@ class Table(FeatureLayer):
         result_record_count: int | None = None,
         object_ids: str | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict[str, Any]] | None = None,
         return_all_records: bool = True,
         historic_moment: int | datetime | None = None,
@@ -4056,11 +4056,11 @@ class Table(FeatureLayer):
                                             returnCountOnly = true, the response will return both the count and
                                             the extent.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
+        order_by_fields                     Optional string or list of strings. One or more field names on which the
                                             features/records need to be ordered. Use ASC or DESC for ascending
                                             or descending, respectively, following every field to control the
                                             ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+                                            example: "STATE_NAME ASC, RACE DESC, GENDER" or ["STATE_NAME ASC", "RACE DESC", "GENDER"]
         -------------------------------     --------------------------------------------------------------------
         group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
                                             be grouped for calculating the statistics.
