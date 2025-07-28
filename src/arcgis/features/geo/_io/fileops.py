@@ -309,7 +309,7 @@ def _ensure_path_string(input_path):
         and USE_ARCPY == False
     ):
         raise ValueError(
-            "The input path enter requires the use of the ArcPy engine.  Please update your geometry engine settings."
+            "The input path entered requires the use of the ArcPy engine.  Please update your geometry engine settings."
         )
     raise ValueError(
         "Input path must be a string or a Path object. "
