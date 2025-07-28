@@ -1344,7 +1344,35 @@ class TestWorkflowManager(unittest.TestCase):
         self.connection.workflow_manager.update_settings(valid_settings)
 
         # Act
-        settings = self.connection.workflow_manager.settings
+        settings = self.connection.workflow_manager.settings()
+        has_setting = [
+            x
+            for x in settings
+            if x["propName"] == "smtpDefaultSenderDisplayName"
+            and x["value"] == "Updated Name"
+        ]
+
+        # Assert
+        self.assertIsInstance(settings, list, "Incorrect return type")
+        self.assertTrue(has_setting, "Does not contain default settings")
+
+    def test_get_valid_settings_without_system_settings(self):
+        # Arrange
+        valid_settings = [
+            {"propName": "smtpDefaultSenderDisplayName", "value": "Updated Name"},
+            {"propName": "smtpDefaultSenderEmail", "value": "update@wmx.com"},
+            {"propName": "smtpUsername", "value": "new_admin"},
+            {"propName": "smtpPassword", "value": "n3W_p@$sw0Rd"},
+            {"propName": "smtpPort", "value": "3113"},
+            {"propName": "smtpProtocol", "value": "New Protocol"},
+            {"propName": "smtpServer", "value": "New Server"},
+        ]
+
+        # Add settings
+        self.connection.workflow_manager.update_settings(valid_settings)
+
+        # Act
+        settings = self.connection.workflow_manager.settings(include_system_settings=False)
         has_setting = [
             x
             for x in settings
