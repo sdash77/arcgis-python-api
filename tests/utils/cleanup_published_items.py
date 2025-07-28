@@ -33,7 +33,7 @@ class CleanupTestData:
         tags: str = None,
         search_str: str = None,
         day_difference: int = 7,
-        test_only: bool = True,
+        dry_run: bool = True,
     ):
         """
         Get all portal items owned by a specific user and delete them if they are not delete protected and older than a specified number of days.
@@ -41,7 +41,7 @@ class CleanupTestData:
         :param tags: str: An optional comma separated string of tags to limit the search
         :param search_str: str: An option search string e.g. `title:my_tile` or `type:CSV`
         :param day_difference: int: Difference in days from current date. Default is 90
-        :param test_only: bool: Run the function without deleting the items.
+        :param dry_run: bool: Run the function without deleting the items.
         :return: void
         """
         self.gis = gis
@@ -49,7 +49,7 @@ class CleanupTestData:
         self.tags = tags
         self.search_str = search_str
         self.day_difference = day_difference
-        self.test_only = test_only
+        self.test_only = dry_run
 
     def delete_all_items(self):
         print("*************************")
@@ -130,24 +130,26 @@ class CleanupTestData:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--test-only",
+        "--gis_profile",
+        type=str,
+        help="The existing profile name of the target enterprise",
+    )
+    parser.add_argument(
+        "--dry_run",
         type=bool,
         help="Runs the query but will not delete anything",
         default=True,
     )
     parser.add_argument(
-        "--day-difference",
+        "--day_difference",
         type=int,
         help="How many days from now to query items",
         default="7",
     )
 
     args = parser.parse_args()
-    ent_gis = GIS(profile="your_enterprise_profile")
-    ago_gis = GIS(profile="your_online_profile")
-    connections = [ent_gis, ago_gis]
-    for gis_ in connections:
-        cleanup = CleanupTestData(
-            gis=gis_, day_difference=args.day_difference, test_only=args.test_only
-        )
-        cleanup.delete_all_items()
+    gis = GIS(profile=args.gis_profile)
+    cleanup = CleanupTestData(
+        gis=gis, day_difference=args.day_difference, dry_run=args.dry_run
+    )
+    cleanup.delete_all_items()

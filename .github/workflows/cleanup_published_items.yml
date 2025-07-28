@@ -2,12 +2,16 @@ name: Cleanup Published Items
 on:
   workflow_dispatch:
     inputs:
+      gis_profile:
+        description: "To report and delete items or report only"
+        required: true
+        type: str
       day-difference:
         description: "How many days before 'now' to look for items"
         required: false
         default: 7
         type: number
-      test-only:
+      dry_run:
         description: "To report and delete items or report only"
         required: false
         default: true
@@ -29,6 +33,7 @@ jobs:
           frozen: true
       - name: Run cleanup job
         env:
-          DAY_DIFFERENCE: ${{ inputs.day-difference || 7 }}
-          TEST_ONLY: ${{ inputs.test-only || true }}
-        run: python cleanup_published_items.py --day-difference=$DAY_DIFFERENCE --test-only=$TEST_ONLY
+          GIS_PROFILE: ${{ inputs.gis_profile }}
+          DAY_DIFFERENCE: ${{ inputs.day_difference || 7 }}
+          TEST_ONLY: ${{ inputs.dry_run || true }}
+        run: python cleanup_published_items.py --day_difference=$DAY_DIFFERENCE --dry_run=$TEST_ONLY
