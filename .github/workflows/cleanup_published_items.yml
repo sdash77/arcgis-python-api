@@ -1,6 +1,18 @@
 name: Cleanup Published Items
 on:
   workflow_dispatch:
+    inputs:
+      day-difference:
+        description: "How many days before 'now' to look for items"
+        required: false
+        default: 7
+        type: number
+      test-only:
+        description: "To report and delete items or report only"
+        required: false
+        default: true
+        type: boolean
+
   schedule:
     # Run every day at 4AM UTC
     - cron: '8 0 * * *'
@@ -16,4 +28,7 @@ jobs:
             local
           frozen: true
       - name: Run cleanup job
-        run: python -m cleanup_published_items.py
+        env:
+          DAY_DIFFERENCE: ${{ inputs.day-difference || 7 }}
+          TEST_ONLY: ${{ inputs.test-only || true }}
+        run: python cleanup_published_items.py --day-difference=$DAY_DIFFERENCE --test-only=$TEST_ONLY

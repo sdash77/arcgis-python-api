@@ -14,6 +14,7 @@ Set 'test_only' to print out what is to be deleted without deleting
 
 """
 
+import argparse
 from arcgis.gis import GIS, Item
 from datetime import datetime, timedelta
 from utils._logging import enable_verbose_logging
@@ -127,10 +128,26 @@ class CleanupTestData:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--test-only",
+        type=bool,
+        help="Runs the query but will not delete anything",
+        default=True,
+    )
+    parser.add_argument(
+        "--day-difference",
+        type=int,
+        help="How many days from now to query items",
+        default="7",
+    )
 
+    args = parser.parse_args()
     ent_gis = GIS(profile="your_enterprise_profile")
     ago_gis = GIS(profile="your_online_profile")
     connections = [ent_gis, ago_gis]
     for gis_ in connections:
-        cleanup = CleanupTestData(gis=gis_, day_difference=7, test_only=True)
+        cleanup = CleanupTestData(
+            gis=gis_, day_difference=args.day_difference, test_only=args.test_only
+        )
         cleanup.delete_all_items()
