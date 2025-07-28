@@ -9612,6 +9612,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                         "title": output_dsm_mesh_name,
                     }
                 }
+            elif isinstance(output_dsm_mesh_name, Item):
+                output_dsm_mesh_dict = {"itemProperties": {"itemId": output_dsm_mesh_name.itemid}}
             if folderId is not None:
                 output_dsm_mesh_dict["folderId"] = folderId
             output_products["dsm_mesh"] = output_dsm_mesh_dict
@@ -9624,6 +9626,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                         "title": output_point_cloud_name,
                     }
                 }
+            elif isinstance(output_point_cloud_name, Item):
+                output_point_cloud_dict = {"itemProperties": {"itemId": output_point_cloud_name.itemid}}
             if folderId is not None:
                 output_point_cloud_dict["folderId"] = folderId
             output_products["point_cloud"] = output_point_cloud_dict
@@ -9636,6 +9640,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                         "title": output_mesh_name,
                     }
                 }
+            elif isinstance(output_mesh_name, Item):
+                output_mesh_dict = {"itemProperties": {"itemId": output_mesh_name.itemid}}
             if folderId is not None:
                 output_mesh_dict["folderId"] = folderId
             output_products["mesh"] = output_mesh_dict
