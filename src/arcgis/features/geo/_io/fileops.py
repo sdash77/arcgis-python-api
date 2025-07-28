@@ -283,6 +283,34 @@ def _ensure_path_string(input_path):
         return str(input_path)
     if isinstance(input_path, str):
         return input_path
+    if (
+        hasattr(input_path, "connectionProperties")
+        and (
+            hasattr(input_path, "isWebLayer")
+            and getattr(input_path, "isWebLayer") == False
+        )
+        and (
+            hasattr(input_path, "isFeatureLayer")
+            and getattr(input_path, "isFeatureLayer")
+        )
+        and USE_ARCPY
+    ):
+        return input_path
+    elif (
+        hasattr(input_path, "connectionProperties")
+        and (
+            hasattr(input_path, "isWebLayer")
+            and getattr(input_path, "isWebLayer") == False
+        )
+        and (
+            hasattr(input_path, "isFeatureLayer")
+            and getattr(input_path, "isFeatureLayer")
+        )
+        and USE_ARCPY == False
+    ):
+        raise ValueError(
+            "The input path enter requires the use of the ArcPy engine.  Please update your geometry engine settings."
+        )
     raise ValueError(
         "Input path must be a string or a Path object. "
         "Received type: {}".format(type(input_path))
