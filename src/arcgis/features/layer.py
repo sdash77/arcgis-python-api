@@ -633,20 +633,23 @@ class FeatureLayer(Layer):
         # Two options depending on file size
         # If the file is less than 10MB, we can upload it directly
         if (os.path.getsize(file_path) < 10e6) or (
-            self._gis._is_agol is False and [2024, 1] < self._gis.version < [2025, 2]
+            not self._gis._is_agol and [2024, 1] < self._gis.version < [2025, 2]
         ):
             files = {}
-            for k, v in {"attachment": file_path}.items():
-                if isinstance(v, (list, tuple)):
-                    files[k] = v
-                else:
-                    buffer_reader = open(v, "rb")
-                    files[k] = (
-                        os.path.basename(v),
-                        buffer_reader,
-                        mimetypes.guess_type(v)[0],
-                    )
-            return self._gis.session.post(url=attach_url, data=params, files=files)
+            v = file_path
+            buffer_reader = open(v, "rb")
+            try:
+                files["attachment"] = (
+                    os.path.basename(v),
+                    buffer_reader,
+                    mimetypes.guess_type(v)[0],
+                )
+                response = self._gis.session.post(
+                    url=attach_url, data=params, files=files
+                )
+            finally:
+                buffer_reader.close()
+            return response
         else:
             container = self.container
             itemid = container.upload(file_path)
