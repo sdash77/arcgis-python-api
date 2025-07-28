@@ -1541,22 +1541,22 @@ def reconstruct_surface(
     
     if output_dsm_name:
         if "dsm" in products:
-            output_dsm_name = products["dsm"]
+            output_dsm_name = arcgis.gis.Item(gis, products["dsm"]["itemId"])
     if output_true_ortho_name:
         if "true_ortho" in products:
-            output_true_ortho_name = products["true_ortho"]
+            output_true_ortho_name = arcgis.gis.Item(gis, products["true_ortho"]["itemId"])
     if output_dsm_mesh_name:
         if "dsm_mesh" in products:
-            output_dsm_mesh_name = products["dsm_mesh"]
+            output_dsm_mesh_name = arcgis.gis.Item(gis, products["dsm_mesh"]["itemId"])
     if output_point_cloud_name:
         if "point_cloud" in products:
-            output_point_cloud_name = products["point_cloud"]
+            output_point_cloud_name = arcgis.gis.Item(gis, products["point_cloud"]["itemId"])
     if output_mesh_name:
         if "mesh" in products:
-            output_mesh_name = products["mesh"]    
+            output_mesh_name = arcgis.gis.Item(gis, products["mesh"]["itemId"])
     if output_dtm_name:
         if "dtm" in products:
-            output_dtm_name = products["dtm"]    
+            output_dtm_name = arcgis.gis.Item(gis, products["dtm"]["itemId"])
 
     if mission.workspace:
         if context:
@@ -1826,12 +1826,12 @@ class RMProject:
         gis = arcgis.env.active_gis if gis is None else gis
         project_item = {"itemId": self._project_item.itemid}
 
-        workspace = None
+        # workspace = None
+        from datetime import datetime
         service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         if mission_name is None:
             mission_name = "mission_" + _id_generator()
         
-        from datetime import datetime
         if image_collection_name:
             if isinstance(image_collection_name, str):
                 # service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
