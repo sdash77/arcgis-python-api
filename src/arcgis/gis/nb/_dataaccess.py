@@ -371,11 +371,11 @@ class NotebookFolder:
         if token:
             headers["X-Esri-Authorization"] = f"Bearer {token}"
         with open(file_path, "rb") as file_data:
-            resp = self._session.put(
+            resp = self._da._gis.session.put(
                 url=url,
                 data=file_data,
                 verify=True,
-                headers=self._session.headers,
+                headers=self._da._gis.session.headers,
             )
         return 200 <= resp.status_code < 300
 
