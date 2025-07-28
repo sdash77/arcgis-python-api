@@ -23,7 +23,7 @@ version = "0.1.0"
 "test:unit" = {cmd = "python -m nose2 -v -s tests/unit/test_arcgis/{{test_path}} --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path='{{test_path}}_unit_testreport.xml'",  depends-on = [{task = "test:config:profiles"}], args = [{arg = "test_path", default = ""}], description = "Run unit tests from specified path (e.g. pixi run test:unit test_apps) or all unit tests, if unspecified"}
 "test:smoke" = {cmd = "cd tests && python -m nose2 -v -s smoke --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path='smoke_testreport.xml'", description = "Run all smoke tests from tests/smoke"}
 "test:config:profiles" = {cmd = "python tests/integration/config_profiles.py", description = "Create profiles for tests (e.g. `GIS(profile='your_enterprise_profile')`)"}
-"test:cleanup-published-items" = {cmd = "python cleanup_published_items.py", description = "Cleanup published items based on date range", args = [{name = "day-difference", default = "7"}, {name = "dry-run", default = "true"}]}
+"test:cleanup-published-items" = {cmd = "python cleanup_published_items.py", description = "Cleanup published items based on date range", args = [{arg = "day-difference", default = "7"}, {arg = "dry-run", default = "true"}]}
 
 # tasks with names prefixed with "_" are not listed in `pixi task list`
 # and are not intended to be run directly
