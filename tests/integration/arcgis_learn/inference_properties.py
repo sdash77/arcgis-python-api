@@ -393,7 +393,7 @@ data_inferencing = {
         "input_path_ms": False,
         "model_path": os.path.join(saved_models_path, "trained_model_autoML.dlpk"),
         "should_test": True,
-        "owner": "vraj",
+        "owner": "sbanik",
         "batch_size": None,
         "output_filename": "output_AutoML",
     },
@@ -409,7 +409,7 @@ data_inferencing = {
             saved_models_path, "mlmodel_trained_regression.dlpk"
         ),
         "should_test": True,
-        "owner": "vraj",
+        "owner": "sbanik",
         "model_categories": ["classification", "regression"],
     },
     "fcn": {
@@ -425,7 +425,7 @@ data_inferencing = {
             saved_models_path, "fcn_trained_regression.dlpk"
         ),
         "should_test": True,
-        "owner": "vraj",
+        "owner": "sbanik",
         "model_categories": ["classification", "regression"],
     },
     "autodl_objectdetection": {
