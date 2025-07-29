@@ -23,7 +23,7 @@ RESOURCES_ROOT_PATH = os.environ.get(
     "GEOSAURUS_RESOURCES_ROOT_PATH", str(_TESTS_RESOURCES_ROOT_PATH)
 )
 WEB_RESOURCE_ROOT_PATH = os.environ.get(
-    "GEOSAURUS_RESOURCES_WEB_ROOT", "https://esri-forge.python.geocloud.com/_/data"
+    "GEOSAURUS_RESOURCES_WEB_ROOT", "https://esri-forge.python.geocloud.com/_/data/"
 )
 
 
@@ -67,23 +67,19 @@ def get_web_resource_path(relative_path, unique_copy=False):
         )
         return cached_resource
     except FileNotFoundError:
-        # cache miss, download the resource from the web and save it to the cache
-        ...
-
-    # download the resource from the web
-    resource_url = urllib.parse.urljoin(WEB_RESOURCE_ROOT_PATH, relative_path)
-    try:
-        response = requests.get(resource_url)
-        response.raise_for_status()
-    except requests.RequestException as e:
-        raise FileNotFoundError(f"Failed to fetch web resource: {relative_path}") from e
-
-    # save the resource to the cache
-    content = response.content
-    resource_path = get_resource_path(_resource_cache_path, verify=False)
-    os.makedirs(os.path.dirname(resource_path), exist_ok=True)
-    # TODO consider streaming the content to the file
-    # first pass is only working with files <1MB
-    with open(resource_path, "wb") as f:
-        f.write(content)
-    return get_resource_path(_resource_cache_path, verify=True, unique_copy=unique_copy)
+        resource_url = urllib.parse.urljoin(WEB_RESOURCE_ROOT_PATH, relative_path)
+        try:
+            response = requests.get(resource_url)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise FileNotFoundError(f"Failed to fetch web resource: {relative_path}") from e
+    
+        # save the resource to the cache
+        content = response.content
+        resource_path = get_resource_path(_resource_cache_path, verify=False)
+        os.makedirs(os.path.dirname(resource_path), exist_ok=True)
+        # TODO consider streaming the content to the file
+        # first pass is only working with files <1MB
+        with open(resource_path, "wb") as f:
+            f.write(content)
+        return get_resource_path(_resource_cache_path, verify=True, unique_copy=unique_copy)

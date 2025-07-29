@@ -39,9 +39,22 @@ def publish_test_item(
         )
 
         # Source item is good, try publishing
-        portal_item = source_item.publish(
-            {"name": layer_name, "tags": INTEGRATION_TEST_ITEM_TAG}
-        )
+        publish_params = {"name": layer_name, "tags": INTEGRATION_TEST_ITEM_TAG}
+        if source_item.type == "Scene Package":
+            publish_params.update({"outputType":"sceneService", "fileType": "scenepackage"})
+            portal_item = source_item.publish(
+                publish_parameters=publish_params,
+                build_initial_cache=True
+            )
+        elif source_item.type == "Tile Package":
+            portal_item = source_item.publish(
+                publish_parameters=publish_params,
+                build_initial_cache=True
+            )
+        else:
+            portal_item = source_item.publish(
+                publish_parameters=publish_params
+            )
         if not portal_item:
             raise Exception(f"Could not update publish {layer_name}")
 
