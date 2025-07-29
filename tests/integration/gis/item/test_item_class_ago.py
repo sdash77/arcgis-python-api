@@ -534,14 +534,6 @@ class Test_Item_arcgis_online(unittest.TestCase):
             verify=True,
             unique_copy=True
         )
-        #sd_tile_lyr_item = publish_test_item(
-            #gis=self.gis,
-            #layer_name="ago_Tiled_QueryLayer",
-            #item_type=ItemTypeEnum.SERVICE_DEFINITION,
-            #source_data_path=sd_file,
-            #folder=self.item_test_folder
-        #)
-        #sd_tlyr_sd_item = sd_tile_lyr_item.related_items("Service2Data", "forward")[0]
 
         sd_tile_pkg_item = self.item_test_folder.add(
             item_properties=ItemProperties(
@@ -706,7 +698,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         try:
             chicago_csv_item = self.chicago_wfl_item.related_items("Service2Data", "forward")[0]
         except IndexError as ie:
-           self.skipTest("CSV item not returned as source for expected feature layer.") 
+            self.skipTest("CSV item not returned as source for expected feature layer.") 
         
         with tempfile.TemporaryDirectory() as temp_dir:
             chicago_data = chicago_csv_item.download()
@@ -1332,7 +1324,6 @@ class Test_Item_arcgis_online(unittest.TestCase):
             "Item ID is not same after overwriting",
         )
 
-        # verify content is updated
         flayer = overwrite_result.layers[0]
         fset = flayer.query()
         overwritten_flayer_df = fset.sdf
@@ -1367,7 +1358,6 @@ class Test_Item_arcgis_online(unittest.TestCase):
 
         orig_num_features = len(orig_flayer_df)
 
-        # update fdgb item
         new_fgdb_path = get_resource_path(
             relative_path="staging_data/item_class_test_data/overwrite_data/set1_Item_overwrite_HFS_fgdb.gdb.zip",
             verify=True,
