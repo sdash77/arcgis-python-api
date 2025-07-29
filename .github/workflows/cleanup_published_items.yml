@@ -27,5 +27,8 @@ jobs:
           environments: >-
             local
           frozen: true
+          activate-environment: true
+      - name: Generate GIS profiles
+        run: pixi run test:config:profiles
       - name: Run cleanup job
         run: python cleanup_published_items.py --gis_profile=${{ inputs.gis_profile }} --day_difference=${{ inputs.day_difference || 7 }} --dry_run=${{ inputs.dry_run || true }}
