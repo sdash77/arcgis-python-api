@@ -168,7 +168,7 @@ class Profiles:
                 UserType.ADMIN: Profile(
                     name="your_kubernetes_admin_profile",
                     verbose_name="your_prod_kubernetes_admin_profile",
-                    url="https://1140pubbi-1140pubbi.apps.openshift416release.esri.com/web",
+                    url="https://1150pubbi-1150pubbi.apps.openshift416release.esri.com/web",
                     credentials=Credential(
                         username="PAPIadmin", password="PAPIletmein01"
                     ),
@@ -179,7 +179,7 @@ class Profiles:
                 UserType.STANDARD: Profile(
                     name="your_kubernetes_profile",
                     verbose_name="your_prod_kubernetes_profile",
-                    url="https://1140pubbi-1140pubbi.apps.openshift416release.esri.com/web",
+                    url="https://1150pubbi-1150pubbi.apps.openshift416release.esri.com/web",
                     credentials=Credential(
                         username="PAPIpublisher", password="PAPIletmein01"
                     ),
@@ -272,22 +272,22 @@ class Profiles:
             },
             PortalType.ENTERPRISE_K8S: {
                 UserType.ADMIN: Profile(
-                    name="your_ent_admin_profile",
-                    verbose_name="your_dev_ent_admin_profile",
-                    url="https://devent.esri.com/gis",
+                    name="your_kubernetes_admin_profile",
+                    verbose_name="your_dev_kubernetes_admin_profile",
+                    url="https://rqa01bi-rqa01bi.apps.openshift416release.esri.com/gis",
                     credentials=Credential(
-                        username="administrator", password="esri.agp1"
+                        username="PAPIadmin", password="PAPIletmein01"
                     ),
                     environment=PortalEnvironment.TESTING,
                     portal_type=PortalType.ENTERPRISE,
                     user_type=UserType.ADMIN,
                 ),
                 UserType.STANDARD: Profile(
-                    name="your_enterprise_profile",
-                    verbose_name="your_dev_enterprise_profile",
-                    url="https://devent.esri.com/gis",
+                    name="your_kubernetes_profile",
+                    verbose_name="your_dev_kubernetes_profile",
+                    url="https://rqa01bi-rqa01bi.apps.openshift416release.esri.com/gis",
                     credentials=Credential(
-                        username="pythonapiuser", password="geosaurus_automation123"
+                        username="PAPIpublisher", password="PAPIletmein01"
                     ),
                     environment=PortalEnvironment.TESTING,
                     portal_type=PortalType.ENTERPRISE,
