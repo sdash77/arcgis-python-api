@@ -9232,6 +9232,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         gis=None,
         future=False,
         flight_json_details=None,
+        context=None,
         **kwargs,
     ):
         """
@@ -9259,9 +9260,17 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         image_collection = self._set_image_collection_param(
             image_collection=image_collection
         )
-        job = self._tbx.reset_image_collection(
-            image_collection=image_collection, gis=gis, future=True
-        )
+
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version >= 12.0 and not self._is_ortho:
+                job = self._tbx.reset_image_collection(
+                    image_collection=image_collection, context=context, gis=gis, future=True
+                )
+            else:
+                job = self._tbx.reset_image_collection(
+                    image_collection=image_collection, gis=gis, future=True
+                )
 
         final_job = None
         if self._is_ortho:

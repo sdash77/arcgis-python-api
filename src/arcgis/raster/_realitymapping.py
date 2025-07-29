@@ -1255,10 +1255,12 @@ def reset_image_collection(
         raise TypeError("The mission parameter must be a RMMission object.")
 
     image_collection = mission.image_collection
+    context = {"mission": mission.mission_id}
 
     return gis._tools.realitymapping.reset_image_collection(
         image_collection=image_collection,
         future=future,
+        context=context,
         **kwargs,
     )
 

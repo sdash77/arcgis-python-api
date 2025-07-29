@@ -2831,12 +2831,10 @@ def request_handler(func):
             else:
                 response_op = response.json()
         except Exception as e:
-            _LOGGER.warning(f"Failed to process request: {e}")
             return None
 
         if isinstance(response_op, dict) and response_op and "error" in response_op:
             message = response_op.get("message", "No additional detail provided.")
-            _LOGGER.error(f"Failed to process request: {message}")
             return None
 
         return response_op
