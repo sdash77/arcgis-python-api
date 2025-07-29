@@ -9252,6 +9252,22 @@ def raster_collection_function(
     else:
         raster = "$$"
 
+    if isinstance(raster, dict):
+        if (
+            "rasterFunction" in raster
+            and raster["rasterFunction"] == "None"
+            and "rasterFunctionArguments" in raster
+            and "Raster" in raster["rasterFunctionArguments"]
+        ):
+            raster_args = raster["rasterFunctionArguments"]["Raster"]
+            raster = {
+                "renderingRule": {"rasterFunction": "None"},
+                "url": raster_args.get("url"),
+                "mosaicRule": raster_args.get("mosaicRule"),
+                "renderingRule": {"rasterFunction": "None"},
+            }
+            raster_ra = raster
+
     template_dict = {
         "rasterFunction": "RasterCollection",
         "rasterFunctionArguments": {"RasterCollection": raster},
