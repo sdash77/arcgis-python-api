@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       gis_profile:
-        description: "To report and delete items or report only"
+        description: "The GIS profile name (e.g your_enterprise_profile)"
         required: true
         type: string
       day-difference:
