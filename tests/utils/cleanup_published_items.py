@@ -131,6 +131,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--gis_profile",
+        required=True,
         type=str,
         help="The existing profile name of the target enterprise",
     )

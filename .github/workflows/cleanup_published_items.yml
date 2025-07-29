@@ -5,7 +5,7 @@ on:
       gis_profile:
         description: "To report and delete items or report only"
         required: true
-        type: str
+        type: string
       day-difference:
         description: "How many days before 'now' to look for items"
         required: false
@@ -16,10 +16,6 @@ on:
         required: false
         default: true
         type: boolean
-
-  schedule:
-    # Run every day at 4AM UTC
-    - cron: '8 0 * * *'
 jobs:
   cleanup-items:
     runs-on: ubuntu-latest
@@ -32,8 +28,4 @@ jobs:
             local
           frozen: true
       - name: Run cleanup job
-        env:
-          GIS_PROFILE: ${{ inputs.gis_profile }}
-          DAY_DIFFERENCE: ${{ inputs.day_difference || 7 }}
-          TEST_ONLY: ${{ inputs.dry_run || true }}
-        run: python cleanup_published_items.py --day_difference=$DAY_DIFFERENCE --dry_run=$TEST_ONLY
+        run: python cleanup_published_items.py --gis_profile=${{ inputs.gis_profile }} --day_difference=${{ inputs.day_difference || 7 }} --dry_run=${{ inputs.dry_run || true }}
