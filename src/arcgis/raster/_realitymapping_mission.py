@@ -2,7 +2,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
-import requests
 from arcgis.gis import GIS, Item
 from arcgis.raster._realitymapping import RMProject
 from ._util import _update_settings, _validate_settings, get_request, post_request
@@ -104,10 +103,13 @@ class RMMission:
         if products is None:
             _LOGGER.warning("No products found for this mission.")
             return mission_products
+        
+        from arcgis.gis import Item
+        
         for product in products:
             prod_type = product["interpretation"]
             prod_type = dataprod_mapping[prod_type] if prod_type in dataprod_mapping else prod_type
-            mission_products[prod_type] = product["arcgisItem"]
+            mission_products[prod_type] = Item(self._gis, product["arcgisItem"]["itemId"])
             self._prod_to_id_map[prod_type] = product["id"]
 
         return mission_products
@@ -147,11 +149,8 @@ class RMMission:
             return self._collection
         else:
             products = self.products
-            img_coll = products.get("image_collection", None)
-            if img_coll is not None:
-                if "itemId" in img_coll:
-                    self._collection = self._gis.content.get(img_coll["itemId"])
-            else:
+            self._collection = products.get("image_collection", None)
+            if self._collection is None:
                 _LOGGER.warning("No image collection found for this mission.")
         return self._collection
 
