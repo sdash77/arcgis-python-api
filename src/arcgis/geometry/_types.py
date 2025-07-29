@@ -3548,19 +3548,16 @@ class Polygon(Geometry):
             geom_json = json.loads(densify_geom.JSON)["rings"]
         else:
             geom_json = self["rings"]
+
+        path = ""
         for ring in geom_json:
-            rings = ring
-            exterior_coords = [["{},{}".format(*c) for c in rings]]
-            path = " ".join(
-                [
-                    "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
-                    for coords in exterior_coords
-                ]
-            )
-            s += (
-                '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
-                'stroke-width="{0}" opacity="0.6" d="{1}" />'
-            ).format(2.0 * scale_factor, path, fill_color)
+            coords = ["{},{}".format(*coord) for coord in ring]
+            path += "M {} L {} z ".format(coords[0], " L ".join(coords[1:]))
+
+        s += (
+            '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
+            'stroke-width="{0}" opacity="0.6" d="{1}" />'
+        ).format(2.0 * scale_factor, path, fill_color)
         return s
 
     # ----------------------------------------------------------------------

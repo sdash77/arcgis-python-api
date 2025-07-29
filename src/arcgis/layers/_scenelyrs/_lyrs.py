@@ -605,7 +605,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         area_of_interest: dict | None = None,
     ) -> str:
         """
-        Update atrribute is a "light rebuild" where attributes of
+        Update attribute is a "light rebuild" where attributes of
         the layers selected are updated and can be used for change tracking.
         The results of the operation is the url to the scene service once it is
         done updating.

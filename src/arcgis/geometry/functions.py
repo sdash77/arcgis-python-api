@@ -34,8 +34,7 @@ For a complete list of well-known ID values, see
 
 from __future__ import annotations
 from enum import Enum
-import json
-from typing import Any, Optional, Union
+from typing import Any
 from arcgis.geometry import (
     Geometry,
     Point,
@@ -149,7 +148,7 @@ def areas_and_lengths(
     area_unit: str | AreaUnits,
     calculation_type: str,
     spatial_ref: int = 4326,
-    gis: Optional[gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -280,10 +279,10 @@ def areas_and_lengths(
 
 # -------------------------------------------------------------------------
 def auto_complete(
-    polygons: Optional[list[Polygon]] = None,
-    polylines: Optional[list[Polyline]] = None,
-    spatial_ref: Optional[SpatialReference] = None,
-    gis: Optional[arcgis_gis.GIS] = None,
+    polygons: list[Polygon] | None = None,
+    polylines: list[Polyline] | None = None,
+    spatial_ref: SpatialReference | None = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -324,14 +323,14 @@ def auto_complete(
 
 def buffer(
     geometries: list,
-    in_sr: Union[int, dict[str, Any]],
+    in_sr: int | dict[str, Any],
     distances: float | list[float],
     unit: str | LengthUnits,
-    out_sr: Optional[Union[int, dict[str, Any]]] = None,
-    buffer_sr: Optional[float] = None,
-    union_results: Optional[bool] = None,
-    geodesic: Optional[bool] = None,
-    gis: Optional[arcgis_gis.GIS] = None,
+    out_sr: int | dict[str, Any] | None = None,
+    buffer_sr: float | None = None,
+    union_results: bool | None = None,
+    geodesic: bool | None = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -404,7 +403,7 @@ def buffer(
             >>> from arcgis.gis import GIS
             >>> from arcgis.geometry import Point, buffer, LengthUnits, AreaUnits
 
-            >>> gis = GIS(profile="my_entertprise_user")
+            >>> gis = GIS(profile="my_enterprise_user")
 
             >>> flyr_item = gis.content.get("<item_id>")
 
@@ -452,9 +451,9 @@ def buffer(
 
 
 def convex_hull(
-    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
-    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
-    gis: Optional[arcgis_gis.GIS] = None,
+    geometries: list[Polygon] | list[Polyline] | list[MultiPoint] | list[Point],
+    spatial_ref: int | dict[str, Any] | None = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -583,9 +582,9 @@ def convex_hull(
 
 def cut(
     cutter: Polyline,
-    target: Union[list[Polyline], list[Polygon]],
-    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
-    gis: Optional[arcgis_gis.GIS] = None,
+    target: list[Polyline] | list[Polygon],
+    spatial_ref: int | dict[str, Any] | None = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -631,12 +630,12 @@ def cut(
 
 
 def densify(
-    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
-    max_segment_length: Optional[float],
-    length_unit: Optional[str] | Optional[LengthUnits],
+    geometries: list[Polygon] | list[Polyline] | list[MultiPoint] | list[Point],
+    spatial_ref: int | dict[str, Any] | None,
+    max_segment_length: float | None,
+    length_unit: str | LengthUnits | None,
     geodesic: bool = False,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -705,10 +704,10 @@ def densify(
 
 
 def difference(
-    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometries: list[Polygon] | list[Polyline] | list[MultiPoint] | list[Point],
+    spatial_ref: int | dict[str, Any] | None,
     geometry: Geometry,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -758,12 +757,12 @@ def difference(
 
 
 def distance(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    spatial_ref: int | dict[str, Any] | None,
     geometry1: Geometry,
     geometry2: Geometry,
     distance_unit: str | LengthUnits | None = "",
     geodesic: bool = False,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -827,11 +826,11 @@ def distance(
 
 
 def find_transformation(
-    in_sr: Optional[Union[int, dict[str, Any]]],
-    out_sr: Optional[Union[int, dict[str, Any]]],
-    extent_of_interest: Optional[dict[str, Any]] = None,
+    in_sr: int | dict[str, Any] | None,
+    out_sr: int | dict[str, Any] | None,
+    extent_of_interest: dict[str, Any] | None = None,
     num_of_results: int = 1,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -903,11 +902,11 @@ def find_transformation(
 
 
 def from_geo_coordinate_string(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    spatial_ref: int | dict[str, Any] | None,
     strings: list[str],
-    conversion_type: Optional[str],
-    conversion_mode: Optional[str] = None,
-    gis: Optional[arcgis_gis.GIS] = None,
+    conversion_type: str | None,
+    conversion_mode: str | None = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -991,11 +990,11 @@ def from_geo_coordinate_string(
 
 
 def generalize(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    spatial_ref: int | dict[str, Any] | None,
     geometries: list[Geometry],
     max_deviation: int,
     deviation_unit: str | LengthUnits | None = None,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1053,10 +1052,10 @@ def generalize(
 
 
 def intersect(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    spatial_ref: int | dict[str, Any] | None,
     geometries: list[Geometry],
     geometry: Geometry,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1105,9 +1104,9 @@ def intersect(
 
 
 def label_points(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    spatial_ref: int | dict[str, Any] | None,
     polygons: list[Polygon],
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1146,68 +1145,93 @@ def label_points(
 
 
 def lengths(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
-    polylines: Polyline,
-    length_unit: str | LengthUnits,
+    spatial_ref: int | SpatialReference | dict[str, Any],
+    polylines: list[Polyline],
+    length_unit: str | int | LengthUnits,
     calculation_type: str,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
-    The ``lengths`` function calculates the` 2D Euclidean` or `geodesic` lengths of
+    The ``lengths`` function calculates the `2D Euclidean` or `geodesic` lengths of
     each :class:`~arcgis.geometry.Polyline` specified in the input array.
 
-    ================  ===============================================================================
-    **Keys**          **Description**
-    ----------------  -------------------------------------------------------------------------------
-    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` object or the well-known ID of
-                      the spatial reference of the input *polygons*.
-    ----------------  -------------------------------------------------------------------------------
-    polylines         The list of :class:`~arcgis.geometry.Polyline` objects to compute.
-    ----------------  -------------------------------------------------------------------------------
-    length_unit       The length unit in which the lengths are calculated.
+    ================    ================================================================================
+    **Keys**            **Description**
+    ----------------    -------------------------------------------------------------------------------
+    spatial_ref         A :class:`~arcgis.geometry.SpatialReference` object or the well-known ID of
+                        the spatial reference of the input *polygons*.
+    ----------------    -------------------------------------------------------------------------------
+    polylines           The list of :class:`~arcgis.geometry.Polyline` objects to compute.
 
-                      * If *calculation_type* is *planar* - value can be any `esriUnits` constant
+                        Example: [<polyline1>, <polyline2>, ..., <polylineN>]
+    ----------------    -------------------------------------------------------------------------------
+    length_unit         An instance of :class:`~arcgis.geometry.functions.LengthUnits` in which the lengths are calculated.
+
+                        * If *calculation_type* is *planar* - value can be any `esriUnits` constant
 
                         * If *calculation_type* is *planar* and argument not provided, the units
-                          are derived from ``spatial_ref``.
+                        are derived from ``spatial_ref``.
 
-                      * If *calculationType* is *not* planar, then must be a
+                        * If *calculationType* is *not* planar, then must be a
                         :class:`~arcgis.geometry.functions.LengthUnits` value, such as
                         *LengthUnits.METER* or *LengthUnits.SURVEYMILE*
-                      * If *calculationType* is *not* planar and argument not provided, the value is
+
+                        * If *calculationType* is *not* planar and argument not provided, the value is
                         *meters*
-    ----------------  -------------------------------------------------------------------------------
-    calculation_type  The length calculation type used for the operation. Can be one of the following:
+
+                        See valid list of units: `esriSRUnitTypeConstants <https://resources.arcgis.com/en/help/arcobjects-cpp/componenthelp/index.html#/esriSRUnitType_Constants/000w00000042000000/>`_
+    ----------------    -------------------------------------------------------------------------------
+    calculation_type    The length calculation type used for the operation. Can be one of the following:
 
 
-                          * *planar* - uses 2D Euclidean distance to calculate length. Only use this
+                        * *planar* - uses 2D Euclidean distance to calculate length. Only use this
                              if the length needs to be calculated in the given *spatial_ref*,
                              otherwise use *preserveShape*
 
-                          * *geodesic* - uses only the vertices of the *polygon* and defines the
+                        * *geodesic* - uses only the vertices of the *polygon* and defines the
                              lines between the vertices as geodesic independent of the actual shape of
                              the :class:`~arcgis.geometry.Polyline`. This segment is the shortest path
                              between two points on an ellipsoid.
 
-                          * *preserveShape* - uses the surface of the earth ellipsoid to calculate
+                        * *preserveShape* - uses the surface of the earth ellipsoid to calculate
                              the length. The shape of the geometry in its coordinate system is preserved.
-    ----------------  -------------------------------------------------------------------------------
-    future            Optional boolean.
+    ----------------    -------------------------------------------------------------------------------
+    future              Optional boolean.
 
-                      * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
+                        * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
-                      * If *False*, the process waits for the operation to complete before returning
+                        * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
 
-                      .. note::
-                          If *future=True*, there is a limitation of 6500 geometries that can be
-                          processed in one call.
-    ================  ===============================================================================
+                        .. note::
+                            If *future=True*, there is a limitation of 6500 geometries that can be
+                            processed in one call.
+    ================    ===============================================================================
 
     :returns:
         If *future = False*, a list of 2D-Euclidean or geodesic lengths in *float* format, or if
         *future = True*, a :class:`~arcgis.geometry.GeometryJob` object.
+
+    .. code-block:: python
+        # Example Usage:
+        from arcgis.geometry import Polyline
+        from arcgis.geometry import lengths, LengthUnits
+        simple_polyline = Polyline({
+            "paths": [[[-95.5, 30.2], [-95.6, 30.3]]],
+            "spatialReference": {"wkid": 4326}
+        })
+        print(type(simple_polyline))
+        print(simple_polyline)
+        usFeet_simple = lengths(
+            spatial_ref=4326,
+            polylines=[simple_polyline],
+            length_unit=LengthUnits.FOOT,
+            calculation_type='geodesic',
+            gis=gis
+        )
+        print(usFeet_simple)
+        >>> [14680.602962612653]
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1220,14 +1244,14 @@ def lengths(
 
 
 def offset(
-    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
+    geometries: list[Polygon] | list[Polyline] | list[MultiPoint] | list[Point],
     offset_distance: float,
     offset_unit: str | LengthUnits,
     offset_how: str = "esriGeometryOffsetRounded",
     bevel_ratio: int = 10,
     simplify_result: bool = False,
-    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
-    gis: Optional[arcgis_gis.GIS] = None,
+    spatial_ref: int | dict[str, Any] | None = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1328,12 +1352,12 @@ def offset(
 
 
 def project(
-    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
-    in_sr: Optional[Union[int, dict[str, Any]]],
-    out_sr: Optional[Union[int, dict[str, Any]]],
+    geometries: list[Polygon] | list[Polyline] | list[MultiPoint] | list[Point],
+    in_sr: int | dict[str, Any] | None,
+    out_sr: int | dict[str, Any] | None,
     transformation: str = "",
     transform_forward: bool = False,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1411,10 +1435,10 @@ def project(
 def relation(
     geometries1: list[Geometry],
     geometries2: list[Geometry],
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    spatial_ref: int | dict[str, Any] | None,
     spatial_relation: str = "esriGeometryRelationIntersection",
     relation_param: str = "",
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1498,10 +1522,10 @@ def relation(
 
 
 def reshape(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
-    target: Union[Polyline, Polygon],
+    spatial_ref: int | dict[str, Any] | None,
+    target: Polyline | Polygon,
     reshaper: Polyline,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1539,9 +1563,9 @@ def reshape(
 
 
 def simplify(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
-    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
-    gis: Optional[arcgis_gis.GIS] = None,
+    spatial_ref: int | dict[str, Any] | None,
+    geometries: list[Polygon] | list[Polyline] | list[MultiPoint] | list[Point],
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1580,14 +1604,14 @@ def simplify(
 
 
 def to_geo_coordinate_string(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
-    coordinates: json,
+    spatial_ref: int | dict[str, Any] | None,
+    coordinates: list[list[float]],
     conversion_type: str,
     conversion_mode: str = "mgrsDefault",
-    num_of_digits: Optional[int] = None,
+    num_of_digits: int | None = None,
     rounding: bool = True,
     add_spaces: bool = True,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1714,11 +1738,11 @@ def to_geo_coordinate_string(
 
 
 def trim_extend(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    spatial_ref: int | dict[str, Any] | None,
     polylines: list[Polyline],
     trim_extend_to: Polyline,
     extend_how: int = 0,
-    gis: Optional[arcgis_gis.GIS] = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """
@@ -1779,9 +1803,9 @@ def trim_extend(
 
 
 def union(
-    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
-    spatial_ref: Optional[Union[str, dict[str:str]]] = None,
-    gis: Optional[arcgis_gis.GIS] = None,
+    geometries: list[Polygon] | list[Polyline] | list[MultiPoint] | list[Point],
+    spatial_ref: str | dict[str, str] | None = None,
+    gis: arcgis_gis.GIS | None = None,
     future: bool = False,
 ):
     """

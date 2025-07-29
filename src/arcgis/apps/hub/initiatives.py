@@ -1,6 +1,6 @@
 from __future__ import annotations
 from arcgis.gis import GIS
-from arcgis.gis import SharingLevel
+from arcgis.gis._impl import SharingLevel
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.apps.hub.sites import SiteManager, Site
 from collections import OrderedDict
