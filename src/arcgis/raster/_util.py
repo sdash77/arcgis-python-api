@@ -2767,6 +2767,7 @@ def _nestify_context(context):
 
     context["adjustOptions"] = adjust_options_list
 
+
 def _validate_settings(default_settings, input_settings):
     """
     Validates input_settings against the full default_settings but only checks the subset given in input_settings.
@@ -2776,7 +2777,11 @@ def _validate_settings(default_settings, input_settings):
         if not isinstance(input_settings, dict):
             return False
 
-        for key in input_settings:  # Iterate over input_settings keys instead of default_settings keys
+        for (
+            key
+        ) in (
+            input_settings
+        ):  # Iterate over input_settings keys instead of default_settings keys
             if key == "ortho":
                 return True
             if key not in default_settings:
@@ -2811,6 +2816,7 @@ def _validate_settings(default_settings, input_settings):
 
         return True
 
+
 def _update_settings(default_settings, input_settings):
     """
     Recursively updates a dictionary.
@@ -2820,6 +2826,7 @@ def _update_settings(default_settings, input_settings):
             _update_settings(default_settings[key], value)  # Recursively update
         else:
             default_settings[key] = value  # Update value directly
+
 
 def request_handler(func):
     @wraps(func)
@@ -2838,11 +2845,14 @@ def request_handler(func):
             return None
 
         return response_op
+
     return wrapper
+
 
 @request_handler
 def get_request(url, headers):
     return requests.get(url, headers=headers, verify=False)
+
 
 @request_handler
 def post_request(url, payload, headers, **kwargs):

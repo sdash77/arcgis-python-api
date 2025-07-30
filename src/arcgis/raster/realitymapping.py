@@ -12,7 +12,14 @@ import arcgis
 import json
 from arcgis.gis import GIS, Item
 import collections
-from ._util import _flatten_adjust_settings, _nestify_context, _validate_settings, _update_settings, get_request, post_request
+from ._util import (
+    _flatten_adjust_settings,
+    _nestify_context,
+    _validate_settings,
+    _update_settings,
+    get_request,
+    post_request,
+)
 import string as _string
 import random as _random
 
@@ -142,7 +149,7 @@ def _create_project(
         )
     if sensor_type and sensor_type.lower() == "satellite":
         scenario_type = ""
-    
+
     if isinstance(out_sr, arcgis.geometry.SpatialReference):
         out_sr = json.loads(out_sr.JSON)
     elif isinstance(out_sr, int):
@@ -153,16 +160,16 @@ def _create_project(
         out_sr = {}
 
     gis = arcgis.env.active_gis if gis is None else gis
-    
-    project_definition = {"name": name, "spatialReference": out_sr, "settings": settings}
+
+    project_definition = {
+        "name": name,
+        "spatialReference": out_sr,
+        "settings": settings,
+    }
     result = gis._tools.realitymapping.create_project(
-        project_definition,
-        sensor_type,
-        scenario_type,
-        future=future,
-        **kwargs
+        project_definition, sensor_type, scenario_type, future=future, **kwargs
     )
-    
+
     item = Item(gis=gis, itemid=result["realityProject"]["itemId"])
     return item
 
@@ -206,7 +213,7 @@ def compute_sensor_model(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a 
+    mission                Required, the input mission. The mission must be a
                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
@@ -265,7 +272,7 @@ def compute_sensor_model(
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
-    
+
     image_collection = mission.image_collection
     settings = {}
 
@@ -277,9 +284,7 @@ def compute_sensor_model(
             and ("template" in project_adj_settings.keys())
             and "adjustSettings" in project_adj_settings["template"].keys()
         ):
-            project_adj_settings = project_adj_settings["template"][
-                "adjustSettings"
-            ]
+            project_adj_settings = project_adj_settings["template"]["adjustSettings"]
         keys_to_pop = ["parallelProcessingFactor"]
 
         if isinstance(context, dict):
@@ -322,9 +327,7 @@ def compute_sensor_model(
                 "focalLength",
             ]
             adj_dict = {
-                k: context_new[k.lower()]
-                for k in adj_keys
-                if k.lower() in context_new
+                k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
             }
             adj_dict.update({"locationAccuracy": location_accuracy})
             settings = adj_dict
@@ -362,7 +365,7 @@ def alter_processing_states(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a 
+    mission                Required, the input mission. The mission must be a
                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
@@ -417,7 +420,7 @@ def get_processing_states(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a 
+    mission                Required, the input mission. The mission must be a
                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
@@ -693,7 +696,7 @@ def compute_control_points(
 
     image_collection = mission.image_collection
     if context:
-        context["mission"]  = mission.mission_id
+        context["mission"] = mission.mission_id
     else:
         context = {"mission": mission.mission_id}
 
@@ -729,7 +732,7 @@ def edit_control_points(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a 
+    mission                Required, the input mission. The mission must be a
                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
@@ -851,7 +854,7 @@ def generate_orthomosaic(
     ===================================    ====================================================================
     **Parameter**                           **Description**
     -----------------------------------    --------------------------------------------------------------------
-    mission                                Required, the input mission. The mission must be a 
+    mission                                Required, the input mission. The mission must be a
                                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                                            The mission must exist.
@@ -942,7 +945,7 @@ def generate_orthomosaic(
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
-    
+
     image_collection = mission.image_collection
 
     if mission.workspace:
@@ -1094,7 +1097,7 @@ def generate_report(
     ===================    ====================================================================
     **Parameter**           **Description**
     -------------------    --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a 
+    mission                Required, the input mission. The mission must be a
                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
@@ -1185,7 +1188,7 @@ def query_control_points(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a 
+    mission                Required, the input mission. The mission must be a
                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
@@ -1236,7 +1239,7 @@ def reset_image_collection(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a 
+    mission                Required, the input mission. The mission must be a
                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
@@ -1387,7 +1390,7 @@ def reconstruct_surface(
     =========================================================================   ===========================================================================
     **Parameter**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    mission                                                                     Required, the input mission. The mission must be a 
+    mission                                                                     Required, the input mission. The mission must be a
                                                                                 :class:`~arcgis.raster.realitymapping.Mission` object.
 
                                                                                 The mission must exist.
@@ -1540,7 +1543,7 @@ def reconstruct_surface(
 
     image_collection = mission.image_collection
     products = mission.products
-    
+
     if output_dsm_name:
         if "dsm" in products:
             output_dsm_name = products["dsm"]
@@ -1573,7 +1576,9 @@ def reconstruct_surface(
 
     products = mission.products
     prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]
-    dataproduct_ids = {k: v for k, v in mission._prod_to_id_map.items() if k in prod_types}
+    dataproduct_ids = {
+        k: v for k, v in mission._prod_to_id_map.items() if k in prod_types
+    }
     context["dataproduct_id"] = dataproduct_ids
 
     if kwargs is not None:
@@ -1693,8 +1698,11 @@ class Project:
                     break
         except:
             self._folder = None
-        
-        self._reality_url = self._gis._url[:self._gis._url.find(".com")+4] + ":6443/arcgis/reality/api"
+
+        self._reality_url = (
+            self._gis._url[: self._gis._url.find(".com") + 4]
+            + ":6443/arcgis/reality/api"
+        )
 
     def _get_project_json(self):
         url = f"{self._reality_url}/projects/{self._project_item.itemid}"
@@ -1703,11 +1711,11 @@ class Project:
         if resp is None:
             raise RuntimeError("Failed to retrieve project JSON.")
         return resp
-    
+
     @property
     def _project_json(self):
         return self._get_project_json()
-    
+
     @property
     def missions(self):
         """
@@ -1726,7 +1734,9 @@ class Project:
         for mission in res_list:
             name = mission["name"]
             mid = mission["id"]
-            self._mission_list.append(Mission(mission_name=name, mission_id=mid, project=self))
+            self._mission_list.append(
+                Mission(mission_name=name, mission_id=mid, project=self)
+            )
 
         return self._mission_list
 
@@ -1747,10 +1757,14 @@ class Project:
             try:
                 if self._project_json:
                     if "outputSpatialReference" in self._project_json:
-                        self._spatial_reference = self._project_json["outputSpatialReference"]
+                        self._spatial_reference = self._project_json[
+                            "outputSpatialReference"
+                        ]
                 else:
                     self._project_json = self._get_project_json()
-                    self._spatial_reference = self._project_json.get("outputSpatialReference", None)
+                    self._spatial_reference = self._project_json.get(
+                        "outputSpatialReference", None
+                    )
             except:
                 self._spatial_reference = None
 
@@ -1764,7 +1778,7 @@ class Project:
         :return: A portal item
         """
         return self._project_item
-    
+
     @property
     def groups(self):
         """
@@ -1793,23 +1807,23 @@ class Project:
         """
         if new_settings is None:
             raise ValueError("new_settings cannot be None")
-        
+
         current_settings = self.settings
         is_valid = _validate_settings(current_settings, new_settings)
-        
+
         if not is_valid:
             raise ValueError("Invalid settings provided.")
-        
+
         # update the current settings with the new settings
         _update_settings(current_settings, new_settings)
         payload = {"processingSettings": current_settings}
-        
+
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/update"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         resp = post_request(url, payload=payload, headers=headers)
         if resp is None:
             raise RuntimeError("Failed to update project settings.")
-        
+
     def create_mission(
         self,
         image_list,
@@ -1830,10 +1844,11 @@ class Project:
 
         # workspace = None
         from datetime import datetime
+
         service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         if mission_name is None:
             mission_name = "mission_" + _id_generator()
-        
+
         if image_collection_name:
             if isinstance(image_collection_name, str):
                 # service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -1856,7 +1871,9 @@ class Project:
                     portal_name = f"Image Collection for {mission_name}"
                     image_collection_name["portal_name"] = portal_name
                 if service_name:
-                    ok = gis.content.is_service_name_available(image_collection_name["service_name"], "Image Service")
+                    ok = gis.content.is_service_name_available(
+                        image_collection_name["service_name"], "Image Service"
+                    )
                 if not ok:
                     raise RuntimeError(
                         f"The service name {service_name} is not available. Please choose a different name."
@@ -1875,17 +1892,15 @@ class Project:
             raster_type_name = "UAV/UAS"
 
         _ra = gis._tools.rasteranalysis
-        input_rasters, image_collection, raster_type, context, _ = (
-            _ra._sanitize_inputs(
-                image_collection=image_collection_name,
-                input_rasters=image_list,
-                raster_type_name=raster_type_name,
-                raster_type_params=raster_type_params,
-                out_sr=out_sr,
-                context=context,
-                folder=self._folder,
-                **kwargs,
-            )
+        input_rasters, image_collection, raster_type, context, _ = _ra._sanitize_inputs(
+            image_collection=image_collection_name,
+            input_rasters=image_list,
+            raster_type_name=raster_type_name,
+            raster_type_params=raster_type_params,
+            out_sr=out_sr,
+            context=context,
+            folder=self._folder,
+            **kwargs,
         )
 
         mission_def = {"name": mission_name}
@@ -1910,7 +1925,12 @@ class Project:
         )
 
         from ._realitymapping_mission import Mission
-        return Mission(mission_name=mission_name, mission_id=mission["mission"]["itemId"], project=self)
+
+        return Mission(
+            mission_name=mission_name,
+            mission_id=mission["mission"]["itemId"],
+            project=self,
+        )
 
     def get_mission(self, name):
         """
@@ -1953,12 +1973,13 @@ class Project:
         if output_mission_name is None:
             output_mission_name = "mission_" + _id_generator()
         from datetime import datetime
+
         output_collection_name = f"{output_mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         if kwargs.get("folder", None) is None:
             kwargs["folder"] = self._folder
         context = {"workspace": output_collection_name}
-        
+
         mission = gis._tools.realitymapping.merge_missions(
             missions=missions,
             output_mission_name=output_mission_name,
@@ -1970,7 +1991,12 @@ class Project:
         )
 
         from ._realitymapping_mission import Mission
-        return Mission(mission_name=output_mission_name, mission_id=mission["mission"]["itemId"], project=self)
+
+        return Mission(
+            mission_name=output_mission_name,
+            mission_id=mission["mission"]["itemId"],
+            project=self,
+        )
 
     def __repr__(self):
         return "<%s - %s>" % (type(self).__name__, self._project_name)

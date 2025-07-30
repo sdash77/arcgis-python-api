@@ -9263,9 +9263,16 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         if self._current_version is not None:
             current_version = self._current_version
-            if (current_version is not None) and current_version >= 12.0 and not self._is_ortho:
+            if (
+                (current_version is not None)
+                and current_version >= 12.0
+                and not self._is_ortho
+            ):
                 job = self._tbx.reset_image_collection(
-                    image_collection=image_collection, context=context, gis=gis, future=True
+                    image_collection=image_collection,
+                    context=context,
+                    gis=gis,
+                    future=True,
                 )
             else:
                 job = self._tbx.reset_image_collection(
@@ -9622,7 +9629,9 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                     }
                 }
             elif isinstance(output_dsm_mesh_name, Item):
-                output_dsm_mesh_dict = {"itemProperties": {"itemId": output_dsm_mesh_name.itemid}}
+                output_dsm_mesh_dict = {
+                    "itemProperties": {"itemId": output_dsm_mesh_name.itemid}
+                }
             if folderId is not None:
                 output_dsm_mesh_dict["folderId"] = folderId
             output_products["dsm_mesh"] = output_dsm_mesh_dict
@@ -9636,7 +9645,9 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                     }
                 }
             elif isinstance(output_point_cloud_name, Item):
-                output_point_cloud_dict = {"itemProperties": {"itemId": output_point_cloud_name.itemid}}
+                output_point_cloud_dict = {
+                    "itemProperties": {"itemId": output_point_cloud_name.itemid}
+                }
             if folderId is not None:
                 output_point_cloud_dict["folderId"] = folderId
             output_products["point_cloud"] = output_point_cloud_dict
@@ -9650,7 +9661,9 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                     }
                 }
             elif isinstance(output_mesh_name, Item):
-                output_mesh_dict = {"itemProperties": {"itemId": output_mesh_name.itemid}}
+                output_mesh_dict = {
+                    "itemProperties": {"itemId": output_mesh_name.itemid}
+                }
             if folderId is not None:
                 output_mesh_dict["folderId"] = folderId
             output_products["mesh"] = output_mesh_dict
@@ -9692,7 +9705,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if future:
             return final_job
         return final_job.result()
-    
+
     # --------------------------------------------------------------------
     def create_project(
         self,
@@ -9701,7 +9714,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         scenario,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `create_project` method creates a Reality Mapping project on portal and sitescan
@@ -9715,7 +9728,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             sensor_type=sensor_type,
             scenario=scenario,
             gis=gis,
-            future=True)
+            future=True,
+        )
 
         # job._is_reality = True
         job = RMJob(job)
@@ -9744,6 +9758,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if future:
             return job
         return job.result()
+
     # --------------------------------------------------------------------
     def create_mission(
         self,
@@ -9755,7 +9770,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         future=False,
         **kwargs,
-        ):
+    ):
         task = "CreateMission"
         gis = self._gis
 
@@ -9781,9 +9796,9 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         task = "DeleteMission"
         gis = self._gis
         mission = {"itemId": mission._mission_id}
-        
+
         gpjob = self._tbx.delete_mission(mission, gis=gis, future=True)
-        
+
         gpjob._is_reality = True
         job = RMJob(gpjob)
         if future:
@@ -9799,11 +9814,11 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         mission_settings=None,
         future=False,
-        **kwargs
-        ):
+        **kwargs,
+    ):
         task = "MergeMission"
         gis = self._gis
-        
+
         missions = {"itemIds": [mission._mission_id for mission in missions]}
         mission_def = {
             "name": output_mission_name,
@@ -9815,7 +9830,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             output_name=output_collection_name,
             task=task,
             output_properties=kwargs,
-            )
+        )
 
         gpjob = self._tbx.merge_missions(
             mission_list=missions,
@@ -9823,7 +9838,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             output_collection_name=output_collection_name,
             context=context,
             gis=gis,
-            future=True
+            future=True,
         )
 
         gpjob._is_reality = True
@@ -9831,6 +9846,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if future:
             return job
         return job.result()
+
 
 ###########################################################################
 class _RasterAnalysisTools(BaseAnalytics):
@@ -10268,14 +10284,14 @@ class _RasterAnalysisTools(BaseAnalytics):
         self, output_name, task, folder=None, output_properties=None
     ):
         gis = self._gis
-        
+
         title = output_name
         if isinstance(output_name, dict):
             if "portal_name" in output_name:
                 title = output_name["portal_name"]
             if "service_name" in output_name:
                 output_name = output_name["service_name"]
-        
+
         ok = gis.content.is_service_name_available(
             output_name.replace(" ", "_"), "Image Service"
         )
@@ -11986,7 +12002,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def delete_image(
-        self, image_collection, where, future=False, estimate=False, context=None, **kwargs
+        self,
+        image_collection,
+        where,
+        future=False,
+        estimate=False,
+        context=None,
+        **kwargs,
     ):
         """
         delete_image allows users to remove existing images from the image collection (mosaic dataset).

@@ -6,7 +6,14 @@ import arcgis
 from arcgis.features.layer import FeatureLayer
 from arcgis.gis import GIS, Item
 from arcgis.raster.realitymapping import Project
-from ._util import _update_settings, _validate_settings, get_request, post_request, _flatten_adjust_settings, _nestify_context
+from ._util import (
+    _update_settings,
+    _validate_settings,
+    get_request,
+    post_request,
+    _flatten_adjust_settings,
+    _nestify_context,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,13 +73,16 @@ class Mission:
         self._gis = project._gis
         self._collection = None
         self._prod_to_id_map = {}
-        self._reality_url = self._gis._url[:self._gis._url.find(".com")+4] + ":6443/arcgis/reality/api"
+        self._reality_url = (
+            self._gis._url[: self._gis._url.find(".com") + 4]
+            + ":6443/arcgis/reality/api"
+        )
         self._workspace = self._mission_json.get("workspace", None)
 
     @property
     def _mission_json(self):
         return self._get_mission_json()
-    
+
     @property
     def mission_id(self):
         return self._mission_id
@@ -105,13 +115,19 @@ class Mission:
         if products is None:
             _LOGGER.warning("No products found for this mission.")
             return mission_products
-        
+
         from arcgis.gis import Item
-        
+
         for product in products:
             prod_type = product["interpretation"]
-            prod_type = dataprod_mapping[prod_type] if prod_type in dataprod_mapping else prod_type
-            mission_products[prod_type] = Item(self._gis, product["arcgisItem"]["itemId"])
+            prod_type = (
+                dataprod_mapping[prod_type]
+                if prod_type in dataprod_mapping
+                else prod_type
+            )
+            mission_products[prod_type] = Item(
+                self._gis, product["arcgisItem"]["itemId"]
+            )
             self._prod_to_id_map[prod_type] = product["id"]
 
         return mission_products
@@ -136,6 +152,7 @@ class Mission:
         :return: A datetime object representing the mission date & time
         """
         from datetime import datetime
+
         ts = self._mission_json["created"]
         dt_obj = datetime.fromisoformat(ts.rstrip("Z"))
         return dt_obj
@@ -165,8 +182,9 @@ class Mission:
         """
         if self._workspace is not None:
             return self._workspace
-        
+
         import json
+
         metadata = {}
         try:
             if "metadata" in self._mission_json:
@@ -175,7 +193,7 @@ class Mission:
         except:
             pass
         return self._workspace
-    
+
     @property
     def settings(self):
         return self._mission_json.get("processingSettings", {})
@@ -187,17 +205,17 @@ class Mission:
         """
         if new_settings is None:
             raise ValueError("new_settings cannot be None")
-        
+
         current_settings = self.settings
         is_valid = _validate_settings(current_settings, new_settings)
-        
+
         if not is_valid:
             raise ValueError("Invalid settings provided.")
-        
+
         # update the current settings with the new settings
         _update_settings(current_settings, new_settings)
         payload = {"processingSettings": current_settings}
-        
+
         url = f"{self._reality_url}/missions/{self.mission_id}/update"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
         resp = post_request(url, payload=payload, headers=headers)
@@ -219,7 +237,6 @@ class Mission:
         :return: A boolean indicating whether the deletion was successful or not
         """
         return self._gis._tools.realitymapping.delete_mission(self, future=False)
-
 
     def add_image(
         self,
@@ -381,7 +398,11 @@ class Mission:
         context = {"mission": self.mission_id}
 
         gpjob = delete_image(
-            image_collection=image_collection, where=where, gis=gis, future=True, context=context
+            image_collection=image_collection,
+            where=where,
+            gis=gis,
+            future=True,
+            context=context,
         )
 
         return image_collection.url
@@ -533,7 +554,6 @@ class Mission:
             **kwargs,
         )
 
-
     ###################################################################################################
     ## Alter processing states
     ###################################################################################################
@@ -588,7 +608,6 @@ class Mission:
             **kwargs,
         )
 
-
     ###################################################################################################
     ## Get processing states
     ###################################################################################################
@@ -616,7 +635,6 @@ class Mission:
         return gis._tools.realitymapping.get_processing_states(
             image_collection=image_collection, future=future, **kwargs
         )
-
 
     ###################################################################################################
     ## Match control points
@@ -755,7 +773,6 @@ class Mission:
             **kwargs,
         )
 
-
     ###################################################################################################
     ## Compute Control Points
     ###################################################################################################
@@ -850,7 +867,7 @@ class Mission:
 
         image_collection = self.image_collection
         if context:
-            context["mission"]  = self.mission_id
+            context["mission"] = self.mission_id
         else:
             context = {"mission": self.mission_id}
 
@@ -862,7 +879,6 @@ class Mission:
             future=future,
             **kwargs,
         )
-
 
     ###################################################################################################
     ## Edit control points
@@ -977,7 +993,6 @@ class Mission:
             **kwargs,
         )
 
-
     ###################################################################################################
     ## Generate orthomosaic
     ###################################################################################################
@@ -1080,7 +1095,7 @@ class Mission:
 
         """
         gis = arcgis.env.active_gis if gis is None else gis
-        
+
         image_collection = self.image_collection
 
         if self.workspace:
@@ -1211,7 +1226,6 @@ class Mission:
             **kwargs,
         )
 
-
     ###################################################################################################
     ## Generate report
     ###################################################################################################
@@ -1251,7 +1265,6 @@ class Mission:
             future=future,
             **kwargs,
         )
-
 
     ###################################################################################################
     ## query camera info
@@ -1294,7 +1307,6 @@ class Mission:
         return gis._tools.realitymapping.query_camera_info(
             camera_query=camera_query, future=future, **kwargs
         )
-
 
     ###################################################################################################
     ## query control points
@@ -1339,7 +1351,6 @@ class Mission:
             **kwargs,
         )
 
-
     ###################################################################################################
     ## Reset image collection
     ###################################################################################################
@@ -1374,7 +1385,6 @@ class Mission:
             context=context,
             **kwargs,
         )
-
 
     ###################################################################################################
     ## Query exif info
@@ -1414,7 +1424,6 @@ class Mission:
         return gis._tools.realitymapping.query_exif_info(
             input_images=input_images, future=future, **kwargs
         )
-
 
     ###################################################################################################
     ## Reconstruct surface
@@ -1592,7 +1601,7 @@ class Mission:
 
         image_collection = self.image_collection
         products = self.products
-        
+
         if output_dsm_name:
             if "dsm" in products:
                 output_dsm_name = products["dsm"]
@@ -1625,7 +1634,9 @@ class Mission:
 
         products = self.products
         prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]
-        dataproduct_ids = {k: v for k, v in self._prod_to_id_map.items() if k in prod_types}
+        dataproduct_ids = {
+            k: v for k, v in self._prod_to_id_map.items() if k in prod_types
+        }
         context["dataproduct_id"] = dataproduct_ids
 
         if kwargs is not None:
