@@ -1366,6 +1366,7 @@ class TestWorkflowManager(unittest.TestCase):
             {"propName": "smtpPort", "value": "3113"},
             {"propName": "smtpProtocol", "value": "New Protocol"},
             {"propName": "smtpServer", "value": "New Server"},
+            {"propName": "userProp", "value": "UserSetting"},
         ]
 
         # Add settings
@@ -1379,10 +1380,16 @@ class TestWorkflowManager(unittest.TestCase):
             if x["propName"] == "smtpDefaultSenderDisplayName"
             and x["value"] == "Updated Name"
         ]
+        has_user_setting = [
+            x
+            for x in settings
+            if x["propName"] == "userProp" and x["value"] == "UserSetting"
+        ]
 
         # Assert
         self.assertIsInstance(settings, list, "Incorrect return type")
-        self.assertTrue(has_setting, "Does not contain default settings")
+        self.assertFalse(has_setting, "Should not contain default settings")
+        self.assertTrue(has_user_setting, "Does not contain user settings")
 
     def test_update_settings_returns_successfully(self):
         # Arrange
