@@ -225,7 +225,7 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
             pred = self.learn.predict(im)
             # multi_all_cam setting it to True will return gradcam zero for the class not predicted
             grad_cam_outputs, _, xb, _ = self._generate_grad_cam(
-                im, pred, multi_all_cam=True
+                im, pred, self._data.dataset_type, multi_all_cam=True
             )
 
         # Get ground truth and prediction class names

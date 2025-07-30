@@ -24,7 +24,7 @@ class TestAttachmentManager(unittest.TestCase):
         uid = int(time.time())
         staging_data_path = "staging_data/attachments"
         sd_file_path = get_resource_path(
-            f"{staging_data_path}/ntgrtn_tst_AttachmentManager.sd",
+            f"{staging_data_path}/ntgrtn_tst_AttachmentManager.zip",
             unique_copy=True,
         )
         cls.new_attachment = get_resource_path(f"{staging_data_path}/cows3.jpg")
@@ -32,9 +32,9 @@ class TestAttachmentManager(unittest.TestCase):
 
         cls.test_item = publish_test_item(
             cls.gis,
-            layer_name=f"ntgrtn_tst_AttachmentManager{uid}",
+            layer_name=f"ntgrtn_tst_AttachmentManager_{uid}",
             source_data_path=sd_file_path,
-            item_type=ItemTypeEnum.SERVICE_DEFINITION,
+            item_type=ItemTypeEnum.FILE_GEODATABASE,
         )
         assert isinstance(cls.test_item, Item), "Published item is not an Item"
 

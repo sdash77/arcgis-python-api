@@ -57,8 +57,11 @@ try:
     from .._utils.evaluate_batchsize import estimate_batch_size
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
-    from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
-    from ._dofa_utils import dofa_backbone, dofa_backbones_downstream
+    from ._transformer_backbone import (
+        custom_backbone,
+        transformer_backbone_downstream,
+        wavelengths_required_models,
+    )
     from ._wavelengths import wavelength_dict
 
     # EarlyStoppingCallback should run as one
@@ -455,13 +458,13 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-
-    if hasattr(model, "_is_dofa"):
-        return model
-    if hasattr(model, "backbone") and (
-        getattr(model.backbone, "_is_prithvi", False)
-        or getattr(model.backbone, "_is_dofa", False)
-    ):
+    if (
+        hasattr(model, "backbone")
+        and (
+            getattr(model.backbone, "_is_prithvi", False)
+            or getattr(model.backbone, "_is_vitdet", False)
+        )
+    ) or getattr(model, "_is_vitdet", False):
         return model
 
     tail_name, tail = _get_tail(model)
@@ -584,9 +587,33 @@ def get_wavelengths_from_bandnames(band_names):
             wavelengths.append(float(cleaned_wavelength_dict[bandname]))
         except KeyError:
             raise Exception(
-                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. \nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.'
+                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. This models require a list of central wavelengths corresponding to each data band (in micrometers).Please provide a value (list of floats) for the "wavelengths" keyword argument.'
             )
     return wavelengths
+
+
+def get_wavelenths_bandnames(data, in_channels, **kwargs):
+    wavelengths = kwargs.get("wavelengths", None)
+    band_names = None
+    if wavelengths is None:
+        if data._emd.get("InputRastersProps", None) is not None:
+            band_names = data._emd.get("InputRastersProps").get("BandNames")
+        elif data._emd.get("AllTilesStats", None) is not None:
+            band_names = [x.get("BandName") for x in data._emd.get("AllTilesStats")]
+        else:
+            raise Exception(
+                '\nThis backbone require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
+            )
+        wavelengths = get_wavelengths_from_bandnames(band_names)
+        assert len(wavelengths) == in_channels
+        band_names = band_names
+    else:
+        if len(wavelengths) != in_channels:
+            raise Exception(
+                'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
+            )
+
+    return wavelengths, band_names
 
 
 def get_backbone_func(backbone, data, **kwargs):
@@ -607,61 +634,39 @@ def get_backbone_func(backbone, data, **kwargs):
             bckbn = backbone.split(":")[1]
             from . import _hf_weightutils as hfwu
 
-            if "resnet" in bckbn:
+            supported_hf_backbones = {"resnet", "swin"}
+            if any(name in bckbn for name in supported_hf_backbones):
                 backbone = getattr(hfwu, bckbn)
-            elif "swin" in bckbn:
-                backbone = getattr(hfwu, bckbn)
-            elif "vit_small" in bckbn:
-                backbone = getattr(hfwu, bckbn)
+            else:
+                raise ValueError(f"Unsupported backbone: 'hf:{bckbn}'")
+
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
                 len(data._extract_bands) if hasattr(data, "_extract_bands") else 3
             )
+
+            wavelengths = None
+            band_names = None
+            if backbone in wavelengths_required_models:
+                wavelengths, band_names = get_wavelenths_bandnames(
+                    data, in_channels, **kwargs
+                )
+
             backbone = partial(
                 custom_backbone,
                 backbone_name=backbone,
                 img_size=int(kwargs.get("chip_size", data.chip_size)),
                 in_chans=in_channels,
                 is_fpn=kwargs.get("is_fpn", False),
-            )
-            backbone.__name__ = backbone_name
-        elif backbone in dofa_backbones_downstream:
-            backbone_name = backbone
-            wavelengths = kwargs.get("wavelengths", None)
-            band_names = None
-            if wavelengths is None:
-                if data._emd.get("InputRastersProps", None) is not None:
-                    band_names = data._emd.get("InputRastersProps").get("BandNames")
-                elif data._emd.get("AllTilesStats", None) is not None:
-                    band_names = [
-                        x.get("BandName") for x in data._emd.get("AllTilesStats")
-                    ]
-                else:
-                    raise Exception(
-                        '\nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
-                    )
-                wavelengths = get_wavelengths_from_bandnames(band_names)
-                assert len(wavelengths) == len(data._extract_bands)
-                band_names = band_names
-            else:
-                if len(wavelengths) != len(data._extract_bands):
-                    raise Exception(
-                        'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
-                    )
-
-            backbone = partial(
-                dofa_backbone,
-                backbone_name=backbone,
-                img_size=int(kwargs.get("chip_size", data.chip_size)),
-                pretrained=True,
                 wavelengths=wavelengths,
-                is_clf=kwargs.get("is_clf", False),
-                num_classes=kwargs.get("num_classes", data.c),
                 band_names=band_names,
+                is_clf=kwargs.get("is_clf", False),
+                is_plain_vit=kwargs.get("is_plain_vit", False),
+                num_classes=kwargs.get("num_classes", data.c),
             )
             backbone.__name__ = backbone_name
-
+            backbone._wavelengths = wavelengths
     else:
         backbone = backbone
     return backbone
@@ -739,6 +744,8 @@ class ArcGISModel(object):
         self._pretrained_path = kwargs.get("pretrained_path", None)
         if hasattr(self._data, "arcgis_init_kwargs"):
             self._check_data_support_with_pretrained_path()
+        if getattr(self._backbone, "_wavelengths", False):
+            kwargs["wavelengths"] = self._backbone._wavelengths
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
             if not getattr(data, "_is_empty", False) and hasattr(
@@ -796,7 +803,13 @@ class ArcGISModel(object):
                 )
 
     def _arcgis_init_callback(self):
-        if self._is_multispectral:
+        vitdet_model = False
+        if (
+            hasattr(self.learn.model, "backbone")
+            and getattr(self.learn.model.backbone, "_is_vitdet", False)
+        ) or getattr(self.learn.model, "_is_vitdet", False):
+            vitdet_model = True
+        if self._is_multispectral and not vitdet_model:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
                 next(params_iterator).requires_grad = (
@@ -1100,6 +1113,7 @@ class ArcGISModel(object):
         mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
                                 training. If set to `True`, model training will be done in
                                 mixed precision mode. Only `Pytorch` based models are supported.
+                                This feature is experimental.
                                 The default value is 'False'.
         =====================   ===========================================
         """
@@ -1110,12 +1124,24 @@ class ArcGISModel(object):
         if getattr(self, "_is_mm3d", False):
             self.learn.model.prediction = False
 
+        import platform
+
+        _is_linux = lambda: platform.system() == "Linux"
+        _is_notebook_server = lambda: os.getenv("NB_AUTH_FILE") is not None
+
+        import matplotlib
+
+        _stored_matplotlib_backend = matplotlib.get_backend()
+
+        if not _is_notebook_server() and _is_linux():
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()
 
             if lr is None:
-
                 if len(self.learn.data.train_dl) == 0:
                     print(
                         f"Warning: Your training dataloader is empty. Cannot find the optimal learning rate."
@@ -1251,6 +1277,9 @@ class ArcGISModel(object):
                     mixed_precision=mixed_precision,
                     **kwargs,
                 )
+            if not _is_notebook_server() and _is_linux():
+                matplotlib.use(_stored_matplotlib_backend)
+                import matplotlib.pyplot as plt
 
     def unfreeze(self):
         """
@@ -1269,7 +1298,7 @@ class ArcGISModel(object):
             raise Exception("You need to train your model to compute losses")
 
     def _create_emd_template(
-        self, path, compute_metrics=True, save_inference_file=True
+        self, path, compute_metrics=True, save_inference_file=True, **kwargs
     ):
         _emd_template = {}
 
@@ -1386,18 +1415,10 @@ class ArcGISModel(object):
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
 
-        if (
-            model_params.get("backbone", None) is not None
-            and model_params["backbone"] in dofa_backbones_downstream
-        ):
-            if self._model_kwargs.get("wavelengths", None) is not None:
-                _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[
-                    "wavelengths"
-                ]
-            else:
-                _emd_template["ModelParameters"]["wavelengths"] = (
-                    get_wavelengths_from_bandnames(self._data._band_names)
-                )
+        if self._model_kwargs.get("wavelengths", False):
+            _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[
+                "wavelengths"
+            ]
 
         if compute_metrics:
             if self._model_metrics_cache == None:
@@ -1413,7 +1434,14 @@ class ArcGISModel(object):
 
         # Check if model is Multispectral and dump parameters for that
         _emd_template["IsMultispectral"] = getattr(self, "_is_multispectral", False)
-        if _emd_template.get("IsMultispectral", False):
+        # Check if data is not 8 bit RGB then don't use imagenet normalization
+        _emd_template["IsImageNetNormalization"] = not getattr(
+            self._data, "_is_non8bit_rgb", False
+        )
+        if (
+            _emd_template.get("IsMultispectral", False)
+            or not _emd_template["IsImageNetNormalization"]
+        ):
             _emd_template["Bands"] = self._data._bands
             _emd_template["ImageryType"] = self._data._imagery_type
             if getattr(self._data, "_dataset_type", None) != "ChangeDetection":
@@ -1483,6 +1511,14 @@ class ArcGISModel(object):
                         _emd_template["per_class_metrics"] = (
                             self.per_class_metrics().to_json()
                         )
+
+        if (
+            getattr(self._data, "_dataset_type", None) == "Labeled_Tiles"
+            or getattr(self._data, "_dataset_type", None) == "Imagenet"
+        ):
+            if hasattr(self, "_gradCAM") and not (self._data._is_multispectral):
+                _emd_template["ExpMap"] = kwargs.get("gradcam", False)
+
         return _emd_template
 
     @staticmethod
@@ -1843,6 +1879,7 @@ class ArcGISModel(object):
                 saved_path.with_suffix(".pth"),
                 compute_metrics,
                 save_inference_file,
+                **kwargs,
             )
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
@@ -2393,7 +2430,6 @@ class ArcGISModel(object):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
-                                Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import User, GIS
 from typing import Any, List
 

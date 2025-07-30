@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import urllib.parse
 from typing import Union, List
@@ -18,7 +19,14 @@ _log = logging.getLogger()
 ###########################################################################
 class AGOLServerManager:
     """
-    Represents a Single AGO Server
+    Represents a Single ArcGIS Online server for an organization. This class
+    is not meant to be initialized directly, but instances of this class are
+    returned by these attributes of the
+    :class:`~arcgis.gis.agoserver.AGOLServersManager`:
+
+    * the :meth:`~arcgis.gis.agoserver.AGOLServersManager.list` method
+    * the :attr:`~arcgis.gis.agoserver.AGOLServersManager.feature_server` property
+    * the :attr:`~arcgis.gis.agoserver.AGOLServersManager.tile_server` property
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -28,6 +36,17 @@ class AGOLServerManager:
     gis                    Required GIS. The connection to ArcGIS Online.
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Usage Example: Accessing an AGOLServerManager object
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_online_admin_manager")
+
+        >>> online_servers_mgr = gis.admin.servers
+        >>> hosted_feature_svc_mgr = online_servers_mgr.feature_server[0]
+        >>> hosted_feature_svc_mgr
+
+        < AGOLServerManager @ https://services7.arcgis.com/<org_id>/ArcGIS/admin/services >
     """
 
     _gis = None
@@ -61,7 +80,32 @@ class AGOLServerManager:
     @cached(cache=TTLCache(maxsize=10, ttl=25))
     def properties(self) -> InsensitiveDict:
         """
-        Returns the server's properties. This call is cached for 25 seconds.
+        Returns a dictionary with a *servers* key that contains information,
+        such as the type, name, and status of the services on the server.
+
+        .. note::
+            This call is cached for 25 seconds.
+
+        .. code-block:: python
+
+            # Usage Example:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_admin_profile")
+
+            >>> online_servers_mgr = gis.admin.servers
+            >>> feature_server_mgr = online_servers_mgr.feature_server[0]
+            >>> service_info = feature_server_mgr.properties["services"][0]
+            >>> service_info
+
+            {
+              'adminServiceInfo': {
+                     'name': 'service_name',
+                     'type': 'FeatureServer',
+                     'status': 'Started',
+                     'maxRecordCount': 1000
+                     },
+               'serviceDescription': ''
+            }
 
         :return: Dict
         """
@@ -183,7 +227,26 @@ class AGOLServerManager:
 class AGOLServersManager:
     """
     This class allows users to work with hosted tile and feature services on
-    ArcGIS Online.
+    ArcGIS Online. This class is not meant to be initialized directly, but
+    accessed using the :attr:`~arcgis.gis.admin.AGOLAdminManager.servers`
+    property on an :class:`~arcgis.gis.admin.AGOLAdminManager` object:
+
+    .. code-block:: python
+
+        # Usage Example: Initialize the ArcGIS Online Servers manager
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_online_admin_profile")
+
+        >>> online_admin = gis.admin
+        >>> online_admin
+
+        < AGOLAdminManager @ https://example.online.com/sharing/rest/ >
+
+        >>> online_servers = online_admin.servers
+        >>> online_servers
+
+        <arcgis.gis.agoserver._admin.AGOLServersManager object at <mem_addr>>
+
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -205,9 +268,25 @@ class AGOLServersManager:
     @property
     def properties(self) -> InsensitiveDict:
         """
-        Returns the properties of the server
+        Returns the properties of the hosted tile and feature servers for
+        the organization.
 
-        :returns: InsensitiveDict
+        .. code-block:: python
+
+            # Usage Example: Online Servers Manager properties
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_admin_profile")
+
+            >>> online_servers_mgr = gis.admin.servers
+            >>> online_servers_mgr.properties
+
+            {'tile': ['https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/admin/services'],
+            'feature': ['https://services7.arcgis.com/<org_id>/ArcGIS/admin/services']}
+
+        :returns:
+            An dictionary-like object (InsensitiveDict) providing the admin
+            URL endpoints for the online organization's hosted feature and
+            tile services.
         """
         return InsensitiveDict(self._urls(gis=self._gis))
 
@@ -231,7 +310,11 @@ class AGOLServersManager:
 
     @property
     def tile_server(self) -> List[AGOLServerManager]:
-        """returns a list of Tile Administrative Servers"""
+        """
+        Returns a list of :class:`~arcgis.gis.agoserver.AGOLServerManager`
+        objects for the hosted tile services in the organization.
+        """
+
         return [
             AGOLServerManager(url, gis=self._gis)
             for url in self._urls(self._gis)["tile"]
@@ -239,7 +322,10 @@ class AGOLServersManager:
 
     @property
     def feature_server(self) -> List[AGOLServerManager]:
-        """returns a list of Feature Administrative Servers"""
+        """
+        Returns a list of :class:`~arcgis.gis.agoserver.AGOLServerManager`
+        objects for the hosted feature services in the organization.
+        """
         return [
             AGOLServerManager(url, gis=self._gis)
             for url in self._urls(self._gis)["feature"]
@@ -248,7 +334,7 @@ class AGOLServersManager:
     @lru_cache(maxsize=254)
     def list(self) -> List[AGOLServerManager]:
         """
-        Returns a list of all server managers
+        Returns a list of all server managers for the organization.
 
         :returns: List[:class:`~arcgis.gis.agoserver.AGOLServerManager`]
         """

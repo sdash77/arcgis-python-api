@@ -30,7 +30,7 @@ class RasterInfo(object):
         rinfo_based_ras.write(<numpy_array>)
 
         #To save this temporary raster locally:
-        rinfo_based_ras.save(r"C:\data\persisted_raster.crf")
+        rinfo_based_ras.save("C:\\data\\persisted_raster.crf")
 
     RasterInfo object can also be used in raster functions that take in raster info as a parameter. (does not require arcpy)
     example: As value to the raster_info parameter for :meth:`arcgis.raster.functions.constant_raster` and :meth:`arcgis.raster.functions.random_raster`

@@ -2,12 +2,11 @@ from __future__ import annotations
 import json
 import datetime
 from arcgis.gis import GIS, User, Item
-from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
 
 
 ###########################################################################
-class BaseTask(object):
+class BaseTask:
     """
     Base Schedule Class
     """
@@ -31,18 +30,24 @@ class BaseTask(object):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self) -> InsensitiveDict:
+    def properties(self) -> dict:
+        """
+        Set of properties for the object.
+        """
         if self._properties is None:
             params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
-            self._properties = InsensitiveDict(res)
+            self._properties = res
         return self._properties
 
 
 ###########################################################################
 class Run(BaseTask):
     """
-    Represents a single run of a scheduled task.
+    Represents a run of a scheduled :class:`task <arcgis.gis.tasks.Task>`. The
+    objects are not meant to be initialized directly, but instead a list of
+    *runs* are returned by the :attr:`~arcgis.gis.tasks.Task.runs` property
+    of :class:`task <arcgis.gis.tasks.Task>` objects.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -64,7 +69,7 @@ class Run(BaseTask):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"<{self.__class__.__name__} @ {self.properties.runId}>"
+        return f"<{self.__class__.__name__} @ {self.properties['runId']}>"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -84,6 +89,20 @@ class Run(BaseTask):
         if "success" in res:
             return res["success"]
         return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self) -> dict:
+        """
+        A dictionary object listing various properties of the
+        :class:`run <arcgis.gis.tasks.Run>` object.
+        """
+        if self._properties is None:
+            params = {"f": "json"}
+            resp = self._gis.session.get(self._url, params=params)
+            res: dict = resp.json()
+            self._properties = res
+        return self._properties
 
     # ----------------------------------------------------------------------
     def update(self, status: str | None = None, description: str | None = None) -> bool:
@@ -118,11 +137,11 @@ class Run(BaseTask):
         elif status and status.lower() not in status_values:
             raise ValueError("Invalid status")
         elif status is None:
-            params["status"] = self.properties.status
+            params["status"] = self.properties["status"]
         if description:
             params["result"] = description
         elif description is None:
-            params["result"] = self.properties.result
+            params["result"] = self.properties["result"]
 
         url = f"{self._url}/update"
         res = self._gis._con.post(url, params)
@@ -135,7 +154,31 @@ class Run(BaseTask):
 ###########################################################################
 class Task(BaseTask):
     """
-    Represents a scheduled task that can be modified for a user.
+    Represents a scheduled :class:`task <arcgis.gis.tasks.Task>`. These objects
+    are not meant to be intialized directly, but instead are returned
+    by the :attr:`~arcgis.gis.tasks.TaskManager.all` property or
+    :meth:`~arcgis.gis.tasks.TaskManager.search` method on the
+    :class:`~arcgis.gis.tasks.TaskManager` object.
+
+    .. code-block:: python
+
+        # Usage example:  Returning task objects for an item
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_organization_profile")
+
+        >>> task_mgr = gis.users.me.tasks
+        >>> user_item = gis.content.get(<item_id>)
+        >>> task_list = task_mgr.search(item=user_item)
+        >>> task_list
+
+            [<Task @ 3259ac1...afc154f>,
+             <Task @ 10f7a74...3afa7de>,
+             <Task @ 0e6dc28...32ac65b>]
+
+        >>> t0 = task_list[0]
+        >>> t0
+
+            <Task @ 3259ac1...afc154f>
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -157,7 +200,7 @@ class Task(BaseTask):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"<Task @ {self.properties.id}>"
+        return f"<Task @ {self.properties['id']}>"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -204,6 +247,53 @@ class Task(BaseTask):
         if "success" in res:
             return res["success"]
         return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self) -> dict:
+        """
+        A dictionary object listing various properties of the
+        :class:`task <arcgis.gis.tasks.Task>` object.
+
+        .. code-block:: python
+
+            # Usage Example: Listing keys of the properties object for a task:
+
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> task_mgr = gis.users.me.tasks
+            >>> tsk = task_mgr.search(item=my_item)[0]
+            >>> list(tsk.properties.keys())
+
+                ['id',
+                'itemId',
+                'type',
+                'title',
+                'userId',
+                'cronSchedule',
+                'runIntervalSeconds',
+                'nextStart',
+                'maxOccurrences',
+                'created',
+                'updated',
+                'startDate',
+                'active',
+                'taskState']
+
+        :return:
+            Dictionary-like object of *task* properties.
+        """
+        if self._properties is None:
+            resp = self._gis.session.get(
+                self._url,
+                params={
+                    "f": "json",
+                },
+            )
+            resp.raise_for_status()
+            self._properties = resp.json()
+        return self._properties
 
     # ----------------------------------------------------------------------
     def start(self) -> bool:
@@ -289,8 +379,8 @@ class Task(BaseTask):
             "midnight": "0 0 * * *",
         }
         params = {
-            "title": title or self.properties.title,
-            "type": task_type or self.properties.type,
+            "title": title or self.properties["title"],
+            "type": task_type or self.properties["type"],
             "taskUrl": task_url or "",
             "parameters": parameters,
             "itemId": None,
@@ -299,7 +389,7 @@ class Task(BaseTask):
             "dayOfMonth": None,
             "month": None,
             "dayOfWeek": None,
-            "maxOccurrences": occurences or self.properties.maxOccurrences,
+            "maxOccurrences": occurences or self.properties["maxOccurrences"],
             "isActive": None,
             "f": "json",
         }
@@ -310,11 +400,12 @@ class Task(BaseTask):
         if task_url is None:
             params.pop("taskUrl", None)
         if cron is None:
-            params["minute"] = self.properties.cronSchedule.minute
-            params["hour"] = self.properties.cronSchedule.hour
-            params["dayOfMonth"] = self.properties.cronSchedule.dayOfMonth
-            params["month"] = self.properties.cronSchedule.month
-            params["dayOfWeek"] = self.properties.cronSchedule.dayOfWeek
+            cron_schedule: dict = self.properties.get("cronSchedule", {})
+            params["minute"] = cron_schedule.get("minute")
+            params["hour"] = cron_schedule.get("hour")
+            params["dayOfMonth"] = cron_schedule.get("dayOfMonth")
+            params["month"] = cron_schedule.get("month")
+            params["dayOfWeek"] = cron_schedule.get("dayOfWeek")
         elif isinstance(cron, str) and cron in SPECIALS:
             cron = SPECIALS[cron].split(" ")
             params["minute"] = cron[0]
@@ -335,7 +426,7 @@ class Task(BaseTask):
         elif item:
             params["itemId"] = item
         else:
-            params["itemId"] = self.properties.itemId
+            params["itemId"] = self.properties["itemId"]
 
         if start_date:
             params["startDate"] = local_time_to_online(dt=start_date)
@@ -348,7 +439,7 @@ class Task(BaseTask):
         if parameters:
             params["parameters"] = json.dumps(parameters)
         elif "parameters" in self.properties:
-            params["parameters"] = self.properties.parameters
+            params["parameters"] = self.properties["parameters"]
         url = f"{self._url}/update"
         res = self._gis._con.post(url, params)
         if "success" in res:
@@ -360,9 +451,11 @@ class Task(BaseTask):
     @property
     def runs(self) -> list:
         """
-        Returns the Runs for the Task.  The maximum number of runs returned is 30
+        Returns all *runs* for the *task*.  The maximum number of runs
+        returned is 30>
 
-        :return: List
+        :return:
+            List of :class:`~arcgis.gis.tasks.Run` objects.
         """
         runs = []
         url = f"{self._url}/runs"
@@ -376,12 +469,28 @@ class Task(BaseTask):
 
 
 ###########################################################################
-class TaskManager(object):
+class TaskManager:
     """
 
-    Provides the functions to create, update and delete scheduled tasks.
+    Provides the functions to create, update, delete and view
+    :class:`task <arcgis.gis.tasks.Task>` objects.
 
-    This operation is for Enterprise configuration 10.8.1+.
+     .. note::
+        Available starting with ArcGIS Enterprise release 10.8.1, and ArcGIS Online.
+
+    Objects are not meant to be initialized directly, but instead are accessed
+    using the :attr:`~arcgis.gis.User.tasks` property on a :class:`~arcgis.gis.User`
+    object:
+
+    .. code-block:: python
+
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_online_profile")
+
+        >>> task_mgr = gis.users.me.tasks
+        >>> type(task_mgr)
+
+        <class 'arcgis.gis.tasks._schedule.TaskManager'>
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -425,16 +534,22 @@ class TaskManager(object):
         ================  ===============================================================================
         **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        item              Optional Item. The item to query tasks about.
+        item              Optional :class:`~arcgis.gis.Item`. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
         active            Optional Bool. Queries tasks based on active status.
         ----------------  -------------------------------------------------------------------------------
-        types             Optional String. The type of notebook execution for the item.  This can be
-                          ''ExecuteNotebook'', ''UpdateInsightsWorkbook'', ''ExecuteSceneCook'',
-                          ''ExecuteWorkflowManager''. ''ExecuteReport'', or ''GPService''.
+        types             Optional String. The type of notebook execution for the item.  Can be one of:
+
+                          * *ExecuteNotebook*
+                          * *UpdateInsightsWorkbook*
+                          * *ExecuteSceneCook*
+                          * *ExecuteWorkflowManager*
+                          * *ExecuteReport*
+                          * *GPService*
         ================  ===============================================================================
 
-        :return: List of :class:`~arcgis.gis.tasks.Task` objects
+        :return:
+            List of :class:`~arcgis.gis.tasks.Task` objects
 
         """
         if item is None and active is None and types is None:
@@ -486,9 +601,10 @@ class TaskManager(object):
         ------------------     --------------------------------------------------------------------
         item                   Required :class:`~arcgis.gis.Item`. The item to schedule a task on.
         ------------------     --------------------------------------------------------------------
-        cron                   Required String. The CRON statement. This should be in the from of:
+        cron                   Required String. The CRON statement. This should be in the following
+                               format:
 
-                               `<minute> <hour> <day of month> <month> <day of week>`
+                               *<minute> <hour> <day of month> <month> <day of week>`*
 
                                Example to run a task weekly, use: `0 0 * * 0`.
 
@@ -518,20 +634,21 @@ class TaskManager(object):
         title                  Optional String. The title of the scheduled task.
         ------------------     --------------------------------------------------------------------
         parameters             Optional Dict. Optional collection of Key/Value pairs that will be
-                               added to the task run request.
+                               inserted into the task run at time of request.
 
                                .. note::
                                    Required when *task_type* argument is *ExecuteSceneCook*
 
                                .. code-block:: python
 
+                                   # Usage Example: For a scene service
                                    >>> task_mgr = gis.users.me.tasks
                                    >>> task_output = task_mgr.create(
                                                              ...
                                                              parameters = {
                                                                    "service_url": <scene service URL>,
-                                                                   "num_of_caching_service_instances": 2, (2 instances are required)
-                                                                   "layer": "{<list of scene layers to cook>}", //The default is all layers
+                                                                   "num_of_caching_service_instances": 2, #(2 instances are required)
+                                                                   "layer": "{<list of scene layers to cook>}", #The default is all layers
                                                                    "update_mode": "PARTIAL_UPDATE_NODES"
                                                                 },
                                                             ...
@@ -546,6 +663,34 @@ class TaskManager(object):
 
         :return:
             :class:`~arcgis.gis.tasks.Task` object
+
+        .. code-block:: python
+
+            # Usage Example: Schedule a notebook to run every 15 minutes for 5 runs
+            #                starting March 8, 2025 at 1pm Pacific
+
+            >>> import datetime as dt
+            >>> import pytz
+            >>> from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> nb_item = gis.content.search("air_quality_regular_updates", "notebook")[0]
+
+            >>> dt = dt.datetime(2025, 3, 8, 13, 0, 0)
+            >>> pdt_tz = pytz.timezone("US/Pacific")
+            >>> dt_pdt = pdt_tz.localize(dt)
+
+
+            >>> tsk_mgr = gis.users.me.tasks
+            >>> tsk_mgr.create(
+            >>>        item=nb_item,
+            >>>        cron= "*/15 * ? * 1,2,3,4,5,6,7",
+            >>>        task_type="ExecuteNotebook",
+            >>>        occurences=5,
+            >>>        start_date= dt_pdt,
+            >>>        title="data_index_update"
+            >>>    )
 
         """
         SPECIALS = {
@@ -652,7 +797,7 @@ class TaskManager(object):
     @property
     def count(self) -> int:
         """
-        Returns the number of tasks a user has
+        Returns the number of tasks belonging to the :class:`~arcgis.gis.User`.
 
         :return: Int
         """

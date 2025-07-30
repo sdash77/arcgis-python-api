@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import Union, Optional, Any, Literal
-from datetime import datetime
+from typing import Any, Literal
+import datetime as _dt
+
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from arcgis._impl.common._filters import GeometryFilter, StatisticFilter
 from arcgis._impl.common._utils import _date_handler
+from arcgis.auth import EsriSession
 from arcgis.geometry import Geometry
 import concurrent.futures
 import copy
@@ -55,7 +57,7 @@ class QueryParameters(BaseModel):
                     COLUMN_NAME BETWEEN LITERAL_VALUE AND LITERAL_VALUE
                     """,
     )
-    out_fields: Optional[Union[str, list[str]]] = Field(
+    out_fields: str | list[str] | None = Field(
         "*",
         alias="outFields",
         description="""Optional list of fields to be included in the returned result set.
@@ -68,12 +70,12 @@ class QueryParameters(BaseModel):
                         as True, do not specify this parameter in order to avoid errors.
                     """,
     )
-    text: Optional[str] = Field(
+    text: str | None = Field(
         None,
         alias="text",
         description="Optional String. A literal search text. If the layer has a display field associated with it, the server searches for this text in this field. Only used when querying a Map Feature Layer.",
     )
-    time_filter: Optional[list[datetime]] = Field(
+    time_filter: list[_dt.datetime] | str | None = Field(
         None,
         alias="timeFilter",
         description="""Optional list. The format is of [<startTime>, <endTime>] using
@@ -83,17 +85,17 @@ class QueryParameters(BaseModel):
                             milliseconds.
                     """,
     )
-    geometry_filter: Optional[dict] = Field(
+    geometry_filter: dict | None = Field(
         None,
         alias="geometryFilter",
         description="Optional from :attr:`~arcgis.geometry.filters`. Allows for the information to be filtered on spatial relationship with another geometry.",
     )
-    return_geometry: Optional[bool] = Field(
+    return_geometry: bool | None = Field(
         True,
         alias="returnGeometry",
         description="Optional boolean. If true, geometry is returned with the query.",
     )
-    return_count_only: Optional[bool] = Field(
+    return_count_only: bool | None = Field(
         False,
         alias="returnCountOnly",
         strict=True,
@@ -105,7 +107,7 @@ class QueryParameters(BaseModel):
                     the extent.
                     """,
     )
-    return_ids_only: Optional[bool] = Field(
+    return_ids_only: bool | None = Field(
         False,
         alias="returnIdsOnly",
         description="""Optional boolean. Default is False.  If true, the response only
@@ -114,7 +116,7 @@ class QueryParameters(BaseModel):
                                             true is invalid.
                     """,
     )
-    return_distinct_values: Optional[bool] = Field(
+    return_distinct_values: bool | None = Field(
         False,
         alias="returnDistinctValues",
         description="""Optional boolean.  If true, it returns distinct values based on the
@@ -128,7 +130,7 @@ class QueryParameters(BaseModel):
                         Otherwise, reliable results will not be returned.
                     """,
     )
-    return_extent_only: Optional[bool] = Field(
+    return_extent_only: bool | None = Field(
         False,
         alias="returnExtentOnly",
         description="""Optional boolean. If true, the response only includes the extent of
@@ -139,7 +141,7 @@ class QueryParameters(BaseModel):
                     `supportsReturningQueryExtent` property of the layer is true.
                     """,
     )
-    group_by_fields_for_statistics: Optional[str] = Field(
+    group_by_fields_for_statistics: str | None = Field(
         None,
         alias="groupByFieldsForStatistics",
         description="""Optional string. One or more field names on which the values need to
@@ -147,7 +149,7 @@ class QueryParameters(BaseModel):
                     example: STATE_NAME, GENDER
                     """,
     )
-    statistic_filter: Optional[dict] = Field(
+    statistic_filter: dict | list[dict] | None = Field(
         None,
         alias="outStatistics",
         description="""Optional ``StatisticFilter`` instance. The definitions for one or more field-based
@@ -161,7 +163,7 @@ class QueryParameters(BaseModel):
                     sf.filter
                     """,
     )
-    result_offset: Optional[int] = Field(
+    result_offset: int | None = Field(
         None,
         alias="resultOffset",
         description="""Optional integer. This option can be used for fetching query results
@@ -170,7 +172,7 @@ class QueryParameters(BaseModel):
                     if return_all_records is True (i.e. by default).
                     """,
     )
-    result_record_count: Optional[int] = Field(
+    result_record_count: int | None = Field(
         None,
         alias="resultRecordCount",
         description="""Optional integer. This option can be used for fetching query results
@@ -181,7 +183,7 @@ class QueryParameters(BaseModel):
                     return_all_records is True (i.e. by default).
                     """,
     )
-    object_ids: Optional[Union[list[str], str]] = Field(
+    object_ids: list[str] | str | None = Field(
         None,
         alias="objectIds",
         description="""Optional string. The object IDs of this layer or table to be queried.
@@ -193,7 +195,7 @@ class QueryParameters(BaseModel):
                         1,000 object_ids are specified.
                     """,
     )
-    distance: Optional[int] = Field(
+    distance: int | None = Field(
         None,
         alias="distance",
         description="""Optional integer. The buffer distance for the input geometries.
@@ -202,7 +204,7 @@ class QueryParameters(BaseModel):
                     meters, and all points within 100 meters of the point are returned.
                     """,
     )
-    units: Optional[
+    units: (
         Literal[
             "esriSRUnit_Meter",
             "esriSRUnit_StatuteMile",
@@ -211,7 +213,8 @@ class QueryParameters(BaseModel):
             "esriSRUnit_NauticalMile",
             "esriSRUnit_USNauticalMile",
         ]
-    ] = Field(
+        | None
+    ) = Field(
         None,
         alias="units",
         description="""Optional string. The unit for calculating the buffer distance. If
@@ -221,7 +224,7 @@ class QueryParameters(BaseModel):
                     This parameter only applies if `supportsQueryWithDistance` is true.
                     """,
     )
-    max_allowable_offset: Optional[int] = Field(
+    max_allowable_offset: int | None = Field(
         None,
         alias="maxAllowableOffset",
         description="""Optional float. This option can be used to specify the
@@ -232,12 +235,12 @@ class QueryParameters(BaseModel):
                     spatial reference of the layer.
                     """,
     )
-    out_sr: Optional[Union[dict[str, int], str, int]] = Field(
+    out_sr: dict[str, Any] | str | int | None = Field(
         None,
         alias="outSR",
         description="Optional Integer. The WKID for the spatial reference of the returned geometry.",
     )
-    geometry_precision: Optional[int] = Field(
+    geometry_precision: int | None = Field(
         None,
         alias="geometryPrecision",
         description="""Optional Integer. This option can be used to specify the number of
@@ -246,7 +249,7 @@ class QueryParameters(BaseModel):
                     This applies to X and Y values only (not m or z-values).
                     """,
     )
-    gdb_version: Optional[str] = Field(
+    gdb_version: str | None = Field(
         None,
         alias="gdbVersion",
         description="""Optional string. The geodatabase version to query. This parameter
@@ -255,7 +258,7 @@ class QueryParameters(BaseModel):
                     map's version.
                     """,
     )
-    order_by_fields: Optional[str] = Field(
+    order_by_fields: list[str] | str | None = Field(
         None,
         alias="orderByFields",
         description="""Optional string. One or more field names on which the
@@ -269,7 +272,7 @@ class QueryParameters(BaseModel):
                         as True, do not specify this parameter in order to avoid errors.
                     """,
     )
-    out_statistics: Optional[list[dict[str, Any]]] = Field(
+    out_statistics: list[dict[str, Any]] | None = Field(
         None,
         alias="outStatistics",
         description="""Optional list of dictionaries. The definitions for one or more field-based
@@ -291,27 +294,27 @@ class QueryParameters(BaseModel):
                     ]
                     """,
     )
-    return_z: Optional[bool] = Field(
+    return_z: bool | None = Field(
         False,
         alias="returnZ",
         description="Optional boolean. If true, Z values are included in the results if the features have Z values. Otherwise, Z values are not returned.",
     )
-    return_m: Optional[bool] = Field(
+    return_m: bool | None = Field(
         False,
         alias="returnM",
         description="Optional boolean. If true, M values are included in the results if the features have M values. Otherwise, M values are not returned.",
     )
-    multipatch_option: Optional[tuple] = Field(
+    multipatch_option: tuple | None = Field(
         None,
         alias="multipatchOption",
         description="Optional x/y footprint. This option dictates how the geometry of a multipatch feature will be returned.",
     )
-    quantization_parameters: Optional[dict[str, Any]] = Field(
+    quantization_parameters: dict[str, Any] | None = Field(
         None,
         alias="quantizationParameters",
         description="Optional dict. Used to project the geometry onto a virtual grid, likely representing pixels on the screen.",
     )
-    return_centroid: Optional[bool] = Field(
+    return_centroid: bool | None = Field(
         False,
         alias="returnCentroid",
         description="""Optional boolean. Used to return the geometry centroid associated
@@ -320,7 +323,7 @@ class QueryParameters(BaseModel):
                     polygon geometry type.
                     """,
     )
-    return_all_records: Optional[bool] = Field(
+    return_all_records: bool | None = Field(
         True,
         alias="returnAllRecords",
         description="""Optional boolean. When True, the query operation will call the
@@ -332,12 +335,12 @@ class QueryParameters(BaseModel):
                     specified, the default is True.
                     """,
     )
-    result_type: Optional[Literal["standard", "tile"]] = Field(
+    result_type: Literal["standard", "tile"] | None = Field(
         None,
         alias="resultType",
         description="Optional string. The result_type parameter can be used to control the number of features returned by the query operation.",
     )
-    historic_moment: Optional[Union[int, datetime]] = Field(
+    historic_moment: int | _dt.datetime | None = Field(
         None,
         alias="historicMoment",
         description="""Optional integer. The historic moment to query. This parameter
@@ -349,7 +352,7 @@ class QueryParameters(BaseModel):
                     current features.
                     """,
     )
-    sql_format: Optional[Literal["standard", "native"]] = Field(
+    sql_format: Literal["standard", "native"] | None = Field(
         None,
         alias="sqlFormat",
         description="""Optional string.  The sql_format parameter can be either standard
@@ -358,7 +361,7 @@ class QueryParameters(BaseModel):
                     depends on useStandardizedQuery parameter.
                     """,
     )
-    return_true_curves: Optional[bool] = Field(
+    return_true_curves: bool | None = Field(
         False,
         alias="returnTrueCurves",
         description="""Optional boolean. When set to true, returns true curves in output
@@ -366,7 +369,7 @@ class QueryParameters(BaseModel):
                     polylines or polygons.
                     """,
     )
-    return_exceeded_limit_features: Optional[bool] = Field(
+    return_exceeded_limit_features: bool | None = Field(
         None,
         alias="returnExceededLimitFeatures",
         description="""Optional boolean. Optional parameter which is true by default. When
@@ -379,7 +382,7 @@ class QueryParameters(BaseModel):
                     limit is no longer exceeded without making multiple calls.
                     """,
     )
-    datum_transformation: Optional[Union[int, dict[str, Any]]] = Field(
+    datum_transformation: int | dict[str, Any] | None = Field(
         None,
         alias="datumTransformation",
         description="""Optional Integer/Dictionary.  This parameter applies a datum transformation while
@@ -406,7 +409,7 @@ class QueryParameters(BaseModel):
                         ===========     ===================================
                     """,
     )
-    range_values: Optional[dict[str, Any]] = Field(
+    range_values: dict[str, Any] | None = Field(
         None,
         alias="rangeValues",
         description="""Optional List. Allows you to filter features from the layer that are
@@ -447,7 +450,7 @@ class QueryParameters(BaseModel):
                                                 ]
                     """,
     )
-    parameter_values: Optional[dict[str, Any]] = Field(
+    parameter_values: dict[str, Any] | None = Field(
         None,
         alias="parameterValues",
         description="""Optional Dict. Allows you to filter the layers by specifying
@@ -464,7 +467,7 @@ class QueryParameters(BaseModel):
                         for details on parameterized filters.
                     """,
     )
-    format_3d_objects: Optional[
+    format_3d_objects: (
         Literal[
             "3D_dae",
             "3D_dwg",
@@ -478,7 +481,8 @@ class QueryParameters(BaseModel):
             "3D_usdc",
             "3D_usdz",
         ]
-    ] = Field(
+        | None
+    ) = Field(
         None,
         alias="formatOf3DObjects",
         description="""Optional string. Specifies the 3D format that will be used to request
@@ -494,7 +498,7 @@ class QueryParameters(BaseModel):
                     asset mapping will be missing.
                     """,
     )
-    time_reference_unknown_client: Optional[bool] = Field(
+    time_reference_unknown_client: bool | None = Field(
         None,
         alias="timeReferenceUnknownClient",
         description="""Optional boolean. Setting `time_reference_unknown_client` as True
@@ -548,6 +552,12 @@ class QueryParameters(BaseModel):
             return ",".join(value)
         return value
 
+    @field_validator("order_by_fields", mode="before")
+    def validate_order_by_fields(cls, value):
+        if isinstance(value, (list, tuple)):
+            return ",".join(value)
+        return value
+
     @field_validator("object_ids", mode="before")
     def validate_object_ids(cls, value):
         if isinstance(value, (list, tuple)):
@@ -586,16 +596,14 @@ class Query:
         is_layer: bool = True,
         query_3d: bool = False,
         as_df: bool = False,
-        supports_pagination: bool = False,
-        max_record_count: int = 2000,
     ):
         self.layer = layer
         self.is_layer = is_layer
         self.query_3d = query_3d
         self.as_df = as_df
         self.parameters = self.create_parameters(parameters)
-        self.supports_pagination = supports_pagination
-        self.max_record_count = max_record_count
+        self.url = None
+        self._cached_record_count = None
 
     def create_parameters(
         self,
@@ -655,10 +663,10 @@ class Query:
 
     def execute(self):
         raw = True if self.query_3d else False
-        url = self._get_url()
+        self._get_url()
 
         # Two workflows: Return as FeatureSet or return as DataFrame
-        return self._query(url, raw)
+        return self._query(raw)
 
     def _get_url(self):
         if self.query_3d and hasattr(self.layer, "_is_3d") and self.layer._is_3d:
@@ -667,19 +675,31 @@ class Query:
             url = self.layer._url + "/query"
         else:
             url = "%s/query" % self.layer._url.split("?")[0]
-        return url
+        self.url = url
 
-    def _query(self, url, raw=False):
+    def _content_length(self, encoded_parameters: dict) -> int:
+        return len(json.dumps(encoded_parameters) + self.url) + 1
+
+    def _send_request(self, session: EsriSession, encoded_parameters: dict) -> dict:
+        url_length: int = self._content_length(encoded_parameters)
+        if url_length <= 2000:
+            response = session.get(self.url, params=encoded_parameters)
+        else:
+            response = session.post(self.url, params=encoded_parameters)
+        return response.json()
+
+    def _query(self, raw=False):
         """Returns results of the query for the provided layer and URL."""
         try:
             encoded_parameters = _encode_params(self.parameters)
             # Perform the initial query
-            result = self.layer._con._session.get(url, params=encoded_parameters).json()
-            return self._process_query_result(result, raw, url)
+            session = self.layer._con._session
+            result: dict = self._send_request(session, encoded_parameters)
+            return self._process_query_result(result, raw)
         except Exception as query_exception:
-            return self._handle_query_exception(query_exception, url)
+            return self._handle_query_exception(query_exception)
 
-    def _process_query_result(self, result, raw, url):
+    def _process_query_result(self, result, raw):
         """Processes the query result based on the parameters and handles pagination."""
         # Handle errors in the result
         if "error" in result:
@@ -692,26 +712,30 @@ class Query:
             self.parameters.get("returnExtentOnly")
         ):
             return result
+        elif self.parameters.get("outStatistics", None) or self.parameters.get(
+            "groupByFieldsForStatistics", None
+        ):
+            if self.as_df:
+                return self._query_df(result)
+            return arcgis_features.FeatureSet.from_dict(result)
         elif self._is_true(raw):
             return result
 
         features = result.get("features", [])
-        if self._needs_more_features(result, features):
+        if self._needs_more_features(features):
             # Pagination workflow
-            if not self.supports_pagination:
-                # This paginates using object ids so we can fetch all features even if the service has a limit
-                features = self._fetch_all_features_by_chunk(url)
-            elif (
+            if (
                 self.parameters.get("objectIds")
                 or self.parameters.get("orderByFields")
                 or self.parameters.get("geometryFilter")
                 or self.parameters.get("statisticFilter")
             ):
                 # For certain parameters, we do not expect all records to be returned or they have to be returned in a specific order
-                features = self._fetch_all_features_single_thread(url, features, result)
+                features = self._fetch_all_features_single_thread(features, result)
             else:
-                # Otherwise, we use a concurrent workflow to fetch all features
-                features = self._fetch_all_features_concurrent(url, features)
+                # Otherwise, we use a concurrent workflow with ids to fetch all features
+                # This workflow also works if pagination is not supported
+                features = self._fetch_all_features_by_chunk()
 
         result["features"] = features
         if self.as_df:
@@ -726,19 +750,26 @@ class Query:
         else:
             return False
 
-    def _needs_more_features(self, result, features):
+    def _needs_more_features(self, features):
         """
-        Checks if more features need to be fetched.
-        This can be because exceededTransferLimit is True
-        or resultRecordCount is set and the number of
-        features fetched is less than the resultRecordCount.
+        Determines if additional query requests are needed to retrieve more features.
         """
-        return result.get("exceededTransferLimit") or (
-            self.parameters.get("resultRecordCount")
-            and self.parameters.get("resultRecordCount") != len(features)
-        )
+        fetched = len(features)
+        requested_feature_count = self.parameters.get("resultRecordCount")
+        total_available = self._fetch_total_records_count()
 
-    def _fetch_all_features_single_thread(self, url, features, result):
+        # If we've already fetched everything available, don't fetch more
+        if fetched >= total_available:
+            return False
+
+        # If user defined a cap, and we haven't hit it, continue
+        if requested_feature_count is not None:
+            return fetched < requested_feature_count
+
+        # Default case: no user cap, fetch until we've got everything
+        return fetched < total_available
+
+    def _fetch_all_features_single_thread(self, features, result):
         """Fetches all features by handling pagination."""
         original_record_count = self.parameters.get("resultRecordCount")
         original_offset = self.parameters.get("resultOffset", 0)
@@ -753,79 +784,31 @@ class Query:
             # len of features is the new offset each time
             self.parameters["resultOffset"] = len(features) + original_offset
             encoded_parameters = _encode_params(self.parameters)
-            result = self.layer._con._session.get(url, params=encoded_parameters).json()
+            result: dict = self._send_request(
+                session=self.layer._con._session,
+                encoded_parameters=encoded_parameters,
+            )
             features += result.get("features", [])
 
         return features
 
-    def _fetch_all_features_concurrent(self, url, features):
-        """Fetches all features by handling pagination and using concurrent requests."""
-        original_offset = self.parameters.get("resultOffset", 0)
+    def _fetch_total_records_count(self):
+        if self._cached_record_count is not None:
+            # If we have a cached count, return it
+            return self._cached_record_count
 
-        # Step 1: Get total records, but respect user-defined limit
-        total_available = self._fetch_total_records_count(url)
-        requested_count = self.parameters.get("resultRecordCount", total_available)
-        # Ensure we don’t request more than needed
-        requested_count = min(total_available, requested_count)
-
-        self.parameters["resultRecordCount"] = (
-            self.max_record_count
-        )  # Enforce per-request limit
-
-        # Step 2: Define function to fetch a page of features
-        def fetch_page(offset, limit, params):
-            page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
-            page_params["resultOffset"] = offset
-            page_params["resultRecordCount"] = limit
-            page_params = _encode_params(page_params)
-            response = self.layer._con._session.get(url, params=page_params).json()
-            # Return offset to maintain order
-            return (
-                offset,
-                response.get("features", []),
-            )
-
-        # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
-        with concurrent.futures.ThreadPoolExecutor(5) as executor:
-            futures = {}
-            fetched_count = len(features)
-
-            while fetched_count < requested_count:
-                remaining = requested_count - fetched_count  # How many more we need
-                batch_size = min(self.max_record_count, remaining)  # Adjust batch size
-                offset = original_offset + fetched_count  # Adjust offset correctly
-
-                # Submit batch request
-                futures[
-                    executor.submit(fetch_page, offset, batch_size, self.parameters)
-                ] = offset
-
-                # Step 4: Process results in the correct order
-                results_by_offset = {}
-                for future in concurrent.futures.as_completed(futures):
-                    offset, result = future.result()
-                    results_by_offset[offset] = result
-
-                # Step 5: Merge results in order
-                for offset in sorted(results_by_offset.keys()):
-                    features.extend(results_by_offset[offset])
-                    fetched_count += len(results_by_offset[offset])
-
-                    # Stop early if we reach requested_count
-                    if fetched_count >= requested_count:
-                        return features[:requested_count]
-
-        return features[:requested_count]  # Final trim
-
-    def _fetch_total_records_count(self, url):
         count_params = copy.deepcopy(self.parameters)
         count_params["returnCountOnly"] = True
         count_params["returnAllRecords"] = False  # must be false when above True
         count_params = _encode_params(count_params)
-        count_result = self.layer._con._session.get(url, params=count_params).json()
-        return count_result.get("count")
+        count_result: dict = self._send_request(
+            session=self.layer._con._session,
+            encoded_parameters=count_params,
+        )
+        self._cached_record_count = count_result.get("count")
+        return self._cached_record_count
 
-    def _fetch_all_ids(self, url):
+    def _fetch_all_ids(self):
         """Query to create a list of object ids."""
         ids = []
         id_params = copy.deepcopy(self.parameters)
@@ -834,15 +817,19 @@ class Query:
         original_offset = id_params.get("resultOffset", 0)
 
         # Get the total count of ids
-        if id_params.get("resultRecordCount") is None:
-            total_count = self._fetch_total_records_count(url)
-        else:
-            total_count = id_params.get("resultRecordCount")
+        all_records = self._fetch_total_records_count()
+        user_requested_records = id_params.get("resultRecordCount")
+        total_count = all_records - original_offset
+        if user_requested_records and user_requested_records < total_count:
+            total_count = user_requested_records
 
         # Perform query until all ids are fetched
         while True:
             encoded_params = _encode_params(id_params)
-            result = self.layer._con._session.get(url, params=encoded_params).json()
+            result: dict = self._send_request(
+                session=self.layer._con._session,
+                encoded_parameters=encoded_params,
+            )
             ids.extend(result.get("objectIds", []))
 
             if len(ids) >= total_count:
@@ -852,40 +839,47 @@ class Query:
                 id_params["resultRecordCount"] = total_count - len(ids)
         return ids
 
-    def _fetch_all_features_by_chunk(self, url):
+    def _fetch_all_features_by_chunk(self):
         """
         This workflow is used when users specify resultRecordCount.
         """
         features = []  # start from an empty list
         # Step 1: Query for all the ids using the parameters set
-        ids = self._fetch_all_ids(url)
-        self.parameters["resultRecordCount"] = (
-            None  # we got the number of ids, so no need to limit the records
-        )
+        ids = self._fetch_all_ids()
 
         # Step 2: Define function to fetch a page of features
         def fetch_page(ids_subset):
             page_params = copy.deepcopy(self.parameters)
+            if "resultOffset" in page_params:
+                del page_params["resultOffset"]
+            if "resultRecordCount" in page_params:
+                del page_params["resultRecordCount"]
             page_params["objectIds"] = ids_subset
             page_params = _encode_params(page_params)
-            return self.layer._con._session.get(url, params=page_params)
+
+            return self._send_request(
+                session=self.layer._con._session,
+                encoded_parameters=page_params,
+            )
 
         # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
             futures = []
             # Calculate the number of requests needed, using page_size for offset increment
-            page_size = self.max_record_count
+            page_size = 200  # anything larger causes the server to crash
             for i in range(0, len(ids), page_size):
                 ids_subset = ",".join(str(i) for i in ids[i : i + page_size])
                 futures.append(executor.submit(fetch_page, ids_subset))
 
             # Step 4: Process the results
             for future in concurrent.futures.as_completed(futures):
-                result = future.result().json()
+                result = future.result()
+                if not isinstance(result, dict):
+                    result = result.json()
                 features += result.get("features", [])
         return features
 
-    def _handle_query_exception(self, query_exception, url):
+    def _handle_query_exception(self, query_exception):
         """Handles exceptions raised during the query process."""
         error_messages = [
             "Error performing query operation",
@@ -893,14 +887,14 @@ class Query:
         ]
 
         if any(msg in str(query_exception) for msg in error_messages):
-            return self._retry_query_with_fewer_records(url)
+            return self._retry_query_with_fewer_records()
 
         raise query_exception
 
-    def _retry_query_with_fewer_records(self, url):
+    def _retry_query_with_fewer_records(self):
         """Retries the query with a reduced result record count."""
         max_record = self.parameters.get(
-            "resultRecordCount", self._fetch_total_records_count(url)
+            "resultRecordCount", self._fetch_total_records_count()
         )
         offset = self.parameters.get("resultOffset", 0)
 
@@ -918,7 +912,7 @@ class Query:
             self.parameters["resultOffset"] = offset + max_rec * i
 
             try:
-                records = self._query(url, raw=True)
+                records = self._query(raw=True)
                 if result:
                     result["features"].extend(records["features"])
                 else:
@@ -997,6 +991,11 @@ class Query:
                 df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.layer.renderer
                 df.spatial._meta.source = self.layer
+                df.spatial._meta.geometry_type = (
+                    self.layer.properties["geometryType"]
+                    .replace("esriGeometry", "")
+                    .lower()
+                )
 
             return pd.DataFrame([], columns=columns).astype(columns)
         sr = None
@@ -1010,7 +1009,12 @@ class Query:
         # set based on layer
         df.spatial.renderer = self.layer.renderer
         df.spatial._meta.source = self.layer.url
-
+        if "geometryType" in dict(self.layer.properties):
+            df.spatial._meta.geometry_type = (
+                self.layer.properties["geometryType"]
+                .replace("esriGeometry", "")
+                .lower()
+            )
         if "SHAPE" in df.columns:
             df.loc[df.SHAPE.isna(), "SHAPE"] = None
             df.spatial.set_geometry("SHAPE")

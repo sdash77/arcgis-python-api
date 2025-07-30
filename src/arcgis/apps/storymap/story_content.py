@@ -5,12 +5,14 @@ from typing import Optional, Union
 import uuid
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
+import warnings
+
+from arcgis.gis._impl._con._puremagic_ext import find_puremagic_ext
+
 
 arcgis = LazyLoader("arcgis")
 _imports = LazyLoader("arcgis._impl.imports")
-briefing = LazyLoader("arcgis.apps.storymap.briefing")
-story = LazyLoader("arcgis.apps.storymap.story")
-collection = LazyLoader("arcgis.apps.storymap.collection")
+_story_mod = LazyLoader("arcgis.apps.storymap")
 urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
@@ -19,7 +21,7 @@ html = LazyLoader("html")
 os = LazyLoader("os")
 io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
-utils = LazyLoader("arcgis.apps.storymap._utils")
+_utils = LazyLoader("arcgis.apps.storymap._utils")
 pd = LazyLoader("pandas")
 
 
@@ -112,6 +114,8 @@ class SlideLayout(Enum):
     FULL = "full"
     SECTIONDOUBLE = "section-double"
     SECTIONSINGLE = "section-single"
+    TITLELESSFLEXIBLE = "titleless-flexible"
+    FLEXIBLE = "flexible"
 
 
 class SlideSubLayout(Enum):
@@ -209,7 +213,7 @@ class Separator:
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Separator"
+        return "Separator()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(self, story=None, **kwargs):
@@ -228,7 +232,7 @@ class Separator:
 
         :return: True if successful.
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
 
 ###############################################################################################################
@@ -294,11 +298,7 @@ class Image:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Image: {self.caption}"
-        else:
-            return "Image"
+        return f"Image(path='{self._path}')"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -480,17 +480,27 @@ class Image:
         """
         Get/Set display for image.
 
-        Values: `small` | `wide` | `full` | `float`
+        Values for Storymap: `small` | `wide` | `full` | `float`
+        Values for Briefings: `fill` | `fit`
         """
-        if self._existing is True:
+        if self._existing is True and isinstance(self._story, _story_mod.StoryMap):
             return self._story._properties["nodes"][self.node]["config"].get("size")
+        elif self._existing is True and isinstance(self._story, _story_mod.Briefing):
+            return (
+                self._story._properties["nodes"][self.node]["config"]
+                .get("placement", {})
+                .get("type")
+            )
 
     # ----------------------------------------------------------------------
     @display.setter
     def display(self, display):
-        if self._existing is True:
+        if self._existing is True and isinstance(self._story, _story_mod.StoryMap):
             self._story._properties["nodes"][self.node]["config"]["size"] = display
-            return self.display
+        elif self._existing is True and isinstance(self._story, _story_mod.Briefing):
+            self._story._properties["nodes"][self.node].setdefault(
+                "config", {}
+            ).setdefault("placement", {})["type"] = display
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -499,7 +509,7 @@ class Image:
 
         :return: True if successful.
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_to_story(self, story, **kwargs):
@@ -514,7 +524,7 @@ class Image:
 
         # Make an add resource call if not url
         if self._is_url is False:
-            utils._add_resource(self._story, self._path)
+            _utils._add_resource(self._story, self._path)
 
         # Create image nodes. This is similar for file path and url
         self._story._properties["nodes"][self.node] = {
@@ -524,11 +534,22 @@ class Image:
                 "caption": "" if caption is None else caption,
                 "alt": "" if alt_text is None else alt_text,
             },
-            "config": {"size": "" if display is None else display},
         }
+        if isinstance(self._story, _story_mod.StoryMap):
+            self._story._properties["nodes"][self.node]["config"] = {
+                "size": "" if display is None else display
+            }
+        elif isinstance(self._story, _story_mod.Briefing):
+            self._story._properties["nodes"][self.node].setdefault("config", {})[
+                "placement"
+            ] = {
+                "type": "fit",
+                "fill": {"x": 0.5, "y": 0.5},
+                "fit": {"color": "backgroundColor"},
+            }
 
         # Create resource node. Different if file path or url
-        width, height = self._get_image_dimensions(self._path)
+        width, height = self._get_image_dimensions(self._path) or (400, 300)
         if self._is_url is False:
             # Get image properties and create the resourceId that corresponds to the resource added
             self._story._properties["resources"][self.resource_node] = {
@@ -577,7 +598,11 @@ class Image:
                 # Read the first few bytes to identify the image format
                 header = image_file.read(32)
 
-                if header.startswith(b"\xff\xd8\xff\xe0\x00\x10JFIF"):  # JPEG
+                if header.startswith(
+                    b"\xff\xd8\xff\xe0\x00\x10JFIF"
+                ) or header.startswith(
+                    b"\x00\x00\x00 ftypavif\x00\x00\x00\x00avifmif1miafMA1B"
+                ):  # JPEG
                     # Extract dimensions from the APP0 segment
                     width, height = struct.unpack(">HH", header[7:11])
                     return width, height
@@ -633,8 +658,8 @@ class Image:
         ] = "item-resource"
         # Update the resource by removing old and adding new
         if resource_id:
-            utils._remove_resource(self._story, resource_id)
-        utils._add_resource(self._story, new_image)
+            _utils._remove_resource(self._story, resource_id)
+        _utils._add_resource(self._story, new_image)
 
     # ----------------------------------------------------------------------
     def _update_dimensions(self, width, height):
@@ -738,11 +763,7 @@ class Video:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Video: {self.caption}"
-        else:
-            return "Video"
+        return f"Video(path={self._path})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -892,7 +913,7 @@ class Video:
 
         :return: True if successful
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_to_story(
@@ -910,7 +931,7 @@ class Video:
 
         if not self._is_url:
             # Make an add resource call since it is a file path
-            utils._add_resource(self._story, self._path)
+            _utils._add_resource(self._story, self._path)
 
             # Create video nodes for file path
             self._create_video_node(caption, alt_text, display)
@@ -979,7 +1000,7 @@ class Video:
             resource_id = self._story._properties["resources"][self.resource_node][
                 "data"
             ]["resourceId"]
-            utils._remove_resource(self._story, resource_id)
+            _utils._remove_resource(self._story, resource_id)
             # Remove the resource node since should not exist for url. Will be added back if file path
             del self._story._properties["resources"][self.resource_node]
 
@@ -1080,11 +1101,7 @@ class Audio:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        caption = getattr(self, "caption", None)
-        if caption:
-            return f"Audio: {self.caption}"
-        else:
-            return "Audio"
+        return f"Audio(path={self._path})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1224,7 +1241,7 @@ class Audio:
 
         :return: True if successful
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_to_story(
@@ -1241,7 +1258,7 @@ class Audio:
         display = kwargs.pop("display", None)
 
         # Make an add resource call
-        utils._add_resource(self._story, self._path)
+        _utils._add_resource(self._story, self._path)
 
         # Create audio nodes
         self._create_audio_node(caption, alt_text, display)
@@ -1291,8 +1308,8 @@ class Audio:
         ] = os.path.basename(os.path.normpath(self._path))
 
         # Add new resource and remove old one
-        utils._add_resource(self._story, self._path)
-        utils._remove_resource(self._story, resource_id)
+        _utils._add_resource(self._story, self._path)
+        _utils._remove_resource(self._story, resource_id)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -1376,7 +1393,7 @@ class Embed:
         """
         if self._existing is True:
             if self._offline_dependent:
-                return utils._assign_node_class(
+                return _utils._assign_node_class(
                     story=self._story, node_id=self._offline_dependent
                 )
         return None
@@ -1386,7 +1403,7 @@ class Embed:
     def offline_media(self, value: Image | Video):
         if self._existing:
             # can only set for briefing
-            if isinstance(self._story, briefing.Briefing):
+            if isinstance(self._story, _story_mod.Briefing):
                 if isinstance(value, Image) or isinstance(value, Video):
                     value._add_to_story(story=self._story)
                     self._story._properties["nodes"][self.node]["dependents"] = {
@@ -1404,7 +1421,7 @@ class Embed:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Embed: {self.link}"
+        return f"Embed(link={self.link})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1517,7 +1534,7 @@ class Embed:
 
         :return: True if successful.
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_to_story(self, story=None, **kwargs):
@@ -1733,7 +1750,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return self._type
+        return f"Map(item={self._path}, type={self._type})"
 
     # ----------------------------------------------------------------------
     @property
@@ -1809,6 +1826,38 @@ class Map:
         if self._existing is True:
             return self._map_layers
         return []
+
+    # ----------------------------------------------------------------------
+    def update_map_layers(self, layer_id: str | int, visible: bool):
+        """
+        Update the visibility of the map layers.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        layer_id            Required String or integer index. The id of the layer to update. You can find the id in the map layers property.
+        ------------------  ----------------------------------------
+        visible             Required Boolean. True if the layer should be visible, False otherwise.
+        ==================  ========================================
+
+        :return:
+            The updated map layers that are being used.
+        """
+        if self._existing is True:
+            for i, layer in enumerate(
+                self._story._properties["resources"][self.resource_node]["data"][
+                    "mapLayers"
+                ]
+            ):
+                if layer["id"] == layer_id:
+                    self._story._properties["resources"][self.resource_node]["data"][
+                        "mapLayers"
+                    ][i]["visible"] = visible
+                    break
+        self._map_layers = self._story._properties["resources"][self.resource_node][
+            "data"
+        ]["mapLayers"]
+        return self._map_layers
 
     # ----------------------------------------------------------------------
     def _calculate_z_value(self, scale: int = None):
@@ -2095,7 +2144,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     @pinned_popup.setter
-    def pinned_popup_info(self, value: dict | None):
+    def pinned_popup(self, value: dict | None):
         # Check if the dictionary has the correct keys
         if value is None:
             self._story._properties["nodes"][self.node]["data"].pop(
@@ -2241,7 +2290,7 @@ class Map:
                 node = self._story._properties["nodes"][self._offline_dependent]
                 # Find the type of dependent
                 if node["type"] in ["image", "video"]:
-                    return utils._assign_node_class(
+                    return _utils._assign_node_class(
                         story=self._story, node_id=self._offline_dependent
                     )
                 else:
@@ -2258,7 +2307,7 @@ class Map:
     @offline_media.setter
     def offline_media(self, value: arcgis.gis.Item | Image | Video):
         if self._existing:
-            if not isinstance(self._story, briefing.Briefing):
+            if not isinstance(self._story, _story_mod.Briefing):
                 raise ValueError("offline_media can only be set for a Briefing")
             if isinstance(value, arcgis.gis.Item):
                 # check if item is a MMPK or MSPK
@@ -2308,7 +2357,7 @@ class Map:
         """
         Delete the node
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_to_story(self, story=None, **kwargs):
@@ -2545,10 +2594,7 @@ class Text:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.text:
-            return f"Text: {self._style}"
-        else:
-            return "Text"
+        return f"Text(text={self._text or ''})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -2627,7 +2673,7 @@ class Text:
             # check for common errors
             if size not in ["small", "medium", "large"]:
                 raise ValueError("Size must be 'small', 'medium', or 'large'")
-            if size == "small" and not isinstance(self._story, briefing.Briefing):
+            if size == "small" and not isinstance(self._story, _story_mod.Briefing):
                 raise ValueError("Size 'small' can only be used in a Briefing")
 
             self._story._properties["nodes"][self.node]["data"]["textSize"] = size
@@ -2660,7 +2706,7 @@ class Text:
 
         :return: True if successful.
         """
-        if self._existing is True and isinstance(self._story, briefing.Briefing):
+        if self._existing is True and isinstance(self._story, _story_mod.Briefing):
             content_node = None
             content_type = None
 
@@ -2757,7 +2803,7 @@ class Text:
 
         :return: True if successful.
         """
-        if self._existing is True and isinstance(self._story, briefing.Briefing):
+        if self._existing is True and isinstance(self._story, _story_mod.Briefing):
             # First get the text
             full_text = self.text
             # Initialize an empty list to store removed action IDs
@@ -2765,7 +2811,7 @@ class Text:
 
             if text:
                 # Remove the specified attachment if text_to_remove is provided
-                if f'<span data-action-type="attachment-action" id="' in text:
+                if '<span data-action-type="attachment-action" id="' in text:
                     # Get the action id to remove it from the dictionary
                     action_id = text.split('id="')[1].split('">')[0]
                     # Remove the action from the text
@@ -2808,7 +2854,7 @@ class Text:
 
         :return: True if successful.
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _create_item_embed(self, item):
@@ -2862,7 +2908,10 @@ class Text:
             ]
         if self._size is not None:
             # if story is not a briefing and size is 'small' then set to 'medium'
-            if not isinstance(self._story, briefing.Briefing) and self._size == "small":
+            if (
+                not isinstance(self._story, _story_mod.Briefing)
+                and self._size == "small"
+            ):
                 self._size = "medium"
             self._story._properties["nodes"][self.node]["data"]["textSize"] = self._size
 
@@ -2910,7 +2959,7 @@ class Button:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Button: {self.text}"
+        return f"Button(link={self._link}, text={self._text})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -2986,7 +3035,7 @@ class Button:
         """
         Delete the node
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_to_story(self, story, **kwargs):
@@ -3049,7 +3098,7 @@ class Gallery:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Image Gallery"
+        return "ImageGallery()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -3098,7 +3147,7 @@ class Gallery:
             self._children = self._story._properties["nodes"][self.node]["children"]
             images = []
             for child in self._children:
-                images.append(utils._assign_node_class(self._story, child))
+                images.append(_utils._assign_node_class(self._story, child))
             return images
         else:
             raise Warning(
@@ -3239,7 +3288,7 @@ class Gallery:
         if image in image_nodes:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
-            utils._delete(self._story, image)
+            _utils._delete(self._story, image)
         self._children = self._story._properties["nodes"][self.node]["children"]
         return self.images
 
@@ -3272,7 +3321,7 @@ class Gallery:
         :return: True if successful.
         """
         if self._existing is True:
-            return utils._delete(self._story, self.node)
+            return _utils._delete(self._story, self.node)
         else:
             return False
 
@@ -3310,7 +3359,7 @@ class Swipe:
         >>> swipe = Swipe()
 
         # Method 2: Use the get method in story
-        >>> swipe = my_story.get(node = <node_id>)
+        >>> swipe = my_story.content_list[3] # if swipe at index 3
 
     """
 
@@ -3328,10 +3377,10 @@ class Swipe:
                 self._right_node = self._story._properties["nodes"][self.node]["data"][
                     "contents"
                 ]["1"]
-                self._left_content = utils._assign_node_class(
+                self._left_content = _utils._assign_node_class(
                     story=self._story, node_id=self._left_node
                 )
-                self._right_content = utils._assign_node_class(
+                self._right_content = _utils._assign_node_class(
                     story=self._story, node_id=self._left_node
                 )
                 # Get the media type since has to be same for both sides
@@ -3371,7 +3420,7 @@ class Swipe:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Swipe: {self._media_type}"
+        return f"Swipe(type={self._media_type})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -3574,7 +3623,7 @@ class Swipe:
         :return: True if successful.
         """
         if self._existing is True:
-            return utils._delete(self._story, self.node)
+            return _utils._delete(self._story, self.node)
         else:
             return False
 
@@ -3662,11 +3711,11 @@ class Sidecar:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Sidecar"
+        return "Sidecar()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Sidecar"
+        return "Sidecar()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(
@@ -3806,7 +3855,7 @@ class Sidecar:
         .. code-block:: python
 
             # Get sidecar from story and see the properties
-            sc = story.get(<sidecar_node_id>)
+            sc = story.content_list[3] # if sidecar at index 3
             sc.properties
             >> returns a dictionary structure of the sidecar
 
@@ -3822,7 +3871,7 @@ class Sidecar:
             sc.edit(im2, 2)
 
             # OPTION 2 (only applicable if content is of same type as existing)
-            im2 = sc.get(im.node_id)
+            im2 = sc.content_list[4]
             im2.image = <img_url_or_path>
 
         """
@@ -3835,7 +3884,7 @@ class Sidecar:
         self._add_item_story(content)
 
         if media_node:
-            utils._delete(self._story, media_node)
+            _utils._delete(self._story, media_node)
         self._story._properties["nodes"][slide_node]["children"].insert(1, content.node)
 
     # ----------------------------------------------------------------------
@@ -3867,7 +3916,7 @@ class Sidecar:
             story.save()
 
         """
-        return utils._assign_node_class(self._story, node_id)
+        return _utils._assign_node_class(self._story, node_id)
 
     # ----------------------------------------------------------------------
     def add_action(
@@ -4159,7 +4208,7 @@ class Sidecar:
         # Remove slide and all associated children.
         self._remove_associated(slide)
         self._story._properties["nodes"][self.node]["children"].remove(slide)
-        utils._delete(self._story, slide)
+        _utils._delete(self._story, slide)
         self._slides = self._story._properties["nodes"][self.node]["children"]
         return True
 
@@ -4170,7 +4219,7 @@ class Sidecar:
 
         :return: True if successful.
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
@@ -4182,14 +4231,14 @@ class Sidecar:
                 "children"
             ]
             for child in children:
-                utils._delete(self._story, child)
+                _utils._delete(self._story, child)
         # Delete the narrative panel itself
-        utils._delete(self._story, narrative_panel)
+        _utils._delete(self._story, narrative_panel)
 
         # Remove media item and resource node if one exists
         if len(self._story._properties["nodes"][slide]["children"]) >= 1:
             media_item: str = self._story._properties["nodes"][slide]["children"][0]
-            utils._delete(self._story, media_item)
+            _utils._delete(self._story, media_item)
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content: Union[Image, Video, Map, Embed, Swipe]):
@@ -4266,11 +4315,11 @@ class Timeline:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Timeline"
+        return "Timeline()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Timeline"
+        return "Timeline()"
 
     # ----------------------------------------------------------------------
     def _add_to_story(
@@ -4375,7 +4424,7 @@ class Timeline:
                 old_text_node = self._story._properties["nodes"][event]["children"].pop(
                     position
                 )
-                utils._delete(self._story, old_text_node)
+                _utils._delete(self._story, old_text_node)
                 self._story._properties["nodes"][event]["children"].insert(
                     position, content.node
                 )
@@ -4387,7 +4436,7 @@ class Timeline:
                 old_image_node = self._story._properties["nodes"][event][
                     "children"
                 ].pop(position)
-                utils._delete(self._story, old_image_node)
+                _utils._delete(self._story, old_image_node)
                 self._story._properties["nodes"][event]["children"].insert(
                     position, content.node
                 )
@@ -4471,7 +4520,7 @@ class Timeline:
         """
         self._remove_associated(event)
         self._story._properties["nodes"][self.node]["children"].remove(event)
-        utils._delete(self._story, event)
+        _utils._delete(self._story, event)
         return True
 
     # ----------------------------------------------------------------------
@@ -4481,7 +4530,7 @@ class Timeline:
 
         :return: True if successful.
         """
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _remove_associated(self, event):
@@ -4489,8 +4538,8 @@ class Timeline:
         if "children" in self._story._properties["nodes"][event]:
             children = self._story._properties["nodes"][event]["children"]
             for child in children:
-                utils._delete(self._story, child)
-            utils._delete(self._story, event)
+                _utils._delete(self._story, child)
+            _utils._delete(self._story, event)
 
     # ----------------------------------------------------------------------
     def _find_position_content(self, content, event_node):
@@ -4565,7 +4614,9 @@ class MapTour:
             self._subtype = self._story._properties["nodes"][self.node]["data"][
                 "subtype"
             ]
-            self._places = self._story._properties["nodes"][self.node]["data"]["places"]
+            self._places = self._story._properties["nodes"][self.node]["data"].get(
+                "places"
+            ) or self._story._properties["nodes"][self.node]["data"].get("dataDriven")
         else:
             raise ValueError(
                 "You cannot create a Map Tour from scratch at this time. Please use an existing Map Tour."
@@ -4573,25 +4624,26 @@ class MapTour:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Tour"
+        return f"MapTour(type={self._type}, subtype={self._subtype})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Map Tour"
+        return f"MapTour(type={self._type}, subtype={self._subtype})"
 
     # ----------------------------------------------------------------------
     @property
     def _children(self) -> list:
         """private method to gather all children of a map tour from places data"""
         children = [self.map]
-        for place in self.places:
-            if "children" in place and place["contents"]:
-                for content in place["contents"]:
-                    children.append(content)
-            if "media" in place and place["media"]:
-                children.append(place["media"])
-            if "title" in place and place["title"]:
-                children.append(place["title"])
+        if isinstance(self._places, list):
+            for place in self.places:
+                if "children" in place and place["contents"]:
+                    for content in place["contents"]:
+                        children.append(content)
+                if "media" in place and place["media"]:
+                    children.append(place["media"])
+                if "title" in place and place["title"]:
+                    children.append(place["title"])
         return children
 
     # ----------------------------------------------------------------------
@@ -4610,7 +4662,7 @@ class MapTour:
         """
         List all places on the map
         """
-        return self._story._properties["nodes"][self.node]["data"]["places"]
+        return self._places
 
     # ----------------------------------------------------------------------
     def get(self, node_id: str):
@@ -4641,7 +4693,7 @@ class MapTour:
             story.save()
 
         """
-        return utils._assign_node_class(self._story, node_id)
+        return _utils._assign_node_class(self._story, node_id)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -4691,11 +4743,11 @@ class MediaAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Media Action"
+        return "MediaAction()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Media Action"
+        return "MediaAction()"
 
     # ----------------------------------------------------------------------
     @property
@@ -4717,7 +4769,7 @@ class MediaAction:
             if action["origin"] == self.node:
                 node = action["data"]["media"] if "media" in action["data"] else None
         if node:
-            return utils._assign_node_class(self._story, node)
+            return _utils._assign_node_class(self._story, node)
         return None
 
     # ----------------------------------------------------------------------
@@ -4837,7 +4889,7 @@ class MediaAction:
         for idx, action in enumerate(self._story._properties["actions"]):
             if action["origin"] == self.node:
                 del self._story._properties["actions"][idx]
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -4890,11 +4942,11 @@ class MapAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Action"
+        return "MapAction()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Map Action"
+        return "MapAction()"
 
     # ----------------------------------------------------------------------
     @property
@@ -4988,7 +5040,7 @@ class MapAction:
         for idx, action in enumerate(self._story._properties["actions"]):
             if action["origin"] == self.node:
                 del self._story._properties["actions"][idx]
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -5019,9 +5071,21 @@ class ExpressMap:
             ]
             # check if offline dependent
             if "dependents" in self._story._properties["nodes"][self.node]:
-                self._offline_dependent = self._story._properties["nodes"][self.node][
-                    "dependents"
-                ]["offline"]
+                if (
+                    "offline"
+                    in self._story._properties["nodes"][self.node]["dependents"]
+                ):
+                    self._offline_dependent = self._story._properties["nodes"][
+                        self.node
+                    ]["dependents"]["offline"]
+                else:
+                    self._offline_dependent = None
+                if "media" in self._story._properties["nodes"][self.node]["dependents"]:
+                    self._media_dependents = self._story._properties["nodes"][
+                        self.node
+                    ]["dependents"]["media"]
+                else:
+                    self._media_dependents = []
         else:
             raise ValueError(
                 "You cannot create an ExpressMap from scratch at this time. Please use an existing ExpressMap."
@@ -5029,11 +5093,11 @@ class ExpressMap:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "ExpressMap"
+        return "ExpressMap()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "ExpressMap"
+        return "ExpressMap()"
 
     # ----------------------------------------------------------------------
     @property
@@ -5052,7 +5116,7 @@ class ExpressMap:
         """
         if self._existing is True:
             if self._offline_dependent:
-                return utils._assign_node_class(
+                return _utils._assign_node_class(
                     story=self._story, node_id=self._offline_dependent
                 )
         return None
@@ -5062,7 +5126,7 @@ class ExpressMap:
     def offline_media(self, value: Image | Video):
         if self._existing:
             # can only set for briefing
-            if isinstance(self._story, briefing.Briefing):
+            if isinstance(self._story, _story_mod.Briefing):
                 if isinstance(value, Image) or isinstance(value, Video):
                     value._add_to_story(story=self._story)
                     self._story._properties["nodes"][self.node]["dependents"] = {
@@ -5079,6 +5143,29 @@ class ExpressMap:
             )
 
     # ----------------------------------------------------------------------
+    @property
+    def media(self):
+        """
+        Get/Set the media property for the embed.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        media               Image or Video. The new media for the Embed.
+        ==================  ========================================
+
+        :return:
+            The media that is being used.
+        """
+        if self._existing is True:
+            if self._media_dependents:
+                return [
+                    _utils._assign_node_class(story=self._story, node_id=md)
+                    for md in self._media_dependents
+                ]
+        return None
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Delete the map action.
@@ -5086,7 +5173,7 @@ class ExpressMap:
         for idx, action in enumerate(self._story._properties["actions"]):
             if action["origin"] == self.node:
                 del self._story._properties["actions"][idx]
-        return utils._delete(self._story, self.node)
+        return _utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -5153,7 +5240,7 @@ class Code:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Code: {self.language}"
+        return f"Code(language={self.language})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -5302,7 +5389,7 @@ class BriefingSlide:
         self,
         **kwargs,
     ):
-        self._story: briefing.Briefing = kwargs.pop("story")
+        self._story: _story_mod.Briefing = kwargs.pop("story")
         self._type: str = "briefing-slide"
         self.node: str = kwargs.pop("node_id", None)
         # Check if node exists else create a new instance
@@ -5333,7 +5420,7 @@ class BriefingSlide:
 
             subtitle = node_data.get("subtitle", None)
             if subtitle:
-                self._subtitle: Text | None = utils._assign_node_class(
+                self._subtitle: Text | None = _utils._assign_node_class(
                     story=self._story, node_id=subtitle
                 )
             else:
@@ -5341,9 +5428,15 @@ class BriefingSlide:
 
             title_node = node_data.get("title", None)
             if title_node:
-                self._title: Text = utils._assign_node_class(self._story, title_node)
+                self._title: Text = _utils._assign_node_class(self._story, title_node)
             else:
                 self._title: Text | None = None
+
+            display_title = node_data.get("displayTitle", None)
+            if display_title:
+                self._display_title: str = display_title
+            else:
+                self._display_title: str | None = None
 
             self._section_position: str | None = node_data.get("sectionPosition", None)
 
@@ -5361,8 +5454,10 @@ class BriefingSlide:
             self._title: Text = (
                 Text(title, TextStyles.SUBHEADING) if isinstance(title, str) else title
             )
+            self._display_title: str = title if isinstance(title, str) else title.text
         else:
             self._title: Text | None = None
+            self._display_title: str | None = None
 
         # set subtitle
         if subtitle:
@@ -5386,14 +5481,21 @@ class BriefingSlide:
             "full",
             "section-single",
             "section-double",
+            "titleless-flexible",
+            "flexible",
         ]:
             self._layout: str = layout
         else:
             raise ValueError(
-                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double"
+                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double, flexible, titleless-flexible."
             )
 
-        if self._layout in ["double", "titleless-double"]:
+        if self._layout in [
+            "double",
+            "titleless-double",
+            "flexible",
+            "titleless-flexible",
+        ]:
             if sublayout and sublayout in SlideSubLayout.__members__.values():
                 self._sublayout: str = sublayout.value
             elif sublayout and sublayout in ["3-7", "7-3", "1-1"]:
@@ -5462,7 +5564,7 @@ class BriefingSlide:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Briefing Slide: {self.layout}"
+        return f"BriefingSlide(layout={self.layout})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -5476,14 +5578,14 @@ class BriefingSlide:
         """
         # property only accessed through the cover slide
         if self._layout != "cover":
-            raise Warning(
+            warnings.warn(
                 "This is not a cover slide. The cover class can only be accessed through the cover slide."
             )
             return None
         # The storycover in a Briefing is the child of the first slide
         cover = self._story._properties["nodes"][self.node]["children"][0]
         # create a class from the node id
-        return utils._assign_node_class(self._story, cover)
+        return _utils._assign_node_class(self._story, cover)
 
     # ----------------------------------------------------------------------
     @property
@@ -5500,7 +5602,7 @@ class BriefingSlide:
         if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
             # self._children is a list of node ids in this case
             return [
-                utils._assign_node_class(self._story, node_id)
+                _utils._assign_node_class(self._story, node_id)
                 for node_id in self._children
             ]
 
@@ -5588,6 +5690,31 @@ class BriefingSlide:
 
     # ----------------------------------------------------------------------
     @property
+    def display_title(self) -> str | None:
+        """
+        Get/Set the display title of the slide. This is the title that will be shown in the
+        briefing when the slide is displayed.
+
+        :return:
+            A string of the display title if it exists, otherwise None.
+        """
+        return self._display_title
+
+    # ----------------------------------------------------------------------
+    @display_title.setter
+    def display_title(self, title: str):
+        """
+        Set the display title of the slide. This is the title that will be shown in the
+        briefing when the slide is displayed.
+
+        :param title: A string of the display title.
+        """
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["displayTitle"] = title
+        self._display_title = title
+
+    # ----------------------------------------------------------------------
+    @property
     def layout(self) -> str:
         """
         Get the layout of the slide.
@@ -5619,6 +5746,10 @@ class BriefingSlide:
     # ----------------------------------------------------------------------
     @sublayout.setter
     def sublayout(self, sublayout: str | SlideSubLayout):
+        if self.layout in ["flexible", "titleless-flexible"]:
+            # TODO: Ability to change sublayout in flexible layout
+            raise Exception("Changing the sublayout is not supported at this time.")
+
         if sublayout not in SlideSubLayout.__members__.values() and not isinstance(
             sublayout, str
         ):
@@ -5691,7 +5822,7 @@ class BriefingSlide:
         :return: True if successful.
         """
         if self._existing is True:
-            return utils._delete(self._story, self.node)
+            return _utils._delete(self._story, self.node)
         else:
             return False
 
@@ -5762,23 +5893,7 @@ class Block:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self._index == "0" and self._slide.layout in [
-            "single",
-            "titleless-single",
-            "full",
-            "section-double",
-        ]:
-            return "Block"
-        elif self._index == "0" and self._slide.layout in [
-            "double",
-            "titleless-double",
-        ]:
-            return "Left Block"
-        elif self._index == "1" and self._slide.layout in [
-            "double",
-            "titleless-double",
-        ]:
-            return "Right Block"
+        return f"Block(content={self.content}, index={self._index})"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -5797,7 +5912,7 @@ class Block:
         if isinstance(self._content, list) and len(self._content) > 0:
             # This is a list of content items
             return [
-                utils._assign_node_class(self._story, node_id)
+                _utils._assign_node_class(self._story, node_id)
                 for node_id in self._content
             ]
         elif isinstance(self._content, list) and len(self._content) == 0:
@@ -5805,7 +5920,7 @@ class Block:
             return []
         else:
             # There is only one content in the block
-            return [utils._assign_node_class(self._story, self._content)]
+            return [_utils._assign_node_class(self._story, self._content)]
 
     # ----------------------------------------------------------------------
     def add_content(
@@ -6039,7 +6154,7 @@ class Table:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Table"
+        return "Table()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -6087,22 +6202,22 @@ class Cover:
 
     def __init__(self, **kwargs):
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
         self._existing = self._check_node()
         if self._existing:
-            self._title = self._story._properties["nodes"][self._node]["data"].get(
+            self._title = self._story._properties["nodes"][self.node]["data"].get(
                 "title", None
             )
-            self._summary = self._story._properties["nodes"][self._node]["data"].get(
+            self._summary = self._story._properties["nodes"][self.node]["data"].get(
                 "summary", None
             )
-            self._byline = self._story._properties["nodes"][self._node]["data"].get(
+            self._byline = self._story._properties["nodes"][self.node]["data"].get(
                 "byline", None
             )
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Cover"
+        return "Cover()"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -6130,7 +6245,7 @@ class Cover:
             if isinstance(title, Text):
                 title = title.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["title"] = title
+            self._story._properties["nodes"][self.node]["data"]["title"] = title
         self._title = title
 
     # ----------------------------------------------------------------------
@@ -6155,7 +6270,7 @@ class Cover:
             if isinstance(summary, Text):
                 summary = summary.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["summary"] = summary
+            self._story._properties["nodes"][self.node]["data"]["summary"] = summary
         self._summary = summary
 
     # ----------------------------------------------------------------------
@@ -6180,7 +6295,7 @@ class Cover:
             if isinstance(byline, Text):
                 byline = byline.text
             # Set the title node id in data of slide
-            self._story._properties["nodes"][self._node]["data"]["byline"] = byline
+            self._story._properties["nodes"][self.node]["data"]["byline"] = byline
         self._byline = byline
 
     # ----------------------------------------------------------------------
@@ -6192,20 +6307,34 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        type                Optional string or CoverType enum. The type of story cover to be used in the story.
+        type                Optional string or :class:`~arcgis.apps.storymap.story_content.CoverType`
+                            enumeration. The type of story cover to be used in the story.
 
-                            ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal" | "card" | "split" | "top"``
-                            ``Values for Collection: "grid" | "magazine" | "journal"``
+                            * Values for :class:`~arcgis.apps.storymap.story.StoryMap`
+                              and :class:`~arcgis.apps.storymap.briefing.Briefing`:
+                             * *full*
+                             * *sidebyside*
+                             * *minimal*
+                             * *card*
+                             * *split*
+                             * *top*
+
+                            * Values for :class:`~arcgis.apps.storymap.collection.Collection`:
+
+                             * *grid*
+                             * *magazine*
+                             * *journal*
 
                             .. note::
-                                As of Enterprise 11.4 only "full", "sidebyside", and "minimal" are supported for Storymap and Briefing.
+                                As of Enterprise 11.4 only "full", "sidebyside", and "minimal" are
+                                supported for Storymap and Briefing.
         ===============     ====================================================================
 
         :return:
             A string of the cover type.
         """
         if self._existing:
-            return self._story._properties["nodes"][self._node]["data"]["type"]
+            return self._story._properties["nodes"][self.node]["data"]["type"]
         return None
 
     # ----------------------------------------------------------------------
@@ -6217,8 +6346,8 @@ class Cover:
 
         # check value
         if (
-            isinstance(self._story, briefing.Briefing)
-            or isinstance(self._story, story.StoryMap)
+            isinstance(self._story, _story_mod.Briefing)
+            or isinstance(self._story, _story_mod.StoryMap)
             and cover_type
             not in [
                 "full",
@@ -6232,7 +6361,7 @@ class Cover:
             raise ValueError(
                 "Invalid cover type. Please provide 'full', 'sidebyside', 'minimal', 'card', 'split', or 'top'."
             )
-        elif isinstance(self._story, collection.Collection) and cover_type not in [
+        elif isinstance(self._story, _story_mod.Collection) and cover_type not in [
             "grid",
             "magazine",
             "journal",
@@ -6241,7 +6370,7 @@ class Cover:
                 "Invalid cover type. Please provide 'grid', 'magazine', or 'journal'."
             )
         if self._existing:
-            self._story._properties["nodes"][self._node]["data"]["type"] = cover_type
+            self._story._properties["nodes"][self.node]["data"]["type"] = cover_type
 
     # ----------------------------------------------------------------------
     @property
@@ -6252,14 +6381,14 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        media               Optional string. The media of the cover slide. This can be an instance of
+        media               The media of the cover slide. This can be an instance of
                             Image or Video.
         ===============     ====================================================================
         """
         if self._existing:
-            if "children" in self._story._properties["nodes"][self._node]:
-                media_node = self._story._properties["nodes"][self._node]["children"][0]
-                return utils._assign_node_class(self._story, media_node)
+            if "children" in self._story._properties["nodes"][self.node]:
+                media_node = self._story._properties["nodes"][self.node]["children"][0]
+                return _utils._assign_node_class(self._story, media_node)
         return None
 
     # ----------------------------------------------------------------------
@@ -6275,12 +6404,12 @@ class Cover:
             )
         if media is None:
             # remove media
-            self._story._properties["nodes"][self._node]["children"] = []
+            self._story._properties["nodes"][self.node]["children"] = []
             return
         if media.node not in self._story._properties["nodes"]:
             # must be added to story resources
             media._add_to_story(story=self._story)
-        self._story._properties["nodes"][self._node]["children"] = [media.node]
+        self._story._properties["nodes"][self.node]["children"] = [media.node]
 
     # ----------------------------------------------------------------------
     @property
@@ -6334,11 +6463,11 @@ class Cover:
         ===============     ====================================================================
         """
         return (
-            self._story._properties["nodes"][self._node]["data"][
+            self._story._properties["nodes"][self.node]["data"][
                 "titlePanelVerticalPosition"
             ]
             if "titlePanelVerticalPosition"
-            in self._story._properties["nodes"][self._node]["data"]
+            in self._story._properties["nodes"][self.node]["data"]
             else None
         )
 
@@ -6356,7 +6485,7 @@ class Cover:
             raise ValueError(
                 "Invalid vertical position value. Please provide 'top', 'middle', or 'bottom'."
             )
-        self._story._properties["nodes"][self._node]["data"][
+        self._story._properties["nodes"][self.node]["data"][
             "titlePanelVerticalPosition"
         ] = position
 
@@ -6376,11 +6505,11 @@ class Cover:
         ===================     ====================================================================
         """
         return (
-            self._story._properties["nodes"][self._node]["data"][
+            self._story._properties["nodes"][self.node]["data"][
                 "titlePanelHorizontalPosition"
             ]
             if "titlePanelHorizontalPosition"
-            in self._story._properties["nodes"][self._node]["data"]
+            in self._story._properties["nodes"][self.node]["data"]
             else None
         )
 
@@ -6398,7 +6527,7 @@ class Cover:
             raise ValueError(
                 "Invalid horizontal position value. Please provide 'start', 'center', or 'end'."
             )
-        self._story._properties["nodes"][self._node]["data"][
+        self._story._properties["nodes"][self.node]["data"][
             "titlePanelHorizontalPosition"
         ] = position
 
@@ -6418,8 +6547,8 @@ class Cover:
         ===============     ====================================================================
         """
         return (
-            self._story._properties["nodes"][self._node]["data"]["titlePanelStyle"]
-            if "titlePanelStyle" in self._story._properties["nodes"][self._node]["data"]
+            self._story._properties["nodes"][self.node]["data"]["titlePanelStyle"]
+            if "titlePanelStyle" in self._story._properties["nodes"][self.node]["data"]
             else None
         )
 
@@ -6440,7 +6569,7 @@ class Cover:
             raise ValueError(
                 "Invalid style value. Please provide 'gradient', 'themed', 'transparent-with-light-color' or 'transparent-with-dark-color'."
             )
-        self._story._properties["nodes"][self._node]["data"]["titlePanelStyle"] = style
+        self._story._properties["nodes"][self.node]["data"]["titlePanelStyle"] = style
 
     # ----------------------------------------------------------------------
     @property
@@ -6458,8 +6587,8 @@ class Cover:
         ===============     ====================================================================
         """
         return (
-            self._story._properties["nodes"][self._node]["data"]["titlePanelSize"]
-            if "titlePanelSize" in self._story._properties["nodes"][self._node]["data"]
+            self._story._properties["nodes"][self.node]["data"]["titlePanelSize"]
+            if "titlePanelSize" in self._story._properties["nodes"][self.node]["data"]
             else None
         )
 
@@ -6475,11 +6604,11 @@ class Cover:
             raise ValueError(
                 "Invalid size value. Please provide 'small', 'medium', or 'large'."
             )
-        self._story._properties["nodes"][self._node]["data"]["titlePanelSize"] = size
+        self._story._properties["nodes"][self.node]["data"]["titlePanelSize"] = size
 
     # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None or self._node is None:
+        if self._story is None or self.node is None:
             return False
         return True
 
@@ -6492,18 +6621,14 @@ class Navigation:
 
     def __init__(self, **kwargs) -> None:
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
 
-        self._hidden = self._story._properties["nodes"][self._node]["config"][
-            "isHidden"
-        ]
-        self._links = (
-            self._story._properties["nodes"][self._node]["data"]["links"] or []
-        )
+        self._hidden = self._story._properties["nodes"][self.node]["config"]["isHidden"]
+        self._links = self._story._properties["nodes"][self.node]["data"]["links"] or []
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Navigation"
+        return "Navigation()"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -6520,7 +6645,7 @@ class Navigation:
         """
         links = []
         for link in self._links:
-            links.append(utils._assign_node_class(self._story, link))
+            links.append(_utils._assign_node_class(self._story, link))
         return links
 
     # ----------------------------------------------------------------------
@@ -6537,7 +6662,7 @@ class Navigation:
             for link in link_list
             if isinstance(link, Text) and link._style in ["h2", "h3", "h4"]
         ]
-        self._story._properties["nodes"][self._node]["data"]["links"] = self._links
+        self._story._properties["nodes"][self.node]["data"]["links"] = self._links
 
     # ----------------------------------------------------------------------
     @property
@@ -6555,9 +6680,7 @@ class Navigation:
 
         # update the hidden property
         self._hidden = hidden
-        self._story._properties["nodes"][self._node]["config"][
-            "isHidden"
-        ] = self._hidden
+        self._story._properties["nodes"][self.node]["config"]["isHidden"] = self._hidden
 
 
 ###############################################################################################################
@@ -6568,11 +6691,11 @@ class CollectionNavigation:
 
     def __init__(self, **kwargs) -> None:
         self._story = kwargs.pop("story")
-        self._node = kwargs.pop("node_id")
+        self.node = kwargs.pop("node_id")
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Collection Navigation"
+        return "CollectionNavigation()"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -6594,7 +6717,7 @@ class CollectionNavigation:
         :return:
             A string of the navigation type.
         """
-        return self._story._properties["nodes"][self._node]["data"]["type"]
+        return self._story._properties["nodes"][self.node]["data"]["type"]
 
     @type.setter
     def type(self, nav_type: str):
@@ -6602,4 +6725,4 @@ class CollectionNavigation:
             raise ValueError(
                 "Invalid navigation type. Please provide 'compact', 'tab', or 'bullet'."
             )
-        self._story._properties["nodes"][self._node]["data"]["type"] = nav_type
+        self._story._properties["nodes"][self.node]["data"]["type"] = nav_type

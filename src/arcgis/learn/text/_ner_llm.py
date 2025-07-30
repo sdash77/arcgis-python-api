@@ -398,7 +398,7 @@ class _LlmEntityRecognizer(ArcGISModel):
             f"This method is not supported when the backbone is configured as {self._submodel}."
         )
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         raise Exception(
             f"This method is not supported when the backbone is configured as {self._submodel}."
         )

@@ -354,6 +354,7 @@ class UnetClassifier(ArcGISModel):
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]

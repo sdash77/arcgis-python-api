@@ -154,6 +154,7 @@ class ClimaX(ArcGISModel):
         _emd_template["std_norm_stats"] = list(
             (self._data._norm_std).astype(np.float64)
         )
+        _emd_template["IsMultidimensional"] = True
 
         return _emd_template
 

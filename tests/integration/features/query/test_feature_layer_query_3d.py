@@ -16,6 +16,7 @@ from utils.decorators import integration_test, profiles
 # )
 
 
+@unittest.skip("Need to recreate the data in both AGOL and Enterprise")
 @profiles.admin_enterprise
 @integration_test
 class TestQuery3DFeatureLayer(unittest.TestCase):

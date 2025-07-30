@@ -13,24 +13,22 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 ### `arcgis.apps` Module 
 
 - `arcgis.apps.dashboard` - entire module deprecated at version **2.1.0**.  This sub-module maybe removed at a future major release (example: 2.x to 3.x). 
-- `WebExperience.clone` - deprecated in **2.3.0** will be removed in **2.4.2**. Pass in the Web Experience item to `gis.content.clone_items()` instead.
 - `StoryMap.get` - deprecated in **2.2.0** will be removed in **2.4.2**. `get` method has been deprecated, use `content_list` property instead.
 - `StoryMap.nodes` - deprecated in **2.2.0** removed in **2.4.0**. The `nodes` property has been deprecated, use `content_list` property instead.
 - `StoryMap.cover_date` - deprecated in **2.4.0** removed in future major release. Use the `date` property in the Cover class.
-- `StoryMap.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
-- `StoryMap.navigation` - deprecated in **2.4.0** removed in future major release. Use the Navigation class.
-- `Briefing.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
-- `Collection.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
 - `Swipe.properties` - deprecated in **2.4.0** removed in future major release. Use the `content` property instead.
 - `Swipe.edit` - deprecated in **2.4.0** removed in future major release. Use the `content` property setter instead.
 - `MapAction` - deprecated in **2.4.0** removed in future major release. Use the `MediaAction` class instead.
 - `JournalStoryMap` - deprecated in **2.0.0** removed in **2.4.0**.  Template was removed from the ArcGIS platform.
 - `Hub.initiatives` - deprecated in **2.4.0** removed in a future release. Use `Hub.sites` instead.
 
+### `arcgis.features` Module
+- `UtilityNetworkManager.export_subnetwork` - deprecated the "result_type" parameter. Please use "result_types" instead.
+- `UtilityNetworkManager.trace` - deprecated the "result_type" parameter. Please use "result_types" instead.
 
 ### `arcgis.learn` Module
 
-- `categorize_features` - depreacted in **1.7.1** and will be removed in a future major release (example: 2.x to 3.x).  Please use `arcgis.learn.classify_objects` instead.
+- `categorize_features` - deprecated in **1.7.1** and will be removed in a future major release (example: 2.x to 3.x).  Please use `arcgis.learn.classify_objects` instead.
 
 ### `arcgis.gis.agonb` Module 
 
@@ -52,36 +50,10 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `Item.unshare` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 - `overwrite` item_property on `Folder.add` is deprecated and will be removed at **2.4.2**.  Use `item.update` to update the source file for an `Item` instead.
 
+### `arcgis.layers` Module
 
-### `arcgis.mapping` Module
-
-- `MapImageLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapImageLayer` class instead.
-- `MapImageLayerManager` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapImageLayerManager` class instead.
-- `EnterpriseMapImageLayerManager` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.EnterpriseMapImageLayerManager` class instead.
-- `VectorTileLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.VectorTileLayer` class instead.
-- `VectorTileLayerManager` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.VectorTileLayerManager` class instead.
-- `Object3DLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.Object3DLayer` class instead.
-- `IntegratedMeshLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.IntegratedMeshLayer` class instead.
-- `Tiles3DLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.Tiles3DLayer` class instead.
-- `Point3DLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.Point3DLayer` class instead.
-- `VoxelLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.VoxelLayer` class instead.
-- `PointCloudLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.PointCloudLayer` class instead.
-- `BuildingLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.BuildingLayer` class instead.
-- `SceneLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.SceneLayer` class instead.
-- `SceneLayerManager` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.SceneLayerManager` class instead.
-- `EnterpriseSceneLayerManager` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.EnterpriseSceneLayerManager` class instead.
-- `MapServiceLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapServiceLayer` class instead.
-- `MapFeatureLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapFeatureLayer` class instead.
-- `MapTable` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapTable` class instead.
-- `MapRasterLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapRasterLayer` class instead.
-- `WMTSLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.WMTSLayer` class instead.
-- `CSVLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.CSVLayer` class instead.
-- `GeoRssLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.GeoRssLayer` class instead.
-- `KMLLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.KMLLayer` class instead.
-- `WMSLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.WMSLayer` class instead.
-- `GeoJSONLayer` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.GeoJSONLayer` class instead.
-- `OGCCollection` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.OGCCollection` class instead.
-- `OGCFeatureService` - deprecated in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.OGCFeatureService` class instead.
+- `BasemapServices` - deprecated in **2.4.2** removed in **2.5.0**. Use the `arcgis.map.BasemapStylesService` class instead.
+- `BasemapService` - deprecated in **2.4.2** removed in **2.5.0**. Use the `arcgis.map.BasemapStyle` class instead.
 
 ## Deprecation Removals
 
@@ -101,15 +73,8 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `arcgis.geoanalytics.define_output_datastore` was removed in **2.4.0**.  Use version 2.3.x if this functionality is still needed.
 - `arcgis.geoanalytics.is_supported` was removed in **2.4.0**.  Use version 2.3.x if this functionality is still needed.
 
-
-
 ### `arcgis.mapping` Module
-- `WebMap` - removed in **2.4.0**. Use `arcgis.map.Map` instead.
-- `WebScene` - removed in **2.4.0**. Use `arcgis.map.Scene` instead.
-- `forms` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.forms` module instead.
-- `renderer` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.renderers` and methods in `arcgis.map.SmartMappingManager`.
-- `OfflineMapAreaManager` - removed in **2.4.0**. Use the `arcgis.map.OfflineMapArea`.
-
+- The entire module was deprecated in 2.4.0 and has been removed in 2.4.2. Use the `arcgis-mapping` package and access all the new classes through `arcgis.map`.
 
 ### `arcgis.geocoding` Module
 - `suggest` - The **distance** parameter is deprecated and removed at **2.4.0**.  The parameter is no longer supported. Please use the `search_extent` parameter instead to control the search area.
@@ -133,7 +98,6 @@ Several classes, functions, and methods have been completely removed from the Ar
 
 ### `arcgis.raster` Module
 
-- `calculate_distance` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation (or arcgis.raster.functions.gbl.distance_allocation for allocation output) instead.
 - `calculate_travel_cost` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation (or arcgis.raster.functions.gbl.distance_allocation for allocation output), instead.
 - `cost_allocation` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation instead.
 - `cost_backlink` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation with value specified for output_back_direction_raster_name, instead.
@@ -164,3 +128,13 @@ Several classes, functions, and methods have been completely removed from the Ar
 ### `arcgis.gis` Module
 
 - `Group.invite_by_email` - deprecated in **1.5.1** removed in **2.4.0**.  Use `Group.invite` instead.
+
+### `arcgis.apps` Module
+- `WebExperience.clone` - deprecated in **2.3.0** was removed in **2.4.2**. Pass in the Web Experience item to `gis.content.clone_items()` instead.
+- `StoryMap.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+- `StoryMap.navigation` - deprecated in **2.4.0** removed in future major release. Use the Navigation class.
+- `Briefing.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+- `Collection.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+### Packages
+
+- `fiona` - removed in **2.4.2**. 

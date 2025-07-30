@@ -439,10 +439,11 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         self._session = session
+        self.proxies = kwargs.pop("proxies", None)
         if not session:
             self._session = requests.Session()
             self._session.verify = verify_cert
-            self.proxies = kwargs.pop("proxies", {})
+
             if self.proxies:
                 self._session.proxies = self.proxies
 
@@ -476,7 +477,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._re_expressions = {
             "step-1a": re.compile("var oAuthInfo = ({.*?});", re.DOTALL),
             "step-1b": re.compile("var oAuthInfo = ({.*?})", re.DOTALL),
-            "step-1c": re.compile("var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
+            "step-1c": re.compile(r"var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
             "step-2": re.compile(r"<title>SUCCESS code=(.*?)</title>", re.DOTALL),
             "password_reset": re.compile(r"{.*\:.*}"),
         }
@@ -675,23 +676,9 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             self._init_response_type_token()
             return
         oauth_info = None
-        pattern = self._re_expressions["step-1a"]
-        if len(pattern.findall(content)) == 0:
-            pattern = self._re_expressions["step-1b"]
-        soup = lxml.html.fromstring(content)
-        for script in soup.xpath("//script/text()"):
-            script_code = str(script).strip()
-            matches = pattern.search(script_code)
-            if not matches is None:
-                js_object = matches.groups()[0]
-                try:
-                    oauth_info = json.loads(js_object)
-                except:
-                    oauth_info = json.loads(js_object + "}")
-                break
-        if oauth_info:
-            oauth_state = oauth_info["oauth_state"]
-        else:
+        oauth_info = self._match_oauth_info(content) or {}
+        oauth_state = oauth_info.get("oauth_state")
+        if not oauth_state:
             raise ArcGISLoginError(
                 "Could not login. Please ensure you have valid credentials and set your security login question."
             )
@@ -708,14 +695,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             allow_redirects=True,
             drop_auth=True,
         )
-        matches = pattern.findall(signin_resp.text)
-        if len(matches) > 0:
-            try:
-                sign_json = json.loads(matches[0].strip())
-            except:
-                sign_json = json.loads(matches[0].strip() + "}")
-        else:
-            sign_json = {}
+        sign_json = self._match_oauth_info(signin_resp.text)
         if "messages" in sign_json and (
             any(
                 [
@@ -745,17 +725,8 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 allow_redirects=True,
             )
             resp_text = signin_resp.text
-            exp = r"<title>SUCCESS code=(.*?)</title>"
-            pattern = self._re_expressions["step-2"]
-            code = pattern.findall(resp_text)[0]
+            code = self._match_success_code(resp_text)
         elif signin_resp.url.lower().find("updateuserprofile") > -1:
-            # raise Exception(
-            # (
-            # "This is your first time logging in and you are required"
-            # " to setup a new password manually before logging in."
-            # )
-            # )
-
             print(
                 "This is your first time logging in and you are required to setup a new password."
             )
@@ -763,10 +734,8 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             assert self._password != new_password
 
             resp_text = signin_resp.text
-            pattern = self._re_expressions["password_reset"]
-            oauth_state = json.loads(pattern.findall(resp_text)[0].replace(" ", ""))[
-                "oauth_state"
-            ]
+            reset_json = self._match_password_reset(resp_text) or {}
+            oauth_state = reset_json.get("oauth_state")
             params = {
                 "password": self._password,
                 "newPassword": new_password,
@@ -781,9 +750,8 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 drop_auth=True,
             )
             self._password = new_password
-            oauth_state = json.loads(pattern.findall(resp_text)[0].replace(" ", ""))[
-                "oauth_state"
-            ]
+            reset_json = self._match_password_reset(resp_text) or {}
+            oauth_state = reset_json.get("oauth_state")
             print(_MSG)
             question = int(getpass(prompt="Select a question by integer: "))
             answer = getpass("Answer to the question: ")
@@ -810,22 +778,9 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 verify_code = mfa_otp(mfa_code)
 
             oauth_info = None
-            pattern = self._re_expressions["step-1a"]
-            if len(pattern.findall(content)) == 0:
-                pattern = self._re_expressions["step-1b"]
-            soup = lxml.html.fromstring(signin_resp.text)
-            for script in soup.xpath("//script/text()"):
-                script_code = str(script).strip()
-                matches = pattern.search(script_code)
-                if not matches is None:
-                    js_object = matches.groups()[0]
-                    try:
-                        oauth_info = json.loads(js_object)
-                    except:
-                        oauth_info = json.loads(js_object + "}")
-                    break
+            oauth_info = self._match_oauth_info(signin_resp.text) or {}
             mfa_params: dict[str, str] = {
-                "oauth_state": oauth_info["oauth_state"],
+                "oauth_state": oauth_info.get("oauth_state"),
                 "authResponse": "",
                 "totp": "",
                 "mfa_code": verify_code,
@@ -839,9 +794,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 drop_auth=True,
             )
             resp_text = self._session.get(resp.headers["location"], drop_auth=True).text
-            exp = r"<title>SUCCESS code=(.*?)</title>"
-            pattern = self._re_expressions["step-2"]
-            code = pattern.findall(resp_text)[0]
+            code = self._match_success_code(resp_text)
             self._auth_token = self._oauth.fetch_token(
                 token_url=self._token_url,
                 code=code,
@@ -851,10 +804,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 **{"expiration": 20160},
             )
         else:
-            resp_text = signin_resp.text
-            exp = r"<title>SUCCESS code=(.*?)</title>"
-            pattern = self._re_expressions["step-2"]
-            code = pattern.findall(resp_text)[0]
+            code = self._match_success_code(signin_resp.text)
         self._auth_token = self._oauth.fetch_token(
             token_url=self._token_url,
             code=code,
@@ -1008,6 +958,55 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 )
             else:
                 self._expiration_time = _dt.datetime.now() + _dt.timedelta(seconds=300)
+
+    @classmethod
+    def _match_oauth_info(cls, text: str) -> dict | None:
+        """Extracts OAuth info JSON object from script text in OAuth response"""
+        patterns = [
+            {"pattern": re.compile("var oAuthInfo = ({.*?});", re.DOTALL), "group": 0},
+            {"pattern": re.compile("var oAuthInfo = ({.*?})", re.DOTALL), "group": 0},
+            {
+                "pattern": re.compile(r"var\s+(\w+)\s*=\s*({.*?})", re.DOTALL),
+                "group": 1,
+            },
+        ]
+        for script in lxml.html.fromstring(text).xpath("//script/text()"):
+            script_code = str(script).strip()
+            for pattern_config in patterns:
+                pattern = pattern_config["pattern"]
+                match = pattern.search(script_code)
+                if not match:
+                    continue
+                js_object = match.groups()[pattern_config["group"]]
+                try:
+                    return json.loads(js_object)
+                except Exception:
+                    try:
+                        return json.loads(js_object + "}")
+                    except Exception:
+                        continue
+        return None
+
+    @classmethod
+    def _match_success_code(cls, text: str) -> str | None:
+        """Extracts the SUCCESS code from OAuth oob HTML response"""
+        pattern = re.compile(r"<title>SUCCESS code=(.*?)</title>", re.DOTALL)
+        match = pattern.search(text)
+        if match:
+            return match.group(1)
+        return None
+
+    @classmethod
+    def _match_password_reset(cls, text: str) -> dict | None:
+        """Extracts password reset JSON from text using the password_reset regex."""
+        pattern = re.compile(r"{.*\:.*}")
+        match = pattern.search(text)
+        if match:
+            try:
+                return json.loads(match.group(0).replace(" ", ""))
+            except Exception:
+                return None
+        return None
 
 
 ###########################################################################

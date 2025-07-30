@@ -3,9 +3,10 @@ from utils.decorators import integration_test, profiles
 from arcgis.features import FeatureSet
 from arcgis.geometry import Envelope, Geometry
 from arcgis.geometry.filters import intersects
+from arcgis.gis import GIS
 
 
-@profiles.agol
+@profiles.enterprise_and_agol
 @integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
 
@@ -75,11 +76,17 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query result_offset
         """
+        base_query = result_offset_results = self.major_cities_layer.query(
+            return_all_records=False
+        )
+        count_base_records = len(base_query.features)
         result_offset_results = self.major_cities_layer.query(
             result_offset=100, return_all_records=False
         )
+        count_offset_records = len(result_offset_results.features)
+
         assert result_offset_results
-        assert result_offset_results.features[0].attributes["OBJECTID"] == 101
+        assert (count_base_records - count_offset_records) == 100
 
     def test_query_object_ids(self):
         """
@@ -104,29 +111,32 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with limited out_fields indicated
         Test return_distinct_values
         """
-        fields = self.major_cities_layer.query(
-            out_fields=["class", "families", "females"]
-        )
+        field_names = ["population", "class", "pop_class"]
+        if self.gis._is_arcgisonline:
+            field_names = [n.upper() for n in field_names]
+        fields = self.major_cities_layer.query(out_fields=field_names)
         # ObjectId field always included
         assert len(fields.fields) == 4
 
+    def test_query_distinct_values(self):
         distinct_values = self.major_cities_layer.query(
-            out_fields=["class", "families"],
+            out_fields=["class"],
             return_distinct_values=True,
             return_geometry=False,
         )
+        all_count = self.major_cities_layer.query(return_count_only=True)
         # ObjectId field not included
-        assert len(distinct_values.fields) == 2
-        assert len(distinct_values.features) < self.major_cities_layer.query(
-            return_count_only=True
-        )
+        assert len(distinct_values.fields) == 1
+        assert (
+            len(distinct_values.features) < all_count
+        ), f"Incorrect difference. {len(distinct_values.features)} got {all_count}"
 
     def test_query_extent_only(self):
         """
         Test query with return_extent_only=True
         """
         extent = self.major_cities_layer.query(
-            where="st = 'ID'", return_extent_only=True
+            where="NAME = 'San Diego'", return_extent_only=True
         )
         assert extent["extent"]
         assert isinstance(extent, dict)
@@ -136,19 +146,24 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with order_by_fields=True
         """
+        population_field_name = "population"
+        field_names = ["population", "name", "pop_class"]
+        if self.gis._is_arcgisonline:
+            population_field_name = population_field_name.upper()
+            field_names = [n.upper() for n in field_names]
         ordered = self.major_cities_layer.query(
-            out_fields=["class", "families", "females"],
-            order_by_fields="families ASC",
+            out_fields=field_names,
+            order_by_fields=f"{population_field_name} ASC",
             return_geometry=False,
         )
         assert ordered
         assert (
-            ordered.features[0].attributes["families"]
-            < ordered.features[1].attributes["families"]
+            ordered.features[0].attributes[population_field_name]
+            < ordered.features[1].attributes[population_field_name]
         )
         assert (
-            ordered.features[1].attributes["families"]
-            < ordered.features[2].attributes["families"]
+            ordered.features[1].attributes[population_field_name]
+            < ordered.features[2].attributes[population_field_name]
         )
 
     def test_query_return_m_and_z_and_centroid(self):
@@ -187,11 +202,14 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with sql_format
         """
+        name_field_name = "name"
+        if self.gis._is_arcgisonline:
+            name_field_name = name_field_name.upper()
         sql = self.major_cities_layer.query(
-            where="name like '%Park'", sql_format="standard"
+            where="name like '%Diego'", sql_format="standard"
         )
         assert sql
-        assert sql.features[0].attributes["name"].endswith("Park")
+        assert sql.features[0].attributes[name_field_name].endswith("Diego")
         assert len(sql.features) < self.major_cities_layer.query(return_count_only=True)
 
     def test_query_units(self):
@@ -261,30 +279,43 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with group_by_field_for_statistics
         """
+        population_field_name = "population"
+        if self.gis._is_arcgisonline:
+            population_field_name = population_field_name.upper()
+
         group_field = self.major_cities_layer.query(
-            out_statistics=[{"statisticType": "avg", "onStatisticField": "females"}],
-            group_by_fields_for_statistics="pop_class",
+            out_statistics=[
+                {"statisticType": "avg", "onStatisticField": population_field_name}
+            ],
+            group_by_fields_for_statistics=population_field_name,
         )
         assert group_field
         assert isinstance(group_field, FeatureSet)
-        assert len(group_field.features) == 6
+        assert len(group_field.features) == 2000
 
     def test_query_out_statistics(self):
         """
         Test query with out_statistics
         """
-        output_name = "sum_females"
+        output_name = "sum_population"
+        population_field_name = "population"
+
+        if self.gis._is_arcgisonline:
+            population_field_name = population_field_name.lower()
+
         out_stats = self.major_cities_layer.query(
             out_statistics=[
                 {
                     "statisticType": "sum",
-                    "onStatisticField": "females",
+                    "onStatisticField": population_field_name,
                     "outStatisticFieldName": output_name,
                 }
             ]
         )
         assert out_stats
-        assert out_stats.fields[0]["name"] == output_name
+        assert (
+            out_stats.fields[0]["name"] == output_name
+        ), f"Expected 'sum_population' got {output_name}"
 
 
 if __name__ == "__main__":

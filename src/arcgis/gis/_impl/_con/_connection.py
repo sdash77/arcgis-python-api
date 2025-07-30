@@ -2,6 +2,7 @@
 Connection Object that uses Python Requests
 """
 
+from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Union
 from arcgis.auth.tools._util import check_module_exists
@@ -71,7 +72,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -1046,13 +1047,13 @@ class Connection(object):
                                       Files can be provided two ways:
 
                                       The most basic way is:
-                                      Way1: {key : r"c:\temp\myfile.foo}
+                                      Way1: {key : "/path/to/myfile.foo"}
                                       This is just the file path and the key.
 
 
                                       The preferred way:
 
-                                      Way 2: {key : (file_name, open(c:\temp\myfile.foo, 'rb'), image\jpeg)}
+                                      Way 2: {key : (file_name, open("/path/to/myfile.foo", 'rb'), "image/jpeg")}
 
                                       Way 2 requires providing the filename, IO object as 'rb', and the mimetype.
         ===========================   =====================================================
@@ -1299,13 +1300,13 @@ class Connection(object):
                                       Files can be provided two ways:
 
                                       The most basic way is:
-                                      Way1: {key : r"c:\temp\myfile.foo}
+                                      Way1: {key : "/path/to/myfile.foo"}
                                       This is just the file path and the key.
 
 
                                       The preferred way:
 
-                                      Way 2: {key : (file_name, open(c:\temp\myfile.foo, 'rb'), image\jpeg)}
+                                      Way 2: {key : (file_name, open("/path/to/myfile.foo", 'rb'), "image/jpeg")}
 
                                       Way 2 requires providing the filename, IO object as 'rb', and the mimetype.
         ===========================   =====================================================

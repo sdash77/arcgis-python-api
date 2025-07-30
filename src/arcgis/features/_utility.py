@@ -1,10 +1,9 @@
 from __future__ import annotations
-from dataclasses import dataclass
 from typing import Any, Optional, Union
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features._trace_configuration import TraceConfiguration
-from arcgis._impl.common._deprecate import deprecated
+from arcgis._impl.common._output_to_file import handle_response
 
 
 ########################################################################
@@ -90,10 +89,11 @@ class UtilityNetworkManager(object):
         trace_type: str,
         moment: int | None = None,
         configuration: dict | TraceConfiguration | None = None,
-        result_type: str | None = None,
+        result_type: list[dict] | None = None,
         result_types: list[dict] | None = None,
         trace_config_global_id: str | None = None,
         out_sr: int | None = None,
+        future: bool = False,
         pbf: bool = False,
     ) -> dict:
         """
@@ -170,6 +170,8 @@ class UtilityNetworkManager(object):
                                    To see all configuration properties see:
                                    `Trace Configuration Properties
                                    <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+        -----------------------    --------------------------------------------------------------------
+        result_type                ** Deprecated, use `result_types` instead. **
         -----------------------    --------------------------------------------------
         result_types               Optional parameter specifying the types of results
                                    to return.
@@ -196,6 +198,12 @@ class UtilityNetworkManager(object):
         -----------------------    --------------------------------------------------
         pbf                        Optional Boolean. If True, the results are returned in
                                    the PBF format. The default is False.
+        -----------------------    --------------------------------------------------------------------
+        future                     Optional boolean. If `True`, the request is processed as an asynchronous
+                                   job and a URL is returned that points a location displaying the status
+                                   of the job.
+
+                                   The default is `False`.
         =======================    ==================================================
 
         .. note::
@@ -227,22 +235,34 @@ class UtilityNetworkManager(object):
             "moment": moment,
             "traceLocations": locations,
             "traceConfiguration": configuration,
+            "async": future,
         }
         if trace_config_global_id:
             params["traceConfigurationGlobalId"] = trace_config_global_id
-        if self._gis.version <= [7, 3]:
-            params["resultType"] = result_type
-        else:
+
+        # Both result_type and result_types will be mapped to resultTypes,
+        # however prioritize result_types if both are provided
+        if result_types:
             params["resultTypes"] = result_types
+        elif result_type:
+            params["resultTypes"] = result_type
         if out_sr:
             params["outSR"] = out_sr
-        if pbf is True:
-            return self._con.post(url, params, force_bytes=True)
+
+        if future:
+            res = self._con.post(path=url, postdata=params, force_bytes=pbf)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
         else:
-            return self._con.post(url, params)
+            return self._con.post(url, params, force_bytes=pbf)
 
     # ----------------------------------------------------------------------
-    def disable_topology(self) -> dict:
+    def disable_topology(self, future: bool = False) -> dict:
         """
         Disables the network topology for a utility network. When the
         topology is disabled, feature and association edits do not generate
@@ -265,6 +285,14 @@ class UtilityNetworkManager(object):
           reconcile process can be used to inherit the state from the default
           branch version.
 
+        =======================    ==================================================
+        future                     Optional boolean. If `True`, the request is processed as an asynchronous
+                                   job and a URL is returned that points a location displaying the status
+                                   of the job.
+
+                                   The default is `False`.
+        =======================    ==================================================
+
         :return:
             Dictionary indicating 'success' or 'error'
 
@@ -275,10 +303,20 @@ class UtilityNetworkManager(object):
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def enable_topology(self, error_count: int = 10000) -> dict:
+    def enable_topology(self, error_count: int = 10000, future: bool = False) -> dict:
         """
         Enabling the network topology for a utility network is done on the
         **DEFAULT** version. Enabling is **not** supported in named versions.
@@ -302,6 +340,12 @@ class UtilityNetworkManager(object):
         error_count                              Optional Integer. Sets the threshold when the *enable_topology* will
                                                  stop if the maximum number of errors is met. The default value is
                                                  10,000.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                    Optional boolean. If `True`, the request is processed as an asynchronous
+                                                  job and a URL is returned that points a location displaying the status
+                                                  of the job.
+
+                                                  The default is `False`.
         ====================================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -312,7 +356,17 @@ class UtilityNetworkManager(object):
 
         params = {"f": "json", "maxErrorCount": error_count}
         url = "%s/enableTopology" % self._url
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def disable_subnetwork_controller(
@@ -434,10 +488,11 @@ class UtilityNetworkManager(object):
         subnetwork_name: str,
         trace_configuration: dict | TraceConfiguration | None = None,
         export_acknowledgement: bool = False,
-        result_type: str | None = None,
+        result_type: list[dict] | None = None,
         result_types: list[dict] | None = None,
         moment: int | None = None,
         run_async: bool = False,
+        future: bool = False,
         out_sr: int | None = None,
         pbf: bool = False,
     ) -> dict:
@@ -466,6 +521,8 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         export_acknowledgement                      Optional Boolean. Specify whether the export is acknowledged.
         ------------------------------------        --------------------------------------------------------------------
+        result_type                                 ** Deprecated, use `result_types` instead. **
+        ------------------------------------        --------------------------------------------------------------------
         result_types                                Optional list of dictionaries. Specifies the type of results to return.
 
                                                     .. code-block:: python
@@ -491,6 +548,12 @@ class UtilityNetworkManager(object):
         pbf                                         Optional Boolean. If true, the response will be in PBF format.
                                                     The default from the REST is False. In Pro, starting at 3.3, the default is True so make
                                                     sure to set `pbf` to True if you want to mimic that response.
+        -----------------------                     --------------------------------------------------------------------
+        future                                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                                    job and a URL is returned that points a location displaying the status
+                                                    of the job.
+
+                                                    The default is `False`.
         ====================================        ====================================================================
 
         :return:
@@ -525,6 +588,9 @@ class UtilityNetworkManager(object):
             elif "useDigitizedDirection" in trace_configuration:
                 del trace_configuration["useDigitizedDirection"]
 
+        if run_async:
+            future = True
+
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -535,19 +601,35 @@ class UtilityNetworkManager(object):
             "subnetworkName": subnetwork_name,
             "exportAcknowledgement": export_acknowledgement,
             "traceConfiguration": trace_configuration,
-            "async": run_async,
+            "async": future,
         }
-        if self._gis.version <= [7, 3]:
-            params["resultType"] = result_type
-        else:
+
+        # Toggle for pbf output from pbf argument
+        force_bytes = False
+
+        # Both result_type and result_types will be mapped to resultTypes,
+        # however prioritize result_types if both are provided
+        if result_types:
             params["resultTypes"] = result_types
+        elif result_type:
+            params["resultTypes"] = result_type
         if out_sr:
             params["outSR"] = out_sr
         if pbf:
             params["f"] = "pbf"
-            return self._con.post(url, params, force_bytes=True)
+            force_bytes = True
+
+        if future:
+            res = self._con.post(path=url, postdata=params, force_bytes=force_bytes)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
         else:
-            return self._con.post(url, params)
+            return self._con.post(url, params, force_bytes=force_bytes)
 
     # ----------------------------------------------------------------------
     def query_network_moments(
@@ -679,7 +761,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def update_is_connected(self) -> dict:
+    def update_is_connected(self, future: bool = False) -> dict:
         """
 
         Utility network features have an attribute called *IsConnected* that
@@ -688,10 +770,28 @@ class UtilityNetworkManager(object):
         updates this attribute on features in the specified utility network.
         This operation can only be executed on the default version by the portal
         utility network owner.
+        ====================================        ====================================================================
+        future                                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                                    job and a URL is returned that points a location displaying the status
+                                                    of the job.
+
+                                                    The default is `False`.
+        ====================================        ====================================================================
         """
         url = "%s/updateIsConnected" % self._url
         params = {"f": "json"}
-        return self._con.post(url, params)
+
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def update_subnetwork(
@@ -702,6 +802,7 @@ class UtilityNetworkManager(object):
         all_subnetwork_tier: bool = False,
         continue_on_failure: bool = False,
         trace_configuration: dict | None = None,
+        future: bool = False,
     ) -> dict:
         """
         A subnetwork is updated by calling the update_subnetwork operation. With
@@ -733,6 +834,12 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         trace_configuration                         Optional Dictionary. Represents the collection of trace configuration
                                                     parameters. See `trace` method to get parameters.
+        -----------------------                     --------------------------------------------------------------------
+        future                                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                                    job and a URL is returned that points a location displaying the status
+                                                    of the job.
+
+                                                    The default is `False`.
         ====================================        ====================================================================
 
         :return: Dictionary of the JSON response.
@@ -760,8 +867,20 @@ class UtilityNetworkManager(object):
             "allSubnetworksInTier": all_subnetwork_tier,
             "continueOnFailure": continue_on_failure,
             "traceConfiguration": trace_configuration,
+            "async": future,
         }
-        return self._con.post(url, params)
+
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def validate_topology(
@@ -771,6 +890,8 @@ class UtilityNetworkManager(object):
         return_edits: bool = False,
         validate_set: list[dict] | None = None,
         out_sr: int | None = None,
+        validation_type: str = None,
+        future: bool = False,
     ) -> dict:
         """
         Validating the network topology for a utility network maintains
@@ -832,25 +953,48 @@ class UtilityNetworkManager(object):
                                                         ]
         ------------------------------------        --------------------------------------------------------------------
         out_sr                                      Optional integer. The output spatial reference.
+        ------------------------------------        --------------------------------------------------------------------
+        validation_type                             Optional string. The output spatial reference.
+        -----------------------                     --------------------------------------------------------------------
+        future                                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                                    job and a URL is returned that points a location displaying the status
+                                                    of the job.
+
+                                                    The default is `False`.
         ====================================        ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/validateNetworkTopology" % self._url
+        if not validation_type:
+            validation_type = "normal"
+        if run_async:
+            future = run_async
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
             "validateArea": envelope,
-            "async": run_async,
+            "async": future,
             "returnEdits": return_edits,
         }
         if self._gis.version >= [9, 2]:
             params["validateSet"] = validate_set
+            params["validationType"] = validation_type
         if out_sr:
             params["outSR"] = out_sr
-        return self._con.post(url, params)
+        if future or run_async:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def associations(self) -> dict:
@@ -1083,6 +1227,7 @@ class UtilityNetworkManager(object):
         containment_associations: bool = False,
         locations: bool = False,
         out_sr: int | dict | None = None,
+        future: bool = False,
     ) -> dict:
         """
         The query operation queries the locatability of the provided set of objects
@@ -1147,8 +1292,19 @@ class UtilityNetworkManager(object):
                 "containmentAssociations": containment_associations,
                 "locations": locations,
                 "outSR": out_sr,
+                "async": future,
             }
-            return self._con.post(url, params)
+            if future:
+                res = self._con.post(path=url, postdata=params)
+                f = self._run_async(
+                    self._status_via_url,
+                    con=self._con,
+                    url=res["statusUrl"],
+                    params={"f": "json"},
+                )
+                return f
+            else:
+                return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def trace_configurations(self) -> TraceConfigurationsManager:
@@ -1172,6 +1328,40 @@ class UtilityNetworkManager(object):
             )
 
     # ----------------------------------------------------------------------
+    def _run_async(self, fn, **inputs):
+        """runs the inputs asynchronously"""
+        import concurrent.futures
+
+        tp = concurrent.futures.ThreadPoolExecutor(1)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
+        tp.shutdown(False)
+        return future
+
+    # ----------------------------------------------------------------------
+
+    def _status_via_url(self, con, url, params):
+        """
+        performs the asynchronous check to see if the operation finishes
+        """
+        status_allowed = [
+            "InProgress",
+            "Pending",
+            "Completed",
+            "Failed",
+        ]
+        status = con.get(url, params)
+        while status["status"] in status_allowed and status["status"] != "Completed":
+            if status["status"] == "Completed":
+                return status
+            elif status["status"] in [
+                "Failed",
+            ]:
+                break
+            status = con.get(url, params)
+        return status
 
 
 class TraceConfigurationsManager(object):
@@ -1466,5 +1656,41 @@ class TraceConfigurationsManager(object):
                 "tags": tags,
             }
             return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def _run_async(self, fn, **inputs):
+        """runs the inputs asynchronously"""
+        import concurrent.futures
+
+        tp = concurrent.futures.ThreadPoolExecutor(1)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
+        tp.shutdown(False)
+        return future
+
+    # ----------------------------------------------------------------------
+
+    def _status_via_url(self, con, url, params):
+        """
+        performs the asynchronous check to see if the operation finishes
+        """
+        status_allowed = [
+            "InProgress",
+            "Pending",
+            "Completed",
+            "Failed",
+        ]
+        status = con.get(url, params)
+        while status["status"] in status_allowed and status["status"] != "Completed":
+            if status["status"] == "Completed":
+                return status
+            elif status["status"] in [
+                "Failed",
+            ]:
+                break
+            status = con.get(url, params)
+        return status
 
     # ----------------------------------------------------------------------

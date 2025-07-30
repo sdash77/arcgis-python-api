@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, Table
 from arcgis.geometry import Geometry
@@ -138,14 +139,12 @@ def from_featureset(fset, sr=None):
 
         if "SHAPE" in df.columns:
             # replace the float NaN with None, otherwise error occurs
-            df["SHAPE"].replace({np.nan: None}, inplace=True)
+            df.loc[df["SHAPE"] == np.nan, "SHAPE"] = None
             df.spatial.set_geometry("SHAPE")
             df.spatial.sr = sr
-            for i in range(len(df)):
-                shape = df.loc[i]["SHAPE"]
-                # Check if NaN by comparing to self.
-                if shape != shape:
-                    df.iat[i, df.columns.get_loc("SHAPE")] = None
+            mask_na = df["SHAPE"].isna()
+            df.loc[mask_na, "SHAPE"] = None
+
         if pandas_dtypes:
             try:
                 df = df.astype(pandas_dtypes)
@@ -180,14 +179,25 @@ def from_layer(layer, query="1=1"):
     """
     if not layer.filter is None:
         query = layer.filter
-    from arcgis.geometry import Geometry, SpatialReference
 
-    fields = []
-    records = []
+    g_lu = {
+        "esriGeometryPoint": "point",
+        "esriGeometryMultipoint": "multipoint",
+        "esriGeometryPolyline": "polyline",
+        "esriGeometryPolygon": "polygon",
+        "esriGeometryEnvelope": "envelope",
+        "point": "point",
+        "multipoint": "multipoint",
+        "polyline": "polyline",
+        "polygon": "polygon",
+        "envelope": "envelope",
+        None: None,
+    }
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
     sdf = layer.query(where=query, as_df=True)
     sdf.spatial._meta.source = layer.url
+    sdf.spatial._meta.geometry_type = g_lu[dict(layer.properties).get("geometryType")]
     if "drawingInfo" in layer.properties:
         sdf.spatial.renderer = dict(layer.properties.drawingInfo.renderer)
     else:

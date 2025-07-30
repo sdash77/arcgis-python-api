@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, Iterator
 from functools import lru_cache
-from arcgis.auth.api import LazyLoader
+from arcgis.auth.tools._lazy import LazyLoader
 from arcgis.auth import EsriSession
 import logging
 

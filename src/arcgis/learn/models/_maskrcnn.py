@@ -59,8 +59,7 @@ try:
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
     from .._utils.env import is_arcgispronotebook
-    from ._transformer_backbone import vit_config, custom_backbone
-    from ._dofa_utils import dofa_config, dofa_backbone, dofa_backbones_downstream
+    from ._transformer_backbone import vit_config
 
     HAS_FASTAI = True
 except Exception as e:
@@ -318,6 +317,7 @@ class MaskRCNN(ArcGISModel):
         if self._is_multispectral:
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
+        if self._is_multispectral or getattr(data, "_is_non8bit_rgb", False):
             scaled_mean_values = data._scaled_mean_values[data._extract_bands].tolist()
             scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
 
@@ -407,56 +407,12 @@ class MaskRCNN(ArcGISModel):
                                 torch.nn.Sequential(*backbone_fpn.children())
                             )
                 elif backbone in MaskRCNN.transformer_backbones():
-                    backbone_fpn = custom_backbone(
-                        backbone_name=backbone,
+                    backbone_fpn = self._backbone(
                         pretrained=pretrained_backbone,
                         is_fpn=True,
                         img_size=int(1.5 * data.chip_size),
-                        in_chans=len(data._extract_bands),
                     ).backbone_fpn
                     backbone_fpn._is_transformer = True
-                elif backbone in MaskRCNN.dofa_backbones():
-                    from arcgis.learn.models._arcgis_model import (
-                        get_backbone_func,
-                        get_wavelengths_from_bandnames,
-                    )
-
-                    wavelengths = kwargs.get("wavelengths", None)
-                    if wavelengths is None:
-                        if data._emd.get("InputRastersProps", None) is not None:
-                            band_names = data._emd.get("InputRastersProps").get(
-                                "BandNames"
-                            )
-                        elif data._emd.get("AllTilesStats", None) is not None:
-                            band_names = [
-                                x.get("BandName")
-                                for x in data._emd.get("AllTilesStats")
-                            ]
-                        else:
-                            raise Exception(
-                                '\nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
-                            )
-                        wavelengths = get_wavelengths_from_bandnames(band_names)
-                        assert len(wavelengths) == len(data._extract_bands)
-                    else:
-                        if len(wavelengths) != len(data._extract_bands):
-                            raise Exception(
-                                'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
-                            )
-
-                    backbone_fpn = get_backbone_func(
-                        backbone,
-                        data,
-                        is_fpn=True,
-                        chip_size=data.chip_size * 1.5,
-                        **kwargs,
-                    )
-
-                    backbone_fpn = self.fastai.vision.learner.create_body(
-                        backbone_fpn, True, None
-                    )
-
-                    backbone_fpn = backbone_fpn[0]
                 else:
                     ## warning_fix 'pretrained' replaced with 'weights'
                     backbone_fpn = resnet_fpn_backbone(
@@ -495,10 +451,7 @@ class MaskRCNN(ArcGISModel):
                         max_size=2 * data.chip_size,
                         **self.maskrcnn_kwargs,
                     )
-                if (
-                    "timm" in self._backbone.__module__
-                    or self._backbone.__name__ in dofa_backbones_downstream
-                ):
+                if "timm" in self._backbone.__module__:
                     model.rpn.anchor_generator.grid_anchors = types.MethodType(
                         grid_anchors, model.rpn.anchor_generator
                     )
@@ -509,6 +462,10 @@ class MaskRCNN(ArcGISModel):
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
+
+        if getattr(data, "_is_non8bit_rgb", False):
+            model.transform.image_mean = scaled_mean_values
+            model.transform.image_std = scaled_std_values
 
         if pointrend:
             model = create_pointrend(model, data.c)
@@ -616,22 +573,17 @@ class MaskRCNN(ArcGISModel):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         transformer_backbone = list(vit_config.keys())
         return transformer_backbone
 
     @staticmethod
-    def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
-        dofa_backbone = list(dofa_config.keys())
-        return dofa_backbone
-
-    @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
         torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
-
         return torchgeo_backbone
 
     @staticmethod
@@ -655,7 +607,6 @@ class MaskRCNN(ArcGISModel):
         transformer_backbone = MaskRCNN.transformer_backbones()
         torchgeo_backbone = MaskRCNN.torchgeo_backbones()
         satlas_backbone = MaskRCNN.satlas_backbones()
-        dofa_backbone = MaskRCNN.dofa_backbones()
 
         return (
             [*_resnet_family]
@@ -663,7 +614,6 @@ class MaskRCNN(ArcGISModel):
             + timm_backbones
             + torchgeo_backbone
             + satlas_backbone
-            + dofa_backbone
         )
 
     @property

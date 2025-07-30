@@ -1,4 +1,10 @@
+import json
 import unittest
+import urllib.request
+
+import concurrent.futures
+
+from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 from utils.decorators import integration_test, profiles
@@ -7,10 +13,19 @@ utility_network_url = "https://utilitynetwork.esri.com/server/rest/services/Nape
 
 
 # Server gets updated at 2:30PM PST Everyday. Do not test around then.
-@profiles.utility_network
+# @profiles.utility_network
 @integration_test
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.gis = GIS(
+            url="https://utilitynetwork.esri.com/portal",
+            username="python_api_team",
+            password="python_api_team.109",
+            verify_cert=False,
+        )
 
     def setUp(self):
         self.utility_network_manager = UtilityNetworkManager(
@@ -66,6 +81,35 @@ class TestUtilityNetworkManager(unittest.TestCase):
         self.assertTrue(len(locations) >= 1, "Unexpected length of Locations result")
         self.assertIsNotNone(
             locations["objects"][0]["globalId"], "Result global ID is emtpy"
+        )
+
+    def test_locations_async(self):
+        """Test getting locations, and querying them."""
+        assert self.utility_network_manager.locations()
+
+        locations = self.utility_network_manager.query_locations(
+            max_geom_count=100,
+            elements=[
+                {
+                    "sourceId": 16,
+                    "globalIds": ["{A1094F84-42E3-4179-9236-51E1351054F8}"],
+                }
+            ],
+            locations=True,
+            future=True,
+        )
+        assert isinstance(locations, concurrent.futures.Future)
+        result = locations.result()
+        self.assertEqual(
+            "Completed",
+            result["status"],
+            f"Async job failed:\t{result['status']}",
+        )
+        self.assertIsNotNone(result, "Locations object is None")
+        self.assertTrue(result["objects"], "Locations result not successful")
+        self.assertTrue(len(result) >= 1, "Unexpected length of Locations result")
+        self.assertIsNotNone(
+            result["objects"][0]["globalId"], "Result global ID is emtpy"
         )
 
     def test_trace_configurations(self):
@@ -202,6 +246,31 @@ class TestUtilityNetworkManager(unittest.TestCase):
             f"Unexpected exception occurred: {str(ex.exception)}",
         )
 
+    @unittest.skip("Validate topology async has a known enterprise bug. Skip for now.")
+    def test_validate_topology_async(self):
+        """Test validate topology method. Validate edit made to network. If improper then gets marked as dirty rather than clean."""
+        with self.assertRaises(Exception) as ex:
+            result = self.utility_network_manager.validate_topology(
+                envelope={
+                    "xmin": 1034659.2752358826,
+                    "ymin": 1871561.7755379943,
+                    "xmax": 1034730.4307899779,
+                    "ymax": 1871623.0833411064,
+                    "spatialReference": {"wkid": 102671, "latestWkid": 3435},
+                },
+                return_edits=True,
+                validation_type="normal",
+                future=True,
+            )
+            assert isinstance(result, concurrent.futures.Future)
+            validation = result.result()
+            self.assertIsNotNone(validation)
+        self.assertTrue(
+            "A dirty area is not present within the validate network topology input extent."
+            in str(ex.exception),
+            f"Unexpected exception occurred: {str(ex.exception)}",
+        )
+
     def test_query_network(self):
         """Test query network method"""
         query1 = self.utility_network_manager.query_network_moments(
@@ -266,11 +335,144 @@ class TestUtilityNetworkManager(unittest.TestCase):
             ],
             trace_type="subnetwork",
             configuration=trace_configs,
+            result_types=[
+                {
+                    "type": "features",
+                    "includeGeometry": False,
+                    "includePropagatedValues": False,
+                    "networkAttributeNames": [],
+                    "diagramTemplateName": "",
+                    "resultTypeFields": [],
+                }
+            ],
         )
         assert trace
         assert trace["success"] is True
+        trace_features = trace.get("traceResults").get("featureElements")
+        trace_features_count = len(trace_features)
+        self.assertTrue(
+            trace_features_count > 6000,
+            f"Incorrect count of trace features returned: {trace_features_count}",
+        )
+
+    def test_trace_test_async(self):
+        """
+        Test using trace method with the Utility Network Service
+        """
+        trace_configs = TraceConfiguration(
+            domain_network_name="Electric",
+            tier_name="Electric Distribution",
+            condition_barriers=[
+                {
+                    "name": "E:Device Status",
+                    "type": "networkAttribute",
+                    "operator": "equal",
+                    "value": 1,
+                    "combineUsingOr": True,
+                    "isSpecificValue": True,
+                },
+                {
+                    "name": "Lifecycle Status",
+                    "type": "networkAttribute",
+                    "operator": "doesNotIncludeAny",
+                    "value": 24,
+                    "combineUsingOr": False,
+                    "isSpecificValue": True,
+                },
+            ],
+        )
+        result = self.utility_network_manager.trace(
+            locations=[
+                {
+                    "traceLocationType": "startingPoint",
+                    "globalId": "{2F82291C-ED2E-40F5-AB36-FEB0C50E3353}",
+                    "terminalId": 16,
+                }
+            ],
+            trace_type="subnetwork",
+            configuration=trace_configs,
+            result_types=[
+                {
+                    "type": "features",
+                    "includeGeometry": False,
+                    "includePropagatedValues": False,
+                    "networkAttributeNames": [],
+                    "diagramTemplateName": "",
+                    "resultTypeFields": [],
+                }
+            ],
+            future=True,
+        )
+        assert isinstance(result, concurrent.futures.Future)
+        trace = result.result()
+        assert trace
+        assert trace["success"] is True
+        trace_features = trace.get("traceResults").get("featureElements")
+        trace_features_count = len(trace_features)
+        self.assertTrue(
+            trace_features_count > 6000,
+            f"Incorrect count of trace features returned: {trace_features_count}",
+        )
 
     def test_export_subnetwork(self):
+        export = self.utility_network_manager.export_subnetwork(
+            domain_name="electric",
+            tier_name="Electric Distribution",
+            subnetwork_name="RMT001",
+            result_types=[
+                {
+                    "type": "associations",
+                    "includeGeometry": False,
+                    "includePropagatedValues": False,
+                    "networkAttributeNames": [],
+                    "diagramTemplateName": "",
+                    "resultTypeFields": [],
+                }
+            ],
+        )
+        assert export
+        assert export["success"] is True
+        result_type_query = urllib.request.urlopen(export.get("url"))
+        result_type_result = json.loads(result_type_query.read())
+        self.assertEqual(
+            1708,
+            len(result_type_result.get("associations")),
+            "Incorrect quantity of result associations",
+        )
+
+    def test_export_subnetwork_async(self):
+        result = self.utility_network_manager.export_subnetwork(
+            trace_configuration={},
+            domain_name="electric",
+            tier_name="Electric Distribution",
+            subnetwork_name="RMT001",
+            result_types=[
+                {
+                    "type": "associations",
+                    "includeGeometry": False,
+                    "includePropagatedValues": False,
+                    "networkAttributeNames": [],
+                    "diagramTemplateName": "",
+                    "resultTypeFields": [],
+                }
+            ],
+            future=True,
+            pbf=False,
+        )
+        assert isinstance(result, concurrent.futures.Future)
+        export = result.result()
+        assert export
+        assert export["success"] is True
+        result_type_query = urllib.request.urlopen(export.get("url"))
+        result_type_result = json.loads(result_type_query.read())
+        self.assertEqual(
+            1708,
+            len(result_type_result.get("associations")),
+            "Incorrect quantity of result associations",
+        )
+
+    @unittest.skip("This test no longer throws an exception")
+    def test_export_dirty_subnetwork_fails(self):
         """Test export of subnetwork"""
         with self.assertRaises(Exception) as ex:
             export = self.utility_network_manager.export_subnetwork(

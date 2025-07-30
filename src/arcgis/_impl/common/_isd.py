@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import ujson as _ujson
 from collections import OrderedDict
@@ -10,7 +11,7 @@ class InsensitiveDict(MutableMapping):
     """
     A case-insensitive ``dict`` like object used to update and alter JSON
 
-    A varients of a case-less dictionary that allows for dot and bracket notation.
+    A variant of a case-less dictionary that allows for dot and bracket notation.
     """
 
     # ----------------------------------------------------------------------

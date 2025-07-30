@@ -561,7 +561,6 @@ features = {
     'displayFieldName': '',
     'fieldAliases': {
         'OID': 'OID',
-        'Class': 'Class',
         'Confidence': 'Confidence',
         'Shape':'Shape',
         'Label':'Label',
@@ -572,11 +571,6 @@ features = {
             'name': 'OID',
             'type': 'esriFieldTypeOID',
             'alias': 'OID'
-        },
-        {
-            'name': 'Class',
-            'type': 'esriFieldTypeString',
-            'alias': 'Class'
         },
         {
             'name': 'Confidence',
@@ -727,6 +721,10 @@ class ArcGISObjectClassifier:
         if 'DataRange' in self.json_info:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
 
+        self.exp_map = False
+        if 'explainability_map' in configuration:
+            self.exp_map = configuration['explainability_map']
+
         configuration['inheritProperties'] = 2|4|8
         configuration['inputMask'] = True
 
@@ -757,7 +755,10 @@ class ArcGISObjectClassifier:
         pixelBlocks['rasters_pixels'] = rasters_pixels
 
         try:
-            polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
+            if self.exp_map:
+                polygon_list, scores, labels, exp_map_blob = self.child_object_detector.vectorize(**pixelBlocks)
+            else:
+                polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
         except RuntimeError as e:
             if 'out of memory' in str(e):
                 # arcpy.AddError('Runtime Error: ran out of GPU memory, please try a smaller batch size')
@@ -788,6 +789,16 @@ class ArcGISObjectClassifier:
             for item in features['fields']:
                 if item['name'] == 'Confidence':
                     item['type'] = 'esriFieldTypeString'
+        
+        if self.exp_map:
+            expMapField = {
+                    'name': 'ExpMap',
+                    'type': 'esriFieldTypeBlob',
+                    'alias': 'ExpMap'
+                }
+            if not expMapField in features['fields']:
+               features['fields'].append(expMapField)
+               features['fieldAliases'].update({'ExpMap':'ExpMap'})
 
         for i in range(len(polygon_list)):
 
@@ -800,12 +811,17 @@ class ArcGISObjectClassifier:
                     ]
                 )
 
+            attributes = {
+               'OID': i + 1,
+               'Confidence': str(scores[i]),
+               'Label': labels[i]
+               }
+
+            if self.exp_map:
+                attributes['ExpMap'] = exp_map_blob[i]
+
             features['features'].append({
-                'attributes': {
-                    'OID': i + 1,
-                    'Confidence': str(scores[i]),
-                    'Label': labels[i],
-                },
+                'attributes': attributes,
                 'geometry': {
                     'rings': rings
                 }

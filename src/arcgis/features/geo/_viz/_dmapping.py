@@ -2,10 +2,10 @@
 """
 Mapping Holds the Plot function for creating a FeatureCollection JSON plus the render options
 """
+from __future__ import annotations
 import uuid
 import json
 import dask.dataframe as dd
-import arcgis
 from arcgis.auth.tools import LazyLoader
 
 _imports = LazyLoader("arcgis._impl.imports")

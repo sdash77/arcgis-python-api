@@ -1,11 +1,13 @@
+import time
 import unittest
 import pandas as pd
 from arcgis.features import FeatureLayer, FeatureSet
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
+from utils.data_utils import cleanup_published_items
 
 
-# enable_verbose_logging()
+enable_verbose_logging()
 DATA = {
     "features": [
         {
@@ -274,6 +276,7 @@ class TestApplyEditsSeDF(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         rows = []
+        uid = int(time.time())
         for feat in DATA["features"][:5]:
             geom = feat["geometry"]
             att = feat["attributes"]
@@ -281,7 +284,9 @@ class TestApplyEditsSeDF(unittest.TestCase):
             rows.append(att)
         df = pd.DataFrame(rows)
         df.spatial.set_geometry("SHAPE")
-        cls.item = cls.gis.content.import_data(df, tags="ntgrtn-tst")
+        cls.item = cls.gis.content.import_data(
+            df, title=f"edit_sedf_{uid}", tags="ntgrtn-tst"
+        )
 
     def test_apply_edits_adds(self):
         lyr: FeatureLayer = self.item.layers[0]
@@ -302,16 +307,7 @@ class TestApplyEditsSeDF(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            if cls.item:
-                source_item = cls.item.related_items("Service2Data", "forward")[0]
-                source_item.delete(permanent=True)
-                cls.item.delete(permanent=True)
-            else:
-                pass
-        except IndexError as e:
-            cls.item.delete()
-            print(f"Could not delete source item.")
+        cleanup_published_items([cls.item])
 
 
 if __name__ == "__main__":

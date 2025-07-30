@@ -60,17 +60,85 @@ def _is_valid(value):
             if len(value["points"]) == 0:
                 return True
             return _is_point(coords=value["points"])
+        elif "curvePath" in value:
+            if len(value["curvePath"]) == 0:
+                return True
+            return _is_curve_line(coords=value["curvePath"])
+        elif "curveRings":
+            if len(value["curveRings"]) == 0:
+                return True
+            return _is_curve_polygon(coords=value["curveRings"])
 
     return False
 
 
+def _is_curve_polygon(coords):
+    """
+    Checks if the input coordinates define a valid curved polygon.
+    A curved polygon should:
+    - Be a list of rings (closed paths).
+    - Have at least one valid curved ring.
+    - Ensure each ring has a valid structure.
+    """
+    if not isinstance(coords, list) or len(coords) == 0:
+        return False
+
+    # MultiPolygon case: list of list of rings
+    if isinstance(coords[0], list) and isinstance(coords[0][0], list):
+        return all(_is_curve_polygon(poly) for poly in coords)
+
+    # Single Polygon case
+    for ring in coords:
+        if len(ring) < 4:
+            return False
+        if not _is_curve_line(ring):  # Validate as a curved line
+            return False
+        if ring[0] != ring[-1]:  # Ensure the ring is closed
+            return False
+
+    return True
+
+
+def _is_curve_line(coords):
+    """
+    Checks if the input coordinates define a valid curved line.
+    A curved line should:
+    - Contain at least 2 points.
+    - Include Bezier or Circular Arc definitions.
+    """
+    if not isinstance(coords, list) or len(coords) < 2:
+        return False
+
+    has_curve = False
+    for point in coords:
+        if isinstance(point, dict) and "curve" in point:  # Check for curve definition
+            has_curve = True
+        elif not _is_point(point):  # Ensure all points are valid
+            return False
+
+    return has_curve  # Ensure at least one curve segment exists
+
+
 def _is_polygon(coords):
-    for coord in coords:
-        if len(coord) < 4:
+    if not isinstance(coords, list) or len(coords) == 0:
+        return False
+
+    # Handle MultiPolygon (list of lists of rings)
+    if isinstance(coords[0], list) and isinstance(coords[0][0], list):
+        # MultiPolygon detected: check each polygon separately
+        return all([_is_polygon(poly) for poly in coords])
+
+    # Handle Single Polygon case (wrap single ring in a list)
+    if len(coords) > 0 and isinstance(coords[0], (list, tuple)) and len(coords[0]) == 2:
+        coords = [coords]  # Wrap single ring in a list
+
+    # Validate each ring in the polygon
+    for ring in coords:
+        if len(ring) < 4:
             return False
-        if not _is_line(coord):
+        if not _is_line(ring):  # Check if it's a valid line
             return False
-        if coord[0] != coord[-1]:
+        if ring[0] != ring[-1]:  # Ensure the ring is closed
             return False
 
     return True
@@ -183,11 +251,17 @@ class GeometryFactory(type):
             from geomet.wkt import loads as _wkt_loads
             from geomet.esri import dumps as _esri_dumps
 
+            # geomet doesn't support Z or ZM or M yet, so we need to handle that
+            if "Z" in iterable or "ZM" in iterable:
+                iterable = iterable.replace("Z", "").replace("ZM", "")
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
                 geom = _esri_dumps(_wkt_loads(iterable))
                 geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
                 return geom
+            elif iterable and iterable.startswith("POINT"):
+                # For some reason the case below will not catch 3D points, however this does.
+                return Geometry(_wkt_loads(iterable))
             elif iterable:
                 return _esri_dumps(_wkt_loads(iterable))
         return {}
@@ -233,9 +307,12 @@ class GeometryFactory(type):
                     (
                         "POINT",
                         "LINESTRING",
+                        "LINESTRING Z",
                         "POLYGON",
                         "MULTIPOINT",
+                        "MULTIPOINT Z",
                         "MULTIPOLYGON",
+                        "MULTIPOLYGON Z",
                         "MULTILINESTRING",
                         "POINT ZM",
                         "POINT M",
@@ -393,9 +470,16 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return {"type": "Point", "coordinates": (self.x, self.y)}
             elif isinstance(self, Polygon):
                 col = []
-                for part in self["rings"]:
+                rings = self["rings"]
+                for part in rings:
                     col.append([tuple(pt) for pt in part])
-                return {"coordinates": [col], "type": "MultiPolygon"}
+                if len(rings) > 1:
+                    return {
+                        "type": "MultiPolygon",
+                        "coordinates": [col],
+                    }
+                else:
+                    return {"type": "Polygon", "coordinates": col}
             elif isinstance(self, Polyline):
                 return {
                     "type": "MultiLineString",
@@ -931,16 +1015,33 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
                 from shapely.geometry import shape
                 from shapely.validation import explain_validity
+                from shapely import make_valid
 
                 if "curvePaths" in self or "curveRings" in self:
                     return {}
-                geom_shply = shape(self.__geo_interface__)
+
+                # Convert to shapely geometry and make valid
+                try:
+                    geom_shply = shape(self.__geo_interface__)
+                except Exception as e:
+                    if "'float' object is not iterable" in str(e):
+                        geom = self.__geo_interface__
+                        # Ensure the coordinates are in a list,
+                        # since we treat all polygons as multi-polygons in the geojson we need to nest more if not actual multipolygon
+                        geom["coordinates"] = [geom["coordinates"]]
+                        geom_shply = shape(geom)
+                    else:
+                        raise e
+
+                # Ensure the geometry is valid
+                geom_shply = make_valid(geom_shply)
 
                 if not geom_shply.is_valid:
                     print(
                         f"Geometry failed validation: {explain_validity(geom_shply)}. Repairing with `buffer(0)`."
                     )
                     geom_shply = geom_shply.buffer(0)
+
                 return geom_shply
         return None
 
@@ -998,18 +1099,68 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             )
 
         """
-        if HAS_SHAPELY:
-            gj = shapely_geometry.__geo_interface__
-            geom_cls = _geojson_type_to_esri_type(gj["type"])
-
-            if spatial_reference:
-                geometry = geom_cls._from_geojson(gj, sr=spatial_reference)
-            else:
-                geometry = geom_cls._from_geojson(gj)
-
-            return geometry
-        else:
+        # Check that shapely is installed
+        if not HAS_SHAPELY:
             raise ValueError("Shapely is required to execute from_shapely.")
+
+        # Get classes from shapely
+        from shapely.geometry import mapping, Polygon, MultiPolygon
+        from shapely.geometry.polygon import orient
+
+        # internal function to ensure lists are used for coordinates
+        def _deep_convert_tuples_to_lists(coordinates: Any) -> Any:
+            """Recursively converts all tuples to lists for compatibility with ArcGIS API and Shapely."""
+            if isinstance(coordinates, (list, tuple)):  # Handle both cases
+                return [
+                    (
+                        list(coord)
+                        if isinstance(coord, tuple)
+                        else _deep_convert_tuples_to_lists(coord)
+                    )
+                    for coord in coordinates
+                ]
+            return coordinates
+
+        # Validate spatial reference
+        if spatial_reference and not isinstance(spatial_reference, dict):
+            raise TypeError(
+                "spatial_reference must be a dictionary containing 'wkid' or 'wkt'."
+            )
+
+        if spatial_reference and not (
+            "wkid" in spatial_reference or "wkt" in spatial_reference
+        ):
+            raise ValueError("spatial_reference must contain either 'wkid' or 'wkt'.")
+
+        # Ensure correct polygon orientation
+        if isinstance(shapely_geometry, Polygon):
+            shapely_geometry = orient(shapely_geometry, sign=1.0)
+        elif isinstance(shapely_geometry, MultiPolygon):
+            shapely_geometry = MultiPolygon(
+                [orient(poly, sign=1.0) for poly in shapely_geometry.geoms]
+            )
+
+        # get the geometry type from the shapely geometry
+        geom_cls = _geojson_type_to_esri_type(shapely_geometry.geom_type)
+
+        # Use wkt if possible, this solves issues occurring with polygons and multipolygons
+        if hasattr(shapely_geometry, "wkt"):
+            geom = geom_cls(shapely_geometry.wkt)
+            if spatial_reference:
+                geom["spatialReference"] = spatial_reference
+            return geom
+
+        # If no wkt is available, use the mapping function to convert to GeoJSON
+        # Convert Shapely geometry to GeoJSON
+        geojson_geom = mapping(shapely_geometry)
+        # Ensure coordinate consistency (keep list, no tuple conversion)
+        geojson_geom["coordinates"] = _deep_convert_tuples_to_lists(
+            geojson_geom["coordinates"]
+        )
+        # Convert to ArcGIS geometry type
+        return geom_cls._from_geojson(
+            geojson_geom, sr=spatial_reference or {"wkid": 4326}
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -1078,7 +1229,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         else:
             from geomet import wkt
 
-            geojson_item = self.__geo_interface__
+            geojson_item = self.__geo_interface__  # extra nesting done in property call
             return wkt.dumps(geojson_item)
 
     # ----------------------------------------------------------------------
@@ -1112,7 +1263,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             # geomet conversion
             from geomet import wkb
 
-            geojson_item = self.__geo_interface__
+            geojson_item = self.__geo_interface__  # extra nesting done in property call
             return wkb.dumps(geojson_item, big_endian=False)
 
     # ----------------------------------------------------------------------
@@ -3397,19 +3548,16 @@ class Polygon(Geometry):
             geom_json = json.loads(densify_geom.JSON)["rings"]
         else:
             geom_json = self["rings"]
+
+        path = ""
         for ring in geom_json:
-            rings = ring
-            exterior_coords = [["{},{}".format(*c) for c in rings]]
-            path = " ".join(
-                [
-                    "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
-                    for coords in exterior_coords
-                ]
-            )
-            s += (
-                '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
-                'stroke-width="{0}" opacity="0.6" d="{1}" />'
-            ).format(2.0 * scale_factor, path, fill_color)
+            coords = ["{},{}".format(*coord) for coord in ring]
+            path += "M {} L {} z ".format(coords[0], " L ".join(coords[1:]))
+
+        s += (
+            '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
+            'stroke-width="{0}" opacity="0.6" d="{1}" />'
+        ).format(2.0 * scale_factor, path, fill_color)
         return s
 
     # ----------------------------------------------------------------------
@@ -3458,29 +3606,42 @@ class Polygon(Geometry):
 
     @classmethod
     def _from_geojson(cls, data, sr=None):
-        if sr is None:
-            sr = {"wkid": 4326}
+        sr = sr or {"wkid": 4326}
 
         coordinates = data["coordinates"]
-        if data["type"].lower() == "polygon":
-            coordinates = [coordinates]
-
         part_list = []
-        for part in coordinates:
-            for ring in part:
-                part_item = []
-                for coord in reversed(ring):
-                    part_item.append(coord)
-                part_list.append(part_item)
+
+        if data["type"].lower() == "multipolygon":
+            for polygon in coordinates:  # Iterate over individual polygons
+                polygon_rings = []
+                for ring in polygon:  # Outer + inner rings
+                    polygon_rings.append(
+                        [tuple(coord) for coord in ring]
+                    )  # Convert to tuple
+                part_list.append(
+                    polygon_rings
+                )  # Append entire polygon as a separate entry
+        elif data["type"].lower() == "polygon":
+            polygon_rings = [
+                [tuple(coord) for coord in coordinates[0]]
+            ]  # Ensure consistent list structure
+            part_list.append(polygon_rings)  # Keep same nesting level as MultiPolygon
+
         return cls({"rings": part_list, "spatialReference": sr})
 
     @property
     def __geo_interface__(self) -> dict:
-        """returns the Polygon as a MultiPolygon GeoJSON"""
-        col = []
-        for part in self["rings"]:
-            col.append([tuple(pt) for pt in part])
-        return {"coordinates": [col], "type": "MultiPolygon"}
+        """Returns the geometry in valid GeoJSON format as either Polygon or MultiPolygon."""
+        rings = self["rings"]
+
+        # Ensure the structure is correct (list of lists of coordinates)
+        col = [[tuple(pt) for pt in ring] for ring in rings]
+
+        # Check if it's a MultiPolygon
+        if len(rings) > 1:
+            return {"type": "MultiPolygon", "coordinates": [col]}  # Wrap in extra list
+        else:
+            return {"type": "Polygon", "coordinates": col}
 
 
 ########################################################################

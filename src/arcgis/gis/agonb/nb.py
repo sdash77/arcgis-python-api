@@ -20,6 +20,7 @@ class AGOLNotebookManager:
     _snapshot = None
     _nbm = None
     _services = None
+    _da = None
 
     def __init__(self, url: str, gis: GIS):
         self._url = url
@@ -83,7 +84,7 @@ class AGOLNotebookManager:
         return self._runtimes
 
     @property
-    def snaphots(self) -> SnapshotManager:
+    def snapshots(self) -> SnapshotManager:
         """
         Returns tools to work with snapshots on notebooks
 
@@ -105,3 +106,22 @@ class AGOLNotebookManager:
             url = f"{self._url}/notebooks"
             self._nbm = NotebookManager(url=url, gis=self._gis, nbs=self)
         return self._nbm
+
+    # ----------------------------------------------------------------------
+    @property
+    def data_access(self) -> "NotebookDataAccess":
+        """Provides access to managing files stored on notebook server.
+
+        :return:
+            :class:`~arcgis.gis.nb._dataaccess.NotebookDataAccess` object
+
+        """
+        if self._da is None:
+            from arcgis.gis.nb._dataaccess import NotebookDataAccess
+
+            user = self._gis.users.me
+            url = user.generate_direct_access_url("notebook")["url"]
+            # remove the /notebookWorkspace part and replace with the username
+            url = url.replace("/notebooksWorkspace", "")
+            self._da = NotebookDataAccess(url, self._gis)
+        return self._da

@@ -55,7 +55,7 @@ class SurveyManager:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "< SurveyManager @ {iid} >".format(iid=self._gis._url)
+        return "< SurveyManager @ {iid} >".format(iid=self._gis.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -408,7 +408,7 @@ class Survey:
         locale: str = "en",
         save_folder: Optional[str] = None,
     ) -> str:
-        """
+        r"""
         The `generate_report` method allows users to create Microsoft Word and PDF reports
         for survey results based on a reporting template. Reports are saved as an :class:`~arcgis.gis.Item`
         in an ArcGIS content folder or saved locally on disk. For additional information on parameters,
@@ -594,7 +594,7 @@ class Survey:
         params = {
             "outputFormat": output_format,
             "queryParameters": where,
-            "portalUrl": self._si._gis._url,
+            "portalUrl": self._si._gis.url,
             "templateItemId": report_template.id,
             "outputReportName": report_title,
             "outputPackageName": package_name,
@@ -713,7 +713,7 @@ class Survey:
         params = {
             "featureLayerUrl": fl_url,
             "surveyItemId": self._si.id,
-            "portalUrl": gis._url,
+            "portalUrl": gis.url,
             "contentType": template_type,
             "username": gis.users.me.username,
             "f": "json",
@@ -767,7 +767,7 @@ class Survey:
         params = {
             "featureLayerUrl": fl_url,
             "surveyItemId": self._si.id,
-            "portalUrl": self._si._gis._url,
+            "portalUrl": self._si._gis.url,
             "f": "json",
         }
 
@@ -906,7 +906,7 @@ class Survey:
             "queryParameters": where,
             "templateItemId": report_template.id,
             "surveyItemId": self._si.id,
-            "portalUrl": self._si._gis._url,
+            "portalUrl": self._si._gis.url,
             "f": "json",
         }
 
@@ -1014,7 +1014,7 @@ class Survey:
 
         params = {
             "queryParameters": where,
-            "portalUrl": self._si._gis._url,
+            "portalUrl": self._si._gis.url,
             "templateItemId": report_template.id,
             "surveyItemId": self._si.id,
             "featureLayerUrl": fl_url,
@@ -1056,7 +1056,7 @@ class Survey:
         params = {
             "f": "json",
             "username": self._si._gis.users.me.username,
-            "portalUrl": self._si._gis._url,
+            "portalUrl": self._si._gis.url,
         }
         status_url = "https://{base}/api/featureReport/jobs/{jid}/status".format(
             base=self._baseurl, jid=jid
@@ -1154,10 +1154,12 @@ class Survey:
         tmpdir = tempfile.TemporaryDirectory()
         tmp_name = tmpdir.name
         name = self._si._gis._con.get(
-            f"{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/forminfo.json"
+            f"{self._gis.url}/sharing/rest/content/items/{self._si.id}/info/forminfo.json"
         )["name"]
         title = quote(name, safe="()!-_.'~")
-        url = f"{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/{title}.xml"
+        url = (
+            f"{self._gis.url}/sharing/rest/content/items/{self._si.id}/info/{title}.xml"
+        )
         response = self._si._gis._con.get(url, out_folder=tmp_name)
         tree = ET.parse(response)
         shutil.rmtree(tmp_name, ignore_errors=True)
@@ -1866,7 +1868,7 @@ class Survey:
         # Create web map
         if create_web_map is True and initial_publish is True:
             arcgismapping = _imports.get_arcgis_map_mod(True)
-            wm = arcgismapping.Map()
+            wm = arcgismapping.Map(gis=self._gis)
             for lyr in list(self._ssi.layers + self._ssi.tables):
                 wm.content.add(
                     lyr,
@@ -1901,7 +1903,7 @@ class Survey:
     @property
     def webhooks(self) -> list:
         """Returns a list of existing :class:`~arcgis.apps.survey123.Survey` webhooks"""
-        url = f"{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/{self._si.title}.info"
+        url = f"{self._gis.url}/sharing/rest/content/items/{self._si.id}/info/{self._si.title}.info"
         params = {"f": "json"}
         submit = self._si._gis._con.get(url, params)
         try:
@@ -2001,7 +2003,7 @@ class Survey:
                 "includeSurveyInfo": survey_info,
                 "events": trigger_events,
             },
-            "portalUrl": self._gis._url,
+            "portalUrl": self._gis.url,
         }
         submit = self._si._gis._con.post(url, params)
         return submit
@@ -2131,7 +2133,7 @@ class Survey:
                     else existing_webhook["events"]
                 ),
             },
-            "portalUrl": self._gis._url,
+            "portalUrl": self._gis.url,
         }
         submit = self._si._gis._con.post(url, params)
         return submit
@@ -2152,6 +2154,6 @@ class Survey:
         """
 
         url = f"https://{self._baseurl}/api/survey/{self._si.id}/webhook/{webhook_id}/delete"
-        params = {"portalUrl": self._gis._url}
+        params = {"portalUrl": self._gis.url}
         submit = self._si._gis._con.post(url, params)
         return submit["success"]

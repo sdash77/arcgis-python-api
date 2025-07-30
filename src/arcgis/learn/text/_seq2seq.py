@@ -7,6 +7,8 @@ import json
 import warnings
 import traceback
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
+from typing import Tuple, List, Union
+from arcgis.features import FeatureSet
 
 HAS_FASTAI = True
 
@@ -34,7 +36,6 @@ try:
         seq2seq_acc,
         calculate_bleu,
     )
-    from typing import Tuple, List, Union
     from ._model_extension_text import TextModelExtension
     from .._utils.text_transforms import TransformersBaseTokenizer, TransformersVocab
     from ._arcgis_transformer import ModelBackbone, infer_model_type
@@ -46,7 +47,6 @@ try:
         transformer_seq_length,
     )
     from transformers import logging
-    from arcgis.features import FeatureSet
     from .._utils.llm_utils import data_sanity_llm
     from ._llm import LLM
 except Exception as e:
@@ -478,8 +478,8 @@ class SequenceToSequence(ArcGISModel):
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Path to Deep Learning Package
-                                (DLPK) or Esri Model Definition(EMD) file.
+        name_or_path            Required string. Name or Path to
+                                Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
         if self.model_extension:
@@ -803,20 +803,20 @@ class SequenceToSequence(ArcGISModel):
         ---------------------   -------------------------------------------
         num_beams               Optional integer.
                                 Number of beams for beam search. 1 means no beam search.
-                                Default value is set to 1
+                                Default value is set to 1.
         ---------------------   -------------------------------------------
         max_length              Optional integer.
                                 The maximum length of the sequence to be generated.
-                                Default value is set to 20
+                                Default value is set to 20.
         ---------------------   -------------------------------------------
         min_length              Optional integer.
                                 The minimum length of the sequence to be generated.
-                                Default value is set to 10
+                                Default value is set to 10.
         ---------------------   -------------------------------------------
         input_field             Optional string.
-                                input field name in the feature set. Supported
-                                in model extension
-                                Deafult value: input_str
+                                Input field name in the feature set. Supported
+                                in model extension.
+                                Default value: input_str
         =====================   ===========================================
 
         :return: list of tuples(input , predicted output strings) or FeatureSet.
@@ -1198,7 +1198,7 @@ class SequenceToSequence(ArcGISModel):
                 f"This method is not supported when the backbone is configured as {self._submodel}."
             )
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -1222,7 +1222,7 @@ class SequenceToSequence(ArcGISModel):
             )
 
         if self._backbone != "llm":
-            return super().lr_find(allow_plot=allow_plot)
+            return super().lr_find(allow_plot=allow_plot, **kwargs)
         else:
             raise Exception(
                 f"This method is not supported when the backbone is configured as {self._submodel}."

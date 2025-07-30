@@ -28,10 +28,12 @@ try:
     from ._tsmodel_archs._ResCNN import _TSResCNN
     from ._tsmodel_archs._FCN import _TSFCN
     from ._tsmodel_archs._LSTM import _TSLSTM
+    from ._tsmodel_archs._TimeMoE import TimeMoe, TimeMoeConfig
     from .._utils.TSData import To3dTensor, ToTensor
-    from .._utils.common import _get_emd_path
+    from .._utils.common import _get_emd_path, _temp_dlpk
     from ._tsmodel_archs._TST import TST
     from ..text._model_extension_text import TextModelExtension
+    from arcgis.gis import GIS
 
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
@@ -40,6 +42,7 @@ try:
         "fcn": _TSFCN,
         "lstm": _TSLSTM,
         "timeseriestransformer": TST,
+        "timemoe": TimeMoe,
     }
 
 except Exception as e:
@@ -74,6 +77,27 @@ def _get_model_from_path(pretrained_path):
     return learn
 
 
+def weight_download_url(item_id):
+    """
+    Returns a function that downloads the weights from the given URL.
+    """
+    # check Arcgis pro cache dir
+    cache_dir = Path.home() / "AppData/Local/ESRI/DeepLearning/TimeMoE"
+    gis = arcgis.env.active_gis
+    if gis is None:
+        raise Exception(
+            "Use GIS() to log into your ArcGIS Online or ArcGIS Enterprise account first. A GIS must be provided and/or set as active."
+        )
+    online_model = gis.content.get(item_id)
+    # download the model using arcgis python
+    if not os.path.exists(cache_dir / online_model.name):
+        download_path = online_model.download(save_path=cache_dir)
+    else:
+        download_path = cache_dir / online_model.name
+    extracted_path = _temp_dlpk(download_path)
+    return extracted_path
+
+
 class TimeSeriesModel(ArcGISModel):
     """
     Creates a :class:`~arcgis.learn.TimeSeriesModel` Object.
@@ -91,9 +115,10 @@ class TimeSeriesModel(ArcGISModel):
     ---------------------   -------------------------------------------
     model_arch              Optional string. Model Architecture.
                             Allowed "InceptionTime", "ResCNN",
-                            "Resnet", "FCN", "TimeSeriesTransformer", "LSTM". "LSTM"
+                            "Resnet", "FCN", "TimeSeriesTransformer", "TimeMoE", "LSTM". "LSTM"
                             supports both "LSTM" and "Bi-LSTM". "Bi-LSTM" is enabled by passing
-                            `bidirectional=True` in kwargs.
+                            `bidirectional=True` in kwargs. The TimeMoE architecture currently
+                            does not support multistep forecasting or multivariate input modeling.
     ---------------------   -------------------------------------------
     location_var            Optional string. Location variable in case of
                             NetCDF dataset.
@@ -168,6 +193,12 @@ class TimeSeriesModel(ArcGISModel):
                     model = model_arch_ob(
                         data_bunch.features, data_bunch.c, seq_len, **kwargs
                     ).to(self._device)
+                elif model_arch.lower() == "timemoe":
+                    temp_path = weight_download_url("c8040ba5cef2417fa178c42ae9225c07")
+                    pretr_path = os.path.join(temp_path, "TimeMoE-50M")
+                    config = TimeMoeConfig.from_pretrained(pretr_path)
+                    model = model_arch_ob(config, **kwargs).to(self._device)
+
                 else:
                     if model_arch.lower() in ["resnet", "fcn"]:
                         kwargs["device"] = self._device
@@ -176,7 +207,12 @@ class TimeSeriesModel(ArcGISModel):
                     ).to(self._device)
                     if model_arch.lower() in ["resnet", "fcn"]:
                         del kwargs["device"]
-                self.learn = Learner(data_bunch, model, path=data.path)
+                if model_arch.lower() == "timemoe":
+                    self.learn = Learner(
+                        data_bunch, model, loss_func=model.time_moe_loss, path=data.path
+                    )
+                else:
+                    self.learn = Learner(data_bunch, model, path=data.path)
                 self.learn.data = data_bunch
 
             self.learn.layer_groups = split_model_idx(self.learn.model, [1])
@@ -276,18 +312,15 @@ class TimeSeriesModel(ArcGISModel):
             data._test_size = test_size
 
             if "InferenceFunction" in emd:
-                try:
-                    if extensible_model.model_loaded:
-                        class_object = cls(
-                            data,
-                            seq_len,
-                            model_arch="inference_model",
-                            pretrained_path=emd_path,
-                            model_extension=True,
-                            extensible_model=extensible_model,
-                        )
-                except:
-                    raise Exception("Could not load the inference model")
+                if extensible_model.model_loaded == True:
+                    class_object = cls(
+                        data,
+                        seq_len,
+                        model_arch="inference_model",
+                        pretrained_path=emd_path,
+                        model_extension=True,
+                        extensible_model=extensible_model,
+                    )
             else:
                 class_object = cls(
                     data,
@@ -1068,7 +1101,7 @@ class TimeSeriesModel(ArcGISModel):
                                 datetime_dict[i] = tuple([new_delta, end_value_temp])
 
         pred_temp_df = pd.DataFrame(
-            np.full([number_of_predictions, orig_dataframe.shape[1]], np.NAN)
+            np.full([number_of_predictions, orig_dataframe.shape[1]], np.nan)
         )
         pred_temp_df.columns = orig_dataframe.columns
         # preserve the indexes. Need to adjust 1 because new index will start from 0
@@ -1254,9 +1287,7 @@ class TimeSeriesModel(ArcGISModel):
         sample_ticks = False
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
-                index_data_copy
-            ):
+            if not pd.api.types.is_datetime64_any_dtype(index_data_copy):
                 try:
                     index_data_copy = pd.to_datetime(index_data_copy)
                 except:

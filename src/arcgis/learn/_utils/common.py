@@ -48,6 +48,16 @@ except Exception:
         pass
 
 
+def raise_mixed_precision_framework_error(framework="invalid"):
+    # Custom error message
+    import_exception = f"Error: Unsupported framework '{framework}'"
+    message = "The selected framework does not support mixed precision operations."
+    installation_steps = "Please update your current framework to PyTorch."
+
+    # Raise the exception with the custom message
+    raise Exception(f"{import_exception}\n\n{message}\n{installation_steps}")
+
+
 def read_image(path, resize_to: int = None, keep_raw=False):
     """
     path: file path of image on disk.
@@ -275,6 +285,7 @@ class ArcGISMSImage(Image):
 
 class ArcGISImageList(ImageList):
     "`ImageList` suitable for classification tasks."
+
     _square_show_res = False
     _div = None
     _imagery_type = None
@@ -370,7 +381,8 @@ class ArcGISImageListRGB(ArcGISImageList):
 
 def get_multispectral_data_params_from_emd(data, emd):
     data._is_multispectral = emd.get("IsMultispectral", False)
-    if data._is_multispectral:
+    data._is_non8bit_rgb = not emd.get("IsImageNetNormalization", True)
+    if data._is_multispectral or data._is_non8bit_rgb:
         data._bands = emd.get("Bands")
         data._imagery_type = emd.get("ImageryType")
         data._extract_bands = emd.get("ExtractBands")

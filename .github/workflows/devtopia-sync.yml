@@ -1,0 +1,24 @@
+# Sync https://devtopia.esri.com/ArcGISDevelopers/python-api-doc main branch to https://github.com/ArcGIS/geosaurus afd-doc/main branch
+# This will allow GitHub Actions Cloud Runners to Build and Deploy the Gatsby Site
+name: Devtopia Sync
+on:
+  workflow_dispatch:
+  schedule:
+    # daily at 1830Z
+    - cron: '30 18 * * *'
+
+jobs:
+  sync-python-api-doc:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Devtopia
+        uses: actions/checkout@v4
+        with:
+          github-server-url: https://devtopia.esri.com
+          repository: ArcGISDevelopers/python-api-doc
+          ref: main
+          token: ${{ secrets.DEVTOPIA_AFD_PYTHON_API_TOKEN }}
+      - name: Push to GitHub
+        run: |
+          git remote add github https://github.com/ArcGIS/geosaurus.git
+          git push github main:afd-doc/main

@@ -8,6 +8,7 @@ import math
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
+from packaging import version
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
@@ -16,6 +17,7 @@ from .._utils.tabular_data import (
     explain_prediction,
     add_h3,
 )
+from .._utils.common import _get_emd_path
 
 try:
     import sklearn
@@ -43,7 +45,6 @@ try:
         import xgboost
     import lightgbm
     import catboost
-    import tabpfn
 
     HAS_ML_DEPS = True
 except:
@@ -57,6 +58,10 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
+_FAIRNESS_CLASSIFICATION_SUPPORT = (
+    "This method only supports binary classification and regression currently."
+)
+_FAIRNESS_NOT_APPLIED = "Obtaining fairness score needs the ground truth and hence this method is not supported when model is instantiated for inferencing. "
 _FAIRNESS_NOT_SUPPORTED = "Fairness is not supported with this model type"
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
@@ -123,6 +128,13 @@ def _get_model_type(model_type):
             model = model_type.split(".")[0]
         else:
             raise Exception("Invalid model_type.")
+        try:
+            import tabpfn
+        except Exception as e:
+            raise Exception(
+                "TabPFN is not installed. Please install TabPFN using the command `conda install -c esri tabpfn`"
+            )
+
         if not hasattr(tabpfn, model):
             raise Exception("Invalid model_type.")
 
@@ -261,13 +273,15 @@ class MLModel(object):
             self.protected_class = kwargs.get("protected_class")
 
             if self._fairness and self._data._is_classification:
-                self.fairness_label_encoder = LabelEncoder()
-                self._training_labels = self.fairness_label_encoder.fit_transform(
-                    self._training_labels
-                )
-                self._validation_labels = self.fairness_label_encoder.transform(
-                    self._validation_labels
-                )
+                self.fairness_label_encoder = self._data._fairness_encoder
+
+                if self._training_data is not None:
+                    self._training_labels = self.fairness_label_encoder.fit_transform(
+                        self._training_labels
+                    )
+                    self._validation_labels = self.fairness_label_encoder.transform(
+                        self._validation_labels
+                    )
 
         else:
             model = _get_model_type(model_type)
@@ -477,6 +491,8 @@ class MLModel(object):
         visualize=False,
     ):
         """
+        As of now we support only binary classification in fairness evaluation.
+
         Shows sample fairness score and plots for the model.
 
         =====================   ===========================================
@@ -505,14 +521,22 @@ class MLModel(object):
         =====================   ===========================================
         :return: dataframe
         """
+        if self._training_data is None:
+            raise ValueError(_FAIRNESS_NOT_APPLIED)
 
         if sensitive_feature not in self._data._categorical_variables:
             raise ValueError(_SENSITIVE_FEATURE_ERROR)
 
         self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
         if not self._fairness and self._data._is_classification:
-            labelEncoder = LabelEncoder()
+            if self._fairness:
+                labelEncoder = self.fairness_label_encoder
+            else:
+                labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
+            if len(np.unique(train_labels)) > 2:
+                raise ValueError(_FAIRNESS_CLASSIFICATION_SUPPORT)
+
             y_true = labelEncoder.transform(self._validation_labels)
             y_pred = self._predict(self._data._ml_data[2])
 
@@ -561,7 +585,7 @@ class MLModel(object):
         # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
 
-        if self._fairness and self.mitigation_method == "threshold_optimizer":
+        if self._fairness:
             validation_df_batch = self._validation_df.iloc[sample_batch, :]
             sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
             group_df = validation_df_batch.loc[:, self.protected_class]
@@ -748,6 +772,11 @@ class MLModel(object):
 
         MLModel._save_encoders(self._data._encoder_mapping, path, base_file_name)
 
+        if self._fairness:
+            MLModel._save_encoders(
+                self.fairness_label_encoder, path, base_file_name + "_fairness"
+            )
+
         if self._data._procs:
             MLModel._save_transforms(self._data._procs, path, base_file_name)
 
@@ -895,21 +924,7 @@ class MLModel(object):
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
 
-        emd_path = str(emd_path)
-
-        if emd_path.endswith(".dlpk"):
-            with ZipFile(emd_path, "r") as zip_obj:
-                temp_dir = tempfile.TemporaryDirectory().name
-                zip_obj.extractall(temp_dir)
-                MLModel.from_model(temp_dir, data)
-
-        if not emd_path.endswith(".emd"):
-            emd_path = os.path.join(
-                emd_path, (str(os.path.basename(emd_path)) + ".emd")
-            )
-
-        if not os.path.exists(emd_path):
-            raise Exception("Invalid data path.")
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path, "r") as f:
             emd = json.loads(f.read())
@@ -926,17 +941,16 @@ class MLModel(object):
 
         cell_sizes = emd.get("cell_sizes", None)
 
-        if (
-            emd["version"] == str(sklearn.__version__)
-            or emd["version"] == str(xgboost.__version__)
-            or emd["version"] == str(lightgbm.__version__)
-            or emd["version"] == str(catboost.__version__)
+        _model_name = emd.get("ModelName", None)
+        if _model_name and not _model_name.lower().startswith(
+            ("lightgbm", "catboost", "xgboost", "tabpfn")
         ):
-            pass
-        else:
-            warnings.warn(
-                f"Sklearn/xgboost/lightgbm/catboost version has changed. Model Trained using version {emd['version']}"
-            )
+            if version.parse(emd["version"]) < version.parse(
+                str(sklearn.__version__)
+            ) and version.parse(str(sklearn.__version__)) >= version.parse("1.4.0"):
+                raise Exception(
+                    "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
+                )
 
         _is_classification = True
         if emd["_is_classification"] != "classification":
@@ -951,6 +965,16 @@ class MLModel(object):
             if os.path.exists(encoder_path):
                 with open(encoder_path, "rb") as f:
                     encoder_mapping = pickle.loads(f.read())
+
+        _fairness_encoder = None
+        if fairness:
+            fairness_encoder_path = os.path.join(
+                os.path.dirname(emd_path),
+                os.path.basename(emd_path).split(".")[0] + "_fairness_encoders.pkl",
+            )
+            if os.path.exists(fairness_encoder_path):
+                with open(fairness_encoder_path, "rb") as f:
+                    _fairness_encoder = pickle.loads(f.read())
 
         column_transformer = None
         transforms_path = os.path.join(
@@ -973,6 +997,8 @@ class MLModel(object):
             data._cell_sizes = cell_sizes
 
         data._emd = emd
+        if _fairness_encoder:
+            data._fairness_encoder = _fairness_encoder
 
         model_file = os.path.join(os.path.dirname(emd_path), emd["ModelFile"])
         with open(model_file, "rb") as f:

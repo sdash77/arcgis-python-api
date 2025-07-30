@@ -111,6 +111,12 @@ Folder
     :undoc-members:
     :show-inheritance:
 
+Job 
+---
+.. autoclass:: arcgis.gis._impl._content_manager.folder.core.Job
+    :members:
+    :undoc-members:
+
 UserManager
 ----------------------
 .. autoclass:: arcgis.gis.UserManager
@@ -303,6 +309,12 @@ SpatialFilter
     :members:
     :undoc-members:
     :show-inheritance:
+    
+StatisticFilter
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis._impl.common._filters.StatisticFilter
+    :members:
+    :undoc-members:
     
 Submodules
 --------------

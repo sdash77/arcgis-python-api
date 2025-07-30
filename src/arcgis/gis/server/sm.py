@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 import arcgis
 from arcgis import gis
@@ -12,10 +13,31 @@ _log = logging.getLogger(__name__)
 ###########################################################################
 class ServerManager(object):
     """
-    Helper class for managing your ArcGIS Servers. This class is not created
-    by users directly. An instance of this class, called 'servers',
-    is available as a property of the gis.admin object. Administrators call methods
-    on this :class:`ServerManager` object to manage and interrogate ArcGIS Servers.
+    Class for managing your ArcGIS :class:`servers <arcgis.gis.server.Server>` in
+    an ArcGIS Enteprise deployment. This class is not created by users directly,
+    but rather an instance of this class is accessed using the
+    :attr:`~arcgis.gis.admin.PortalAdminManager.servers` property on the
+    :class:`~arcgis.gis.admin.PortalAdminManager` object. Administrators access
+    the *admin* property on their :class:`gis <arcgis.gis.GIS>` connection
+    to get the *PortalAdminManager*. Methods on the :class:`ServerManager`
+    object allow administrators to manage and qeury ArcGIS Servers.
+
+    .. code-block:: python
+
+        # Accessing the ServerManger for an ArcGIS Enterprise organization
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+        >>> org_admin = gis.admin
+        >>> org_admin
+
+        < PortalAdminManager @ https://org.example.com/<web_adaptor>//portaladmin >
+
+        >>> server_mgr = org_admin.servers
+        >>> server_mgr
+
+        < ServerManager @ https://org.example.com/<web_adaptor>//portaladmin >
+
     """
 
     _gis = None
@@ -59,12 +81,12 @@ class ServerManager(object):
     @lru_cache(maxsize=100)
     def list(self):
         """
-        The ``list`` method retrieves all servers in a :class:`~arcgis.gis.GIS`, retrieving a list of admin services.
+        Retrieves all servers in a :class:`~arcgis.gis.GIS`, retrieving a list of admin services.
 
         .. note::
-           This method is not to be confused with the :attr:`~arcgis.server.ServicesDirectory.list` method, in the
-           :class:`~arcgis.server.ServicesDirectory` class, which returns a variety of services, such as a ``Feature Service``,
-           ``Map Service``, ``Vector Tile``, ``Geoprocessing Service``, etc.
+            This method is not to be confused with the :attr:`~arcgis.gis.server.catalog.ServicesDirectory.list`
+            method on the :class:`~arcgis.gis.server.catalog.ServicesDirectory` class, which returns a variety of
+            services, such as a *Feature Service*, *Map Service*, *Vector Tile*, *Geoprocessing Service*, etc.
 
         :return:
            A list of all servers (in the form of admin service objects) found in the :class:`~arcgis.gis.GIS`.
@@ -84,7 +106,7 @@ class ServerManager(object):
             admin_url = server["adminUrl"]
             public_url = server["url"]
             try:
-                if server["serverFunction"] == "NotebookServer":
+                if "notebookserver" in server["serverFunction"].lower():
                     try:
                         from arcgis.gis.nb import NotebookServer
 
@@ -97,7 +119,7 @@ class ServerManager(object):
                         nbs = NotebookServer(url=public_url, gis=self._gis)
                         nbs.info
                         self._server_list.append(nbs)
-                elif server["serverFunction"] == "MissionServer":
+                elif "missionserver" in server["serverFunction"].lower():
                     from arcgis.gis.mission import MissionServer
 
                     try:
@@ -140,19 +162,29 @@ class ServerManager(object):
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         role                   Optional string. Limits the returned ArcGIS Servers based on the
-                               server's role as either a hosting server for the portal, a federated server,
+                               server's role as either a hosting server, a federated server,
                                or a server with restricted access to publishing. The allowed values
-                               are HOSTING_SERVER, FEDERATED_SERVER, or FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
-                               respectively.
+                               are:
+
+                               * *HOSTING_SERVER*
+                               * *FEDERATED_SERVER*
+                               * *FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING*
         ------------------     --------------------------------------------------------------------
         function               Optional string. Limits the returned ArcGIS Servers based on the
-                               server's function. Provide a comma-separated list of values. The
-                               allowed values are GeoAnalytics, RasterAnalytics, NotebookServer,
-                               and ImageHosting.
+                               server's function. Provide a comma-separated list of values. Options
+                               for server functions are:
+
+                               * *RasterAnalytics*
+                               * *NotebookServer*
+                               * *KnowledgeServer*
+                               * *MissionServer*
+                               * *WorkflowManager*
+                               * *ImageHosting*
+                               * *GeoEvent Server*
         ==================     ====================================================================
 
         :return:
-           The ArcGIS Server(s) discovered that match the criteria.
+           List of :class:`server(s) <arcgis.gis.server.Server>` objects that match the criteria.
         """
         servers = []
         if role is None and function is None:
@@ -317,13 +349,23 @@ class ServerManager(object):
         return self._federation.update(server_id, role, function)
 
     # ----------------------------------------------------------------------
-    def validate(self):
+    def validate(self, verbose: bool = False) -> bool | dict:
         """
         This operation returns information on the status of ArcGIS Servers
         registered with Portal for ArcGIS.
 
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        verbose                Optional bool. If `true` a dictionary with any messages will be returned.
+        ==================     ====================================================================
+
         :return:
            True if all servers are functioning as expected, False if there is an
            issue with 1 or more of the Federated Servers.
+
+           when `verbose=True` the response will be a dictionary.
         """
+        if verbose:
+            return self._federation.validate_all()
         return self._federation.validate_all()["status"] == "success"

@@ -98,6 +98,7 @@ def apply_edits(
         "useGlobalIds": use_global_ids,
         "returnEditMoment": return_edit_moment,
         "trueCurveClient": true_curve_client,
+        "editsUploadFormat": "json",
     }
     if return_edit_results:
         params["returnEditResults"] = return_edit_results

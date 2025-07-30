@@ -20,7 +20,6 @@ import collections
 from arcgis.gis import GIS, Item
 from arcgis.raster._util import _set_context, _id_generator
 from arcgis.raster import ImageryLayer
-from .._impl.common._deprecate import deprecated
 
 
 def get_datastores(gis: Optional[GIS] = None):
@@ -31,7 +30,7 @@ def get_datastores(gis: Optional[GIS] = None):
     gis = _arcgis.env.active_gis if gis is None else gis
 
     for ds in gis._datastores:
-        if "RasterAnalytics" in ds._server["serverFunction"]:
+        if "rasteranalytics" in ds._server["serverFunction"].lower():
             return ds
 
     return None
@@ -1574,7 +1573,7 @@ def copy_raster(
         # Usage Example 1: This example creates a tiled imagery layer in ArcGIS Online. 
         # (To create dynamic imagery layer set the tiles_only keyword argument to False)
 
-        copy_raster_op = copy_raster(input_raster=r"C:\data\input_raster.tif",
+        copy_raster_op = copy_raster(input_raster=r"C:\\data\\input_raster.tif",
                                      output_name="output_name",
                                      raster_type_name="Raster Dataset",
                                      gis=gis,
@@ -1583,7 +1582,7 @@ def copy_raster(
         # Usage Example 2: This example creates a tiled imagery layer in AGOL from the datasets detected in the input folder. 
         # (To create dynamic imagery layer set the tiles_only keyword argument to False)
 
-        copy_raster_op = copy_raster(input_raster=r"C:\data",
+        copy_raster_op = copy_raster(input_raster=r"C:\\data",
                                      output_name="output_name",
                                      raster_type_name="Raster Dataset",
                                      gis=gis,
@@ -1591,7 +1590,7 @@ def copy_raster(
         
         # Usage Example 3: This example creates an imagery layer using Landsat 1-5 MSS Raster Type with a Level 1 product and a Multispectral template.
 
-        copy_raster_op_landsat15 = copy_raster(input_raster=r"C:\data\Landsat15MSS",
+        copy_raster_op_landsat15 = copy_raster(input_raster=r"C:\\data\\Landsat15MSS",
                                                output_name="landsat15_op",
                                                raster_type_name="Landsat 1-5 MSS",
                                                raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral"},
@@ -1599,7 +1598,7 @@ def copy_raster(
 
         # Usage Example 4: This example creates an imagery layer using Sentinel-2 Raster Type with a Level 1 product and a Multispectral template.
 
-        copy_raster_op_sentinel2 = copy_raster(input_raster=r"C:\data\Sentinel2",
+        copy_raster_op_sentinel2 = copy_raster(input_raster=r"C:\\data\\Sentinel2",
                                                output_name="sentinel2_op",
                                                raster_type_name="Sentinel-2",
                                                raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral-10m"},
@@ -1607,7 +1606,7 @@ def copy_raster(
 
         # Usage Example 5: This example creates an imagery layer using Pleiades-1 Raster Type with an Ortho product and a Pansharpen template.
 
-        copy_raster_op_pleiades1 = copy_raster(input_raster=r"C:\data\Pleiades1",
+        copy_raster_op_pleiades1 = copy_raster(input_raster=r"C:\\data\\Pleiades1",
                                                output_name="pleiades1_op",
                                                raster_type_name="Pleiades-1",
                                                raster_type_params={"productType":"ORTHO","processingTemplate":"Pansharpen"},
@@ -1615,7 +1614,7 @@ def copy_raster(
 
         # Usage Example 6: This example creates an imagery layer using SPOT 6 Raster Type with an Ortho Reflectance product and a Pansharpen Reflectance template.
 
-        copy_raster_op_spot6 = copy_raster(input_raster=r"C:\data\SPOT6",
+        copy_raster_op_spot6 = copy_raster(input_raster=r"C:\\data\\SPOT6",
                                           output_name="spot6_op",
                                           raster_type_name="SPOT 6",
                                           raster_type_params={"productType": "ORTHO REFLECTANCE", "processingTemplate": "Pansharpen Reflectance"},
@@ -1623,7 +1622,7 @@ def copy_raster(
 
         # Usage Example 7: This example creates an imagery layer using WorldView-2 Raster Type with a Pansharpen and Multispectral template.
 
-        copy_raster_op_worldview2 = copy_raster(input_raster=r"C:\data\WorldView",
+        copy_raster_op_worldview2 = copy_raster(input_raster=r"C:\\data\\WorldView",
                                                 output_name="worldview2_op",
                                                 raster_type_name="WorldView-2",
                                                 raster_type_params= {"productType": "Basic", "processingTemplate": "Pansharpen and Multispectral"},
@@ -1649,10 +1648,10 @@ def copy_raster(
         # Specify the actual source data path referenced by the uploaded mosaic dataset using input_raster parameter.
         # The data would be uploaded to the ArcGIS Online's user store from this path.
         
-        landsat_mosaic = copy_raster(input_raster=[r"C:\data\landsat_data_folder"],
+        landsat_mosaic = copy_raster(input_raster=["C:\\data\\landsat_data_folder"],
                                      output_name="mosaic_datset_op",
                                      context={"upload_properties":{"displayProgress":True}},
-                                     source_mosaic_dataset=r"C:\data\md.gdb\landsat",
+                                     source_mosaic_dataset="C:\\data\\md.gdb\\landsat",
                                      gis = gis)
 
     """
@@ -4164,14 +4163,14 @@ def create_image_collection(
         # Usage Example 2: This example creates an image collection from the datasets detected in the input folder.
 
         img_coll_result = create_image_collection(image_collection="imageCollection",
-                                                  input_rasters=r"C:\data",
+                                                  input_rasters="C:\\data",
                                                   raster_type_name="Raster Dataset",
                                                   gis=gis)
         
         # Usage Example 3: This example creates an image collection using Landsat 1-5 MSS Raster Type with a Level 1 product and a Multispectral template.
 
         landsat15_collection = create_image_collection(image_collection="landsat15_collection",
-                                                       input_rasters=r"C:\data\Landsat15MSS",
+                                                       input_rasters="C:\\data\\Landsat15MSS",
                                                        raster_type_name="Landsat 1-5 MSS",
                                                        raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral"},
                                                        gis=gis)
@@ -4179,7 +4178,7 @@ def create_image_collection(
         # Usage Example 4: This example creates an image collection using Sentinel-2 Raster Type with a Level 1 product and a Multispectral template.
 
         sentinel2_collection = create_image_collection(image_collection="sentinel2_collection",
-                                                       input_rasters=r"C:\data\Sentinel2",
+                                                       input_rasters="C:\\data\\Sentinel2",
                                                        raster_type_name="Sentinel-2",
                                                        raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral-10m"},
                                                        gis=gis)
@@ -4187,7 +4186,7 @@ def create_image_collection(
         # Usage Example 5: This example creates an image collection using Pleiades-1 Raster Type with an Ortho product and a Pansharpened template.
 
         pleiades1_collection = create_image_collection(image_collection="pleiades1_collection",
-                                                       input_rasters=r"C:\data\Pleiades1",
+                                                       input_rasters="C:\\data\\Pleiades1",
                                                        raster_type_name="Pleiades-1",
                                                        raster_type_params={"productType":"ORTHO","processingTemplate":"Pansharpen"},
                                                        gis=gis)
@@ -4195,7 +4194,7 @@ def create_image_collection(
         # Usage Example 6: This example creates an image collection using SPOT 6 Raster Type with an Ortho Reflectance product and a Pansharpen Reflectance template.
 
         spot6_collection = create_image_collection(image_collection="spot6_collection",
-                                                   input_rasters=r"C:\data\SPOT6",
+                                                   input_rasters="C:\\data\\SPOT6",
                                                    raster_type_name="SPOT 6",
                                                    raster_type_params={"productType": "ORTHO REFLECTANCE", "processingTemplate": "Pansharpen Reflectance"},
                                                    gis=gis)
@@ -4203,7 +4202,7 @@ def create_image_collection(
         # Usage Example 7: This example creates an image collection using WorldView-2 Raster Type with a Pansharpen and Multispectral template.
 
         worldview2_collection = create_image_collection(image_collection="worldview2_collection",
-                                                        input_rasters=r"C:\data\WorldView",
+                                                        input_rasters="C:\\data\\WorldView",
                                                         raster_type_name="WorldView-2",
                                                         raster_type_params= {"productType": "Basic", "processingTemplate": "Pansharpen and Multispectral"},
                                                         gis=gis)
@@ -4232,10 +4231,10 @@ def create_image_collection(
         # to the ArcGIS Online's user store from this path. 
 
         landsat_mosaic  = create_image_collection(image_collection="landsat_image_collection",
-                                                  input_rasters=[r"C:\data\landsat_data_folder"],
+                                                  input_rasters=["C:\\data\\landsat_data_folder"],
                                                   raster_type_name=None,
                                                   context={"upload_properties":{"displayProgress":True}},
-                                                  source_mosaic_dataset=r"C:\data\md.gdb\landsat",
+                                                  source_mosaic_dataset="C:\\data\\md.gdb\\landsat",
                                                   gis=gis)
 
     """
@@ -8016,6 +8015,8 @@ def manage_multidimensional_raster(
     dimension_value: Optional[str] = None,
     dimension_description: Optional[str] = None,
     dimension_unit: Optional[str] = None,
+    update_statistics: bool = True,
+    update_transpose: bool = True,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -8067,6 +8068,30 @@ def manage_multidimensional_raster(
                                              This is required if manage_mode is set to ADD_DIMENSION.
     ------------------------------------     --------------------------------------------------------------------
     dimension_unit                           Optional string. The unit of the dimension to be modified.
+    ------------------------------------     --------------------------------------------------------------------
+    update_statistics                        Optional boolean. Specifies whether the statistics will be recalculated
+                                             for the multidimensional raster dataset.
+
+                                             - True - Statistics will be recalculated. This is the default.
+                                             - False - Statistics will not be recalculated.
+
+                                             Example:
+
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 11.5 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    update_transpose                         Optional boolean. Specifies whether the transpose will be rebuilt for
+                                             the multidimensional raster dataset.
+
+                                             - True - The transpose will be rebuilt. If no transpose exists, a new transpose will be built. This is the default.
+                                             - False - The transpose will not be rebuilt.
+
+                                             Example:
+
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 11.5 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -8121,6 +8146,8 @@ def manage_multidimensional_raster(
         dimension_value=dimension_value,
         dimension_description=dimension_description,
         dimension_unit=dimension_unit,
+        update_statistics=update_statistics,
+        update_transpose=update_transpose,
         future=future,
         estimate=estimate,
         **kwargs,

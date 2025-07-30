@@ -68,8 +68,8 @@ class ImageryModel(ArcGISModel):
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        path                    Required string. Path to
-                                Esri Model Definition(EMD) or DLPK file.
+        path                    Required string. Name or Path to
+                                Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required ImageryDataObject. Returned data
                                 object from :meth:`~arcgis.learn.prepare_data`  function.
@@ -112,7 +112,6 @@ class ImageryModel(ArcGISModel):
                 "imagery_model",
                 getattr(ag.learn, modelname).from_model(path, data),
             )
-        getattr(self, "imagery_model").load(path)
 
     def fit(
         self,
@@ -353,14 +352,14 @@ class ImageryModel(ArcGISModel):
         :return: `dict` if mean is False otherwise `float`
         """
         if self._modeltype is not None:
-            if self._modeltype == "ObjectDetection":
-                print("This method is not supported with Object Detection models")
-                return
-            else:
+            if self._modeltype in ["ImageClassification"]:
                 try:
                     return getattr(self, "imagery_model").mIOU()
                 except Exception as E:
                     print("Load the model first using load()")
+            else:
+                print("This method is not supported with the current model type.")
+                return
         else:
             print("Train the model first using fit()")
             return
@@ -389,14 +388,15 @@ class ImageryModel(ArcGISModel):
         :return: `dict` if mean is False otherwise `float`
         """
         if self._modeltype is not None:
-            if self._modeltype != "ObjectDetection":
-                print("This method is not supported with pixel classification model")
-                return
-            else:
+            if self._modeltype in ["ObjectDetection", "InstanceDetection"]:
                 try:
                     return getattr(self, "imagery_model").average_precision_score()
                 except Exception as E:
                     print("Load the model first using load()")
+            else:
+                print("This method is not supported with the current model type.")
+                return
+
         else:
             print("Train the model first using fit()")
             return
@@ -483,6 +483,7 @@ class AutoDL:
 
         prepare_data_args = data.arcgis_init_kwargs
         prepare_data_args["batch_size"] = None
+        self.prepare_data_args = prepare_data_args
         self._data = prepare_data(**prepare_data_args)
 
         self.verbose = verbose

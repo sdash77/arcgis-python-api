@@ -191,6 +191,9 @@ class WebExperience(object):
     name                Optional string. If a new experience is being created, the name of the
                         item. Otherwise, will default to "Experience via Python" followed by a
                         random number.
+    ---------------     --------------------------------------------------------------------
+    folder              Optional string. The folder in the portal to add the experience to.
+                        If none is specified, the user's root folder will be used.
     ===============     ====================================================================
     """
 
@@ -210,6 +213,7 @@ class WebExperience(object):
         gis: Optional[_arcgis_gis.GIS] = None,
         template: Optional[Union[Templates, str]] = None,
         name: Optional[str] = None,
+        folder: Optional[str] = None,
     ):
         if gis is None:
             if item and isinstance(item, _arcgis_gis.Item):
@@ -274,7 +278,7 @@ class WebExperience(object):
             # Throw error if item is not of type Experience
             raise ValueError("Item is not a Web Experience or is inaccesible")
         else:
-            self._create_new_experience(template=template, name=name)
+            self._create_new_experience(template=template, name=name, folder=folder)
 
     # -----------------------------------------------------------------------------------
     @property
@@ -315,6 +319,7 @@ class WebExperience(object):
         name=None,
         gis=None,
         item_properties={},
+        folder=None,
     ):
         """
         If no experience is specified when creating a WebExperience, this helper function
@@ -322,7 +327,8 @@ class WebExperience(object):
         a template from the experience builder to create their template, in addition to a custom
         item name (done as arguments in the initial creation of the WebExperience).
         """
-
+        if not gis:
+            gis = self._gis
         if config is None:
             if isinstance(template, Templates):
                 template = template.value
@@ -343,7 +349,7 @@ class WebExperience(object):
                     + no_space
                     + "/config.json"
                 )
-                temp_dict = self._gis._con.get(temp_url, {"f": "json"})
+                temp_dict = gis._con.get(temp_url, {"f": "json"})
             else:
                 json_path = os.path.join(
                     os.path.dirname(__file__),
@@ -355,17 +361,24 @@ class WebExperience(object):
                     temp_dict = json.load(f)
 
             if "attributes" in temp_dict:
-                temp_dict["attributes"]["portalUrl"] = self._gis.url
+                temp_dict["attributes"]["portalUrl"] = gis.url
             else:
-                temp_dict["attributes"] = {"portalUrl": self._gis.url}
-            if self._gis._is_agol:
-                exb_version = self._gis._con.get(
+                temp_dict["attributes"] = {"portalUrl": gis.url}
+            if gis._is_agol:
+                exb_version = gis._con.get(
                     "https://experience.arcgis.com/version.json",
                     {"f": "json"},
                 )["exbVersion"]
             else:
-                url = self._gis.url + "/apps/experiencebuilder/version.json"
-                exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
+                try:
+                    url = gis.url + "/apps/experiencebuilder/version.json"
+                    exb_version = gis._con.get(url, {"f": "json"})["exbVersion"]
+                except:
+                    url = (
+                        gis.url.split("/home")[0]
+                        + "/apps/experiencebuilder/version.json"
+                    )
+                    exb_version = gis._con.get(url, {"f": "json"})["exbVersion"]
 
             temp_dict["exbVersion"] = exb_version
             temp_dict["originExbVersion"] = exb_version
@@ -388,16 +401,11 @@ class WebExperience(object):
 
         else:
             temp_dict = config
-            temp_dict["attributes"]["portalUrl"] = self._gis.url
+            temp_dict["attributes"]["portalUrl"] = gis.url
             if name is None:
                 title = "Experience via Python %s" % uuid.uuid4().hex[:10]
             else:
                 title = name
-
-        if gis:
-            temp_dict["attributes"]["portalUrl"] = gis.url
-        else:
-            temp_dict["attributes"]["portalUrl"] = self._gis.url
 
         keywords = ",".join(
             [
@@ -423,11 +431,14 @@ class WebExperience(object):
             "typeKeywords": keywords,
         }"""
 
-        # add to active gis and set properties
-        if gis is None:
-            folder = self._gis.content.folders.get()
-        else:
+        if folder and isinstance(folder, str):
+            folder = gis.content.folders._get_or_create(folder)
+
+        if not folder:
             folder = gis.content.folders.get()
+
+        # add to active gis and set properties
+
         item = folder.add(item_properties=props).result()
 
         # assign to experience properties
@@ -724,6 +735,8 @@ class WebExperience(object):
         item_mapping: Optional[dict] = None,
         auto_remap: Optional[bool] = False,
         item_properties: Optional[dict] = {},
+        folder: Optional[str] = None,
+        widget_mapping: Optional[dict] = None,
     ):
         """
         Adds a WebExperience created locally through the Developer Edition to a specified
@@ -744,8 +757,8 @@ class WebExperience(object):
                             experience in the portal.
         ---------------     --------------------------------------------------------------------
         item_mapping        Optional dictionary. Allows users to manually remap the datasources
-                            of their experience to datasources present in the portal. See
-                            example dictionary below.
+                            of their experience to datasources present in the portal. The keys
+                            and values of the dictionary should be item id's.
         ---------------     --------------------------------------------------------------------
         auto_remap          Optional boolean. Searches the portal for matching datasources and
                             automatically remaps the experience to use those accordingly.
@@ -754,6 +767,15 @@ class WebExperience(object):
         item_properties     Optional dictionary. Contains a variety of properties that can be
                             set when creating a new item, much like `ContentManager.add()`. See
                             below for a table containing possible properties.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. The folder in the portal to add the experience to.
+                            If none is specified, the user's root folder will be used.
+        ---------------     --------------------------------------------------------------------
+        widget_mapping      Optional dictionary. Allows users to manually remap custom widgets
+                            in their local experience to custom widgets present in the portal
+                            or to a hosted online manifest file. The dictionary keys should
+                            be the name of the widget in the local experience, and the values
+                            should be the new widget's id or the URI of the hosted manifest.
         ===============     ====================================================================
 
 
@@ -830,28 +852,82 @@ class WebExperience(object):
                 for attr, new_value in v.items():
                     new_config["dataSources"][source][attr] = new_value
 
+        def _create_custom_widget(uri: str, title: str, data: str):
+            widg_props = {
+                "title": title + " widget",
+                "type": "Experience Builder Widget",
+                "typeKeywords": [
+                    "Experience Builder",
+                    "Experience Builder Widget",
+                    "Widget",
+                ],
+                "url": uri,
+                "text": data,
+            }
+            if folder and isinstance(folder, str):
+                folder_object = gis.content.folders._get_or_create(folder)
+            else:
+                folder_object = gis.content.folders.get()
+            return folder_object.add(widg_props).result()
+
+        # if custom widgets exist, map them accordingly
+        widget_folder = os.path.join(self._source_path, "widgets")
+        if widget_mapping is not None:
+            for widget_name, v in widget_mapping.items():
+                for w_id, w_dict in new_config["widgets"].items():
+                    if widget_name in w_dict["uri"]:
+                        w_portal_id = None
+                        w_portal_url = None
+                        # check to see if existent widget item
+                        if not _arcgis_gis._impl._con._is_http_url(v):
+                            existent_widget = gis.content.get(v)
+                            if existent_widget:
+                                w_portal_id = existent_widget.id
+                                w_portal_url = existent_widget.url
+
+                        # if not existent, create it
+                        else:
+                            w_path_name = os.path.join(
+                                widget_folder, widget_name, "manifest.json"
+                            )
+                            if os.path.exists(w_path_name):
+                                with open(w_path_name) as json_file:
+                                    w_data = json_file.read()
+
+                            new_widget = _create_custom_widget(v, widget_name, w_data)
+                            w_portal_id = new_widget.id
+                            w_portal_url = new_widget.url
+
+                        # update with id and url of new custom widget item
+                        new_config["widgets"][w_id]["uri"] = w_portal_url
+                        new_config["widgets"][w_id]["itemId"] = w_portal_id
+                        break
+
         # create a new portal experience using the config
         self._create_new_experience(
             config=new_config,
             name=title,
             gis=gis,
             item_properties=item_properties,
+            folder=folder,
         )
         self._local = False
-        if "resources" in os.listdir(self._source_path):
-            images_path = os.path.join(self._source_path, "resources", "images")
+        images_path = os.path.join(self._source_path, "resources", "images")
+        if os.path.exists(images_path):
             image_list = os.path.join(images_path, "image-resources-list.json")
             icon_list = os.path.join(images_path, "icon-resources-list.json")
-            self._item.resources.add(
-                file=image_list,
-                folder_name="images",
-                file_name="image-resources-list.json",
-            )
-            self._item.resources.add(
-                file=icon_list,
-                folder_name="images",
-                file_name="icon-resources-list.json",
-            )
+            if os.path.exists(image_list):
+                self._item.resources.add(
+                    file=image_list,
+                    folder_name="images",
+                    file_name="image-resources-list.json",
+                )
+            if os.path.exists(icon_list):
+                self._item.resources.add(
+                    file=icon_list,
+                    folder_name="images",
+                    file_name="icon-resources-list.json",
+                )
 
             widgets = [f for f in os.listdir(images_path) if "widget" in f]
             for widget in widgets:
@@ -924,43 +1000,3 @@ class WebExperience(object):
 
         except:
             return self._item.url
-
-    # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.3.0",
-        removed_in="2.4.2",
-        current_version="2.4.1",
-        details="Pass in the Web Experience item to `gis.content.clone_items()` instead.",
-    )
-    def clone(self, target, owner, **kwargs):
-        """
-        Clones the experience and all of it's data sources to a target GIS. User must
-        have admin privileges on the original item's GIS, and provide an authenticated
-        instance of a target GIS. Users must also specify the name of an account on the
-        target GIS to own the items. Also accepts arguments for :class:`~arcgis.gis.Item.clone_items()`
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        target              Required GIS. An authenticated instance of the GIS that the user
-                            wishes to clone the experience to.
-        ---------------     --------------------------------------------------------------------
-        owner               Required string. The username of the account that will be the owner
-                            of the experience and its data source items in the target GIS.
-        ---------------     --------------------------------------------------------------------
-        **kwargs            Optional additional arguments. See ``Item.clone_items()`` for the full
-                            list.
-        ===============     ====================================================================
-
-        :return:
-            The item corresponding to the cloned experience in the target GIS.
-        """
-
-        exp_clone = target.content.clone_items([self._item], owner=owner, **kwargs)
-        if exp_clone:
-            for cloned_item in exp_clone:
-                if cloned_item.type == "Web Experience":
-                    return cloned_item
-            return False
-        else:
-            return False

@@ -42,7 +42,12 @@ try:
         ClassificationInterpretation,
         cnn_config,
     )
-    from ._arcgis_model import _set_multigpu_callback, _resnet_family, _get_device
+    from ._arcgis_model import (
+        _set_multigpu_callback,
+        _resnet_family,
+        _get_device,
+        get_backbone_func,
+    )
     from fastai.vision.transform import (
         crop,
         rotate,
@@ -73,9 +78,10 @@ try:
         gradcam_trnsfrmr,
         reshape_tensor,
         complete_transformer_backbone_name,
+        create_transformer_FeatureClassifier,
     )
     from fastai.vision import learner
-    from ._dofa_utils import dofa_config
+    from ._transformer_backbone import vit_foundation_model_config
 
     learner._test_cnn = test_cnn_trnsfrmr
     ClassificationInterpretation.GradCAM = gradcam_trnsfrmr
@@ -260,24 +266,29 @@ class FeatureClassifier(ArcGISModel):
             else:
                 head = None
 
-            self._transformer = (
-                type(backbone) is str
-                and backbone in FeatureClassifier._transformer_backbone_original_names()
-            )
-
-            self._dofa = (
-                type(backbone) is str and backbone in FeatureClassifier.dofa_backbones()
+            self._transformer = type(backbone) is str and (
+                backbone in FeatureClassifier._transformer_backbone_original_names()
+                or backbone in FeatureClassifier.foundation_model_backbones()
             )
             try:
                 if self._transformer:
-                    from ._timm_utils import create_transformer_FeatureClassifier
-
-                    trnsfrmr_model = create_transformer_FeatureClassifier(
-                        self._backbone.__name__,
-                        num_classes=data.c,
-                        img_size=self._data.chip_size,
-                        pretrained=True,
-                    )
+                    if backbone in FeatureClassifier.foundation_model_backbones():
+                        backbone_func = get_backbone_func(
+                            backbone,
+                            data,
+                            is_clf=True,
+                            num_classes=data.c,
+                            is_plain_vit=True,
+                            **kwargs,
+                        )
+                        trnsfrmr_model = backbone_func()
+                    else:
+                        trnsfrmr_model = create_transformer_FeatureClassifier(
+                            self._backbone.__name__,
+                            num_classes=data.c,
+                            img_size=self._data.chip_size,
+                            pretrained=True,
+                        )
                     if self._is_multispectral:
                         trnsfrmr_model = _change_tail(trnsfrmr_model, data)
 
@@ -289,34 +300,6 @@ class FeatureClassifier(ArcGISModel):
                     idx = self._freeze()
                     if trnsfrmr_model[0].__class__.__name__ == "CoaT":
                         idx = 8
-                    self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
-                    self.learn.create_opt(lr=3e-3)
-                elif self._dofa:
-                    from arcgis.learn.models._arcgis_model import get_backbone_func
-
-                    backbone_func = get_backbone_func(
-                        backbone,
-                        data,
-                        is_clf=True,
-                        num_classes=data.c,
-                        **kwargs,
-                    )
-                    backbone_dofa_clf = fastai.vision.learner.create_body(
-                        backbone_func, True, None
-                    )
-
-                    backbone_dofa_clf._is_dofa = True
-
-                    if self._is_multispectral:
-                        backbone_dofa_clf = _change_tail(backbone_dofa_clf, data)
-
-                    self.learn = Learner(
-                        data,
-                        model=backbone_dofa_clf,
-                        metrics=metrics,
-                    )
-
-                    idx = self._freeze()
                     self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
                     self.learn.create_opt(lr=3e-3)
                 else:
@@ -336,8 +319,7 @@ class FeatureClassifier(ArcGISModel):
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
 
-            if not self._dofa:
-                self._arcgis_init_callback()  # make first conv weights learnable
+            self._arcgis_init_callback()  # make first conv weights learnable
 
             # Add Mixup data augmentation
             if mixup:
@@ -405,6 +387,7 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
         from ._timm_utils import shortened_transformer_backbone
 
         transformer_model = shortened_transformer_backbone()
@@ -448,13 +431,14 @@ class FeatureClassifier(ArcGISModel):
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
-    def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
-        dofa_backbone = list(dofa_config.keys())
-        return dofa_backbone
+    def foundation_model_backbones():
+        """Supported list of foundation model backbones for this model."""
+        foundation_model = list(vit_foundation_model_config.keys())
+        return foundation_model
 
     @staticmethod
     def torchgeo_backbones():
+        """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
         resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
@@ -488,15 +472,15 @@ class FeatureClassifier(ArcGISModel):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbones = FeatureClassifier.transformer_backbones()
         torchgeo_backbone = FeatureClassifier.torchgeo_backbones()
+        foundation_model = FeatureClassifier.foundation_model_backbones()
         satlas_backbone = FeatureClassifier.satlas_backbones()
-        dofa_backbone = FeatureClassifier.dofa_backbones()
 
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
             timm_backbones
             + transformer_backbones
             + torchgeo_backbone
+            + foundation_model
             + satlas_backbone
-            + dofa_backbone
         )
 
     @property
@@ -542,7 +526,7 @@ class FeatureClassifier(ArcGISModel):
         from .._utils.image_classification import IC_show_results
 
         if self._is_multispectral and gradcam:
-            raise Exception("This method is not supported for multispectral dataset.")
+            raise Exception("This feature is not supported for multispectral datasets.")
 
         return_fig = kwargs.get("return_fig", False)
         fig = IC_show_results(self, nrows=rows, gradcam_show_result=gradcam, **kwargs)
@@ -621,9 +605,12 @@ class FeatureClassifier(ArcGISModel):
                                 If False, the model will not work with ArcGIS Pro 2.6
                                 or earlier. Default is set to True.
         ---------------------   -------------------------------------------
-        gradcam                 Optional boolean. Used to save the results with the
-                                Grad-CAM heatmap for the predicted classes, enhancing the
-                                clarity and interpretability of the model's predictions.
+        gradcam                 Optional boolean. Setting this to True for labelled tiles
+                                will enable the 'explainability_map' parameter in the
+                                Classify Object Using Deep Learning tool in ArcGIS Pro/Online.
+                                The explainability_map parameter can be used to visualize
+                                the Grad-CAM from the tool. Setting this to True will
+                                also save Explainability Map in the saved folder
                                 Default is set to False. This feature works only with RGB images.
         ---------------------   -------------------------------------------
         kwargs                  Optional Parameters.
@@ -1973,7 +1960,9 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
-    def _generate_grad_cam(self, im, cl, heatmap_thresh: int = 16, **kwargs):
+    def _generate_grad_cam(
+        self, im, cl, classifier_dataset_type, heatmap_thresh: int = 16, **kwargs
+    ):
         """
         Generate Grad-CAM heatmaps for the given image and model predictions.
 
@@ -1985,7 +1974,8 @@ class FeatureClassifier(ArcGISModel):
             grad_cam_outputs: List of Grad-CAM heatmaps for the predicted classes.
             pred_class_label: List of predicted class labels corresponding to the heatmaps.
         """
-        if self._data.dataset_type == "MultiLabeled_Tiles":
+
+        if classifier_dataset_type == "MultiLabeled_Tiles":
             # Handles MuliCategory types
             cat_pred = cl[1]
         else:
@@ -2002,35 +1992,46 @@ class FeatureClassifier(ArcGISModel):
         pred_class_label = []
         for class_label, pred_cat1 in enumerate(cat_pred.cpu().numpy()):
             if (
-                self._data.dataset_type == "Labeled_Tiles"
-                or self._data.dataset_type == "Imagenet"
+                classifier_dataset_type == "Labeled_Tiles"
+                or classifier_dataset_type == "Imagenet"
             ):
                 class_label = pred_cat1
                 pred_cat1 = True
             if pred_cat1:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    with hook_output(m[0]) as hook_a:
-                        with hook_output(m[0], grad=True) as hook_g:
-                            preds = m(xb)
-                            preds[0, class_label].backward()
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        with hook_output(m[0]) as hook_a:
+                            with hook_output(m[0], grad=True) as hook_g:
 
-                acts = hook_a.stored[0].cpu()  # Activation maps
-                grad = hook_g.stored[0][0].cpu()  # Gradients
+                                # to support GPU and CPU for pro inferencing
+                                if kwargs.get("device_") != None:
+                                    xb = xb.to(kwargs.get("device_"))
+                                    m = m.to(kwargs.get("device_"))
 
-                if self._transformer:
-                    acts = reshape_tensor(acts)
-                    grad = reshape_tensor(grad)
+                                preds = m(xb)
+                                preds[0, class_label].backward()
 
-                # for Grad-CAM
-                if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
-                    grad_chan = grad.mean(1).mean(1)
-                    mult = F.relu((acts * grad_chan[..., None, None]).sum(0))
-                    grad_cam_outputs.append(mult)
-                    pred_class_label.append(class_label)
-                else:
-                    raise ValueError(
-                        "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
+                    acts = hook_a.stored[0].cpu()  # Activation maps
+                    grad = hook_g.stored[0][0].cpu()  # Gradients
+
+                    if self._transformer:
+                        acts = reshape_tensor(acts)
+                        grad = reshape_tensor(grad)
+
+                    # for Grad-CAM
+                    if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
+                        grad_chan = grad.mean(1).mean(1)
+                        mult = F.relu((acts * grad_chan[..., None, None]).sum(0))
+                        grad_cam_outputs.append(mult)
+                        pred_class_label.append(class_label)
+                    else:
+                        raise ValueError(
+                            "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
+                        )
+                except:
+                    raise Exception(
+                        f"The backbone does not support the Grad-CAM feature."
                     )
             else:
                 if kwargs.get("multi_all_cam"):
@@ -2042,23 +2043,22 @@ class FeatureClassifier(ArcGISModel):
 
     def _gradCAM(self, im, cl, image: bool = True, grad_vis=False):
         # If the predictions are all 0, including for None class
+        xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+        xb, _ = self._data.one_item(im, detach=False, denorm=False)
+        xb_im = Image(xb[0])
+        xb_im_denorm = Image(xb_norm[0])
         if isinstance(cl[0], fastai.core.MultiCategory) and not cl[0].raw:
-            xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
-            xb, _ = self._data.one_item(im, detach=False, denorm=False)
-            xb_im = Image(xb[0])
-            xb_im_denorm = Image(xb_norm[0])
             _, ax = plt.subplots(figsize=(6, 6))
             xb_im_denorm.show(ax, title=f"Predicted class: None")
             return
         else:
-            grad_cam_outputs, pred_class_label, xb, xb_norm = self._generate_grad_cam(
-                im, cl
-            )
+
             if image:
-                xb_im = Image(xb[0])
-                xb_im_denorm = Image(xb_norm[0])
                 sz = list(xb_im.shape[-2:])
                 if grad_vis == True:
+                    grad_cam_outputs, pred_class_label, xb, xb_norm = (
+                        self._generate_grad_cam(im, cl, self._data.dataset_type)
+                    )
                     plotsize = 12 + 2 * (len(grad_cam_outputs) - 1)
                     _, ax = plt.subplots(
                         nrows=1,
@@ -2079,11 +2079,10 @@ class FeatureClassifier(ArcGISModel):
                             interpolation="bilinear",
                             cmap="hot",
                         )
+                    return grad_cam_outputs
                 else:
                     _, ax = plt.subplots(figsize=(6, 6))
                     xb_im_denorm.show(ax, title=f"Predicted class: {cl[0]}")
-
-            return grad_cam_outputs
 
     @deprecated(
         deprecated_in="1.7.1",

@@ -2135,7 +2135,7 @@ def _generate_data_path(datastore_path, gis=None):
 
     :param datastore_path: Required string. datastore path. Example: "/rasterStores/MyRasterStore"
     :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
-    :return: String. The actual path for the given datastore path. Example: "/cloudStores/cs", "r"\\sha-arcgis-ra\C$\rasterstore"
+    :return: String. The actual path for the given datastore path. Example: "/cloudStores/cs", ""\\sha-arcgis-ra\\C$\\rasterstore"
     """
     if gis is None:
         gis = _arcgis.env.active_gis
@@ -2218,8 +2218,8 @@ def _generate_data_path(datastore_path, gis=None):
 def _transfer_data(src, dst, gis=None):
     """
     This method is used to transfer data from one location to another.
-    :param src: source location. Example - C:\temp\newop.crf
-    :param dst: destination location Example - \\sha-arcgis-ra\C$\rasterstore\qyfqffwer5ty/imagery/data
+    :param src: source location. Example - C:\\temp\\newop.crf
+    :param dst: destination location Example - \\\\sha-arcgis-ra\\C$\rasterstore\\qyfqffwer5ty/imagery/data
     """
     if gis is None:
         gis = _arcgis.env.active_gis

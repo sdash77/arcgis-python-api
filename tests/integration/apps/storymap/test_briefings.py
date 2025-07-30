@@ -70,7 +70,7 @@ class TestStoryMap(unittest.TestCase):
         img = Image(
             "https://www.nps.gov/npgallery/GetAsset/0022D3FF-1DD8-B71B-0BE3AD4C48F96FF9/proxy/hires"
         )
-        block.add(img)
+        block.add_content(img)
         assert block.content
         assert isinstance(block.content, list)
         assert isinstance(block.content[0], Image)
@@ -104,7 +104,7 @@ class TestStoryMap(unittest.TestCase):
         assert len(single_no_title_slide.blocks) == 1
 
         # double slide
-        double_slide = briefing.add(SlideLayout.DOUBLE, SlideSubLayout.THREE_SEVEN)
+        double_slide = briefing.add(layout=SlideLayout.DOUBLE, sublayout=SlideSubLayout.THREE_SEVEN)
         double_slide.blocks[0].add_content(Text(content="Hello World"))
         assert double_slide.layout == SlideLayout.DOUBLE.value
         assert double_slide.sublayout == SlideSubLayout.THREE_SEVEN.value
@@ -112,7 +112,7 @@ class TestStoryMap(unittest.TestCase):
 
         # double slide without title
         double_no_title_slide = briefing.add(
-            SlideLayout.TITLELESSDOUBLE, SlideSubLayout.SEVEN_THREE
+            SlideLayout.TITLELESSDOUBLE, sublayout=SlideSubLayout.SEVEN_THREE
         )
         double_no_title_slide.blocks[0].add_content(Text(content="Hello World"))
         assert double_no_title_slide.layout == SlideLayout.TITLELESSDOUBLE.value

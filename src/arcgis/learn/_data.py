@@ -1011,7 +1011,7 @@ def prepare_tabulardata(
     explanatory_variables=None,
     explanatory_rasters=None,
     date_field=None,
-    cell_sizes=[3, 4, 5, 6, 7],
+    cell_sizes=[3, 4, 5, 6],
     distance_features=None,
     preprocessors=None,
     val_split_pct=0.1,
@@ -1181,6 +1181,10 @@ def prepare_tabulardata(
     :return: `TabularData` object
 
     """
+    if cell_sizes:
+        if 7 in cell_sizes:
+            cell_sizes.remove(7)
+
     if input_features is None and (
         explanatory_rasters is None or len(explanatory_rasters) == 0
     ):
@@ -1288,7 +1292,8 @@ def prepare_data(
     =====================   ===========================================
     **Parameter**           **Description**
     ---------------------   -------------------------------------------
-    path                    Required string. Path to data directory or a list of paths.
+    path                    Required string. Path to data directory or a list of paths
+                            in case of multi-folder training.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label. Not supported for MaskRCNN model.
@@ -1871,6 +1876,7 @@ def prepare_data(
 
     _infered = False
     sensor_name = "ms"
+    _is_non8bit_rgb = False
     if (
         has_esri_files
         and "InputRastersProps" in emd
@@ -1904,6 +1910,8 @@ def prepare_data(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 ds = gdal.Open(_im_path)
+            if ds.RasterCount == 3 and ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
+                _is_non8bit_rgb = True
             if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
@@ -3258,6 +3266,7 @@ def prepare_data(
         data._do_normalize = True
         if kwargs.get("do_normalize", None) is not None:
             data._do_normalize = kwargs.get("do_normalize", True)
+        # multispectral normalization
         if data._do_normalize:
             data = data.normalize(
                 stats=(data._scaled_mean_values, data._scaled_std_values),
@@ -3576,6 +3585,11 @@ def prepare_data(
         if [data._bands[i] for i in data._extract_bands] == ["r", "g", "b"]:
             _train_tail = False
         data._train_tail = kwargs.get("train_tail", _train_tail)
+
+    if _is_non8bit_rgb:
+        data._is_multispectral = False
+        data._train_tail = False
+    data._is_non8bit_rgb = _is_non8bit_rgb
 
     if not_label_count[0]:
         logger = logging.getLogger()
