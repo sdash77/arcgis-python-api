@@ -20,7 +20,7 @@ except:
 
 @unittest.skipIf(found == False, "Shapely is required to perform this test case.")
 class TestToGeoJSONWithShapely(unittest.TestCase):
-    def test_polyline(self):
+    def test_polyline_single(self):
         ###
         ###   POLYLINE TEST
         ###
@@ -38,6 +38,25 @@ class TestToGeoJSONWithShapely(unittest.TestCase):
             )
             assert arcgis_geom.has_z == True
             assert arcgis_geom.WKT
+            assert arcgis_geom.is_multipart == False
+
+    def test_polyline_multipart(self):
+        ###
+        ###   POLYLINE TEST
+        ###
+        LINESTRING_3D = "MULTILINESTRING ((0 0, 1 1), (2 2, 3 3))"
+        for w in [LINESTRING_3D]:
+            shape = shapely.from_wkt(w)
+            arcgis_geom = arcgis.geometry.Geometry.from_shapely(
+                shapely_geometry=shape, spatial_reference={"wkid": 2154}
+            )
+            assert arcgis_geom.__geo_interface__
+            assert shape.equals(
+                shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
+            )
+            assert arcgis_geom.has_z == False
+            assert arcgis_geom.WKT
+            assert arcgis_geom.is_multipart == True
 
     def test_polygon_2D(self):
         ###
@@ -58,6 +77,7 @@ class TestToGeoJSONWithShapely(unittest.TestCase):
                 shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
             )
             assert arcgis_geom.has_z == False
+            assert arcgis_geom.is_multipart == False
 
     def test_multipolygon_2D(self):
         MULTIPOLYGONWKT_2D = "MULTIPOLYGON (((30 20, 45 40, 10 40, 30 20)), ((15 5, 40 10, 10 20, 5 10, 15 5)))"
@@ -72,6 +92,7 @@ class TestToGeoJSONWithShapely(unittest.TestCase):
                 shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
             )
             assert arcgis_geom.has_z == False
+            assert arcgis_geom.is_multipart == True
 
     def test_polygon_3D(self):
         POLYGONWKT_3D = "MULTIPOLYGON (((30 20 1, 45 40 1, 10 40 1, 30 20 1)), ((15 5 2, 40 10 2, 10 20 0, 5 10 1, 15 5 2)))"
@@ -87,6 +108,7 @@ class TestToGeoJSONWithShapely(unittest.TestCase):
                 shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
             )
             assert arcgis_geom.has_z == True
+            assert arcgis_geom.is_multipart == True
 
     def test_point_3D(self):
 
@@ -101,6 +123,7 @@ class TestToGeoJSONWithShapely(unittest.TestCase):
             assert shape.equals(
                 shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
             )
+            assert arcgis_geom.is_multipart == False
 
     def test_point_2D(self):
 
@@ -116,6 +139,7 @@ class TestToGeoJSONWithShapely(unittest.TestCase):
             assert shape.equals(
                 shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
             )
+            assert arcgis_geom.is_multipart == False
 
     def test_multipoint_3D(self):
         MULTIPOINTWKT_3D = "MULTIPOINT ((10 40 5), (40 30 10), (20 20 15), (30 10 20))"
@@ -131,6 +155,7 @@ class TestToGeoJSONWithShapely(unittest.TestCase):
                 shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
             )
             assert arcgis_geom.has_z == True
+            assert arcgis_geom.is_multipart == True
 
     def test_multipoint_2D(self):
 
@@ -146,6 +171,7 @@ class TestToGeoJSONWithShapely(unittest.TestCase):
                 shapely.from_geojson(ujson.dumps(arcgis_geom.__geo_interface__))
             )
             assert arcgis_geom.has_z == False
+            assert arcgis_geom.is_multipart == True
 
 
 @unittest.skipIf(found == False, "Shapely is required to perform this test case.")

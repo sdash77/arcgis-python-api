@@ -1591,12 +1591,14 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             return False
         elif HAS_ARCPY:
             return getattr(self.as_arcpy, "isMultipart", None)
-        elif HAS_SHAPELY:
-            if self.type.lower().find("multi") > -1:
-                return True
-            else:
-                return False
-        return
+
+        geojson = self.__geo_interface__
+        if "type" not in geojson:
+            return False
+        if geojson["type"].lower().find("multi") > -1:
+            return True
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     @property
