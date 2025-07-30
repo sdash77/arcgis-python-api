@@ -1150,22 +1150,35 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def settings(self, include_system_settings: Optional[bool] = True):
+    @property
+    def settings(self):
         """
         Returns a list of all settings for the Workflow Manager instance
-
-        ===============         ====================================================================
-        **Parameter**           **Description**
-        ---------------         --------------------------------------------------------------------
-        include_system_settings Optional boolean. Indicates whether or not to include the system settings.
-        ===============         ====================================================================
 
         :return:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_
 
         """
         try:
-            params = { "includeSystemSettings": include_system_settings}
+            params = {"includeSystemSettings": True}
+
+            return self._gis._con.get("{base}/settings".format(base=self._url, params=params))[
+                "settings"
+            ]
+        except:
+            self._handle_error(sys.exc_info())
+
+    @property
+    def user_settings(self):
+        """
+        Returns a list of all the user settings for the Workflow Manager instance
+
+        :return:
+            `List <https://docs.python.org/3/library/stdtypes.html#list>`_
+
+        """
+        try:
+            params = {"includeSystemSettings": False}
 
             return self._gis._con.get("{base}/settings".format(base=self._url, params=params))[
                 "settings"

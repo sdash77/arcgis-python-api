@@ -1344,7 +1344,7 @@ class TestWorkflowManager(unittest.TestCase):
         self.connection.workflow_manager.update_settings(valid_settings)
 
         # Act
-        settings = self.connection.workflow_manager.settings()
+        settings = self.connection.workflow_manager.settings
         has_setting = [
             x
             for x in settings
@@ -1372,7 +1372,7 @@ class TestWorkflowManager(unittest.TestCase):
         self.connection.workflow_manager.update_settings(valid_settings)
 
         # Act
-        settings = self.connection.workflow_manager.settings(include_system_settings=False)
+        settings = self.connection.workflow_manager.user_settings
         has_setting = [
             x
             for x in settings
