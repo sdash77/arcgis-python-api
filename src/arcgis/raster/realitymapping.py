@@ -78,7 +78,7 @@ def _create_project(
     image_collection parameter.
 
     The realitymapping project item can be opened in Reality Maker web app.
-    The RMProject includes all project inputs, ancillary data such as image footprints and block adjustment reports,
+    The Project includes all project inputs, ancillary data such as image footprints and block adjustment reports,
     intermediate products such as image collections, quick block adjustment results, final products,
     and status at each stage of processing.
 
@@ -207,7 +207,7 @@ def compute_sensor_model(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -261,10 +261,10 @@ def compute_sensor_model(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
     
     image_collection = mission.image_collection
     settings = {}
@@ -363,7 +363,7 @@ def alter_processing_states(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -390,10 +390,10 @@ def alter_processing_states(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
 
@@ -418,7 +418,7 @@ def get_processing_states(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -431,10 +431,10 @@ def get_processing_states(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
 
@@ -466,7 +466,7 @@ def match_control_points(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -573,10 +573,10 @@ def match_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
 
@@ -613,7 +613,7 @@ def compute_control_points(
     **Parameter**                            **Description**
     ------------------------------------    --------------------------------------------------------------------
     mission                                 Required, the input mission. The mission must be a 
-                                            :class:`~arcgis.raster.realitymapping.RMMission` object.
+                                            :class:`~arcgis.raster.realitymapping.Mission` object.
 
                                             The mission must exist.
     ------------------------------------    --------------------------------------------------------------------
@@ -686,10 +686,10 @@ def compute_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
     if context:
@@ -730,7 +730,7 @@ def edit_control_points(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -813,10 +813,10 @@ def edit_control_points(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
     context = {"mission": mission.mission_id}
@@ -852,7 +852,7 @@ def generate_orthomosaic(
     **Parameter**                           **Description**
     -----------------------------------    --------------------------------------------------------------------
     mission                                Required, the input mission. The mission must be a 
-                                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                                            The mission must exist.
     -----------------------------------    --------------------------------------------------------------------
@@ -938,10 +938,10 @@ def generate_orthomosaic(
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
     
     image_collection = mission.image_collection
 
@@ -1095,7 +1095,7 @@ def generate_report(
     **Parameter**           **Description**
     -------------------    --------------------------------------------------------------------
     mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
     -------------------    --------------------------------------------------------------------
@@ -1109,10 +1109,10 @@ def generate_report(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
 
@@ -1186,7 +1186,7 @@ def query_control_points(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -1205,10 +1205,10 @@ def query_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
 
@@ -1237,7 +1237,7 @@ def reset_image_collection(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.RMMission` object.
+                           :class:`~arcgis.raster.realitymapping.Mission` object.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -1249,10 +1249,10 @@ def reset_image_collection(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
     context = {"mission": mission.mission_id}
@@ -1388,7 +1388,7 @@ def reconstruct_surface(
     **Parameter**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     mission                                                                     Required, the input mission. The mission must be a 
-                                                                                :class:`~arcgis.raster.realitymapping.RMMission` object.
+                                                                                :class:`~arcgis.raster.realitymapping.Mission` object.
 
                                                                                 The mission must exist.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -1533,32 +1533,32 @@ def reconstruct_surface(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import RMMission
+    from .realitymapping_mission import Mission
 
-    if not isinstance(mission, RMMission):
-        raise TypeError("The mission parameter must be a RMMission object.")
+    if not isinstance(mission, Mission):
+        raise TypeError("The mission parameter must be a Mission object.")
 
     image_collection = mission.image_collection
     products = mission.products
     
     if output_dsm_name:
         if "dsm" in products:
-            output_dsm_name = arcgis.gis.Item(gis, products["dsm"]["itemId"])
+            output_dsm_name = products["dsm"]
     if output_true_ortho_name:
         if "true_ortho" in products:
-            output_true_ortho_name = arcgis.gis.Item(gis, products["true_ortho"]["itemId"])
+            output_true_ortho_name = products["true_ortho"]
     if output_dsm_mesh_name:
         if "dsm_mesh" in products:
-            output_dsm_mesh_name = arcgis.gis.Item(gis, products["dsm_mesh"]["itemId"])
+            output_dsm_mesh_name = products["dsm_mesh"]
     if output_point_cloud_name:
         if "point_cloud" in products:
-            output_point_cloud_name = arcgis.gis.Item(gis, products["point_cloud"]["itemId"])
+            output_point_cloud_name = products["point_cloud"]
     if output_mesh_name:
         if "mesh" in products:
-            output_mesh_name = arcgis.gis.Item(gis, products["mesh"]["itemId"])
+            output_mesh_name = products["mesh"]
     if output_dtm_name:
         if "dtm" in products:
-            output_dtm_name = arcgis.gis.Item(gis, products["dtm"]["itemId"])
+            output_dtm_name = products["dtm"]
 
     if mission.workspace:
         if context:
@@ -1608,12 +1608,12 @@ def reconstruct_surface(
     )
 
 
-class RMProject:
+class Project:
     """
 
-    RMProject represents an Realitymapping Project Item in the portal.
+    Project represents an Realitymapping Project Item in the portal.
 
-    Usage: ``arcgis.raster.RMProject(project, gis=gis)``
+    Usage: ``arcgis.raster.Project(project, gis=gis)``
 
     ====================================     ====================================================================
     **Parameter**                             **Description**
@@ -1636,12 +1636,12 @@ class RMProject:
 
         # Example Usage
 
-        project = RMProject('rm_proj', gis=gis)
+        project = Project('rm_proj', gis=gis)
 
         # Example Usage
 
         rm_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
-        project = RMProject(rm_item, gis=gis)
+        project = Project(rm_item, gis=gis)
 
     """
 
@@ -1715,7 +1715,7 @@ class RMProject:
 
         :return: A list of missions of the realitymapping project
         """
-        from ._realitymapping_mission import RMMission
+        from .realitymapping_mission import Mission
 
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/missions"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
@@ -1726,7 +1726,7 @@ class RMProject:
         for mission in res_list:
             name = mission["name"]
             mid = mission["id"]
-            self._mission_list.append(RMMission(mission_name=name, mission_id=mid, project=self))
+            self._mission_list.append(Mission(mission_name=name, mission_id=mid, project=self))
 
         return self._mission_list
 
@@ -1909,17 +1909,17 @@ class RMProject:
             **kwargs,
         )
 
-        from ._realitymapping_mission import RMMission
-        return RMMission(mission_name=mission_name, mission_id=mission["mission"]["itemId"], project=self)
+        from .realitymapping_mission import Mission
+        return Mission(mission_name=mission_name, mission_id=mission["mission"]["itemId"], project=self)
 
     def get_mission(self, name):
         """
-        Returns a RMMission object with the name specified using the name parameter.
+        Returns a Mission object with the name specified using the name parameter.
 
         ==================                   ====================================================================
         **Parameter**                         **Description**
         ------------------                   --------------------------------------------------------------------
-        name                                 Required string. The name of the RMMission.
+        name                                 Required string. The name of the Mission.
         ==================                   ====================================================================
 
         :return: The imagery layer url
@@ -1969,8 +1969,8 @@ class RMProject:
             **kwargs,
         )
 
-        from ._realitymapping_mission import RMMission
-        return RMMission(mission_name=output_mission_name, mission_id=mission["mission"]["itemId"], project=self)
+        from .realitymapping_mission import Mission
+        return Mission(mission_name=output_mission_name, mission_id=mission["mission"]["itemId"], project=self)
 
     def __repr__(self):
         return "<%s - %s>" % (type(self).__name__, self._project_name)
