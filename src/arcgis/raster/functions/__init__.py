@@ -14167,8 +14167,19 @@ class RFT:
                             if isinstance(v, (ImageryLayer, Raster)) or isinstance(
                                 v, _FeatureLayer
                             ):
+                                url = v.url
+                                if url is not None and "?token" not in url:
+                                    from .utility import _generate_layer_token
+
+                                    token = _generate_layer_token(v, url)
+                                    url = f"{url}?token={token}"
                                 raster = _raster_input_rft(v)
                                 v = _input_rft(raster)
+                                if key == "RasterCollection":
+                                    v = {
+                                        "renderingRule": v,
+                                        "url": url,
+                                    }
                                 if isinstance(raster, str):
                                     value["value"] = v
                                     flag_rasters = 1
