@@ -261,7 +261,7 @@ def compute_sensor_model(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -390,7 +390,7 @@ def alter_processing_states(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -431,7 +431,7 @@ def get_processing_states(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -573,7 +573,7 @@ def match_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -686,7 +686,7 @@ def compute_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -813,7 +813,7 @@ def edit_control_points(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -938,7 +938,7 @@ def generate_orthomosaic(
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -1109,7 +1109,7 @@ def generate_report(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -1205,7 +1205,7 @@ def query_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -1249,7 +1249,7 @@ def reset_image_collection(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -1533,7 +1533,7 @@ def reconstruct_surface(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from .realitymapping_mission import Mission
+    from ._realitymapping_mission import Mission
 
     if not isinstance(mission, Mission):
         raise TypeError("The mission parameter must be a Mission object.")
@@ -1715,7 +1715,7 @@ class Project:
 
         :return: A list of missions of the realitymapping project
         """
-        from .realitymapping_mission import Mission
+        from ._realitymapping_mission import Mission
 
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/missions"
         headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
@@ -1909,7 +1909,7 @@ class Project:
             **kwargs,
         )
 
-        from .realitymapping_mission import Mission
+        from ._realitymapping_mission import Mission
         return Mission(mission_name=mission_name, mission_id=mission["mission"]["itemId"], project=self)
 
     def get_mission(self, name):
@@ -1969,7 +1969,7 @@ class Project:
             **kwargs,
         )
 
-        from .realitymapping_mission import Mission
+        from ._realitymapping_mission import Mission
         return Mission(mission_name=output_mission_name, mission_id=mission["mission"]["itemId"], project=self)
 
     def __repr__(self):
