@@ -3792,6 +3792,22 @@ class Polyline(Geometry):
         """Returns the EsriJSON as GeoJSON"""
         parts: list = []
 
+        if len(self["paths"]) == 1:
+            # Single path, return as LineString
+            coordinates: list = []
+            for pt in self["paths"][0]:
+                if pt:
+                    if len(pt) == 2:
+                        coordinates.append((pt[0], pt[1]))
+                    elif len(pt) == 3:
+                        coordinates.append((pt[0], pt[1], pt[2]))
+                    elif len(pt) == 4:
+                        coordinates.append((pt[0], pt[1], pt[2], pt[3]))
+                else:
+                    coordinates.append(None)
+            return {"type": "LineString", "coordinates": coordinates}
+
+        # Multiple paths, return as MultiLineString
         for part in self["paths"]:
             coordinates: list = []
             for pt in part:
