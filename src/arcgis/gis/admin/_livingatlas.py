@@ -134,7 +134,7 @@ class LivingAtlasManager:
         job: dict = resp.json()
         if "jobId" in job and job.get("success", False):
             job_url: str = (
-                f"{self._gis._portal.resturl}/portals/self/jobs/{jobs['jobId']}"
+                f"{self._gis._portal.resturl}/portals/self/jobs/{job['jobId']}"
             )
 
             return LivingAtlasJob(url=job_url, session=self.session)

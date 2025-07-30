@@ -50,6 +50,11 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `Item.unshare` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 - `overwrite` item_property on `Folder.add` is deprecated and will be removed at **2.4.2**.  Use `item.update` to update the source file for an `Item` instead.
 
+### `arcgis.layers` Module
+
+- `BasemapServices` - deprecated in **2.4.2** removed in **2.5.0**. Use the `arcgis.map.BasemapStylesService` class instead.
+- `BasemapService` - deprecated in **2.4.2** removed in **2.5.0**. Use the `arcgis.map.BasemapStyle` class instead.
+
 ## Deprecation Removals
 
 Several classes, functions, and methods have been completely removed from the ArcGIS API for Python. This means your code relying on them will no longer function properly. For a smooth transition, consult the API documentation to find alternative approaches and update your code accordingly.
