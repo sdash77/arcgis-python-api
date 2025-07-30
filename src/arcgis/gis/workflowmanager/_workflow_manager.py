@@ -1162,9 +1162,9 @@ class WorkflowManager:
         try:
             params = {"includeSystemSettings": True}
 
-            return self._gis._con.get("{base}/settings".format(base=self._url, params=params))[
-                "settings"
-            ]
+            return self._gis._con.get(
+                "{base}/settings".format(base=self._url, params=params)
+            )["settings"]
         except:
             self._handle_error(sys.exc_info())
 
@@ -1180,9 +1180,9 @@ class WorkflowManager:
         try:
             params = {"includeSystemSettings": False}
 
-            return self._gis._con.get("{base}/settings".format(base=self._url, params=params))[
-                "settings"
-            ]
+            return self._gis._con.get(
+                "{base}/settings".format(base=self._url, params=params)
+            )["settings"]
         except:
             self._handle_error(sys.exc_info())
 
