@@ -544,6 +544,10 @@ class Mission:
                 settings = adj_dict
 
         settings.update({"mode": mode})
+        if context:
+            context["mission"] = self.mission_id
+        else:
+            context = {"mission": self.mission_id}
 
         return gis._tools.realitymapping.compute_sensor_model(
             image_collection=image_collection,
