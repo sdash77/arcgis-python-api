@@ -24,7 +24,7 @@ class Mission:
     Mission represents a mission in an Realitymapping Project.
 
     .. note :: This class is not created by users directly. An instance of this class is returned as output for
-      get_mission() and add_mission() methods on the Project class of arcgis.raster.realitymapping module.
+      get_mission() and create_mission() methods or the missions property on the Project class of arcgis.raster.realitymapping module.
 
     ====================================     ====================================================================
     **Parameter**                             **Description**

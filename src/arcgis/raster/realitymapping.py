@@ -13,8 +13,6 @@ import json
 from arcgis.gis import GIS, Item
 import collections
 from ._util import (
-    _flatten_adjust_settings,
-    _nestify_context,
     _validate_settings,
     _update_settings,
     get_request,
@@ -29,9 +27,7 @@ from arcgis.geoprocessing._support import (
     _analysis_job_status,
     _layer_input,
 )
-from arcgis.features.layer import FeatureLayer
-import requests
-
+from arcgis.raster._realitymapping_mission import Mission
 
 ###################################################################################################
 ###
@@ -191,1083 +187,6 @@ def is_supported(gis=None):
         return False
 
 
-###################################################################################################
-## Compute Sensor model
-###################################################################################################
-def compute_sensor_model(
-    mission,
-    mode: str = "Quick",
-    location_accuracy: str = "High",
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    compute_sensor_model computes the bundle block adjustment for the image collection
-    and applies the frame xform to the images. It will also generate the control point
-    table, solution table, solution points table and flight path table.
-    These tables will not be published as Portal items.
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a
-                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                           The mission must exist.
-    ------------------     --------------------------------------------------------------------
-    mode                   Optional string.  the mode to be used for bundle block adjustment
-                           Only the following modes are supported:
-
-                           - 'Quick' : Computes tie points and adjustment at 8x of the source imagery resolution
-
-                           - 'Full'  : adjust the images in Quick mode then at 1x of the source imagery resolution
-
-                           - 'Refine' : adjust the image at 1x of the source imagery resolution
-
-                           By default, 'Quick' mode is applied to compute the sensor model.
-    ------------------     --------------------------------------------------------------------
-    location_accuracy      Optional string. this option allows users to specify the GPS location accuracy level of the
-                           source image. It determines how far the underline tool will search for neighboring
-                           matching images, then calculate tie points and compute adjustments.
-
-                           Possible values for location_accuracy are:
-
-                           - 'VeryHigh'    : Imagery was collected with a high-accuracy, differential GPS, such as RTK or PPK. This option will hold image locations fixed during block adjustment
-
-                           - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images
-
-                           - 'Medium'  : GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images
-
-                           - 'Low'     : GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images
-
-                           - 'VeryLow' : GPS accuracy is more than 50 meters, and the tool uses a maximum of 4 by 20 images
-
-                           The default location_accuracy is 'High'
-    ------------------     --------------------------------------------------------------------
-    context                Optional dictionary. The context parameter is used to configure additional client settings
-                           for block adjustment. The supported configurable parameters are for compute mosaic dataset
-                           candidates after the adjustment.
-
-                           Example:
-
-                               {
-                               "computeCandidate": False,
-                               "maxoverlap": 0.6,
-                               "maxloss": 0.05,
-                               }
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        The imagery layer url
-
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-    settings = {}
-
-    try:
-        project = mission._project
-        project_adj_settings = project.settings
-        if (
-            isinstance(project_adj_settings, dict)
-            and ("template" in project_adj_settings.keys())
-            and "adjustSettings" in project_adj_settings["template"].keys()
-        ):
-            project_adj_settings = project_adj_settings["template"]["adjustSettings"]
-        keys_to_pop = ["parallelProcessingFactor"]
-
-        if isinstance(context, dict):
-            adjust_options = context.pop("adjustOptions", [])
-            adjust_options = _flatten_adjust_settings(adjust_options)
-            # context is flattened
-            context.update(adjust_options)
-            # update adj dict with all the params from context
-            project_adj_settings.update(context)
-            # pop the keys that are not relevant to the adj settings
-            for key in keys_to_pop:
-                project_adj_settings.pop(key, None)
-            # update context with default values from project_adj_settings if they are not present in context
-            context.update(project_adj_settings)
-            _nestify_context(context)
-
-            if (
-                project_adj_settings["locationAccuracy"].lower()
-                != location_accuracy.lower()
-            ):
-                project_adj_settings.update({"locationAccuracy": location_accuracy})
-        elif context is None:
-            context = dict(project_adj_settings)
-            _nestify_context(context)
-        # update the settings to update flight json
-        settings = project_adj_settings
-    except:
-        adj_dict = {}
-        if isinstance(context, dict):
-            context_new = {k.lower(): v for k, v in context.items()}
-            adj_keys = [
-                "computeCandidate",
-                "maxOverlap",
-                "maxLoss",
-                "maxResidual",
-                "initPointResolution",
-                "k",
-                "p",
-                "principalPoint",
-                "focalLength",
-            ]
-            adj_dict = {
-                k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
-            }
-            adj_dict.update({"locationAccuracy": location_accuracy})
-            settings = adj_dict
-
-    settings.update({"mode": mode})
-
-    return gis._tools.realitymapping.compute_sensor_model(
-        image_collection=image_collection,
-        mode=mode,
-        location_accuracy=location_accuracy,
-        context=context,
-        future=future,
-        **kwargs,
-    )
-
-
-###################################################################################################
-## Alter processing states
-###################################################################################################
-def alter_processing_states(
-    mission,
-    new_states: dict[str, Any],
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    Alter the processing states of the image collection.
-    The states are stored as key property "Orthomapping".
-    The content of the state is a dictionary including
-    several properties which can be set based on the process
-    done on the image collection.
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a
-                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                           The mission must exist.
-    ------------------     --------------------------------------------------------------------
-    new_states             Required dictionary. The state to set on the image_collection
-
-                           This a dictionary of states that should be set on the image collection
-                           The new states that can be set on the image collection are:
-                           blockadjustment, dem, gcp, seamlines, colorcorrection, adjust_index, imagetype
-
-                           Example:
-
-                               | {"blockadjustment": "raw",
-                               |  "dem": "Dense_Natual_Neighbor",
-                               |  "seamlines":"VORONOI",
-                               |  "colorcorrection":"SingleColor",
-                               |  "imagetype": "UAV/UAS",
-                               |  "adjust_index": 0}
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        The result will be the newly set states dictionary
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-
-    return gis._tools.realitymapping.alter_processing_states(
-        image_collection=image_collection,
-        new_states=new_states,
-        future=future,
-        **kwargs,
-    )
-
-
-###################################################################################################
-## Get processing states
-###################################################################################################
-def get_processing_states(
-    mission, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
-):
-    """
-    Retrieve the processing states of the image collection
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a
-                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                           The mission must exist.
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        The result will be the newly set states dictionary
-
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-
-    return gis._tools.realitymapping.get_processing_states(
-        image_collection=image_collection, future=future, **kwargs
-    )
-
-
-###################################################################################################
-## Match control points
-###################################################################################################
-def match_control_points(
-    mission,
-    control_points: list[dict[str, Any]],
-    similarity: str = "High",
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    The match_control_points is a function that takes a collection of ground control points
-    as input (control points to be specified as a list of dictionary objects), and each of the 
-    ground control points needs at least one matching tie point in the control point sets. 
-    The function will compute the remaining matching tie points for all control point sets.
-    
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a 
-                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                           The mission must exist.
-    ------------------     --------------------------------------------------------------------
-    control_points         Required, a list of control point sets objects.
-
-                           The schema of control points follows the schema 
-                           of the mosaic dataset control point table. 
-
-                           The control point object should contain the point geometry, pointID, type, status and the
-                           imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
-
-                           -- pointID (int) - The ID of the point within the control point table.
-
-                           -- type (int)    - The type of the control point as determined by its numeric value
-
-                                                 1: Tie Point 
-                                                 2: Ground Control Point.
-                                                 3: Check Point
-
-                           -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
-
-                           -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
-
-                           Example:
-
-                               | [{
-                               | "status": 1,
-                               | "type": 2,
-                               | "x": -117.0926538,
-                               | "y": 34.00704253,
-                               | "z": 634.2175,
-                               | "spatialReference": {
-                               |     "wkid": 4326
-                               | }, // default WGS84
-                               | "imagePointSpatialReference": {}, // default ICS
-                               | "pointId": 1,
-                               | "xyAccuracy": "0.008602325",
-                               | "zAccuracy": "0.015",
-                               | "imagePoints": [{
-                               |     "imageID": 1,
-                               |     "x": 2986.5435987557084,
-                               |     "y": -2042.5193648409431,
-                               |     "u": 3057.4580682832734,
-                               |     "v": -1909.1506872159698
-                               | },
-                               | {
-                               |     "imageID": 2,
-                               |     "x": 1838.2814361401108,
-                               |     "y": -2594.5280063817972,
-                               |     "u": 3059.4079724863363,
-                               |     "v": -2961.292545463305
-                               | },
-                               | {
-                               |     "imageID": 12,
-                               |     "x": 5332.855578204663,
-                               |     "y": -2533.2805429751907,
-                               |     "u": 614.2338676573158,
-                               |     "v": -165.10836768947297
-                               | },
-                               | {
-                               |     "imageID": 13,
-                               |     "x": 4932.0895715254455,
-                               |     "y": -1833.8401744114287,
-                               |     "u": 616.9396928182223,
-                               |     "v": -1243.1445126959693
-                               | }]
-                               | },
-                               | …
-                               | …
-                               | ] 
-    ------------------     --------------------------------------------------------------------
-    similarity             Optional string. Choose the tolerance level for your control point matching. 
-
-                           - Low- The similarity tolerance for finding control points will be low. \
-                           This option will produce the most control points, \
-                           but some may have a higher level of error. 
-
-                           - Medium - The similarity tolerance for finding control points will be medium.
-                           
-                           - High - The similarity tolerance for finding control points will be high. \
-                           This option will produce the least number of control points, \
-                           but each matching pair will have a lower level of error. This is the default. 
-    ------------------     --------------------------------------------------------------------
-    context                Optional dictionary.Additional settings such as the input control points 
-                           spatial reference can be specified here. 
-
-                           For Example:
-
-                                {"groundControlPointsSpatialReference": {"wkid": 3459}, "imagePointSpatialReference": {"wkid": 3459}}
-
-                           Note: The ground control points spatial reference and image point spatial reference 
-                           spatial reference set in the context parameter is to decide the returned point set's 
-                           ground control points spatial reference and image point spatial reference. 
-                           If these two parameters are not set here, the tool will use the spatial reference 
-                           defined in the input point set. And if no spatial reference is defined in the point set,
-                           then the default ground control points coordinates are in lon/lat and image points 
-                           coordinates are in image coordinate system. 
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        A list of dictionary objects
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-
-    return gis._tools.realitymapping.match_control_points(
-        image_collection=image_collection,
-        control_points=control_points,
-        similarity=similarity,
-        context=context,
-        future=future,
-        **kwargs,
-    )
-
-
-###################################################################################################
-## Compute Control Points
-###################################################################################################
-def compute_control_points(
-    mission,
-    reference_image=None,
-    image_location_accuracy: str = "High",
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    This service tool is used for computing matching control points between images
-    within an image collection and/or matching control points between the image 
-    collection images and the reference image.
-    `Compute Control Points <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/compute-control-points.htm>`_
-    
-    ====================================    ====================================================================
-    **Parameter**                            **Description**
-    ------------------------------------    --------------------------------------------------------------------
-    mission                                 Required, the input mission. The mission must be a 
-                                            :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                                            The mission must exist.
-    ------------------------------------    --------------------------------------------------------------------
-    reference_image                         This is the reference image service that can be used to generate ground control 
-                                            points set with the image service. 
-                                            It can be a portal Item or an image service URL or a URI
-    ------------------------------------    --------------------------------------------------------------------
-    image_location_accuracy                 Optional string. This option allows you to specify the GPS location accuracy 
-                                            level of the source image. It determines how far the tool will search for 
-                                            neighboring matching images for calculating tie points and block adjustments. 
-                                            
-                                            The following are the available options:
-                                            Low, Medium, High
-
-                                            - Low- GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images. 
-
-                                            - Medium- GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images. 
-
-                                            - High- GPS accuracy of 0 to 10 meters, and the tool uses a maximum of 4 by 3 images.
-
-                                            If the image collection is created from satellite data, it will be automatically switched 
-                                            to use RPC adjustment mode. In this case, the mode need not be explicitly set by the user.
-
-                                            Default is High
-    ------------------------------------    --------------------------------------------------------------------
-    context                                 Optional dictionary. Context contains additional environment settings that affect 
-                                            output control points generation. 
-                                            
-                                            Possible keys and their possible values are: 
-
-                                            pointSimilarity- Sets LOW, MEDIUM, or HIGH tolerance for computing control points with varying levels of potential error.
-                                                             
-                                            - LOW tolerance will produce the most control point, but may have a higher \
-                                              level of error.
-
-                                            - HIGH tolerance will produce the least number of control point, \
-                                              but each matching pair will have a lower level of error.
-
-                                            - MEDIUM tolerance will set the similarity tolerance to medium.
-
-                                            pointDensity- Sets the number of tie points (LOW, MEDIUM, or HIGH), to be created. 
-                                                          
-                                            - LOW point density will create the fewest number of tie points. \
-
-                                            - MEDIUM point density will create a moderate number of tie points. \
-
-                                            - HIGH point density will create the highest number of tie points. \
-
-                                            pointDistribution- Randomly generates points that are better for overlapping areas with irregular shapes.
-                                                               
-                                            - RANDOM- will generate points that are better for overlapping areas \
-                                              with irregular shapes.
-
-                                            - REGULAR- will generate points based on a \
-                                              fixed pattern and uses the point density to determine how frequently to create points.
-
-                                            Example:
-
-                                                {
-                                                "pointSimilarity":"MEDIUM",
-                                                "pointDensity": "MEDIUM",
-                                                "pointDistribution": "RANDOM"
-                                                }
-    ------------------------------------    --------------------------------------------------------------------
-    gis                                     Optional :class:`~arcgis.gis.GIS` . the GIS on which this tool runs. If not specified, the active GIS is used.
-    ====================================    ====================================================================
-
-    :return:
-        The imagery layer url
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-    if context:
-        context["mission"] = mission.mission_id
-    else:
-        context = {"mission": mission.mission_id}
-
-    return gis._tools.realitymapping.compute_control_points(
-        image_collection=image_collection,
-        reference_image=reference_image,
-        image_location_accuracy=image_location_accuracy,
-        context=context,
-        future=future,
-        **kwargs,
-    )
-
-
-###################################################################################################
-## Edit control points
-###################################################################################################
-def edit_control_points(
-    mission,
-    control_points: list[dict[str, Any]],
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    This service can be used to append additional ground control point sets to
-    the image collection's control points. It is recommended that a ground control point (GCP) set
-    should contain one ground control point and multiple tie points.
-    The service tool can also be used to edit tie point sets.
-    The input control points dictionary will always replace the points in the tie points
-    table if the point IDs already exist.
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a
-                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                           The mission must exist.
-    ------------------     --------------------------------------------------------------------
-    control_points         Required, a list of control point sets objects.
-
-                           The schema of control points follows the schema
-                           of the mosaic dataset control point table.
-
-                           The control point object should contain the point geometry, pointID, type, status and the
-                           imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
-
-                           -- pointID (int) - The ID of the point within the control point table.
-
-                           -- type (int)    - The type of the control point as determined by its numeric value
-
-                                                 1: Tie Point
-                                                 2: Ground Control Point.
-                                                 3: Check Point
-
-                           -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
-
-                           -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
-
-                           Example:
-
-                               | [{
-                               | "status": 1,
-                               | "type": 2,
-                               | "x": -117.0926538,
-                               | "y": 34.00704253,
-                               | "z": 634.2175,
-                               | "spatialReference": {
-                               |     "wkid": 4326
-                               | }, // default WGS84
-                               | "imagePointSpatialReference": {}, // default ICS
-                               | "pointId": 1,
-                               | "xyAccuracy": "0.008602325",
-                               | "zAccuracy": "0.015",
-                               | "imagePoints": [{
-                               |     "imageID": 1,
-                               |     "x": 2986.5435987557084,
-                               |     "y": -2042.5193648409431,
-                               |     "u": 3057.4580682832734,
-                               |     "v": -1909.1506872159698
-                               | },
-                               | {
-                               |     "imageID": 2,
-                               |     "x": 1838.2814361401108,
-                               |     "y": -2594.5280063817972,
-                               |     "u": 3059.4079724863363,
-                               |     "v": -2961.292545463305
-                               | },
-                               | {
-                               |     "imageID": 12,
-                               |     "x": 5332.855578204663,
-                               |     "y": -2533.2805429751907,
-                               |     "u": 614.2338676573158,
-                               |     "v": -165.10836768947297
-                               | },
-                               | {
-                               |     "imageID": 13,
-                               |     "x": 4932.0895715254455,
-                               |     "y": -1833.8401744114287,
-                               |     "u": 616.9396928182223,
-                               |     "v": -1243.1445126959693
-                               | }]
-                               | },
-                               | …
-                               | …
-                               | ]
-
-
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        The Imagery layer url
-
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-    context = {"mission": mission.mission_id}
-
-    return gis._tools.realitymapping.edit_control_points(
-        image_collection=image_collection,
-        input_control_points=control_points,
-        future=future,
-        context=context,
-        **kwargs,
-    )
-
-
-###################################################################################################
-## Generate orthomosaic
-###################################################################################################
-def generate_orthomosaic(
-    mission,
-    out_ortho=None,
-    regen_seamlines: bool = True,
-    recompute_color_correction: bool = True,
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    Function can be used for generating single ortho-rectified mosaicked image from image collection after
-    the block adjustment.
-
-    ===================================    ====================================================================
-    **Parameter**                           **Description**
-    -----------------------------------    --------------------------------------------------------------------
-    mission                                Required, the input mission. The mission must be a
-                                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                                           The mission must exist.
-    -----------------------------------    --------------------------------------------------------------------
-    out_ortho                               Optional String or dict. This is the ortho-mosaicked image converted from the image
-                                            collection after the block adjustment.
-                                            It can be a url, uri, portal item, or string representing the name of output dem
-                                            (either existing or to be created.)
-                                            If passed as a dict, the following keys can be set:
-                                            - service_name: The name for the output ortho-mosaicked image service.
-                                            - portal_name: The name for the portal item for this image service.
-                                            If this product has already been created, the tool will overwrite it instead.
-                                            Like Raster Analysis services, the service can be an existing multi-tenant service URL.
-    -----------------------------------    --------------------------------------------------------------------
-    regen_seamlines                        Optional, boolean.
-                                           Choose whether to apply seamlines before the orthomosaic image generation or not.
-                                           The seamlines will always be regenerated if this parameter is set to True.
-                                           The user can set the seamline options through the context parameter.
-                                           If the seamline generation options are not set, the default will be used.
-
-                                           Default value is True
-    -----------------------------------    --------------------------------------------------------------------
-    recompute_color_correction              Optional, boolean.
-                                            Choose whether to apply color correction settings to the output ortho-image or not.
-                                            Color correction will always be recomputed if this option is set to True.
-                                            The user can configure the compute color correction settings through the context parameter.
-                                            If there is no color collection setting, the default will be used.
-
-                                            Default value is True
-    -----------------------------------    --------------------------------------------------------------------
-    context                                Optional dictionary. Context contains additional environment settings that affect output
-                                           image. The supported environment settings for this tool are:
-
-                                           1. Output Spatial Reference (outSR)-the output features will
-                                              be projected into the output spatial reference.
-
-                                           2. Extent (extent) - extent that would clip or expand the output image
-
-                                           3. Cell Size (cellSize) - The output raster will have the resolution specified by cell size.
-
-                                           4. Compute Seamlines (seamlinesMethod) - Default.
-
-                                           5. Clipping Geometry (clippingGeometry) - Clips the orthomosaic image to an area of
-                                              interest defined by the geometry.
-
-                                           6. Orthomosaic As Overview (orthoMosaicAsOvr) - Adds the orthomosaic as an overview of the image collection.
-
-                                           7. Compute Color Correction (colorcorrectionMethod) — Default.
-
-                                           Example:
-
-                                               | {
-                                               |   "outSR": {"wkid": 3516},
-                                               |   "extent": {"xmin": 470614.263139,
-                                               |             "ymin": 8872849.409968,
-                                               |             "xmax": 532307.351827,
-                                               |             "ymax": 8920205.372412,
-                                               |             "spatialReference": {"wkid": 32628}},
-                                               |   "clippingGeometry": {},
-                                               |   "orthoMosaicAsOvr": False,
-                                               |   "seamlinesMethod": "VORONOI",
-                                               |   "minRegionSize": 100,
-                                               |   "pixelSize": "",
-                                               |   "blendType": "Both",
-                                               |   "blendWidth": None,
-                                               |   "blendUnit": "Pixels",
-                                               |   "requestSize": 1000,
-                                               |   "minThinnessRatio": 0.05,
-                                               |   "maxSliverSize": 20
-                                               |   "colorCorrectionMethod": "DODGING",
-                                               |   "dodgingSurface": "Single_Color",
-                                               |   "referenceImg": {"url": "``https://...``"},
-                                               |   "skipRows": 10,
-                                               |   "skipCols": 10,
-                                               |   "reCalculateSats": "OVERWRITE"
-                                               |  }
-    -----------------------------------    --------------------------------------------------------------------
-    gis                                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ===================================    ====================================================================
-
-    :return:
-        The Orthomosaicked Imagery layer item
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-
-    if mission.workspace:
-        if context:
-            context["workspace"] = mission.workspace
-        else:
-            context = {"workspace": mission.workspace}
-
-    products = mission.products
-    if "ortho" in products:
-        out_ortho = products["ortho"]
-        context["dataproduct_id"] = mission._prod_to_id_map["ortho"]
-
-    context["mission"] = mission.mission_id
-    groups = mission._project.groups
-    groups = [group.id for group in groups]
-    context["groups"] = groups
-
-    if kwargs is not None:
-        if "folder" in kwargs:
-            folder = kwargs["folder"]
-        else:
-            for f in gis.users.me.folders:
-                if f._fid == image_collection.ownerFolder:
-                    folder = f.properties
-                    break
-        kwargs.update({"folder": folder})
-
-    color_balance_keys = [
-        "targetRaster",
-        "skipX",
-        "skipY",
-        "overwriteStats",
-        "dodgingSurface",
-        "colorCorrectionMethod",
-    ]
-    color_balance_dict = {}
-    color_balance_dict.update(
-        {
-            "colorBalance": {
-                "skipX": 0,
-                "skipY": 0,
-                "overwriteStats": "SKIP_EXISTING",
-                "colorCorrectionMethod": "DODGING",
-                "dodgingSurface": "SINGLE_COLOR",
-                "targetImage": "",
-            }
-        }
-    )
-
-    ortho_dict = {}
-    if isinstance(context, dict):
-        context_new = {k.lower(): v for k, v in context.items()}
-        color_balance_dict["colorBalance"].update(
-            {
-                k: context_new[k.lower()]
-                for k in color_balance_keys
-                if k.lower() in context_new
-            }
-        )
-        if "colorCorrectionMethod" in color_balance_dict["colorBalance"]:
-            color_balance_dict["colorBalance"]["method"] = color_balance_dict[
-                "colorBalance"
-            ].pop("colorCorrectionMethod")
-        if "dodgingSurface" in color_balance_dict["colorBalance"]:
-            color_balance_dict["colorBalance"]["surfaceType"] = color_balance_dict[
-                "colorBalance"
-            ].pop("dodgingSurface")
-
-        seamline_keys = [
-            "computeCandidate",
-            "maxOverlap",
-            "maxLoss",
-            "pixelSize",
-            "blendType",
-            "blendUnit",
-            "requestSizeType",
-            "requestSize",
-            "minThinnessRatio",
-            "maxSliverSize",
-            "seamlinesMethod",
-        ]
-        seamline_dict = {}
-        seamline_dict.update(
-            {
-                "seamline": {
-                    "seamlinesMethod": "DISPARITY",
-                    "minRegionSize": 100,
-                    "pixelSize": "",
-                    "blendType": "Both",
-                    "blendWidth": None,
-                    "blendUnit": "Pixels",
-                    "requestSizeType": "Pixels",
-                    "requestSize": 1000,
-                    "minThinnessRatio": 0.05,
-                    "maxSliverSize": 20,
-                }
-            }
-        )
-
-        seamline_dict["seamline"].update(
-            {
-                k: context_new[k.lower()]
-                for k in seamline_keys
-                if k.lower() in context_new
-            }
-        )
-        if "seamlinesMethod" in seamline_dict["seamline"]:
-            seamline_dict["seamline"]["method"] = seamline_dict["seamline"].pop(
-                "seamlinesMethod"
-            )
-
-        ortho_mosaic_as_ovr = context.get("orthoMosaicAsOvr", False)
-        ortho_dict = {"ortho": {"orthoMosaicAsOvr": ortho_mosaic_as_ovr}}
-
-        if regen_seamlines:
-            ortho_dict.update(seamline_dict)
-        if recompute_color_correction:
-            ortho_dict.update(color_balance_dict)
-
-    return gis._tools.realitymapping.generate_orthomosaic(
-        image_collection=image_collection,
-        output_ortho_image=out_ortho,
-        regen_seamlines=regen_seamlines,
-        recompute_color_correction=recompute_color_correction,
-        context=context,
-        future=future,
-        **kwargs,
-    )
-
-
-###################################################################################################
-## Generate report
-###################################################################################################
-def generate_report(
-    mission,
-    report_format: str = "PDF",
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    This function is used to generate realitymapping report with image collection
-    that has been block adjusted. The report would contain information about
-    the quality of the adjusted images, the distribution of the control points, etc.
-    The output of this service tool is a downloadable html page.
-
-    ===================    ====================================================================
-    **Parameter**           **Description**
-    -------------------    --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a
-                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                           The mission must exist.
-    -------------------    --------------------------------------------------------------------
-    report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
-    -------------------    --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ===================    ====================================================================
-
-    :return:
-        The URL of a single html webpage that is a formatted realitymapping report
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-
-    return gis._tools.realitymapping.generate_report(
-        image_collection=image_collection,
-        report_format=report_format,
-        future=future,
-        **kwargs,
-    )
-
-
-###################################################################################################
-## query camera info
-###################################################################################################
-def query_camera_info(
-    camera_query: Optional[str] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    This service tool is used to query specific or the entire digital camera
-    database. The digital camera database contains the specs
-    of digital camera sensors that were used to capture drone images.
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    camera_query           Required String. This is a SQL query statement that can
-                           be used to filter a portion of the digital camera
-                           database.
-                           Digital camera database can be queried using the fields Make, Model,
-                           Focallength, Columns, Rows, PixelSize.
-
-                           Example:
-
-                            "Make='Rollei' and Model='RCP-8325'"
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-
-    :return:
-        Data Frame representing the camera database
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.realitymapping.query_camera_info(
-        camera_query=camera_query, future=future, **kwargs
-    )
-
-
-###################################################################################################
-## query control points
-###################################################################################################
-def query_control_points(
-    mission,
-    query: str,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    Query for control points in an image collection. It allows users to query
-    among certain control point sets that has ground control points inside.
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a
-                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                           The mission must exist.
-    ------------------     --------------------------------------------------------------------
-    query                  Required string. a SQL statement used for querying the point;
-
-                           Example:
-
-                            "pointID > 100"
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-
-    :return:
-        A dictionary object
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-
-    return gis._tools.realitymapping.query_control_points(
-        image_collection=image_collection,
-        where=query,
-        future=future,
-        **kwargs,
-    )
-
-
-###################################################################################################
-## Reset image collection
-###################################################################################################
-def reset_image_collection(
-    mission, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
-):
-    """
-    Reset the image collection. It is used to reset the image collection to its
-    original state. The image collection could be adjusted during the orthomapping
-    workflow and if the user is not satisfied with the result, they will be able
-    to clear any existing adjustment settings and revert the images back to
-    un-adjusted state
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    mission                Required, the input mission. The mission must be a
-                           :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                           The mission must exist.
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        A boolean indicating whether the reset was successful or not
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-    context = {"mission": mission.mission_id}
-
-    return gis._tools.realitymapping.reset_image_collection(
-        image_collection=image_collection,
-        future=future,
-        context=context,
-        **kwargs,
-    )
-
-
 def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     """
     Computes spatial reference factory code. This value may be used as out_sr value in create image collection function
@@ -1318,301 +237,6 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     return factory_code
 
 
-###################################################################################################
-## Query exif info
-###################################################################################################
-def query_exif_info(
-    input_images, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
-):
-    """
-    The `query_exif_info` reads the Exif header metadata from single or
-    multiple images in shared data store. The Exif metadata is usually stored
-    in drone image files. Some common Exif metadata information are GPS
-    locations, camera model, focal length, and more.
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    input_images           Required String/list of Strings.  The input images could be a single image path, list of image paths,
-                           or a folder path, or a list of folder paths. The image file paths can also be server data store path.
-
-                           Eg:
-
-                           - "\\servername\drone\imagefolder\image_file.jpg"
-                           - "/cloudStores/S3DataStore/yvwd13"
-                           - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
-                           - ["/fileShares/drones/SampleEXIF/DJI_0002.JPG", "/fileShares/drones/SampleEXIF/YUN_0040.jpg"]
-                           - ["/cloudStores/S3DataStore/yvwd13", "/cloudStores/S3DataStore/BogotaFarm"]
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        A dictionary object
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.realitymapping.query_exif_info(
-        input_images=input_images, future=future, **kwargs
-    )
-
-
-###################################################################################################
-## Reconstruct surface
-###################################################################################################
-def reconstruct_surface(
-    mission,
-    scenario: Optional[str] = "DRONE",
-    forward_overlap: Optional[int] = None,
-    sideward_overlap: Optional[int] = None,
-    quality: Optional[str] = "ULTRA",
-    area_of_interest: Optional[Union[str, FeatureLayer]] = "AUTO",
-    waterbody_features: Optional[FeatureLayer] = None,
-    correction_feature: Optional[FeatureLayer] = None,
-    reconstruct_options: Optional[str] = None,
-    output_dsm_name: Optional[str] = None,
-    output_true_ortho_name: Optional[str] = None,
-    output_dsm_mesh_name: Optional[str] = None,
-    output_point_cloud_name: Optional[str] = None,
-    output_mesh_name: Optional[str] = None,
-    output_dtm_name: Optional[str] = None,
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    The `reconstruct_surface` generates a digital surface model (DSM), true
-    orthos, 2.5D meshes, 3D meshes, and point clouds from adjusted imagery.
-
-    =========================================================================   ===========================================================================
-    **Parameter**                                                                **Description**
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    mission                                                                     Required, the input mission. The mission must be a
-                                                                                :class:`~arcgis.raster.realitymapping.Mission` object.
-
-                                                                                The mission must exist.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
-
-                                                                                - DRONE: The input imagery will be defined as having been acquired with drones or terrestrial cameras.
-                                                                                - AERIAL_NADIR: The input imagery will be defined as having been acquired with large, photogrammetric camera systems.
-                                                                                - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
-                                                                                - SATELLITE: The input imagery will be defined as having been acquired with a satellite.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
-                                                                                The default is 60.
-                                                                                This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    sideward_overlap                                                            Optional Integer. The sideward (cross-strip) overlap percentage that will be used between the images.
-                                                                                The default is 30.
-                                                                                This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    quality                                                                     Optional String. Specifies the quality of the final product.
-
-                                                                                - ULTRA - Input images will be used at their original (full) resolution.
-                                                                                - HIGH - Input images will be downsampled two times.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer` or String. The area of interest that will
-                                                                                be used to select images for processing. The area of interest can be computed automatically
-                                                                                or defined using an input feature.
-                                                                                If the value contains 3D geometries, the z-component will be ignored. If the value includes
-                                                                                overlapping features, the union of these features will be computed.
-
-                                                                                - NONE - All images will be used in processing.
-                                                                                - AUTO - The processing extent will be calculated automatically. This is the default.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    waterbody_features                                                          Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of large water bodies.
-                                                                                For the best results, use a 3D feature.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    correction_features                                                         Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of all surfaces that are not water bodies.
-                                                                                The value must be a 3D feature.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    reconstruction_options                                                      Optional dict or shared data path (this path must be accessible by the server).
-                                                                                This specifies the values for the tool parameters. If this parameter is specified, the properties of
-                                                                                the file or dictionary will set the default values for the remaining optional parameters.
-                                                                                The list of keywords and an example of this JSON can be found here:
-                                                                                `Reconstruct Surface tool <https://pro.arcgis.com/en/pro-app/latest/tool-reference/reality-mapping/reconstruct-surface.htm>`_
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_dsm_name                                                             Optional String. You can pass in the name of the output Image Service that should be created by this method to be
-                                                                                used as the output for the tool.
-                                                                                If this product has already been created, the tool will overwrite it instead.
-
-                                                                                A RuntimeError is raised if a service by that name already exists.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_true_ortho_name                                                      Optional String. You can pass in the name of the output Image Service that should be created by this method to be
-                                                                                used as the output for the tool.
-                                                                                If this product has already been created, the tool will overwrite it instead.
-
-                                                                                A RuntimeError is raised if a service by that name already exists.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_dsm_mesh_name                                                        Optional String. You can pass in the name of the output Image Service that should be created by this method to be
-                                                                                used as the output for the tool.
-                                                                                If this product has already been created, the tool will overwrite it instead.
-
-                                                                                A RuntimeError is raised if a service by that name already exists.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_point_cloud_name                                                     Optional String. You can pass in the name of the output Image Service that should be created by this method to be
-                                                                                used as the output for the tool.
-                                                                                If this product has already been created, the tool will overwrite it instead.
-
-                                                                                A RuntimeError is raised if a service by that name already exists.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_mesh_name                                                            Optional String. You can pass in the name of the output Image Service that should be created by this method to be
-                                                                                used as the output for the tool.
-                                                                                If this product has already been created, the tool will overwrite it instead.
-
-                                                                                A RuntimeError is raised if a service by that name already exists.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_dtm_name                                                             Optional String. You can pass in the name of the output Image Service that should be created by this method to be
-                                                                                used as the output for the tool.
-                                                                                If this product has already been created, the tool will overwrite it instead.
-
-                                                                                A RuntimeError is raised if a service by that name already exists.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    context                                                                     Context contains additional settings that affect task execution.
-
-                                                                                context parameter overwrites values set through arcgis.env parameter
-
-                                                                                This function has the following settings:
-
-                                                                                - Extent (extent): A bounding box that defines the analysis area.
-
-                                                                                    Example:
-
-                                                                                        | {"extent": {"xmin": -122.68,
-                                                                                        | "ymin": 45.53,
-                                                                                        | "xmax": -122.45,
-                                                                                        | "ymax": 45.6,
-                                                                                        | "spatialReference": {"wkid": 4326}}}
-
-                                                                                - Cell Size (cellSize): The output raster will have the resolution
-                                                                                specified by cell size.
-
-                                                                                    Example:
-
-                                                                                        {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
-
-                                                                                - Parallel Processing Factor (parallelProcessingFactor): controls
-                                                                                Raster Processing (CPU) service instances.
-
-                                                                                    Example:
-
-                                                                                    Syntax example with a specified number of processing instances:
-
-                                                                                        {"parallelProcessingFactor": "2"}
-
-                                                                                    Syntax example with a specified percentage of total
-                                                                                    processing instances:
-
-                                                                                        {"parallelProcessingFactor": "60%"}
-
-                                                                                - Output DSM product settings: controls
-                                                                                the environment variables for creating the DSM product.
-
-                                                                                    Example:
-
-                                                                                    Syntax example with a specified number of processing instances:
-
-                                                                                        {key: {"outputType": "Tiled", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
-
-                                                                                - Output True Ortho product settings: controls
-                                                                                the environment variables for creating the DSM product.
-
-                                                                                    Example:
-
-                                                                                    Syntax example with a specified number of processing instances:
-
-                                                                                        {"true_ortho": {"outputType": "Mosaic", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    =========================================================================   ===========================================================================
-
-    :return: Named Tuple
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
-
-    if not isinstance(mission, Mission):
-        raise TypeError("The mission parameter must be a Mission object.")
-
-    image_collection = mission.image_collection
-    products = mission.products
-
-    if output_dsm_name:
-        if "dsm" in products:
-            output_dsm_name = products["dsm"]
-    if output_true_ortho_name:
-        if "true_ortho" in products:
-            output_true_ortho_name = products["true_ortho"]
-    if output_dsm_mesh_name:
-        if "dsm_mesh" in products:
-            output_dsm_mesh_name = products["dsm_mesh"]
-    if output_point_cloud_name:
-        if "point_cloud" in products:
-            output_point_cloud_name = products["point_cloud"]
-    if output_mesh_name:
-        if "mesh" in products:
-            output_mesh_name = products["mesh"]
-    if output_dtm_name:
-        if "dtm" in products:
-            output_dtm_name = products["dtm"]
-
-    if mission.workspace:
-        if context:
-            context["workspace"] = mission.workspace
-        else:
-            context = {"workspace": mission.workspace}
-
-    context["mission"] = mission.mission_id
-    groups = mission._project.groups
-    groups = [group.id for group in groups]
-    context["groups"] = groups
-
-    products = mission.products
-    prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]
-    dataproduct_ids = {
-        k: v for k, v in mission._prod_to_id_map.items() if k in prod_types
-    }
-    context["dataproduct_id"] = dataproduct_ids
-
-    if kwargs is not None:
-        if "folder" in kwargs:
-            folder = kwargs["folder"]
-        else:
-            for f in gis.users.me.folders:
-                if f._fid == image_collection.ownerFolder:
-                    folder = f.properties
-                    break
-        kwargs.update({"folder": folder})
-
-    return gis._tools.realitymapping.reconstruct_surface(
-        image_collection=image_collection,
-        scenario=scenario,
-        forward_overlap=forward_overlap,
-        sideward_overlap=sideward_overlap,
-        quality=quality,
-        area_of_interest=area_of_interest,
-        waterbody_features=waterbody_features,
-        correction_feature=correction_feature,
-        reconstruct_options=reconstruct_options,
-        output_dsm_name=output_dsm_name,
-        output_true_ortho_name=output_true_ortho_name,
-        output_dsm_mesh_name=output_dsm_mesh_name,
-        output_point_cloud_name=output_point_cloud_name,
-        output_mesh_name=output_mesh_name,
-        output_dtm_name=output_dtm_name,
-        context=context,
-        future=future,
-        **kwargs,
-    )
-
-
 class Project:
     """
 
@@ -1623,7 +247,7 @@ class Project:
     ====================================     ====================================================================
     **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    project                                  Required string or Realitymapping Project Item
+    project                                  Required string or Reality Mapping Project Item
 
                                              Example:
 
@@ -1631,7 +255,16 @@ class Project:
                                                 | om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
                                                 | project = rm_item
     ------------------------------------     --------------------------------------------------------------------
-    definition                               Optional dictionary. Custom project definition.
+    sensor_type                              Optional string. The type of sensor used to collect the imagery.
+                                             Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'.
+    ------------------------------------     --------------------------------------------------------------------
+    scenario_type                            Optional string. The type of scenario for the imagery.
+                                             Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'.
+                                             If not provided, the default value is 'Drone'.
+    ------------------------------------     --------------------------------------------------------------------
+    settings                                 Optional dictionary. The project settings dictionary.
+                                             The definition mainly contains the template information for adjustSettings,
+                                             processingStates.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional  :class:`~arcgis.gis.GIS` . Represents the GIS object of the Realitymapping
                                              Project item.
@@ -1654,10 +287,10 @@ class Project:
 
     def __init__(
         self,
-        project=None,
-        sensor_type="Drone",
-        scenario_type="Drone",
-        settings=None,
+        project: Union[str, Item] = None,
+        sensor_type: Optional[str] = "Drone",
+        scenario_type: Optional[str] = "Drone",
+        settings: Optional[dict] = None,
         *,
         gis: Optional[GIS] = None,
         **kwargs,
@@ -1743,16 +376,19 @@ class Project:
     @property
     def mission_count(self):
         """
-        The ``count`` property returns the number of missions associated with the project
+        The ``mission_count`` property returns the number of missions associated with the project
 
         :return: An integer representing the number of missions
         """
-        if not self._mission_list:
-            len(self.missions)
-        return len(self._mission_list)
+        return len(self.missions)
 
     @property
     def spatial_reference(self):
+        """
+        The ``spatial_reference`` property returns the spatial reference of the project.
+        
+        :return: A dictionary representing the spatial reference of the project
+        """
         if self._spatial_reference is None:
             try:
                 if self._project_json:
@@ -1773,7 +409,7 @@ class Project:
     @property
     def item(self):
         """
-        The ``item`` property returns the portal item associated with the Project.
+        The ``item`` property returns the portal item associated with the project.
 
         :return: A portal item
         """
@@ -1782,7 +418,7 @@ class Project:
     @property
     def groups(self):
         """
-        The ``groups`` property returns the groups associated with the Project.
+        The ``groups`` property returns the groups associated with the project.
 
         :return: A list of groups
         """
@@ -1798,12 +434,17 @@ class Project:
 
     @property
     def settings(self):
+        """
+        The ``settings`` property returns the processing settings of the project.
+        
+        :return: A dictionary representing the processing settings of the project
+        """
         return self._project_json.get("processingSettings", {})
 
     @settings.setter
-    def settings(self, new_settings):
+    def settings(self, new_settings: dict):
         """
-        The ``settings`` method updates the properties of the project item.
+        This property is used to update the processing settings of the project item.
         """
         if new_settings is None:
             raise ValueError("new_settings cannot be None")
@@ -1826,19 +467,182 @@ class Project:
 
     def create_mission(
         self,
-        image_list,
-        image_collection_name=None,
-        mission_name=None,
-        raster_type_name=None,
-        raster_type_params=None,
-        out_sr=None,
-        settings=None,
-        context=None,
+        image_list: list[Union[str, Item]] = None,
+        image_collection_name: Optional[Union[str, dict[str, str]]] = None,
+        mission_name: Optional[str] = None,
+        raster_type_name: Optional[str] = None,
+        raster_type_params: Optional[dict] = None,
+        out_sr: Optional[dict] = None,
+        settings: Optional[dict] = None,
+        context: Optional[dict] = None,
         *,
-        gis=None,
-        future=False,
+        gis: Optional[GIS] = None,
+        future: Optional[bool] = False,
         **kwargs,
     ):
+        """
+        Creates a new mission in the realitymapping project. The mission is created with the specified image collection,
+        raster type, and settings.
+
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        image_list                               Required, the list of input images to be added to
+                                                 the image collection being created. This parameter can
+                                                 be a list of image paths or a path to a folder containing the images.
+                                                 This can be a datastore paths, local paths, or a list of
+                                                 :class:`~arcgis.gis.Item` objects.
+
+                                                 The function can create hosted imagery layers on enterprise from 
+                                                 local raster datasets by uploading the data to the server.    
+        ------------------------------------     --------------------------------------------------------------------
+        image_collection_name                    Optional string or dictionary. The name of the image collection to be created.
+                                                 If a string is provided, it will be used as the portal name for the image collection.
+                                                 If a dictionary is provided, it should contain the keys 'service_name' and 'portal_name'.
+                                                 The 'service_name' must be unique.
+
+                                                 For e.g.: {"service_name": "my_image_service", "portal_name": "My Image Collection"}
+        ------------------------------------     --------------------------------------------------------------------
+        mission_name                             Optional string. The name of the mission to be created. If a name is not provided,
+                                                 a default name will be generated in the format "mission_<random_id>".
+        ------------------------------------     --------------------------------------------------------------------
+        raster_type_name                         Optional string. The name of the raster type used.
+                                                 Refer to :meth:`~arcgis.raster.analytics.create_image_collection` for supported raster types.
+        ------------------------------------     --------------------------------------------------------------------
+        raster_type_params                       Optional dict. Additional ``raster_type`` specific parameters.
+        
+                                                 The process of add rasters to the image collection can be \
+                                                 controlled by specifying additional raster type arguments.
+
+                                                 The raster type parameters argument is a dictionary.
+
+                                                 The dictionary can contain productType, processingTemplate, \
+                                                 pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                                 dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
+                                                 ScaleFactor, ValidRange
+
+                                                 Please check the table below (Supported Raster Types), \
+                                                 for more details about the product types, \
+                                                 processing templates, pansharpen weights for each raster type. 
+
+                                                 - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
+                                                 - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+                                                 - Value for StretchType dictionary can be as follows:
+
+                                                 - "None"
+                                                 - "MinMax; <min>; <max>"
+                                                 - "PercentMinMax; <MinPercent>; <MaxPercent>"
+                                                 - "StdDev; <NumberOfStandardDeviation>"
+                                                 Example: {"StretchType": "MinMax; <min>; <max>"}
+                                                 - Value for ValidRange dictionary can be as follows:
+
+                                                 - "<MaskMinValue>, <MaskMaxValue>"
+                                                 Example: {"ValidRange": "10, 200"}
+
+                                                 Example:
+
+                                                    {"productType":"All","processingTemplate":"Pansharpen",
+                                                    "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
+                                                    "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
+        ------------------------------------     --------------------------------------------------------------------
+        out_sr                                   Optional dictionary. The spatial reference to be used for this mission.
+        ------------------------------------     --------------------------------------------------------------------
+        settings                                 Optional dictionary. The settings for this mission. If not provided, the project settings will be inherited.
+                                                 A subset of the settings can also be provided but the structure of the settings dictionary must be preserved.
+                                                 For e.g.:
+                                                    {
+                                                        "adjustSettings": {
+                                                            "maxResidual": 5,
+                                                            "focalLength": False,
+                                                            "locationAccuracy": "LOW"
+                                                            },
+                                                        "processingSettings": {
+                                                            "dsm": {
+                                                                "dsm": {
+                                                                    "format": "TIFF",
+                                                                    "outputType": "TILED",
+                                                                    "resampling": "BILINEAR"
+                                                                }
+                                                            },
+                                                            "dtm": {
+                                                                "dtm": {
+                                                                    "mask": "",
+                                                                    "extent": "",
+                                                                    "format": "CRF",
+                                                                    "fillDEM": "",
+                                                                    "cellsize": "NaN",
+                                                                    "lowNoise": 0.25,
+                                                                    "highNoise": 100,
+                                                                    "compression": "NONE",
+                                                                    "reuseGround": False
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+        ------------------------------------     --------------------------------------------------------------------
+        context                              Optional dict. The context parameter is used to provide additional input parameters.
+    
+                                             Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+                                        
+                                             Use ``image_collection_properties`` key to set value for imageCollectionType.
+
+                                             .. note::
+
+                                                The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                                Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
+                                                Therefore, if the image collection is created by reference, the requester should set this 
+                                                property based on the type of images in the image collection using the following keywords. 
+                                                If the imageCollectionType is not set, it defaults to "UAV/UAS"
+
+                                             If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+
+                                             The context parameter can also be used to specify whether to build overviews, \
+                                             build footprints, to specify pixel value that represents the NoData etc.
+
+                                             Example:
+
+                                                | {"buildFootprints":True,                                            
+                                                | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
+                                                | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
+                                                | "maintainEdge":False,"simplification":None,"numVertices":20,
+                                                | "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
+                                                | "minRegionSize":100},
+                                                | "defineNodata":True,                                            
+                                                | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
+                                                | "buildOverview":True}
+
+                                             The context parameter can be used to add new fields when creating \
+                                             the image collection.
+
+                                             Example:
+
+                                                | {"fields": [{"name": "cloud_cover", "type": "Long"},
+                                                | {"name": "cloud_shadow_count", "type": "Long"}]}
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional  :class:`~arcgis.gis.GIS` . Represents the GIS object of the Realitymapping
+                                                Project item.
+        ====================================     ====================================================================
+
+        :return: Mission object
+        
+        .. code-block:: python
+
+            # Example Usage
+
+            mission = project.create_mission(
+                                image_list=["/path/to/image1.tif", "/path/to/image2.tif"],
+                                image_collection_name={"service_name": "my_image_service", "portal_name": "My Image Collection"},
+                                mission_name="My Mission",
+                                raster_type_name="UAV/UAS",
+                                raster_type_params={
+                                        "isAltitudeFlightHeight": "False",
+                                        "averagezdem": {"url": "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}
+                                    },
+                                out_sr={"wkid": 4326}
+                    )            
+        
+        """
+        
         gis = arcgis.env.active_gis if gis is None else gis
         project_item = {"itemId": self._project_item.itemid}
 
@@ -1932,7 +736,7 @@ class Project:
             project=self,
         )
 
-    def get_mission(self, name):
+    def get_mission(self, name: str):
         """
         Returns a Mission object with the name specified using the name parameter.
 
@@ -1943,7 +747,6 @@ class Project:
         ==================                   ====================================================================
 
         :return: The imagery layer url
-
 
         """
 
@@ -1960,21 +763,61 @@ class Project:
 
     def merge_missions(
         self,
-        missions,
-        output_mission_name=None,
-        mission_settings=None,
+        missions: list[Mission],
+        output_mission_name: Optional[str] = None,
+        mission_settings: Optional[str] = None,
         *,
-        gis=None,
-        future=False,
+        gis: Optional[GIS] = None,
+        future: Optional[bool] = False,
         **kwargs,
     ):
+        """
+        Merges multiple missions and creates a new mission in the realitymapping project.
+        ==================                   ====================================================================
+        **Parameter**                         **Description**
+        ------------------                   --------------------------------------------------------------------
+        missions                              Required list of Mission objects. The missions to be merged.
+        ------------------                   --------------------------------------------------------------------
+        output_mission_name                  Optional string. The name of the output mission to be created. If not provided,
+                                             a default name will be generated in the format "mission_<random_id>".
+        ------------------                   --------------------------------------------------------------------
+        mission_settings                     Optional dictionary. The settings for the new mission. If not provided, the project settings will be inherited.
+                                             A subset of the settings can also be provided but the structure of the settings dictionary must be preserved.
+                                             Refer to the settings property of the Project class for more details on the structure of the settings dictionary.
+        ------------------                   --------------------------------------------------------------------
+        gis                                  Optional  :class:`~arcgis.gis.GIS` . Represents the GIS object of the Realitymapping
+                                             Project item. If not provided, the active GIS will be used.
+        ==================                   ====================================================================
+
+        :return: A Mission object representing the merged mission.
+
+        .. code-block:: python
+            # Example Usage
+
+            mission1 = project.get_mission("mission_1")
+            mission2 = project.get_mission("mission_2")
+
+            merged_mission = project.merge_missions(
+                missions=[mission1, mission2],
+                output_mission_name="Merged Mission",
+                mission_settings={
+                    "adjustSettings": {
+                        "maxResidual": 5,
+                        "focalLength": False,
+                        "locationAccuracy": "LOW"
+                    }
+                }
+            )
+
+        """
+        
         gis = arcgis.env.active_gis if gis is None else gis
 
         if output_mission_name is None:
             output_mission_name = "mission_" + _id_generator()
         from datetime import datetime
 
-        output_collection_name = f"{output_mission_name}_image_collection_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        output_collection_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         if kwargs.get("folder", None) is None:
             kwargs["folder"] = self._folder
