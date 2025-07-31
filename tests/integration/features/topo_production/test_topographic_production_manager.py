@@ -167,6 +167,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         products_updated = self.topo.products()
         assert len(products_updated["products"]) == number_products - 1
 
+    @unittest.skip("Needs better source data. Does not have valid AOIs")
     def test_generate_product(self):
         """Test generate product"""
         # Get all the products
