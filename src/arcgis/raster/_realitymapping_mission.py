@@ -85,14 +85,19 @@ class Mission:
 
     @property
     def mission_id(self):
+        """
+        The ``mission_id`` property returns the ID of the mission.
+
+        :return: A string representing the mission ID.
+        """
         return self._mission_id
 
     @property
     def products(self):
         """
-        The ``products`` property returns all the products associated with the mission
+        The ``products`` property returns all the products associated with the mission.
 
-        :return: A list of products of the mission
+        :return: A list of products of the mission.
         """
         mission_products = {}
         self._prod_to_id_map = {}
@@ -135,9 +140,9 @@ class Mission:
     @property
     def image_count(self):
         """
-        The ``image_count`` property returns the number of images in the mission
+        The ``image_count`` property returns the number of images in the mission.
 
-        :return: An integer representing the number of images
+        :return: An integer representing the number of images.
         """
         ic = self.image_collection
         lyr = ic.layers[0]
@@ -149,7 +154,7 @@ class Mission:
         """
         The ``mission_date`` property returns the creation date & time of the mission.
 
-        :return: A datetime object representing the mission date & time
+        :return: A datetime object representing the mission date & time.
         """
         from datetime import datetime
 
@@ -160,9 +165,9 @@ class Mission:
     @property
     def image_collection(self):
         """
-        The ``image_collection`` property returns the image collection associated with the mission
+        The ``image_collection`` property returns the image collection associated with the mission.
 
-        :return: image collection item
+        :return: image collection item.
         """
         if self._collection is not None:
             return self._collection
@@ -176,9 +181,9 @@ class Mission:
     @property
     def workspace(self):
         """
-        The ``workspace`` property returns the workspace created for the reality mapping mission on the server
+        The ``workspace`` property returns the workspace created for the reality mapping mission on the server.
 
-        :return: A string representing the workspace name
+        :return: A string representing the workspace name.
         """
         if self._workspace is not None:
             return self._workspace
@@ -196,6 +201,11 @@ class Mission:
 
     @property
     def settings(self):
+        """
+        The ``settings`` property returns the processing settings of the project.
+        
+        :return: A dictionary representing the processing settings of the project.
+        """
         return self._mission_json.get("processingSettings", {})
 
     @settings.setter
@@ -246,104 +256,110 @@ class Mission:
         context: Optional[dict[str, Any]] = None,
     ):
         """
-        Add a collection of images to existing image collection of the mission. It provides provision to specify image collection properties through context parameter.
+        Add a collection of images to existing image collection of the mission. It provides
+        provision to specify image collection properties through context parameter.
 
         It can be used when new data is available to be included in the same mission of the
         realitymapping project. When new data is added to the image collection
         the entire image collection must be reset to the original state.
 
-        ==================                   ====================================================================
-        **Parameter**                         **Description**
-        ------------------                   --------------------------------------------------------------------
-        input_rasters                        Required, the list of input images to be added to
-                                             the image collection being created. This parameter can
-                                             be a list of image paths or a path to a folder containing the images
+        ==================          ====================================================================
+        **Parameter**               **Description**
+        ------------------          --------------------------------------------------------------------
+        input_rasters               Required, the list of input images to be added to
+                                    the image collection being created. This parameter can
+                                    be a list of image paths or a path to a folder containing the images
 
-                                             The function can create hosted imagery layers on enterprise from 
-                                             local raster datasets by uploading the data to the server.  
-        ------------------                   --------------------------------------------------------------------
-        raster_type_name                     Optional string. The name of the raster type to use for adding data to
-                                             the image collection.
+                                    The function can create hosted imagery layers on enterprise from 
+                                    local raster datasets by uploading the data to the server.  
+        ------------------          --------------------------------------------------------------------
+        raster_type_name            Optional string. The name of the raster type to use for adding data to
+                                    the image collection.
 
 
-                                             Choice list:
+                                    Choice list:
 
-                                                 | [
-                                                 | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
-                                                 | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
-                                                 | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
-                                                 | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
-                                                 | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
-                                                 | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
-                                                 | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
-                                                 | ]
-                                         
+                                        | [
+                                        | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                        | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                        | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
+                                        | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                        | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                        | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                        | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                        | ]
+                                
 
-                                             Example:
+                                    Example:
 
-                                                "QuickBird"
-        ------------------                   --------------------------------------------------------------------
-        raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+                                    "QuickBird"
+        ------------------          --------------------------------------------------------------------
+        raster_type_params          Optional dict. Additional ``raster_type`` specific parameters.
         
-                                             The process of add rasters to the image collection can be \
-                                             controlled by specifying additional raster type arguments.
+                                    The process of add rasters to the image collection can be \
+                                    controlled by specifying additional raster type arguments.
 
-                                             The raster type parameters argument is a dictionary.
-                                         
-                                             Syntax:
+                                    The raster type parameters argument is a dictionary.
+                                
+                                    Syntax:
 
-                                                 {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
-                                                 "cameraProperties": {"Maker": "Canon", "Model": "5D Mark II", "FocalLength": 20, "PixelSize": 10, "x0": 0, "y0": 0, "columns": 4000, "rows": 3000},
-                                                 "constantZ": 300,"isAltitudeFlightHeight": "True","dem": {"url": ``https://...``}
+                                        {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
+                                        "cameraProperties": {"Maker": "Canon", "Model": "5D Mark II", "FocalLength": 20, "PixelSize": 10, "x0": 0, "y0": 0, "columns": 4000, "rows": 3000},
+                                        "constantZ": 300,"isAltitudeFlightHeight": "True","dem": {"url": ``https://...``}
 
-                                             The dictionary can contain productType, processingTemplate, \
-                                             pansharpenType, Filter, pansharpenWeights, ConstantZ, \
-                                             dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
-                                             ScaleFactor, ValidRange
+                                    The dictionary can contain productType, processingTemplate, \
+                                    pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                    dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
+                                    ScaleFactor, ValidRange
 
-                                             Please check the table below (Supported Raster Types), \
-                                             for more details about the product types, \
-                                             processing templates, pansharpen weights for each raster type. 
+                                    Please check the table below (Supported Raster Types), \
+                                    for more details about the product types, \
+                                    processing templates, pansharpen weights for each raster type. 
 
-                                             - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
-                                             - Possible values for filter - [None, "Sharpen", "SharpenMore"]
-                                             - Value for StretchType dictionary can be as follows:
+                                    - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
+                                    - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+                                    - Value for StretchType dictionary can be as follows:
 
-                                               - "None"
-                                               - "MinMax; <min>; <max>"
-                                               - "PercentMinMax; <MinPercent>; <MaxPercent>"
-                                               - "StdDev; <NumberOfStandardDeviation>"
-                                               Example: {"StretchType": "MinMax; <min>; <max>"}
-                                             - Value for ValidRange dictionary can be as follows:
+                                    - "None"
+                                    - "MinMax; <min>; <max>"
+                                    - "PercentMinMax; <MinPercent>; <MaxPercent>"
+                                    - "StdDev; <NumberOfStandardDeviation>"
 
-                                               - "<MaskMinValue>, <MaskMaxValue>"
-                                               Example: {"ValidRange": "10, 200"}
+                                    Example: {"StretchType": "MinMax; <min>; <max>"}
+                                    - Value for ValidRange dictionary can be as follows:
 
-                                             Example:
+                                    - "<MaskMinValue>, <MaskMaxValue>"
 
-                                                {"productType":"All","processingTemplate":"Pansharpen",
-                                                "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
-                                                "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
-        ------------------                   --------------------------------------------------------------------
-        context                              Optional dict. The context parameter is used to provide additional input parameters.
+                                    Example: {"ValidRange": "10, 200"}
 
-                                             Syntax:
+                                    Example:
 
-                                                {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":'True'}
-                                            
-                                             Use ``image_collection_properties`` key to set value for imageCollectionType.
+                                    {"productType":"All","processingTemplate":"Pansharpen",
+                                    "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
+                                    "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
+        ------------------          --------------------------------------------------------------------
+        context                     Optional dict. The context parameter is used to provide additional input parameters.
+
+                                    Syntax:
+
+                                    {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":'True'}
+                                
+                                    Use ``image_collection_properties`` key to set value for imageCollectionType.
 
 
-                                             .. note::
+                                    .. note::
 
-                                                The "imageCollectionType" property is important for image collection that will later on be adjusted by realitymapping system service.
-                                                Based on the image collection type, the realitymapping system service will choose different algorithm for adjustment.
-                                                Therefore, if the image collection is created by reference, the requester should set this
-                                                property based on the type of images in the image collection using the following keywords.
-                                                If the imageCollectionType is not set, it defaults to "UAV/UAS"
- 
-                                             If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
-        ==================                   ====================================================================
+                                       The "imageCollectionType" property is important for image collection \
+                                       that will later on be adjusted by realitymapping system service. \
+                                       Based on the image collection type, the realitymapping system \
+                                       service will choose different algorithm for adjustment. \
+                                       Therefore, if the image collection is created by reference, \
+                                       the requester should set this property based on the type of images \
+                                       in the image collection using the following keywords. \
+                                       If the imageCollectionType is not set, it defaults to "UAV/UAS"
+
+                                    If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+        ==================          ====================================================================
 
         :return: The imagery layer url
 
@@ -426,52 +442,52 @@ class Mission:
         table, solution table, solution points table and flight path table.
         These tables will not be published as Portal items.
 
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        mode                   Optional string.  the mode to be used for bundle block adjustment
-                            Only the following modes are supported:
+        ------------------      --------------------------------------------------------------------
+        mode                    Optional string.  the mode to be used for bundle block adjustment
+                                Only the following modes are supported:
 
-                            - 'Quick' : Computes tie points and adjustment at 8x of the source imagery resolution
+                                - 'Quick' : Computes tie points and adjustment at 8x of the source imagery resolution
 
-                            - 'Full'  : adjust the images in Quick mode then at 1x of the source imagery resolution
+                                - 'Full'  : adjust the images in Quick mode then at 1x of the source imagery resolution
 
-                            - 'Refine' : adjust the image at 1x of the source imagery resolution
+                                - 'Refine' : adjust the image at 1x of the source imagery resolution
 
-                            By default, 'Quick' mode is applied to compute the sensor model.
-        ------------------     --------------------------------------------------------------------
-        location_accuracy      Optional string. this option allows users to specify the GPS location accuracy level of the
-                            source image. It determines how far the underline tool will search for neighboring
-                            matching images, then calculate tie points and compute adjustments.
+                                By default, 'Quick' mode is applied to compute the sensor model.
+        ------------------      --------------------------------------------------------------------
+        location_accuracy       Optional string. this option allows users to specify the GPS location accuracy level of the
+                                source image. It determines how far the underline tool will search for neighboring
+                                matching images, then calculate tie points and compute adjustments.
 
-                            Possible values for location_accuracy are:
+                                Possible values for location_accuracy are:
 
-                            - 'VeryHigh'    : Imagery was collected with a high-accuracy, differential GPS, such as RTK or PPK. This option will hold image locations fixed during block adjustment
+                                - 'VeryHigh': Imagery was collected with a high-accuracy, differential GPS, such as RTK or PPK. This option will hold image locations fixed during block adjustment
 
-                            - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images
+                                - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images
 
-                            - 'Medium'  : GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images
+                                - 'Medium'  : GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images
 
-                            - 'Low'     : GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images
+                                - 'Low'     : GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images
 
-                            - 'VeryLow' : GPS accuracy is more than 50 meters, and the tool uses a maximum of 4 by 20 images
+                                - 'VeryLow' : GPS accuracy is more than 50 meters, and the tool uses a maximum of 4 by 20 images
 
-                            The default location_accuracy is 'High'
-        ------------------     --------------------------------------------------------------------
-        context                Optional dictionary. The context parameter is used to configure additional client settings
-                            for block adjustment. The supported configurable parameters are for compute mosaic dataset
-                            candidates after the adjustment.
+                                The default location_accuracy is 'High'
+        ------------------      --------------------------------------------------------------------
+        context                 Optional dictionary. The context parameter is used to configure additional client settings
+                                for block adjustment. The supported configurable parameters are for compute mosaic dataset
+                                candidates after the adjustment.
 
-                            Example:
+                                Example:
 
-                                {
-                                "computeCandidate": False,
-                                "maxoverlap": 0.6,
-                                "maxloss": 0.05,
-                                }
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+                                    {
+                                    "computeCandidate": False,
+                                    "maxoverlap": 0.6,
+                                    "maxloss": 0.05,
+                                    }
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================      ====================================================================
 
         :return:
             The imagery layer url
@@ -576,26 +592,26 @@ class Mission:
         several properties which can be set based on the process
         done on the image collection.
 
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        new_states             Required dictionary. The state to set on the image_collection
+        ------------------      --------------------------------------------------------------------
+        new_states              Required dictionary. The state to set on the image_collection
 
-                            This a dictionary of states that should be set on the image collection
-                            The new states that can be set on the image collection are:
-                            blockadjustment, dem, gcp, seamlines, colorcorrection, adjust_index, imagetype
+                                This a dictionary of states that should be set on the image collection
+                                The new states that can be set on the image collection are:
+                                blockadjustment, dem, gcp, seamlines, colorcorrection, adjust_index, imagetype
 
-                            Example:
+                                Example:
 
-                                | {"blockadjustment": "raw",
-                                |  "dem": "Dense_Natual_Neighbor",
-                                |  "seamlines":"VORONOI",
-                                |  "colorcorrection":"SingleColor",
-                                |  "imagetype": "UAV/UAS",
-                                |  "adjust_index": 0}
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+                                    | {"blockadjustment": "raw",
+                                    |  "dem": "Dense_Natual_Neighbor",
+                                    |  "seamlines":"VORONOI",
+                                    |  "colorcorrection":"SingleColor",
+                                    |  "imagetype": "UAV/UAS",
+                                    |  "adjust_index": 0}
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================      ====================================================================
 
         :return:
             The result will be the newly set states dictionary
@@ -621,11 +637,12 @@ class Mission:
         """
         Retrieve the processing states of the image collection
 
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs.
+                                If not specified, the active GIS is used.
+        ==================      ====================================================================
 
         :return:
             The result will be the current states dictionary
@@ -659,106 +676,105 @@ class Mission:
         ground control points needs at least one matching tie point in the control point sets. 
         The function will compute the remaining matching tie points for all control point sets.
         
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        control_points         Required, a list of control point sets objects.
+        ------------------      --------------------------------------------------------------------
+        control_points          Required, a list of control point sets objects.
 
-                            The schema of control points follows the schema 
-                            of the mosaic dataset control point table. 
+                                The schema of control points follows the schema 
+                                of the mosaic dataset control point table. 
 
-                            The control point object should contain the point geometry, pointID, type, status and the
-                            imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
+                                The control point object should contain the point geometry, pointID, type, status and the
+                                imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
 
-                            -- pointID (int) - The ID of the point within the control point table.
+                                -- pointID (int) - The ID of the point within the control point table.
 
-                            -- type (int)    - The type of the control point as determined by its numeric value
+                                -- type (int)    - The type of the control point as determined by its numeric value
 
-                                                    1: Tie Point 
-                                                    2: Ground Control Point.
-                                                    3: Check Point
+                                                        1: Tie Point 
+                                                        2: Ground Control Point.
+                                                        3: Check Point
 
-                            -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
+                                -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
 
-                            -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
+                                -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
-                            Example:
+                                Example:
 
-                                | [{
-                                | "status": 1,
-                                | "type": 2,
-                                | "x": -117.0926538,
-                                | "y": 34.00704253,
-                                | "z": 634.2175,
-                                | "spatialReference": {
-                                |     "wkid": 4326
-                                | }, // default WGS84
-                                | "imagePointSpatialReference": {}, // default ICS
-                                | "pointId": 1,
-                                | "xyAccuracy": "0.008602325",
-                                | "zAccuracy": "0.015",
-                                | "imagePoints": [{
-                                |     "imageID": 1,
-                                |     "x": 2986.5435987557084,
-                                |     "y": -2042.5193648409431,
-                                |     "u": 3057.4580682832734,
-                                |     "v": -1909.1506872159698
-                                | },
-                                | {
-                                |     "imageID": 2,
-                                |     "x": 1838.2814361401108,
-                                |     "y": -2594.5280063817972,
-                                |     "u": 3059.4079724863363,
-                                |     "v": -2961.292545463305
-                                | },
-                                | {
-                                |     "imageID": 12,
-                                |     "x": 5332.855578204663,
-                                |     "y": -2533.2805429751907,
-                                |     "u": 614.2338676573158,
-                                |     "v": -165.10836768947297
-                                | },
-                                | {
-                                |     "imageID": 13,
-                                |     "x": 4932.0895715254455,
-                                |     "y": -1833.8401744114287,
-                                |     "u": 616.9396928182223,
-                                |     "v": -1243.1445126959693
-                                | }]
-                                | },
-                                | …
-                                | …
-                                | ] 
-        ------------------     --------------------------------------------------------------------
-        similarity             Optional string. Choose the tolerance level for your control point matching. 
+                                    | [{
+                                    | "status": 1,
+                                    | "type": 2,
+                                    | "x": -117.0926538,
+                                    | "y": 34.00704253,
+                                    | "z": 634.2175,
+                                    | "spatialReference": {
+                                    |     "wkid": 4326
+                                    | }, // default WGS84
+                                    | "imagePointSpatialReference": {}, // default ICS
+                                    | "pointId": 1,
+                                    | "xyAccuracy": "0.008602325",
+                                    | "zAccuracy": "0.015",
+                                    | "imagePoints": [{
+                                    |     "imageID": 1,
+                                    |     "x": 2986.5435987557084,
+                                    |     "y": -2042.5193648409431,
+                                    |     "u": 3057.4580682832734,
+                                    |     "v": -1909.1506872159698
+                                    | },
+                                    | {
+                                    |     "imageID": 2,
+                                    |     "x": 1838.2814361401108,
+                                    |     "y": -2594.5280063817972,
+                                    |     "u": 3059.4079724863363,
+                                    |     "v": -2961.292545463305
+                                    | },
+                                    | {
+                                    |     "imageID": 12,
+                                    |     "x": 5332.855578204663,
+                                    |     "y": -2533.2805429751907,
+                                    |     "u": 614.2338676573158,
+                                    |     "v": -165.10836768947297
+                                    | },
+                                    | {
+                                    |     "imageID": 13,
+                                    |     "x": 4932.0895715254455,
+                                    |     "y": -1833.8401744114287,
+                                    |     "u": 616.9396928182223,
+                                    |     "v": -1243.1445126959693
+                                    | }]
+                                    | },
+                                    | …
+                                    | …
+                                    | ] 
+        ------------------      --------------------------------------------------------------------
+        similarity              Optional string. Choose the tolerance level for your control point matching. 
 
-                            - Low- The similarity tolerance for finding control points will be low. \
-                            This option will produce the most control points, \
-                            but some may have a higher level of error. 
+                                - Low - The similarity tolerance for finding control points will be low. \
+                                This option will produce the most control points, \
+                                but some may have a higher level of error. 
+                                - Medium - The similarity tolerance for finding control points will be medium.
+                                - High - The similarity tolerance for finding control points will be high. \
+                                
+                                This option will produce the least number of control points, \
+                                but each matching pair will have a lower level of error. This is the default. 
+        ------------------      --------------------------------------------------------------------
+        context                 Optional dictionary.Additional settings such as the input control points 
+                                spatial reference can be specified here. 
 
-                            - Medium - The similarity tolerance for finding control points will be medium.
-                            
-                            - High - The similarity tolerance for finding control points will be high. \
-                            This option will produce the least number of control points, \
-                            but each matching pair will have a lower level of error. This is the default. 
-        ------------------     --------------------------------------------------------------------
-        context                Optional dictionary.Additional settings such as the input control points 
-                            spatial reference can be specified here. 
-
-                            For Example:
+                                Example:
 
                                     {"groundControlPointsSpatialReference": {"wkid": 3459}, "imagePointSpatialReference": {"wkid": 3459}}
 
-                            Note: The ground control points spatial reference and image point spatial reference 
-                            spatial reference set in the context parameter is to decide the returned point set's 
-                            ground control points spatial reference and image point spatial reference. 
-                            If these two parameters are not set here, the tool will use the spatial reference 
-                            defined in the input point set. And if no spatial reference is defined in the point set,
-                            then the default ground control points coordinates are in lon/lat and image points 
-                            coordinates are in image coordinate system. 
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+                                Note: The ground control points spatial reference and image point spatial reference 
+                                spatial reference set in the context parameter is to decide the returned point set's 
+                                ground control points spatial reference and image point spatial reference. 
+                                If these two parameters are not set here, the tool will use the spatial reference 
+                                defined in the input point set. And if no spatial reference is defined in the point set,
+                                then the default ground control points coordinates are in lon/lat and image points 
+                                coordinates are in image coordinate system. 
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================      ====================================================================
 
         :return:
             A list of dictionary objects
@@ -797,7 +813,7 @@ class Mission:
         `Compute Control Points <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/compute-control-points.htm>`_
         
         ====================================    ====================================================================
-        **Parameter**                            **Description**
+        **Parameter**                           **Description**
         ------------------------------------    --------------------------------------------------------------------
         reference_image                         This is the reference image service that can be used to generate ground control 
                                                 points set with the image service. 
@@ -903,81 +919,80 @@ class Mission:
         The input control points dictionary will always replace the points in the tie points
         table if the point IDs already exist.
 
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        control_points         Required, a list of control point sets objects.
+        ------------------      --------------------------------------------------------------------
+        control_points          Required, a list of control point sets objects.
 
-                            The schema of control points follows the schema
-                            of the mosaic dataset control point table.
+                                The schema of control points follows the schema
+                                of the mosaic dataset control point table.
 
-                            The control point object should contain the point geometry, pointID, type, status and the
-                            imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
+                                The control point object should contain the point geometry, pointID, type, status and the
+                                imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
 
-                            -- pointID (int) - The ID of the point within the control point table.
+                                -- pointID (int) - The ID of the point within the control point table.
 
-                            -- type (int)    - The type of the control point as determined by its numeric value
+                                -- type (int)    - The type of the control point as determined by its numeric value
 
-                                                    1: Tie Point
-                                                    2: Ground Control Point.
-                                                    3: Check Point
+                                                        1: Tie Point
+                                                        2: Ground Control Point.
+                                                        3: Check Point
 
-                            -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
+                                -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
 
-                            -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
+                                -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
-                            Example:
+                                Example:
 
-                                | [{
-                                | "status": 1,
-                                | "type": 2,
-                                | "x": -117.0926538,
-                                | "y": 34.00704253,
-                                | "z": 634.2175,
-                                | "spatialReference": {
-                                |     "wkid": 4326
-                                | }, // default WGS84
-                                | "imagePointSpatialReference": {}, // default ICS
-                                | "pointId": 1,
-                                | "xyAccuracy": "0.008602325",
-                                | "zAccuracy": "0.015",
-                                | "imagePoints": [{
-                                |     "imageID": 1,
-                                |     "x": 2986.5435987557084,
-                                |     "y": -2042.5193648409431,
-                                |     "u": 3057.4580682832734,
-                                |     "v": -1909.1506872159698
-                                | },
-                                | {
-                                |     "imageID": 2,
-                                |     "x": 1838.2814361401108,
-                                |     "y": -2594.5280063817972,
-                                |     "u": 3059.4079724863363,
-                                |     "v": -2961.292545463305
-                                | },
-                                | {
-                                |     "imageID": 12,
-                                |     "x": 5332.855578204663,
-                                |     "y": -2533.2805429751907,
-                                |     "u": 614.2338676573158,
-                                |     "v": -165.10836768947297
-                                | },
-                                | {
-                                |     "imageID": 13,
-                                |     "x": 4932.0895715254455,
-                                |     "y": -1833.8401744114287,
-                                |     "u": 616.9396928182223,
-                                |     "v": -1243.1445126959693
-                                | }]
-                                | },
-                                | …
-                                | …
-                                | ]
+                                    | [{
+                                    | "status": 1,
+                                    | "type": 2,
+                                    | "x": -117.0926538,
+                                    | "y": 34.00704253,
+                                    | "z": 634.2175,
+                                    | "spatialReference": {
+                                    |     "wkid": 4326
+                                    | }, // default WGS84
+                                    | "imagePointSpatialReference": {}, // default ICS
+                                    | "pointId": 1,
+                                    | "xyAccuracy": "0.008602325",
+                                    | "zAccuracy": "0.015",
+                                    | "imagePoints": [{
+                                    |     "imageID": 1,
+                                    |     "x": 2986.5435987557084,
+                                    |     "y": -2042.5193648409431,
+                                    |     "u": 3057.4580682832734,
+                                    |     "v": -1909.1506872159698
+                                    | },
+                                    | {
+                                    |     "imageID": 2,
+                                    |     "x": 1838.2814361401108,
+                                    |     "y": -2594.5280063817972,
+                                    |     "u": 3059.4079724863363,
+                                    |     "v": -2961.292545463305
+                                    | },
+                                    | {
+                                    |     "imageID": 12,
+                                    |     "x": 5332.855578204663,
+                                    |     "y": -2533.2805429751907,
+                                    |     "u": 614.2338676573158,
+                                    |     "v": -165.10836768947297
+                                    | },
+                                    | {
+                                    |     "imageID": 13,
+                                    |     "x": 4932.0895715254455,
+                                    |     "y": -1833.8401744114287,
+                                    |     "u": 616.9396928182223,
+                                    |     "v": -1243.1445126959693
+                                    | }]
+                                    | },
+                                    | …
+                                    | …
+                                    | ]
 
-
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================      ====================================================================
 
         :return:
             The Imagery layer url
@@ -1015,9 +1030,9 @@ class Mission:
         Function can be used for generating single ortho-rectified mosaicked image from image collection after
         the block adjustment.
 
-        ===================================    ====================================================================
+        ===================================     ====================================================================
         **Parameter**                           **Description**
-        -----------------------------------    --------------------------------------------------------------------
+        -----------------------------------     --------------------------------------------------------------------
         out_ortho                               Optional String or dict. This is the ortho-mosaicked image converted from the image
                                                 collection after the block adjustment.
                                                 It can be a url, uri, portal item, or string representing the name of output dem
@@ -1027,15 +1042,15 @@ class Mission:
                                                 - portal_name: The name for the portal item for this image service.
                                                 If this product has already been created, the tool will overwrite it instead.
                                                 Like Raster Analysis services, the service can be an existing multi-tenant service URL.
-        -----------------------------------    --------------------------------------------------------------------
-        regen_seamlines                        Optional, boolean.
-                                            Choose whether to apply seamlines before the orthomosaic image generation or not.
-                                            The seamlines will always be regenerated if this parameter is set to True.
-                                            The user can set the seamline options through the context parameter.
-                                            If the seamline generation options are not set, the default will be used.
+        -----------------------------------     --------------------------------------------------------------------
+        regen_seamlines                         Optional, boolean.
+                                                Choose whether to apply seamlines before the orthomosaic image generation or not.
+                                                The seamlines will always be regenerated if this parameter is set to True.
+                                                The user can set the seamline options through the context parameter.
+                                                If the seamline generation options are not set, the default will be used.
 
-                                            Default value is True
-        -----------------------------------    --------------------------------------------------------------------
+                                                Default value is True
+        -----------------------------------     --------------------------------------------------------------------
         recompute_color_correction              Optional, boolean.
                                                 Choose whether to apply color correction settings to the output ortho-image or not.
                                                 Color correction will always be recomputed if this option is set to True.
@@ -1043,56 +1058,57 @@ class Mission:
                                                 If there is no color collection setting, the default will be used.
 
                                                 Default value is True
-        -----------------------------------    --------------------------------------------------------------------
-        context                                Optional dictionary. Context contains additional environment settings that affect output
-                                            image. The supported environment settings for this tool are:
+        -----------------------------------     --------------------------------------------------------------------
+        context                                 Optional dictionary. Context contains additional environment settings that affect output
+                                                image. The supported environment settings for this tool are:
 
-                                            1. Output Spatial Reference (outSR)-the output features will
-                                                be projected into the output spatial reference.
+                                                1. Output Spatial Reference (outSR)-the output features will
+                                                    be projected into the output spatial reference.
 
-                                            2. Extent (extent) - extent that would clip or expand the output image
+                                                2. Extent (extent) - extent that would clip or expand the output image
 
-                                            3. Cell Size (cellSize) - The output raster will have the resolution specified by cell size.
+                                                3. Cell Size (cellSize) - The output raster will have the resolution specified by cell size.
 
-                                            4. Compute Seamlines (seamlinesMethod) - Default.
+                                                4. Compute Seamlines (seamlinesMethod) - Default.
 
-                                            5. Clipping Geometry (clippingGeometry) - Clips the orthomosaic image to an area of
-                                                interest defined by the geometry.
+                                                5. Clipping Geometry (clippingGeometry) - Clips the orthomosaic image to an area of
+                                                    interest defined by the geometry.
 
-                                            6. Orthomosaic As Overview (orthoMosaicAsOvr) - Adds the orthomosaic as an overview of the image collection.
+                                                6. Orthomosaic As Overview (orthoMosaicAsOvr) - Adds the orthomosaic as an overview of the image collection.
 
-                                            7. Compute Color Correction (colorcorrectionMethod) — Default.
+                                                7. Compute Color Correction (colorcorrectionMethod) — Default.
 
-                                            Example:
+                                                Example:
 
-                                                | {
-                                                |   "outSR": {"wkid": 3516},
-                                                |   "extent": {"xmin": 470614.263139,
-                                                |             "ymin": 8872849.409968,
-                                                |             "xmax": 532307.351827,
-                                                |             "ymax": 8920205.372412,
-                                                |             "spatialReference": {"wkid": 32628}},
-                                                |   "clippingGeometry": {},
-                                                |   "orthoMosaicAsOvr": False,
-                                                |   "seamlinesMethod": "VORONOI",
-                                                |   "minRegionSize": 100,
-                                                |   "pixelSize": "",
-                                                |   "blendType": "Both",
-                                                |   "blendWidth": None,
-                                                |   "blendUnit": "Pixels",
-                                                |   "requestSize": 1000,
-                                                |   "minThinnessRatio": 0.05,
-                                                |   "maxSliverSize": 20
-                                                |   "colorCorrectionMethod": "DODGING",
-                                                |   "dodgingSurface": "Single_Color",
-                                                |   "referenceImg": {"url": "``https://...``"},
-                                                |   "skipRows": 10,
-                                                |   "skipCols": 10,
-                                                |   "reCalculateSats": "OVERWRITE"
-                                                |  }
-        -----------------------------------    --------------------------------------------------------------------
-        gis                                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ===================================    ====================================================================
+                                                    | {
+                                                    |   "outSR": {"wkid": 3516},
+                                                    |   "extent": {"xmin": 470614.263139,
+                                                    |             "ymin": 8872849.409968,
+                                                    |             "xmax": 532307.351827,
+                                                    |             "ymax": 8920205.372412,
+                                                    |             "spatialReference": {"wkid": 32628}},
+                                                    |   "clippingGeometry": {},
+                                                    |   "orthoMosaicAsOvr": False,
+                                                    |   "seamlinesMethod": "VORONOI",
+                                                    |   "minRegionSize": 100,
+                                                    |   "pixelSize": "",
+                                                    |   "blendType": "Both",
+                                                    |   "blendWidth": None,
+                                                    |   "blendUnit": "Pixels",
+                                                    |   "requestSize": 1000,
+                                                    |   "minThinnessRatio": 0.05,
+                                                    |   "maxSliverSize": 20
+                                                    |   "colorCorrectionMethod": "DODGING",
+                                                    |   "dodgingSurface": "Single_Color",
+                                                    |   "referenceImg": {"url": "``https://...``"},
+                                                    |   "skipRows": 10,
+                                                    |   "skipCols": 10,
+                                                    |   "reCalculateSats": "OVERWRITE"
+                                                    |  }
+
+        -----------------------------------     --------------------------------------------------------------------
+        gis                                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+        ===================================     ====================================================================
 
         :return:
             The Orthomosaicked Imagery layer item
@@ -1248,7 +1264,7 @@ class Mission:
         The output of this service tool is a downloadable html page.
 
         ===================    ====================================================================
-        **Parameter**           **Description**
+        **Parameter**          **Description**
         -------------------    --------------------------------------------------------------------
         report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
         -------------------    --------------------------------------------------------------------
@@ -1285,21 +1301,22 @@ class Mission:
         database. The digital camera database contains the specs
         of digital camera sensors that were used to capture drone images.
 
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        camera_query           Required String. This is a SQL query statement that can
-                            be used to filter a portion of the digital camera
-                            database.
-                            Digital camera database can be queried using the fields Make, Model,
-                            Focallength, Columns, Rows, PixelSize.
+        ------------------      --------------------------------------------------------------------
+        camera_query            Required String. This is a SQL query statement that can
+                                be used to filter a portion of the digital camera
+                                database.
+                                Digital camera database can be queried using the fields Make, Model,
+                                Focallength, Columns, Rows, PixelSize.
 
-                            Example:
+                                Example:
 
-                                "Make='Rollei' and Model='RCP-8325'"
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+                                    "Make='Rollei' and Model='RCP-8325'"
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs.
+                                If not specified, the active GIS is used.
+        ==================      ====================================================================
 
 
         :return:
@@ -1327,17 +1344,18 @@ class Mission:
         Query for control points in an image collection. It allows users to query
         among certain control point sets that has ground control points inside.
 
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        query                  Required string. a SQL statement used for querying the point;
+        ------------------      --------------------------------------------------------------------
+        query                   Required string. a SQL statement used for querying the point
 
-                            Example:
+                                Example:
 
                                 "pointID > 100"
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. 
+                                If not specified, the active GIS is used.
+        ==================      ====================================================================
 
 
         :return:
@@ -1368,11 +1386,12 @@ class Mission:
         to clear any existing adjustment settings and revert the images back to
         un-adjusted state
 
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs.
+                                If not specified, the active GIS is used.
+        ==================      ====================================================================
 
         :return:
             A boolean indicating whether the reset was successful or not
@@ -1402,22 +1421,23 @@ class Mission:
         in drone image files. Some common Exif metadata information are GPS
         locations, camera model, focal length, and more.
 
-        ==================     ====================================================================
+        ==================      ====================================================================
         **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        input_images           Required String/list of Strings.  The input images could be a single image path, list of image paths,
-                            or a folder path, or a list of folder paths. The image file paths can also be server data store path.
+        ------------------      --------------------------------------------------------------------
+        input_images            Required String/list of Strings.  The input images could be a single image path, list of image paths,
+                                or a folder path, or a list of folder paths. The image file paths can also be server data store path.
 
-                            Eg:
+                                Eg:
 
-                            - "\\servername\drone\imagefolder\image_file.jpg"
-                            - "/cloudStores/S3DataStore/yvwd13"
-                            - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
-                            - ["/fileShares/drones/SampleEXIF/DJI_0002.JPG", "/fileShares/drones/SampleEXIF/YUN_0040.jpg"]
-                            - ["/cloudStores/S3DataStore/yvwd13", "/cloudStores/S3DataStore/BogotaFarm"]
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+                                - "\\servername\drone\imagefolder\image_file.jpg"
+                                - "/cloudStores/S3DataStore/yvwd13"
+                                - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
+                                - ["/fileShares/drones/SampleEXIF/DJI_0002.JPG", "/fileShares/drones/SampleEXIF/YUN_0040.jpg"]
+                                - ["/cloudStores/S3DataStore/yvwd13", "/cloudStores/S3DataStore/BogotaFarm"]
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs.
+                                If not specified, the active GIS is used.
+        ==================      ====================================================================
 
         :return:
             A dictionary object
