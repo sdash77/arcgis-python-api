@@ -13,19 +13,10 @@ utility_network_url = "https://utilitynetwork.esri.com/server/rest/services/Nape
 
 
 # Server gets updated at 2:30PM PST Everyday. Do not test around then.
-# @profiles.utility_network
+@profiles.utility_network
 @integration_test
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.gis = GIS(
-            url="https://utilitynetwork.esri.com/portal",
-            username="python_api_team",
-            password="python_api_team.109",
-            verify_cert=False,
-        )
 
     def setUp(self):
         self.utility_network_manager = UtilityNetworkManager(
