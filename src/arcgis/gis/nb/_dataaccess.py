@@ -369,10 +369,10 @@ class NotebookFolder:
             and "X-Esri-Authorization" not in original_headers
         ):
             token = self._da._gis._session.auth.token
-            self._da._gis.session.headers.update({token_header: "Bearer %s" % token})
-        if "/azureblob/" in url:
-            # Need to pass 'x-ms-blob-type' header as 'BlockBlob' for azureblob storage
-            self._da._gis.session.headers.update({"x-ms-blob-type": "BlockBlob"})
+        # Needed for online and enterprise
+        self._da._gis.session.headers.update(
+            {token_header: "Bearer %s" % token, "x-ms-blob-type": "BlockBlob"}
+        )
         with open(file_path, "rb") as file_data:
             resp = self._da._gis.session.put(
                 url=url,
