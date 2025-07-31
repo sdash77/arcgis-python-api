@@ -854,18 +854,19 @@ class NotebookDataAccess:
         :param new_name: The new name for the folder.
         :return: True if the folder was renamed successfully, False otherwise.
         """
-        if self._gis._is_agol:
-            url = f"{self._url}/move".replace("/azureblob/", f"/{self._username}/")
-        else:
-            url = f"{self._url}/{self._username}/notebookworkspace/move"
-
         params = {
             "f": "json",
             "source": folder_name,
             "target": new_name,
-            "targetUserName": username or self._username,
             "token": self._gis.session.auth.token,
         }
+        if self._gis._is_agol:
+            url = f"{self._url}/move".replace("/azureblob/", f"/{self._username}/")
+            params["targetUserName"] = username or self._username
+        else:
+            url = f"{self._url}/{self._username}/notebookworkspace/move"
+            params["targetUsername"] = username or self._username
+
         return self._gis.session.post(url, params).json().get("status") == "success"
 
     # ---------------------------------------------------------------------
