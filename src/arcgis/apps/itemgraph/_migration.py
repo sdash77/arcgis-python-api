@@ -675,6 +675,11 @@ class _ImportPackage:
             else:
                 new_item.resources.add(file=res_path, folder_name=res_folder)
             # new_item.resources.add(res_path)
+        
+        if new_item.url:
+            new_item.update(
+                {"url": new_item.url.replace(item_id, new_item.id)}
+            )
 
         # add the related_items relationships to dict for reconstruction
         self._item_relationships[item_id] = relationships["related_items"]
