@@ -846,7 +846,7 @@ class Project:
         :return: A Mission object representing the merged mission.
 
         .. code-block:: python
-            
+
             # Example Usage
 
             mission1 = project.get_mission("mission_1")

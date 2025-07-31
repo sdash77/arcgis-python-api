@@ -203,7 +203,7 @@ class Mission:
     def settings(self):
         """
         The ``settings`` property returns the processing settings of the project.
-        
+
         :return: A dictionary representing the processing settings of the project.
         """
         return self._mission_json.get("processingSettings", {})
@@ -1353,7 +1353,7 @@ class Mission:
 
                                 "pointID > 100"
         ------------------      --------------------------------------------------------------------
-        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. 
+        gis                     Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs.
                                 If not specified, the active GIS is used.
         ==================      ====================================================================
 
