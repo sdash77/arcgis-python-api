@@ -27,7 +27,6 @@ from arcgis.geoprocessing._support import (
     _analysis_job_status,
     _layer_input,
 )
-from arcgis.raster._realitymapping_mission import Mission
 
 ###################################################################################################
 ###
@@ -265,9 +264,10 @@ class Project:
     settings                                 Optional dictionary. The project settings dictionary.
                                              The definition mainly contains the template information for adjustSettings,
                                              processingStates.
+                                             See :ref:`default_settings` for more information on the default settings.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional  :class:`~arcgis.gis.GIS` . Represents the GIS object of the Realitymapping
-                                             Project item.
+    gis                                      Optional  :class:`~arcgis.gis.GIS` . The GIS on which this tool runs.
+                                             If not specified, the active GIS is used.
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -484,122 +484,129 @@ class Project:
         Creates a new mission in the realitymapping project. The mission is created with the specified image collection,
         raster type, and settings.
 
-        ====================================     ====================================================================
-        **Parameter**                             **Description**
-        ------------------------------------     --------------------------------------------------------------------
-        image_list                               Required, the list of input images to be added to
-                                                 the image collection being created. This parameter can
-                                                 be a list of image paths or a path to a folder containing the images.
-                                                 This can be a datastore paths, local paths, or a list of
-                                                 :class:`~arcgis.gis.Item` objects.
+        ====================================    ====================================================================
+        **Parameter**                           **Description**
+        ------------------------------------    --------------------------------------------------------------------
+        image_list                              Required, the list of input images to be added to
+                                                the image collection being created. This parameter can
+                                                be a list of image paths or a path to a folder containing the images.
+                                                This can be a datastore paths, local paths, or a list of
+                                                :class:`~arcgis.gis.Item` objects.
 
-                                                 The function can create hosted imagery layers on enterprise from 
-                                                 local raster datasets by uploading the data to the server.    
-        ------------------------------------     --------------------------------------------------------------------
-        image_collection_name                    Optional string or dictionary. The name of the image collection to be created.
-                                                 If a string is provided, it will be used as the portal name for the image collection.
-                                                 If a dictionary is provided, it should contain the keys 'service_name' and 'portal_name'.
-                                                 The 'service_name' must be unique.
+                                                The function can create hosted imagery layers on enterprise from 
+                                                local raster datasets by uploading the data to the server.    
+        ------------------------------------    --------------------------------------------------------------------
+        image_collection_name                   Optional string or dictionary. The name of the image collection to be created.
+                                                If a string is provided, it will be used as the portal name for the image collection.
+                                                If a dictionary is provided, it should contain the keys 'service_name' and 'portal_name'.
+                                                The 'service_name' must be unique.
 
-                                                 For e.g.: {"service_name": "my_image_service", "portal_name": "My Image Collection"}
-        ------------------------------------     --------------------------------------------------------------------
-        mission_name                             Optional string. The name of the mission to be created. If a name is not provided,
-                                                 a default name will be generated in the format "mission_<random_id>".
-        ------------------------------------     --------------------------------------------------------------------
-        raster_type_name                         Optional string. The name of the raster type used.
-                                                 Refer to :meth:`~arcgis.raster.analytics.create_image_collection` for supported raster types.
-        ------------------------------------     --------------------------------------------------------------------
-        raster_type_params                       Optional dict. Additional ``raster_type`` specific parameters.
+                                                For e.g.: {"service_name": "my_image_service", "portal_name": "My Image Collection"}
+        ------------------------------------    --------------------------------------------------------------------
+        mission_name                            Optional string. The name of the mission to be created. If a name is not provided,
+                                                a default name will be generated in the format "mission_<random_id>".
+        ------------------------------------    --------------------------------------------------------------------
+        raster_type_name                        Optional string. The name of the raster type used.
+                                                Refer to :meth:`~arcgis.raster.analytics.create_image_collection` for supported raster types.
+        ------------------------------------    --------------------------------------------------------------------
+        raster_type_params                      Optional dict. Additional ``raster_type`` specific parameters.
         
-                                                 The process of add rasters to the image collection can be \
-                                                 controlled by specifying additional raster type arguments.
+                                                The process of add rasters to the image collection can be \
+                                                controlled by specifying additional raster type arguments.
 
-                                                 The raster type parameters argument is a dictionary.
+                                                The raster type parameters argument is a dictionary.
 
-                                                 The dictionary can contain productType, processingTemplate, \
-                                                 pansharpenType, Filter, pansharpenWeights, ConstantZ, \
-                                                 dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
-                                                 ScaleFactor, ValidRange
+                                                The dictionary can contain productType, processingTemplate, \
+                                                pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                                dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
+                                                ScaleFactor, ValidRange
 
-                                                 Please check the table below (Supported Raster Types), \
-                                                 for more details about the product types, \
-                                                 processing templates, pansharpen weights for each raster type. 
+                                                Please check the table below (Supported Raster Types), \
+                                                for more details about the product types, \
+                                                processing templates, pansharpen weights for each raster type. 
 
-                                                 - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
-                                                 - Possible values for filter - [None, "Sharpen", "SharpenMore"]
-                                                 - Value for StretchType dictionary can be as follows:
+                                                - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
+                                                - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+                                                - Value for StretchType dictionary can be as follows:
 
-                                                 - "None"
-                                                 - "MinMax; <min>; <max>"
-                                                 - "PercentMinMax; <MinPercent>; <MaxPercent>"
-                                                 - "StdDev; <NumberOfStandardDeviation>"
-                                                 Example: {"StretchType": "MinMax; <min>; <max>"}
-                                                 - Value for ValidRange dictionary can be as follows:
+                                                - "None"
+                                                - "MinMax; <min>; <max>"
+                                                - "PercentMinMax; <MinPercent>; <MaxPercent>"
+                                                - "StdDev; <NumberOfStandardDeviation>"
 
-                                                 - "<MaskMinValue>, <MaskMaxValue>"
-                                                 Example: {"ValidRange": "10, 200"}
+                                                Example: {"StretchType": "MinMax; <min>; <max>"}
+                                                
+                                                - Value for ValidRange dictionary can be as follows:
 
-                                                 Example:
+                                                - "<MaskMinValue>, <MaskMaxValue>"
 
-                                                    {"productType":"All","processingTemplate":"Pansharpen",
-                                                    "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
-                                                    "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
-        ------------------------------------     --------------------------------------------------------------------
-        out_sr                                   Optional dictionary. The spatial reference to be used for this mission.
-        ------------------------------------     --------------------------------------------------------------------
-        settings                                 Optional dictionary. The settings for this mission. If not provided, the project settings will be inherited.
-                                                 A subset of the settings can also be provided but the structure of the settings dictionary must be preserved.
-                                                 For e.g.:
-                                                    {
-                                                        "adjustSettings": {
-                                                            "maxResidual": 5,
-                                                            "focalLength": False,
-                                                            "locationAccuracy": "LOW"
-                                                            },
-                                                        "processingSettings": {
+                                                Example: {"ValidRange": "10, 200"}
+
+                                                Example:
+                                                {
+                                                    "productType":"All",
+                                                    "processingTemplate":"Pansharpen",
+                                                    "pansharpenType":"Gram-Schmidt",
+                                                    "filter":"SharpenMore",
+                                                    "pansharpenWeights":"0.85 0.7 0.35 1",
+                                                    "constantZ":-9999
+                                                }
+        ------------------------------------    --------------------------------------------------------------------
+        out_sr                                  Optional dictionary. The spatial reference to be used for this mission.
+        ------------------------------------    --------------------------------------------------------------------
+        settings                                Optional dictionary. The settings for this mission. If not provided, the project settings will be inherited.
+                                                A subset of the settings can also be provided but the structure of the settings dictionary must be preserved.
+                                                For e.g.:
+                                                {
+                                                    "adjustSettings": {
+                                                        "maxResidual": 5,
+                                                        "focalLength": False,
+                                                        "locationAccuracy": "LOW"
+                                                        },
+                                                    "processingSettings": {
+                                                        "dsm": {
                                                             "dsm": {
-                                                                "dsm": {
-                                                                    "format": "TIFF",
-                                                                    "outputType": "TILED",
-                                                                    "resampling": "BILINEAR"
-                                                                }
-                                                            },
+                                                                "format": "TIFF",
+                                                                "outputType": "TILED",
+                                                                "resampling": "BILINEAR"
+                                                            }
+                                                        },
+                                                        "dtm": {
                                                             "dtm": {
-                                                                "dtm": {
-                                                                    "mask": "",
-                                                                    "extent": "",
-                                                                    "format": "CRF",
-                                                                    "fillDEM": "",
-                                                                    "cellsize": "NaN",
-                                                                    "lowNoise": 0.25,
-                                                                    "highNoise": 100,
-                                                                    "compression": "NONE",
-                                                                    "reuseGround": False
-                                                                }
+                                                                "mask": "",
+                                                                "extent": "",
+                                                                "format": "CRF",
+                                                                "fillDEM": "",
+                                                                "cellsize": "NaN",
+                                                                "lowNoise": 0.25,
+                                                                "highNoise": 100,
+                                                                "compression": "NONE",
+                                                                "reuseGround": False
                                                             }
                                                         }
                                                     }
-        ------------------------------------     --------------------------------------------------------------------
-        context                              Optional dict. The context parameter is used to provide additional input parameters.
+                                                }
+        ------------------------------------    --------------------------------------------------------------------
+        context                                 Optional dict. The context parameter is used to provide additional input parameters.
     
-                                             Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+                                                Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
                                         
-                                             Use ``image_collection_properties`` key to set value for imageCollectionType.
+                                                Use ``image_collection_properties`` key to set value for imageCollectionType.
 
-                                             .. note::
+                                                .. note::
 
-                                                The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
-                                                Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
-                                                Therefore, if the image collection is created by reference, the requester should set this 
-                                                property based on the type of images in the image collection using the following keywords. 
-                                                If the imageCollectionType is not set, it defaults to "UAV/UAS"
+                                                    The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                                    Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
+                                                    Therefore, if the image collection is created by reference, the requester should set this 
+                                                    property based on the type of images in the image collection using the following keywords. 
+                                                    If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
-                                             If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+                                                If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
 
-                                             The context parameter can also be used to specify whether to build overviews, \
-                                             build footprints, to specify pixel value that represents the NoData etc.
+                                                The context parameter can also be used to specify whether to build overviews,
+                                                build footprints, to specify pixel value that represents the NoData etc.
 
-                                             Example:
+                                                Example:
 
                                                 | {"buildFootprints":True,                                            
                                                 | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
@@ -611,17 +618,18 @@ class Project:
                                                 | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
                                                 | "buildOverview":True}
 
-                                             The context parameter can be used to add new fields when creating \
-                                             the image collection.
+                                                The context parameter can be used to add new fields when creating
+                                                the image collection.
 
-                                             Example:
+                                                Example:
 
                                                 | {"fields": [{"name": "cloud_cover", "type": "Long"},
                                                 | {"name": "cloud_shadow_count", "type": "Long"}]}
-        ------------------------------------     --------------------------------------------------------------------
-        gis                                      Optional  :class:`~arcgis.gis.GIS` . Represents the GIS object of the Realitymapping
-                                                Project item.
-        ====================================     ====================================================================
+
+        ------------------------------------    --------------------------------------------------------------------
+        gis                                     Optional  :class:`~arcgis.gis.GIS` . The GIS on which this tool runs
+                                                If not specified, the active GIS is used.
+        ====================================    ====================================================================
 
         :return: Mission object
         
@@ -639,7 +647,7 @@ class Project:
                                         "averagezdem": {"url": "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}
                                     },
                                 out_sr={"wkid": 4326}
-                    )            
+                    )
         
         """
         
@@ -763,7 +771,7 @@ class Project:
 
     def merge_missions(
         self,
-        missions: list[Mission],
+        missions,
         output_mission_name: Optional[str] = None,
         mission_settings: Optional[str] = None,
         *,
@@ -773,21 +781,24 @@ class Project:
     ):
         """
         Merges multiple missions and creates a new mission in the realitymapping project.
-        ==================                   ====================================================================
-        **Parameter**                         **Description**
-        ------------------                   --------------------------------------------------------------------
-        missions                              Required list of Mission objects. The missions to be merged.
-        ------------------                   --------------------------------------------------------------------
-        output_mission_name                  Optional string. The name of the output mission to be created. If not provided,
-                                             a default name will be generated in the format "mission_<random_id>".
-        ------------------                   --------------------------------------------------------------------
-        mission_settings                     Optional dictionary. The settings for the new mission. If not provided, the project settings will be inherited.
-                                             A subset of the settings can also be provided but the structure of the settings dictionary must be preserved.
-                                             Refer to the settings property of the Project class for more details on the structure of the settings dictionary.
-        ------------------                   --------------------------------------------------------------------
-        gis                                  Optional  :class:`~arcgis.gis.GIS` . Represents the GIS object of the Realitymapping
-                                             Project item. If not provided, the active GIS will be used.
-        ==================                   ====================================================================
+        ==================      ====================================================================
+        **Parameter**           **Description**
+        ------------------      --------------------------------------------------------------------
+        missions                Required list of Mission objects. The missions to be merged.
+        ------------------      --------------------------------------------------------------------
+        output_mission_name     Optional string. The name of the output mission to be created. If not provided,
+                                a default name will be generated in the format "mission_<random_id>".
+        ------------------      --------------------------------------------------------------------
+        mission_settings        Optional dictionary. The settings for the new mission. If not
+                                provided, the project settings will be inherited.
+                                A subset of the settings can also be provided but the structure
+                                of the settings dictionary must be preserved.
+                                Refer to the settings property of the Project class for more details
+                                on the structure of the settings dictionary.
+        ------------------      --------------------------------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS`. The GIS on which this tool runs.
+                                If not provided, the active GIS will be used.
+        ==================      ====================================================================
 
         :return: A Mission object representing the merged mission.
 
