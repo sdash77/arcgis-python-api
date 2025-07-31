@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 from enum import Enum
 import os
 from arcgis._impl.common._isd import InsensitiveDict
@@ -361,15 +362,17 @@ class NotebookFolder:
         else:
             url = f"{self._url}/notebookworkspace/{full_path}"
 
-        headers = {
-            "Content-Type": "application/octet-stream",
-            "Content-Length": str(os.path.getsize(file_path)),
-            "x-ms-blob-type": "BlockBlob",
-            "x-ms-version": "2020-10-02",  # Consider making this configurable
-        }
-        token = self._da._gis.session.auth.token
-        if token:
-            headers["X-Esri-Authorization"] = f"Bearer {token}"
+        original_headers = copy.deepcopy(self._da._gis.session.headers)
+        token_header = "X-Esri-Authorization"
+        if (
+            self._da._gis._session.auth.token
+            and "X-Esri-Authorization" not in original_headers
+        ):
+            token = self._da._gis._session.auth.token
+            self._da._gis.session.headers.update({token_header: "Bearer %s" % token})
+        if "/azureblob/" in url:
+            # Need to pass 'x-ms-blob-type' header as 'BlockBlob' for azureblob storage
+            self._da._gis.session.headers.update({"x-ms-blob-type": "BlockBlob"})
         with open(file_path, "rb") as file_data:
             resp = self._da._gis.session.put(
                 url=url,
@@ -377,6 +380,8 @@ class NotebookFolder:
                 verify=True,
                 headers=self._da._gis.session.headers,
             )
+        self._da._gis.session.headers.clear()
+        self._da._gis.session.headers.update(original_headers)
         return 200 <= resp.status_code < 300
 
     # ---------------------------------------------------------------------
