@@ -32,29 +32,6 @@ from arcgis.geoprocessing._support import (
 ###
 ###################################################################################################
 
-
-def _execute_task(gis, taskname, params):
-    gptool_url = gis.properties.helperServices.realityMapping.url
-    gptool = _arcgis.gis._GISResource(gptool_url, gis)
-    task = taskname
-
-    task_url, job_info, job_id = _analysis_job(gptool, task, params)
-    # print ('task url is ', task_url)
-
-    job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
-
-    item_properties = {
-        "properties": {
-            "jobUrl": task_url + "/jobs/" + job_info["jobId"],
-            "jobType": "GPServer",
-            "jobId": job_info["jobId"],
-            "jobStatus": "completed",
-        }
-    }
-    return job_values
-
-
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
     return "".join(_random.choice(chars) for _ in range(size))
 
@@ -322,7 +299,6 @@ class Project:
         except:
             self._project_name = self._project_item.name
 
-        self._mission_list = []
         gis = _arcgis.env.active_gis if gis is None else gis
         self._gis = gis
 
@@ -367,15 +343,15 @@ class Project:
         res_list = get_request(url, headers=headers)
         if res_list is None:
             raise RuntimeError("Failed to retrieve missions for the project.")
-        self._mission_list = []
+        mission_list = []
         for mission in res_list:
             name = mission["name"]
             mid = mission["id"]
-            self._mission_list.append(
+            mission_list.append(
                 Mission(mission_name=name, mission_id=mid, project=self)
             )
 
-        return self._mission_list
+        return mission_list
 
     @property
     def mission_count(self):
@@ -420,13 +396,14 @@ class Project:
         return self._project_item
 
     @property
-    def groups(self):
+    def group(self):
         """
-        The ``groups`` property returns the groups associated with the project.
+        The ``group`` property returns the group associated with the project.
 
-        :return: A list of groups
+        :return: A :class:`~arcgis.gis.Group` object representing the group associated with the project
         """
-        return self._project_item.sharing.groups.list()
+        groups = self._project_item.sharing.groups.list()
+        return groups[0]
 
     def delete(self):
         """
@@ -764,7 +741,7 @@ class Project:
         else:
             if "workspace" not in context:
                 context["workspace"] = service_name
-        context["group"] = self.groups[0].id
+        context["group"] = self.group.id
 
         mission = gis._tools.realitymapping.create_mission(
             project_item=project_item,
@@ -789,11 +766,13 @@ class Project:
         """
         Returns a Mission object with the name specified using the name parameter.
 
-        ==================                   ====================================================================
-        **Parameter**                        **Description**
-        ------------------                   --------------------------------------------------------------------
-        name                                 Required string. The name of the Mission.
-        ==================                   ====================================================================
+        ==================      ====================================================================
+        **Parameter**           **Description**
+        ------------------      --------------------------------------------------------------------
+        name                    Required string. The name of the Mission.
+
+                                The name of the mission is case sensitive.
+        ==================      ====================================================================
 
         :return: The imagery layer url
 
@@ -878,7 +857,7 @@ class Project:
 
         if kwargs.get("folder", None) is None:
             kwargs["folder"] = self._folder
-        context = {"workspace": output_collection_name}
+        context = {"workspace": output_collection_name, "group": self.group.id}
 
         mission = gis._tools.realitymapping.merge_missions(
             missions=missions,

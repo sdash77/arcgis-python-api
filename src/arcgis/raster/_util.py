@@ -1,7 +1,6 @@
 from functools import wraps
 import json as _json
 
-import requests
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 
 # from arcgis.raster._layer import Raster as _Raster
@@ -2851,9 +2850,9 @@ def request_handler(func):
 
 @request_handler
 def get_request(url, headers):
-    return requests.get(url, headers=headers, verify=False)
+    return _requests.get(url, headers=headers, verify=False)
 
 
 @request_handler
 def post_request(url, payload, headers, **kwargs):
-    return requests.post(url, json=payload, headers=headers, verify=False)
+    return _requests.post(url, json=payload, headers=headers, verify=False)

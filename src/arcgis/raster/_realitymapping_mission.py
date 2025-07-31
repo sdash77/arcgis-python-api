@@ -1130,9 +1130,8 @@ class Mission:
             context["dataproduct_id"] = self._prod_to_id_map["ortho"]
 
         context["mission"] = self.mission_id
-        groups = self._project.groups
-        groups = [group.id for group in groups]
-        context["groups"] = groups
+        group = self._project.group
+        context["group"] = group.id
 
         if kwargs is not None:
             if "folder" in kwargs:
@@ -1652,9 +1651,8 @@ class Mission:
                 context = {"workspace": self.workspace}
 
         context["mission"] = self.mission_id
-        groups = self._project.groups
-        groups = [group.id for group in groups]
-        context["groups"] = groups
+        group = self._project.group
+        context["group"] = group.id
 
         products = self.products
         prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]

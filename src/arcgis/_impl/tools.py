@@ -10327,7 +10327,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             create_params=create_parameters,
             service_type="imageService",
             folder=folder,
-            item_properties={"title": title if title is not None else output_name},
+            item_properties={"title": title},
         )
         if output_service is None:
             raise RuntimeError("Unable to create service")
@@ -12036,14 +12036,26 @@ class _RasterAnalysisTools(BaseAnalytics):
         gis = self._gis
 
         image_collection = self._set_image_collection_param(image_collection)
-        gpjob = self._tbx.delete_image(
-            image_collection=image_collection,
-            where=where,
-            context=context,
-            gis=self._gis,
-            future=True,
-            estimate=estimate,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if current_version is not None and current_version >= 12.0:
+                gpjob = self._tbx.delete_image(
+                    image_collection=image_collection,
+                    where=where,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
+            else:
+                gpjob = self._tbx.delete_image(
+                    image_collection=image_collection,
+                    where=where,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
+
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
