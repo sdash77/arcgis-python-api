@@ -637,9 +637,19 @@ class _ImportPackage:
             )
             new_item = job.result()
             if new_item.url:
-                new_item.update(
-                    {"url": new_item.url.replace(item_id, new_item.id)}
-                )
+                if props["type"] == "Web Experience":
+                    if self.gis._portal.is_arcgisonline:
+                        url = f"https://experience.arcgis.com/experience/{new_item.id}"
+                    else:
+                        url = f"{self.gis._portal.url}/apps/experiencebuilder/experience/?id={new_item.id}"
+                    new_item.update({"url": url})
+
+                elif props["type"] == "StoryMap":
+                    if self.gis._portal.is_arcgisonline:
+                        url = f"https://storymaps.arcgis.com/stories/{new_item.id}"
+                    else:
+                        url = f"{self.gis._portal.url}/apps/storymaps/stories/{new_item.id}"
+                    new_item.update({"url": url})
 
         else:
             # if not a covered type, then skip
