@@ -9763,7 +9763,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         """
         gis = self._gis
         item_id = {}
-        if isinstance(project, arcgis.raster._realitymapping.Project):
+        if isinstance(project, arcgis.raster.realitymapping.Project):
             item_id = {"itemId": project._project_item.itemid}
         if isinstance(project, arcgis.gis.Item):
             item_id = {"itemId": project.itemid}
