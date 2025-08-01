@@ -14172,7 +14172,8 @@ class RFT:
                                     from .utility import _generate_layer_token
 
                                     token = _generate_layer_token(v, url)
-                                    url = f"{url}?token={token}"
+                                    if token is not None:
+                                        url = f"{url}?token={token}"
                                 raster = _raster_input_rft(v)
                                 v = _input_rft(raster)
                                 if key == "RasterCollection":
@@ -14189,6 +14190,19 @@ class RFT:
                                     else:
                                         input_dict.update({key: v})
                                 break
+
+                            elif key == "QueryGeometry" and isinstance(v, Geometry):
+                                from .utility import (
+                                    _to_process_raster_collection_geometry,
+                                )
+
+                                try:
+                                    new_v = _to_process_raster_collection_geometry(v)
+                                    v = new_v
+                                except Exception as e:
+                                    print(f"Error processing geometry: {e}")
+                                value["value"] = v
+
                             else:
                                 if "value" in value:
                                     if isinstance(value["value"], dict):
