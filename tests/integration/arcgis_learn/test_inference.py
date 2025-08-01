@@ -191,55 +191,57 @@ def classification3d_params():
 
 def mlModel_params():
     parameter = []
-    for model_category in data_inferencing["mlModel"]["model_categories"]:
-        if model_category == "classification":
-            parameter.append(
-                (
-                    data_inferencing["mlModel"]["name"] + "_" + model_category,
-                    data_inferencing["mlModel"]["input_path"],
-                    data_inferencing["mlModel"]["model_path_classification"],
-                    model_category,
-                    data_inferencing["mlModel"]["owner"]
+    if data_inferencing["mlModel"]["should_test"]:
+        for model_category in data_inferencing["mlModel"]["model_categories"]:
+            if model_category == "classification":
+                parameter.append(
+                    (
+                        data_inferencing["mlModel"]["name"] + "_" + model_category,
+                        data_inferencing["mlModel"]["input_path"],
+                        data_inferencing["mlModel"]["model_path_classification"],
+                        model_category,
+                        data_inferencing["mlModel"]["owner"]
+                    )
                 )
-            )
-        else:
-            parameter.append(
-                (
-                    data_inferencing["mlModel"]["name"] + "_" + model_category,
-                    data_inferencing["mlModel"]["input_path"],
-                    data_inferencing["mlModel"]["model_path_regression"],
-                    model_category,
-                    data_inferencing["mlModel"]["owner"]
+            else:
+                parameter.append(
+                    (
+                        data_inferencing["mlModel"]["name"] + "_" + model_category,
+                        data_inferencing["mlModel"]["input_path"],
+                        data_inferencing["mlModel"]["model_path_regression"],
+                        model_category,
+                        data_inferencing["mlModel"]["owner"]
+                    )
                 )
-            )
     return parameter
 
 
 def fcn_params():
     parameter = []
-    for model_category in data_inferencing["fcn"]["model_categories"]:
-        if model_category == "classification":
-            parameter.append(
-                (
-                    data_inferencing["fcn"]["name"] + "_" + model_category,
-                    data_inferencing["fcn"]["training_item_id"],
-                    data_inferencing["fcn"]["validation_item_id"],
-                    data_inferencing["fcn"]["model_path_classification"],
-                    model_category,
-                    data_inferencing["fcn"]["owner"]
+    if data_inferencing["fcn"]["should_test"]:
+        for model_category in data_inferencing["fcn"]["model_categories"]:
+            if model_category == "classification":
+                parameter.append(
+                    (
+                        data_inferencing["fcn"]["name"] + "_" + model_category,
+                        data_inferencing["fcn"]["training_item_id"],
+                        data_inferencing["fcn"]["validation_item_id"],
+                        data_inferencing["fcn"]["model_path_classification"],
+                        model_category,
+                        data_inferencing["fcn"]["owner"]
+                    )
                 )
-            )
-        else:
-            parameter.append(
-                (
-                    data_inferencing["fcn"]["name"] + "_" + model_category,
-                    data_inferencing["fcn"]["training_item_id"],
-                    data_inferencing["fcn"]["validation_item_id"],
-                    data_inferencing["fcn"]["model_path_regression"],
-                    model_category,
-                    data_inferencing["fcn"]["owner"]
+            else:
+                parameter.append(
+                    (
+                        data_inferencing["fcn"]["name"] + "_" + model_category,
+                        data_inferencing["fcn"]["training_item_id"],
+                        data_inferencing["fcn"]["validation_item_id"],
+                        data_inferencing["fcn"]["model_path_regression"],
+                        model_category,
+                        data_inferencing["fcn"]["owner"]
+                    )
                 )
-            )
     return parameter
 
 
@@ -253,6 +255,53 @@ def autodl_params():
                     val["input_path"],
                     val["model_path"],
                     val["network_name"],
+                    val["owner"],
+                )
+            )
+    return parameter
+
+
+def objectClassification_params_rgb():
+    parameter = []
+    for key, val in data_inferencing.items():
+        if (
+            val["should_test"]
+            and val["inference_function"] == "ClassifyObjectsUsingDeepLearning"
+        ):
+            parameter.append(
+                (
+                    key,
+                    val["input_path_rgb"],
+                    val["model_path_rgb"],
+                    os.path.join(
+                        output_gdb_folder, output_gdb, val["output_filename_rgb"]
+                    ),
+                    val["model_args"],
+                    val["input_features_rgb"],
+                    val["owner"],
+                )
+            )
+    return parameter
+
+
+def objectClassification_params_ms():
+    parameter = []
+    for key, val in data_inferencing.items():
+        if (
+            val["should_test"]
+            and val["inference_function"] == "ClassifyObjectsUsingDeepLearning"
+            and val["input_path_ms"] != False
+        ):
+            parameter.append(
+                (
+                    key+"_ms",
+                    val["input_path_ms"],
+                    val["model_path_ms"],
+                    os.path.join(
+                        output_gdb_folder, output_gdb, val["output_filename_ms"]
+                    ),
+                    val["model_args"],
+                    val["input_features_ms"],
                     val["owner"],
                 )
             )
@@ -380,6 +429,26 @@ def classification3dInferencing(name, input_path, model, batch_size, owner):
             reference_height=None,
             excluded_class_codes=[],
             batch_size=batch_size,
+        )
+    except Exception as e:
+        record_failure(name, owner)
+        raise e
+    
+
+def objectClassificationInferencing(
+    name, input_image_path, model, output_file_path, model_args, input_feature, owner
+):
+    print("Running Inferencing for:", name)
+    try:
+        arcpy.ia.ClassifyObjectsUsingDeepLearning(
+            in_raster=input_image_path,
+            out_feature_class=output_file_path,
+            in_model_definition=model,
+            in_features=input_feature,
+            class_label_field="ClassLabel",
+            processing_mode="PROCESS_AS_MOSAICKED_IMAGE",
+            model_arguments=model_args,
+            caption_field="Caption"
         )
     except Exception as e:
         record_failure(name, owner)
@@ -731,6 +800,25 @@ class TestInferencing(unittest.TestCase):
             shutil.rmtree(model)
         AutoDL_tests(name, input_path, model, network_name, owner)
 
+    
+    @parameterized.expand(objectClassification_params_rgb, skip_on_empty=True)
+    def test_objectClassification(
+        self, name, input_image_path, model, output_file_path, model_args, input_feature, owner
+    ):
+        objectClassificationInferencing(
+            name, input_image_path, model, output_file_path, model_args, input_feature, owner
+        )
+
+
+    @parameterized.expand(objectClassification_params_ms, skip_on_empty=True)
+    def test_objectClassification_ms(
+        self, name, input_image_path, model, output_file_path, model_args, input_feature, owner
+    ):
+        objectClassificationInferencing(
+            name, input_image_path, model, output_file_path, model_args, input_feature, owner
+        )
+
+    
     @classmethod
     def tearDownClass(cls):
         print("Test cases completed successfully")
@@ -740,7 +828,7 @@ class TestInferencing(unittest.TestCase):
                     f.write(line + "\n")
             else:
                 f.write(
-                    "Jenkins notebook test job failed: Configuration error – Suraj Baloni, Sanoj Dimri."
+                    "Jenkins notebook test job failed: Configuration error – Suraj Baloni, Sanoj Prasad."
                 )
         with open(CC_FILE, "w", encoding="utf-8") as f:
             f.write(", ".join(CC_EMAILS))
