@@ -2,11 +2,12 @@ import os
 import io
 import uuid
 import unittest
-from arcgis.gis import Item
+from arcgis.gis import Item, ItemProperties, ItemTypeEnum
 from arcgis.gis._impl._content_manager import Folder, Folders
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
 from integration.config import get_resource_path, get_web_resource_path
+from config import INTEGRATION_TEST_ITEM_TAG
 from utils.data_utils import cleanup_published_items
 import pandas as pd
 from arcgis.gis._impl._content_manager.folder import FolderException
@@ -1053,12 +1054,12 @@ class TestFolderAddContent(unittest.TestCase):
         df = pd.read_csv(URL)
         df.to_csv(buffer)
         item_passengers = self.root_folder.add(
-            item_properties={
-                "type": "CSV",
-                "title": f"Airline Passenger IO Data {uuid.uuid4().hex[:4]}",
-                "fileName": f"airline_{uuid.uuid4().hex[:5]}.csv",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"Airline Passenger IO Data {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.CSV,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+                file_name=f"airline_{uuid.uuid4().hex[:5]}.csv"
+            ),
             file=buffer,
         ).result()
         assert isinstance(item_passengers, Item)
@@ -1067,25 +1068,24 @@ class TestFolderAddContent(unittest.TestCase):
 
     def test_add_service_url(self):
         item = self.root_folder.add(
-            item_properties={
-                "title": f"url map service {uuid.uuid4().hex[:4]}",
-                "type": "Map Service",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"url map service {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.MAP_SERVICE,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            ),
             url="https://sampleserver5.arcgisonline.com/arcgis/rest/services/AGP/USA/MapServer",
-        )
-        item = item.result()
+        ).result()
         assert isinstance(item, Item)
         assert item.type == "Map Service"
         self.items.append(item)
 
     def test_add_data_url(self):
         item = self.root_folder.add(
-            item_properties={
-                "title": f"data url shapefile {uuid.uuid4().hex[:4]}",
-                "type": "Shapefile",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"data url shapefile {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.SHAPEFILE,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            ),
             data_url="https://www2.census.gov/geo/tiger/TIGER2022/ROADS/tl_2022_01001_roads.zip",
         )
         item = item.result()
@@ -1095,11 +1095,11 @@ class TestFolderAddContent(unittest.TestCase):
 
     def test_add_text(self):
         item = self.root_folder.add(
-            item_properties={
-                "title": f"text webmap {uuid.uuid4().hex[:4]}",
-                "type": "Web Map",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"text webmap {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.WEB_MAP,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            ),
             text=TEXT_DATA,
         )
         item = item.result()
@@ -1110,11 +1110,11 @@ class TestFolderAddContent(unittest.TestCase):
     def test_add_small_file_root(self):
         """adds a small item on the root"""
         item = self.root_folder.add(
-            item_properties={
-                "title": f"root small file {uuid.uuid4().hex[:4]}",
-                "type": "Shapefile",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"root small file {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.SHAPEFILE,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+        ),
             file=self.small_shp,
         )
         item = item.result()
@@ -1127,11 +1127,11 @@ class TestFolderAddContent(unittest.TestCase):
         unique_folder_name = f"folder_{uuid.uuid4().hex[:4]}"
         folder = self.folder_mgr.create(unique_folder_name)
         item = folder.add(
-            item_properties={
-                "title": f"folder small file {uuid.uuid4().hex[:4]}",
-                "type": "Shapefile",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"folder small file {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.SHAPEFILE,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            ),
             file=self.small_shp,
         )
         item = item.result()
@@ -1142,11 +1142,11 @@ class TestFolderAddContent(unittest.TestCase):
         """adds a small item inside root through owner"""
         owner_root_folder = self.folder_mgr.get(owner=self.owner)
         item = owner_root_folder.add(
-            item_properties={
-                "title": f"owner root small file {uuid.uuid4().hex[:4]}",
-                "type": "Shapefile",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"owner root small file {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.SHAPEFILE,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            ),
             file=self.small_shp,
         )
         item = item.result()
@@ -1159,11 +1159,11 @@ class TestFolderAddContent(unittest.TestCase):
         owner = [user for user in self.gis.users.search("*")][0]
         owner_folder = self.folder_mgr.create(unique_folder_name, owner=self.owner)
         item = owner_folder.add(
-            item_properties={
-                "title": f"owner small file {uuid.uuid4().hex[:4]}",
-                "type": "Shapefile",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"owner small file {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.SHAPEFILE,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            ),
             file=self.small_shp,
         )
         item = item.result()
@@ -1175,11 +1175,11 @@ class TestFolderAddContent(unittest.TestCase):
         unique_folder_name: str = f"folder_{uuid.uuid4().hex[:4]}"
         folder = self.folder_mgr.create(unique_folder_name)
         item = folder.add(
-            item_properties={
-                "title": f"sd data {uuid.uuid4().hex[:4]}",
-                "type": "Service Definition",
-                "tags": "integration_testing",
-            },
+            item_properties=ItemProperties(
+                title=f"sd data {uuid.uuid4().hex[:4]}",
+                item_type=ItemTypeEnum.SERVICE_DEFINITION,
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            ),
             file=self.large_sd,
         )
         item = item.result()
