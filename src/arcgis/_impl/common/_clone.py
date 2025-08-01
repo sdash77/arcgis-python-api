@@ -3054,7 +3054,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
                 name = re.sub(r"\W+", "_", name)
-                name = self._get_unique_name(self.target, name)
+                if not self.target.content.is_service_name_available(name, "featureService"):
+                    name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
                 if self.folder:
                     folder = self.target.content.folders.get(
