@@ -1464,10 +1464,10 @@ def geocode_from_items(
     input_data                required Item, string, Layer. Data to geocode.
     ---------------------     ----------------------------------------------------------------
     output_type               optional string.  Export item types.  Allowed values are "CSV",
-                              "XLS", or "FeatureLayer".
+                              "XLS", or "Feature Layer".
 
                               .. note::
-                                The default for ``output_type`` is "FeatureLayer".
+                                The default for ``output_type`` is "Feature Layer".
     ---------------------     ----------------------------------------------------------------
     geocode_service_url       optional string of Geocoder. Optional
                               :class:`~arcgis.geocoding.Geocoder` to use to
