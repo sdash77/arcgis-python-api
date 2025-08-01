@@ -1277,11 +1277,13 @@ class Mission:
         gis = arcgis.env.active_gis if gis is None else gis
 
         image_collection = self.image_collection
+        context = {"mission": self.mission_id}
 
         return gis._tools.realitymapping.generate_report(
             image_collection=image_collection,
             report_format=report_format,
             future=future,
+            context=context,
             **kwargs,
         )
 
