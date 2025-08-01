@@ -3,6 +3,7 @@ New Geometries Classes
 """
 
 from __future__ import annotations
+from abc import abstractmethod
 from arcgis.auth.tools import LazyLoader
 import copy
 import json
@@ -1587,18 +1588,16 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
             A boolean indicating yes (True), or no (False)
         """
-        if HAS_ARCPY and isinstance(self, Envelope):
-            return False
-        elif HAS_ARCPY:
+        if HAS_ARCPY:
+            if isinstance(self, Envelope):
+                return False
             return getattr(self.as_arcpy, "isMultipart", None)
 
-        geojson = self.__geo_interface__
-        if "type" not in geojson:
-            return False
-        if geojson["type"].lower().find("multi") > -1:
-            return True
-        else:
-            return False
+        return self._is_multipart_fallback()
+
+    @abstractmethod
+    def _is_multipart_fallback(self):
+        pass
 
     # ----------------------------------------------------------------------
     @property
@@ -3351,6 +3350,9 @@ class MultiPoint(Geometry):
 
         return cls({"points": [p for p in coordinates], "spatialReference": sr})
 
+    def _is_multipart_fallback(self):
+        return True if len(self["points"]) > 1 else False
+
 
 ########################################################################
 class Point(Geometry):
@@ -3476,6 +3478,9 @@ class Point(Geometry):
         if "z" in self:
             gj["coordinates"].append(self["z"])
         return gj
+
+    def _is_multipart_fallback(self):
+        return False
 
 
 ########################################################################
@@ -3665,6 +3670,15 @@ class Polygon(Geometry):
 
         return convertRingsToGeoJSONUnchecked(self["rings"])
 
+    def _is_multipart_fallback(self):
+        from arcgis._impl.common._arcgis2geojson import ringIsClockwise
+
+        num_exterior = 0
+        for ring in self["rings"]:
+            if ringIsClockwise(ring):
+                num_exterior += 1
+        return num_exterior > 1
+
 
 ########################################################################
 class Polyline(Geometry):
@@ -3836,6 +3850,9 @@ class Polyline(Geometry):
                 "spatialReference": sr,
             }
         )
+
+    def _is_multipart_fallback(self):
+        return True if len(self["paths"]) > 1 else False
 
 
 ########################################################################
@@ -4031,6 +4048,9 @@ class Envelope(Geometry):
     def __getstate__(self):
         """pickle support"""
         return dict(self)
+
+    def _is_multipart_fallback(self):
+        return False
 
 
 ########################################################################
