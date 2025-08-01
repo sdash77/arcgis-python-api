@@ -1568,10 +1568,19 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
     @property
     def is_multipart(self):
         """
-        The ``is_multipart`` method determines if the number of parts for this geometry is more than one.
+        Return ``True`` when this geometry has more than one part.
+
+        **Rules**
+
+        * **Point** - always ``False``
+        * **Multipoint** - ``True`` if it contains more than one point
+        * **Polyline** - ``True`` if it contains more than one path
+        * **Polygon** - ``True`` if it contains more than one **exterior** ring.
+        It relies on the orientation of the rings to determine if it is exterior or interior.
+        * **Envelope** - always ``False``
 
         .. note::
-            The ``is_multipart`` method requires ArcPy or Shapely
+            The ``is_multipart`` method requires ArcPy or it will fall back to a Python implementation.
 
         .. code-block:: python
 
@@ -1587,6 +1596,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return:
             A boolean indicating yes (True), or no (False)
+        :rtype:
+            bool
         """
         if HAS_ARCPY:
             if isinstance(self, Envelope):
