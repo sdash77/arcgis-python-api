@@ -25,6 +25,10 @@ from utils.data_utils import (
 
 from arcgis.gis import GIS, ItemTypeEnum
 
+def setUpModule():
+    import warnings
+    warnings.filterwarnings("ignore")
+
 @profiles.admin_all
 @integration_test
 class Test_Item_overwrite_publish_source_item(unittest.TestCase):
@@ -41,35 +45,7 @@ class Test_Item_overwrite_publish_source_item(unittest.TestCase):
         and shapefile item respectively and test each for overwrite after updating
         source item.
         """
-
-        # Enteprise 11.5
-        #cls.gis = GIS(
-            #url="https://rextapilnx02eb.esri.com/portal",
-            #username="PAPIadmin",
-            #password="PAPIletmein01"
-        #)
-        # Enterprise 12.0 - bld 58615
-        #cls.gis = GIS(
-            #url="https://rqawinbi01pt.ags.esri.com/gis",
-            #username="PAPIadmin",
-            #password="PAPIletmein01"
-        #)        
-        
-        # Kubernetes 11.5
-        #cls.gis = GIS(
-            #url="https://1150pubbi-1150pubbi.apps.openshift416release.esri.com/web",
-            #username="PAPIadmin",
-            #password="PAPIletmein01"            
-        #)
-        # Kubernetes 12.0
-        #cls.gis = GIS(
-            #url="https://devet00110.esri.com/arcgis",
-            #username="administrator",
-            #password="esri.agp1"
-        #)
-        print(f"\n{'=' * 80}\n")
-        print(f"{' ' * 5}begin setUpClass method...")
-        cls.start_time = time.time()
+        print("\n======= begin setUpClass ====================================\n")
         
         cls.item_test_overwrite_folder = cls.gis.content.folders._get_or_create(
             "aa_item_overwrite_ntgrtn_tests"
@@ -189,9 +165,6 @@ class Test_Item_overwrite_publish_source_item(unittest.TestCase):
             )
             cls.source_sd_item = cls.sd_flyr_item.related_items("Service2Data", "forward")[0]
         
-        print(f"\n{' ' * 5}...start publish of shapefile...")
-        cls.shp_start = time.time()
-        
         # add a shapefile item and publish feature layer from it
         cls.shp_source_file = get_resource_path(
             relative_path = "staging_data/item_class_test_data/set1_Item_overwrite_HFS_shp.zip",
@@ -206,16 +179,13 @@ class Test_Item_overwrite_publish_source_item(unittest.TestCase):
             folder=cls.item_test_overwrite_folder,
         )
         cls.shp_source_item = cls.shp_flyr_item.related_items("Service2Data", "forward")[0]        
-        cls.shp_elapsed = time.time() - cls.shp_start
-        print(f"{' ' * 8}...completed shapefile publishing in {cls.shp_elapsed / 60:.2} minutes\n")
         
-        print(f"{' ' * 5}completed setUpClass in {(time.time() - cls.start_time) /60:.2f} minutes...")
-        print("==================================================================")
+        print("\n======= begin setUpClass ====================================\n")
         print("Beginning tests in Test_Item_agol class\n")
 
     @classmethod
     def tearDownClass(cls):
-        print("\n==================================================================")
+        print("\n================ begin tearDownClass ========================\n")
         test_items = list(cls.item_test_overwrite_folder.list())
         if test_items:
             cleanup_published_items(test_items)
@@ -225,6 +195,7 @@ class Test_Item_overwrite_publish_source_item(unittest.TestCase):
             gis=cls.gis,
             folder_names=[cls.item_test_overwrite_folder.name]
         )
+        print("\n================ end tearDownClass ==========================\n")
         
     def setUp(self):
         print(f"\n{'-' * 40}\nTest: starting {self._testMethodName}...")

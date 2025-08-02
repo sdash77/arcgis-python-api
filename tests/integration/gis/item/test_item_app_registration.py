@@ -19,37 +19,16 @@ from utils.data_utils import (
 
 from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 
+def setUpModule():
+    import warnings
+    warnings.filterwarnings("ignore")
+
 @profiles.admin_all
 @integration_test
 class Test_Item_app_registration(unittest.TestCase):  
     @classmethod
     def setUpClass(cls):
-        
-        # Enteprise 11.5
-        cls.gis = GIS(
-            url="https://rextapilnx02eb.esri.com/portal",
-            username="PAPIadmin",
-            password="PAPIletmein01"
-        )
-        # Enterprise 12.0 - bld 58615
-        #cls.gis = GIS(
-            #url="https://rqawinbi01pt.ags.esri.com/gis",
-            #username="PAPIadmin",
-            #password="PAPIletmein01"
-        #)        
-        
-        # Kubernetes 11.5
-        #cls.gis = GIS(
-            #url="https://1150pubbi-1150pubbi.apps.openshift416release.esri.com/web",
-            #username="PAPIadmin",
-            #password="PAPIletmein01"            
-        #)
-        # Kubernetes 12.0
-        #cls.gis = GIS(
-            #url="https://devet00110.esri.com/arcgis",
-            #username="administrator",
-            #password="esri.agp1"
-        #)
+        print("\n======= begin setUpClass ====================================\n")
         
         cls.item_test_app_register_folder = cls.gis.content.folders._get_or_create(
            "item_app_register_ntgrtn_tests"
@@ -64,9 +43,11 @@ class Test_Item_app_registration(unittest.TestCase):
             )
         ).result()
         
+        print("\n======= end setUpClass ======================================\n")
+        
     @classmethod
     def tearDownClass(cls):
-        print("\n==================================================================")
+        print("\n======= begin tearDownClass =================================\n")
         test_items = list(cls.item_test_app_register_folder.list())
         if test_items:
             cleanup_published_items(test_items)
@@ -76,6 +57,7 @@ class Test_Item_app_registration(unittest.TestCase):
             gis=cls.gis,
             folder_names=[cls.item_test_app_register_folder.name]
         )
+        print("\n======= end tearDownClass ===================================\n")
         
     def setUp(self):
         print(f"\n{'-' * 40}\nTest: starting {self._testMethodName}...")
@@ -138,3 +120,6 @@ class Test_Item_app_registration(unittest.TestCase):
             0,
             "After unregistering an app the app_info property still returns dict with content."
         )
+        
+if __name__ == "__main__":
+    unittest.main()

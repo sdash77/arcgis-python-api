@@ -22,7 +22,11 @@ from arcgis.gis import GIS, ItemProperties, ItemTypeEnum, Item
 from arcgis.features import FeatureLayer
 from arcgis.layers import VectorTileLayer, Object3DLayer
 
-@profiles.admin_all
+def setUpModule():
+    import warnings
+    warnings.filterwarnings("ignore")
+    
+@profiles.admin_agol
 @integration_test
 class Test_Item_publish_file_types(unittest.TestCase):  
     @classmethod
@@ -30,45 +34,15 @@ class Test_Item_publish_file_types(unittest.TestCase):
         """
         Test for publishing different file types to deployment.
         """
-        # Enterprise 11.5
-        #cls.gis = GIS(
-            #url="https://rextapilnx02eb.esri.com/portal",
-            #username="PAPIadmin",
-            #password="PAPIletmein01"
-        #)
-        # Enterprise 12.0 - bld 58615
-        #cls.gis = GIS(
-            #url="https://rqawinbi01pt.ags.esri.com/gis",
-            #username="PAPIadmin",
-            #password="PAPIletmein01"
-        #)
-        #cls.gis = GIS(
-            #url="https://dev0016752.esri.com/portal",
-            #username="admin",
-            #password="esri.agp"
-        #)
-        
-        # Kubernetes 11.5
-        #cls.gis = GIS(
-            #url="https://1150pubbi-1150pubbi.apps.openshift416release.esri.com/web",
-            #username="PAPIadmin",
-            #password="PAPIletmein01"            
-        #)
-        # Kubernetes 12.0
-        cls.gis = GIS(
-            url="https://devet00110.esri.com/arcgis",
-            username="administrator",
-            password="esri.agp1"
-        )
-        
+    
         # Get or create a folder to store items created during test run
         cls.item_test_publish_folder = cls.gis.content.folders._get_or_create(
-           "aa_item_publish_ntgrtn_tests"
+           "item_publish_ntgrtn_tests"
        )    
     
     @classmethod
     def tearDownClass(cls):
-        print("\n========================= Class tearDown ====================")
+        print("\n=============== begin tearDownClass =========================\n")
         test_items = list(cls.item_test_publish_folder.list())
         if test_items:
             cleanup_published_items(test_items)
@@ -78,10 +52,10 @@ class Test_Item_publish_file_types(unittest.TestCase):
             gis=cls.gis,
             folder_names=[cls.item_test_publish_folder.name]
         )
+        print("\n=============== end tearDownClass ===========================\n")
         
     def setUp(self):
         print(f"\n{'-' * 40}\nTest: starting {self._testMethodName}...")
-        print(f"{' ' * 2}ID: {self.id()}")
         self._start_time = time.time()
         
     def tearDown(self):

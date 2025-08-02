@@ -23,13 +23,18 @@ from utils.data_utils import (
     cleanup_folders
 )
 
-from arcgis.gis import ItemProperties, ItemTypeEnum
+from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 
+def setUpModule():
+    import warnings
+    warnings.filterwarnings("ignore")
+    
 @profiles.admin_all
 @integration_test
 class Test_Item_get_data_outputs(unittest.TestCase):  
     @classmethod
     def setUpClass(cls):
+        print("\n======= begin setUpClass ====================================\n")
         
         cls.item_test_get_data_folder = cls.gis.content.folders._get_or_create(
            "item_get_data_ntgrtn_tests"
@@ -96,10 +101,11 @@ class Test_Item_get_data_outputs(unittest.TestCase):
             source_data_path=cls.word_file_path,
             folder=cls.item_test_get_data_folder
         )
+        print("\n======= end setUpClass ======================================\n")
         
     @classmethod
     def tearDownClass(cls):
-        print("\n==================================================================")
+        print("\n============= begin tearDownClass ===========================\n")
         test_items = list(cls.item_test_get_data_folder.list())
         if test_items:
             cleanup_published_items(test_items)
@@ -108,7 +114,8 @@ class Test_Item_get_data_outputs(unittest.TestCase):
         cleanup_folders(
             gis=cls.gis,
             folder_names=[cls.item_test_get_data_folder.name]
-        )         
+        )
+        print("\n============= end tearDownClass =============================\n")
     
     def setUp(self):
         print(f"\n{'-' * 40}\nTest: starting {self._testMethodName}...")
