@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Name:        Test for the output of the download method of the Item class. 
+# Name:        Test for the output of the download method of the Item class.
 #              Multiple item types, including empty items, are tested for the
 #              location and format of outputs varying the use of the save_path
 #              argument.
@@ -11,37 +11,37 @@ import time
 import tempfile
 from pathlib import Path
 
-from integration.config import (
-    get_resource_path,
-    INTEGRATION_TEST_ITEM_TAG
-)
+from integration.config import get_resource_path, INTEGRATION_TEST_ITEM_TAG
 from utils.decorators import integration_test, profiles
 from utils.data_utils import (
     add_source_item,
     publish_test_item,
     cleanup_published_items,
-    cleanup_folders
+    cleanup_folders,
 )
 
 from arcgis.gis import GIS, ItemTypeEnum
 
+
 def setUpModule():
     import warnings
+
     warnings.filterwarnings("ignore")
-    
+
+
 @profiles.admin_all
 @integration_test
-class Test_Item_download_outputs(unittest.TestCase):  
+class Test_Item_download_outputs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        print("\n======= begin setUpClass ====================================\n")      
-        
+        print("\n======= begin setUpClass ====================================\n")
+
         cls.item_test_download_folder = cls.gis.content.folders._get_or_create(
-           "item_download_ntgrtn_tests"
+            "item_download_ntgrtn_tests"
         )
-        
-        # add csv item and publish point feature layer from it, then create 
-        # a map object, add layer to it and save as new web map item for testing 
+
+        # add csv item and publish point feature layer from it, then create
+        # a map object, add layer to it and save as new web map item for testing
         cls.chicago_source_data = get_resource_path(
             relative_path="staging_data/item_class_test_data/Chicago_points.csv",
             verify=True,
@@ -66,7 +66,7 @@ class Test_Item_download_outputs(unittest.TestCase):
             },
             folder=cls.item_test_download_folder.name,
         )
-        
+
         cls.mmpk_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/set1_mmpk_usa.mmpk",
             verify=True,
@@ -79,9 +79,9 @@ class Test_Item_download_outputs(unittest.TestCase):
             item_type=ItemTypeEnum.MOBILE_MAP_PACKAGE,
             source_data_path=cls.mmpk_file,
             folder=cls.item_test_download_folder,
-        )        
+        )
         print("\n======= end setUpClass ==========================================\n")
-    
+
     @classmethod
     def tearDownClass(cls):
         print("\n=========== begin tearDownClass =============================\n")
@@ -90,20 +90,17 @@ class Test_Item_download_outputs(unittest.TestCase):
             cleanup_published_items(test_items)
         else:
             print(f"Test items already cleared from test folder.")
-        cleanup_folders(
-            gis=cls.gis,
-            folder_names=[cls.item_test_download_folder.name]
-        )
+        cleanup_folders(gis=cls.gis, folder_names=[cls.item_test_download_folder.name])
         print("\n=========== end tearDownClass ===============================\n")
-        
+
     def setUp(self):
         print(f"\n{'-' * 40}\nTest: starting {self._testMethodName}...")
         self._start_time = time.time()
-        
+
     def tearDown(self):
         elapsed_time = time.time() - self._start_time
-        print(f"{' ' * 4}...test took {elapsed_time / 60:.2f} minutes.\n")    
-      
+        print(f"{' ' * 4}...test took {elapsed_time / 60:.2f} minutes.\n")
+
     def test_download_method_empty_data_outpath(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
@@ -111,20 +108,18 @@ class Test_Item_download_outputs(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             chicago_data = self.chicago_wfl_item.download(save_path=temp_dir)
             chicago_data_size = Path(chicago_data).stat().st_size
-    
+
         self.assertIsNotNone(
             chicago_data,
             "Calling download() on feature layer item with empty data resource throws error",
         )
         self.assertEqual(
-            chicago_data_size,
-            0,
-            "File size of feature layer download is > 0"
+            chicago_data_size, 0, "File size of feature layer download is > 0"
         )
         self.assertEqual(
             temp_dir,
             str(Path(chicago_data).parent),
-            "Downloaded file not in tempory directory path as expected."
+            "Downloaded file not in tempory directory path as expected.",
         )
 
     def test_download_method_empty_data_nopath(self):
@@ -139,23 +134,21 @@ class Test_Item_download_outputs(unittest.TestCase):
             chicago_data,
             "Calling download() on feature layer item with empty data resource throws error",
         )
-        self.assertEqual(
-            chicago_data_size,
-            0,
-            "File size of empty item is > 0"
-        )
+        self.assertEqual(chicago_data_size, 0, "File size of empty item is > 0")
         self.assertEqual(
             Path(temp_dir).parent,
             Path(chicago_data).parent,
-            "Download location with no path argument is not temporary directory path."
+            "Download location with no path argument is not temporary directory path.",
         )
 
     def test_download_method_txt_data_nopath(self):
         """
         When no path is provided, Item.download() downloads to sys temp dir
         """
-        chicago_csv_item = self.chicago_wfl_item.related_items("Service2Data", "forward")[0]
-        
+        chicago_csv_item = self.chicago_wfl_item.related_items(
+            "Service2Data", "forward"
+        )[0]
+
         with tempfile.TemporaryDirectory() as temp_dir:
             chicago_data = chicago_csv_item.download()
             chicago_data_size = Path(chicago_data).stat().st_size
@@ -175,14 +168,16 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertEqual(
             Path(temp_dir).parent,
             Path(chicago_data).parent,
-            "Download of text data with no path does not return to temporary directory."
+            "Download of text data with no path does not return to temporary directory.",
         )
 
     def test_download_method_txt_data_outputpath(self):
         """
         When given a download path, ensure Item.download() downloads file into that path
-        """        
-        chicago_csv_item = self.chicago_wfl_item.related_items("Service2Data", "forward")[0]
+        """
+        chicago_csv_item = self.chicago_wfl_item.related_items(
+            "Service2Data", "forward"
+        )[0]
 
         with tempfile.TemporaryDirectory() as temp_dir:
             chicago_data = chicago_csv_item.download(save_path=temp_dir)
@@ -201,9 +196,9 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertEqual(
             str(Path(chicago_data).parent),
             str(temp_dir),
-            "Download path does not match temporary directory path."
+            "Download path does not match temporary directory path.",
         )
-        
+
         self.assertGreater(
             chicago_data_size, 0, "Downloaded file size is not greater than 0"
         )
@@ -213,9 +208,9 @@ class Test_Item_download_outputs(unittest.TestCase):
         When Item has JSON data, ensure Item.download() downloads file into that path instead
         of returning parsed dict.
         """
-        
+
         JSON_item = self.chi_webmap
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             json_file = JSON_item.download(save_path=temp_dir)
             json_file_size = Path(json_file).stat().st_size
@@ -234,20 +229,20 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertEqual(
             Path(json_file).stem,
             JSON_item.title,
-            "Web Map download file name does not match title of web map item."
+            "Web Map download file name does not match title of web map item.",
         )
         self.assertGreater(
             json_file_size, 0, "Downloaded file size is not greater than 0"
         )
-    
+
     def test_download_method_JSON_data_nopath(self):
         """
         When Item has JSON data, ensure Item.download() downloads file into that path instead
         of returning parsed dict.
         """
-        
+
         JSON_item = self.chi_webmap
-        
+
         temp_dir = tempfile.TemporaryDirectory()
         json_file = JSON_item.download()
         json_file_size = Path(json_file).stat().st_size
@@ -266,11 +261,11 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertIn(
             JSON_item.title,
             Path(json_file).stem,
-            "Web Map download file name does not match title of web map item."
+            "Web Map download file name does not match title of web map item.",
         )
         self.assertGreater(
             json_file_size, 0, "Downloaded file size is not greater than 0"
-        )    
+        )
 
     def test_download_method_binary_data_outputpath(self):
         """
@@ -295,17 +290,17 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertEqual(
             Path(map_pkg_file).suffix,
             ".mmpk",
-            "Download file extension is not mmpk as expected"
+            "Download file extension is not mmpk as expected",
         )
         self.assertIn(
             self.mmpk_item.title,
             Path(map_pkg_file).stem,
-            "Download file name does not contain title of mmpk item."
+            "Download file name does not contain title of mmpk item.",
         )
         self.assertGreater(
             map_pkg_file_size, 0, "Downloaded file size is not greater than 0"
         )
-        
+
     def test_download_method_binary_data_nopath(self):
         """
         When Item has binary data - like layer packages, ensure Item.download() downloads file
@@ -329,17 +324,17 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertEqual(
             Path(map_pkg_file).suffix,
             ".mmpk",
-            "Download file extension is not mmpk as expected"
+            "Download file extension is not mmpk as expected",
         )
         self.assertIn(
             self.mmpk_item.title,
             Path(map_pkg_file).stem,
-            "Download file name does not match title of mmpk item."
+            "Download file name does not match title of mmpk item.",
         )
         self.assertGreater(
             map_pkg_file_size, 0, "Downloaded file size is not greater than 0"
         )
-        
+
+
 if __name__ == "__main__":
     unittest.main()
-    
