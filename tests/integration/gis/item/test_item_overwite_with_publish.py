@@ -21,7 +21,7 @@ from utils.data_utils import (
     cleanup_folders,
 )
 
-from arcgis.gis import GIS, ItemTypeEnum
+from arcgis.gis import ItemTypeEnum
 
 
 def setUpModule():

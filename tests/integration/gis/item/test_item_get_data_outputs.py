@@ -20,7 +20,7 @@ from utils.data_utils import (
     cleanup_folders,
 )
 
-from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
+from arcgis.gis import ItemProperties, ItemTypeEnum
 
 
 def setUpModule():

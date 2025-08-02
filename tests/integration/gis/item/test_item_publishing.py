@@ -15,7 +15,7 @@ from integration.config import (
 from utils.decorators import integration_test, profiles
 from utils.data_utils import cleanup_published_items, cleanup_folders
 
-from arcgis.gis import GIS, ItemProperties, ItemTypeEnum, Item
+from arcgis.gis import ItemProperties, ItemTypeEnum, Item
 from arcgis.features import FeatureLayer
 from arcgis.layers import VectorTileLayer, Object3DLayer
 

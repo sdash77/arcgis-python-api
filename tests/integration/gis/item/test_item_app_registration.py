@@ -12,7 +12,7 @@ from integration.config import INTEGRATION_TEST_ITEM_TAG
 from utils.decorators import integration_test, profiles
 from utils.data_utils import cleanup_published_items, cleanup_folders
 
-from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
+from arcgis.gis import ItemProperties, ItemTypeEnum
 
 
 def setUpModule():
