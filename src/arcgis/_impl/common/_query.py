@@ -682,10 +682,10 @@ class Query:
 
     def _send_request(self, session: EsriSession, encoded_parameters: dict) -> dict:
         url_length: int = self._content_length(encoded_parameters)
-        if url_length <= 2000:
+        if url_length <= 2000 and encoded_parameters.get("geometry", None) is None:
             response = session.get(self.url, params=encoded_parameters)
         else:
-            response = session.post(self.url, params=encoded_parameters)
+            response = session.post(self.url, data=encoded_parameters)
         return response.json()
 
     def _query(self, raw=False):
