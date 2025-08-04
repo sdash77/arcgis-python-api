@@ -5,6 +5,7 @@ datasets.
 
 """
 
+from __future__ import annotations
 from arcgis.gis import Layer
 
 """This class provides access to diagrams and schematic layers, as well as diagram templates."""

@@ -23,6 +23,7 @@ version = "0.1.0"
 "test:unit" = {cmd = "python -m nose2 -v -s tests/unit/test_arcgis/{{test_path}} --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path='{{test_path}}_unit_testreport.xml'",  depends-on = [{task = "test:config:profiles"}], args = [{arg = "test_path", default = ""}], description = "Run unit tests from specified path (e.g. pixi run test:unit test_apps) or all unit tests, if unspecified"}
 "test:smoke" = {cmd = "cd tests && python -m nose2 -v -s smoke --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path='smoke_testreport.xml'", description = "Run all smoke tests from tests/smoke"}
 "test:config:profiles" = {cmd = "python tests/integration/config_profiles.py", description = "Create profiles for tests (e.g. `GIS(profile='your_enterprise_profile')`)"}
+"test:cleanup-published-items" = {cmd = "python cleanup_published_items.py", description = "Cleanup published items based on date range", args = [{arg = "day_difference", default = "7"}, {arg = "dry_run", default = "true"}]}
 
 # tasks with names prefixed with "_" are not listed in `pixi task list`
 # and are not intended to be run directly
@@ -53,7 +54,7 @@ azure-storage-blob = "<=12.9"
 cachetools = "*"
 certifi = "*"
 cryptography = "*"
-dask = ">=2024.12.1,<2025.1.0"
+dask = ">=2024.12.1,<2025.3"
 gdal = ">=3.6.2,<4"
 geomet = "*"
 keyring = ">=23.3.0"
@@ -66,7 +67,7 @@ numpy = ">=2.2.0,<3"
 pandas = ">=2.0.0,<2.4.0"
 pillow = "*"
 puremagic = ">=1.15,<2"
-pyarrow = ">=16,<20"
+pyarrow = ">=16,<21"
 pylerc = "*"
 pyspnego = ">=0.8.0"
 pydantic = ">=2.8.2,<3"
@@ -115,6 +116,7 @@ channels = ["conda-forge"]
 # https://github.com/explosion/spaCy/issues/13658#issuecomment-2886370190
 # docs seem to build without fastai
 # fastai = {channel = "fastai"}
+fastprogress = {channel = "conda-forge"}
 pytorch = {channel = "conda-forge"}
 timm = {channel = "esri", version = "~=0.4.12"}
 torchvision = {channel = "conda-forge"}
@@ -122,6 +124,9 @@ nodejs = {channel = "conda-forge", version = "~=22.0"}
 minizip = ">=4,<5" # for zipping up docs
 
 [feature.local]
+[feature.local.dependencies]
+nodejs = "~=18.0"
+
 [feature.local.target.win-64.activation]
 scripts = ["pixi.local.bat"]
 

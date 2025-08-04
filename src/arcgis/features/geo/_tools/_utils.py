@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os, sys
 from contextlib import ExitStack, redirect_stdout, redirect_stderr, suppress
 from io import StringIO

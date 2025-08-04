@@ -1,8 +1,11 @@
-import os
+import uuid
 import time
 import unittest
 from arcgis._impl.common._isd import InsensitiveDict
+from arcgis.gis import ItemTypeEnum
+from integration.config import get_resource_path
 from utils.decorators import integration_test, profiles
+from utils.data_utils import publish_test_item, cleanup_published_items
 from arcgis.auth.tools import LazyLoader
 
 arcgismapping = LazyLoader("arcgis.map")
@@ -14,8 +17,18 @@ class TestRendererProperty(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.item = cls.gis.content.search("*", "Feature Layer", outside_org=True)[0]
-        cls.uid = int(time.time())
+        cls.uid = uuid.uuid4().hex[:4]
+        restaurants = get_resource_path(
+            "staging_data/parkinglots.zip", unique_copy=True
+        )
+        cls.item = publish_test_item(
+            cls.gis,
+            f"fl_renderer_{cls.uid}",
+            restaurants,
+            ItemTypeEnum.SHAPEFILE,
+            prep_for_editing=True,
+        )
+        cls.layers = cls.item.layers
 
     def test_get_renderer(self):
         lyr = self.item.layers[0]
@@ -37,18 +50,29 @@ class TestRendererProperty(unittest.TestCase):
     def test_plot_mapview(self):
         lyr = self.item.layers[0]
         wm = arcgismapping.Map()
-        lyr.renderer.symbol.color = [0, 255, 0, 100]
+        self.assertIsNotNone(wm, "Map is None")
+        rrr = lyr.renderer
+        rrr.symbol.color = [0, 255, 0, 100]
         wm.content.add(lyr, {"title": f"fl_renderer_{self.uid}", "tags": "ntgrtn-tst"})
         assert list(wm.content.layers[0].renderer.symbol.color) == [0, 255, 0, 100]
 
     def test_plot_webmap(self):
         lyr = self.item.layers[0]
         wm = arcgismapping.Map()
+        self.assertIsNotNone(wm, "Map is None")
         lyr.renderer.symbol.color = [255, 0, 0, 100]
         wm.content.add(lyr, {"title": f"fl_renderer_{self.uid}", "tags": "ntgrtn-tst"})
-        assert list(
-            wm.content.layers[0].layerDefinition.drawingInfo.renderer.symbol.color
-        ) == [255, 0, 0, 100]
+        wm_fl = wm.content.layers[0]
+        assert list(wm_fl.renderer.symbol.color) == [
+            255,
+            0,
+            0,
+            100,
+        ]
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items([cls.item])
 
 
 if __name__ == "__main__":

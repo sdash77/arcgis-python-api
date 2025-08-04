@@ -18,8 +18,10 @@ enable_verbose_logging()
 class TestOrientedImageryLayer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fgdb = get_resource_path("staging_data/oriented_imagery/OI_sample.gdb.zip")
-        name = f"Oriented_Imagery_test_{uuid.uuid4().hex[: 4]}"
+        fgdb = get_resource_path(
+            "staging_data/oriented_imagery/OI_sample.gdb.zip", unique_copy=True
+        )
+        name = f"Oriented_Imagery_test_{uuid.uuid4().hex[:5]}"
 
         cls.published_item = publish_test_item(
             cls.gis,

@@ -8,6 +8,7 @@ Ported to Python in 2016 by Chris Shaw.
 arcgis2geojson is made available under the MIT License.
 """
 
+from __future__ import annotations
 import numbers
 
 

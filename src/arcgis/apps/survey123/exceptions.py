@@ -1,5 +1,7 @@
 """ Defines Exception subclasses for errors raised by the survey123-python-api. """
 
+from __future__ import annotations
+
 
 class SurveyError(Exception):
     """
