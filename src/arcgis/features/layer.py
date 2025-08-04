@@ -7,6 +7,7 @@ A FeatureLayerCollection is a collection of feature layers and tables, with the 
 """
 
 from __future__ import annotations
+import mimetypes
 from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
 from datetime import datetime
@@ -39,7 +40,9 @@ from arcgis.gis import Item, Layer, _GISResource
 from arcgis.geometry import Geometry, SpatialReference
 from arcgis.gis._impl._util import _get_item_url
 from arcgis._impl.common._utils import _validate_url
+import logging
 
+log = logging.getLogger()
 _arcgis = LazyLoader("arcgis")
 _uploads = LazyLoader("arcgis.features._uploads.upload")
 
@@ -587,7 +590,7 @@ class FeatureLayer(Layer):
         keywords=None,
         return_moment=False,
         version=None,
-    ):
+    ) -> dict:
         """
         Adds an attachment to a feature service
 
@@ -611,43 +614,60 @@ class FeatureLayer(Layer):
         :return: A JSON Dictionary indicating 'success' or 'error'
 
         """
-        if (
-            os.path.getsize(file_path) < 10e6
-        ):  # (os.path.getsize(file_path) >> 20) <= 9:
-            params = {
-                "f": "json",
-                "gdbVersion": version,
-                "returnEditMoment": return_moment,
-            }
-            if self._gis.version > [7, 3] and keywords:
-                params["keywords"] = keywords
-            if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
-                params["layer"] = self._dynamic_layer
-            else:
-                attach_url = self._url + "/%s/addAttachment" % oid
-            files = {"attachment": file_path}
-            res = self._con.post(path=attach_url, postdata=params, files=files)
-            return res
+        # Create params
+        params = {
+            "f": "json",
+            "gdbVersion": version,
+            "returnEditMoment": return_moment,
+        }
+        if self._gis.version > [7, 3] and keywords:
+            params["keywords"] = keywords
+
+        # Determine the URL for adding attachments
+        if self._dynamic_layer:
+            attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+            params["layer"] = self._dynamic_layer
         else:
-            params = {
-                "f": "json",
-                "gdbVersion": version,
-                "returnEditMoment": return_moment,
-            }
-            if self._gis.version > [7, 3] and keywords:
-                params["keywords"] = keywords
+            attach_url = self._url + "/%s/addAttachment" % oid
+
+        # Two options depending on file size
+        # If the file is less than 10MB, we can upload it directly
+        if (os.path.getsize(file_path) < 10e6) or (
+            not self._gis._is_agol and [2024, 1] < self._gis.version < [2025, 2]
+        ):
+            files = {}
+            v = file_path
+            buffer_reader = open(v, "rb")
+            try:
+                files["attachment"] = (
+                    os.path.basename(v),
+                    buffer_reader,
+                    mimetypes.guess_type(v)[0],
+                )
+                response = self._gis.session.post(
+                    url=attach_url, data=params, files=files
+                ).json()
+            finally:
+                buffer_reader.close()
+            return response
+        else:
             container = self.container
             itemid = container.upload(file_path)
-            if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
-                params["layer"] = self._dynamic_layer
-            else:
-                attach_url = self._url + "/%s/addAttachment" % oid
             params["uploadId"] = itemid
-            res = self._con.post(attach_url, params)
-            if res["addAttachmentResult"]["success"] == True:
-                container._delete_upload(itemid)
+            res = self._gis.session.post(attach_url, params).json()
+            if res.get("addAttachmentResult", {}).get("success") is True:
+                try:
+                    container._delete_upload(itemid)
+                except:
+                    # The server will fail with error 500 for this operation at times.
+                    # Since it is just part of the cleanup we can ignore it.
+                    log.warning(
+                        "Failed to delete upload item %s. Attachment cleanup failed due to server error."
+                        % itemid
+                    )
+                    pass
+            elif res.get("error"):
+                return res.get("error")
             return res
 
     # ----------------------------------------------------------------------
@@ -5730,7 +5750,7 @@ class FeatureLayerCollection(_GISResource):
         b_url = "%s/uploads/%s" % (self._url, item_id)
         commit_part_url = "%s/commit" % b_url
         params = {"f": "json", "parts": self._uploaded_parts(itemid=item_id)}
-        res = self._con.post(commit_part_url, params)
+        res = self._gis.session.post(commit_part_url, params).json()
         if "error" in res:
             raise Exception(res)
         else:
@@ -5738,13 +5758,13 @@ class FeatureLayerCollection(_GISResource):
 
     # ----------------------------------------------------------------------
     def _delete_upload(self, item_id):
-        """commits an upload by parts upload"""
+        """deletes an upload by parts upload"""
         b_url = "%s/uploads/%s" % (self._url, item_id)
         delete_part_url = "%s/delete" % b_url
         params = {
             "f": "json",
         }
-        res = self._con.post(delete_part_url, params)
+        res = self._gis.session.post(delete_part_url, params).json()
         if "error" in res:
             raise Exception(res)
         else:
