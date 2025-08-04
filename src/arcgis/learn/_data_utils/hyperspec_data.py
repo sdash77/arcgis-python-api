@@ -100,15 +100,16 @@ def samples_division_cv(list_dir, val_split_pct):
 
 
 class HyperspectralDataset(data.Dataset):
-    def __init__(self, list_dir, augmentation=False):
+    def __init__(self, list_dir, path, augmentation=False):
         f = open(list_dir)
         self.list_txt = f.readlines()
         self.length = len(self.list_txt)
         self.au = augmentation
+        self.path = path
 
     def __getitem__(self, index):
         sample_path = self.list_txt[index].split(" ")
-        data_path = sample_path[0]
+        data_path = os.path.join(self.path, "DATA", sample_path[0].split("\\")[-1])
         label = sample_path[1][:-1]
         if not self.au:
             data = np.load(data_path)
@@ -183,8 +184,8 @@ def create_train_val_sets(path, val_split_pct, **kwargs):
     data_list_train = save_dir / "data_list_train.txt"
     data_list_test = save_dir / "data_list_test.txt"
 
-    train_dataset = HyperspectralDataset(data_list_train, True)
-    test_dataset = HyperspectralDataset(data_list_test, False)
+    train_dataset = HyperspectralDataset(data_list_train, path, True)
+    test_dataset = HyperspectralDataset(data_list_test, path, False)
 
     images_A = get_files(images_path, extensions=image_extensions, recurse=True)
     images_B = get_files(labels_path, extensions=image_extensions, recurse=True)
@@ -300,6 +301,8 @@ def predict_on_validation(net, window_size, max_min, r, t, batch_size=64):
 
     if isinstance(t, ArcGISMSImage):
         t = t.data
+    else:
+        t = t.cpu().numpy()
 
     net.eval()
     s = window_size
@@ -310,6 +313,9 @@ def predict_on_validation(net, window_size, max_min, r, t, batch_size=64):
 
     valid_positions = np.argwhere(hst_label > 0)
     total_samples = len(valid_positions)
+
+    if total_samples == 0:
+        return np.array([]), np.array([])
 
     y_pred_test = []
     y_test = []
@@ -398,7 +404,7 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
 
     for i, (x, y) in enumerate(zip(xs, ys)):
         y_pred, y_new = predict_on_validation(
-            self.learn.model, self._data._window_size, self._data.max_min, x, y
+            self.learn.model, self._data._window_size, self._data._max_min, x, y
         )
         y_real = y.data
         cls_labels = get_classification_map(y_pred, y)

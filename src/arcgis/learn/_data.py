@@ -3023,7 +3023,7 @@ def prepare_data(
         data._estimate_batch = _estimate_batch
         return data
 
-    if dataset_type == "3DRCNet":
+    elif dataset_type == "3DRCNet":
         from ._data_utils.hyperspec_data import prepare_hyperspec_data
 
         data = prepare_hyperspec_data(

@@ -225,7 +225,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
         acc = calc_accuracy(self.learn.model, self._data)
         return {"Accuracy (OA)": "{}".format(acc)}
 
-    def miou(self):
+    def mIOU(self):
         """
         Computes mIOU on validation set.
 
@@ -233,7 +233,5 @@ class Hyperspectral3DRCNet(ArcGISModel):
         if not hasattr(self._data, "load_empty"):
             raise Exception("Dataset is required for compute metrics")
 
-        miou = compute_mIoU(
-            self.learn.model, self._data.valid_dl, self._data._num_classes
-        )
+        miou = compute_mIoU(self.learn.model, self._data, self._data._num_classes)
         return {"mIOU": "{}".format(miou)}

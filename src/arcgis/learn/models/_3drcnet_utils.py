@@ -434,7 +434,7 @@ def compute_mIoU(model, dataloader, num_classes):
     total_inter = torch.zeros(num_classes, dtype=torch.float32)
     total_union = torch.zeros(num_classes, dtype=torch.float32)
 
-    for inputs, labels in dataloader:
+    for inputs, labels in dataloader.valid_dl:
         preds = model_predict(model, inputs)
 
         preds = preds.cpu()
@@ -454,6 +454,10 @@ def compute_mIoU(model, dataloader, num_classes):
             total_union[cls] += union
 
     iou_per_class = total_inter / (total_union + 1e-6)
-    miou = iou_per_class.mean().item()
 
-    return miou
+    class_names = [j for i, j in dataloader.classes.items()]
+    iou_dict = {
+        class_names[i]: round(iou_per_class[i].item(), 4) for i in range(num_classes)
+    }
+    iou_dict["mean_IoU"] = round(iou_per_class.mean().item(), 4)
+    return iou_dict
