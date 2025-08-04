@@ -623,7 +623,9 @@ class NotebookDataAccess:
 
         result = _find_folder(None)
         if result is None:
-            raise ValueError(f"Folder '{folder_name}' not found in the workspace.")
+            raise ValueError(
+                f"Folder '{folder_name}' not found in the workspace. If you meant to get a file please set type to DATAACCESSTYPE.FILE"
+            )
         return result
 
     # ---------------------------------------------------------------------
@@ -658,9 +660,11 @@ class NotebookDataAccess:
         }
         response = self._gis.session.get(url, params=params).json()
         for f in response.get("Blobs", []):
-            if f["Properties"].get("ResourceType").lower() == "file" and f[
-                "Name"
-            ].endswith(file_name):
+            if (
+                f["Properties"].get("ResourceType")
+                and f["Properties"].get("ResourceType").lower() == "file"
+                and f["Name"].endswith(file_name)
+            ):
                 return NotebookFile(f, self)
         return None
 
