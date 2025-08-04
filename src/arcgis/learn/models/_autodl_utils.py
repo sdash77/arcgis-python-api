@@ -537,8 +537,8 @@ def _objective(trial):
     if self_obj._dataset_type == "classification":
         dice.append(np.array(model.learn.recorder.get_state()["metrics"])[-1][1])
         # accuracy = model.accuracy()
-        miou = model.mIOU()
-        accuracy = sum(miou.values()) / len(miou.values())
+        miou = model.mIOU(mean=True)
+        accuracy = miou
     else:
         avg_precision = model.average_precision_score()
         accuracy = sum(avg_precision.values()) / len(avg_precision.values())

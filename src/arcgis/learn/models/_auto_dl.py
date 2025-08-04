@@ -1044,8 +1044,8 @@ class AutoDL:
         name_time = time.strftime("%Y-%m-%d_%H-%M-%S")
         if model_type == "classification":
             # accuracy = np.array(metrics["metrics"])[-1][0]
-            miou = getattr(self, model).mIOU()
-            accuracy = sum(miou.values()) / len(miou.values())
+            miou = getattr(self, model).mIOU(mean=True)
+            accuracy = miou
             
             miou["Model"] = str(model)
             self._mIOU_df = pd.concat(
