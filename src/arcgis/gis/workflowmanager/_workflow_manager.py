@@ -1169,7 +1169,7 @@ class WorkflowManager:
     @property
     def user_settings(self):
         """
-        Returns a list of all the user settings for the Workflow Manager instance
+        Returns a list of all the user-defined settings for the Workflow Manager instance
 
         :return:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_
