@@ -172,9 +172,9 @@ def generate_output_report(
     data_x = list(
         pd.Series(df.index).astype(str) + "_" + df["Model"] + "_" + df["backbone"]
     )[::-1]
-    if "Mean_mIOU" in df.keys():
-        data_y = list(df["Mean_mIOU"])[::-1]
-        accuracy_fn = "Mean_mIOU"
+    if "mIOU" in df.keys():
+        data_y = list(df["mIOU"])[::-1]
+        accuracy_fn = "mIOU"
     else:
         data_y = list(df["average_precision_score"])[::-1]
         accuracy_fn = "average_precision_score"
@@ -195,7 +195,7 @@ def generate_output_report(
         )
 
     plt.ylabel("Model Names")
-    plt.xlabel("Mean_mIOU")
+    plt.xlabel("mIOU")
 
     plt.title("AutDL Performance")
     # plt.show()
@@ -229,7 +229,7 @@ def generate_output_report(
                 "Model",
                 "train_loss",
                 "valid_loss",
-                "Mean_mIOU",
+                "mIOU",
                 "dice",
                 "lr",
                 "training time",

@@ -1064,7 +1064,7 @@ class AutoDL:
                     "Model": [model],
                     "train_loss": [train_loss],
                     "valid_loss": [valid_loss],
-                    "Mean_mIOU": [accuracy],
+                    "mIOU": [accuracy],
                     "dice": [dice],
                     "lr": [lr_val],
                     "training time": [t],
@@ -1205,7 +1205,7 @@ class AutoDL:
                     "Model",
                     "train_loss",
                     "valid_loss",
-                    "Mean_mIOU",
+                    "mIOU",
                     "dice",
                     "lr",
                     "training time",
@@ -1318,7 +1318,7 @@ class AutoDL:
         self._dataset_type = m_type
         if m_type == "classification":
             self._train_df = self._train_df.sort_values(
-                "Mean_mIOU", ascending=False
+                "mIOU", ascending=False
             ).reset_index(drop=True)
         if m_type == "detection":
             self._train_df = self._train_df.sort_values(
@@ -1416,7 +1416,7 @@ class AutoDL:
                         "Model": list([model] * sorted_df.shape[0]),
                         "train_loss": list(sorted_df["train_loss"]),
                         "valid_loss": list(sorted_df["valid_loss"]),
-                        "Mean_mIOU": list(sorted_df["value"]),
+                        "mIOU": list(sorted_df["value"]),
                         "dice": list(sorted_df["dice"]),
                         "lr": list(sorted_df["params_lr"]),
                         "training time": list(sorted_df["duration"]),
@@ -1513,7 +1513,7 @@ class AutoDL:
 
         if m_type == "classification":
             self._train_df = self._train_df.sort_values(
-                "Mean_mIOU", ascending=False
+                "mIOU", ascending=False
             ).reset_index(drop=True)
         if m_type == "detection":
             self._train_df = self._train_df.sort_values(
@@ -1579,7 +1579,7 @@ class AutoDL:
             if allow_plot:
                 if self._model_type == "Classified_Tiles":
                     self._display_plot(
-                        self._train_df["Model"], self._train_df["Mean_mIOU"]
+                        self._train_df["Model"], self._train_df["mIOU"]
                     )
                 else:
                     self._display_plot(
