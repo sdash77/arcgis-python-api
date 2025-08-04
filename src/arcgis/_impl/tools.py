@@ -48,6 +48,7 @@ from functools import lru_cache
 from arcgis.raster import Raster, ImageryLayer, _ImageServerRaster
 from arcgis.gis._impl._content_manager.folder import Folder
 from urllib.parse import urlparse
+
 _log = logging.getLogger(__name__)
 
 try:
@@ -23070,13 +23071,13 @@ class AGSSystemTools:
         :returns: string
 
         """
-        
+
         if isinstance(layer, ImageryLayer):
             base_service_url: str = (
                 layer._url.split("/services/")[0].lower() + "/services"
             )
             # need split because sometimes the port is on the netloc
-            netloc: str =  urlparse(base_service_url).netloc.split(":")[0] 
+            netloc: str = urlparse(base_service_url).netloc.split(":")[0]
             path: str = layer._url.split("/services/")[-1]
             service_type: str = os.path.basename(path)
             service_name: str = os.path.basename(os.path.dirname(path))
@@ -23092,7 +23093,7 @@ class AGSSystemTools:
                 layer._engine_obj._url.split("/services/")[0].lower() + "/services"
             )
             # need split because sometimes the port is on the netloc
-            netloc: str =  urlparse(base_service_url).netloc.split(":")[0] 
+            netloc: str = urlparse(base_service_url).netloc.split(":")[0]
             service_type: str = os.path.basename(path)
             service_name: str = os.path.basename(os.path.dirname(path))
             folder: str = ""
@@ -23102,7 +23103,7 @@ class AGSSystemTools:
             raise ValueError(
                 "Input must be a service based `Raster` class or `ImageryLayer`"
             )
-        tbxs = { urlparse(k).netloc.split(":")[0] : v for k, v in self._tbx.items()}
+        tbxs = {urlparse(k).netloc.split(":")[0]: v for k, v in self._tbx.items()}
         if len(tbxs) == 1:
             tbx = list(tbxs.values())[0]
         elif netloc in tbxs:
