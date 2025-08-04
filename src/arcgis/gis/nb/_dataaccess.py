@@ -370,7 +370,7 @@ class NotebookFolder:
         ):
             token = self._da._gis._session.auth.token
         # Needed for online and enterprise
-        self._da._gis.session.headers.update(
+        original_headers.update(
             {token_header: "Bearer %s" % token, "x-ms-blob-type": "BlockBlob"}
         )
         with open(file_path, "rb") as file_data:
@@ -378,10 +378,8 @@ class NotebookFolder:
                 url=url,
                 data=file_data,
                 verify=True,
-                headers=self._da._gis.session.headers,
+                headers=original_headers,
             )
-        self._da._gis.session.headers.clear()
-        self._da._gis.session.headers.update(original_headers)
         return 200 <= resp.status_code < 300
 
     # ---------------------------------------------------------------------
