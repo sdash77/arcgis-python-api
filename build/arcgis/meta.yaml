@@ -23,7 +23,7 @@ requirements:
   - cachetools
   - certifi
   - cryptography
-  - dask >=2024.12.1,<2025.1.0
+  - dask >=2024.12.1,<2025.3
   - geomet
   - keyring >=23.3.0
   - lxml
@@ -33,7 +33,7 @@ requirements:
   - pandas >=2.0.0,<2.4.0
   - pillow
   - puremagic >=1.15,<2
-  - pyarrow >=16,<20
+  - pyarrow >=16,<21
   - pylerc
   - pyspnego >=0.8.0
   - pywin32-security [win]

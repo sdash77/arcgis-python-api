@@ -1,6 +1,7 @@
 """
 Test class for parcel fabric's Reconstruct From Seeds
 """
+
 import json
 import unittest
 import time
@@ -9,10 +10,11 @@ from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection, FeatureSet
 from arcgis.features._parcel import ParcelFabricManager
 
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from . import parcel_fabric_utils as pfutils
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestShrinkReconstructSeeds(unittest.TestCase):
     gis = None
@@ -28,12 +30,7 @@ class TestShrinkReconstructSeeds(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/HCAD_Subset/"
         )
-        cls.gis = GIS(
-            "https://dev0016752.esri.com/portal/",
-            "admin",
-            "esri.agp",
-            verify_cert=False,
-        )
+
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(

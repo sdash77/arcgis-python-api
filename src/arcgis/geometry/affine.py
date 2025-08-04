@@ -2,7 +2,7 @@
 Affine transformation functions
 """
 
-from __future__ import division
+from __future__ import division, annotations
 import math
 from . import Point, Polygon, Polyline
 from . import MultiPoint, Geometry

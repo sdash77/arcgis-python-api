@@ -683,7 +683,7 @@ class AttachmentManager(object):
             del row
         return results
 
-    def get_list(self, oid: str):
+    def get_list(self, oid: str | int):
         """
         Get the list of attachments for a given OBJECT ID
 
@@ -697,7 +697,7 @@ class AttachmentManager(object):
             A list of attachments
 
         """
-        return self._layer._list_attachments(oid)["attachmentInfos"]
+        return self._layer._list_attachments(oid, self._version)["attachmentInfos"]
 
     def download(
         self,
@@ -2907,14 +2907,16 @@ class FeatureLayerCollectionManager(_GISResource):
             return False
 
         def create_layer_definition(layer, fs, data=None):
+            layer_id: int = layer.manager.properties["id"]
             return {
+                "id": layer_id,
                 "adminLayerInfo": {
                     "popupInfo": (
                         data.get("popupInfo") if data and "popupInfo" in data else None
                     ),
                     "viewLayerDefinition": {
                         "sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
-                        "sourceLayerId": layer.manager.properties["id"],
+                        "sourceLayerId": layer_id,
                         "sourceLayerFields": "*",
                     },
                 },
@@ -2922,11 +2924,12 @@ class FeatureLayerCollectionManager(_GISResource):
             }
 
         def create_table_definition(table, fs):
+            layer_id: int = table.manager.properties["id"]
             return {
                 "adminLayerInfo": {
                     "viewLayerDefinition": {
                         "sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
-                        "sourceLayerId": table.manager.properties["id"],
+                        "sourceLayerId": layer_id,
                         "sourceLayerFields": "*",
                     },
                 },
@@ -3194,7 +3197,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         params = {
             "f": "json",
-            "updateDefinition": json.dumps(obj=definition, separators=(",", ":")),
+            "updateDefinition": json.dumps(definition),
             "async": json.dumps(future),
         }
         u_url = self._url + "/updateDefinition"
