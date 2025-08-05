@@ -789,7 +789,7 @@ class Folder:
             >>> add_job = item_folder.add(item_properties=item_props,
                                           file=data_path)
             >>> if not add_job.done():
-            >>>     print("...job precessing...")
+            >>>     print("...job processing...")
             >>> else:
             >>>     new_shp_item = add_job.result()
 

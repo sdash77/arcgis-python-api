@@ -19,10 +19,13 @@ configured_profiles = {
 }
 
 STANDARD_ENTERPRISE_PROFILE = "your_enterprise_profile"
-STANDARD_ENTERPRISE_PROFILE_CONFIG = configured_profiles.get(STANDARD_ENTERPRISE_PROFILE, {})
+STANDARD_ENTERPRISE_PROFILE_CONFIG = configured_profiles.get(
+    STANDARD_ENTERPRISE_PROFILE, {}
+)
 STANDARD_ENTERPRISE_URL = environ.get(
     "STANDARD_ENTERPRISE_URL",
-    STANDARD_ENTERPRISE_PROFILE_CONFIG.get("url") or "https://pythonapitestnb.dev.geocloud.com/portal",
+    STANDARD_ENTERPRISE_PROFILE_CONFIG.get("url")
+    or "https://pythonapitestnb.dev.geocloud.com/portal",
 )
 STANDARD_ENTERPRISE_USERNAME = environ.get(
     "STANDARD_ENTERPRISE_USERNAME",
@@ -355,7 +358,9 @@ class server_credentials:
 
     _enterprise_standalone_credential_parameters = (
         "standalone_enterprise",
-        environ.get("ENTERPRISE_STANDALONE_SERVER_URL", "https://dev0016118.esri.com/server"),
+        environ.get(
+            "ENTERPRISE_STANDALONE_SERVER_URL", "https://dev0016118.esri.com/server"
+        ),
         None,
         environ.get("ENTERPRISE_STANDALONE_SERVER_USERNAME", "siteadmin"),
         environ.get("ENTERPRISE_STANDALONE_SERVER_PASSWORD", "IL0veGI$"),
@@ -368,6 +373,7 @@ class server_credentials:
         return cls._get_credentials_parameterized_class(
             cls._enterprise_standalone_credential_parameters
         )
+
     # endregion
 
     def _get_credentials_parameterized_class(*args):
@@ -385,6 +391,7 @@ class server_credentials:
             # default test name is {class_name}_{index}_{connection_name}; override to remove index:
             class_name_func=lambda cls, _, param: f"{cls.__name__}_{parameterized.to_safe_name(param['connection_name'])}",
         )
+
 
 class profiles:
     """
@@ -417,7 +424,10 @@ class profiles:
         "enterprise_admin",
         "your_ent_admin_profile",
     )
-    _enterprise_devent_admin_profile_parameters = ("devent_admin", "your_dev_ent_admin_profile")
+    _enterprise_devent_admin_profile_parameters = (
+        "devent_admin",
+        "your_dev_ent_admin_profile",
+    )
     _k8s_profile_parameters = ("k8s", "your_kubernetes_profile")
     _k8s_admin_profile_parameters = (
         "k8s_admin",
@@ -430,6 +440,10 @@ class profiles:
     _workflow_manager_profile_parameters = (
         "workflow_manager",
         "your_workflow_manager_profile",
+    )
+    _parcel_fabric_profile_parameters = (
+        "parcel_fabric",
+        "your_parcel_fabric_profile",
     )
 
     def _get_profile_parameterized_class(*args):
@@ -567,7 +581,9 @@ class profiles:
     @classproperty
     def admin_devent(cls):
         """Run tests for devent admin profile"""
-        return cls._get_profile_parameterized_class(cls._enterprise_devent_admin_profile_parameters)
+        return cls._get_profile_parameterized_class(
+            cls._enterprise_devent_admin_profile_parameters
+        )
 
     @classproperty
     def utility_network(cls):
@@ -582,6 +598,14 @@ class profiles:
         return cls._get_profile_parameterized_class(
             cls._workflow_manager_profile_parameters
         )
+
+    @classproperty
+    def parcel_fabric(cls):
+        """Run tests for utility network profile"""
+        return cls._get_profile_parameterized_class(
+            cls._parcel_fabric_profile_parameters
+        )
+
     # endregion
 
 

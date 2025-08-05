@@ -4,10 +4,11 @@ import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from . import parcel_fabric_utils as pfutils
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestTransferParcels(unittest.TestCase):
     """Tests the Transfer Parcel function from the parcel fabric SOE"""
@@ -25,12 +26,7 @@ class TestTransferParcels(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/HCAD_Subset/"
         )
-        cls.gis = GIS(
-            "https://dev0016752.esri.com/portal/",
-            "admin",
-            "esri.agp",
-            verify_cert=False,
-        )
+
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(
@@ -39,9 +35,7 @@ class TestTransferParcels(unittest.TestCase):
         cls.vms = cls.parcel_fabric_flc.versions
 
     def test_scenario_1(self):
-        fq_version_name = pfutils.create_version(
-            self.vms, f"api-{int(time.time())}"
-        )
+        fq_version_name = pfutils.create_version(self.vms, f"api-{int(time.time())}")
         transfer_parcel = {
             "id": "{D664B654-D8F2-453C-966F-6FA66E1AE2E2}",
             "layerId": "24",

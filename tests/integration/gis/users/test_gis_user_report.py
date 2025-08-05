@@ -12,14 +12,16 @@ class TestReportApi(unittest.TestCase):
         """setup user and start_time"""
         self.user = self.gis.users.me
 
-        self.today = _dt.datetime.utcnow()
+        self.today = _dt.datetime.now(_dt.UTC)
         # first day of this month
         self.start_time_monthly = self.today.replace(day=1)
         # past monday
         self.start_time_weekly = self.today - _dt.timedelta(days=self.today.weekday())
         # first day of current quarter
         self.current_quarter = (self.today.month - 1) // 3 + 1
-        self.start_time_quarterly = self.today.replace(month=self.current_quarter * 3 - 2, day=1)
+        self.start_time_quarterly = self.today.replace(
+            month=self.current_quarter * 3 - 2, day=1
+        )
 
     def test_missing_argument_error(self):
         """test missing argument raises error"""
@@ -48,17 +50,13 @@ class TestReportApi(unittest.TestCase):
 
     def test_content_report(self):
         """test weekly content report without start_time"""
-        content_item = self.user.report(
-            report_type="content", duration="weekly"
-        )
+        content_item = self.user.report(report_type="content", duration="weekly")
         assert content_item
         assert content_item.delete()
 
     def test_users_report(self):
         """test monthly users report without start_time"""
-        users_item = self.user.report(
-            report_type="users", duration="monthly"
-        )
+        users_item = self.user.report(report_type="users", duration="monthly")
         assert users_item
         assert users_item.delete()
 
