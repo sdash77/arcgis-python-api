@@ -1,6 +1,7 @@
 """ Defines store functions for working with Integrations.
 """
 
+from __future__ import annotations
 from ... import workforce
 from .utils import add_features, update_features, remove_features, validate
 

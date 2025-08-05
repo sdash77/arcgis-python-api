@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Literal, Any, Annotated, Union, Optional
 from enum import Enum
 from pydantic import BaseModel, model_serializer, model_validator, Discriminator, Field

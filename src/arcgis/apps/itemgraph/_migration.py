@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ._item_graph import ItemGraph, ItemNode, load_from_file
 from ._get_dependencies import _get_related_item_dict
 from arcgis.gis import GIS

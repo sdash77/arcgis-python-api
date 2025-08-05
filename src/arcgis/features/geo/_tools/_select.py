@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pandas as pd
 from arcgis.geometry import Geometry, Point, Polygon, Polyline, MultiPoint
 from arcgis.features.geo._accessor import _is_geoenabled

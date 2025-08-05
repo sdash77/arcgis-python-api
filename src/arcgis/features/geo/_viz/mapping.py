@@ -2,6 +2,7 @@
 Mapping Holds the Plot function for creating a FeatureCollection JSON plus the render options
 """
 
+from __future__ import annotations
 from typing import Optional, Union
 import pandas as pd
 

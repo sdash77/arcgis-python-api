@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ._feed_template import _FeedTemplate
 from .run_interval import RunInterval
 from .time import _HasTime, TimeInterval, TimeInstant

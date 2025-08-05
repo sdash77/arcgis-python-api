@@ -4,6 +4,7 @@ The ``Symbology`` class generates Symbol Types for the :class:`~arcgis.gis.GIS` 
 
 """
 
+from __future__ import annotations
 import requests
 import arcgis
 from typing import Any
@@ -693,7 +694,6 @@ def create_symbol(
 
     """
     import numpy as np
-    import matplotlib.pyplot as plt
 
     alpha = kwargs.pop("alpha", 1)
     symbol = kwargs.pop("symbol", None)

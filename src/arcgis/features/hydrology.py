@@ -2,7 +2,7 @@
 """
 These functions help you use hydrology analysis.
 """
-
+from __future__ import annotations
 import logging as _logging
 from typing import Optional, Union
 

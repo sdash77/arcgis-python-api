@@ -1,10 +1,11 @@
 import unittest
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from . import parcel_fabric_utils as pfutils
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestParcelFabricRecords(unittest.TestCase):
     """Apply LSA on a small fabric.  Test sync and async"""
@@ -19,11 +20,9 @@ class TestParcelFabricRecords(unittest.TestCase):
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
         cls.base_server_url = (
-            "https://krennic.esri.com/server/rest/services/WashingtonCountyLSA/"
+            "https://dev0016752.esri.com/server/rest/services/WashingtonCountyLSA/"
         )
-        cls.gis = GIS(
-            "https://krennic.esri.com/portal/", "admin", "esri.agp", verify_cert=False
-        )
+
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(

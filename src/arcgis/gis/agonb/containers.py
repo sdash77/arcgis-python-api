@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import time
+import concurrent.futures
 from arcgis.gis import GIS
 from typing import Any, TypeVar
 
@@ -74,6 +77,7 @@ class ContainerManager:
     def __init__(self, url: str, gis: GIS):
         self._url = url
         self._gis = gis
+        self._con = gis._portal.con
 
     def list(self) -> list[dict[str, Any]]:
         """Returns a list of containers"""
@@ -94,5 +98,28 @@ class ContainerManager:
         }
         if instance_type:
             params["instanceTypeName"] = instance_type
-        res = self._gis._con.post(url, params)
+
+        res = self._con.post(path=url, postdata=params)
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        future = executor.submit(self._check_job_status, res)
+        executor.shutdown(False)
+        return future
+
+    def _check_job_status(self, res):
+        """checks the container start status"""
+        n = 1
+        if "startContainerStatusUrl" in res:
+            time.sleep(0.5)
+            surl = res["startContainerStatusUrl"]
+            sres = self._con.get(path=surl, params={"f": "json"})
+            while sres["status"].lower() != "completed":
+                sres = self._con.get(path=surl, params={"f": "json"})
+                if sres["status"].lower() in "failed":
+                    return False
+                if n >= 40:
+                    n = 40
+                time.sleep(0.5 * n)
+                n += 1
+            else:
+                return True
         return res
