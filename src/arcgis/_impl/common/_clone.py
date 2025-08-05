@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 import re
 import tempfile
@@ -5567,9 +5568,18 @@ class _FormDefinition(_ItemDefinition):
                                             os.path.join(zip_dir, path),
                                             field_mapping,
                                         )
-
+                        try:
+                            connect_version = original_item["properties"][
+                                "websiteVersion"
+                            ]
+                        except:
+                            connect_version = original_item["properties"].get(
+                                "connectVersion", None
+                            )
                         SurveyManager._xform2webform(
-                            os.path.join(zip_dir, path), self.target.url
+                            os.path.join(zip_dir, path),
+                            self.target.url,
+                            connect_version,
                         )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
@@ -5732,9 +5742,12 @@ class _FormDefinition(_ItemDefinition):
             zip_file.close()
 
             # Upload the zip to the item
+            rand_suffix = "_".join(
+                random.choices(string.ascii_uppercase + string.digits, k=5)
+            )
             new_form = shutil.copy2(
                 form_zip,
-                os.path.join(temp_dir, new_item["id"] + "-1" + ".zip"),
+                os.path.join(temp_dir, new_item["id"] + rand_suffix + ".zip"),
             )
             new_item.update(data=new_form)
         except Exception as ex:

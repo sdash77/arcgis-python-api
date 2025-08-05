@@ -590,7 +590,7 @@ class MapFeatureLayer(Layer):
         out_sr: int | None = None,
         geometry_precision: int | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict[str, Any]] | None = None,
         return_z: bool = False,
         return_m: bool = False,
@@ -703,7 +703,7 @@ class MapFeatureLayer(Layer):
                                             `False`. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is `true`.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names by which to order the
+        order_by_fields                     Optional string or list of strings. One or more field names by which to order the
                                             results. Use ``ASC`` or ``DESC`` for ascending
                                             or descending, respectively, following every field to be ordered:
 
@@ -717,7 +717,7 @@ class MapFeatureLayer(Layer):
 
                                             .. code-block:: python
 
-                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+                                                >>> group_by_fields_for_statistics = "STATE_NAME, GENDER"
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional List. The definitions for one or more field-based
                                             statistics to be calculated.
@@ -1324,7 +1324,7 @@ class MapTable(MapFeatureLayer):
         result_record_count: int | None = None,
         object_ids: str | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict] | None = None,
         return_all_records: bool = True,
         historic_moment: int | _dt.datetime | None = None,
@@ -1364,7 +1364,7 @@ class MapTable(MapFeatureLayer):
 
                                                 >>> import _dt.datetime as dt
 
-                                                >>> time_filter = [dt._dt.datetime(2022, 1, 1), dt.dateime(2022, 1, 12)]
+                                                >>> time_filter = [dt._dt.datetime(2022, 1, 1), dt.datetime(2022, 1, 12)]
 
         -------------------------------     --------------------------------------------------------------------
         gdb_version                         Optional string. The geodatabase version to query. This parameter
@@ -1390,7 +1390,7 @@ class MapTable(MapFeatureLayer):
                                             `return_ids_only` parameter. If `return_count_only = True`, the
                                             response will return both the count and the extent.
         -------------------------------     --------------------------------------------------------------------
-         order_by_fields                    Optional string. One or more field names by which to order the
+        order_by_fields                     Optional string or list of strings. One or more field names by which to order the
                                             results. Use ``ASC`` or ``DESC`` for ascending
                                             or descending, respectively, following every field to be ordered:
 
@@ -1404,7 +1404,7 @@ class MapTable(MapFeatureLayer):
 
                                             .. code-block:: python
 
-                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+                                                >>> group_by_fields_for_statistics = "STATE_NAME, GENDER"
 
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional string. The definitions for one or more field-based
@@ -2977,7 +2977,7 @@ class MapImageLayer(_gis.Layer):
                                those layers. Definition expression for a layer that is
                                published with the service will be always honored.
         ------------------     --------------------------------------------------------------------
-        return_geometry        Optional boolean. If true, the resultset will include the geometries
+        return_geometry        Optional boolean. If true, the result set will include the geometries
                                associated with each result. The default is true.
         ------------------     --------------------------------------------------------------------
         max_offset             Optional integer. This option can be used to specify the maximum

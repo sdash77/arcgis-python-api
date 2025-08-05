@@ -5,6 +5,7 @@ Copyright (c) 2013 Brendan Curran-Johnson
 https://github.com/bcj/AttrDict
 """
 
+from __future__ import annotations
 from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, MutableMapping, Sequence

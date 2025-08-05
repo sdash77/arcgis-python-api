@@ -121,6 +121,12 @@ class Job:
     def __repr__(self) -> str:
         return self.__str__()
 
+    def done(self) -> bool:
+        return all([future.done() for future in self.futures])
+
+    def running(self) -> bool:
+        return all([future.running() for future in self.futures])
+
     def result(self) -> _arcgis_gis.Item:
         """
         Returns the :class:`item <arcgis.gis.Item>` that was added by this
@@ -783,7 +789,7 @@ class Folder:
             >>> add_job = item_folder.add(item_properties=item_props,
                                           file=data_path)
             >>> if not add_job.done():
-            >>>     print("...job precessing...")
+            >>>     print("...job processing...")
             >>> else:
             >>>     new_shp_item = add_job.result()
 

@@ -3,6 +3,7 @@ Holds Delegate and Accessor Logic
 """
 
 from __future__ import annotations
+import json
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -1194,8 +1195,6 @@ class GeoAccessor(object):
         * *gdal* - for the `Open Source Geospatial Foundation gdal <https://gdal.org/en/stable/>`_ translator
           library. A good balance of performance and compatibility with multiple GIS formats. Ideal
           for working with large datasets and open-source workflows.
-        * *fiona* - for the `fiona <https://github.com/Toblerity/Fiona>`_ simple feature data streaming
-          library. Can only be used to read in feature classes.
 
         To set environment at the top of the script, add:
 
@@ -2713,7 +2712,6 @@ class GeoAccessor(object):
             * `"shapefile"`
             * `"gdal"`
             * `"arcpy"`
-            * `"fiona"`
 
             If not set, the first available library in the environment will be used.
 
@@ -3210,6 +3208,8 @@ class GeoAccessor(object):
                 sr = self.sr
             except Exception:
                 sr = None
+            wkt = None
+            wkid = None
             if sr and "wkid" in sr:
                 wkid = sr["wkid"]
             elif sr and "latestWkid" in sr:
@@ -3239,13 +3239,9 @@ class GeoAccessor(object):
                 elif isinstance(ref, int):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
-                    self._data[self.name].apply(
-                        lambda x: (
-                            x.update({"spatialReference": ref})
-                            if pd.notnull(x)
-                            else None
-                        )
-                    )
+                    mask = self._data[self.name].notna()
+                    for d in self._data.loc[mask, self.name]:
+                        d["spatialReference"] = ref
 
     # ----------------------------------------------------------------------
     def to_featureset(self):
@@ -3338,12 +3334,18 @@ class GeoAccessor(object):
                 fld["domain"] = None
                 fld["defaultValue"] = None
                 fld["nullable"] = True
+        geom_type = str(self._data.spatial._meta.geometry_type).lower()  # handles None
+        data_copy = self._data.copy()
+        sdf_geom_type = data_copy.spatial.geometry_type[0].lower()
         if drawing_info is None:
-            import json
-
-            di = {"renderer": json.loads(self._data.spatial.renderer.json)}
+            if sdf_geom_type == geom_type:
+                di = {"renderer": json.loads(data_copy.spatial.renderer.json)}
+            else:
+                self._data.spatial.renderer = None
+                di = {"renderer": json.loads(self._data.spatial.renderer.json)}
         else:
             di = drawing_info
+
         layer = {
             "layerDefinition": {
                 "currentVersion": 10.7,
@@ -3626,69 +3628,46 @@ class GeoAccessor(object):
         if new_df.empty and not old_df.empty:
             new_df = pd.DataFrame(data=None, columns=old_df.columns, index=old_df.index)
 
-        # Finding changes in rows
-        merged_rows = new_df.merge(
-            old_df,
-            on=match_field,
-            how="outer",
-            indicator=True,
-            suffixes=("_new", "_old"),
-        )
+        # Find sets of keys
+        old_keys = set(old_df[match_field].dropna().tolist())
+        new_keys = set(new_df[match_field].dropna().tolist())
 
-        # Finding added rows
-        added_rows = merged_rows[merged_rows["_merge"] == "left_only"].drop(
-            columns=["_merge"]
-        )
-        # Removing the old
-        for column in added_rows.columns:
-            if column.endswith("_old"):
-                added_rows = added_rows.drop(columns=[column])
-            # Renaming the new
-            if column.endswith("_new") and column != f"{match_field}_new":
-                new_column_name = column[: -len("_new")]
-                added_rows = added_rows.rename(columns={column: new_column_name})
-        diff["added_rows"] = added_rows
+        # Added rows: keys in new but not in old
+        added_keys = new_keys - old_keys
+        if added_keys:
+            diff["added_rows"] = new_df[new_df[match_field].isin(added_keys)].copy()
+        else:
+            diff["added_rows"] = pd.DataFrame(columns=new_df.columns)
 
-        # Finding deleted rows
-        deleted_rows = merged_rows[merged_rows["_merge"] == "right_only"].drop(
-            columns=["_merge"]
-        )
-        # Removing the new
-        for column in deleted_rows.columns:
-            if column.endswith("_new"):
-                deleted_rows = deleted_rows.drop(columns=[column])
-            # Renaming the old
-            if column.endswith("_old") and column != f"{match_field}_old":
-                new_column_name = column[: -len("_old")]
-                deleted_rows = deleted_rows.rename(columns={column: new_column_name})
-        diff["deleted_rows"] = deleted_rows
+        # Deleted rows: keys in old but not in new
+        deleted_keys = old_keys - new_keys
+        if deleted_keys:
+            diff["deleted_rows"] = old_df[old_df[match_field].isin(deleted_keys)].copy()
+        else:
+            diff["deleted_rows"] = pd.DataFrame(columns=old_df.columns)
 
-        # Finding modified rows
-        common_rows_match_field_list = merged_rows[merged_rows["_merge"] == "both"][
-            match_field
-        ].to_list()
-
-        if len(common_rows_match_field_list) > 0:
-            # Looking at the rows that are existing in both the old and new layers so that we can compare them
-            common_rows_new = new_df[
-                new_df[match_field].isin(common_rows_match_field_list)
-            ]
-            common_rows_old = old_df[
-                old_df[match_field].isin(common_rows_match_field_list)
-            ]
-
-            # Compare common columns attributes
-            merged_common_rows = common_rows_new.merge(
-                common_rows_old,
-                on=None,
-                how="outer",
-                indicator=True,
-            )
-
-            modified_rows = merged_common_rows[
-                merged_common_rows["_merge"] == "left_only"
-            ].drop(columns=["_merge"])
-            diff["modified_rows"] = modified_rows
+        # Modified rows: keys in both, but with different values in any column
+        common_keys = old_keys & new_keys
+        modified_rows = []
+        for key in common_keys:
+            old_rows = old_df[old_df[match_field] == key]
+            new_rows = new_df[new_df[match_field] == key]
+            # Compare all combinations (handle duplicates)
+            for _, new_r in new_rows.iterrows():
+                found_match = False
+                for _, old_r in old_rows.iterrows():
+                    cols_to_compare = [
+                        col for col in old_df.columns if col != match_field
+                    ]
+                    if all(old_r[col] == new_r[col] for col in cols_to_compare):
+                        found_match = True
+                        break
+                if not found_match:
+                    modified_rows.append(new_r)
+        if modified_rows:
+            diff["modified_rows"] = pd.DataFrame(modified_rows, columns=new_df.columns)
+        else:
+            diff["modified_rows"] = pd.DataFrame(columns=new_df.columns)
 
         return diff
 
