@@ -18294,7 +18294,7 @@ class Item(dict):
                     )
                 lods = []
                 for lod in cache_info["lods"]:
-                    if lod["scale"] >= min_scale and lod["scale"] <= max_scale:
+                    if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
                         lods.append(str(lod["scale"]))
                 levels = ";".join(lods)
                 mgr.build_cache(levels=levels, extent=extent)
