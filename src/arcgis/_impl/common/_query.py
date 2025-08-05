@@ -258,7 +258,7 @@ class QueryParameters(BaseModel):
                     map's version.
                     """,
     )
-    order_by_fields: list[str] | None = Field(
+    order_by_fields: list[str] | str | None = Field(
         None,
         alias="orderByFields",
         description="""Optional string. One or more field names on which the
@@ -552,6 +552,12 @@ class QueryParameters(BaseModel):
             return ",".join(value)
         return value
 
+    @field_validator("order_by_fields", mode="before")
+    def validate_order_by_fields(cls, value):
+        if isinstance(value, (list, tuple)):
+            return ",".join(value)
+        return value
+
     @field_validator("object_ids", mode="before")
     def validate_object_ids(cls, value):
         if isinstance(value, (list, tuple)):
@@ -676,10 +682,10 @@ class Query:
 
     def _send_request(self, session: EsriSession, encoded_parameters: dict) -> dict:
         url_length: int = self._content_length(encoded_parameters)
-        if url_length <= 2000:
+        if url_length <= 2000 and encoded_parameters.get("geometry", None) is None:
             response = session.get(self.url, params=encoded_parameters)
         else:
-            response = session.post(self.url, params=encoded_parameters)
+            response = session.post(self.url, data=encoded_parameters)
         return response.json()
 
     def _query(self, raw=False):
