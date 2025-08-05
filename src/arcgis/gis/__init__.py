@@ -6594,7 +6594,8 @@ class GroupManager(object):
         file_name             Optional str. The name of the file without an extension.
         ====================  =========================================================
 
-        :returns: list[CloningJob]
+        :returns:
+            A list of [:class:`~arcgis.gis.clone.CloningJob` objects].
 
         .. code-block:: python
 
