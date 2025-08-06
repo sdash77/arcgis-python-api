@@ -8207,12 +8207,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         )
 
         final_job = None
-        if self._is_ortho:
-            job._is_ortho = True
-            final_job = OMJob(job)
-        else:
-            job._is_reality = True
-            final_job = RMJob(job)
+        job._is_ortho = True
+        final_job = OMJob(job)
         final_job._flight_details = flight_json_details
         if future:
             return final_job
@@ -8412,12 +8408,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         )
 
         final_job = None
-        if self._is_ortho:
-            job._is_ortho = True
-            final_job = OMJob(job)
-        else:
-            job._is_reality = True
-            final_job = RMJob(job)
+        job._is_ortho = True
+        final_job = OMJob(job)
         final_job._flight_details = flight_json_details
         if future:
             return final_job
@@ -8774,16 +8766,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 )
 
         final_job = None
-        if self._is_ortho:
-            job._is_ortho = True
-            job._item_properties = True
-            item = None
-            if output_dem:
-                item = output_dem
-            final_job = OMJob(job, item=item)
-        else:
-            job._is_reality = True
-            final_job = RMJob(job)
+        job._is_ortho = True
+        job._item_properties = True
+        item = None
+        if output_dem:
+            item = output_dem
+        final_job = OMJob(job, item=item)
         final_job._flight_details = flight_json_details
         if future:
             return final_job
