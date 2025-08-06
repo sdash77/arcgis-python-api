@@ -723,15 +723,17 @@ class Project:
             raster_type_name = "UAV/UAS"
 
         _ra = gis._tools.rasteranalysis
-        input_rasters, image_collection, raster_type, context, output_service = _ra._sanitize_inputs(
-            image_collection=image_collection_name,
-            input_rasters=image_list,
-            raster_type_name=raster_type_name,
-            raster_type_params=raster_type_params,
-            out_sr=out_sr,
-            context=context,
-            folder=self._folder,
-            **kwargs,
+        input_rasters, image_collection, raster_type, context, output_service = (
+            _ra._sanitize_inputs(
+                image_collection=image_collection_name,
+                input_rasters=image_list,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                out_sr=out_sr,
+                context=context,
+                folder=self._folder,
+                **kwargs,
+            )
         )
 
         mission_def = {"name": mission_name}
