@@ -200,40 +200,58 @@ class TestWorkflowManager(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 export_item_exec = self.connection.workflow_manager_admin.export_item(
-                    item, job_template_ids=[], include_other_configs=False, run_async=True, save_path=temp_dir, export_mapping=True
+                    item,
+                    job_template_ids=[],
+                    include_other_configs=False,
+                    run_async=True,
+                    save_path=temp_dir,
+                    export_mapping=True,
                 )
 
                 export_item_exec.result()
                 exported_file = export_item_exec.export_location  # config file
                 mapping_file = export_item_exec.export_mapping_location
-            
+
                 importItemExec = self.connection.workflow_manager_admin.import_item(
-                    item_two, exported_file, run_async=True, overwrite_configuration=False, import_mapping_file=mapping_file
+                    item_two,
+                    exported_file,
+                    run_async=True,
+                    overwrite_configuration=False,
+                    import_mapping_file=mapping_file,
                 )
-                
+
                 # Assert
                 self.assertTrue(importItemExec.running(), "Import is not still running")
                 result = importItemExec.result()
-                self.assertIsInstance(result, Notification, "Result is not a Notification")
+                self.assertIsInstance(
+                    result, Notification, "Result is not a Notification"
+                )
                 self.assertTrue(importItemExec.done(), "Import is not done")
         finally:
             self.connection.workflow_manager_admin.delete_item(item_two)
 
-    def test_import_item_async_with_mapping_file_that_does_not_exist_returns_failure(self):
+    def test_import_item_async_with_mapping_file_that_does_not_exist_returns_failure(
+        self,
+    ):
         # Act
         with self.assertRaises(Exception) as ex:
             with tempfile.TemporaryDirectory() as temp_dir:
-                exported_file = 'fake/madeup/path'  # config file
-                mapping_file = 'fake/madeup/path2'
-            
+                exported_file = "fake/madeup/path"  # config file
+                mapping_file = "fake/madeup/path2"
+
                 importItemExec = self.connection.workflow_manager_admin.import_item(
-                    self.connection.workflow_item, exported_file, run_async=True, overwrite_configuration=False, import_mapping_file=mapping_file
+                    self.connection.workflow_item,
+                    exported_file,
+                    run_async=True,
+                    overwrite_configuration=False,
+                    import_mapping_file=mapping_file,
                 )
-                
+
                 # Assert
                 importItemExec.result()
 
-            self.assertIsNotNone(ex, 'An exception should have been thrown')
+            self.assertIsNotNone(ex, "An exception should have been thrown")
+
     # endregion
 
     # region Export Item
