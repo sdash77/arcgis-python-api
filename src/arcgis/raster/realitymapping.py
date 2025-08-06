@@ -723,7 +723,7 @@ class Project:
             raster_type_name = "UAV/UAS"
 
         _ra = gis._tools.rasteranalysis
-        input_rasters, image_collection, raster_type, context, _ = _ra._sanitize_inputs(
+        input_rasters, image_collection, raster_type, context, output_service = _ra._sanitize_inputs(
             image_collection=image_collection_name,
             input_rasters=image_list,
             raster_type_name=raster_type_name,
@@ -752,6 +752,7 @@ class Project:
             raster_type=raster_type,
             context=context,
             future=future,
+            output_service,
             **kwargs,
         )
 

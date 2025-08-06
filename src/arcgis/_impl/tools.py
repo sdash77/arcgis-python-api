@@ -9785,6 +9785,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         raster_type=None,
         context=None,
         future=False,
+        output_service=None,
         **kwargs,
     ):
         task = "CreateMission"
@@ -9802,7 +9803,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         )
 
         gpjob._is_reality = True
-        job = RMJob(gpjob)
+        job = RMJob(gpjob, item=output_service)
         if future:
             return job
         return job.result()
