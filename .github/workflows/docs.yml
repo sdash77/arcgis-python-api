@@ -49,6 +49,7 @@ jobs:
       - name: Deploy doc to s3
       # https://esri-forge.python.geocloud.com/docs/$ARCGIS_DOCS_LABEL/json.zip
       # https://esri-forge.python.geocloud.com/docs/$ARCGIS_DOCS_LABEL/html.zip
+        if: github.repository == 'ArcGIS/geosaurus'
         env:
           # label:
           # - branch name for docs built for successful builds or manually triggered workflows
