@@ -961,7 +961,7 @@ class TestDivideParcels(unittest.TestCase):
                     default_area_unit=default_area_unit,
                 )
             self.assertTrue(
-                "A required parameter is missing from the JSON." in str(ex.exception),
+                "Invalid function arguments" in str(ex.exception),
                 f"Wrong error: {ex.exception}",
             )
 
