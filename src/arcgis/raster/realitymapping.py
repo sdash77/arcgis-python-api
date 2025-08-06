@@ -752,7 +752,7 @@ class Project:
             raster_type=raster_type,
             context=context,
             future=future,
-            output_service,
+            output_service=output_service,
             **kwargs,
         )
 
