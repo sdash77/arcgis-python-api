@@ -1385,6 +1385,24 @@ class WorkflowManager:
             self._handle_error(sys.exc_info())
 
     @property
+    def user_settings(self):
+        """
+        Returns a list of all the user-defined settings for the Workflow Manager instance
+
+        :return:
+            `List <https://docs.python.org/3/library/stdtypes.html#list>`_
+
+        """
+        try:
+            params = {"includeSystemSettings": False}
+
+            return self._gis._con.get(
+                "{base}/settings".format(base=self._url), params=params
+            )["settings"]
+        except:
+            self._handle_error(sys.exc_info())
+
+    @property
     def groups(self):
         """
         Returns an list of all user :class:`groups <arcgis.gis.workflowmanager.Group>`
