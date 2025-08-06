@@ -466,7 +466,7 @@ class WorkflowManagerAdmin:
         passphrase: str | None = None,
         run_async: bool = False,
         overwrite_configuration: bool = True,
-        import_mapping_file: str | None = None
+        import_mapping_file: str | None = None,
     ) -> bool | ItemExecution:
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
@@ -491,8 +491,8 @@ class WorkflowManagerAdmin:
         run_async                Optional. A boolean indicating whether to run import item asynchronously. If set to true,
                                  import_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`
         -----------------------  ---------------------------------------------------------
-        overwrite_configuration  Optional. A boolean indicating whether to overwrite the current item's contents. 
-                                 When set to true, the current item must not have existing jobs, and its contents will 
+        overwrite_configuration  Optional. A boolean indicating whether to overwrite the current item's contents.
+                                 When set to true, the current item must not have existing jobs, and its contents will
                                  be deleted and replaced by the contents of the imported configuration file. When set to False,
                                  importing merges the source configuration with the current item. By default this setting is true.
         -----------------------  ---------------------------------------------------------
@@ -535,6 +535,7 @@ class WorkflowManagerAdmin:
                 print(f'{m.message} ')
 
         """
+
         def call_post(url, files, data):
             return_obj = self._gis._con.post_multipart(
                 url,
@@ -557,15 +558,13 @@ class WorkflowManagerAdmin:
         with ExitStack() as stack:
             # Set up file handles
             wmc_fh = stack.enter_context(open(config_file, "rb"))
-            maybe_mapping_fh = stack.enter_context(open(import_mapping_file, "rb")) if import_mapping_file is not None else None
-        
-            files = {
-                "file": (
-                    os.path.basename(config_file),
-                    wmc_fh,
-                    "application/zip"
-                )
-            }
+            maybe_mapping_fh = (
+                stack.enter_context(open(import_mapping_file, "rb"))
+                if import_mapping_file is not None
+                else None
+            )
+
+            files = {"file": (os.path.basename(config_file), wmc_fh, "application/zip")}
 
             if passphrase is not None:
                 data["passphrase"] = passphrase
@@ -587,7 +586,7 @@ class WorkflowManagerAdmin:
                         files["mappingFile"] = (
                             os.path.basename(import_mapping_file),
                             maybe_mapping_fh,
-                            "application/json"
+                            "application/json",
                         )
                     return_obj = call_post(url, files, data)
                     if return_obj is False:
