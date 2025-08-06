@@ -39,9 +39,16 @@ class CloningJob:
         >>> source_groups = source_gis.groups.search("Research *")
         >>> source_groups
         
-        
+        [<Group title:"Water Research a4" owner:gis_user>,
+        <Group title:"Research tests" owner:gis_user>,
+        <Group title:"Research items" owner:gis_user>]
+          
         >>> target_clone_jobs = target_gis.groups.clone(groups=[source_groups])
         >>> target_clone_jobs
+        
+        [< Group Cloning Job: True >,
+         < Group Cloning Job: True >,
+         < Group Cloning Job: True >]
         
     """
 
