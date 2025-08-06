@@ -10302,8 +10302,11 @@ class ResourceManager(object):
         self._gis = gis
         self._portal = gis._portal
         self._item = item
-        owner = self._item.owner
-        user = gis.users.get(owner)
+        if item:
+            owner = self._item.owner
+            user = gis.users.get(owner)
+        if user is None:
+            user = gis.users.me
         # DO NOT REMOVE THIS CHECK, it is necessary even though looks redundant.
         # This is the way...
         if (hasattr(user, "id")) and (user.id != "null"):
@@ -12282,6 +12285,7 @@ class User(dict):
         self._workdir = tempfile.gettempdir()
         self._invitemgr = None
         self._hydrated = False
+        self._resource_manager = None
         if userdict:
             if (
                 "groups" in userdict and len(userdict["groups"]) == 0
@@ -12382,7 +12386,9 @@ class User(dict):
         Creates a :class:`~arcgis.gis.ResourceManager` object for the user.
         You can use the methods and properties in this class to work with user app resources.
         """
-        return ResourceManager(gis=self._gis, user=self)
+        if self._resource_manager is None:
+            self._resource_manager = ResourceManager(gis=self._gis, user=self)
+        return self._resource_manager
 
     # ----------------------------------------------------------------------
     def user_types(self):

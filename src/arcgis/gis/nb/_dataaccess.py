@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 from enum import Enum
 import os
 from arcgis._impl.common._isd import InsensitiveDict
@@ -361,21 +362,23 @@ class NotebookFolder:
         else:
             url = f"{self._url}/notebookworkspace/{full_path}"
 
-        headers = {
-            "Content-Type": "application/octet-stream",
-            "Content-Length": str(os.path.getsize(file_path)),
-            "x-ms-blob-type": "BlockBlob",
-            "x-ms-version": "2020-10-02",  # Consider making this configurable
-        }
-        token = self._da._gis.session.auth.token
-        if token:
-            headers["X-Esri-Authorization"] = f"Bearer {token}"
+        original_headers = copy.deepcopy(self._da._gis.session.headers)
+        token_header = "X-Esri-Authorization"
+        if (
+            self._da._gis._session.auth.token
+            and "X-Esri-Authorization" not in original_headers
+        ):
+            token = self._da._gis._session.auth.token
+        # Needed for online and enterprise
+        original_headers.update(
+            {token_header: "Bearer %s" % token, "x-ms-blob-type": "BlockBlob"}
+        )
         with open(file_path, "rb") as file_data:
-            resp = self._session.put(
+            resp = self._da._gis.session.put(
                 url=url,
                 data=file_data,
                 verify=True,
-                headers=self._session.headers,
+                headers=original_headers,
             )
         return 200 <= resp.status_code < 300
 
@@ -620,7 +623,9 @@ class NotebookDataAccess:
 
         result = _find_folder(None)
         if result is None:
-            raise ValueError(f"Folder '{folder_name}' not found in the workspace.")
+            raise ValueError(
+                f"Folder '{folder_name}' not found in the workspace. If you meant to get a file please set type to DATAACCESSTYPE.FILE"
+            )
         return result
 
     # ---------------------------------------------------------------------
@@ -655,9 +660,11 @@ class NotebookDataAccess:
         }
         response = self._gis.session.get(url, params=params).json()
         for f in response.get("Blobs", []):
-            if f["Properties"].get("ResourceType").lower() == "file" and f[
-                "Name"
-            ].endswith(file_name):
+            if (
+                f["Properties"].get("ResourceType")
+                and f["Properties"].get("ResourceType").lower() == "file"
+                and f["Name"].endswith(file_name)
+            ):
                 return NotebookFile(f, self)
         return None
 
@@ -849,18 +856,19 @@ class NotebookDataAccess:
         :param new_name: The new name for the folder.
         :return: True if the folder was renamed successfully, False otherwise.
         """
-        if self._gis._is_agol:
-            url = f"{self._url}/move".replace("/azureblob/", f"/{self._username}/")
-        else:
-            url = f"{self._url}/{self._username}/notebookworkspace/move"
-
         params = {
             "f": "json",
             "source": folder_name,
             "target": new_name,
-            "targetUserName": username or self._username,
             "token": self._gis.session.auth.token,
         }
+        if self._gis._is_agol:
+            url = f"{self._url}/move".replace("/azureblob/", f"/{self._username}/")
+            params["targetUserName"] = username or self._username
+        else:
+            url = f"{self._url}/{self._username}/notebookworkspace/move"
+            params["targetUsername"] = username or self._username
+
         return self._gis.session.post(url, params).json().get("status") == "success"
 
     # ---------------------------------------------------------------------
