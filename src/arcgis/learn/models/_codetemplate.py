@@ -1072,6 +1072,13 @@ class ArcGISImageClassifier:
         raster_mask = pixelBlocks['raster_mask']
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
+
+        if "Preprocessing" in self.json_info
+            if self.json_info["Preprocessing"] == "LandsatService":
+                if raster_pixels.shape[0] == 7 and raster_pixels.dtype == np.float32:
+                    raster_pixels = np.clip(raster_pixels, 0, 1)
+                    raster_pixels =  (raster_pixels + 0.2) / 0.0000275
+
         pixelBlocks['raster_pixels'] = raster_pixels
 
         if self.json_info['ModelName'] == 'MultiTaskRoadExtractor':
@@ -2683,6 +2690,13 @@ class ArcGISImageClassifier:
         raster_mask = pixelBlocks['raster_mask']
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
+
+        if "Preprocessing" in self.json_info
+            if self.json_info["Preprocessing"] == "LandsatService":
+                if raster_pixels.shape[0] == 7 and raster_pixels.dtype == np.float32:
+                    raster_pixels = np.clip(raster_pixels, 0, 1)
+                    raster_pixels =  (raster_pixels + 0.2) / 0.0000275
+                    
         pixelBlocks['raster_pixels'] = raster_pixels
 
         xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   

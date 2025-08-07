@@ -1021,6 +1021,7 @@ class YOLOv3(ArcGISModel):
             ret.learn.data.single_ds.classes = ret._data.classes
             ret.learn.data.single_ds.y.classes = ret._data.classes
 
+        ret._model_emd = emd
         return ret
 
 
