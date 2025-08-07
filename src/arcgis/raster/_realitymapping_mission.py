@@ -5,7 +5,7 @@ from typing import Any, Optional, Union
 import arcgis
 from arcgis.features.layer import FeatureLayer
 from arcgis.gis import GIS, Item
-from arcgis.raster.realitymapping import Project
+from arcgis.raster.realitymapping import Project, _generate_reality_url
 from ._util import (
     _update_settings,
     _validate_settings,
@@ -73,10 +73,7 @@ class Mission:
         self._gis = project._gis
         self._collection = None
         self._prod_to_id_map = {}
-        self._reality_url = (
-            self._gis._url[: self._gis._url.find(".com") + 4]
-            + ":6443/arcgis/reality/api"
-        )
+        self._reality_url = _generate_reality_url(self._gis)
         self._workspace = self._mission_json.get("workspace", None)
 
     @property
@@ -115,13 +112,12 @@ class Mission:
         }
 
         url = f"{self._reality_url}/missions/{self._mission_id}/dataproducts"
-        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        token = self._gis._con._create_token(self._reality_url)
+        headers = {"Authorization": f"Bearer {token}"}
         products = get_request(url, headers=headers)
         if products is None:
             _LOGGER.warning("No products found for this mission.")
             return mission_products
-
-        from arcgis.gis import Item
 
         for product in products:
             prod_type = product["interpretation"]
@@ -227,14 +223,16 @@ class Mission:
         payload = {"processingSettings": current_settings}
 
         url = f"{self._reality_url}/missions/{self.mission_id}/update"
-        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        token = self._gis._con._create_token(self._reality_url)
+        headers = {"Authorization": f"Bearer {token}"}
         resp = post_request(url, payload=payload, headers=headers)
         if resp is None:
             raise RuntimeError("Failed to update mission settings.")
 
     def _get_mission_json(self):
         url = f"{self._reality_url}/missions/{self._mission_id}"
-        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        token = self._gis._con._create_token(self._reality_url)
+        headers = {"Authorization": f"Bearer {token}"}
         resp = get_request(url=url, headers=headers)
         if resp is None:
             raise RuntimeError(f"Failed to retrieve settings.")
@@ -371,11 +369,9 @@ class Mission:
 
         gis = self._gis
 
-        if context is None:
-            context = {"mission": self.mission_id, "workspace": self.workspace}
-        else:
-            context["mission"] = self.mission_id
-            context["workspace"] = self.workspace
+        context = context or {}
+        context["mission"] = self.mission_id
+        context["workspace"] = self.workspace
 
         gpjob = add_image(
             image_collection=image_collection,

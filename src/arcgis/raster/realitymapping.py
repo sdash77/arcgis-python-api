@@ -19,6 +19,7 @@ from ._util import (
 )
 import string as _string
 import random as _random
+from datetime import datetime as _dt
 
 from arcgis.geoprocessing._support import (
     _analysis_job,
@@ -35,6 +36,12 @@ from arcgis.geoprocessing._support import (
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
     return "".join(_random.choice(chars) for _ in range(size))
+
+
+def _generate_reality_url(gis: GIS) -> str:
+    return (
+        gis._url[: gis._url.find(".com") + 4]
+        + ":6443/arcgis/reality/api")
 
 
 ###################################################################################################
@@ -135,8 +142,6 @@ def _create_project(
         out_sr = {"wkt": out_sr}
     else:
         out_sr = {}
-
-    gis = _arcgis.env.active_gis if gis is None else gis
 
     project_definition = {
         "name": name,
@@ -300,8 +305,7 @@ class Project:
         except:
             self._project_name = self._project_item.name
 
-        gis = _arcgis.env.active_gis if gis is None else gis
-        self._gis = gis
+        self._gis = _arcgis.env.active_gis if gis is None else gis
 
         content = self._gis.content
         fm = content.folders
@@ -313,14 +317,12 @@ class Project:
         except:
             self._folder = None
 
-        self._reality_url = (
-            self._gis._url[: self._gis._url.find(".com") + 4]
-            + ":6443/arcgis/reality/api"
-        )
+        self._reality_url = _generate_reality_url(self._gis)
 
     def _get_project_json(self):
         url = f"{self._reality_url}/projects/{self._project_item.itemid}"
-        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        token = self._gis._con._create_token(self._reality_url)
+        headers = {"Authorization": f"Bearer {token}"}
         resp = get_request(url, headers=headers)
         if resp is None:
             raise RuntimeError("Failed to retrieve project JSON.")
@@ -340,7 +342,8 @@ class Project:
         from ._realitymapping_mission import Mission
 
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/missions"
-        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        token = self._gis._con._create_token(self._reality_url)
+        headers = {"Authorization": f"Bearer {token}"}
         res_list = get_request(url, headers=headers)
         if res_list is None:
             raise RuntimeError("Failed to retrieve missions for the project.")
@@ -442,7 +445,8 @@ class Project:
         payload = {"processingSettings": current_settings}
 
         url = f"{self._reality_url}/projects/{self._project_item.itemid}/update"
-        headers = {"Authorization": f"Bearer {self._gis.session.auth.token}"}
+        token = self._gis._con._create_token(self._reality_url)
+        headers = {"Authorization": f"Bearer {token}"}
         resp = post_request(url, payload=payload, headers=headers)
         if resp is None:
             raise RuntimeError("Failed to update project settings.")
@@ -670,24 +674,18 @@ class Project:
         
         """
 
-        gis = _arcgis.env.active_gis if gis is None else gis
         project_item = {"itemId": self._project_item.itemid}
 
-        # workspace = None
-        from datetime import datetime
-
-        service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        service_name = f"reality_pyapi_{_dt.now().strftime('%Y%m%d%H%M%S')}"
         if mission_name is None:
             mission_name = "mission_" + _id_generator()
 
         if image_collection_name:
             if isinstance(image_collection_name, str):
-                # service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                 image_collection_name = {
                     "service_name": service_name,
                     "portal_name": image_collection_name,
                 }
-                # workspace = service_name
             elif isinstance(image_collection_name, dict):
                 service_name = image_collection_name.get("service_name", None)
                 portal_name = image_collection_name.get("portal_name", None)
@@ -696,33 +694,29 @@ class Project:
                         "Please provide either a service_name or portal_name in the image_collection_name dictionary."
                     )
                 if portal_name and not service_name:
-                    # service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                     image_collection_name["service_name"] = service_name
                 elif service_name and not portal_name:
                     portal_name = f"Image Collection for {mission_name}"
                     image_collection_name["portal_name"] = portal_name
                 if service_name:
-                    ok = gis.content.is_service_name_available(
+                    ok = self._gis.content.is_service_name_available(
                         image_collection_name["service_name"], "Image Service"
                     )
                 if not ok:
                     raise RuntimeError(
                         f"The service name {service_name} is not available. Please choose a different name."
                     )
-                # workspace = service_name
         else:
-            # service_name = f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
             portal_name = f"Image Collection for {mission_name}"
             image_collection_name = {
                 "service_name": service_name,
                 "portal_name": portal_name,
             }
-            # workspace = service_name
 
         if raster_type_name is None:
             raster_type_name = "UAV/UAS"
 
-        _ra = gis._tools.rasteranalysis
+        _ra = self._gis._tools.rasteranalysis
         input_rasters, image_collection, raster_type, context, output_service = (
             _ra._sanitize_inputs(
                 image_collection=image_collection_name,
@@ -746,7 +740,7 @@ class Project:
                 context["workspace"] = service_name
         context["group"] = self.group.id
 
-        mission = gis._tools.realitymapping.create_mission(
+        mission = self._gis._tools.realitymapping.create_mission(
             project_item=project_item,
             mission_definition=mission_def,
             input_rasters=input_rasters,
@@ -849,21 +843,18 @@ class Project:
 
         """
 
-        gis = _arcgis.env.active_gis if gis is None else gis
-
         if output_mission_name is None:
             output_mission_name = "mission_" + _id_generator()
-        from datetime import datetime
 
         output_collection_name = (
-            f"reality_pyapi_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            f"reality_pyapi_{_dt.now().strftime('%Y%m%d%H%M%S')}"
         )
 
         if kwargs.get("folder", None) is None:
             kwargs["folder"] = self._folder
         context = {"workspace": output_collection_name, "group": self.group.id}
 
-        mission = gis._tools.realitymapping.merge_missions(
+        mission = self._gis._tools.realitymapping.merge_missions(
             missions=missions,
             output_mission_name=output_mission_name,
             output_collection_name=output_collection_name,
