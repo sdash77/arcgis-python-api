@@ -323,7 +323,10 @@ def _parse_dashboard(item):
     structure = item.get_data()
     if item._gis._is_arcgisonline:
         try:
-            dash_endpoint = item._gis.properties["helperServices"]["dashboardsUtility"]["url"] + "/findAllDependencies"
+            dash_endpoint = (
+                item._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+                + "/findAllDependencies"
+            )
             dash_response = item._gis._con.post(
                 dash_endpoint,
                 {
@@ -331,20 +334,20 @@ def _parse_dashboard(item):
                     "options": {
                         "includeLayers": False,
                         "includeFields": False,
-                    }
+                    },
                 },
-                add_headers = {'Content-Type': 'application/json'},
-                json_encode = False,
-                post_json = True,
+                add_headers={"Content-Type": "application/json"},
+                json_encode=False,
+                post_json=True,
             )
 
-            for item_dict in dash_response['results']:
+            for item_dict in dash_response["results"]:
                 item_id = item_dict.get("itemId", None)
                 if item_id:
                     deps.add(item_id)
         except:
             pass
-    
+
     widgets1 = structure.get("widgets", [])
     widgets2 = structure.get("desktopView", {}).get("widgets", [])
     widgets = widgets1 + widgets2

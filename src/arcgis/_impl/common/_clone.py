@@ -208,7 +208,7 @@ class _DeepCloner:
                                         map_dict[stat_def["onStatisticField"]] = (
                                             stat_def["onStatisticField"].lower()
                                         )
-            
+
                 cloned_db.remap_data(item_mapping=map_dict, force=True)
             else:
                 try:
@@ -216,7 +216,9 @@ class _DeepCloner:
                     for k, v in map_dict.items():
                         m = {"sourceItemId": k, "targetItemId": v}
                         mappings.append(m)
-                    cloned_db.remap_data(item_mapping = {}, force = True, db_mapping = mappings)
+                    cloned_db.remap_data(
+                        item_mapping={}, force=True, db_mapping=mappings
+                    )
                 except:
                     cloned_db.remap_data(item_mapping=map_dict, force=True)
 

@@ -10061,7 +10061,11 @@ class ContentManager(object):
     ):
         if isinstance(db_item, str):
             db_item = self.get(db_item)
-        if not db_item or not isinstance(db_item, Item) or db_item.get("type", None) != "Dashboard":
+        if (
+            not db_item
+            or not isinstance(db_item, Item)
+            or db_item.get("type", None) != "Dashboard"
+        ):
             raise ValueError("Valid Dashboard Item or Item ID must be provided.")
         db_data = db_item.get_data()
         if not self._gis._is_arcgisonline:
@@ -10072,25 +10076,28 @@ class ContentManager(object):
             mappings = [mappings]
         try:
             # if not force, go through each mapping and check items for legit
-            dash_endpoint = self._gis.properties["helperServices"]["dashboardsUtility"]["url"] + "/replaceAllDependencies"
+            dash_endpoint = (
+                self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+                + "/replaceAllDependencies"
+            )
             resp = self._gis._con.post(
                 dash_endpoint,
                 {
-                    "item" : {"data" : db_data},
-                    "mappings" : mappings,
-                    "options" : {
-                        "includeLayers" : include_layers,
-                        "includeFields" : include_fields,
-                    }
+                    "item": {"data": db_data},
+                    "mappings": mappings,
+                    "options": {
+                        "includeLayers": include_layers,
+                        "includeFields": include_fields,
+                    },
                 },
-                add_headers = {'Content-Type': 'application/json'},
-                json_encode = False,
-                post_json = True,
+                add_headers={"Content-Type": "application/json"},
+                json_encode=False,
+                post_json=True,
             )
             updated_data = resp["item"]
             return updated_data
         except Exception as e:
-            raise(e)
+            raise (e)
 
 
 ########################################################################
@@ -19446,7 +19453,9 @@ class Item(dict):
             db_mapping = kwargs.get("db_mapping", None)
             if db_mapping and self._gis._is_arcgisonline:
                 try:
-                    updated_data = self._gis.content._replace_dashboard(self.id, db_mapping, True, True)
+                    updated_data = self._gis.content._replace_dashboard(
+                        self.id, db_mapping, True, True
+                    )
                 except:
                     updated_data = db_data
             else:
