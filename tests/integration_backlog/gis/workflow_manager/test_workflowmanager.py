@@ -1356,6 +1356,41 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsInstance(settings, list, "Incorrect return type")
         self.assertTrue(has_setting, "Does not contain default settings")
 
+    def test_get_valid_settings_without_system_settings(self):
+        # Arrange
+        valid_settings = [
+            {"propName": "smtpDefaultSenderDisplayName", "value": "Updated Name"},
+            {"propName": "smtpDefaultSenderEmail", "value": "update@wmx.com"},
+            {"propName": "smtpUsername", "value": "new_admin"},
+            {"propName": "smtpPassword", "value": "n3W_p@$sw0Rd"},
+            {"propName": "smtpPort", "value": "3113"},
+            {"propName": "smtpProtocol", "value": "New Protocol"},
+            {"propName": "smtpServer", "value": "New Server"},
+            {"propName": "userProp", "value": "UserSetting"},
+        ]
+
+        # Add settings
+        self.connection.workflow_manager.update_settings(valid_settings)
+
+        # Act
+        settings = self.connection.workflow_manager.user_settings
+        has_setting = [
+            x
+            for x in settings
+            if x["propName"] == "smtpDefaultSenderDisplayName"
+            and x["value"] == "Updated Name"
+        ]
+        has_user_setting = [
+            x
+            for x in settings
+            if x["propName"] == "userProp" and x["value"] == "UserSetting"
+        ]
+
+        # Assert
+        self.assertIsInstance(settings, list, "Incorrect return type")
+        self.assertFalse(has_setting, "Should not contain default settings")
+        self.assertTrue(has_user_setting, "Does not contain user settings")
+
     def test_update_settings_returns_successfully(self):
         # Arrange
         uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
