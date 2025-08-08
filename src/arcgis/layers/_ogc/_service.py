@@ -31,15 +31,17 @@ class OGCCollection:
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS = None) -> None:
         """Constructor"""
-        assert (
-            str(url).lower().find("ogcfeatureserver") > -1
-            and os.path.basename(url).isdigit()
-        )
+
         if gis is None:
             gis = _env.active_gis or GIS()
         self._gis = gis
         self._url = url
         self._session = gis.session
+
+        self._is_esri_ogc = (
+            str(url).lower().find("ogcfeatureserver") > -1
+            and os.path.basename(url).isdigit()
+        )
 
     # ---------------------------------------------------------------------
     @property
@@ -109,6 +111,8 @@ class OGCCollection:
         if time_filter:
             params["datetime"] = time_filter
         for k, v in kwargs.items():
+            if not self._is_esri_ogc and k == "as_dict":
+                continue
             params[k] = v
         as_dict = kwargs.pop("as_dict", False)
         if as_dict == False:  # returns all records as sedf
@@ -154,7 +158,6 @@ class OGCCollection:
                     results.extend(r1)
                 params["offset"] += limit
             df = pd.DataFrame(results)
-            df.spatial.name
             return df
         else:
             resp: requests.Response = self._session.get(url=url, params=params)
@@ -186,7 +189,6 @@ class OGCCollection:
                     break
                 params["offset"] += limit
             return results
-        return {}
 
     # ---------------------------------------------------------------------
     def get(self, feature_id: int) -> Dict[str, Any]:
@@ -198,7 +200,8 @@ class OGCCollection:
         """
         assert isinstance(feature_id, int)
         url = f"{self._url}/items/{feature_id}"
-        resp: requests.Response = self._session.get(url=url)
+        params = {"f": "json"}
+        resp: requests.Response = self._session.get(url=url, params=params)
         resp.raise_for_status()
         return resp.json()
 
@@ -225,7 +228,6 @@ class OGCFeatureService:
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS = None) -> "OGCFeatureService":
         """Constructor"""
-        assert str(url).lower().endswith("ogcfeatureserver")
         if gis is None:
             gis = _env.active_gis or GIS()
         self._gis = gis
@@ -235,6 +237,7 @@ class OGCFeatureService:
             self._session = gis._session
         else:
             self._session = gis.session
+        self._is_ogc_feature_server = str(url).lower().endswith("ogcfeatureserver")
 
     # ---------------------------------------------------------------------
     @property
