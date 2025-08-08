@@ -12,6 +12,7 @@ computing power of your site or unregister them if you no longer
 need them.
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 import json
@@ -460,7 +461,7 @@ class Machine(BaseServer):
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
 
-        :return: Boolean
+        :return: String stating "success" or error message.
 
         """
         params = {"f": "json", "csrfPreventToken": self._con.token}

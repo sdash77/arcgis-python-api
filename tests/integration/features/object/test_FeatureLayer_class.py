@@ -1,16 +1,17 @@
 import os
-import time
+import uuid
 import unittest
 from arcgis.features import FeatureLayer, FeatureLayerCollection, FeatureSet, Feature
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 
 from pandas import DataFrame
-from integration.config import QALAB_ROOT_PATH
+from integration.config import QALAB_ROOT_PATH, get_resource_path
 from utils.decorators import integration_test, profiles
 from utils.data_utils import publish_test_item, cleanup_published_items
+from integration.config import get_resource_path
 
 
-@profiles.enterprise_and_agol
+@profiles.all
 @integration_test
 class TestFeatureLayerClass(unittest.TestCase):
     """
@@ -25,15 +26,13 @@ class TestFeatureLayerClass(unittest.TestCase):
         Publish test Items
         :return:
         """
-        uid = int(time.time())
-        cls.qalab_base_path = QALAB_ROOT_PATH
-        cls.qalab_cls_path = os.path.join(
-            cls.qalab_base_path, "features_mod_FeatureLayer_cls"
-        )
 
         # Publish feature layer
-        layer_name = f"dino_FeatureLayer_basic_{uid}"
-        csv_path = os.path.join(cls.qalab_cls_path, "edit_features_points.csv")
+        layer_name = f"dino_FeatureLayer_basic_{uuid.uuid4().hex[:6]}"
+        csv_path = get_resource_path(
+            "staging_data/feature_object/feature_layer_class/edit_features_points.csv",
+            unique_copy=True,
+        )
         capabilities = {"capabilities": "Query,Uploads,Editing,Create,Update,Delete"}
         cls.feature_layer_item = publish_test_item(
             cls.gis,
@@ -48,9 +47,10 @@ class TestFeatureLayerClass(unittest.TestCase):
         ), f"No layers found in collection: {layer_name}"
 
         # Publish feature layer
-        layer_name_delfeatures = f"dino_FeatureLayer_delfeatures_{uid}"
-        fgdb_path = os.path.join(
-            cls.qalab_cls_path, "set1_fortune10_delfeatures.gdb.zip"
+        layer_name_delfeatures = f"dino_FeatureLayer_delfeatures_{uuid.uuid4().hex[:6]}"
+        fgdb_path = get_resource_path(
+            "staging_data/feature_object/feature_layer_class/set1_fortune10_delfeatures.gdb.zip",
+            unique_copy=True,
         )
         cls.feature_layer_del_features = publish_test_item(
             cls.gis, layer_name_delfeatures, fgdb_path, ItemTypeEnum.FILE_GEODATABASE

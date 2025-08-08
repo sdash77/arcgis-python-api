@@ -2,6 +2,7 @@
 StoryMap Implementation
 """
 
+from __future__ import annotations
 from .story import StoryMap, Themes
 from .briefing import Briefing
 from .collection import Collection

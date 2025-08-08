@@ -1145,10 +1145,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         # Use wkt if possible, this solves issues occurring with polygons and multipolygons
         if hasattr(shapely_geometry, "wkt"):
-            return geom_cls(
-                shapely_geometry.wkt,
-                spatial_reference=spatial_reference or {"wkid": 4326},
-            )
+            geom = geom_cls(shapely_geometry.wkt)
+            if spatial_reference:
+                geom["spatialReference"] = spatial_reference
+            return geom
 
         # If no wkt is available, use the mapping function to convert to GeoJSON
         # Convert Shapely geometry to GeoJSON
@@ -3548,19 +3548,16 @@ class Polygon(Geometry):
             geom_json = json.loads(densify_geom.JSON)["rings"]
         else:
             geom_json = self["rings"]
+
+        path = ""
         for ring in geom_json:
-            rings = ring
-            exterior_coords = [["{},{}".format(*c) for c in rings]]
-            path = " ".join(
-                [
-                    "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
-                    for coords in exterior_coords
-                ]
-            )
-            s += (
-                '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
-                'stroke-width="{0}" opacity="0.6" d="{1}" />'
-            ).format(2.0 * scale_factor, path, fill_color)
+            coords = ["{},{}".format(*coord) for coord in ring]
+            path += "M {} L {} z ".format(coords[0], " L ".join(coords[1:]))
+
+        s += (
+            '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
+            'stroke-width="{0}" opacity="0.6" d="{1}" />'
+        ).format(2.0 * scale_factor, path, fill_color)
         return s
 
     # ----------------------------------------------------------------------

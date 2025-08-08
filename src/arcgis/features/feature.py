@@ -1402,9 +1402,9 @@ class FeatureSet(object):
 
             # Obtain a feature from a feature layer:
 
-            >>> feat_set = feature_layer.save(save_location = "C:\ArcGISProjects\"
+            >>> feat_set = feature_layer.save(save_location = "/path/to/output"
             >>>                               out_name = "Power_Plant_Data")
-            "C:\ArcGISProjects\Power_Plant_Data"
+            "/path/to/output/Power_Plant_Data"
 
         """
         _, file_extension = os.path.splitext(out_name)

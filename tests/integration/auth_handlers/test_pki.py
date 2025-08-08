@@ -54,7 +54,7 @@ class TestPKISession(unittest.TestCase):
 
     def test_simple_login_multi_auth(self):
         values = pfx_to_pem(pfx_path=self.cert, pfx_password=self.password)
-        extra_auth = EsriWindowsAuth()
+        extra_auth = EsriWindowsAuth(session=EsriSession())
         with EsriSession(cert=values, verify_cert=False, auth=extra_auth) as session:
             resp = session.get(
                 f"{self.portal_url}/sharing/rest/portals/self/servers?f=json"

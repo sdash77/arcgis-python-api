@@ -2,6 +2,7 @@ import os
 import pathlib
 import tempfile
 
+import json
 import requests
 import shutil
 import urllib.parse
@@ -27,8 +28,18 @@ WEB_RESOURCE_ROOT_PATH = os.environ.get(
 )
 
 
-def get_resource_path(relative_path, verify=True, unique_copy=False):
-    resource = pathlib.Path(RESOURCES_ROOT_PATH) / relative_path
+def get_resource_path(relative_path=None, verify=True, unique_copy=False):
+    """
+    Get the absolute path to a resource file within this repository. e.g. `./geosaurus/tests/resources`
+
+    If `relative_path` is None, it returns the root path of the resources.
+    If `verify` is True, it checks if the resource exists and raises FileNotFoundError if it does not.
+    If `unique_copy` is True, it creates a unique copy of the resource in a temporary directory.
+    """
+    relative_path = relative_path or '' # use empty string for root path
+    # Normalize the path to use forward slashes and remove leading slashes
+    relative_path = relative_path.replace('\\', '/').lstrip('/')
+    resource = pathlib.Path(RESOURCES_ROOT_PATH) / (relative_path or '')
     if verify and not resource.exists():
         raise FileNotFoundError(f"Resource not found: {resource}")
     if unique_copy:
@@ -38,6 +49,24 @@ def get_resource_path(relative_path, verify=True, unique_copy=False):
         shutil.copy(resource, temp_resource_copy)
         resource = temp_resource_copy
     return str(resource)
+
+def get_json_resource(relative_path):
+    """
+    Load json resource from the resources folder.
+    """
+    resource_path = get_resource_path(relative_path, verify=True)
+    with open(resource_path) as f:
+        data = json.load(f)
+    return data
+
+
+def copy_as_tempfile(staging_data_path: str):
+    resource = pathlib.Path(staging_data_path)
+    temp_dir = tempfile.mkdtemp()
+    unique_name = f"{resource.stem}_{uuid.uuid4().hex}{resource.suffix}"
+    temp_resource_copy = pathlib.Path(temp_dir, unique_name)
+    shutil.copy(resource, temp_resource_copy)
+    return str(temp_resource_copy)
 
 
 def get_web_resource_path(relative_path, unique_copy=False):

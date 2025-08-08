@@ -2,6 +2,7 @@
 Provides functions to gather usage statistics for Portal/ArcGIS Online
 """
 
+from __future__ import annotations
 import os
 import time
 import datetime
@@ -12,7 +13,7 @@ from ..._impl.common._utils import (
     local_time_to_online,
     timestamp_to_datetime,
 )
-from ...gis import GIS
+from arcgis.gis import GIS
 from ._base import BasePortalAdmin
 from cachetools import cached, TTLCache
 

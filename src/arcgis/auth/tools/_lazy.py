@@ -1,3 +1,4 @@
+from __future__ import annotations
 import types
 import importlib
 
@@ -19,6 +20,7 @@ class LazyLoader(types.ModuleType):
 
         Set Strict == True if the module is required
         """
+        module_name = module_name.strip()
         if strict:
             if LazyLoader.check_module_exists(module_name) == False:
                 raise ModuleNotFoundError(f"Required {module_name} not found.")

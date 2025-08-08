@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import uuid
 from arcgis.gis._impl._con._url_validator import validate_url
