@@ -26,30 +26,30 @@ class CloningJob:
     This class was not designed to be initialized directly, but rather instances
     are returned by the :meth:`~arcgis.gis.GroupManager.clone` method on
     a :class:`~arcgis.gis.GroupManager` object.
-    
+
     .. code-block:: python
-    
+
         # Usage Example: Cloning groups from one organization deployment to
                          another
-                         
+
         >>> from arcgis.gis import GIS
         >>> source_gis = GIS(profile="your_online_admin_profile")
         >>> target_gis = GIS(profile="your_enterprise_admin_profile")
-        
+
         >>> source_groups = source_gis.groups.search("Research *")
         >>> source_groups
-        
+
         [<Group title:"Water Research a4" owner:gis_user>,
         <Group title:"Research tests" owner:gis_user>,
         <Group title:"Research items" owner:gis_user>]
-          
+
         >>> target_clone_jobs = target_gis.groups.clone(groups=[source_groups])
         >>> target_clone_jobs
-        
+
         [< Group Cloning Job: True >,
          < Group Cloning Job: True >,
          < Group Cloning Job: True >]
-        
+
     """
 
     _future: concurrent.futures.Future
