@@ -39,9 +39,7 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _generate_reality_url(gis: GIS) -> str:
-    return (
-        gis._url[: gis._url.find(".com") + 4]
-        + ":6443/arcgis/reality/api")
+    return gis._url[: gis._url.find(".com") + 4] + ":6443/arcgis/reality/api"
 
 
 ###################################################################################################
@@ -846,9 +844,7 @@ class Project:
         if output_mission_name is None:
             output_mission_name = "mission_" + _id_generator()
 
-        output_collection_name = (
-            f"reality_pyapi_{_dt.now().strftime('%Y%m%d%H%M%S')}"
-        )
+        output_collection_name = f"reality_pyapi_{_dt.now().strftime('%Y%m%d%H%M%S')}"
 
         if kwargs.get("folder", None) is None:
             kwargs["folder"] = self._folder
