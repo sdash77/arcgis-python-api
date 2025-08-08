@@ -14427,7 +14427,6 @@ class Item(dict):
     """
 
     _uid = None
-    _snapeshots = None
 
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
