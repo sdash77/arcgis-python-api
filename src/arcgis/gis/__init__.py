@@ -2106,9 +2106,9 @@ class OfflineContentManager(object):
                                   prevents duplication by reusing existing items when certain
                                   dependencies have already been uploaded.
         ---------------------     ----------------------------------------------------------------------
-        search_existing_items     Optional boolean. Indicating whether items that have already been 
-                                  cloned should be searched for in the GIS and reused rather than cloned 
-                                  again. Existent items will be reused in other new created items, as 
+        search_existing_items     Optional boolean. Indicating whether items that have already been
+                                  cloned should be searched for in the GIS and reused rather than cloned
+                                  again. Existent items will be reused in other new created items, as
                                   appropriate. Default is *False*.
         =====================     ======================================================================
 

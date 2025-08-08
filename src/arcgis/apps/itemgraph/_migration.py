@@ -343,7 +343,7 @@ class _ImportPackage:
 
         item_id = item_properties["id"]
 
-         # read the relationships.json file
+        # read the relationships.json file
         with open(os.path.join(item_folder, "relationships.json"), "r") as rel_file:
             relationships = json.load(rel_file)
 
@@ -351,12 +351,19 @@ class _ImportPackage:
             # check if item already exists in the org
             mini_dict = {"id": item_id, "type": item_properties["type"]}
             existing_item = _search_org_for_existing_item(
-                self.gis, mini_dict,
+                self.gis,
+                mini_dict,
             )
             if existing_item:
                 self.created_item_mapping[item_id] = existing_item.id
-                self._name_mapping[item_id] = (item_properties["title"], existing_item.title)
-                self._service_mapping[item_id] = (item_properties["url"], existing_item.url)
+                self._name_mapping[item_id] = (
+                    item_properties["title"],
+                    existing_item.title,
+                )
+                self._service_mapping[item_id] = (
+                    item_properties["url"],
+                    existing_item.url,
+                )
                 # add the related_items relationships to dict for reconstruction
                 self._item_relationships[item_id] = relationships["related_items"]
                 return []
@@ -454,7 +461,7 @@ class _ImportPackage:
         added_items = []
 
         def _remap_json(json_text, remap_dict):
-            remap_dict.pop(None) # remove None key if exists
+            remap_dict.pop(None)  # remove None key if exists
             if len(remap_dict) > 0:
                 json_text = json_text.replace("\\/", "/")
                 json_text = _text_replace(json_text, remap_dict)
@@ -771,7 +778,10 @@ class _ImportPackage:
                 continue
             try:
                 new_items = self._import_item(
-                    item_folder, preserve_id=preserve_ids, folder=folder, search_existing=search_existing_items,
+                    item_folder,
+                    preserve_id=preserve_ids,
+                    folder=folder,
+                    search_existing=search_existing_items,
                 )
                 if new_items:
                     created_items.extend(new_items)
