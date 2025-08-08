@@ -355,11 +355,11 @@ class _ImportPackage:
             )
             if existing_item:
                 self.created_item_mapping[item_id] = existing_item.id
-                self._name_mapping[item_id] = (item_properties["title"], new_item.title)
-                self._service_mapping[item_id] = (item_properties["url"], new_item.url)
+                self._name_mapping[item_id] = (item_properties["title"], existing_item.title)
+                self._service_mapping[item_id] = (item_properties["url"], existing_item.url)
                 # add the related_items relationships to dict for reconstruction
                 self._item_relationships[item_id] = relationships["related_items"]
-                return [existing_item]
+                return []
 
         if item_properties["type"] in DISALLOWED_TYPES:
             raise RuntimeError(
@@ -454,6 +454,7 @@ class _ImportPackage:
         added_items = []
 
         def _remap_json(json_text, remap_dict):
+            remap_dict.pop(None) # remove None key if exists
             if len(remap_dict) > 0:
                 json_text = json_text.replace("\\/", "/")
                 json_text = _text_replace(json_text, remap_dict)
