@@ -24,6 +24,18 @@ Mission
     :undoc-members:
     :show-inheritance:
 
+SensorType
+^^^^^^^^^^
+.. autoclass:: arcgis.raster.realitymapping.SensorType
+    :undoc-members:
+    :show-inheritance:
+
+ScenarioType
+^^^^^^^^^^^^
+.. autoclass:: arcgis.raster.realitymapping.ScenarioType
+    :undoc-members:
+    :show-inheritance:
+
 
 .. _default_settings:
 

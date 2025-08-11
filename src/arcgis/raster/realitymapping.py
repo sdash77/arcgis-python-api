@@ -17,15 +17,10 @@ from ._util import (
     get_request,
     post_request,
 )
+from enum import Enum
 import string as _string
 import random as _random
 from datetime import datetime as _dt
-
-from arcgis.geoprocessing._support import (
-    _analysis_job,
-    _analysis_job_results,
-    _analysis_job_status,
-)
 
 ###################################################################################################
 ###
@@ -44,10 +39,53 @@ def _generate_reality_url(gis: GIS) -> str:
 
 ###################################################################################################
 ###################################################################################################
+class SensorType(Enum):
+    """
+    Represents the supported SensorTypes for realitymapping projects.
+
+    +----------------+------------------+
+    | Name           | Value            |
+    +================+==================+
+    | DRONE          | "drone"          |
+    +----------------+------------------+
+    | SATELLITE      | "satellite"      |
+    +----------------+------------------+
+    | AERIAL_SCANNED | "aerial_scanned" |
+    +----------------+------------------+
+    | AERIAL_DIGITAL | "aerial_digital" |
+    +----------------+------------------+    
+    """
+
+    DRONE = "drone"
+    SATELLITE = "satellite"
+    AERIAL_SCANNED = "aerial_scanned"
+    AERIAL_DIGITAL = "aerial_digital"
+
+
+class ScenarioType(Enum):
+    """
+    Represents the supported ScenarioTypes for realitymapping projects.
+
+    +----------------+------------------+
+    | Name           | Value            |
+    +================+==================+
+    | DRONE          | "drone"          |
+    +----------------+------------------+
+    | AERIAL_NADIR   | "aerial_nadir"   |
+    +----------------+------------------+
+    | AERIAL_OBLIQUE | "aerial_oblique" |
+    +----------------+------------------+    
+    """
+
+    DRONE = "drone"
+    AERIAL_NADIR = "aerial_nadir"
+    AERIAL_OBLIQUE = "aerial_oblique"
+
+
 def _create_project(
     name: str,
-    sensor_type: str = "Drone",
-    scenario_type: Optional[str] = None,
+    sensor_type: Union[SensorType, str] = SensorType.DRONE,
+    scenario_type: Optional[Union[ScenarioType, str]] = None,
     settings: Optional[dict[str, Any]] = None,
     out_sr: Optional[dict] = None,
     *,
@@ -74,16 +112,18 @@ def _create_project(
     ------------------     --------------------------------------------------------------------
     name                   Required string. The name of the project item to be created.
     ------------------     --------------------------------------------------------------------
-    sensor_type            Optional string. The type of sensor used to collect the imagery.
-                           
-                           Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'.
+    sensor_type            Optional SensorType or string. The type of sensor used to collect the imagery.
+
+                           Please refer to :class:`~arcgis.raster.realitymapping.SensorType` for
+                           supported values.
     ------------------     --------------------------------------------------------------------
-    scenario_type          Optional string. The type of scenario for the imagery.
-                           
-                           Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'.
-                           
-                           The 'Aerial_Nadir' and 'Aerial_Oblique' scenarios are only applicable \
-                           for Aerial Digital sensor type.
+    scenario_type          Optional ScenarioType or string. The type of scenario for the imagery.
+
+                           The ScenarioType.AERIAL_NADIR and ScenarioType.AERIAL_OBLIQUE scenarios
+                           are only applicable for SensorType.AERIAL_DIGITAL.
+
+                           Please refer to :class:`~arcgis.raster.realitymapping.ScenarioType` for
+                           supported values.
     ------------------     --------------------------------------------------------------------
     settings               Optional dictionary.  The project definition dictionary.
                            the definition contais the template informatios such as adjustSettings,
@@ -100,36 +140,38 @@ def _create_project(
 
     gis = _arcgis.env.active_gis if gis is None else gis
 
-    if sensor_type and sensor_type.lower() not in [
-        "drone",
-        "satellite",
-        "aerialdigital",
-        "aerialscanned",
+    if isinstance(sensor_type, SensorType):
+        sensor_type = sensor_type.value
+    elif isinstance(sensor_type, str) and sensor_type.lower() in [
+        e.value for e in SensorType
+    ]:
+        sensor_type = sensor_type.lower()
+    else:
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are listed in the SensorType enum. Please refer to arcgis.raster.realitymapping.SensorType for more information."
+        )
+
+    if scenario_type:
+        if isinstance(scenario_type, ScenarioType):
+            scenario_type = scenario_type.value
+        elif isinstance(scenario_type, str) and scenario_type.lower() in [
+            e.value for e in ScenarioType
+        ]:
+            scenario_type = scenario_type.lower()
+        else:
+            raise RuntimeError(
+                "Invalid sensor type. Supported values are listed in the ScenarioType enum. Please refer to arcgis.raster.realitymapping.ScenarioType for more information."
+            )
+
+    if sensor_type == SensorType.AERIAL_DIGITAL.value and scenario_type not in [
+        ScenarioType.AERIAL_NADIR.value,
+        ScenarioType.AERIAL_OBLIQUE.value,
     ]:
         raise RuntimeError(
-            "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
+            "Invalid scenario type for Aerial Digital sensor. Supported values are 'aerial_nadir', 'aerial_oblique'"
         )
-    if scenario_type and scenario_type.lower() not in [
-        "drone",
-        "aerial_nadir",
-        "aerial_oblique",
-    ]:
-        raise RuntimeError(
-            "Invalid scenario type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
-        )
-    if (
-        sensor_type
-        and sensor_type.lower() == "aerialdigital"
-        and scenario_type.lower()
-        not in [
-            "aerial_nadir",
-            "aerial_oblique",
-        ]
-    ):
-        raise RuntimeError(
-            "Invalid scenario type for Aerial Digital sensor. Supported values are 'Aerial_Nadir', 'Aerial_Oblique'"
-        )
-    if sensor_type and sensor_type.lower() == "satellite":
+
+    if sensor_type == SensorType.SATELLITE.value:
         scenario_type = ""
 
     if isinstance(out_sr, _arcgis.geometry.SpatialReference):
@@ -239,12 +281,18 @@ class Project:
                                                 | om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
                                                 | project = rm_item
     ------------------------------------     --------------------------------------------------------------------
-    sensor_type                              Optional string. The type of sensor used to collect the imagery.
-                                             Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'.
+    sensor_type                              Optional SensorType or string. The type of sensor used to collect the imagery.
+
+                                             Please refer to :class:`~arcgis.raster.realitymapping.SensorType` for
+                                             supported values.
     ------------------------------------     --------------------------------------------------------------------
-    scenario_type                            Optional string. The type of scenario for the imagery.
-                                             Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'.
-                                             If not provided, the default value is 'Drone'.
+    scenario_type                            Optional ScenarioType or string. The type of scenario for the imagery.
+
+                                             The ScenarioType.AERIAL_NADIR and ScenarioType.AERIAL_OBLIQUE scenarios
+                                             are only applicable for SensorType.AERIAL_DIGITAL.
+
+                                             Please refer to :class:`~arcgis.raster.realitymapping.ScenarioType` for
+                                             supported values.
     ------------------------------------     --------------------------------------------------------------------
     settings                                 Optional dictionary. The project settings dictionary.
                                              The definition mainly contains the template information for adjustSettings,
@@ -273,8 +321,8 @@ class Project:
     def __init__(
         self,
         project: Union[str, Item] = None,
-        sensor_type: Optional[str] = "Drone",
-        scenario_type: Optional[str] = "Drone",
+        sensor_type: Optional[Union[Enum, str]] = "Drone",
+        scenario_type: Optional[Union[Enum, str]] = "Drone",
         settings: Optional[dict] = None,
         *,
         gis: Optional[GIS] = None,
