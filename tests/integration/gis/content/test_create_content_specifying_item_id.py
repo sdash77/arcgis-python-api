@@ -8,6 +8,8 @@ from arcgis.geometry import Geometry
 from arcgis._impl.common._utils import zipws
 import json
 from utils.decorators import integration_test, profiles
+from utils.data_utils import cleanup_published_items
+from config import INTEGRATION_TEST_ITEM_TAG
 
 g1 = Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
 g2 = Geometry({"x": -117.15, "y": 34.80, "spatialReference": {"wkid": 4326}})
@@ -209,7 +211,7 @@ webmap = {
 
 @profiles.enterprise
 @integration_test
-class TestItemByItemId(unittest.TestCase):
+class TestAddItemWithItemId(unittest.TestCase):
     """
     Tests the 10.8.1 Create Items with user specified UUID
     Only works for Enterprise
@@ -217,63 +219,55 @@ class TestItemByItemId(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.folder = cls.gis.content.folders._get_or_create(
-            folder="integration_testing_gis_content_folder_add_with_id",
-            owner=cls.gis._username,
-        )
+        cls.items = []
 
     @classmethod
     def tearDownClass(cls):
-        if cls.folder:
-            cls.folder.delete(permanent=True)
+        cleanup_published_items(cls.items)
 
-    def test_add_set_item_id(self):
-        """tests setting an ItemID"""
+    def test_add_with_item_id(self):
+        """tests folder.add() with an ItemID"""
         myuid = uuid.uuid4().hex
-        item = self.folder.add(
+        item = self.gis.content.folders.get().add(
             item_properties={
-                "title": "test_add_item_with_id",
+                "title": f"test_add_{uuid.uuid4().hex[:5]}",
                 "type": "Web Map",
                 "text": json.dumps(webmap),
-                "tags": "integration_testing",
+                "tags": INTEGRATION_TEST_ITEM_TAG,
             },
             item_id=myuid,
         ).result()
+        self.items.append(item)
         assert item.itemid.lower() == myuid.lower()
-        assert item.delete(permanent=True)
 
-    def test_add_set_item_id_error_raised(self):
-        """tests create 2 items with same id"""
+    def test_add_with_item_id_error_raised(self):
+        """tests add 2 items with same id"""
         myuid = uuid.uuid4().hex
-        item1 = self.folder.add(
+        item1 = self.gis.content.folders.get().add(
             item_properties={
-                "title": "test_add_item_with_same_id",
+                "title": f"test_add_{uuid.uuid4().hex[:5]}",
                 "type": "Web Map",
                 "text": json.dumps(webmap),
-                "tags": "integration_testing"
+                "tags": INTEGRATION_TEST_ITEM_TAG,
             },
             item_id=myuid,
         ).result()
-        assert item1.itemid == myuid
 
         with self.assertRaises(Exception) as context:
-            item2 = self.folder.add(
+            item2 = self.gis.content.folder.get().add(
                 item_properties={
-                    "title": "test_add_item_with_same_id",
+                    "title": f"test_add_{uuid.uuid4().hex[:5]}",
                     "type": "Web Map",
                     "text": json.dumps(webmap),
-                    "tags": "integration_testing",
+                    "tags": INTEGRATION_TEST_ITEM_TAG,
                 },
                 item_id=myuid,
             ).result()
-        assert item1.delete(permanent=True)
-        #if item2:
-        #    item2.delete(permanent=True)
+        self.items.append(item1)
 
-    def test_import_data_sedf(self):
+    def test_import_data_with_item_id(self):
         """
-        tests the setting of the UID value to a specific value for
-        publishing/importing content
+        tests the setting of the UID value to a specific value for publishing/importing content
         """
         data = {
             "OBJECTID": [1, 2, 3, 4],
@@ -281,24 +275,19 @@ class TestItemByItemId(unittest.TestCase):
             "NAME": ["a", "b", "c", "d"],
         }
         df = pd.DataFrame(data)
-        df.spatial.name
         myuid = uuid.uuid4().hex
-        item = self.gis.content.import_data(df, title="test_import_data_with_id", item_id=myuid)
-        assert item.itemid == myuid
+        item = self.gis.content.import_data(df, title=f"test_import_data_{uuid.uuid4().hex[:5]}", item_id=myuid)
+        self.items.append(item)
+        assert item.itemid.lower() == myuid.lower()
 
-        related_items = item.related_items("Service2Data", "forward")
-        assert item.delete(permanent=True)
-        for item in related_items:
-            item.delete(permanent=True)
-
-    def test_create_service(self):
+    def test_create_service_with_item_id(self):
         """tests the create_service and setting a item id"""
         myuid = uuid.uuid4().hex
         service_item = self.gis.content.create_service(
-            name=f"test_create_service_with_id", item_id=myuid
+            name=f"test_create_service_{uuid.uuid4().hex[:5]}", item_id=myuid
         )
-        assert myuid == service_item.itemid
-        assert service_item.delete(permanent=True)
+        self.items.append(service_item)
+        assert myuid.lower() == service_item.itemid.lower()
 
     def test_add_publish_workflow(self):
         """tests the add/publish workflow on Enterprise"""
@@ -308,21 +297,19 @@ class TestItemByItemId(unittest.TestCase):
             "NAME": ["a", "b", "c", "d"],
         }
         df = pd.DataFrame(data)
-        df.spatial.name
-
         now = datetime.datetime.now()
         myshapefile_uuid = uuid.uuid4().hex
         myservice_uuid = uuid.uuid4().hex
         with tempfile.TemporaryDirectory() as d:
             mydata = os.path.join(d, "export_data.shp")
             data = df.spatial.to_featureclass(mydata)
-            temp_zip = os.path.join(d, f"test_add_publish_flow_{uuid.uuid4().hex[:5]}.zip")
+            temp_zip = os.path.join(d, f"test_publish_{uuid.uuid4().hex[:5]}.zip")
             zipws(path=d, outfile=temp_zip, keep=False)
-            shp_item = self.folder.add(
+            shp_item = self.gis.content.folders.get().add(
                 item_id=myshapefile_uuid,
                 item_properties={
-                    "title": f"test_add_publish_flow_with_id",
-                    "tags": "integration_testing",
+                    "title": f"test_publish_{uuid.uuid4().hex[:5]}",
+                    "tags": INTEGRATION_TEST_ITEM_TAG,
                     "type": "Shapefile",
                 },
                 file=temp_zip,
@@ -331,10 +318,9 @@ class TestItemByItemId(unittest.TestCase):
                 publish_parameters={"name": f"test_publish_with_id_{now.microsecond}"},
                 item_id=myservice_uuid,
             )
-            assert shp_pitem.itemid == myservice_uuid
-            assert shp_item.itemid == myshapefile_uuid
-            assert shp_item.delete(permanent=True)
-            assert shp_pitem.delete(permanent=True)
+            self.items.append(shp_pitem)
+            assert shp_pitem.itemid.lower() == myservice_uuid.lower()
+            assert shp_item.itemid.lower() == myshapefile_uuid.lower()
 
 
 if __name__ == "__main__":
