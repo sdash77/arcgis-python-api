@@ -1,8 +1,6 @@
 import time
 import unittest
 import pandas as pd
-from pandas import Timestamp
-from arcgis.gis import GIS
 from arcgis.geometry import Geometry
 from arcgis.features import Feature, FeatureSet, FeatureLayer
 from utils.decorators import integration_test, profiles
@@ -21,7 +19,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         cls.uid = int(time.time())
 
     def setUp(self):
-        test_data = self.generate_test_data()
+        test_data = get_edit_features_test_data(self.gis)
         sdf = pd.DataFrame(test_data)
         sdf.SHAPE = sdf.SHAPE.apply(lambda x: Geometry(x))
         sdf.spatial.set_geometry("SHAPE")
