@@ -6,7 +6,7 @@ from utils.decorators import integration_test, profiles
 
 @integration_test
 @profiles.enterprise_and_agol
-class TestGSSettingSR(unittest.TestCase):
+class TestGSSettingSRSync(unittest.TestCase):
     """
     Tests that sync operations set the spatial reference on the geometry objects
     """
@@ -599,7 +599,10 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        assert gs.union(sr=3857, geometries=geoms,)
+        assert gs.union(
+            sr=3857,
+            geometries=geoms,
+        )
 
     def test_gs_trim_extend(self):
         """Tests the trim_extend using auth and no auth"""

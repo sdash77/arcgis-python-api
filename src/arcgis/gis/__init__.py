@@ -10059,6 +10059,53 @@ class ContentManager(object):
                 Item(gis=self._gis, itemid=item)._hydrated = False
         return res
 
+    def _replace_dashboard(
+        self,
+        db_item: Union[str, Item],
+        mappings: Union[list, dict],
+        include_layers: bool = False,
+        include_fields: bool = False,
+    ):
+        if isinstance(db_item, str):
+            db_item = self.get(db_item)
+        if (
+            not db_item
+            or not isinstance(db_item, Item)
+            or db_item.get("type", None) != "Dashboard"
+        ):
+            raise ValueError("Valid Dashboard Item or Item ID must be provided.")
+        db_data = db_item.get_data()
+        if not self._gis._is_arcgisonline:
+            raise RuntimeError(
+                "Dashboard API functionality is currently only available for ArcGIS Online organizations."
+            )
+        if isinstance(mappings, dict):
+            mappings = [mappings]
+        try:
+            # if not force, go through each mapping and check items for legit
+            dash_endpoint = (
+                self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+                + "/replaceAllDependencies"
+            )
+            resp = self._gis._con.post(
+                dash_endpoint,
+                {
+                    "item": {"data": db_data},
+                    "mappings": mappings,
+                    "options": {
+                        "includeLayers": include_layers,
+                        "includeFields": include_fields,
+                    },
+                },
+                add_headers={"Content-Type": "application/json"},
+                json_encode=False,
+                post_json=True,
+            )
+            updated_data = resp["item"]
+            return updated_data
+        except Exception as e:
+            raise (e)
+
 
 ########################################################################
 class CategorySchemaManager(object):
@@ -14427,7 +14474,6 @@ class Item(dict):
     """
 
     _uid = None
-    _snapeshots = None
 
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
@@ -17566,7 +17612,10 @@ class Item(dict):
             in the ArcGIS REST API documentation.
         """
 
-        if self.type == "Vector Tile Package" and build_initial_cache == False:
+        if (
+            self.type in ["Vector Tile Package", "Scene Package"]
+            and build_initial_cache == False
+        ):
             build_initial_cache = True
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -17877,6 +17926,21 @@ class Item(dict):
                     publish_parameters["name"], "featureService"
                 ):
                     raise Exception("Service name already exists in your org.")
+        elif publish_parameters and self.type in ["Scene Package"]:
+            if not "maxRecordCount" in publish_parameters:
+                publish_parameters["maxRecordCount"] = 2000
+            if not "name" in publish_parameters:
+                service_name: str = self.title
+                while (
+                    self._gis.content.is_service_name_available(
+                        service_name, "featureService"
+                    )
+                    == False
+                ):
+                    service_name = (
+                        re.sub(r"[\W_]+", "_", service_name) + uuid.uuid4().hex[:2]
+                    )
+                publish_parameters["name"] = service_name
 
         # New parameter that affects arcgis Online and Enterprise 11.4+
         # Applied to geojson, csv, excel
@@ -19446,7 +19510,7 @@ class Item(dict):
         return url
 
     # ----------------------------------------------------------------------
-    def remap_data(self, item_mapping: dict[str, str], force=False):
+    def remap_data(self, item_mapping: dict[str, str], force=False, **kwargs):
         """
         Method to help users easily replace data in web maps, applications, and other item types
         that may contain references to other items. Users pass in a dictionary of item ids
@@ -19506,7 +19570,6 @@ class Item(dict):
         _TEXT_BASED_ITEM_TYPES = [
             "Web Map",
             "Map Service",
-            "Dashboard",
             "Feature Collection",
             "Web Mapping Application",
             "Application",
@@ -19676,6 +19739,28 @@ class Item(dict):
                 tfile.write(new_string)
                 tfile.close()
             return self.update(item_properties={}, data=tfile.name)
+
+        elif self.type == "Dashboard":
+            db_data = self.get_data()
+            db_mapping = kwargs.get("db_mapping", None)
+            if db_mapping and self._gis._is_arcgisonline:
+                try:
+                    updated_data = self._gis.content._replace_dashboard(
+                        self.id, db_mapping, True, True
+                    )
+                except:
+                    updated_data = db_data
+            else:
+                if db_mapping:
+                    warnings.warn(
+                        "Dashboard API functionality is currently only available for ArcGIS Online organizations."
+                    )
+                updated_data = db_data
+
+            old_string = json.dumps(updated_data)
+            new_string = _common_utils._text_replace(old_string, expanded_dict)
+            new_data = json.loads(new_string)
+            return self.update(item_properties={}, data=new_data)
 
         else:
             raise ValueError(

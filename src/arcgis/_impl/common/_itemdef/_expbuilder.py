@@ -196,9 +196,11 @@ class _WebExperience(_ItemDefinition):
                 file=tfile.name,
             )
             if new_item.url:
-                new_item.update(
-                    {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
-                )
+                if self.target._portal.is_arcgisonline:
+                    url = f"https://experience.arcgis.com/experience/{new_item.id}"
+                else:
+                    url = f"{self.target._portal.url}/apps/experiencebuilder/experience/?id={new_item.id}"
+                new_item.update({"url": url})
             keywords = new_item.typeKeywords
             for word in keywords:
                 if "status" in word:

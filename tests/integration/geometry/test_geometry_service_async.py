@@ -6,7 +6,7 @@ from utils.decorators import integration_test, profiles
 
 @integration_test
 @profiles.enterprise_and_agol
-class TestGSSettingSR(unittest.TestCase):
+class TestGSSettingSRAsync(unittest.TestCase):
     """
     Tests that async operations set the spatial reference on the geometry objects
     """

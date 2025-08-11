@@ -14321,7 +14321,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
-        if output_service:
+        if output_service and not isinstance(output_name, Item):
             item = output_service
         if future:
             return RAJob(gpjob, item=item)
