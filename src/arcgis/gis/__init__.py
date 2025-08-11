@@ -17612,7 +17612,10 @@ class Item(dict):
             in the ArcGIS REST API documentation.
         """
 
-        if self.type == "Vector Tile Package" and build_initial_cache == False:
+        if (
+            self.type in ["Vector Tile Package", "Scene Package"]
+            and build_initial_cache == False
+        ):
             build_initial_cache = True
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -17923,6 +17926,21 @@ class Item(dict):
                     publish_parameters["name"], "featureService"
                 ):
                     raise Exception("Service name already exists in your org.")
+        elif publish_parameters and self.type in ["Scene Package"]:
+            if not "maxRecordCount" in publish_parameters:
+                publish_parameters["maxRecordCount"] = 2000
+            if not "name" in publish_parameters:
+                service_name: str = self.title
+                while (
+                    self._gis.content.is_service_name_available(
+                        service_name, "featureService"
+                    )
+                    == False
+                ):
+                    service_name = (
+                        re.sub(r"[\W_]+", "_", service_name) + uuid.uuid4().hex[:2]
+                    )
+                publish_parameters["name"] = service_name
 
         # New parameter that affects arcgis Online and Enterprise 11.4+
         # Applied to geojson, csv, excel
