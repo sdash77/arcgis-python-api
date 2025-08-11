@@ -7346,7 +7346,11 @@ def _deep_get(dictionary, *keys):
     dictionary - The dictionary to search for the value
     *keys - The keys used to fetch the desired value"""
 
-    return reduce(lambda d, key: d.get(key) if d else None, keys, dictionary)
+    return reduce(
+        lambda d, key: d.get(key) if d and isinstance(d, dict) else None,
+        keys,
+        dictionary,
+    )
 
 
 # endregion
