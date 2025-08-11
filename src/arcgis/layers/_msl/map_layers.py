@@ -590,7 +590,7 @@ class MapFeatureLayer(Layer):
         out_sr: int | None = None,
         geometry_precision: int | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict[str, Any]] | None = None,
         return_z: bool = False,
         return_m: bool = False,
@@ -703,7 +703,7 @@ class MapFeatureLayer(Layer):
                                             `False`. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is `true`.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names by which to order the
+        order_by_fields                     Optional string or list of strings. One or more field names by which to order the
                                             results. Use ``ASC`` or ``DESC`` for ascending
                                             or descending, respectively, following every field to be ordered:
 
@@ -1324,7 +1324,7 @@ class MapTable(MapFeatureLayer):
         result_record_count: int | None = None,
         object_ids: str | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict] | None = None,
         return_all_records: bool = True,
         historic_moment: int | _dt.datetime | None = None,
@@ -1390,7 +1390,7 @@ class MapTable(MapFeatureLayer):
                                             `return_ids_only` parameter. If `return_count_only = True`, the
                                             response will return both the count and the extent.
         -------------------------------     --------------------------------------------------------------------
-         order_by_fields                    Optional string. One or more field names by which to order the
+        order_by_fields                     Optional string or list of strings. One or more field names by which to order the
                                             results. Use ``ASC`` or ``DESC`` for ascending
                                             or descending, respectively, following every field to be ordered:
 

@@ -3,6 +3,7 @@ New Geometries Classes
 """
 
 from __future__ import annotations
+from abc import abstractmethod
 from arcgis.auth.tools import LazyLoader
 import copy
 import json
@@ -1143,14 +1144,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         # get the geometry type from the shapely geometry
         geom_cls = _geojson_type_to_esri_type(shapely_geometry.geom_type)
 
-        # Use wkt if possible, this solves issues occurring with polygons and multipolygons
-        if hasattr(shapely_geometry, "wkt"):
-            geom = geom_cls(shapely_geometry.wkt)
-            if spatial_reference:
-                geom["spatialReference"] = spatial_reference
-            return geom
-
-        # If no wkt is available, use the mapping function to convert to GeoJSON
+        # Use the mapping function to convert to GeoJSON
         # Convert Shapely geometry to GeoJSON
         geojson_geom = mapping(shapely_geometry)
         # Ensure coordinate consistency (keep list, no tuple conversion)
@@ -1574,10 +1568,19 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
     @property
     def is_multipart(self):
         """
-        The ``is_multipart`` method determines if the number of parts for this geometry is more than one.
+        Return ``True`` when this geometry has more than one part.
+
+        **Rules**
+
+        * **Point** - always ``False``
+        * **Multipoint** - ``True`` if it contains more than one point
+        * **Polyline** - ``True`` if it contains more than one path
+        * **Polygon** - ``True`` if it contains more than one **exterior** ring.
+        It relies on the orientation of the rings to determine if it is exterior or interior.
+        * **Envelope** - always ``False``
 
         .. note::
-            The ``is_multipart`` method requires ArcPy or Shapely
+            The ``is_multipart`` method requires ArcPy or it will fall back to a Python implementation.
 
         .. code-block:: python
 
@@ -1593,17 +1596,19 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return:
             A boolean indicating yes (True), or no (False)
+        :rtype:
+            bool
         """
-        if HAS_ARCPY and isinstance(self, Envelope):
-            return False
-        elif HAS_ARCPY:
-            return getattr(self.as_arcpy, "isMultipart", None)
-        elif HAS_SHAPELY:
-            if self.type.lower().find("multi") > -1:
-                return True
-            else:
+        if HAS_ARCPY:
+            if isinstance(self, Envelope):
                 return False
-        return
+            return getattr(self.as_arcpy, "isMultipart", None)
+
+        return self._is_multipart_fallback()
+
+    @abstractmethod
+    def _is_multipart_fallback(self):
+        pass
 
     # ----------------------------------------------------------------------
     @property
@@ -3356,6 +3361,9 @@ class MultiPoint(Geometry):
 
         return cls({"points": [p for p in coordinates], "spatialReference": sr})
 
+    def _is_multipart_fallback(self):
+        return True if len(self["points"]) > 1 else False
+
 
 ########################################################################
 class Point(Geometry):
@@ -3482,6 +3490,9 @@ class Point(Geometry):
             gj["coordinates"].append(self["z"])
         return gj
 
+    def _is_multipart_fallback(self):
+        return False
+
 
 ########################################################################
 class Polygon(Geometry):
@@ -3548,19 +3559,16 @@ class Polygon(Geometry):
             geom_json = json.loads(densify_geom.JSON)["rings"]
         else:
             geom_json = self["rings"]
+
+        path = ""
         for ring in geom_json:
-            rings = ring
-            exterior_coords = [["{},{}".format(*c) for c in rings]]
-            path = " ".join(
-                [
-                    "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
-                    for coords in exterior_coords
-                ]
-            )
-            s += (
-                '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
-                'stroke-width="{0}" opacity="0.6" d="{1}" />'
-            ).format(2.0 * scale_factor, path, fill_color)
+            coords = ["{},{}".format(*coord) for coord in ring]
+            path += "M {} L {} z ".format(coords[0], " L ".join(coords[1:]))
+
+        s += (
+            '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
+            'stroke-width="{0}" opacity="0.6" d="{1}" />'
+        ).format(2.0 * scale_factor, path, fill_color)
         return s
 
     # ----------------------------------------------------------------------
@@ -3609,42 +3617,78 @@ class Polygon(Geometry):
 
     @classmethod
     def _from_geojson(cls, data, sr=None):
+        """
+        Convert a GeoJSON Polygon / MultiPolygon into an Esri JSON Polygon.
+
+        Parameters
+        ----------
+        data : dict
+            GeoJSON geometry (RFC 7946) of type "Polygon" or "MultiPolygon".
+        sr : dict, optional
+            Esri spatialReference object to copy into the output.
+
+        Returns
+        -------
+        dict
+            Esri-JSON polygon with keys: "rings", "hasZ", "hasM",
+            and optionally "spatialReference".
+        """
+        from arcgis._impl.common._arcgis2geojson import ringIsClockwise, closeRing
+
         sr = sr or {"wkid": 4326}
+        gtype = data.get("type")
+        if gtype == "Polygon":
+            polys = [data["coordinates"]]  # wrap as multipolygon
+        elif gtype == "MultiPolygon":
+            polys = data["coordinates"]
+        else:
+            raise ValueError(f"Unsupported geometry type: {gtype!r}")
 
-        coordinates = data["coordinates"]
-        part_list = []
+        rings = []  # flat list of all rings for Esri JSON
 
-        if data["type"].lower() == "multipolygon":
-            for polygon in coordinates:  # Iterate over individual polygons
-                polygon_rings = []
-                for ring in polygon:  # Outer + inner rings
-                    polygon_rings.append(
-                        [tuple(coord) for coord in ring]
-                    )  # Convert to tuple
-                part_list.append(
-                    polygon_rings
-                )  # Append entire polygon as a separate entry
-        elif data["type"].lower() == "polygon":
-            polygon_rings = [
-                [tuple(coord) for coord in coordinates[0]]
-            ]  # Ensure consistent list structure
-            part_list.append(polygon_rings)  # Keep same nesting level as MultiPolygon
+        for poly in polys:
+            if not poly:
+                continue  # skip empty parts
 
-        return cls({"rings": part_list, "spatialReference": sr})
+            # ---- outer ring ----------------------------------------------------
+            outer = closeRing(poly[0])
+            if not ringIsClockwise(outer):  # GeoJSON outer is CCW -> flip
+                outer = outer[::-1]
+            rings.append(outer)
+
+            # ---- holes ---------------------------------------------------------
+            for hole in poly[1:]:
+                hole = closeRing(hole)
+                if ringIsClockwise(hole):  # GeoJSON hole is CW -> flip
+                    hole = hole[::-1]
+                rings.append(hole)
+
+        max_dim = len(polys[0][0][0]) if polys else 2
+
+        esri = {
+            "rings": rings,
+            "hasZ": max_dim >= 3,  # by default assume the third dim is z
+            "hasM": max_dim >= 4,
+            "spatialReference": sr,
+        }
+
+        return cls(esri)
 
     @property
     def __geo_interface__(self) -> dict:
         """Returns the geometry in valid GeoJSON format as either Polygon or MultiPolygon."""
-        rings = self["rings"]
+        from arcgis._impl.common._arcgis2geojson import convertRingsToGeoJSONUnchecked
 
-        # Ensure the structure is correct (list of lists of coordinates)
-        col = [[tuple(pt) for pt in ring] for ring in rings]
+        return convertRingsToGeoJSONUnchecked(self["rings"])
 
-        # Check if it's a MultiPolygon
-        if len(rings) > 1:
-            return {"type": "MultiPolygon", "coordinates": [col]}  # Wrap in extra list
-        else:
-            return {"type": "Polygon", "coordinates": col}
+    def _is_multipart_fallback(self):
+        from arcgis._impl.common._arcgis2geojson import ringIsClockwise
+
+        num_exterior = 0
+        for ring in self["rings"]:
+            if ringIsClockwise(ring):
+                num_exterior += 1
+        return num_exterior > 1
 
 
 ########################################################################
@@ -3817,6 +3861,9 @@ class Polyline(Geometry):
                 "spatialReference": sr,
             }
         )
+
+    def _is_multipart_fallback(self):
+        return True if len(self["paths"]) > 1 else False
 
 
 ########################################################################
@@ -4012,6 +4059,9 @@ class Envelope(Geometry):
     def __getstate__(self):
         """pickle support"""
         return dict(self)
+
+    def _is_multipart_fallback(self):
+        return False
 
 
 ########################################################################

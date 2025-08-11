@@ -5,6 +5,7 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, ProfileManager
 from utils.decorators import integration_test, profiles
 
+
 # Use World Countries Feature Layer item: 2ef6f1c2b2e04e68b30c54899d82d123
 ###########################################################################
 
@@ -17,7 +18,6 @@ class TestQueryAnalytics(unittest.TestCase):
     FeatureLayer
     """
 
-    # ----------------------------------------------------------------------
     def test_query(self):
         """Tests the simple query analytics call"""
         url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
@@ -37,7 +37,6 @@ class TestQueryAnalytics(unittest.TestCase):
         assert len(result) >= 0
         assert "Cumulative_Distrib" in result.columns
 
-    ##----------------------------------------------------------------------
     def test_query_async(self):
         """Tests the simple query analytics call"""
         url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
@@ -60,7 +59,6 @@ class TestQueryAnalytics(unittest.TestCase):
         assert len(result) >= 0
         assert "Cumulative_Distrib" in result.columns
 
-    ## ----------------------------------------------------------------------
     def test_query_async_less_than_100(self):
         """Tests the simple query analytics call"""
         url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
@@ -89,6 +87,5 @@ class TestQueryAnalytics(unittest.TestCase):
         assert "Cumulative_Distrib" in result.columns
 
 
-###########################################################################
 if __name__ == "__main__":
     unittest.main()

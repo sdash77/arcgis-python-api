@@ -390,8 +390,15 @@ class TestServerMachine(unittest.TestCase):
         machine_name = machines.list()[0].properties.machineName
         machine = machines.get(machine_name=machine_name)
         self.assertIsInstance(machine, Machine)
-        self.assertEquals(machine.properties.machineName, machine_name)
-        assert machine.properties["adminURL"].endswith(":6443/arcgis/admin")
+        self.assertEqual(
+            machine.properties.machineName,
+            machine_name,
+            f"Machine name from properties incorrect: {machine.properties.machineName}",
+        )
+        self.assertTrue(
+            machine.properties["adminURL"].endswith(":6443/arcgis/admin"),
+            "Incorrect URL parts",
+        )
 
 
 @profiles.admin_enterprise
