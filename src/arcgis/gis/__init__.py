@@ -18096,6 +18096,8 @@ class Item(dict):
         max_scale: float,
         cache_info: Optional[dict[str, Any]] = None,
         build_cache: bool = False,
+        *,
+        extent: list[float] | None = None,
     ):
         """
         The ``create_tile_service`` method allows publishers and administrators to publish hosted feature
@@ -18158,6 +18160,12 @@ class Item(dict):
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
+        original_cache_value: bool = copy.deepcopy(build_cache)
+        if build_cache == True:
+            # build_cache needs to be false as of 4/16/2025 for ArcGIS Online
+            # and cache built later in the process. Enterprise automatically
+            # builds the cache.
+            build_cache = False
         if self.type.lower() == "Feature Service".lower():
             if cache_info is None:
                 cache_info = {
@@ -18285,10 +18293,17 @@ class Item(dict):
                         },
                     ],
                 }
+            storage_format: str = "esriMapCacheStorageModeExploded"
+            if (
+                self._gis._is_kubernetes == False
+                and self._gis._is_arcgisonline == False
+            ):
+                storage_format: str = "esriMapCacheStorageModeCompactV2"
             pp = {
                 "minScale": min_scale,
                 "maxScale": max_scale,
                 "name": title,
+                "layers": [],
                 "tilingSchema": {
                     "tileCacheInfo": cache_info,
                     "tileImageInfo": {
@@ -18297,14 +18312,21 @@ class Item(dict):
                         "antialiasing": True,
                     },
                     "cacheStorageInfo": {
-                        "storageFormat": "esriMapCacheStorageModeExploded",
+                        "storageFormat": storage_format,
                         "packetSize": 128,
                     },
                 },
                 "cacheOnDemand": True,
-                "cacheOnDemandMinScale": 144448,
+                "cacheOnDemandMinScale": min_scale,
                 "capabilities": "Map,ChangeTracking",
             }
+            if (
+                self._gis._is_arcgisonline == False
+                and self._gis._is_kubernetes == False
+            ):
+                pp.pop("capabilities", None)
+                pp.pop("cacheOnDemandMinScale", None)
+                pp["cacheOnDemand"] = False
             params = {
                 "f": "json",
                 "outputType": "tiles",
@@ -18313,17 +18335,40 @@ class Item(dict):
                 "filetype": "featureService",
                 "publishParameters": json.dumps(pp),
             }
-            url = "%s/content/users/%s/publish" % (
+            url = "%scontent/users/%s/publish" % (
                 self._portal.resturl,
                 self._user_id,
             )
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res["services"], folder=None)
-            if self._gis._portal.is_arcgisonline:
-                from ..mapping._types import MapImageLayer
+            if original_cache_value and self._gis._is_arcgisonline == False:
+                from arcgis.layers import Service
 
                 ms_url = self._gis.content.get(serviceitem_id).url
-                ms = MapImageLayer(url=ms_url, gis=self._gis)
+                ms = Service(ms_url, server=self._gis)
+                mgr = ms.manager
+                if extent is None:
+                    extent = " ".join(
+                        [
+                            str(ms.properties["fullExtent"]["xmin"]),
+                            str(ms.properties["fullExtent"]["ymin"]),
+                            str(ms.properties["fullExtent"]["xmax"]),
+                            str(ms.properties["fullExtent"]["ymax"]),
+                        ]
+                    )
+                lods = []
+                for lod in cache_info["lods"]:
+                    if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
+                        lods.append(str(lod["scale"]))
+                levels = ";".join(lods)
+                mgr.build_cache(levels=levels, extent=extent)
+                return self._gis.content.get(serviceitem_id)
+            elif self._gis._portal.is_arcgisonline and original_cache_value:
+                from arcgis.layers import Service
+
+                ms_url = self._gis.content.get(serviceitem_id).url
+
+                ms = Service(ms_url, server=self._gis)
                 extent = ",".join(
                     [
                         str(ms.properties["fullExtent"]["xmin"]),
@@ -18336,7 +18381,13 @@ class Item(dict):
                 for lod in cache_info["lods"]:
                     if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
                         lods.append(str(lod["level"]))
-                ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                try:
+
+                    ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                except Exception as ex:
+                    print(
+                        f"An issue building the cache occurred: {ex}. Please see the item homepage for more details."
+                    )
             return self._gis.content.get(serviceitem_id)
         else:
             raise ValueError("Input must of type FeatureService")
