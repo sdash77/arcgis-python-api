@@ -53,7 +53,7 @@ class SensorType(Enum):
     | AERIAL_SCANNED | "aerial_scanned" |
     +----------------+------------------+
     | AERIAL_DIGITAL | "aerial_digital" |
-    +----------------+------------------+    
+    +----------------+------------------+
     """
 
     DRONE = "drone"
@@ -74,7 +74,7 @@ class ScenarioType(Enum):
     | AERIAL_NADIR   | "aerial_nadir"   |
     +----------------+------------------+
     | AERIAL_OBLIQUE | "aerial_oblique" |
-    +----------------+------------------+    
+    +----------------+------------------+
     """
 
     DRONE = "drone"
