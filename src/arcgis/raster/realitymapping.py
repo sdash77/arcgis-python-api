@@ -98,7 +98,7 @@ def _create_project(
 
     """
 
-    gis = _arcgis.env.active_gis if gis is None else gis
+    gis = gis or _arcgis.env.active_gis
 
     if sensor_type and sensor_type.lower() not in [
         "drone",
