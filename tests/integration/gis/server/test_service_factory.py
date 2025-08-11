@@ -30,6 +30,7 @@ from arcgis.schematics import SchematicLayers
 from arcgis.layers import SceneLayer
 from utils.decorators import integration_test
 
+
 ############################################################################
 # @unittest.SkipTest
 @integration_test
@@ -47,12 +48,7 @@ class ServiceFactoryTest(unittest.TestCase):
         assert service
         from arcgis.gis import GIS
 
-        gis = GIS(
-            "https://deldev.maps.arcgis.com",
-            "demos_deldev",
-            "DelDevs.1234",
-            verify_cert=False,
-        )
+        gis = GIS(profile="your_online_profile")
         service = Service(url_or_item=url)
         # assert service.execute_911_calls_hotspot()
         assert service
