@@ -35,6 +35,21 @@ wavelengths_required_cfg = dict(
         ),
         pretrained_path="https://hf.co/torchgeo/dofa/resolve/b8db318b64a90b9e085ec04ba8851233c5893666/dofa_large_patch16_224-0ff904d3.pth",
     ),
+    clay_large=dict(
+        backbone_name="clay_large",
+        patch_size=16,
+        embed_dim=1024,
+        depth=24,
+        num_heads=16,
+        drop_path_rate=0.0,
+        window_block_indexes=(
+            list(range(0, 7))
+            + list(range(8, 15))
+            + list(range(16, 23))
+            + list(range(24, 31))
+        ),
+        pretrained_path="https://huggingface.co/made-with-clay/Clay/resolve/main/v1.5/clay-v1.5.ckpt",
+    ),
 )
 
 vit_foundation_model_config = dict(

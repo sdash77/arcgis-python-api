@@ -8,6 +8,12 @@ from mmdet3d.registry import MODELS as MM3D_MODELS
 from ._arcgis_model import _EmptyData
 
 
+class GridSizeError(Exception):
+    def __init__(self, voxel_size):
+        self.voxel_size = voxel_size
+        super().__init__(f"The size {voxel_size} of the voxel is too big.")
+
+
 def get_backbone_channel(model_cfg, data, data_preprocessor):
     temp_model = MM3D_MODELS.build(model_cfg).to(data.device)
 
@@ -43,7 +49,7 @@ def get_voxel_size(voxel_parms, data):
         # check if given voxel_size is creating at least 64x64x8 voxels
         grid_size = pc_lwh / voxel_size
         if min(grid_size) < 64:
-            raise Exception(f"The size {voxel_size} of the voxel is too big.")
+            raise GridSizeError(voxel_size)
 
     grid_size = torch.tensor(pc_lwh / voxel_size).round().long().tolist()[::-1]
 
