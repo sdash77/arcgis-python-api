@@ -138,7 +138,7 @@ def _create_project(
 
     """
 
-    gis = _arcgis.env.active_gis if gis is None else gis
+    gis = gis or _arcgis.env.active_gis
 
     if isinstance(sensor_type, SensorType):
         sensor_type = sensor_type.value

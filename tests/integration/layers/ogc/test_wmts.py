@@ -12,7 +12,7 @@ wm_urls = {
 
 
 @integration_test
-class TestwmtsLayer(unittest.TestCase):
+class TestWMTSLayer(unittest.TestCase):
     """Tests working with a wmts Layer"""
 
     @classmethod
