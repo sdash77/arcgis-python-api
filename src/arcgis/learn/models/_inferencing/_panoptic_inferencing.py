@@ -434,7 +434,8 @@ class ChildPanopticSegmenter:
 
         transforms = [0]
         if test_time_aug:
-            if self.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+            image_space_used = self.json_info.get("ImageSpaceUsed")
+            if image_space_used == "MAP_SPACE":
                 transforms = list(range(8))
             else:
                 transforms = [
