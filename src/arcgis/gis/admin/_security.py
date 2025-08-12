@@ -615,7 +615,7 @@ class SSLCertificates(BasePortalAdmin):
         ---------------------------     --------------------------------------------------------------------
         state                           Optional string. The name of the state
         ---------------------------     --------------------------------------------------------------------
-        country_code                    Optional string. The two letter abbrevation of the country
+        country_code                    Optional string. The two letter abbreviation of the country
         ---------------------------     --------------------------------------------------------------------
         alt_name                        Optional string. The common name used to identify the server for
                                         which the certificate is to be generated. This is a required
@@ -1030,7 +1030,7 @@ class EnterpriseGroups(BasePortalAdmin):
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        groups                          Required string. The comma seperated list of group names to be
+        groups                          Required string. The comma separated list of group names to be
                                         refreshed
         ===========================     ====================================================================
 
@@ -1333,7 +1333,7 @@ class EnterpriseUsers(BasePortalAdmin):
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        users                           Required string. A comma seperated list of users.
+        users                           Required string. A comma separated list of users.
         ===========================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'

@@ -162,7 +162,7 @@ class CreditManager(object):
         returns the total credit consumption for a given time period.
 
         ===================   ===============================================
-        **arguements**        **description**
+        **arguments**         **description**
         -------------------   -----------------------------------------------
         start_time            datetime.datetime object. This is the date to
                               start at.

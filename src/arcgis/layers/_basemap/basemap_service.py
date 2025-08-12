@@ -1,10 +1,16 @@
 from __future__ import annotations
 from functools import lru_cache
 from arcgis.auth.tools import LazyLoader
+from arcgis._impl.common._deprecate import deprecated
 
 _arcgis = LazyLoader("arcgis")
 
 
+@deprecated(
+    deprecated_in="2.4.2",
+    removed_in="2.5.0",
+    details="Use `basemap_styles_service` property found in BasemapManager class in the `arcgis.map` package.",
+)
 class BasemapServices:
     """
     The basemap styles service is a ready-to-use location service that serves vector
@@ -85,6 +91,11 @@ class BasemapServices:
         return resp.json()["worldviews"]
 
 
+@deprecated(
+    deprecated_in="2.4.2",
+    removed_in="2.5.0",
+    details="Use `basemap_styles_service` property found in BasemapManager class in the `arcgis.map` package.",
+)
 class BasemapService:
     """
     Represents a basemap style service that is available for use in the basemap styles service.
