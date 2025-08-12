@@ -923,7 +923,8 @@ class TestDivideParcels(unittest.TestCase):
             except Exception as ex:
                 print(ex)
                 self.fail(f"Divide failed: {ex}")
-
+                
+  
     def test_divide_missing_parameter_correct_error(self):
         fq_version_name = pfutils.create_version(self.vms)
         divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
@@ -960,7 +961,7 @@ class TestDivideParcels(unittest.TestCase):
                     default_area_unit=default_area_unit,
                 )
             self.assertTrue(
-                "A required parameter is missing from the JSON." in str(ex.exception),
+                "Invalid function arguments" in str(ex.exception),
                 f"Wrong error: {ex.exception}",
             )
 
