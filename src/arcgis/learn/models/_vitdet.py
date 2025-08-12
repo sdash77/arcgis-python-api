@@ -483,10 +483,14 @@ class ViT(nn.Module):
             num_patches = num_patches + self._num_tokens
             self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
         elif "clay_large" in backbone_name:
-            use_rel_pos = False
-            self.pos_embed = None
+            # use_rel_pos = False
+            # self.pos_embed = None
             qkv_bias = False
             proj_bias = False
+
+            num_patches = (img_size // patch_size) ** 2
+            num_positions = (num_patches + 1) if pretrain_use_cls_token else num_patches
+            self.pos_embed = nn.Parameter(torch.zeros(1, num_positions, embed_dim))
         elif use_abs_pos:
             # Initialize absolute positional embedding with pretrain image size.
             num_patches = (pretrain_img_size // patch_size) * (
@@ -541,7 +545,19 @@ class ViT(nn.Module):
                 clay_state_dict = torch.load(
                     os.path.join(temp_path, "clay-v1.5_encoder.pth")
                 )
-                load_state_dict(self, clay_state_dict, True, logging.getLogger())
+                load_state_dict(self, clay_state_dict, False)  # , logging.getLogger())
+                # intialize patch_embeding
+                from ._dofa_utils import posemb_sincos_2d
+
+                # patch_size is 8 for clay
+                h, w = [img_size // 8] * 2
+                pos_embed = posemb_sincos_2d(h, w, embed_dim, cls_token=True)
+                self.pos_embed.data.copy_(pos_embed.unsqueeze(0))
+
+                # freeze patch_embedding
+                # for _, param in self.patch_embed.named_parameters():
+                #     param.requires_grad = False
+
             else:
                 load_mmlab_checkpoint(self, pretrained_path)
             logging.disable(0)
