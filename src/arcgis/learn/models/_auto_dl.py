@@ -1043,10 +1043,8 @@ class AutoDL:
         valid_loss = np.array(metrics["val_losses"])[-1]
         name_time = time.strftime("%Y-%m-%d_%H-%M-%S")
         if model_type == "classification":
-            # accuracy = np.array(metrics["metrics"])[-1][0]
-            miou = getattr(self, model).mIOU(mean=True)
-            accuracy = miou
-            
+            accuracy = getattr(self, model).mIOU(mean=True)
+            miou = getattr(self, model).mIOU()
             miou["Model"] = str(model)
             self._mIOU_df = pd.concat(
                 [

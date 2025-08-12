@@ -536,9 +536,9 @@ def _objective(trial):
     all_train_losses.append(float(model.learn.recorder.get_state()["losses"][-1]))
     if self_obj._dataset_type == "classification":
         dice.append(np.array(model.learn.recorder.get_state()["metrics"])[-1][1])
-        # accuracy = model.accuracy()
-        miou = model.mIOU(mean=True)
-        accuracy = miou
+        accuracy = model.mIOU(mean=True)
+        # miou = model.mIOU(mean=True)
+        # accuracy = miou
     else:
         avg_precision = model.average_precision_score()
         accuracy = sum(avg_precision.values()) / len(avg_precision.values())
