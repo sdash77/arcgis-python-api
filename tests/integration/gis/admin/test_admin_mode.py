@@ -7,11 +7,10 @@ import arcgis
 enable_verbose_logging()
 
 
-#@unittest.skip("Manual test, comment this decorator to run")
+@unittest.skip("Manual test, comment this decorator to run")
 @profiles.admin_enterprise
-#@integration_test
+@integration_test
 class TestMode(unittest.TestCase):
-    @unittest.skip
     def test_set_readonly(self):
         """tests setting the portal to read only mode"""
         assert self.gis
