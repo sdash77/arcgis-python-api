@@ -14577,11 +14577,9 @@ class Item(dict):
             and len(self._gis.notebook_server) > 0
         ):
             nbs = self._gis.notebook_server[0]
-            if self._gis._is_arcgisonline is False:
-                return nbs.notebooks.snapshots.list(self)
-            elif self._gis._is_arcgisonline:
-                sm = nbs.snapshots
-                return sm.list(self)
+            if self._gis._is_arcgisonline:
+                return nbs.snapshots.list(self)
+            return nbs.notebooks.snapshots.list(self)
         return []
 
     # ----------------------------------------------------------------------
