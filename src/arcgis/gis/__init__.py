@@ -6594,7 +6594,8 @@ class GroupManager(object):
         file_name             Optional str. The name of the file without an extension.
         ====================  =========================================================
 
-        :returns: list[CloningJob]
+        :returns:
+            A list of [:class:`~arcgis.gis.clone.CloningJob` objects].
 
         .. code-block:: python
 
@@ -14576,11 +14577,9 @@ class Item(dict):
             and len(self._gis.notebook_server) > 0
         ):
             nbs = self._gis.notebook_server[0]
-            if self._gis._portal.is_arcgisonline is False:
-                return nbs.notebooks.snapshots.list(self)
-            elif self._gis._portal.is_arcgisonline:
-                sm = nbs.snaphots
-                return sm.list(self)
+            if self._gis._is_arcgisonline:
+                return nbs.snapshots.list(self)
+            return nbs.notebooks.snapshots.list(self)
         return []
 
     # ----------------------------------------------------------------------
