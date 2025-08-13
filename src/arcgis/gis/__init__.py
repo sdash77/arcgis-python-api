@@ -6594,7 +6594,8 @@ class GroupManager(object):
         file_name             Optional str. The name of the file without an extension.
         ====================  =========================================================
 
-        :returns: list[CloningJob]
+        :returns:
+            A list of [:class:`~arcgis.gis.clone.CloningJob` objects].
 
         .. code-block:: python
 
@@ -10058,6 +10059,53 @@ class ContentManager(object):
             if isinstance(item, str):
                 Item(gis=self._gis, itemid=item)._hydrated = False
         return res
+
+    def _replace_dashboard(
+        self,
+        db_item: Union[str, Item],
+        mappings: Union[list, dict],
+        include_layers: bool = False,
+        include_fields: bool = False,
+    ):
+        if isinstance(db_item, str):
+            db_item = self.get(db_item)
+        if (
+            not db_item
+            or not isinstance(db_item, Item)
+            or db_item.get("type", None) != "Dashboard"
+        ):
+            raise ValueError("Valid Dashboard Item or Item ID must be provided.")
+        db_data = db_item.get_data()
+        if not self._gis._is_arcgisonline:
+            raise RuntimeError(
+                "Dashboard API functionality is currently only available for ArcGIS Online organizations."
+            )
+        if isinstance(mappings, dict):
+            mappings = [mappings]
+        try:
+            # if not force, go through each mapping and check items for legit
+            dash_endpoint = (
+                self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+                + "/replaceAllDependencies"
+            )
+            resp = self._gis._con.post(
+                dash_endpoint,
+                {
+                    "item": {"data": db_data},
+                    "mappings": mappings,
+                    "options": {
+                        "includeLayers": include_layers,
+                        "includeFields": include_fields,
+                    },
+                },
+                add_headers={"Content-Type": "application/json"},
+                json_encode=False,
+                post_json=True,
+            )
+            updated_data = resp["item"]
+            return updated_data
+        except Exception as e:
+            raise (e)
 
 
 ########################################################################
@@ -17565,7 +17613,10 @@ class Item(dict):
             in the ArcGIS REST API documentation.
         """
 
-        if self.type == "Vector Tile Package" and build_initial_cache == False:
+        if (
+            self.type in ["Vector Tile Package", "Scene Package"]
+            and build_initial_cache == False
+        ):
             build_initial_cache = True
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -17876,6 +17927,21 @@ class Item(dict):
                     publish_parameters["name"], "featureService"
                 ):
                     raise Exception("Service name already exists in your org.")
+        elif publish_parameters and self.type in ["Scene Package"]:
+            if not "maxRecordCount" in publish_parameters:
+                publish_parameters["maxRecordCount"] = 2000
+            if not "name" in publish_parameters:
+                service_name: str = self.title
+                while (
+                    self._gis.content.is_service_name_available(
+                        service_name, "featureService"
+                    )
+                    == False
+                ):
+                    service_name = (
+                        re.sub(r"[\W_]+", "_", service_name) + uuid.uuid4().hex[:2]
+                    )
+                publish_parameters["name"] = service_name
 
         # New parameter that affects arcgis Online and Enterprise 11.4+
         # Applied to geojson, csv, excel
@@ -18031,6 +18097,8 @@ class Item(dict):
         max_scale: float,
         cache_info: Optional[dict[str, Any]] = None,
         build_cache: bool = False,
+        *,
+        extent: list[float] | None = None,
     ):
         """
         The ``create_tile_service`` method allows publishers and administrators to publish hosted feature
@@ -18093,6 +18161,12 @@ class Item(dict):
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
+        original_cache_value: bool = copy.deepcopy(build_cache)
+        if build_cache == True:
+            # build_cache needs to be false as of 4/16/2025 for ArcGIS Online
+            # and cache built later in the process. Enterprise automatically
+            # builds the cache.
+            build_cache = False
         if self.type.lower() == "Feature Service".lower():
             if cache_info is None:
                 cache_info = {
@@ -18220,10 +18294,17 @@ class Item(dict):
                         },
                     ],
                 }
+            storage_format: str = "esriMapCacheStorageModeExploded"
+            if (
+                self._gis._is_kubernetes == False
+                and self._gis._is_arcgisonline == False
+            ):
+                storage_format: str = "esriMapCacheStorageModeCompactV2"
             pp = {
                 "minScale": min_scale,
                 "maxScale": max_scale,
                 "name": title,
+                "layers": [],
                 "tilingSchema": {
                     "tileCacheInfo": cache_info,
                     "tileImageInfo": {
@@ -18232,14 +18313,21 @@ class Item(dict):
                         "antialiasing": True,
                     },
                     "cacheStorageInfo": {
-                        "storageFormat": "esriMapCacheStorageModeExploded",
+                        "storageFormat": storage_format,
                         "packetSize": 128,
                     },
                 },
                 "cacheOnDemand": True,
-                "cacheOnDemandMinScale": 144448,
+                "cacheOnDemandMinScale": min_scale,
                 "capabilities": "Map,ChangeTracking",
             }
+            if (
+                self._gis._is_arcgisonline == False
+                and self._gis._is_kubernetes == False
+            ):
+                pp.pop("capabilities", None)
+                pp.pop("cacheOnDemandMinScale", None)
+                pp["cacheOnDemand"] = False
             params = {
                 "f": "json",
                 "outputType": "tiles",
@@ -18248,17 +18336,40 @@ class Item(dict):
                 "filetype": "featureService",
                 "publishParameters": json.dumps(pp),
             }
-            url = "%s/content/users/%s/publish" % (
+            url = "%scontent/users/%s/publish" % (
                 self._portal.resturl,
                 self._user_id,
             )
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res["services"], folder=None)
-            if self._gis._portal.is_arcgisonline:
-                from ..mapping._types import MapImageLayer
+            if original_cache_value and self._gis._is_arcgisonline == False:
+                from arcgis.layers import Service
 
                 ms_url = self._gis.content.get(serviceitem_id).url
-                ms = MapImageLayer(url=ms_url, gis=self._gis)
+                ms = Service(ms_url, server=self._gis)
+                mgr = ms.manager
+                if extent is None:
+                    extent = " ".join(
+                        [
+                            str(ms.properties["fullExtent"]["xmin"]),
+                            str(ms.properties["fullExtent"]["ymin"]),
+                            str(ms.properties["fullExtent"]["xmax"]),
+                            str(ms.properties["fullExtent"]["ymax"]),
+                        ]
+                    )
+                lods = []
+                for lod in cache_info["lods"]:
+                    if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
+                        lods.append(str(lod["scale"]))
+                levels = ";".join(lods)
+                mgr.build_cache(levels=levels, extent=extent)
+                return self._gis.content.get(serviceitem_id)
+            elif self._gis._portal.is_arcgisonline and original_cache_value:
+                from arcgis.layers import Service
+
+                ms_url = self._gis.content.get(serviceitem_id).url
+
+                ms = Service(ms_url, server=self._gis)
                 extent = ",".join(
                     [
                         str(ms.properties["fullExtent"]["xmin"]),
@@ -18271,7 +18382,13 @@ class Item(dict):
                 for lod in cache_info["lods"]:
                     if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
                         lods.append(str(lod["level"]))
-                ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                try:
+
+                    ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                except Exception as ex:
+                    print(
+                        f"An issue building the cache occurred: {ex}. Please see the item homepage for more details."
+                    )
             return self._gis.content.get(serviceitem_id)
         else:
             raise ValueError("Input must of type FeatureService")
@@ -19394,7 +19511,7 @@ class Item(dict):
         return url
 
     # ----------------------------------------------------------------------
-    def remap_data(self, item_mapping: dict[str, str], force=False):
+    def remap_data(self, item_mapping: dict[str, str], force=False, **kwargs):
         """
         Method to help users easily replace data in web maps, applications, and other item types
         that may contain references to other items. Users pass in a dictionary of item ids
@@ -19454,7 +19571,6 @@ class Item(dict):
         _TEXT_BASED_ITEM_TYPES = [
             "Web Map",
             "Map Service",
-            "Dashboard",
             "Feature Collection",
             "Web Mapping Application",
             "Application",
@@ -19624,6 +19740,28 @@ class Item(dict):
                 tfile.write(new_string)
                 tfile.close()
             return self.update(item_properties={}, data=tfile.name)
+
+        elif self.type == "Dashboard":
+            db_data = self.get_data()
+            db_mapping = kwargs.get("db_mapping", None)
+            if db_mapping and self._gis._is_arcgisonline:
+                try:
+                    updated_data = self._gis.content._replace_dashboard(
+                        self.id, db_mapping, True, True
+                    )
+                except:
+                    updated_data = db_data
+            else:
+                if db_mapping:
+                    warnings.warn(
+                        "Dashboard API functionality is currently only available for ArcGIS Online organizations."
+                    )
+                updated_data = db_data
+
+            old_string = json.dumps(updated_data)
+            new_string = _common_utils._text_replace(old_string, expanded_dict)
+            new_data = json.loads(new_string)
+            return self.update(item_properties={}, data=new_data)
 
         else:
             raise ValueError(

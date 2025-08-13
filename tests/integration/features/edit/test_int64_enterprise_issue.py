@@ -1,11 +1,10 @@
-from arcgis.gis import GIS
 import unittest
 
 import pandas as pd
-from pandas import Timestamp
 from arcgis.geometry import Geometry
 from config import get_json_resource
 from utils.decorators import integration_test, profiles
+from ._shared_data import get_edit_features_test_data
 
 
 @profiles.all
@@ -17,7 +16,7 @@ class TestIssueInt64(unittest.TestCase):
         """Create a spatially enabled dataframe and publish an item with it to different portals."""
         item = None
         try:
-            test_data = self.generate_test_data()
+            test_data = get_edit_features_test_data(self.gis)
             sdf = pd.DataFrame(test_data)
             sdf.SHAPE = sdf.SHAPE.apply(lambda x: Geometry(x))
             sdf.spatial.set_geometry("SHAPE")
