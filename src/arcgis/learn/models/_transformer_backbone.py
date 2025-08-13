@@ -37,7 +37,7 @@ wavelengths_required_cfg = dict(
     ),
     clay_large=dict(
         backbone_name="clay_large",
-        patch_size=16,
+        patch_size=8,
         embed_dim=1024,
         depth=24,
         num_heads=16,
