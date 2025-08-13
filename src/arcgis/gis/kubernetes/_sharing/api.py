@@ -254,10 +254,10 @@ class KbertnetesPy(object):
         # If we've never retrieved the version before, or the caller is
         # forcing a check of the server, then check the server
         if not self._version or force:
-            resp = self.con.post("", self._postdata())
+            resp = self.con.get("", self._postdata())
             if not resp:
                 old_resturl = _normalize_url(self.url) + "sharing/"
-                resp = self.con.post(old_resturl, self._postdata(), ssl=True)
+                resp = self.con.get(old_resturl, self._postdata(), ssl=True)
                 if resp:
                     _log.warning("Portal is pre-1.6.2; some things may not work")
                     self._is_pre_162 = True
