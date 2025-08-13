@@ -1298,7 +1298,7 @@ class KbertnetesPy(object):
             username          string, name of user
             ================  ========================================================
         """
-        res = self.con.post("community/users/" + username, {"f": "json"})
+        res = self.con.get("community/users/" + username, {"f": "json"})
         res2 = self.con.get(
             "community/self", {"f": "json", "returnUserLicensedItems": True}
         )
