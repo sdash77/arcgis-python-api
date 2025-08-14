@@ -352,6 +352,7 @@ class DeploymentManager(_BaseKube):
         super()
         self._url = url
         self._gis = gis
+        self._con = gis._con
 
     # ---------------------------------------------------------------------
     def search(
