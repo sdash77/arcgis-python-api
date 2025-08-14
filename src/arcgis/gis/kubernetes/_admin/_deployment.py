@@ -327,7 +327,7 @@ class DeploymentManager(_BaseKube):
 
     .. code-block:: python
 
-        # Initializing a DeploymentProperty object
+        # Initializing a DeploymentManager object
         >>> from arcgis.gis import GIS
         >>> kube_gis = GIS(profile="your_kubernetes_admin_profile")
         >>> kube_admin = kube_gis.admin
@@ -397,7 +397,7 @@ class DeploymentManager(_BaseKube):
         ------------------     --------------------------------------------------------------------
         filter_id              Optional String. The microservice ID.
         ------------------     --------------------------------------------------------------------
-        provider               Optioal String. The microservice provider. Only microservices
+        provider               Optional String. The microservice provider. Only microservices
                                related to an ArcGIS service type will have a provider type. A
                                provider type of Undefined is used for non-service related
                                microservices (Admin API, Portal Sharing, ingress controller,
