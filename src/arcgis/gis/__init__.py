@@ -10076,18 +10076,17 @@ class ContentManager(object):
         ):
             raise ValueError("Valid Dashboard Item or Item ID must be provided.")
         db_data = db_item.get_data()
-        if not self._gis._is_arcgisonline:
+        try:
+            dash_url = self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+        except:
             raise RuntimeError(
-                "Dashboard API functionality is currently only available for ArcGIS Online organizations."
+                "Dashboard API functionality is currently unavailable for this ArcGIS organization."
             )
         if isinstance(mappings, dict):
             mappings = [mappings]
         try:
             # if not force, go through each mapping and check items for legit
-            dash_endpoint = (
-                self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
-                + "/replaceAllDependencies"
-            )
+            dash_endpoint = dash_url + "/replaceAllDependencies"
             resp = self._gis._con.post(
                 dash_endpoint,
                 {
@@ -19742,7 +19741,11 @@ class Item(dict):
         elif self.type == "Dashboard":
             db_data = self.get_data()
             db_mapping = kwargs.get("db_mapping", None)
-            if db_mapping and self._gis._is_arcgisonline:
+            try:
+                dash_url = self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+            except:
+                dash_url = None
+            if db_mapping and dash_url:
                 try:
                     updated_data = self._gis.content._replace_dashboard(
                         self.id, db_mapping, True, True
@@ -19752,7 +19755,7 @@ class Item(dict):
             else:
                 if db_mapping:
                     warnings.warn(
-                        "Dashboard API functionality is currently only available for ArcGIS Online organizations."
+                        "Dashboard API functionality is currently unavailable for this ArcGIS organization."
                     )
                 updated_data = db_data
 
