@@ -1,4 +1,6 @@
 import unittest
+import sys
+sys.path.insert(0, r"C:\workspace\geosaurus\tests")
 from arcgis.apps.storymap import StoryMap, Themes, Cover, Navigation, Image
 from utils.decorators import integration_test, profiles
 from integration.config import INTEGRATION_TEST_ITEM_TAG, get_resource_path
@@ -22,7 +24,7 @@ class TestStoryMap(unittest.TestCase):
         assert self.story.content_list
         assert self.story.properties
         assert 'en' in self.story.story_locale
-        assert isinstance(self.story.navigation_list, list)
+        assert isinstance(self.story.content_list[1], Navigation)
         assert isinstance(self.story.get("n-aTn8ak"), Cover)
         assert isinstance(self.story.navigation(hidden=True), list)
 
