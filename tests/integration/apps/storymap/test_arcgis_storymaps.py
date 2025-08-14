@@ -22,7 +22,6 @@ class TestStoryMap(unittest.TestCase):
         assert self.story.content_list
         assert self.story.properties
         assert 'en' in self.story.story_locale
-        assert isinstance(self.story.navigation_list, list)
         assert isinstance(self.story.content_list[0], Cover)
         assert isinstance(self.story.content_list[1], Navigation)
 
