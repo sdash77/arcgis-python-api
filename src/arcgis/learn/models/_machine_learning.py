@@ -149,89 +149,102 @@ def raise_data_exception():
 
 class MLModel(object):
     """
-    Creates a machine learning model based on its implementation from scikit-learn, xgboost, lightgbm, catboost.
+    Creates a machine learning model based on its implementation from *scikit-learn*,
+    *xgboost*, *lightgbm*, or *catboost*.
+
     For supervised learning:
-    Refer `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_,
-    `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html>`_,
-    `lightgbm <https://lightgbm.readthedocs.io/en/latest/Python-API.html>`_ ,
-    `catboost <https://catboost.ai/en/docs/concepts/python-quickstart>`_ .
+    Refer to:
+
+    * `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_
+    * `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html>`_
+    * `lightgbm <https://lightgbm.readthedocs.io/en/latest/Python-API.html>`_
+    * `catboost <https://catboost.ai/en/docs/concepts/python-quickstart>`_
 
     For unsupervised learning:
+    Refer to : `Unsupervised Learning <https://scikit-learn.org/stable/unsupervised_learning.html>`_ documentation.
+
     1. Clustering Models
     2. Gaussian Mixture Models
     3. Novelty and outlier detection
-    Refer https://scikit-learn.org/stable/unsupervised_learning.html
 
-    =====================   ===========================================
-    **Parameter**            **Description**
-    ---------------------   -------------------------------------------
+    =====================   ===================================================
+    **Parameter**           **Description**
+    ---------------------   ---------------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :class:`~arcgis.learn.prepare_tabulardata` function.
-    ---------------------   -------------------------------------------
+    ---------------------   ---------------------------------------------------
     model_type              Required string path to the module.
-                            For example for SVM:
 
-                            `sklearn.svm.SVR <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html>`_ or `sklearn.svm.SVC <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html>`_
+                            * For example for SVM:
 
-                            For tree:
+                              `sklearn.svm.SVR <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html>`_ or `sklearn.svm.SVC <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html>`_
 
-                            `sklearn.tree.DecisionTreeRegressor <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html>`_ or `sklearn.tree.DecisionTreeClassifier <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html>`_
+                            * For tree:
 
-                            For gradient boosting:
+                              `sklearn.tree.DecisionTreeRegressor <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html>`_ or `sklearn.tree.DecisionTreeClassifier <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html>`_
 
-                            `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
+                            * For gradient boosting:
 
-                            For TabPFN:
-                            `Built with TabPFN - tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/blob/main/LICENSE>`
+                              `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
 
-    ---------------------   -------------------------------------------
-    Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
+                            * For TabPFN:
 
-                                                A dictionary to provide fairness args. Following are allowed keys and values
-                                                Keyword Args:                   Value Args:
-                                                <sensitive_feature> str:        Protected class column or feature name. Ony categorical variable is allowed.
-                                                <mitigation_type> str:          `reweighing` or `threshold_optimizer` or `exponentiated_gradient` (For Classification)
-                                                                                `grid_search` or `exponentiated_gradient` (For Regression)
-                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' (For Classification)
-                                                                                and `ZeroOneLoss` or `SquareLoss` (For Regression)
+                              `Built wtih TabPFN tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/blob/main/LICENSE>`_
+
+    ---------------------   ---------------------------------------------------
+    fairness_args           Optional dictionary. As of now we support only *binary
+                            classification* and *regression* in fairness evaluation.
+
+                            A dictionary to provide fairness args. Following are
+                            allowed keys and values:
+
+                            =====================   ===========================================
+                            **Key**                 **Value**
+                            ---------------------   -------------------------------------------
+                            sensitive_feature       *String* - the Protected class column or feature
+                                                    name. Only *categorical* variable is allowed.
+                            ---------------------   -------------------------------------------
+                            mitigation_type         *String* - `reweighing` or `threshold_optimizer`
+                                                    or `exponentiated_gradient` (For Classification)
+                                                    `grid_search` or `exponentiated_gradient` (For Regression)
+                            ---------------------   -------------------------------------------
+                            mitigation_constraint   *String* - `demographic_parity` or
+                                                    `equalized_odds' (For Classification) or
+                                                    `ZeroOneLoss` or `SquareLoss` (For Regression)
+                            =====================   ===========================================
 
 
-                            For example:
-                                                For classification :
+                            .. code-block:: python
+
+                                # Usage Example for classification;
+
+                                >>> mlmodel = MLModel(
+                                                ...
                                                 fairness_args = {
-                                                            'sensitive_feature': 'Gender',
-                                                            'mitigation_type': "threshold_optimizer",
-                                                            'mitigation_constraint':'demographic_parity'
-
+                                                            "sensitive_feature": "Gender",
+                                                            "mitigation_type": "threshold_optimizer",
+                                                            "mitigation_constraint": "demographic_parity"
                                                             }
 
-                                                For Regression :
+                                # Usage Example For regression :
 
                                                 fairness_args = {
-                                                            'sensitive_feature': 'Gender',
-                                                            'mitigation_type': "grid_search",
-                                                            'mitigation_constraint':'ZeroOneLoss'
-
+                                                            "sensitive_feature": "Gender",
+                                                            "mitigation_type": "grid_search",
+                                                            "mitigation_constraint": "ZeroOneLoss"
                                                             }
-    ---------------------   -------------------------------------------
-    ``**kwargs``            model_type specific arguments.
-                            Refer Parameters section
+    =====================   ===================================================
 
-                            `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_,
+    For additional argument options that can be entered in **kwargs** based upon
+    specific models, refer to parameters section documentation in:
 
-                            `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_
-
-                            `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
-
-                            `catboostregressor <https://catboost.ai/en/docs/concepts/python-reference_catboostregressor>`_
-
-                            `catboostclassifier <https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier>`_
-
-                            `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_
-
-                            `tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/tree/v1.0.0>`
-
-    =====================   ===========================================
+    * `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_
+    * `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_
+    * `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
+    * `catboostregressor <https://catboost.ai/en/docs/concepts/python-reference_catboostregressor>`_
+    * `catboostclassifier <https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier>`_
+    * `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_
+    * `tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/tree/v1.0.0>`_
 
     :return: :class:`~arcgis.learn.MLModel` Object
     """
@@ -322,6 +335,13 @@ class MLModel(object):
             self.initialize_fair_model(fairness_args)
 
     def initialize_fair_model(self, fairness_args):
+        """
+        ==========================   ==========================================
+        **Parameter**                **Description**
+        --------------------------   ------------------------------------------
+        fairness_args                Required dictionary. Fairness arguments.
+        ==========================   ==========================================
+        """
         if not isinstance(fairness_args, dict):
             raise ValueError(_FAIRNESS_ARGS_NOT_DICT)
 
@@ -440,6 +460,9 @@ class MLModel(object):
                 raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
 
     def fit(self):
+        """
+        Fits the model with the training data and labels.
+        """
         if (
             not self._data._is_unsupervised
             and (self._training_data is None or self._training_labels is None)
@@ -496,30 +519,31 @@ class MLModel(object):
         Shows sample fairness score and plots for the model.
 
         =====================   ===========================================
-        **Parameter**            **Description**
+        **Parameter**           **Description**
         ---------------------   -------------------------------------------
-        sensitive_feature        Column name of the protected class.
-        fairness_metrics         Allowed list of fairness metrics
-                                 1. for classification
-                                    [
-                                     "equalized_odds_difference",
-                                     "demographic_parity_difference",
-                                     "equalized_odds_ratio",
-                                     "demographic_parity_ratio"
-                                    ]
-                                 2. for Regression
-                                    [
-                                    "MAE",
-                                    "MSE",
-                                    "RMSE",
-                                    "MAPE"
-                                    ]
-                                 Metric should be one of the values mentioned in
-                                 the list.
+        sensitive_feature       Column name of the protected class.
+        ---------------------   -------------------------------------------
+        fairness_metrics        Allowed list of fairness metrics:
 
-        visualize                A boolean value to visualize plot of metrics
+                                * for classification
+
+                                  * *equalized_odds_difference*
+                                  * *demographic_parity_difference*
+                                  * *equalized_odds_ratio*
+                                  * *demographic_parity_ratio*
+
+                                * for regression
+
+                                  * *MAE*
+                                  * *MSE*
+                                  * *RMSE*
+                                  * *MAPE*
+        ---------------------   -------------------------------------------
+        visualize               A boolean value to visualize plot of metrics
         =====================   ===========================================
-        :return: dataframe
+
+        :return:
+            A dataframe object.
         """
         if self._training_data is None:
             raise ValueError(_FAIRNESS_NOT_APPLIED)

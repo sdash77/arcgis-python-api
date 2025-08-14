@@ -590,7 +590,7 @@ class MapFeatureLayer(Layer):
         out_sr: int | None = None,
         geometry_precision: int | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict[str, Any]] | None = None,
         return_z: bool = False,
         return_m: bool = False,
@@ -703,7 +703,7 @@ class MapFeatureLayer(Layer):
                                             `False`. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is `true`.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names by which to order the
+        order_by_fields                     Optional string or list of strings. One or more field names by which to order the
                                             results. Use ``ASC`` or ``DESC`` for ascending
                                             or descending, respectively, following every field to be ordered:
 
@@ -1324,7 +1324,7 @@ class MapTable(MapFeatureLayer):
         result_record_count: int | None = None,
         object_ids: str | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict] | None = None,
         return_all_records: bool = True,
         historic_moment: int | _dt.datetime | None = None,
@@ -1390,7 +1390,7 @@ class MapTable(MapFeatureLayer):
                                             `return_ids_only` parameter. If `return_count_only = True`, the
                                             response will return both the count and the extent.
         -------------------------------     --------------------------------------------------------------------
-         order_by_fields                    Optional string. One or more field names by which to order the
+        order_by_fields                     Optional string or list of strings. One or more field names by which to order the
                                             results. Use ``ASC`` or ``DESC`` for ascending
                                             or descending, respectively, following every field to be ordered:
 
@@ -1725,6 +1725,126 @@ class EnterpriseMapImageLayerManager(_gis._GISResource):
         super(EnterpriseMapImageLayerManager, self).__init__(url, gis)
         self._ms = map_img_lyr
 
+    @property
+    def lifecycleinfo(self) -> dict:
+        """Returns the date and time information (in Unix format) of when a service was created or updated."""
+        url: str = f"{self.url}/lifecycleinfos"
+        params: dict = {
+            "f": "json",
+        }
+        return self._gis.session.get(url, params=params).json()
+
+    def build_cache(
+        self,
+        levels: float = None,
+        extent: list[float] | None = None,
+        area_of_interest: _geometry.Polygon | None = None,
+    ) -> str:
+        """"""
+        if area_of_interest is None and extent is None:
+            raise ValueError("An `extent` or `area_of_interest` must be provided.")
+        values = self._ms.url.split("/rest/services/")[1].split("/")
+        if len(values) == 2:
+            service_url: str = f"{values[0]}:{values[1]}"
+        elif len(values) == 3:
+            service_url: str = f"{values[0]}/{values[1]}:{values[2]}"
+
+        update_mode: str = "RECREATE_ALL_TILES"
+        return self._enterprise_cache_tool(
+            service_url=service_url,
+            levels=levels,
+            update_mode=update_mode,
+            thread_count=-1,
+            extent=extent,
+            job_id=None,
+            area_of_interest=area_of_interest,
+        )
+
+    def _enterprise_cache_tool(
+        self,
+        service_url: str,
+        levels: float | int,
+        update_mode: str,
+        thread_count: int = -1,
+        extent: list[float] | None = None,
+        job_id: str | None = None,
+        area_of_interest: _geometry.Polygon | None = None,
+    ) -> str:
+        """ """
+        update_modes: list[str] = [
+            "RECREATE_EMPTY_TILES",
+            "RECREATE_ALL_TILES",
+            "DELETE_TILES",
+            "COMPLETE_JOB",
+            "FIX_JOB",
+            "RESUME_JOB",
+        ]
+        if not update_mode in update_modes:
+            raise ValueError(
+                f"{update_mode} is not a valid value for `update_mode`. Allowed values are: {','.join(update_modes)}"
+            )
+
+        base_url: str = self._ms.url.split("/rest/services/")[0]
+        url: str = base_url + "/rest/services/System/CachingControllers/GPServer"
+        reporting_url: str = base_url + "/rest/services/System/ReportingTools/GPServer"
+        from arcgis.layers import Service
+
+        gp = Service(url_or_item=url, server=self._ms._gis)
+        reporting_gp = Service(url_or_item=reporting_url, server=self._ms._gis)
+        job = gp.manage_map_cache_tiles(
+            service_url=service_url,
+            levels=levels,
+            thread_count=thread_count,
+            update_mode=update_mode,
+            constraining_extent=extent,
+            jobid=job_id,
+            area_of_interest=area_of_interest,
+            future=True,
+        )
+
+        result = job.result()
+
+        status_result = reporting_gp.report_cache_status(
+            service_url=result,
+            report_mode="esriCacheStatus",
+            job_id=None,
+            level_id=None,
+            error_start=None,
+            error_count=None,
+            gis=None,
+            future=False,
+            estimate=False,
+        )
+        while status_result.get("status") in [
+            "EXISTS",
+            "NONE",
+            "COMPLETED",
+            "FAILED",
+            "FAILURE",
+            "FAILING",
+        ]:
+            if status_result.get("status") in [
+                "EXISTS",
+                "NONE",
+                "COMPLETED",
+                "FAILED",
+                "FAILURE",
+                "FAILING",
+            ]:
+                return status_result
+            status_result = reporting_gp.report_cache_status(
+                service_url=result,
+                report_mode="esriCacheStatus",
+                job_id=None,
+                level_id=None,
+                error_start=None,
+                error_count=None,
+                gis=None,
+                future=False,
+                estimate=False,
+            )
+        return status_result
+
     # ----------------------------------------------------------------------
     def edit(self, service_dictionary: dict) -> bool:
         """
@@ -2018,10 +2138,8 @@ class MapImageLayerManager(_gis._GISResource):
             <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
-            if self._gis.version >= [10, 3]:
-                url = "%s/update" % self._url
-            else:
-                url = "%s/updateTiles" % self._url
+
+            url = "%s/updateTiles" % self._url
 
             params = {
                 "f": "json",

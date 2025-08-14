@@ -18,6 +18,7 @@ from ._workflow_manager import Template
 from ._workflow_manager import NotificationManager
 from ._workflow_manager import Notification
 from ._workflow_manager import JobExecution
+from ._workflow_manager import ItemExecution
 from ._workflow_manager import MessageType
 from ._workflow_manager import ExecutionStatus
 
@@ -37,6 +38,7 @@ __all__ = [
     "NotificationManager",
     "Notification",
     "JobExecution",
+    "ItemExecution",
     "MessageType",
     "ExecutionStatus",
 ]

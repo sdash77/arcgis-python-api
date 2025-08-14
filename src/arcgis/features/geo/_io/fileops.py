@@ -283,6 +283,16 @@ def _ensure_path_string(input_path):
         return str(input_path)
     if isinstance(input_path, str):
         return input_path
+    if (
+        hasattr(input_path, "connectionProperties")
+        and getattr(input_path, "isWebLayer", None) == False
+        and getattr(input_path, "isFeatureLayer", None)
+    ):
+        if not USE_ARCPY:
+            raise ValueError(
+                "The input path entered requires the use of the ArcPy engine.  Please update your geometry engine settings."
+            )
+        return input_path
     raise ValueError(
         "Input path must be a string or a Path object. "
         "Received type: {}".format(type(input_path))
@@ -878,7 +888,7 @@ def _arcpy_workflow(filename, **kwargs):
             dfs.append(pd.DataFrame(batch, columns=df_fields))
     dtypes = {k: v for k, v in pandas_dtypes.items() if k in rows.fields}
     df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame(columns=df_fields)
-    df = df.astype(pandas_dtypes)
+    df = df.astype(dtypes)
     q = df.SHAPE.notnull()
     none_q = ~q  # preserve the null geometries after processing
     geom_type = desc["shapeType"].lower()
