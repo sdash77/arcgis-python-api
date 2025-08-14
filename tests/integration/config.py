@@ -2,6 +2,7 @@ import os
 import pathlib
 import tempfile
 
+import json
 import requests
 import shutil
 import urllib.parse
@@ -48,6 +49,15 @@ def get_resource_path(relative_path=None, verify=True, unique_copy=False):
         shutil.copy(resource, temp_resource_copy)
         resource = temp_resource_copy
     return str(resource)
+
+def get_json_resource(relative_path):
+    """
+    Load json resource from the resources folder.
+    """
+    resource_path = get_resource_path(relative_path, verify=True)
+    with open(resource_path) as f:
+        data = json.load(f)
+    return data
 
 
 def copy_as_tempfile(staging_data_path: str):

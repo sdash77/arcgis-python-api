@@ -22,9 +22,8 @@ class TestStoryMap(unittest.TestCase):
         assert self.story.content_list
         assert self.story.properties
         assert 'en' in self.story.story_locale
-        assert isinstance(self.story.navigation_list, list)
-        assert isinstance(self.story.get("n-aTn8ak"), Cover)
-        assert isinstance(self.story.navigation(hidden=True), list)
+        assert isinstance(self.story.content_list[0], Cover)
+        assert isinstance(self.story.content_list[1], Navigation)
 
     def test_creating_and_saving(self):
         """Change cover/theme for the story"""
