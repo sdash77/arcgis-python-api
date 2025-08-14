@@ -24,7 +24,7 @@ class Deployment:
 
         :return: Dict[str, Any]
         """
-        self._con.get(self._url, {"f": "json"})
+        return self._con.get(self._url, {"f": "json"})
 
     def edit(self, props: Dict[str, Any]) -> bool:
         """
@@ -171,11 +171,13 @@ class DeploymentManager(_BaseKube):
         mode: Optional[str] = None,
     ) -> List[Deployment]:
         """
-        `find` queries and returns a `List[Deployment]` of microservies
-        within ArcGIS Enterprise on Kubernetes. The results can be
-        fine-tuned by specifying the name, type, ID, provider, and mode of
-        a microservice. These filters are options; if no filter is applied,
-        all microservices are returned by the operation.
+        The search operation queries and returns a list of
+        :class:`~arcgis.gis.kubernetes.Deployment`
+        objects representing the microservies within a Kubernetes deployment. 
+        Search criteria can be fine-tuned by specifying the *name*, *type*, *ID*,
+        *provider*, and/or *mode* of the service you're searching for. These
+        filters are optional, if no filter is applied all microservices are returned
+        by the operation.
 
         ==================     ====================================================================
         **Parameter**           **Description**
@@ -184,10 +186,22 @@ class DeploymentManager(_BaseKube):
         ------------------     --------------------------------------------------------------------
         filter_type            Optional String. The microservice type.
 
-                               Allowed Values: `FeatureServer`, `GeometryServer`, `GPServer`,
-                               `GPSyncServer`, `MapServer`, `TileServer`, `System`, `InMemoryStore`,
-                               `ObjectStore`, `SpatiotemporalIndexStore`, `QueueServer`,
-                               `RelationalStore`.
+                               Allowed Values:
+                               
+                               * `FeatureServer`
+                               * `GeometryServer`
+                               * `GPServer`
+                               * `GPSyncServer`
+                               * `MapServer`
+                               * `TileServer`
+                               * `ImageServer`
+                               * `System`
+                               * `InMemoryStore`
+                               * `ObjectStore`
+                               * `SpatiotemporalIndexStore`
+                               * `QueueServer`
+                               * `RelationalStore`
+                               * `WebhookProcessor`
         ------------------     --------------------------------------------------------------------
         filter_id              Optional String. The microservice ID.
         ------------------     --------------------------------------------------------------------
@@ -197,8 +211,18 @@ class DeploymentManager(_BaseKube):
                                microservices (Admin API, Portal Sharing, ingress controller,
                                etc.).
 
-                               Values: `SDS`, `ArcObjects11`, `DMaps`, `Undefined`, `Postgres`,
-                               `Tiles`, `Ignite`, `MinIO`, `Elasticsearch`, `RabbitMQ`
+                               Values:
+                               
+                               * `SDS`
+                               * `ArcObjects11`
+                               * `DMaps`
+                               * `Undefined`
+                               * `Postgres`,
+                               * `Tiles`
+                               * `Ignite`
+                               * `MinIO`
+                               * `Elasticsearch`
+                               * `RabbitMQ`
         ------------------     --------------------------------------------------------------------
         mode                   Optional String. The microservice mode. A mode type of Undefined is
                                used when the microservices is system related (Admin API, Portal
@@ -206,14 +230,21 @@ class DeploymentManager(_BaseKube):
                                an ArcGIS service type use either the Dedicated or Shared value for
                                this parameter.
 
-                               Values: `Shared`, `Dedicated`, `Undefined`, `Primary`, `Standby`,
-                               `Coordinator`
+                               Values:
+                               
+                               * `Shared`
+                               * `Dedicated`
+                               * `Undefined`
+                               * `Primary`
+                               * `Standby
+                               * `Coordinator`
         ==================     ====================================================================
 
-        :return: List[Deployment]
+        :return:
+            A list of :class:`~arcgis.gis.kubernetes.Deployment` objects
 
         """
-        url = f"{self._url}/findDeployment"
+        url = f"{self._url}/findDeploymentIds"
         params = {
             "filterName": name,
             "filterType": filter_type,
@@ -225,11 +256,17 @@ class DeploymentManager(_BaseKube):
         for k in list(params.keys()):
             if params[k] is None:
                 del params[k]
-        return [
-            Deployment(url + "/%s" % deploy["deploymentId"], gis=self._gis)
-            for deploy in self._con.post(url, params).get("filteredDeployments", [])
-            if "deploymentId" in deploy
-        ]
+        res = self._gis._con.post(url, params).get("filteredDeploymentIds", [])
+        deployment_res = []
+        for deploy_id in res:
+            deplyment = Deployment(f"{self.url}/{deploy_id}",self._gis)
+            deployment_res.append(deplyment)
+        return deployment_res
+        
+        #return [
+            #Deployment(self.url + "/%s" % deploy, gis=self._gis)
+            #for deploy in self._gis._con.post(url, params).get("filteredDeploymentsIds", [])
+        #]
 
     def get(self, deployment_id: str) -> Deployment:
         """

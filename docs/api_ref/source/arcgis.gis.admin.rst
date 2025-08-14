@@ -82,6 +82,13 @@ DataStore
     :undoc-members:
     :show-inheritance:
 
+DeploymentManager
+^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.DeploymentManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Deployment
 ^^^^^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.Deployment
