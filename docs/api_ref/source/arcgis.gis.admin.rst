@@ -95,6 +95,13 @@ Deployment
     :members:
     :undoc-members:
     :show-inheritance:
+    
+DeploymentProperty
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.DeploymentProperty
+    :members:
+    :undoc-members:
+    :show-inheritance:    
 
 Job
 ^^^
