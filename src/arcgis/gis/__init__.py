@@ -10077,7 +10077,9 @@ class ContentManager(object):
             raise ValueError("Valid Dashboard Item or Item ID must be provided.")
         db_data = db_item.get_data()
         try:
-            dash_url = self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+            dash_url = self._gis.properties["helperServices"]["dashboardsUtility"][
+                "url"
+            ]
         except:
             raise RuntimeError(
                 "Dashboard API functionality is currently unavailable for this ArcGIS organization."
@@ -19742,7 +19744,9 @@ class Item(dict):
             db_data = self.get_data()
             db_mapping = kwargs.get("db_mapping", None)
             try:
-                dash_url = self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+                dash_url = self._gis.properties["helperServices"]["dashboardsUtility"][
+                    "url"
+                ]
             except:
                 dash_url = None
             if db_mapping and dash_url:
