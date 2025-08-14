@@ -7,6 +7,7 @@ A FeatureLayerCollection is a collection of feature layers and tables, with the 
 """
 
 from __future__ import annotations
+import mimetypes
 from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
 from datetime import datetime
@@ -39,9 +40,11 @@ from arcgis.gis import Item, Layer, _GISResource
 from arcgis.geometry import Geometry, SpatialReference
 from arcgis.gis._impl._util import _get_item_url
 from arcgis._impl.common._utils import _validate_url
+import logging
 
+log = logging.getLogger()
 _arcgis = LazyLoader("arcgis")
-_uploads = LazyLoader(" arcgis.features._uploads.upload")
+_uploads = LazyLoader("arcgis.features._uploads.upload")
 
 
 @lru_cache(maxsize=255)
@@ -587,7 +590,7 @@ class FeatureLayer(Layer):
         keywords=None,
         return_moment=False,
         version=None,
-    ):
+    ) -> dict:
         """
         Adds an attachment to a feature service
 
@@ -611,43 +614,60 @@ class FeatureLayer(Layer):
         :return: A JSON Dictionary indicating 'success' or 'error'
 
         """
-        if (
-            os.path.getsize(file_path) < 10e6
-        ):  # (os.path.getsize(file_path) >> 20) <= 9:
-            params = {
-                "f": "json",
-                "gdbVersion": version,
-                "returnEditMoment": return_moment,
-            }
-            if self._gis.version > [7, 3] and keywords:
-                params["keywords"] = keywords
-            if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
-                params["layer"] = self._dynamic_layer
-            else:
-                attach_url = self._url + "/%s/addAttachment" % oid
-            files = {"attachment": file_path}
-            res = self._con.post(path=attach_url, postdata=params, files=files)
-            return res
+        # Create params
+        params = {
+            "f": "json",
+            "gdbVersion": version,
+            "returnEditMoment": return_moment,
+        }
+        if self._gis.version > [7, 3] and keywords:
+            params["keywords"] = keywords
+
+        # Determine the URL for adding attachments
+        if self._dynamic_layer:
+            attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+            params["layer"] = self._dynamic_layer
         else:
-            params = {
-                "f": "json",
-                "gdbVersion": version,
-                "returnEditMoment": return_moment,
-            }
-            if self._gis.version > [7, 3] and keywords:
-                params["keywords"] = keywords
+            attach_url = self._url + "/%s/addAttachment" % oid
+
+        # Two options depending on file size
+        # If the file is less than 10MB, we can upload it directly
+        if (os.path.getsize(file_path) < 10e6) or (
+            not self._gis._is_agol and [2024, 1] < self._gis.version < [2025, 2]
+        ):
+            files = {}
+            v = file_path
+            buffer_reader = open(v, "rb")
+            try:
+                files["attachment"] = (
+                    os.path.basename(v),
+                    buffer_reader,
+                    mimetypes.guess_type(v)[0],
+                )
+                response = self._gis.session.post(
+                    url=attach_url, data=params, files=files
+                ).json()
+            finally:
+                buffer_reader.close()
+            return response
+        else:
             container = self.container
             itemid = container.upload(file_path)
-            if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
-                params["layer"] = self._dynamic_layer
-            else:
-                attach_url = self._url + "/%s/addAttachment" % oid
             params["uploadId"] = itemid
-            res = self._con.post(attach_url, params)
-            if res["addAttachmentResult"]["success"] == True:
-                container._delete_upload(itemid)
+            res = self._gis.session.post(attach_url, params).json()
+            if res.get("addAttachmentResult", {}).get("success") is True:
+                try:
+                    container._delete_upload(itemid)
+                except:
+                    # The server will fail with error 500 for this operation at times.
+                    # Since it is just part of the cleanup we can ignore it.
+                    log.warning(
+                        "Failed to delete upload item %s. Attachment cleanup failed due to server error."
+                        % itemid
+                    )
+                    pass
+            elif res.get("error"):
+                return res.get("error")
             return res
 
     # ----------------------------------------------------------------------
@@ -1841,41 +1861,41 @@ class FeatureLayer(Layer):
     def query(
         self,
         where: str = "1=1",
-        out_fields: Union[str, list[str]] = "*",
-        time_filter: Optional[list[datetime]] = None,
-        geometry_filter: Optional[GeometryFilter] = None,
+        out_fields: str | list[str] = "*",
+        time_filter: list[datetime] | None = None,
+        geometry_filter: GeometryFilter | None = None,
         return_geometry: bool = True,
         return_count_only: bool = False,
         return_ids_only: bool = False,
         return_distinct_values: bool = False,
         return_extent_only: bool = False,
-        group_by_fields_for_statistics: Optional[str] = None,
-        statistic_filter: Optional[StatisticFilter] = None,
-        result_offset: Optional[int] = None,
-        result_record_count: Optional[int] = None,
-        object_ids: Optional[list[str]] = None,
-        distance: Optional[int] = None,
+        group_by_fields_for_statistics: str | None = None,
+        statistic_filter: StatisticFilter | None = None,
+        result_offset: int | None = None,
+        result_record_count: int | None = None,
+        object_ids: list[str] | None = None,
+        distance: int | None = None,
         units: str | LengthUnits | None = None,
-        max_allowable_offset: Optional[int] = None,
-        out_sr: Optional[Union[dict[str, Any], str]] = None,
-        geometry_precision: Optional[int] = None,
-        gdb_version: Optional[str] = None,
-        order_by_fields: Optional[str] = None,
-        out_statistics: Optional[list[dict[str, Any]]] = None,
+        max_allowable_offset: int | None = None,
+        out_sr: dict[str, Any] | str | None = None,
+        geometry_precision: int | None = None,
+        gdb_version: str | None = None,
+        order_by_fields: list[str] | str | None = None,
+        out_statistics: list[dict[str, Any]] | None = None,
         return_z: bool = False,
         return_m: bool = False,
         multipatch_option: tuple = None,
-        quantization_parameters: Optional[dict[str, Any]] = None,
+        quantization_parameters: dict[str, Any] | None = None,
         return_centroid: bool = False,
         return_all_records: bool = True,
-        result_type: Optional[str] = None,
-        historic_moment: Optional[Union[int, datetime]] = None,
-        sql_format: Optional[str] = None,
+        result_type: str | None = None,
+        historic_moment: int | datetime | None = None,
+        sql_format: str | None = None,
         return_true_curves: bool = False,
-        return_exceeded_limit_features: Optional[bool] = None,
+        return_exceeded_limit_features: bool | None = None,
         as_df: bool = False,
-        datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
-        time_reference_unknown_client: Optional[bool] = None,
+        datum_transformation: int | dict[str, Any] | None = None,
+        time_reference_unknown_client: bool | None = None,
         **kwargs,
     ):
         """
@@ -2018,11 +2038,11 @@ class FeatureLayer(Layer):
                                             The default is false. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is true.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
+        order_by_fields                     Optional string or list of strings. One or more field names on which the
                                             features/records need to be ordered. Use ASC or DESC for ascending
                                             or descending, respectively, following every field to control the
                                             ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+                                            example: "STATE_NAME ASC, RACE DESC" GENDER or ["STATE_NAME ASC", "RACE DESC"]
 
                                             .. note::
                                                 If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
@@ -3652,7 +3672,7 @@ class FeatureLayer(Layer):
         geometry_filter: Geometry | dict | None = None,
         gdb_version: str | None = None,
         return_distinct_values: bool | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         group_by_fields_for_statistics: str | None = None,
         out_statistics: list[dict] | None = None,
         result_offset: int | None = None,
@@ -3736,11 +3756,11 @@ class FeatureLayer(Layer):
                                                 Make sure to set return_geometry to False if this is set to True.
                                                 Otherwise, reliable results will not be returned.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
+        order_by_fields                     Optional string or list of strings. One or more field names on which the
                                             features/records need to be ordered. Use ASC or DESC for ascending
                                             or descending, respectively, following every field to control the
                                             ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+                                            example: "STATE_NAME ASC, RACE DESC, GENDER" or ["STATE_NAME ASC", "RACE DESC", "GENDER"]
 
                                             .. note::
                                                 If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
@@ -3990,26 +4010,26 @@ class Table(FeatureLayer):
     def query(
         self,
         where: str = "1=1",
-        out_fields: Union[str, list[str]] = "*",
-        time_filter: list[datetime] = None,
+        out_fields: str | list[str] = "*",
+        time_filter: list[datetime] | None = None,
         return_count_only: bool = False,
         return_ids_only: bool = False,
         return_distinct_values: bool = False,
-        group_by_fields_for_statistics: Optional[str] = None,
-        statistic_filter: Optional[StatisticFilter] = None,
-        result_offset: Optional[int] = None,
-        result_record_count: Optional[int] = None,
-        object_ids: Optional[str] = None,
-        gdb_version: Optional[str] = None,
-        order_by_fields: Optional[str] = None,
-        out_statistics: Optional[list[dict[str, Any]]] = None,
+        group_by_fields_for_statistics: str | None = None,
+        statistic_filter: StatisticFilter | None = None,
+        result_offset: int | None = None,
+        result_record_count: int | None = None,
+        object_ids: str | None = None,
+        gdb_version: str | None = None,
+        order_by_fields: list[str] | str | None = None,
+        out_statistics: list[dict[str, Any]] | None = None,
         return_all_records: bool = True,
-        historic_moment: Optional[Union[int, datetime]] = None,
-        sql_format: Optional[str] = None,
-        return_exceeded_limit_features: Optional[bool] = None,
+        historic_moment: int | datetime | None = None,
+        sql_format: str | None = None,
+        return_exceeded_limit_features: bool | None = None,
         as_df: bool = False,
-        having: Optional[str] = None,
-        time_reference_unknown_client: Optional[bool] = None,
+        having: str | None = None,
+        time_reference_unknown_client: bool | None = None,
         **kwargs,
     ):
         """
@@ -4056,11 +4076,11 @@ class Table(FeatureLayer):
                                             returnCountOnly = true, the response will return both the count and
                                             the extent.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
+        order_by_fields                     Optional string or list of strings. One or more field names on which the
                                             features/records need to be ordered. Use ASC or DESC for ascending
                                             or descending, respectively, following every field to control the
                                             ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+                                            example: "STATE_NAME ASC, RACE DESC, GENDER" or ["STATE_NAME ASC", "RACE DESC", "GENDER"]
         -------------------------------     --------------------------------------------------------------------
         group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
                                             be grouped for calculating the statistics.
@@ -5730,7 +5750,7 @@ class FeatureLayerCollection(_GISResource):
         b_url = "%s/uploads/%s" % (self._url, item_id)
         commit_part_url = "%s/commit" % b_url
         params = {"f": "json", "parts": self._uploaded_parts(itemid=item_id)}
-        res = self._con.post(commit_part_url, params)
+        res = self._gis.session.post(commit_part_url, params).json()
         if "error" in res:
             raise Exception(res)
         else:
@@ -5738,13 +5758,13 @@ class FeatureLayerCollection(_GISResource):
 
     # ----------------------------------------------------------------------
     def _delete_upload(self, item_id):
-        """commits an upload by parts upload"""
+        """deletes an upload by parts upload"""
         b_url = "%s/uploads/%s" % (self._url, item_id)
         delete_part_url = "%s/delete" % b_url
         params = {
             "f": "json",
         }
-        res = self._con.post(delete_part_url, params)
+        res = self._gis.session.post(delete_part_url, params).json()
         if "error" in res:
             raise Exception(res)
         else:

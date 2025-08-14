@@ -283,6 +283,16 @@ def _ensure_path_string(input_path):
         return str(input_path)
     if isinstance(input_path, str):
         return input_path
+    if (
+        hasattr(input_path, "connectionProperties")
+        and getattr(input_path, "isWebLayer", None) == False
+        and getattr(input_path, "isFeatureLayer", None)
+    ):
+        if not USE_ARCPY:
+            raise ValueError(
+                "The input path entered requires the use of the ArcPy engine.  Please update your geometry engine settings."
+            )
+        return input_path
     raise ValueError(
         "Input path must be a string or a Path object. "
         "Received type: {}".format(type(input_path))
@@ -463,32 +473,45 @@ def from_table(filename, **kwargs):
     """
 
     filename = _ensure_path_string(filename)
+    where = kwargs.pop("where", None)
+    fields = kwargs.pop("fields", "*")
+    skip_nulls = kwargs.pop("skip_nulls", True)
+    null_value = kwargs.pop("null_value", None)
 
     if USE_ARCPY and not filename.lower().endswith(".dbf"):
-        where = kwargs.pop("where", None)
-        fields = kwargs.pop("fields", "*")
-        skip_nulls = kwargs.pop("skip_nulls", True)
-        null_value = kwargs.pop("null_value", None)
-        arr = arcpy.da.TableToNumPyArray(
-            in_table=filename,
-            field_names=fields,
-            where_clause=where,
-            skip_nulls=skip_nulls,
-            null_value=null_value,
-        )
-        return pd.DataFrame(arr)
+        desc: dict = arcpy.da.Describe(filename)
+        dtypes: dict = _fc2pandas_dtypes(describe=desc)
+        if skip_nulls:
+            arr = arcpy.da.TableToNumPyArray(
+                in_table=filename,
+                field_names=fields,
+                where_clause=where,
+                skip_nulls=skip_nulls,
+                null_value=null_value,
+            )
+            field_names: tuple = arr.dtype.names
+            dtypes = {k: v for k, v in dtypes.items() if k in field_names}
+        else:
+            with arcpy.da.SearchCursor(
+                in_table=filename,
+                field_names=kwargs.pop("fields", "*"),
+                where_clause=kwargs.pop("where", None),
+            ) as scur:
+                dtypes = {k: v for k, v in dtypes.items() if k in scur.fields}
+                arr = [row for row in scur]
+        return pd.DataFrame(arr, columns=list(dtypes.keys())).astype(dtypes)
     elif USE_ARCPY and filename.lower().endswith(".dbf"):
+        desc: dict = arcpy.da.Describe(filename)
+        dtypes: dict = _fc2pandas_dtypes(describe=desc)
         with arcpy.da.SearchCursor(
             in_table=filename,
             field_names=kwargs.pop("fields", "*"),
             where_clause=kwargs.pop("where", None),
         ) as scur:
             array = [row for row in scur]
-            df = pd.DataFrame(array, columns=scur.fields)
-            try:
-                return df.convert_dtypes()
-            except:
-                return df
+            filter_dtypes = {k: v for k, v in dtypes.items() if k in scur.fields}
+            df = pd.DataFrame(array, columns=scur.fields).astype(filter_dtypes)
+            return df
         return None
     elif filename.lower().endswith(".dbf") and USE_GDAL:
         return _gdal_to_sedf(file_path=filename)
@@ -845,6 +868,7 @@ def _arcpy_workflow(filename, **kwargs):
     df_fields = fields + ["SHAPE"]
 
     dfs = []
+    dtypes = pandas_dtypes
     with arcpy.da.SearchCursor(
         filename,
         field_names=cursor_fields,
@@ -853,6 +877,7 @@ def _arcpy_workflow(filename, **kwargs):
         spatial_reference=sr,
         datum_transformation=datum_transformation,
     ) as rows:
+        dtypes = {k: v for k, v in dtypes.items() if k in rows.fields}
         batch = []
         for row in rows:
             batch.append(row)
@@ -861,9 +886,9 @@ def _arcpy_workflow(filename, **kwargs):
                 batch = []
         if batch:
             dfs.append(pd.DataFrame(batch, columns=df_fields))
-
+    dtypes = {k: v for k, v in pandas_dtypes.items() if k in rows.fields}
     df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame(columns=df_fields)
-
+    df = df.astype(dtypes)
     q = df.SHAPE.notnull()
     none_q = ~q  # preserve the null geometries after processing
     geom_type = desc["shapeType"].lower()
@@ -890,7 +915,7 @@ def _arcpy_workflow(filename, **kwargs):
             elif data_type == np.dtype("<M8[us]"):
                 df[key] = pd.to_datetime(df[key], utc=True)
 
-    return df.convert_dtypes()
+    return df
 
 
 def _shapefile_workflow(filename):

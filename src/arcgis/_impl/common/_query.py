@@ -3,6 +3,7 @@ from typing import Any, Literal
 import datetime as _dt
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+import urllib
 from arcgis._impl.common._filters import GeometryFilter, StatisticFilter
 from arcgis._impl.common._utils import _date_handler
 from arcgis.auth import EsriSession
@@ -258,7 +259,7 @@ class QueryParameters(BaseModel):
                     map's version.
                     """,
     )
-    order_by_fields: list[str] | None = Field(
+    order_by_fields: list[str] | str | None = Field(
         None,
         alias="orderByFields",
         description="""Optional string. One or more field names on which the
@@ -552,6 +553,12 @@ class QueryParameters(BaseModel):
             return ",".join(value)
         return value
 
+    @field_validator("order_by_fields", mode="before")
+    def validate_order_by_fields(cls, value):
+        if isinstance(value, (list, tuple)):
+            return ",".join(value)
+        return value
+
     @field_validator("object_ids", mode="before")
     def validate_object_ids(cls, value):
         if isinstance(value, (list, tuple)):
@@ -672,14 +679,17 @@ class Query:
         self.url = url
 
     def _content_length(self, encoded_parameters: dict) -> int:
-        return len(json.dumps(encoded_parameters) + self.url) + 1
+        return (
+            len(urllib.parse.urlencode(encoded_parameters, doseq=True) + self.url) + 1
+        )
 
     def _send_request(self, session: EsriSession, encoded_parameters: dict) -> dict:
         url_length: int = self._content_length(encoded_parameters)
-        if url_length <= 2000:
+        if url_length <= 2000 and encoded_parameters.get("geometry", None) is None:
+            # TODO: @achapkowski @jtroe -> Discuss only using POST for all queries
             response = session.get(self.url, params=encoded_parameters)
         else:
-            response = session.post(self.url, params=encoded_parameters)
+            response = session.post(self.url, data=encoded_parameters)
         return response.json()
 
     def _query(self, raw=False):

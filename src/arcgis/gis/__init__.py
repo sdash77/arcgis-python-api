@@ -4459,6 +4459,10 @@ class UserManager(object):
                 and self._gis.properties["defaultUserCreditAssignment"] != -1
             ):  # get the credits
                 credits: int = self._gis.properties["defaultUserCreditAssignment"]
+
+            groups: list[str] = [
+                grp.id if isinstance(grp, Group) else grp for grp in groups
+            ]
             params: dict = {
                 "f": "json",
                 "invitationList": {
@@ -4556,8 +4560,11 @@ class UserManager(object):
                 d.reverse()
                 username = "@".join(d)
             user = self.get(username)
-            for grp in [self._gis.groups.get(g) for g in groups]:
-                grp.add_users([username])
+            for grp in [
+                self._gis.groups.get(g) if isinstance(g, str) else g for g in groups
+            ]:
+                if grp:
+                    grp.add_users([username])
             if thumbnail is not None:
                 ret = user.update(thumbnail=thumbnail)
                 if not ret:
@@ -6587,7 +6594,8 @@ class GroupManager(object):
         file_name             Optional str. The name of the file without an extension.
         ====================  =========================================================
 
-        :returns: list[CloningJob]
+        :returns:
+            A list of [:class:`~arcgis.gis.clone.CloningJob` objects].
 
         .. code-block:: python
 
@@ -10052,6 +10060,53 @@ class ContentManager(object):
                 Item(gis=self._gis, itemid=item)._hydrated = False
         return res
 
+    def _replace_dashboard(
+        self,
+        db_item: Union[str, Item],
+        mappings: Union[list, dict],
+        include_layers: bool = False,
+        include_fields: bool = False,
+    ):
+        if isinstance(db_item, str):
+            db_item = self.get(db_item)
+        if (
+            not db_item
+            or not isinstance(db_item, Item)
+            or db_item.get("type", None) != "Dashboard"
+        ):
+            raise ValueError("Valid Dashboard Item or Item ID must be provided.")
+        db_data = db_item.get_data()
+        if not self._gis._is_arcgisonline:
+            raise RuntimeError(
+                "Dashboard API functionality is currently only available for ArcGIS Online organizations."
+            )
+        if isinstance(mappings, dict):
+            mappings = [mappings]
+        try:
+            # if not force, go through each mapping and check items for legit
+            dash_endpoint = (
+                self._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+                + "/replaceAllDependencies"
+            )
+            resp = self._gis._con.post(
+                dash_endpoint,
+                {
+                    "item": {"data": db_data},
+                    "mappings": mappings,
+                    "options": {
+                        "includeLayers": include_layers,
+                        "includeFields": include_fields,
+                    },
+                },
+                add_headers={"Content-Type": "application/json"},
+                json_encode=False,
+                post_json=True,
+            )
+            updated_data = resp["item"]
+            return updated_data
+        except Exception as e:
+            raise (e)
+
 
 ########################################################################
 class CategorySchemaManager(object):
@@ -10286,16 +10341,29 @@ class ResourceManager(object):
         Users do not create this class directly. Use the `resources` property to create the class instance.
     """
 
-    _username = None
+    _user_id = None
+    _user = None
 
     def __init__(
         self, item: Item | None = None, gis: GIS | None = None, user: User | None = None
     ):
         self._gis = gis
         self._portal = gis._portal
-        self._item = item  # this can be None
-        self._user = user or gis.users.get(self._item.owner)
-        self._username = user.username
+        self._item = item
+        if item:
+            owner = self._item.owner
+            user = gis.users.get(owner)
+        if user is None:
+            user = gis.users.me
+        # DO NOT REMOVE THIS CHECK, it is necessary even though looks redundant.
+        # This is the way...
+        if (hasattr(user, "id")) and (user.id != "null"):
+            self._user_id = user.username
+            self._user = user
+            # self._user_id = user.id
+        else:
+            self._user_id = user.username
+            self._user = user
 
     def export(
         self,
@@ -10326,7 +10394,7 @@ class ResourceManager(object):
             )
         url = (
             "content/users/"
-            + self._username
+            + self._user_id
             + "/items/"
             + self._item.itemid
             + "/resources/export"
@@ -10359,7 +10427,7 @@ class ResourceManager(object):
             raise ValueError("Please provide a valid file or text/file_name.")
         query_url = (
             "content/users/"
-            + self._username
+            + self._user_id
             + "/items/"
             + self._item.itemid
             + "/addResources"
@@ -10394,7 +10462,7 @@ class ResourceManager(object):
         if not file_name:
             raise ValueError("Please provide a valid file_name for user resources.")
 
-        url = f"{self._gis.resturl}community/users/{self._username}/addResource"
+        url = f"{self._gis.resturl}community/users/{self._user_id}/addResource"
         params = {
             "f": "json",
             "key": file_name,
@@ -10610,7 +10678,7 @@ class ResourceManager(object):
 
         query_url = (
             "content/users/"
-            + self._username
+            + self._user_id
             + "/items/"
             + self._item.itemid
             + "/updateResources"
@@ -10676,10 +10744,12 @@ class ResourceManager(object):
 
         def resource_generator():
             if self._item:
-                query_url = "content/items/" + self._item.itemid + "/resources"
+                query_url = (
+                    f"{self._gis.resturl}content/items/{self._item.itemid}/resources"
+                )
             else:
                 query_url = (
-                    f"{self._gis.resturl}community/users/{self._username}/resources"
+                    f"{self._gis.resturl}community/users/{self._user_id}/resources"
                 )
 
             params = {"f": "json", "num": 500}
@@ -10765,11 +10835,11 @@ class ResourceManager(object):
 
         if self._item:
             query_url: str = (
-                "content/items/" + self._item.itemid + "/resources/" + safe_file_format
+                f"{self._gis.resturl}content/items/{self._item.itemid}/resources/{safe_file_format}"
             )
         else:
             query_url: str = (
-                f"{self._gis.resturl}community/users/{self._username}/resources/{safe_file_format}"
+                f"{self._gis.resturl}community/users/{self._user_id}/resources/{safe_file_format}"
             )
 
         resp: requests.Response = self._portal.con.get(
@@ -10832,13 +10902,7 @@ class ResourceManager(object):
         else:
             delete_all = "true"
 
-        query_url = (
-            "content/users/"
-            + self._username
-            + "/items/"
-            + self._item.itemid
-            + "/removeResources"
-        )
+        query_url = f"{self._gis.resturl}content/users/{self._user_id}/items/{self._item.itemid}/removeResources"
         params = {
             "f": "json",
             "resource": safe_file_format if safe_file_format else "",
@@ -10860,7 +10924,7 @@ class ResourceManager(object):
         else:
             file_name = [file_name]
 
-        url = f"{self._gis.resturl}community/users/{self._username}/removeResource"
+        url = f"{self._gis.resturl}community/users/{self._user_id}/removeResource"
         for name in file_name:
             params = {
                 "f": "json",
@@ -12249,7 +12313,7 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     modified                 The date the user was last modified. Shown in milliseconds since the Unix epoch.
     ---------------------    ---------------------------------------------------------
-    groups                   A JSON array of groups the user belongs to. See Group for properties of a group.
+    groups                   A list of groups the user belongs to as `Group` classes.
     ---------------------    ---------------------------------------------------------
     provider                 The identity provider for the organization.<br>Values: arcgis (for built-in users) ,enterprise (for external users managed by an enterprise identity store), facebook (for public accounts in ArcGIS Online), google (for public accounts in ArcGIS Online)
     ---------------------    ---------------------------------------------------------
@@ -12269,6 +12333,7 @@ class User(dict):
         self._workdir = tempfile.gettempdir()
         self._invitemgr = None
         self._hydrated = False
+        self._resource_manager = None
         if userdict:
             if (
                 "groups" in userdict and len(userdict["groups"]) == 0
@@ -12369,7 +12434,9 @@ class User(dict):
         Creates a :class:`~arcgis.gis.ResourceManager` object for the user.
         You can use the methods and properties in this class to work with user app resources.
         """
-        return ResourceManager(gis=self._gis, user=self)
+        if self._resource_manager is None:
+            self._resource_manager = ResourceManager(gis=self._gis, user=self)
+        return self._resource_manager
 
     # ----------------------------------------------------------------------
     def user_types(self):
@@ -14408,7 +14475,6 @@ class Item(dict):
     """
 
     _uid = None
-    _snapeshots = None
 
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
@@ -14511,11 +14577,9 @@ class Item(dict):
             and len(self._gis.notebook_server) > 0
         ):
             nbs = self._gis.notebook_server[0]
-            if self._gis._portal.is_arcgisonline is False:
-                return nbs.notebooks.snapshots.list(self)
-            elif self._gis._portal.is_arcgisonline:
-                sm = nbs.snaphots
-                return sm.list(self)
+            if self._gis._is_arcgisonline:
+                return nbs.snapshots.list(self)
+            return nbs.notebooks.snapshots.list(self)
         return []
 
     # ----------------------------------------------------------------------
@@ -17547,7 +17611,10 @@ class Item(dict):
             in the ArcGIS REST API documentation.
         """
 
-        if self.type == "Vector Tile Package" and build_initial_cache == False:
+        if (
+            self.type in ["Vector Tile Package", "Scene Package"]
+            and build_initial_cache == False
+        ):
             build_initial_cache = True
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -17858,6 +17925,21 @@ class Item(dict):
                     publish_parameters["name"], "featureService"
                 ):
                     raise Exception("Service name already exists in your org.")
+        elif publish_parameters and self.type in ["Scene Package"]:
+            if not "maxRecordCount" in publish_parameters:
+                publish_parameters["maxRecordCount"] = 2000
+            if not "name" in publish_parameters:
+                service_name: str = self.title
+                while (
+                    self._gis.content.is_service_name_available(
+                        service_name, "featureService"
+                    )
+                    == False
+                ):
+                    service_name = (
+                        re.sub(r"[\W_]+", "_", service_name) + uuid.uuid4().hex[:2]
+                    )
+                publish_parameters["name"] = service_name
 
         # New parameter that affects arcgis Online and Enterprise 11.4+
         # Applied to geojson, csv, excel
@@ -18013,6 +18095,8 @@ class Item(dict):
         max_scale: float,
         cache_info: Optional[dict[str, Any]] = None,
         build_cache: bool = False,
+        *,
+        extent: list[float] | None = None,
     ):
         """
         The ``create_tile_service`` method allows publishers and administrators to publish hosted feature
@@ -18075,6 +18159,12 @@ class Item(dict):
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
+        original_cache_value: bool = copy.deepcopy(build_cache)
+        if build_cache == True:
+            # build_cache needs to be false as of 4/16/2025 for ArcGIS Online
+            # and cache built later in the process. Enterprise automatically
+            # builds the cache.
+            build_cache = False
         if self.type.lower() == "Feature Service".lower():
             if cache_info is None:
                 cache_info = {
@@ -18202,10 +18292,17 @@ class Item(dict):
                         },
                     ],
                 }
+            storage_format: str = "esriMapCacheStorageModeExploded"
+            if (
+                self._gis._is_kubernetes == False
+                and self._gis._is_arcgisonline == False
+            ):
+                storage_format: str = "esriMapCacheStorageModeCompactV2"
             pp = {
                 "minScale": min_scale,
                 "maxScale": max_scale,
                 "name": title,
+                "layers": [],
                 "tilingSchema": {
                     "tileCacheInfo": cache_info,
                     "tileImageInfo": {
@@ -18214,14 +18311,21 @@ class Item(dict):
                         "antialiasing": True,
                     },
                     "cacheStorageInfo": {
-                        "storageFormat": "esriMapCacheStorageModeExploded",
+                        "storageFormat": storage_format,
                         "packetSize": 128,
                     },
                 },
                 "cacheOnDemand": True,
-                "cacheOnDemandMinScale": 144448,
+                "cacheOnDemandMinScale": min_scale,
                 "capabilities": "Map,ChangeTracking",
             }
+            if (
+                self._gis._is_arcgisonline == False
+                and self._gis._is_kubernetes == False
+            ):
+                pp.pop("capabilities", None)
+                pp.pop("cacheOnDemandMinScale", None)
+                pp["cacheOnDemand"] = False
             params = {
                 "f": "json",
                 "outputType": "tiles",
@@ -18230,17 +18334,40 @@ class Item(dict):
                 "filetype": "featureService",
                 "publishParameters": json.dumps(pp),
             }
-            url = "%s/content/users/%s/publish" % (
+            url = "%scontent/users/%s/publish" % (
                 self._portal.resturl,
                 self._user_id,
             )
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res["services"], folder=None)
-            if self._gis._portal.is_arcgisonline:
-                from ..mapping._types import MapImageLayer
+            if original_cache_value and self._gis._is_arcgisonline == False:
+                from arcgis.layers import Service
 
                 ms_url = self._gis.content.get(serviceitem_id).url
-                ms = MapImageLayer(url=ms_url, gis=self._gis)
+                ms = Service(ms_url, server=self._gis)
+                mgr = ms.manager
+                if extent is None:
+                    extent = " ".join(
+                        [
+                            str(ms.properties["fullExtent"]["xmin"]),
+                            str(ms.properties["fullExtent"]["ymin"]),
+                            str(ms.properties["fullExtent"]["xmax"]),
+                            str(ms.properties["fullExtent"]["ymax"]),
+                        ]
+                    )
+                lods = []
+                for lod in cache_info["lods"]:
+                    if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
+                        lods.append(str(lod["scale"]))
+                levels = ";".join(lods)
+                mgr.build_cache(levels=levels, extent=extent)
+                return self._gis.content.get(serviceitem_id)
+            elif self._gis._portal.is_arcgisonline and original_cache_value:
+                from arcgis.layers import Service
+
+                ms_url = self._gis.content.get(serviceitem_id).url
+
+                ms = Service(ms_url, server=self._gis)
                 extent = ",".join(
                     [
                         str(ms.properties["fullExtent"]["xmin"]),
@@ -18253,7 +18380,13 @@ class Item(dict):
                 for lod in cache_info["lods"]:
                     if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
                         lods.append(str(lod["level"]))
-                ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                try:
+
+                    ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                except Exception as ex:
+                    print(
+                        f"An issue building the cache occurred: {ex}. Please see the item homepage for more details."
+                    )
             return self._gis.content.get(serviceitem_id)
         else:
             raise ValueError("Input must of type FeatureService")
@@ -19376,7 +19509,7 @@ class Item(dict):
         return url
 
     # ----------------------------------------------------------------------
-    def remap_data(self, item_mapping: dict[str, str], force=False):
+    def remap_data(self, item_mapping: dict[str, str], force=False, **kwargs):
         """
         Method to help users easily replace data in web maps, applications, and other item types
         that may contain references to other items. Users pass in a dictionary of item ids
@@ -19436,7 +19569,6 @@ class Item(dict):
         _TEXT_BASED_ITEM_TYPES = [
             "Web Map",
             "Map Service",
-            "Dashboard",
             "Feature Collection",
             "Web Mapping Application",
             "Application",
@@ -19606,6 +19738,28 @@ class Item(dict):
                 tfile.write(new_string)
                 tfile.close()
             return self.update(item_properties={}, data=tfile.name)
+
+        elif self.type == "Dashboard":
+            db_data = self.get_data()
+            db_mapping = kwargs.get("db_mapping", None)
+            if db_mapping and self._gis._is_arcgisonline:
+                try:
+                    updated_data = self._gis.content._replace_dashboard(
+                        self.id, db_mapping, True, True
+                    )
+                except:
+                    updated_data = db_data
+            else:
+                if db_mapping:
+                    warnings.warn(
+                        "Dashboard API functionality is currently only available for ArcGIS Online organizations."
+                    )
+                updated_data = db_data
+
+            old_string = json.dumps(updated_data)
+            new_string = _common_utils._text_replace(old_string, expanded_dict)
+            new_data = json.loads(new_string)
+            return self.update(item_properties={}, data=new_data)
 
         else:
             raise ValueError(

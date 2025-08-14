@@ -209,7 +209,18 @@ class _DeepCloner:
                                             stat_def["onStatisticField"].lower()
                                         )
 
-            cloned_db.remap_data(item_mapping=map_dict, force=True)
+                cloned_db.remap_data(item_mapping=map_dict, force=True)
+            else:
+                try:
+                    mappings = []
+                    for k, v in map_dict.items():
+                        m = {"sourceItemId": k, "targetItemId": v}
+                        mappings.append(m)
+                    cloned_db.remap_data(
+                        item_mapping={}, force=True, db_mapping=mappings
+                    )
+                except:
+                    cloned_db.remap_data(item_mapping=map_dict, force=True)
 
         return cloned_item_list
 
@@ -3054,7 +3065,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
                 name = re.sub(r"\W+", "_", name)
-                name = self._get_unique_name(self.target, name)
+                if not self.target.content.is_service_name_available(
+                    name, "featureService"
+                ):
+                    name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
                 if self.folder:
                     folder = self.target.content.folders.get(
@@ -5568,9 +5582,18 @@ class _FormDefinition(_ItemDefinition):
                                             os.path.join(zip_dir, path),
                                             field_mapping,
                                         )
-
+                        try:
+                            connect_version = original_item["properties"][
+                                "websiteVersion"
+                            ]
+                        except:
+                            connect_version = original_item["properties"].get(
+                                "connectVersion", None
+                            )
                         SurveyManager._xform2webform(
-                            os.path.join(zip_dir, path), self.target.url
+                            os.path.join(zip_dir, path),
+                            self.target.url,
+                            connect_version,
                         )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
@@ -7323,7 +7346,11 @@ def _deep_get(dictionary, *keys):
     dictionary - The dictionary to search for the value
     *keys - The keys used to fetch the desired value"""
 
-    return reduce(lambda d, key: d.get(key) if d else None, keys, dictionary)
+    return reduce(
+        lambda d, key: d.get(key) if d and isinstance(d, dict) else None,
+        keys,
+        dictionary,
+    )
 
 
 # endregion
