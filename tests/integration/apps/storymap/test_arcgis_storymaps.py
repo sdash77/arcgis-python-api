@@ -1,6 +1,4 @@
 import unittest
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\tests")
 from arcgis.apps.storymap import StoryMap, Themes, Cover, Navigation, Image
 from utils.decorators import integration_test, profiles
 from integration.config import INTEGRATION_TEST_ITEM_TAG, get_resource_path
