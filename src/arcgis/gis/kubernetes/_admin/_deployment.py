@@ -160,6 +160,7 @@ class DeploymentManager(_BaseKube):
         super()
         self._url = url
         self._gis = gis
+        self._con = gis._con
 
     # ---------------------------------------------------------------------
     def search(
@@ -227,7 +228,7 @@ class DeploymentManager(_BaseKube):
                 del params[k]
         return [
             Deployment(url + "/%s" % deploy["deploymentId"], gis=self._gis)
-            for deploy in self._con.post(url, params).get("filteredDeployments", [])
+            for deploy in self._con.get(url, params).get("filteredDeployments", [])
             if "deploymentId" in deploy
         ]
 
