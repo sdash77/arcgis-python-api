@@ -729,3 +729,30 @@ def _get_geometry_from_feature_layer(lyr):
             return union_op[0]
     except:
         return None
+
+
+def _to_process_raster_collection_geometry(geometry_obj):
+    """
+    Converts a geometry object (Polygon, Point, Envelope, etc.) to the
+    Process Raster Collection RFT input geometry format.
+
+    For Polygon: {"geometries": [{"rings": ...}], "spatialReference": ...}
+    For Point:   {"geometries": [{"x": ..., "y": ...}], "spatialReference": ...}
+    For Envelope/other: returns the dictionary form directly.
+    """
+    import json
+    from arcgis.geometry import Polygon, Point
+
+    geom_dict = json.loads(geometry_obj.JSON)
+    sr = geom_dict.get("spatialReference")
+
+    if isinstance(geometry_obj, Polygon) and "rings" in geom_dict:
+        result = {"geometries": [{"rings": geom_dict["rings"]}]}
+    elif isinstance(geometry_obj, Point) and "x" in geom_dict and "y" in geom_dict:
+        result = {"geometries": [{"x": geom_dict["x"], "y": geom_dict["y"]}]}
+    else:
+        return geom_dict
+
+    if sr:
+        result["spatialReference"] = sr
+    return result
