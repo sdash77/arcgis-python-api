@@ -19763,7 +19763,10 @@ class Item(dict):
                 updated_data = db_data
 
             old_string = json.dumps(updated_data)
-            new_string = _common_utils._text_replace(old_string, expanded_dict)
+            if expanded_dict:
+                new_string = _common_utils._text_replace(old_string, expanded_dict)
+            else:
+                new_string = old_string
             new_data = json.loads(new_string)
             return self.update(item_properties={}, data=new_data)
 
