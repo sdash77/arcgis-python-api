@@ -239,7 +239,7 @@ class Test_Item_download_outputs(unittest.TestCase):
 
     def test_download_method_Image_data_nopath(self):
         """
-        For Image item, download with a path should return string representation of the item.
+        For Image item, download with no path should return string representation of the item.
         :return:
         """
 
