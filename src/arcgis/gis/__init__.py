@@ -19743,12 +19743,11 @@ class Item(dict):
         elif self.type == "Dashboard":
             db_data = self.get_data()
             db_mapping = kwargs.get("db_mapping", None)
-            if "dashboardsUtility" in self._gis.properties["helperServices"]:
-                dash_url = self._gis.properties["helperServices"]["dashboardsUtility"][
-                    "url"
-                ]
-            else:
-                dash_url = None
+            dash_url = (
+                self._gis.properties["helperServices"]
+                .get("dashboardsUtility", {})
+                .get("url")
+            )
             if db_mapping and dash_url:
                 try:
                     updated_data = self._gis.content._replace_dashboard(

@@ -191,12 +191,11 @@ class _DeepCloner:
         if cloned_db_list:
             cloned_db = cloned_db_list[0]
             cloned_item_list.append(cloned_db)
-            if "dashboardsUtility" in self.target.properties["helperServices"]:
-                dash_url = self.target.properties["helperServices"][
-                    "dashboardsUtility"
-                ]["url"]
-            else:
-                dash_url = None
+            dash_url = (
+                self.target.properties["helperServices"]
+                .get("dashboardsUtility", {})
+                .get("url")
+            )
             if not dash_url:
                 cdb_data = cloned_db.get_data()
                 selectors = _deep_get(cdb_data, "desktopView", "header", "selectors")
