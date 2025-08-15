@@ -19743,11 +19743,11 @@ class Item(dict):
         elif self.type == "Dashboard":
             db_data = self.get_data()
             db_mapping = kwargs.get("db_mapping", None)
-            try:
+            if "dashboardsUtility" in self._gis.properties["helperServices"]:
                 dash_url = self._gis.properties["helperServices"]["dashboardsUtility"][
                     "url"
                 ]
-            except:
+            else:
                 dash_url = None
             if db_mapping and dash_url:
                 try:
