@@ -1,7 +1,7 @@
 import unittest
 from utils.decorators import integration_test, profiles
 from integration.config import get_resource_path
-from data_utils import INTEGRATION_TEST_ITEM_TAG, cleanup_published_items
+from utils.data_utils import INTEGRATION_TEST_ITEM_TAG, cleanup_published_items
 import pandas as pd
 from arcgis.features import FeatureCollection
 import uuid

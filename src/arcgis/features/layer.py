@@ -646,7 +646,7 @@ class FeatureLayer(Layer):
                 )
                 response = self._gis.session.post(
                     url=attach_url, data=params, files=files
-                )
+                ).json()
             finally:
                 buffer_reader.close()
             return response
