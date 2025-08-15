@@ -14168,12 +14168,15 @@ class RFT:
                                 v, _FeatureLayer
                             ):
                                 url = v.url
-                                if url is not None and "?token" not in url:
-                                    from .utility import _generate_layer_token
+                                try:
+                                    if url is not None and "?token" not in url:
+                                        from .utility import _generate_layer_token
 
-                                    token = _generate_layer_token(v, url)
-                                    if token is not None:
-                                        url = f"{url}?token={token}"
+                                        token = _generate_layer_token(v, url)
+                                        if token is not None:
+                                            url = f"{url}?token={token}"
+                                except:
+                                    pass
                                 raster = _raster_input_rft(v)
                                 v = _input_rft(raster)
                                 if key == "RasterCollection":
