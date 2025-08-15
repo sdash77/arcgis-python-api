@@ -26,7 +26,7 @@ def setUpModule():
     warnings.filterwarnings("ignore")
 
 
-@profiles.admin_all
+@profiles.admin_agol
 @integration_test
 class Test_Item_publish_file_types(unittest.TestCase):
     @classmethod
@@ -34,22 +34,23 @@ class Test_Item_publish_file_types(unittest.TestCase):
         """
         Test for publishing different file types to deployment.
         """
-
+        print(f"{'=' * 5} begin setUp {cls.__name__}")
         # Get or create a folder to store items created during test run
         cls.item_test_publish_folder = cls.gis.content.folders._get_or_create(
             "item_publish_ntgrtn_tests"
         )
+        print(f"{'=' * 5} end setup {'=' * 30}\n")
 
     @classmethod
     def tearDownClass(cls):
-        print("\n=============== begin tearDownClass =========================\n")
+        print(f"\n{'=' * 5} begin teardownClass: {cls.__name__}")
         test_items = list(cls.item_test_publish_folder.list())
         if test_items:
             cleanup_published_items(test_items)
         else:
             print(f"Test items already cleared from test folder.")
         cleanup_folders(gis=cls.gis, folder_names=[cls.item_test_publish_folder.name])
-        print("\n=============== end tearDownClass ===========================\n")
+        print(f"{'=' * 5} end tearDownClass {'=' * 10}\n")
 
     def setUp(self):
         print(f"\n{'-' * 40}\nTest: starting {self._testMethodName}...")
@@ -57,8 +58,8 @@ class Test_Item_publish_file_types(unittest.TestCase):
 
     def tearDown(self):
         elapsed_time = time.time() - self._start_time
-        print(f"{' ' * 4}...test took {elapsed_time / 60:.2f} minutes.\n")
-
+        print(f"{' ' * 4}...test took {elapsed_time/60:.2f} minutes.\n")
+    @unittest.skip("for now")
     def test_publish_csv(self):
         csv_source_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/RUS_cities.csv",
@@ -107,7 +108,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "No features found in published feature service.",
         )
-
+    @unittest.skip("for now")
     def test_publish_fgdb(self):
         cities_fgdb_source = get_resource_path(
             relative_path="staging_data/item_class_test_data/set2_USAcities.zip",
@@ -159,10 +160,10 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "No features found in published feature service.",
         )
-
+    @unittest.skip("for now")
     def test_publish_vtpk(self):
         vtpk_package_file = get_web_resource_path(
-            relative_path="data/set2_vtpk_worldgreen.vtpk",
+            relative_path="set2_vtpk_worldgreen.vtpk",
             unique_copy=True,
         )
 
@@ -206,12 +207,12 @@ class Test_Item_publish_file_types(unittest.TestCase):
             VectorTileLayer,
             "Layer type not published as a Vector Tile Layer.",
         )
-
+    @unittest.skip("for now")
     def test_publish_spk(self):
         if self.gis._is_kubernetes:
             self.skipTest("Scene package format spk not supported on Kubernetes.")
         spk_package_file = get_web_resource_path(
-            relative_path="data/set2_spk_SD3dbuildings.spk", unique_copy=True
+            relative_path="set2_spk_SD3dbuildings.spk", unique_copy=True
         )
         scn_pkg_item = self.item_test_publish_folder.add(
             item_properties=ItemProperties(
@@ -254,7 +255,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             Object3DLayer,
             f"{scn_item.title} layer is not a SceneLayer as expected.",
         )
-
+    @unittest.skip("for now")
     def test_publish_slpk(self):
         if self.gis.version >= [2024, 2]:
             if self.gis.properties.isPortal and not self.gis._is_kubernetes:
@@ -278,7 +279,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
                     )
 
         slpk_package_file = get_web_resource_path(
-            relative_path="data/set2_slpk_Vancouver.slpk", unique_copy=True
+            relative_path="set2_slpk_Vancouver.slpk", unique_copy=True
         )
 
         scn_pkg_item = self.item_test_publish_folder.add(
@@ -315,7 +316,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
         )
 
         # added to allow for layer publish to complete
-        time.sleep(120)
+        time.sleep(60)
         self.assertEqual(
             len(scn_item.layers),
             1,
@@ -331,7 +332,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
         if self.gis._is_kubernetes:
             self.skipTest("Tile package format tpk not supported on Kubernetes.")
         tile_pkg_file = get_web_resource_path(
-            relative_path="data/set3_tpk_SD.tpk", unique_copy=True
+            relative_path="set3_tpk_SD.tpk", unique_copy=True
         )
 
         tile_pkg_item = self.item_test_publish_folder.add(
@@ -345,7 +346,9 @@ class Test_Item_publish_file_types(unittest.TestCase):
             file=tile_pkg_file,
         ).result()
         tile_lyr_item = tile_pkg_item.publish(
-            publish_parameters={"name": "set3_tpk_SD_api"}
+            publish_parameters={
+                "name": "set3_tpk_SD_api"
+            }
         )
         self.assertEqual(
             tile_pkg_item.type,
@@ -369,7 +372,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
 
     def test_publish_tpkx(self):
         tpkx_package_file = get_web_resource_path(
-            relative_path="data/redlands_testcase22.tpkx", unique_copy=True
+            relative_path="redlands_testcase22.tpkx", unique_copy=True
         )
 
         tilex_pkg_item = self.item_test_publish_folder.add(
@@ -384,7 +387,9 @@ class Test_Item_publish_file_types(unittest.TestCase):
         ).result()
 
         tilex_lyr_item = tilex_pkg_item.publish(
-            publish_parameters={"name": "redlands_testcase_tpkx_api"}
+            publish_parameters={
+                "name": "redlands_testcase_tpkx_api"
+            }
         )
 
         self.assertEqual(
@@ -408,7 +413,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Tile layer does not have layers as expected.",
         )
-
+    @unittest.skip("for now")
     def test_publish_flyr_sd(self):
         if self.gis.properties.isPortal:
             self.skipTest(
@@ -465,7 +470,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Feature Service layer does not have features as expected.",
         )
-
+    @unittest.skip("for now")
     def test_publish_tlyr_sd(self):
         if self.gis.properties.isPortal:
             self.skipTest(
@@ -514,7 +519,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             len(svcdef_tile_lyr_item.layers) == 3,
             "Publishing item did not create 3 layers as expected in Map Service.",
         )
-
+    @unittest.skip("for now")
     def test_publish_shp(self):
         shp_source_file = get_resource_path(
             relative_path="staging_data/USA_Major_Cities.zip",

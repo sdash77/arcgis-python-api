@@ -8,10 +8,12 @@
 import unittest
 
 from utils.decorators import integration_test, profiles
+from utils.data_utils import cleanup_published_items, INTEGRATION_TEST_ITEM_TAG
+from integration.config import get_resource_path
 
 from arcgis.gis import ResourceManager
 
-#@profiles.admin_enterprise_and_agol
+@profiles.admin_all
 @integration_test
 class Test_Item_resources_methods(unittest.TestCase):  
     """Testing the resources property and methods on the Resource Manager."""
@@ -26,11 +28,41 @@ class Test_Item_resources_methods(unittest.TestCase):
             item_type="StoryMap"
         )
         if not cls.smap_items:
-            cls.smap_items = cls.gis.content.search(
-                query=f"owner:{cls.gis.users.me.username}",
-                item_type="StoryMap"
-            )
-        cls.smap_item = cls.smap_items[0]      
+            try:
+                cls.smap_item = cls.gis.content.search(
+                    query=f"owner:{cls.gis.users.me.username}",
+                    item_type="StoryMap"
+                    )[0]
+            except IndexError as ie:
+                from arcgis.apps.storymap import StoryMap, Image, Themes
+                
+                cls.story = StoryMap(gis=cls.gis)
+            
+                # image for story cover
+                resource_path = get_resource_path("storymap")
+                cls.river = Image(f'{resource_path}/storymap_image_river.jpg')
+                # Edit story cover
+                cover = cls.story.content_list[0]
+                cover.title = "River Story Map for Kubernetes"
+                cover.summary = "StoryMap to test Python API ResourceManager in Kubernetes."
+                cover.by_line = "Python API Test-Runner"
+                cover.media = cls.river
+        
+                # Change the story theme
+                cls.story.theme(Themes.SLATE)
+        
+                # Save the storymap changes
+                cls.smap_item = cls.story.save(
+                    title="River Storymap for Python API Testing",
+                    tags=INTEGRATION_TEST_ITEM_TAG
+                )
+        else:
+            cls.smap_item = cls.smap_items[0]
+    
+    @classmethod
+    def tearDownClass(cls):
+        if cls.gis._is_kubernetes:
+            cleanup_published_items(items=[cls.smap_item])
         
     def test_resources_property(self):
         res_mgr = self.smap_item.resources

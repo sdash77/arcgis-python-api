@@ -41,6 +41,8 @@ class Test_Item_share_public_item(unittest.TestCase):
         them to their group. This is a popular way to accumulate content in
         their GIS.
         """
+        if not self.gis._is_arcgisonline:
+            self.skipTest("Public content searchable only from ArcGIS Online without specific configuration.")
         public_data_item = self.gis.content.search(
             "title: Hurricane * AND access:public", outside_org=True
         )[0]

@@ -20,7 +20,7 @@ from utils.data_utils import (
     cleanup_folders,
 )
 
-from arcgis.gis import ItemTypeEnum
+from arcgis.gis import ItemTypeEnum, ItemProperties
 
 
 def setUpModule():
@@ -28,13 +28,14 @@ def setUpModule():
 
     warnings.filterwarnings("ignore")
 
-
 @profiles.admin_all
 @integration_test
 class Test_Item_download_outputs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        print("\n======= begin setUpClass ====================================\n")
+        print(f"\n{'=' * 5} begin setUpClass {'=' * 20}")
+        print(f"{' ' * 10}test class: {cls.__name__}")
+        start = time.perf_counter()
 
         cls.item_test_download_folder = cls.gis.content.folders._get_or_create(
             "item_download_ntgrtn_tests"
@@ -80,27 +81,55 @@ class Test_Item_download_outputs(unittest.TestCase):
             source_data_path=cls.mmpk_file,
             folder=cls.item_test_download_folder,
         )
-        print("\n======= end setUpClass ==========================================\n")
+        
+        cls.png_file = get_resource_path(
+            relative_path="staging_data/item_class_test_data/set1_shifting_opportunity.png",
+            verify=True,
+            unique_copy=True,
+        )        
+        
+        cls.img_item = add_source_item(
+            gis=cls.gis,
+            layer_name="image_for_download_testing",
+            item_type=ItemTypeEnum.IMAGE,
+            source_data_path=cls.png_file,
+            folder=cls.item_test_download_folder,
+        )
+        
+        cls.wmapp_item = cls.item_test_download_folder.add(
+            item_properties=ItemProperties(
+                title="empty_web_app_download_test",
+                item_type=ItemTypeEnum.WEB_MAPPING_APPLICATION,
+                snippet="Empty Web App item added with Folder in API.",
+                description="Item of 0kb for Python API integration tests.",
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            )
+        ).result()
+        
+        end = time.perf_counter()
+        elapsed = end - start
+        print(f"{' ' * 10}elapsed time: {elapsed/60:.2f} minutes.")
+        print(f"{'=' * 5} end setUpClass {'=' * 20}\n")
 
     @classmethod
     def tearDownClass(cls):
-        print("\n=========== begin tearDownClass =============================\n")
+        print(f"\n{'=' * 5} tear down: {cls.__name__}")
         test_items = list(cls.item_test_download_folder.list())
         if test_items:
             cleanup_published_items(test_items)
         else:
             print(f"Test items already cleared from test folder.")
         cleanup_folders(gis=cls.gis, folder_names=[cls.item_test_download_folder.name])
-        print("\n=========== end tearDownClass ===============================\n")
+        print(f"{'=' * 5} end tearDownClass {'=' * 20}\n")
 
     def setUp(self):
         print(f"\n{'-' * 40}\nTest: starting {self._testMethodName}...")
-        self._start_time = time.time()
+        self._start_time = time.perf_counter()
 
     def tearDown(self):
-        elapsed_time = time.time() - self._start_time
-        print(f"{' ' * 4}...test took {elapsed_time / 60:.2f} minutes.\n")
-
+        elapsed_time = time.perf_counter() - self._start_time
+        print(f"{' ' * 4}...test took {elapsed_time:.2f} seconds.\n")
+    
     def test_download_method_empty_data_outpath(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
@@ -121,7 +150,7 @@ class Test_Item_download_outputs(unittest.TestCase):
             str(Path(chicago_data).parent),
             "Downloaded file not in tempory directory path as expected.",
         )
-
+    ("for now")
     def test_download_method_empty_data_nopath(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
@@ -140,7 +169,7 @@ class Test_Item_download_outputs(unittest.TestCase):
             Path(chicago_data).parent,
             "Download location with no path argument is not temporary directory path.",
         )
-
+    ("for now")
     def test_download_method_txt_data_nopath(self):
         """
         When no path is provided, Item.download() downloads to sys temp dir
@@ -202,6 +231,73 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertGreater(
             chicago_data_size, 0, "Downloaded file size is not greater than 0"
         )
+         
+    def test_download_method_Image_data_nopath(self):
+        """
+        For Image item, download with a path should return string representation of the item.
+        :return:
+        """
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            img_download_data = self.img_item.download()
+            img_size = Path(img_download_data).stat().st_size
+
+        self.assertIsInstance(
+            img_download_data,
+            str,
+            "Calling download() on Image item does not return download str path",
+        )
+        self.assertTrue(
+            Path(img_download_data).name.endswith(".png"),
+            "Download file name does not match known input",
+        )
+        self.assertIn(
+            Path(self.png_file).stem,
+            Path(img_download_data).stem,
+            "Download file from Image item does not match known file name.",
+        )
+        self.assertGreater(img_size, 0, "Downloaded file size is not greater than 0")
+        
+        
+    def test_download_method_Image_data_outpath(self):
+        """
+        For Image item, download with a path should return string representation of the item.
+        :return:
+        """
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            img_download_data = self.img_item.download(save_path=temp_dir)
+            img_size = Path(img_download_data).stat().st_size
+
+        self.assertIsInstance(
+            img_download_data,
+            str,
+            "Calling download() on Image item does not return download str path",
+        )
+        self.assertTrue(
+            Path(img_download_data).name.endswith(".png"),
+            "Download file name does not match known input",
+        )
+        self.assertIn(
+            Path(self.png_file).stem,
+            Path(img_download_data).stem,
+            "Download file from Image item does not match known file name.",
+        )
+        self.assertGreater(img_size, 0, "Downloaded file size is not greater than 0")        
+    
+
+    def test_download_method_zero_size_data(self):
+        """
+        When Item has no data or 0kb size - ensure Item.download() returns None
+        :return:
+        """
+        wmapp_download_file = self.wmapp_item.download()
+        wmapp_download_file_size = Path(wmapp_download_file).stat().st_size
+
+        self.assertIsNotNone(
+            wmapp_download_file, "Calling download() on zero kb item returns None"
+        )
+        self.assertEqual(wmapp_download_file_size, 0, "Downloaded file size is not 0")    
 
     def test_download_method_JSON_data_outputpath(self):
         """
@@ -334,7 +430,6 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertGreater(
             map_pkg_file_size, 0, "Downloaded file size is not greater than 0"
         )
-
 
 if __name__ == "__main__":
     unittest.main()

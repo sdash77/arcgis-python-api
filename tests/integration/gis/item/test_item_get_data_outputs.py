@@ -122,45 +122,32 @@ class Test_Item_get_data_outputs(unittest.TestCase):
         elapsed_time = time.time() - self._start_time
         print(f"{' ' * 4}...test took {elapsed_time / 60:.2f} minutes.\n")
 
-    def test_get_data_method_Image(self):
+    def test_get_data_method_Image_tryjson_False(self):
         """
-        For Image item, item.get_data(False) should return string representation of the item.
-        :return:
+        For Image item, item.get_data(False) should return string path to the
+        image item downloaded to the system. Changing try_json to True results
+        in identical output, no separate test included.
         """
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            img_download_data = self.img_item.download()
-            img_size = Path(img_download_data).stat().st_size
+            img_get_data_output = self.img_item.get_data(try_json=False)
+            img_size = Path(img_get_data_output).stat().st_size
 
         self.assertIsInstance(
-            img_download_data,
+            img_get_data_output,
             str,
-            "Calling download() on Image item does not return download str path",
+            "Calling get_data() on Image item does not return download str path",
         )
         self.assertTrue(
-            Path(img_download_data).name.endswith(".png"),
-            "Download file name does not match known input",
+            Path(img_get_data_output).name.endswith(".png"),
+            "Get data output file name does not match known input",
         )
         self.assertIn(
             self.img_item.title,
-            Path(img_download_data).stem,
+            Path(img_get_data_output).stem,
             "Download file from Image item does not match known file name.",
         )
         self.assertGreater(img_size, 0, "Downloaded file size is not greater than 0")
-
-    def test_download_method_zero_size_data(self):
-        """
-        When Item has no data or 0kb size - ensure Item.download() returns None
-        :return:
-        """
-
-        wmapp_download_file = self.wmapp_item.download()
-        wmapp_download_file_size = Path(wmapp_download_file).stat().st_size
-
-        self.assertIsNotNone(
-            wmapp_download_file, "Calling download() on zero kb item returns None"
-        )
-        self.assertEqual(wmapp_download_file_size, 0, "Downloaded file size is not 0")
 
     def test_get_data_method_binary_data_tryjson_True(self):
         """
