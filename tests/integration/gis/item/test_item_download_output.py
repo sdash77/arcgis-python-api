@@ -28,6 +28,7 @@ def setUpModule():
 
     warnings.filterwarnings("ignore")
 
+
 @profiles.admin_all
 @integration_test
 class Test_Item_download_outputs(unittest.TestCase):
@@ -81,13 +82,13 @@ class Test_Item_download_outputs(unittest.TestCase):
             source_data_path=cls.mmpk_file,
             folder=cls.item_test_download_folder,
         )
-        
+
         cls.png_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/set1_shifting_opportunity.png",
             verify=True,
             unique_copy=True,
-        )        
-        
+        )
+
         cls.img_item = add_source_item(
             gis=cls.gis,
             layer_name="image_for_download_testing",
@@ -95,7 +96,7 @@ class Test_Item_download_outputs(unittest.TestCase):
             source_data_path=cls.png_file,
             folder=cls.item_test_download_folder,
         )
-        
+
         cls.wmapp_item = cls.item_test_download_folder.add(
             item_properties=ItemProperties(
                 title="empty_web_app_download_test",
@@ -105,7 +106,7 @@ class Test_Item_download_outputs(unittest.TestCase):
                 tags=INTEGRATION_TEST_ITEM_TAG,
             )
         ).result()
-        
+
         end = time.perf_counter()
         elapsed = end - start
         print(f"{' ' * 10}elapsed time: {elapsed/60:.2f} minutes.")
@@ -129,7 +130,7 @@ class Test_Item_download_outputs(unittest.TestCase):
     def tearDown(self):
         elapsed_time = time.perf_counter() - self._start_time
         print(f"{' ' * 4}...test took {elapsed_time:.2f} seconds.\n")
-    
+
     def test_download_method_empty_data_outpath(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
@@ -150,7 +151,9 @@ class Test_Item_download_outputs(unittest.TestCase):
             str(Path(chicago_data).parent),
             "Downloaded file not in tempory directory path as expected.",
         )
+
     ("for now")
+
     def test_download_method_empty_data_nopath(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
@@ -169,7 +172,9 @@ class Test_Item_download_outputs(unittest.TestCase):
             Path(chicago_data).parent,
             "Download location with no path argument is not temporary directory path.",
         )
+
     ("for now")
+
     def test_download_method_txt_data_nopath(self):
         """
         When no path is provided, Item.download() downloads to sys temp dir
@@ -231,7 +236,7 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertGreater(
             chicago_data_size, 0, "Downloaded file size is not greater than 0"
         )
-         
+
     def test_download_method_Image_data_nopath(self):
         """
         For Image item, download with a path should return string representation of the item.
@@ -257,8 +262,7 @@ class Test_Item_download_outputs(unittest.TestCase):
             "Download file from Image item does not match known file name.",
         )
         self.assertGreater(img_size, 0, "Downloaded file size is not greater than 0")
-        
-        
+
     def test_download_method_Image_data_outpath(self):
         """
         For Image item, download with a path should return string representation of the item.
@@ -283,8 +287,7 @@ class Test_Item_download_outputs(unittest.TestCase):
             Path(img_download_data).stem,
             "Download file from Image item does not match known file name.",
         )
-        self.assertGreater(img_size, 0, "Downloaded file size is not greater than 0")        
-    
+        self.assertGreater(img_size, 0, "Downloaded file size is not greater than 0")
 
     def test_download_method_zero_size_data(self):
         """
@@ -297,7 +300,7 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertIsNotNone(
             wmapp_download_file, "Calling download() on zero kb item returns None"
         )
-        self.assertEqual(wmapp_download_file_size, 0, "Downloaded file size is not 0")    
+        self.assertEqual(wmapp_download_file_size, 0, "Downloaded file size is not 0")
 
     def test_download_method_JSON_data_outputpath(self):
         """
@@ -430,6 +433,7 @@ class Test_Item_download_outputs(unittest.TestCase):
         self.assertGreater(
             map_pkg_file_size, 0, "Downloaded file size is not greater than 0"
         )
+
 
 if __name__ == "__main__":
     unittest.main()
