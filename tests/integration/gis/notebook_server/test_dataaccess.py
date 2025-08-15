@@ -45,9 +45,6 @@ class TestNotebookDataAccess(unittest.TestCase):
             self.assertTrue(renamed)
             self.assertEqual(new_folder.name, "testfolder_renamed")
 
-        except Exception as e:
-            raise e
-
         finally:
             self.assertTrue(new_folder.delete())
 
@@ -84,9 +81,6 @@ class TestNotebookDataAccess(unittest.TestCase):
             print(local_path)
             self.assertTrue(os.path.isfile(local_path))
 
-        except Exception as e:
-            raise e
-
         finally:
             self.assertTrue(file_obj.delete())
             os.remove(local_path)
@@ -103,9 +97,6 @@ class TestNotebookDataAccess(unittest.TestCase):
             # Move folder1 into folder2
             moved = folder1.move(folder2)
             self.assertTrue(moved)
-
-        except Exception as e:
-            raise e
 
         finally:
             self.assertTrue(folder2.delete())
