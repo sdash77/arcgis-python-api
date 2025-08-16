@@ -352,6 +352,7 @@ class DeploymentManager(_BaseKube):
         super()
         self._url = url
         self._gis = gis
+        self._con = gis._con
 
     # ---------------------------------------------------------------------
     def search(
@@ -495,6 +496,7 @@ class DeploymentManager(_BaseKube):
             "filteredDeploymentIds", []
         )
         return [self.get(deploy_id) for deploy_id in deployment_ids]
+
 
     def get(self, deployment_id: str) -> Deployment:
         """
