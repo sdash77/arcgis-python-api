@@ -1592,8 +1592,6 @@ def geocode_from_items(
     item = None
     if gis is None:
         gis = arcgis.env.active_gis
-    if not gis is None and (gis._is_arcgisonline or gis._is_kubernetes):
-        raise Exception("This method only works on ArcGIS Enterprise.")
     url = gis.properties.helperServices.asyncGeocode.url
     tbx = Toolbox(url=url, gis=gis)
 
