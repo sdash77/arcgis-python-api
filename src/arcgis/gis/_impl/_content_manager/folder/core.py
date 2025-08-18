@@ -794,13 +794,22 @@ class Folder:
                               required.
 
                               .. code-block:: python
+                                  
+                                  # Creating a validated item_properties argument
 
                                   >>> from arcgis.gis import ItemProperties, ItemTypeEnum
 
                                   >>> item_props = ItemProperties(
                                                     title="<item_title>",
-                                                    item_type=ItemTypeEnum.SHAPEFILE.value
+                                                    item_type=ItemTypeEnum.SHAPEFILE,
+                                                    snippet="New shapefile item added to folder",
+                                                    tags=["shapefile_item", "gis_data"]
                                                    )
+                                  >>> folder_add_job = folder_obj.add(
+                                                         ...
+                                                         item_properties=item_props,
+                                                         ...
+                                                       )
         -----------------     --------------------------------------------------------------------
         file                  Optional string, io.StringIO, or io.BytesIO. Provide the data to the
                               item.
@@ -860,7 +869,7 @@ class Folder:
             # Usage Example:
             >>> from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 
-            >>> gis = GIS(profile="your_organization_profile")
+            >>> gis = GIS(profile="your_data_owner_profile")
 
             >>> data_path = r"<path_to_zipped_shapefile>"
             >>> item_props = ItemProperties(title="new_shapefile_item",
@@ -880,7 +889,7 @@ class Folder:
 
             >>> new_shp_item
 
-            <Item title:"new_shapefile_item" type:SHAPEFILE owner:water_data_owner>
+            <Item title:"new_shapefile_item" type:SHAPEFILE owner:data_owner>
 
             >>> new_flyr_item = new_shp_item.publish()
         """
