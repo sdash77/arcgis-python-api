@@ -519,17 +519,17 @@ class NotebookDataAccess:
 
     # ---------------------------------------------------------------------
     def _get_folders(self, parent_folder: str | None) -> list[NotebookFolder]:
-        if self._gis._is_agol:
-            url = f"{self._url}/{self._username}"
-        else:
-            url = f"{self._url}/{self._username}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
             "comp": "list",
-            "delimiter": "/",
             "token": self._gis.session.auth.token,
         }
+        if self._gis._is_agol:
+            url = f"{self._url}/{self._username}"
+            params["delimiter"] = "/"
+        else:
+            url = f"{self._url}/{self._username}/notebookworkspace"
         if parent_folder:
             params["prefix"] = parent_folder
         response = self._gis.session.get(url, params=params).json()
