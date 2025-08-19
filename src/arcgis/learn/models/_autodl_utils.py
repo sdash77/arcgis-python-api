@@ -195,7 +195,10 @@ def generate_output_report(
         )
 
     plt.ylabel("Model Names")
-    plt.xlabel("Mean IoU")
+    if "Mean IoU" in df.keys():
+        plt.xlabel("Mean IoU")
+    else:
+        plt.xlabel("Accuracy")
 
     plt.title("AutDL Performance")
     # plt.show()
