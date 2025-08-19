@@ -102,7 +102,7 @@ class Job:
 
         >>> gis = GIS(profile="your_online_admin_profile")
 
-        >>> shp_file_path = Path("path/to/your/shapefile.shp")
+        >>> shp_file_path = Path("path/to/your/zipped/shapefile.zip")
 
         >>> new_folder = gis.content.folders.create("new_gis_data")
         >>> add_item_job = new_folder.add(
@@ -158,7 +158,7 @@ class Job:
             >>> from arcgis.gis import GIS, ItemTypeEnum, ItemProperties
             >>> gis = GIS(profile="your_online_profile")
 
-            >>> shp_file_path = "/path/to/your/shapefile.shp"
+            >>> shp_file_path = "/path/to/your/zipped/shapefile.zip"
 
             >>> new_data_item_job = gis_folder.add(
             >>>     item_properties=ItemProperties(
