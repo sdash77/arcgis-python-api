@@ -60,7 +60,6 @@ class Test_Item_publish_file_types(unittest.TestCase):
         elapsed_time = time.time() - self._start_time
         print(f"{' ' * 4}...test took {elapsed_time/60:.2f} minutes.\n")
 
-    @unittest.skip("Skipping to check spk.")
     def test_publish_csv(self):
         csv_source_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/RUS_cities.csv",
@@ -109,7 +108,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "No features found in published feature service.",
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_fgdb(self):
         cities_fgdb_source = get_resource_path(
             relative_path="staging_data/item_class_test_data/set2_USAcities.zip",
@@ -161,7 +160,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "No features found in published feature service.",
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_vtpk(self):
         vtpk_package_file = get_web_resource_path(
             relative_path="set2_vtpk_worldgreen.vtpk",
@@ -208,7 +207,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             VectorTileLayer,
             "Layer type not published as a Vector Tile Layer.",
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_spk(self):
         if self.gis._is_kubernetes:
             self.skipTest("Scene package format spk not supported on Kubernetes.")
@@ -270,7 +269,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             Object3DLayer,
             f"{scn_item.title} layer is not a SceneLayer as expected.",
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_slpk(self):
         if self.gis.version >= [2024, 2]:
             if self.gis.properties.isPortal and not self.gis._is_kubernetes:
@@ -342,7 +341,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             Object3DLayer,
             f"{scn_item.title} layer is not a SceneLayer as expected.",
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_tpk(self):
         if self.gis._is_kubernetes:
             self.skipTest("Tile package format tpk not supported on Kubernetes.")
@@ -389,7 +388,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
         self.assertTrue(
             len(tile_lyr_item.layers) > 0, "No layers published in Map Service."
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_tpkx(self):
         tpkx_package_file = get_web_resource_path(
             relative_path="redlands_testcase22.tpkx", unique_copy=True
@@ -436,7 +435,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Tile layer does not have layers as expected.",
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_flyr_sd(self):
         if self.gis.properties.isPortal:
             self.skipTest(
@@ -493,7 +492,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Feature Service layer does not have features as expected.",
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_tlyr_sd(self):
         if self.gis.properties.isPortal:
             self.skipTest(
@@ -542,7 +541,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             len(svcdef_tile_lyr_item.layers) == 3,
             "Publishing item did not create 3 layers as expected in Map Service.",
         )
-    @unittest.skip("Skipping to check spk.")
+
     def test_publish_shp(self):
         shp_source_file = get_resource_path(
             relative_path="staging_data/USA_Major_Cities.zip",
@@ -604,9 +603,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
         pub_params["name"] = "data_magic_table_csv"
         pub_params["locationType"] = "none"
 
-        hosted_table_item = csv_item.publish(
-            publish_parameters=pub_params
-        )
+        hosted_table_item = csv_item.publish(publish_parameters=pub_params)
 
     def test_publish_tbl_from_xlsx(self):
         source_xlsx_file = get_resource_path(
@@ -620,9 +617,9 @@ class Test_Item_publish_file_types(unittest.TestCase):
                 item_type=ItemTypeEnum.MICROSOFT_EXCEL,
                 snippet="Excel item added with Folder in API.",
                 description="Excel item for publishing a table in Python API integration testing.",
-                tags=INTEGRATION_TEST_ITEM_TAG
+                tags=INTEGRATION_TEST_ITEM_TAG,
             ),
-            file=source_xlsx_file
+            file=source_xlsx_file,
         ).result()
 
         analyzed_output = self.gis.content.analyze(item=xlsx_item, file_type="excel")
@@ -630,9 +627,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
         pub_params["name"] = "passenger_table_uqUq"
         pub_params["locationType"] = "none"
 
-        hosted_table_item = xlsx_item.publish(
-            publish_parameters=pub_params
-        )
+        hosted_table_item = xlsx_item.publish(publish_parameters=pub_params)
 
 
 if __name__ == "__main__":
