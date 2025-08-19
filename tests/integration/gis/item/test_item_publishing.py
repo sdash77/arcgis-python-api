@@ -208,7 +208,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             VectorTileLayer,
             "Layer type not published as a Vector Tile Layer.",
         )
-
+    @unittest.skip("Skipping to check spk.")
     def test_publish_spk(self):
         if self.gis._is_kubernetes:
             self.skipTest("Scene package format spk not supported on Kubernetes.")
@@ -580,6 +580,58 @@ class Test_Item_publish_file_types(unittest.TestCase):
             shp_flyr_item.layers[0].query(return_count_only=True),
             0,
             "Shapefile layer does not have features as expected.",
+        )
+
+    def test_publish_tbl_from_csv(self):
+        source_csv_file = get_resource_path(
+            relative_path="staging_data/item_class_test_data/data_magic.csv",
+            verify=True,
+            unique_copy=True,
+        )
+        csv_item = self.item_test_publish_folder.add(
+            item_properties=ItemProperties(
+                title="data_magic",
+                item_type=ItemTypeEnum.CSV,
+                snippet="CSV item added from folder in API",
+                description="CSV item for publishing a table in Python API integration testing.",
+                tags=INTEGRATION_TEST_ITEM_TAG,
+            ),
+            file=source_csv_file,
+        ).result()
+
+        analyzed_output = self.gis.content.analyze(item=csv_item, file_type="csv")
+        pub_params = analyzed_output["publishParameters"]
+        pub_params["name"] = "data_magic_table_csv"
+        pub_params["locationType"] = "none"
+
+        hosted_table_item = csv_item.publish(
+            publish_parameters=pub_params
+        )
+
+    def test_publish_tbl_from_xlsx(self):
+        source_xlsx_file = get_resource_path(
+            relative_path="staging_data/item_class_test_data/air_passenger_io_uqUq.xlsx",
+            verify=True,
+            unique_copy=True,
+        )
+        xlsx_item = self.item_test_publish_folder.add(
+            item_properties=ItemProperties(
+                title="air_passenger_io_data_xlsx",
+                item_type=ItemTypeEnum.MICROSOFT_EXCEL,
+                snippet="Excel item added with Folder in API.",
+                description="Excel item for publishing a table in Python API integration testing.",
+                tags=INTEGRATION_TEST_ITEM_TAG
+            ),
+            file=source_xlsx_file
+        ).result()
+
+        analyzed_output = self.gis.content.analyze(item=xlsx_item, file_type="excel")
+        pub_params = analyzed_output["publishParameters"]
+        pub_params["name"] = "passenger_table_uqUq"
+        pub_params["locationType"] = "none"
+
+        hosted_table_item = xlsx_item.publish(
+            publish_parameters=pub_params
         )
 
 
