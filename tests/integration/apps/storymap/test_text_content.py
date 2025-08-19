@@ -1,5 +1,4 @@
 import unittest
-from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Text, TextStyles, Button
 from utils.decorators import integration_test, profiles
@@ -10,38 +9,37 @@ from utils.decorators import integration_test, profiles
 class TestTextContent(unittest.TestCase):
     """Test adding text and seeing properties"""
 
+    def setUp(self):
+        self.story = StoryMap(gis=self.gis)
+
+    def tearDown(self):
+        self.story.delete_story()
+
     def test_add_button(self):
         """Test adding a Button and seeing the properties"""
         # establish gis connection
-        gis = self.gis
-        story = StoryMap(gis=gis)
         btn = Button(
             link="https://www.nps.gov/subjects/forests/leaf-peeping.htm",
             text="Autumn Colors",
         )
-        button = story.add(btn)
+        button = self.story.add(btn)
 
         assert button
         assert btn.properties
 
-        item = gis.content.get(story._itemid)
-        assert story.delete_story()
-
     def test_add_text(self):
         """Test adding Text of different styles and seeing properties"""
         # establish gis connection
-        gis = self.gis
-        story = StoryMap(gis=gis)
         welcome = Text(
             text="Welcome to a New Story About Some National Park Information",
             style=TextStyles.HEADING,
         )
-        heading = story.add(welcome, position=2)
+        heading = self.story.add(welcome, position=2)
         park_quote = Text(
             text="I encourage everybody to hop on Google and type in 'national park' in whatever state they live in and see the beauty that lies in their own backyard. It's that simple.",
             style=TextStyles.QUOTE,
         )
-        quote = story.add(park_quote, position=4)
+        quote = self.story.add(park_quote, position=4)
 
         assert heading
         assert quote
@@ -53,35 +51,29 @@ class TestTextContent(unittest.TestCase):
             style=TextStyles.PARAGRAPH,
             size="large",
         )
-        assert story.add(paragraph)
+        assert self.story.add(paragraph)
 
-        item = gis.content.get(story._itemid)
-        assert story.delete_story()
-
-    def test_get(self):
-        """Test the get method for getting nodes by type and from an id"""
+    def test_get_text(self):
+        """Test getting text node through content_list"""
         # establish gis connection
-        gis = self.gis
-        story = StoryMap(gis=gis)
         welcome = Text(
             text="Welcome to a New Story About Some National Park Information",
             style=TextStyles.HEADING,
         )
-        story.add(welcome, position=2)
+        self.story.add(welcome, position=2)
 
         park_quote = Text(
             text="I encourage everybody to hop on Google and type in 'national park' in whatever state they live in and see the beauty that lies in their own backyard. It's that simple.",
             style=TextStyles.QUOTE,
         )
-        story.add(park_quote, position=4)
+        self.story.add(park_quote, position=4)
 
-        assert story.get(type="text")
-        text = story.get(type="text")[0]
-        text_id = list(text.keys())[0]
-        assert story.get(node=text_id)
-
-        item = gis.content.get(story._itemid)
-        assert story.delete_story()
+        text_welcome = self.story.content_list[2]
+        assert isinstance(text_welcome, Text)
+        assert text_welcome.properties['node_dict']['data']['type'] == TextStyles.HEADING.value
+        text_park = self.story.content_list[3]
+        assert isinstance(text_park, Text)
+        assert text_park.properties['node_dict']['data']['type'] == TextStyles.QUOTE.value
 
 
 if __name__ == "__main__":
