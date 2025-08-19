@@ -4,12 +4,12 @@ from arcgis.layers import OGCCollection, OGCFeatureService
 
 from utils.decorators import integration_test
 
-ogc_url = "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer"
-ogc_collection_url = "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer/collections/0"
+ogc_url = "https://demo.ldproxy.net/daraa"
+ogc_collection_url = "https://demo.ldproxy.net/daraa/collections/AeronauticCrv"
 
 
 @integration_test
-class TestOGCFS(unittest.TestCase):
+class TestOGCFSNonEsri(unittest.TestCase):
     """Tests working with a OGC FS and Layer"""
 
     def test_ogc_fs(self):
@@ -27,7 +27,7 @@ class TestOGCFS(unittest.TestCase):
             if u.endswith(e)
         ]
         self.assertEqual(
-            4,
+            10,
             len(conformance_urls),
             f"Incorrect count of conformance endpoints. Got {len(conformance_urls)}",
         )
@@ -41,20 +41,20 @@ class TestOGCFS(unittest.TestCase):
             sedf = ogc_lyr.query(return_all=True)
             assert isinstance(sedf, pd.DataFrame)
             assert len(ogc_lyr.query(return_all=False, limit=10)) == 10
-
-            dict_query_1 = ogc_lyr.query(return_all=False, limit=10, as_dict=True)
-            assert isinstance(dict_query_1, dict), f"Failed: {type(dict_query_1)}"
-
+            dict_query = ogc_lyr.query(return_all=False, limit=10, as_dict=True)
+            self.assertIsInstance(
+                dict_query, dict, "Query non-esri OGC with as_dict failed"
+            )
             assert len(ogc_lyr.query(return_all=True, as_dict=True)["features"]) == len(
                 sedf
             )
-            assert isinstance(ogc_lyr.get(2180), dict)
+            assert isinstance(ogc_lyr.get(8), dict)
             break
 
     def test_ogc_collection(self):
         ogc_collection = OGCCollection(url=ogc_collection_url)
         self.assertEqual(
-            "Hospitals_Medical_Centers",
+            "Aeronautic (Curves)",
             ogc_collection.properties.get("title"),
             "Unexpected OGC Collection title.",
         )
