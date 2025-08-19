@@ -9252,6 +9252,22 @@ def raster_collection_function(
     else:
         raster = "$$"
 
+    if isinstance(raster, dict):
+        if (
+            "rasterFunction" in raster
+            and raster["rasterFunction"] == "None"
+            and "rasterFunctionArguments" in raster
+            and "Raster" in raster["rasterFunctionArguments"]
+        ):
+            raster_args = raster["rasterFunctionArguments"]["Raster"]
+            raster = {
+                "renderingRule": {"rasterFunction": "None"},
+                "url": raster_args.get("url"),
+                "mosaicRule": raster_args.get("mosaicRule"),
+                "renderingRule": {"rasterFunction": "None"},
+            }
+            raster_ra = raster
+
     template_dict = {
         "rasterFunction": "RasterCollection",
         "rasterFunctionArguments": {"RasterCollection": raster},
@@ -14151,8 +14167,23 @@ class RFT:
                             if isinstance(v, (ImageryLayer, Raster)) or isinstance(
                                 v, _FeatureLayer
                             ):
+                                url = v.url
+                                try:
+                                    if url is not None and "?token" not in url:
+                                        from .utility import _generate_layer_token
+
+                                        token = _generate_layer_token(v, url)
+                                        if token is not None:
+                                            url = f"{url}?token={token}"
+                                except:
+                                    pass
                                 raster = _raster_input_rft(v)
                                 v = _input_rft(raster)
+                                if key == "RasterCollection":
+                                    v = {
+                                        "renderingRule": v,
+                                        "url": url,
+                                    }
                                 if isinstance(raster, str):
                                     value["value"] = v
                                     flag_rasters = 1
@@ -14162,6 +14193,19 @@ class RFT:
                                     else:
                                         input_dict.update({key: v})
                                 break
+
+                            elif key == "QueryGeometry" and isinstance(v, Geometry):
+                                from .utility import (
+                                    _to_process_raster_collection_geometry,
+                                )
+
+                                try:
+                                    new_v = _to_process_raster_collection_geometry(v)
+                                    v = new_v
+                                except Exception as e:
+                                    print(f"Error processing geometry: {e}")
+                                value["value"] = v
+
                             else:
                                 if "value" in value:
                                     if isinstance(value["value"], dict):
