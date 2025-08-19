@@ -100,7 +100,7 @@ class Job:
         >>> from pathlib import Path
         >>> from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 
-        >>> gis = GIS(profile="your_online_admin_file)
+        >>> gis = GIS(profile="your_online_admin_profile")
 
         >>> shp_file_path = Path("path/to/your/shapefile.shp")
 
