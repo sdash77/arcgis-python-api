@@ -1,11 +1,14 @@
 from __future__ import annotations
-import copy
-from enum import Enum
 import os
+import re
+import copy
+import tempfile
+from enum import Enum
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import User
+import requests
 
 
 class DATAACCESSTYPE(Enum):
@@ -816,16 +819,93 @@ class NotebookDataAccess:
         else:
             raise ValueError(f"Unknown error during workspace transfer: {res}")
 
+    def _extract_filename(self, content_disposition_string: str) -> str | None:
+        """
+        Extracts the filename from a Content-Disposition header string.
+        Handles both quoted and unquoted filenames, and prioritizes filename* for UTF-8.
+        """
+
+        if not content_disposition_string:
+            return None
+
+        # Try to extract filename* (for UTF-8 encoded filenames) first
+        match_utf8 = re.search(
+            r"filename\*=UTF-8''([^;]+)", content_disposition_string, re.IGNORECASE
+        )
+        if match_utf8:
+            # Decode URL-encoded characters
+            import urllib.parse
+
+            return urllib.parse.unquote(match_utf8.group(1))
+
+        # Then try to extract quoted filename
+        match_quoted = re.search(
+            r'filename="([^"]+)"', content_disposition_string, re.IGNORECASE
+        )
+        if match_quoted:
+            return match_quoted.group(1)
+
+        # Finally, try to extract unquoted filename
+        match_unquoted = re.search(
+            r"filename=([^;]+)", content_disposition_string, re.IGNORECASE
+        )
+        if match_unquoted:
+            return match_unquoted.group(1).strip()
+
+        return None
+
+    def _is_file(self, response: requests.Response) -> bool:
+        """checks if the response contains a file"""
+        content_type = response.headers.get("Content-Type")
+        content_disposition = response.headers.get("Content-Disposition")
+        file_name: str | None = self._extract_filename(content_disposition)
+        is_file = False, file_name
+
+        if content_disposition and "attachment" in content_disposition:
+            is_file = True, file_name
+        elif (
+            content_type
+            and "text/html" not in content_type
+            and "application/json" not in content_type
+        ):
+            is_file = True, file_name
+        return is_file
+
     # ---------------------------------------------------------------------
     def _download(self, filename: str) -> str:
         """
-        downloads a file from the
+        downloads a file from the notebook server
         """
-        url = f"{self._url}/notebookworkspace/downloadFile"
-        params = {
-            "f": "json",
-            "fileName": filename,
-        }
+
+        if self._gis._is_arcgisonline:
+            url = f"{self._url.replace('/azureblob', '')}/{self._gis.users.me.username}/downloadFile"
+            params = {
+                "fileName": filename,
+            }
+            response: requests.Response = self._gis.session.get(url, params=params)
+            is_file, file_name = self._is_file(response)
+            if is_file:
+
+                folder: str = tempfile.gettempdir()
+                fp = os.path.join(folder, file_name)
+                with open(fp, "wb") as writer:
+                    writer.write(response.content)
+                return fp
+        else:
+            url = f"{self._url}/notebookworkspace/downloadFile"
+            params = {
+                "f": "json",
+                "fileName": filename,
+            }
+            response: requests.Response = self._gis.session.post(url, data=params)
+            is_file, file_name = self._is_file(response)
+            if is_file:
+
+                folder: str = tempfile.gettempdir()
+                fp = os.path.join(folder, file_name)
+                with open(fp, "wb") as writer:
+                    writer.write(response.content)
+                return fp
         return self._gis.session.post(url, data=params).json()
 
     # ---------------------------------------------------------------------
