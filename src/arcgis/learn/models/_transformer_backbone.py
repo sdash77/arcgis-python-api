@@ -42,6 +42,8 @@ wavelengths_required_cfg = dict(
         depth=24,
         num_heads=16,
         drop_path_rate=0.0,
+        qkv_bias=False,
+        proj_bias=False,
         window_block_indexes=(
             list(range(0, 7))
             + list(range(8, 15))
