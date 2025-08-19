@@ -794,7 +794,7 @@ class Folder:
                               required.
 
                               .. code-block:: python
-                                  
+
                                   # Creating a validated item_properties argument
 
                                   >>> from arcgis.gis import ItemProperties, ItemTypeEnum
