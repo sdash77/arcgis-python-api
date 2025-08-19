@@ -26,7 +26,7 @@ def setUpModule():
     warnings.filterwarnings("ignore")
 
 
-@profiles.admin_enterprise
+@profiles.all
 @integration_test
 class Test_Item_publish_file_types(unittest.TestCase):
     @classmethod
