@@ -178,10 +178,7 @@ class ChildImageClassifier:
                     "dataType": "GPString",
                     "required": True,
                     "value": "True",
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "displayName": "Predict Background",
                     "description": "If set to True, background class is also classified.",
                 },
@@ -190,10 +187,7 @@ class ChildImageClassifier:
                     "dataType": "GPString",
                     "required": True,
                     "value": "False",
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "displayName": "Test Time Augmentation",
                     "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },

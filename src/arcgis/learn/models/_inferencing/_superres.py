@@ -185,10 +185,7 @@ class ChildImageClassifier:
                             "dataType": "GPString",
                             "required": True,
                             "value": "ddim",
-                            "domain": [
-                                "ddim",
-                                "ddpm"
-                            ],
+                            "domain": ["ddim", "ddpm"],
                             "displayName": "Sampling Type",
                             "description": "Type of sampling",
                         },

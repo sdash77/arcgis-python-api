@@ -212,10 +212,7 @@ class ChildInstanceDetector:
                     "name": "return_bboxes",
                     "dataType": "GPString",
                     "required": True,
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "value": "False",
                     "displayName": "Bounding Boxes",
                     "description": "If True, the tool will return a bounding box around the detected feature.",
@@ -225,10 +222,7 @@ class ChildInstanceDetector:
                     "dataType": "GPString",
                     "required": True,
                     "value": "False",
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "displayName": "Test Time Augmentation",
                     "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },
@@ -237,11 +231,7 @@ class ChildInstanceDetector:
                     "dataType": "GPString",
                     "required": True,
                     "value": "mean",
-                    "domain": [
-                        "mean",
-                        "max",
-                        "min"
-                    ],
+                    "domain": ["mean", "max", "min"],
                     "displayName": "Merge Policy",
                     "description": "Policy for merging predictions (mean, min, or max). Applicable when test_time_augmentation is True.",
                 },

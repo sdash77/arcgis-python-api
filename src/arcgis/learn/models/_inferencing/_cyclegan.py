@@ -179,10 +179,7 @@ class ChildImageClassifier:
                     "dataType": "GPString",
                     "required": True,
                     "value": "AtoB",
-                    "domain": [
-                        "AtoB",
-                        "BtoA"
-                    ],
+                    "domain": ["AtoB", "BtoA"],
                     "displayName": "Direction",
                     "description": '"AtoB" or "BtoA" to generate raster of type A or B.',
                 },

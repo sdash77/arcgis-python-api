@@ -270,10 +270,7 @@ class ChildObjectDetector:
                     "name": "exclude_pad_detections",
                     "dataType": "GPString",
                     "required": True,
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "value": "True",
                     "displayName": "Exclude Padding Detections",
                     "description": "If True, this filters potentially truncated detections near the edges that are in the padded region of image chips.",

@@ -230,10 +230,7 @@ class ChildImageClassifier:
                         "dataType": "GPString",
                         "required": True,
                         "value": "False",
-                        "domain": [
-                            "True",
-                            "False"
-                        ],
+                        "domain": ["True", "False"],
                         "displayName": "Return Probability Raster",
                         "description": "If True, will return the probability surface of the result.",
                     },
@@ -256,10 +253,7 @@ class ChildImageClassifier:
                     "dataType": "GPString",
                     "required": True,
                     "value": "False",
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "displayName": "Test Time Augmentation",
                     "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },
@@ -268,11 +262,7 @@ class ChildImageClassifier:
                     "dataType": "GPString",
                     "required": True,
                     "value": "max",
-                    "domain": [
-                        "mean",
-                        "max",
-                        "min"
-                    ],
+                    "domain": ["mean", "max", "min"],
                     "displayName": "Merge Policy",
                     "description": "Policy for merging predictions (mean, min, or max). Applicable when test_time_augmentation is True.",
                 },

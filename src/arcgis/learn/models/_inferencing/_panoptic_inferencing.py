@@ -310,10 +310,7 @@ class ChildPanopticSegmenter:
                         if "test_time_augmentation" not in self.json_info
                         else str(self.json_info["test_time_augmentation"])
                     ),
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "displayName": "Test Time Augmentation",
                     "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },

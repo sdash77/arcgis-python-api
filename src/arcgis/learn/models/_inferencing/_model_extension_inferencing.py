@@ -297,10 +297,7 @@ class ChildObjectDetector:
                     "name": "exclude_pad_detections",
                     "dataType": "GPString",
                     "required": True,
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "value": "True",
                     "displayName": "Exclude Padding Detections",
                     "description": "If True, this filters potentially truncated detections near the edges that are in the padded region of image chips.",
@@ -511,10 +508,7 @@ class ChildImageClassifier:
                         if "test_time_augmentation" not in self.json_info
                         else str(self.json_info["test_time_augmentation"])
                     ),
-                    "domain": [
-                        "True",
-                        "False"
-                    ],
+                    "domain": ["True", "False"],
                     "displayName": "Test Time Augmentation",
                     "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },
@@ -528,10 +522,7 @@ class ChildImageClassifier:
                         "dataType": "GPString",
                         "value": "False",
                         "required": True,
-                        "domain": [
-                            "True",
-                            "False"
-                        ],
+                        "domain": ["True", "False"],
                         "displayName": "Thinning",
                         "description": "If True, edges will be thined to one pixel wide.",
                     },
@@ -540,11 +531,7 @@ class ChildImageClassifier:
                         "dataType": "GPString",
                         "required": True,
                         "value": "mean",
-                        "domain": [
-                            "mean",
-                            "max",
-                            "min"
-                        ],
+                        "domain": ["mean", "max", "min"],
                         "displayName": "Merge Policy",
                         "description": "Policy for merging predictions (mean, min, or max). Applicable when test_time_augmentation is True.",
                     },
@@ -561,7 +548,7 @@ class ChildImageClassifier:
                             "dataType": "GPDouble",
                             "value": 0.5,
                             "required": True,
-                            "domain": [0,1],
+                            "domain": [0, 1],
                             "displayName": "Box Threshold",
                             "description": "The confidence score used for selecting the detections to be included in the results. The allowed values range from 0 to 1.0.",
                         },
@@ -570,10 +557,7 @@ class ChildImageClassifier:
                             "dataType": "GPString",
                             "required": True,
                             "value": "False",
-                            "domain": [
-                                "True",
-                                "False"
-                            ],
+                            "domain": ["True", "False"],
                             "displayName": "Return Probability Raster",
                             "description": "If True, will return the probability surface of the result.",
                         },
@@ -587,10 +571,7 @@ class ChildImageClassifier:
                         "dataType": "GPString",
                         "required": True,
                         "value": "True",
-                        "domain": [
-                            "True",
-                            "False"
-                        ],
+                        "domain": ["True", "False"],
                         "displayName": "Predict Background",
                         "description": "If set to True, background class is also classified.",
                     }

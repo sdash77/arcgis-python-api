@@ -85,17 +85,13 @@ class ChildObjectDetector:
                     "dataType": "GPString",
                     "value": str(self.emd["ExpMap"]),
                     "required": True,
-                    "domain": [
-                        "True",
-                        "False"
-                    ],       
+                    "domain": ["True", "False"],
                     "displayName": "Explainability Map",
                     "description": "Display the heatmaps.",
                 }
             )
         # add tta in the parameters
         required_parameters.append(
-            
             {
                 "name": "test_time_augmentation",
                 "dataType": "GPString",
@@ -105,10 +101,7 @@ class ChildObjectDetector:
                     if "test_time_augmentation" not in self.emd
                     else str(self.emd["test_time_augmentation"])
                 ),
-                "domain": [
-                        "True",
-                        "False"
-                ],
+                "domain": ["True", "False"],
                 "displayName": "Test Time Augmentation",
                 "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
             }
