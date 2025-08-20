@@ -29,6 +29,8 @@ class TestNotebookDataAccess(unittest.TestCase):
         """ Test workflow: creating a folder in workspace and renaming it."""
 
         new_folder = None
+        if new_folder:
+            print("new_folder is not None")
         try:
             home = self.da.folders[0]
             new_folder = home.create_folder("testfolder")
@@ -46,7 +48,8 @@ class TestNotebookDataAccess(unittest.TestCase):
             self.assertEqual(new_folder.name, "testfolder_renamed")
 
         finally:
-            self.assertTrue(new_folder.delete())
+            if new_folder:
+                self.assertTrue(new_folder.delete())
 
     def test_folder_files_and_upload(self):
         """ Test workflow: uploading a file to a folder in workspace and downloading it."""
@@ -78,12 +81,13 @@ class TestNotebookDataAccess(unittest.TestCase):
             # Download and delete
             file_obj = next(f for f in files if f.name == file_name)
             local_path = file_obj.download()
-            print(local_path)
             self.assertTrue(os.path.isfile(local_path))
 
         finally:
-            self.assertTrue(file_obj.delete())
-            os.remove(local_path)
+            if file_obj:
+                self.assertTrue(file_obj.delete())
+            if local_path:
+                os.remove(local_path)
 
     def test_move_folder(self):
         """ Test workflow: moving a folder to another folder in workspace."""
@@ -99,7 +103,8 @@ class TestNotebookDataAccess(unittest.TestCase):
             self.assertTrue(moved)
 
         finally:
-            self.assertTrue(folder2.delete())
+            if folder2:
+                self.assertTrue(folder2.delete())
 
     @unittest.skip("This workflow cannot be automated")
     def test_transfer_workspace(self):
