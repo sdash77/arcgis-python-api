@@ -270,7 +270,8 @@ class ChildInstanceDetector:
         ]
 
         if self.use_tta:
-            if self.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+            image_space_used = self.json_info.get("ImageSpaceUsed")
+            if image_space_used == "MAP_SPACE":
                 self.model.arcgis_tta = list(range(8))
             else:
                 self.model.arcgis_tta = [0, 2]

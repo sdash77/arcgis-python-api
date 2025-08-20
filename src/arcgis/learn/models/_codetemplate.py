@@ -360,13 +360,14 @@ class ArcGISObjectDetector:
         transforms = [0]
 
         if self.use_tta:
-            if self.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+            image_space_used = self.json_info.get("ImageSpaceUsed")
+            if image_space_used  == "MAP_SPACE":
                 transforms = list(range(8))
             else:
                 transforms = [
                     0,
                     2,
-                ]  # no vertical flips for pixel space (oriented imagery)
+                ]  # no vertical flips for pixel space (oriented imagery / missing key)
 
         for k in transforms:
             out = dihedral_affine(Image(torch.tensor(input_image.copy() / 256.0)), k)
