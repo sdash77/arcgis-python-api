@@ -65,9 +65,35 @@ def vertexIntersectsVertex(a1, a2, b1, b2):
     return False
 
 
+def _bbox(p, q):  # (minx, miny, maxx, maxy)
+    return (min(p[0], q[0]), min(p[1], q[1]), max(p[0], q[0]), max(p[1], q[1]))
+
+
+def _boxes_overlap(b1, b2):
+    return (
+        b1[2] >= b2[0]
+        and b2[2] >= b1[0]  # x overlap
+        and b1[3] >= b2[1]
+        and b2[3] >= b1[1]
+    )  # y overlap
+
+
 def arrayIntersectsArray(a, b):
+    bboxes_a = [None for _ in range(len(a))]
+    bboxes_b = [None for _ in range(len(b))]
     for i in range(0, len(a) - 1):
         for j in range(0, len(b) - 1):
+            if not bboxes_a[i]:
+                bboxes_a[i] = _bbox(a[i], a[i + 1])
+            bbox_a = bboxes_a[i]
+
+            if not bboxes_b[j]:
+                bboxes_b[j] = _bbox(b[j], b[j + 1])
+            bbox_b = bboxes_b[j]
+
+            if not _boxes_overlap(bbox_a, bbox_b):
+                continue
+
             if vertexIntersectsVertex(a[i], a[i + 1], b[j], b[j + 1]):
                 return True
 
@@ -100,6 +126,101 @@ def coordinatesContainCoordinates(outer, inner):
     if not intersects and contains:
         return True
     return False
+
+
+def _ring_bbox(ring):
+    """Bounding box of a closed ring."""
+    axes = list(zip(*ring))  # xs, ys, zs (optional), ms (optional)
+    xs, ys = axes[0], axes[1]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _point_in_bbox(bbox, pt):
+    return bbox[0] <= pt[0] <= bbox[2] and bbox[1] <= pt[1] <= bbox[3]
+
+
+def convertRingsToGeoJSONUnchecked(rings):
+    """
+    Classify ArcGIS rings into GeoJSON Polygon / MultiPolygon, recognising holes.
+    This does not check for intersection.
+    """
+
+    outerRings = []
+    outerRingsBBoxes = []
+    holes = []
+    x = None  # iterator
+    outerRing = None  # current outer ring being evaluated
+    hole = None  # current hole being evaluated
+
+    # for each ring
+    for r in range(0, len(rings)):
+        ring = closeRing(rings[r])
+        if len(ring) < 4:
+            continue
+
+        # is this ring an outer ring? is it clockwise?
+        if ringIsClockwise(ring):
+            polygon = [ring]
+            outerRings.append(polygon)  # push to outer rings
+            outerRingsBBoxes.append(_ring_bbox(ring))
+        else:
+            holes.append(ring)  # counterclockwise push to holes
+
+    uncontainedHoles = []
+
+    start_idx = (
+        len(outerRings) - 1
+    )  # remember the last match, search from back to front. this is fast if the holes are clustered
+    # while there are holes left...
+    while len(holes):
+        # pop a hole off out stack
+        hole = holes.pop()
+
+        # loop over all outer rings and see if they contain our hole.
+        contained = False
+        for offset in range(0, -len(outerRings), -1):  # walk backwards
+            outer_idx = (start_idx + offset) % len(outerRings)
+            outerRing = outerRings[outer_idx][0]
+
+            if not _point_in_bbox(outerRingsBBoxes[outer_idx], hole[0]):
+                continue  # bbox already says "outside"
+
+            if coordinatesContainPoint(outerRing, hole[0]):
+                outerRings[outer_idx].append(hole)  # place the hole
+                contained = True
+                start_idx = outer_idx
+                break
+
+        # ring is not contained in any outer ring
+        # sometimes this happens https://github.com/Esri/esri-leaflet/issues/320
+        if not contained:
+            uncontainedHoles.append(hole)
+
+    # if we couldn't match any holes using contains we can try intersects...
+    while len(uncontainedHoles):
+        # pop a hole off out stack
+        hole = uncontainedHoles.pop()
+
+        # loop over all outer rings and see if any intersect our hole.
+        intersects = False
+        x = len(outerRings) - 1
+        while x >= 0:
+            outerRing = outerRings[x][0]
+            if arrayIntersectsArray(outerRing, hole):
+                # the hole is contained push it into our polygon
+                outerRings[x].append(hole)
+                intersects = True
+                break
+            x = x - 1
+
+        if not intersects:
+            outerRings.append([hole[::-1]])
+            outerRingsBBoxes.append(_ring_bbox(hole))
+
+    if len(outerRings) == 1:
+        return {"type": "Polygon", "coordinates": outerRings[0]}
+    else:
+        return {"type": "MultiPolygon", "coordinates": outerRings}
 
 
 def convertRingsToGeoJSON(rings):
