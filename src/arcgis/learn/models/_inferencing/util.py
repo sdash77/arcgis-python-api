@@ -792,11 +792,11 @@ def variable_tile_size_check(json_info, parameters):
             [
                 {
                     "name": "tile_size",
-                    "dataType": "numeric",
+                    "dataType": "GPLong",
                     "value": int(json_info["ImageHeight"]),
-                    "required": False,
+                    "required": True,
                     "displayName": "Tile Size",
-                    "description": "Tile size used for inferencing",
+                    "description": "The width and height of image tiles into which the imagery is split for prediction.",
                 }
             ]
         )
