@@ -70,37 +70,47 @@ class ChildObjectDetector:
             required_parameters.append(
                 {
                     "name": "threshold",
-                    "dataType": "numeric",
+                    "dataType": "GPDouble",
                     "value": 0.5,
-                    "required": False,
-                    "displayName": "Confidence Score Threshold [0.0, 1.0]",
-                    "description": "Confidence score threshold value [0.0, 1.0]",
+                    "required": True,
+                    "domain": [0.0, 1.0],
+                    "displayName": "Confidence Threshold",
+                    "description": "The confidence score used for selecting the detections to be included in the results. The allowed values range from 0 to 1.0.",
                 }
             )
         if "ExpMap" in self.emd and self.emd["ExpMap"] == True:
             required_parameters.append(
                 {
                     "name": "explainability_map",
-                    "dataType": "string",
+                    "dataType": "GPString",
                     "value": str(self.emd["ExpMap"]),
-                    "required": False,
-                    "displayName": "Display the heatmaps.",
+                    "required": True,
+                    "domain": [
+                        "True",
+                        "False"
+                    ],       
+                    "displayName": "Explainability Map",
                     "description": "Display the heatmaps.",
                 }
             )
         # add tta in the parameters
         required_parameters.append(
+            
             {
                 "name": "test_time_augmentation",
-                "dataType": "string",
-                "required": False,
+                "dataType": "GPString",
+                "required": True,
                 "value": (
                     "False"
                     if "test_time_augmentation" not in self.emd
                     else str(self.emd["test_time_augmentation"])
                 ),
-                "displayName": "Perform test time augmentation while predicting",
-                "description": "If True, will merge predictions from flipped and rotated images.",
+                "domain": [
+                        "True",
+                        "False"
+                ],
+                "displayName": "Test Time Augmentation",
+                "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
             }
         )
         return required_parameters
