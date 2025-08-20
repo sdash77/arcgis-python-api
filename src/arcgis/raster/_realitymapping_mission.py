@@ -779,6 +779,8 @@ class Mission:
         gis = arcgis.env.active_gis if gis is None else gis
 
         image_collection = self.image_collection
+        context = context or {}
+        context["mission"] = self.mission_id
 
         return gis._tools.realitymapping.match_control_points(
             image_collection=image_collection,
