@@ -382,6 +382,7 @@ class RTDetrV2(ModelExtension):
             rtdetr.learn.data.single_ds.classes = rtdetr._data.classes
             rtdetr.learn.data.single_ds.y.classes = rtdetr._data.classes
 
+        rtdetr._model_emd = emd
         return rtdetr
 
     def predict(
