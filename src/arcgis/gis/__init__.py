@@ -17613,7 +17613,7 @@ class Item(dict):
         """
 
         if (
-            self.type in ["Vector Tile Package", "Scene Package"]
+            self.type in ["Vector Tile Package", "Scene Package", "Tile Package"]
             and build_initial_cache == False
         ):
             build_initial_cache = True
