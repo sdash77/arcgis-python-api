@@ -54,8 +54,8 @@ class Briefing(object):
 
     def __init__(
         self,
-        item: Optional[Union[arcgis.gis.Item, str]] = None,
-        gis: Optional[arcgis.gis.GIS] = None,
+        item: arcgis.gis.Item | str | None = None,
+        gis: arcgis.gis.GIS | None = None,
     ):
         self._gis = gis or arcgis.env.active_gis
         self._validate_gis()
@@ -224,7 +224,7 @@ class Briefing(object):
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
-    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+    def show(self, width: int | None = None, height: int | None = None):
         """
         Show a preview of the briefing. The default is a width of 700 and height of 300.
 
@@ -332,7 +332,7 @@ class Briefing(object):
         return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
+    def theme(self, theme: storymap.Themes | str | None = None):
         """
         Each briefing has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -353,6 +353,7 @@ class Briefing(object):
             >>> briefing = Briefing()
             >>> briefing.theme(Themes.TIDAL)
         """
+        theme = theme or storymap.Themes.SUMMIT
         # call method to update theme
         utils.theme(self, theme)
         return True
@@ -362,11 +363,11 @@ class Briefing(object):
         self,
         layout: str,
         *,
-        sublayout: Optional[str] = None,
-        title: Optional[str] = None,
-        subtitle: Optional[str] = None,
-        section_position: Optional[str] = None,
-        position: Optional[int] = None,
+        sublayout: str | None = None,
+        title: str | None = None,
+        subtitle: str | None = None,
+        section_position: str | None = None,
+        position: int | None = None,
     ):
         """
         Use this method to add content to your StoryMap. content can be of various class types and when
@@ -420,7 +421,7 @@ class Briefing(object):
     def move(
         self,
         slide: int,
-        position: Optional[int] = None,
+        position: int | None = None,
         delete_current: bool = False,
     ):
         """
@@ -472,9 +473,9 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     def save(
         self,
-        title: Optional[str] = None,
-        tags: Optional[list] = None,
-        access: str = None,
+        title: str | None = None,
+        tags: list | None = None,
+        access: str | None = None,
         publish: bool = False,
         make_copyable: bool = None,
         no_seo: bool = None,
@@ -533,7 +534,7 @@ class Briefing(object):
         return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
-    def duplicate(self, title: Optional[str] = None):
+    def duplicate(self, title: str | None = None):
         """
         Duplicate the story. All items will be duplicated as they are. This allows you to create
         a briefing template and duplicate it when you want to work with it.

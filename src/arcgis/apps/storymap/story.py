@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Optional, Union
 import uuid
 from enum import Enum
 from arcgis._impl.common._deprecate import deprecated
@@ -8,7 +7,7 @@ import re
 import copy
 
 arcgis = LazyLoader("arcgis")
-Content = LazyLoader("arcgis.apps.storymap.story_content")
+story_content = LazyLoader("arcgis.apps.storymap.story_content")
 json = LazyLoader("json")
 time = LazyLoader("time")
 utils = LazyLoader("arcgis.apps.storymap._utils")
@@ -17,7 +16,7 @@ utils = LazyLoader("arcgis.apps.storymap._utils")
 class Themes(Enum):
     """
     Represents the Supported Theme Type Enumerations.
-    Example: story_map.theme(Theme.Slate)
+    Example: story_map.theme(Themes.Slate)
     """
 
     SUMMIT = "summit"
@@ -67,20 +66,17 @@ class StoryMap(object):
 
     def __init__(
         self,
-        item: Optional[Union[arcgis.gis.Item, str]] = None,
-        gis: Optional[arcgis.gis.GIS] = None,
+        item: arcgis.gis.Item | str | None = None,
+        gis: arcgis.gis.GIS | None = None,
     ):
         # Section: Set up gis
         self._setup_gis(gis)
         self._setup_storymap(item)
 
     def _setup_gis(self, gis):
-        if gis is None:
-            # If no gis, find active env
-            gis = arcgis.env.active_gis
-        self._gis = gis
+        self._gis = gis or arcgis.env.active_gis
 
-        if not (gis and gis._portal.is_logged_in):
+        if not (self._gis and self._gis._portal.is_logged_in):
             raise ValueError("Must be logged into a Portal Account")
 
     def _setup_storymap(self, item):
@@ -263,7 +259,7 @@ class StoryMap(object):
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
-    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+    def show(self, width: int | None = None, height: int | None = None):
         """
         Show a preview of the story. The default is a width of 700 and height of 300.
 
@@ -283,7 +279,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
-    def story_locale(self):
+    def story_locale(self) -> str:
         """
         Get/Set the locale and language of the story.
 
@@ -299,7 +295,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @story_locale.setter
-    def story_locale(self, locale):
+    def story_locale(self, locale: str):
         """
         See story_locale property above
         """
@@ -310,13 +306,13 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """This property returns the storymap's JSON."""
         return self._properties
 
     # ----------------------------------------------------------------------
     @property
-    def content_list(self):
+    def content_list(self) -> list:
         """
         Get a list of all the content instances in order of appearance in the story.
         This returns a list of class instances for the content in the story.
@@ -331,7 +327,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
-    def actions(self):
+    def actions(self) -> list:
         """
         Get list of action nodes.
         """
@@ -343,13 +339,17 @@ class StoryMap(object):
         return actions
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.2",
+        details="Get the Navigation class from the `content_list` property.",
+    )
     @property
-    def navigation_list(self):
+    def navigation_list(self) -> list:
         """
         Get a list of the nodes that are linked in the navigation.
         """
         # navigation item has list of links corresponding to the text nodes in the navigation
-        nav = utils.get(type="navigation")[0]
+        nav = utils.get(story=self, type="navigation")[0]
         for key, value in nav.items():
             node_id = key
         try:
@@ -379,9 +379,9 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def set_logo(
         self,
-        image: Optional[str] = None,
-        link: Optional[str] = None,
-        alt_text: Optional[str] = None,
+        image: str | None = None,
+        link: str | None = None,
+        alt_text: str | None = None,
     ):
         """
         Set the logo for the story. The logo is seen in the header of the story.
@@ -423,7 +423,7 @@ class StoryMap(object):
         return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
+    def theme(self, theme: Themes | str | None = None):
         """
         Each story has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -445,16 +445,17 @@ class StoryMap(object):
             >>> story.theme(Themes.TIDAL)
         """
         # call method to update theme
+        theme = theme or Themes.SUMMIT
         utils.theme(self, theme)
         return True
 
     # ----------------------------------------------------------------------
     def credits(
         self,
-        content: Optional[str] = None,
-        attribution: Optional[str] = None,
-        heading: Optional[str] = None,
-        description: Optional[str] = None,
+        content: str | None = None,
+        attribution: str | None = None,
+        heading: str | None = None,
+        description: str | None = None,
     ):
         """
         Credits are found at the end of the story and thus are always the last node.
@@ -509,9 +510,6 @@ class StoryMap(object):
         # Get existing children or initialize an empty list
         children = self._properties["nodes"][credits_node_id].get("children", [])
 
-        # Add content and attribution if provided
-        children.extend(self._add_content_and_attribution(content, attribution))
-
         # Update or add heading
         if heading:
             children = self._update_or_add_heading(heading, children)
@@ -520,12 +518,15 @@ class StoryMap(object):
         if description:
             children = self._update_or_add_description(description, children)
 
+        # Add content and attribution if provided
+        children.extend(self._add_content_and_attribution(content, attribution))
+
         self._properties["nodes"][credits_node_id]["children"] = children
         return self._properties["nodes"][credits_node_id]["children"]
 
     def _get_credits_node_id(self):
         # Find credit node
-        dict_node = utils.get(type="credits")[0]
+        dict_node = utils.get(story=self, type="credits")[0]
         # Get credit node id
         for key, _ in dict_node.items():
             return key
@@ -540,7 +541,7 @@ class StoryMap(object):
             node_id = self._generate_unique_node_id()
             self._properties["nodes"][node_id] = {
                 "type": "attribution",
-                "data": {"content": content, "attribution": attribution},
+                "data": {"attribution": attribution, "content": content},
             }
             nodes.append(node_id)
         return nodes
@@ -554,7 +555,7 @@ class StoryMap(object):
             "data": {"text": heading, "type": "h4"},
         }
         children = self._update_node(children, "text", "h4")
-        children.append(node_id)
+        children.insert(0, node_id)
         return children
 
     def _update_or_add_description(self, description, children):
@@ -564,16 +565,27 @@ class StoryMap(object):
             "data": {"text": description, "type": "paragraph"},
         }
         children = self._update_node(children, "text", "paragraph")
-        children.append(node_id)
+
+        # If a heading exists make this the second child, otherwise it is first child
+        (
+            children.insert(1, node_id)
+            if self._credit_child_exists(children[0], "text", "h4")
+            else children.insert(0, node_id)
+        )
         return children
+
+    def _credit_child_exists(self, child, node_type, data_type):
+        if (
+            self._properties["nodes"][child]["type"] == node_type
+            and self._properties["nodes"][child]["data"]["type"] == data_type
+        ):
+            return True
+        return False
 
     def _update_node(self, children, node_type, data_type):
         # remove the old node if it exists
         for child in children:
-            if (
-                self._properties["nodes"][child]["type"] == node_type
-                and self._properties["nodes"][child]["data"]["type"] == data_type
-            ):
+            if self._credit_child_exists(child, node_type, data_type):
                 del self._properties["nodes"][child]
                 children.remove(child)
         return children
@@ -581,26 +593,25 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        content: Optional[
-            Union[
-                Content.Image,
-                Content.Video,
-                Content.Audio,
-                Content.Embed,
-                Content.Map,
-                Content.Button,
-                Content.Text,
-                Content.Gallery,
-                Content.Timeline,
-                Content.Sidecar,
-                Content.Code,
-                Content.Table,
-            ]
-        ] = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = None,
-        position: Optional[int] = None,
+        content: (
+            story_content.Image
+            | story_content.Video
+            | story_content.Audio
+            | story_content.Embed
+            | story_content.Map
+            | story_content.Button
+            | story_content.Text
+            | story_content.Gallery
+            | story_content.Timeline
+            | story_content.Sidecar
+            | story_content.Code
+            | story_content.Table
+            | None
+        ) = None,
+        caption: str | None = None,
+        alt_text: str | None = None,
+        display: str | None = None,
+        position: int | None = None,
     ):
         """
         Use this method to add content to your StoryMap. content can be of various class types and when
@@ -677,7 +688,7 @@ class StoryMap(object):
 
         # Find instance of content and call correct method
         if not content:
-            content = Content.Separator(story=self, node_id=node_id)
+            content = story_content.Separator(story=self, node_id=node_id)
         content._add_to_story(
             story=self,
             caption=caption,
@@ -693,7 +704,7 @@ class StoryMap(object):
     def move(
         self,
         node_id: str,
-        position: Optional[int] = None,
+        position: int | None = None,
         delete_current: bool = False,
     ):
         """
@@ -747,9 +758,9 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def save(
         self,
-        title: Optional[str] = None,
-        tags: Optional[list] = None,
-        access: str = None,
+        title: str | None = None,
+        tags: list | None = None,
+        access: str | None = None,
         publish: bool = False,
         make_copyable: bool = None,
         no_seo: bool = None,
@@ -809,7 +820,7 @@ class StoryMap(object):
         return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
-    def duplicate(self, title: Optional[str] = None):
+    def duplicate(self, title: str | None = None):
         """
         Duplicate the story. All items will be duplicated as they are. This allows you to create
         a story template and duplicate it when you want to work with it.

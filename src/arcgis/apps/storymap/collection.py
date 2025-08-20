@@ -5,7 +5,6 @@ from arcgis.auth.tools import LazyLoader
 import re
 import os
 import copy
-from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -237,7 +236,7 @@ class Collection(object):
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
-    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+    def show(self, width: int | None = None, height: int | None = None):
         """
         Show a preview of the collection. The default is a width of 700 and height of 300.
 
@@ -265,7 +264,7 @@ class Collection(object):
         return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
+    def theme(self, theme: storymap.Themes | str | None = None):
         """
         Each collection has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -286,6 +285,7 @@ class Collection(object):
             >>> collection = Collection()
             >>> collection.theme(Themes.TIDAL)
         """
+        theme = theme or storymap.Themes.SUMMIT
         # call method to update theme
         utils.theme(self, theme)
         return True
@@ -293,18 +293,18 @@ class Collection(object):
     # ----------------------------------------------------------------------
     def save(
         self,
-        title: Optional[str] = None,
-        tags: Optional[list] = None,
-        access: str = None,
+        title: str | None = None,
+        tags: list | None = None,
+        access: str | None = None,
         publish: bool = False,
-        make_copyable: bool = None,
-        no_seo: bool = None,
+        make_copyable: bool | None = None,
+        no_seo: bool | None = None,
     ):
         """
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
 
-        The title only needs to be specified if a change is wanted, otherwise exisiting title
+        The title only needs to be specified if a change is wanted, otherwise existing title
         is used.
 
         .. warning::
@@ -551,10 +551,10 @@ class Collection(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        item: Union[content.Image, content.Video, content.Embed, _gis.Item, str],
-        title: Optional[str] = None,
-        thumbnail: Optional[str] = None,
-        position: Optional[int] = None,
+        item: content.Image | content.Video | content.Embed | _gis.Item | str,
+        title: str | None = None,
+        thumbnail: str | None = None,
+        position: int | None = None,
     ):
         """
         Add an item to the collection. Specify this item with the item object.
