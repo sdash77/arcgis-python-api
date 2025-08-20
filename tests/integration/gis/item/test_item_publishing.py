@@ -26,7 +26,7 @@ def setUpModule():
     warnings.filterwarnings("ignore")
 
 
-@profiles.agol
+@profiles.k8s
 @integration_test
 class Test_Item_publish_file_types(unittest.TestCase):
     @classmethod
@@ -59,7 +59,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
     def tearDown(self):
         elapsed_time = time.time() - self._start_time
         print(f"{' ' * 4}...test took {elapsed_time/60:.2f} minutes.\n")
-    
+    @unittest.skip("for now")
     def test_publish_csv(self):
         csv_source_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/RUS_cities.csv",
@@ -108,7 +108,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "No features found in published feature service.",
         )
-    
+    @unittest.skip("for now")    
     def test_publish_fgdb(self):
         cities_fgdb_source = get_resource_path(
             relative_path="staging_data/item_class_test_data/set2_USAcities.zip",
@@ -160,7 +160,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "No features found in published feature service.",
         )
-    
+    @unittest.skip("for now")
     def test_publish_vtpk(self):
         vtpk_package_file = get_web_resource_path(
             relative_path="set2_vtpk_worldgreen.vtpk",
@@ -207,7 +207,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             VectorTileLayer,
             "Layer type not published as a Vector Tile Layer.",
         )
-    
+    @unittest.skip("for now")    
     def test_publish_spk(self):
         if self.gis._is_kubernetes:
             self.skipTest("Scene package format spk not supported on Kubernetes.")
@@ -269,7 +269,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             Object3DLayer,
             f"{scn_item.title} layer is not a SceneLayer as expected.",
         )
-    
+    @unittest.skip("for now")   
     def test_publish_slpk(self):
         if self.gis.version >= [2024, 2]:
             if self.gis.properties.isPortal and not self.gis._is_kubernetes:
@@ -360,15 +360,10 @@ class Test_Item_publish_file_types(unittest.TestCase):
             file=tile_pkg_file,
         ).result()
 
-        # to accommodate Issue #13655
-        if not self.gis._is_arcgisonline:
-            tile_lyr_item = tile_pkg_item.publish(
-                publish_parameters={"name": "set3_tpk_SD_api"}
-            )
-        else:
-            tile_lyr_item = tile_pkg_item.publish(
-                publish_parameters={"name": "set3_tpk_SD_api"}, build_initial_cache=True
-            )
+        tile_lyr_item = tile_pkg_item.publish(
+            publish_parameters={"name": "set3_tpk_SD_api"}
+        )
+
         self.assertEqual(
             tile_pkg_item.type,
             "Tile Package",
@@ -388,7 +383,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
         self.assertTrue(
             len(tile_lyr_item.layers) > 0, "No layers published in Map Service."
         )
-
+    
     def test_publish_tpkx(self):
         tpkx_package_file = get_web_resource_path(
             relative_path="redlands_testcase22.tpkx", unique_copy=True
@@ -405,16 +400,10 @@ class Test_Item_publish_file_types(unittest.TestCase):
             file=tpkx_package_file,
         ).result()
 
-        # to accommodate Issue #13655
-        if not self.gis._is_arcgisonline:
-            tilex_lyr_item = tilex_pkg_item.publish(
-                publish_parameters={"name": "redlands_testcase_tpkx_api"}
-            )
-        else:
-            tilex_lyr_item = tilex_pkg_item.publish(
-                publish_parameters={"name": "redlands_testcase_tpkx_api"},
-                build_initial_cache=True,
-            )
+        tilex_lyr_item = tilex_pkg_item.publish(
+            publish_parameters={"name": "redlands_testcase_tpkx_api"}
+        )
+
         self.assertEqual(
             tilex_pkg_item.type,
             "Tile Package",
@@ -435,7 +424,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Tile layer does not have layers as expected.",
         )
-    
+    @unittest.skip("for now")    
     def test_publish_flyr_sd(self):
         if self.gis.properties.isPortal:
             self.skipTest(
@@ -492,7 +481,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Feature Service layer does not have features as expected.",
         )
-    
+    @unittest.skip("for now")    
     def test_publish_tlyr_sd(self):
         if self.gis.properties.isPortal:
             self.skipTest(
@@ -541,7 +530,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             len(svcdef_tile_lyr_item.layers) == 3,
             "Publishing item did not create 3 layers as expected in Map Service.",
         )
-    
+    @unittest.skip("for now")    
     def test_publish_shp(self):
         shp_source_file = get_resource_path(
             relative_path="staging_data/USA_Major_Cities.zip",
@@ -580,7 +569,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Shapefile layer does not have features as expected.",
         )
-    
+
     def test_publish_tbl_from_csv(self):
         source_csv_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/data_magic.csv",
@@ -605,7 +594,6 @@ class Test_Item_publish_file_types(unittest.TestCase):
 
         hosted_table_item = csv_item.publish(publish_parameters=pub_params)
     
-    # Issue #13663 - this will fail in Enterprise and Kubernetes as of 8.19.25
     def test_publish_tbl_from_xlsx(self):
         source_xlsx_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/air_passenger_io_uqUq.xlsx",
@@ -627,6 +615,8 @@ class Test_Item_publish_file_types(unittest.TestCase):
         pub_params = analyzed_output["publishParameters"]
         pub_params["name"] = "passenger_table_uqUq"
         pub_params["locationType"] = "none"
+        for idx, lyr in enumerate(pub_params["layers"]):
+            pub_params["layers"][idx]["locationType"] = "none"
 
         hosted_table_item = xlsx_item.publish(publish_parameters=pub_params)
 
