@@ -38,11 +38,13 @@ def init_prithvi(model, pretrained_path):
             k = k.replace("encoder.", "")
             if "patch_embed.proj.weight" in k:
                 model_in_chanls = model.patch_embed.proj.weight.shape[1]
-                if model_in_chanls != 6:
-                    repeat = int(math.ceil(model_in_chanls / 3))
-                    v = v.data.float().repeat(1, repeat, 1, 1, 1)[
-                        :, :model_in_chanls, :, :, :
-                    ]
+                # since pre-traine in_channels = 6:
+                repeat = int(math.ceil(model_in_chanls / 6))
+                v = v.data.float().repeat(1, repeat, 1, 1, 1)[
+                    :, :model_in_chanls, :, :, :
+                ]
+                if model_in_chanls > 6:
+                    v *= 6 / float(model_in_chanls)
                 # for 2dConv
                 if model.patch_embed.proj.weight.ndim == 4:
                     # squeeze time dims
