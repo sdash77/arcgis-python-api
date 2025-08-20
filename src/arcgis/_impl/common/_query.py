@@ -3,6 +3,7 @@ from typing import Any, Literal
 import datetime as _dt
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+import urllib
 from arcgis._impl.common._filters import GeometryFilter, StatisticFilter
 from arcgis._impl.common._utils import _date_handler
 from arcgis.auth import EsriSession
@@ -678,11 +679,14 @@ class Query:
         self.url = url
 
     def _content_length(self, encoded_parameters: dict) -> int:
-        return len(json.dumps(encoded_parameters) + self.url) + 1
+        return (
+            len(urllib.parse.urlencode(encoded_parameters, doseq=True) + self.url) + 1
+        )
 
     def _send_request(self, session: EsriSession, encoded_parameters: dict) -> dict:
         url_length: int = self._content_length(encoded_parameters)
         if url_length <= 2000 and encoded_parameters.get("geometry", None) is None:
+            # TODO: @achapkowski @jtroe -> Discuss only using POST for all queries
             response = session.get(self.url, params=encoded_parameters)
         else:
             response = session.post(self.url, data=encoded_parameters)

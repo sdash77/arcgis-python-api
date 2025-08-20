@@ -92,6 +92,12 @@ JobExecution
     :members:
     :show-inheritance:
 
+ItemExecution
+--------------
+.. autoclass:: arcgis.gis.workflowmanager.ItemExecution
+    :members:
+    :show-inheritance:
+
 MessageType
 --------------
 .. autoclass:: arcgis.gis.workflowmanager.MessageType

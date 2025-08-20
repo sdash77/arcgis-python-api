@@ -349,7 +349,7 @@ class StoryMap(object):
         Get a list of the nodes that are linked in the navigation.
         """
         # navigation item has list of links corresponding to the text nodes in the navigation
-        nav = self.get(type="navigation")[0]
+        nav = utils.get(type="navigation")[0]
         for key, value in nav.items():
             node_id = key
         try:
@@ -525,9 +525,9 @@ class StoryMap(object):
 
     def _get_credits_node_id(self):
         # Find credit node
-        dict_node = self.get(type="credits")[0]
+        dict_node = utils.get(type="credits")[0]
         # Get credit node id
-        for key, value in dict_node.items():
+        for key, _ in dict_node.items():
             return key
 
     def _generate_unique_node_id(self):
