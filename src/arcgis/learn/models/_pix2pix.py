@@ -187,7 +187,11 @@ class Pix2Pix(ArcGISModel):
         model_params["perceptual_loss"] = emd.get("perceptual_loss", False)
         data._extract_bands = emd.get("extract_bands", None)
         data._bands = emd.get("bands", None)
-        return cls(data, **model_params, pretrained_path=str(model_file))
+
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     @property
     def _model_metrics(self):

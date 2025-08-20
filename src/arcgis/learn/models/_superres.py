@@ -361,7 +361,12 @@ class SuperResolution(ArcGISModel):
             backbone = model_params.get("backbone")
         data.resize_to = resize_to
 
-        return cls(data, backbone=backbone, pretrained_path=str(model_file), **kwargs)
+        model_obj = cls(
+            data, backbone=backbone, pretrained_path=str(model_file), **kwargs
+        )
+        model_obj._model_emd = emd
+
+        return model_obj
 
     @property
     def _model_metrics(self):

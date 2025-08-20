@@ -491,8 +491,10 @@ class UnetClassifier(ArcGISModel):
             data._is_empty = True
 
         data.resize_to = resize_to
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        return model_obj
 
     @property
     def _model_metrics(self):

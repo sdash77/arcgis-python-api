@@ -443,9 +443,12 @@ class PTv3Det(ArcGISModel):
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
 
-        return cls(
+        model_obj = cls(
             data, **emd["ModelParameters"]["kwargs"], pretrained_path=str(model_file)
         )
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def predict_h5(self, path, output_path=None, **kwargs):
         """
