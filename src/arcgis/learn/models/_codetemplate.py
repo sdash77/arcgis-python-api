@@ -158,27 +158,31 @@ class ArcGISObjectDetector:
             [
                 {
                     "name": "test_time_augmentation",
-                    "dataType": "string",
-                    "required": False,
+                    "dataType": "GPString",
+                    "domain": [
+                        "True",
+                        "False"
+                    ],
+                    "required": True,
                     "value": (
                         "False"
                         if "test_time_augmentation" not in self.json_info
                         else str(self.json_info["test_time_augmentation"])
                     ),
-                    "displayName": "Perform test time augmentation while predicting",
-                    "description": "If True, will merge predictions from flipped and rotated images.",
+                    "displayName": "Test Time Augmentation",
+                    "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },
                 {
                     "name": "tta_scales",
-                    "dataType": "string",
-                    "required": False,
+                    "dataType": "GPStringKeyword",
+                    "required": True,
                     "value": (
                         "1"
                         if "tta_scales" not in self.json_info
                         else str(self.json_info["tta_scales"])
                     ),
-                    "displayName": "Perform test time augmentation while predicting using different scales",
-                    "description": "provide different scales separated by comma e.g. 0.9,1,1.1",
+                    "displayName": "TTA Scales",
+                    "description": "Performs test time augmentation while predicting by changing the scale of the image. The values in the range of 0.5 to 1.5 are recommended. Multiple scale values separated by commas can also be provided, for example, 0.9, 1, 1.1.",
                 },
             ]
         )
@@ -700,11 +704,11 @@ class ArcGISObjectClassifier:
              required_parameters.append(
                  {
                      'name': 'batch_size',
-                     'dataType': 'numeric',
-                     'required': False,
+                     'dataType': 'GPLong',
+                     'required': True,
                      'value': 4,
                      'displayName': 'Batch Size',
-                     'description': 'Batch Size'
+                     'description': 'Number of image tiles processed in each step of the model inference. This depends on the memory of your graphic card.'
                  }
              )
 
@@ -2107,11 +2111,11 @@ class ArcGISImageCaptioner:
              required_parameters.append(
                  {
                      'name': 'batch_size',
-                     'dataType': 'numeric',
-                     'required': False,
+                     'dataType': 'GPLong',
+                     'required': True,
                      'value': 4,
                      'displayName': 'Batch Size',
-                     'description': 'Batch Size'
+                     'description': 'Number of image tiles processed in each step of the model inference. This depends on the memory of your graphic card.'
                  }
              )
 

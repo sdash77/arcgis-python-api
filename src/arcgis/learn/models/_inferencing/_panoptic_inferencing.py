@@ -269,47 +269,50 @@ class ChildPanopticSegmenter:
             [
                 {
                     "name": "padding",
-                    "dataType": "numeric",
-                    "value": self.json_info["ImageHeight"] // 4,
-                    "required": False,
+                    "dataType": "GPLong",
+                    "value": int(self.json_info["ImageHeight"]) // 4,
+                    "required": True,
                     "displayName": "Padding",
-                    "description": "Padding",
+                    "description": "Number of pixels at the border of image tiles from which predictions are blended for adjacent tiles. Increase its value to smooth the output while reducing edge artifacts. The maximum value of the padding can be half of the tile size value.",
                 },
                 {
                     "name": "threshold",
-                    "dataType": "numeric",
+                    "dataType": "GPDouble",
                     "value": 0.5,
-                    "required": False,
-                    "displayName": "Confidence Score Threshold [0.0, 1.0]",
-                    "description": "Confidence score threshold value [0.0, 1.0]",
+                    "required": True,
+                    "domain": [0.0, 1.0],
+                    "displayName": "Confidence Threshold",
+                    "description": "The confidence score used for selecting the detections to be included in the results. The allowed values range from 0 to 1.0.",
                 },
                 {
                     "name": "nms_overlap",
-                    "dataType": "numeric",
+                    "dataType": "GPDouble",
                     "value": 0.1,
-                    "required": False,
+                    "required": True,
+                    "domain": [0.0, 1.0],
                     "displayName": "NMS Overlap",
-                    "description": "Maximum allowed overlap within each chip",
+                    "description": "The maximum overlap ratio for two overlapping features, which is defined as the ratio of intersection area over union area. The default is 0.1.",
                 },
                 {
                     "name": "batch_size",
-                    "dataType": "numeric",
-                    "required": False,
+                    "dataType": "GPLong",
+                    "required": True,
                     "value": 4,
                     "displayName": "Batch Size",
-                    "description": "Batch Size",
+                    "description": "Number of image tiles processed in each step of the model inference. This depends on the memory of your graphic card.",
                 },
                 {
                     "name": "test_time_augmentation",
-                    "dataType": "string",
-                    "required": False,
+                    "dataType": "GPString",
+                    "required": True,
                     "value": (
                         "False"
                         if "test_time_augmentation" not in self.json_info
                         else str(self.json_info["test_time_augmentation"])
                     ),
-                    "displayName": "Perform test time augmentation while predicting",
-                    "description": "If True, will merge predictions from flipped and rotated images.",
+                    "domain": ["True", "False"],
+                    "displayName": "Test Time Augmentation",
+                    "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },
             ]
         )

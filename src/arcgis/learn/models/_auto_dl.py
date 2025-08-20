@@ -1043,7 +1043,7 @@ class AutoDL:
         valid_loss = np.array(metrics["val_losses"])[-1]
         name_time = time.strftime("%Y-%m-%d_%H-%M-%S")
         if model_type == "classification":
-            accuracy = np.array(metrics["metrics"])[-1][0]
+            accuracy = getattr(self, model).mIOU(mean=True)
             miou = getattr(self, model).mIOU()
             miou["Model"] = str(model)
             self._mIOU_df = pd.concat(
@@ -1062,7 +1062,7 @@ class AutoDL:
                     "Model": [model],
                     "train_loss": [train_loss],
                     "valid_loss": [valid_loss],
-                    "accuracy": [accuracy],
+                    "Mean IoU": [accuracy],
                     "dice": [dice],
                     "lr": [lr_val],
                     "training time": [t],
@@ -1203,7 +1203,7 @@ class AutoDL:
                     "Model",
                     "train_loss",
                     "valid_loss",
-                    "accuracy",
+                    "Mean IoU",
                     "dice",
                     "lr",
                     "training time",
@@ -1316,7 +1316,7 @@ class AutoDL:
         self._dataset_type = m_type
         if m_type == "classification":
             self._train_df = self._train_df.sort_values(
-                "accuracy", ascending=False
+                "Mean IoU", ascending=False
             ).reset_index(drop=True)
         if m_type == "detection":
             self._train_df = self._train_df.sort_values(
@@ -1414,7 +1414,7 @@ class AutoDL:
                         "Model": list([model] * sorted_df.shape[0]),
                         "train_loss": list(sorted_df["train_loss"]),
                         "valid_loss": list(sorted_df["valid_loss"]),
-                        "accuracy": list(sorted_df["value"]),
+                        "Mean IoU": list(sorted_df["value"]),
                         "dice": list(sorted_df["dice"]),
                         "lr": list(sorted_df["params_lr"]),
                         "training time": list(sorted_df["duration"]),
@@ -1511,7 +1511,7 @@ class AutoDL:
 
         if m_type == "classification":
             self._train_df = self._train_df.sort_values(
-                "accuracy", ascending=False
+                "Mean IoU", ascending=False
             ).reset_index(drop=True)
         if m_type == "detection":
             self._train_df = self._train_df.sort_values(
@@ -1577,7 +1577,7 @@ class AutoDL:
             if allow_plot:
                 if self._model_type == "Classified_Tiles":
                     self._display_plot(
-                        self._train_df["Model"], self._train_df["accuracy"]
+                        self._train_df["Model"], self._train_df["Mean IoU"]
                     )
                 else:
                     self._display_plot(

@@ -888,7 +888,7 @@ def _arcpy_workflow(filename, **kwargs):
             dfs.append(pd.DataFrame(batch, columns=df_fields))
     dtypes = {k: v for k, v in pandas_dtypes.items() if k in rows.fields}
     df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame(columns=df_fields)
-    df = df.astype(pandas_dtypes)
+    df = df.astype(dtypes)
     q = df.SHAPE.notnull()
     none_q = ~q  # preserve the null geometries after processing
     geom_type = desc["shapeType"].lower()
