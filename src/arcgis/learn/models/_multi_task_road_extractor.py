@@ -714,7 +714,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
 
-        return cls(data, **model_params, pretrained_path=emd_path)
+        model_obj = cls(data, **model_params, pretrained_path=emd_path)
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def show_results(self, rows=2, **kwargs):
         """

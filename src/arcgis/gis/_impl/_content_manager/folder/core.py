@@ -90,8 +90,35 @@ class Job:
     """
     Represents a *job* that is created when adding an item to a *folder*.
     Objects of this class should not be initialized directly but instead
-    are returned by calling the :meth:`~arcgis.gis._impl._content_manager.folder.core.Folder.add`
+    are returned by calling the :meth:`~arcgis.gis._impl._content_manager.Folder.add`
     method of a :class:`~arcgis.gis._impl._content_manager.folder.core.Folder`.
+
+    .. code-block:: python
+
+        # Usage Example: Initializing a folder Job object
+
+        >>> from pathlib import Path
+        >>> from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
+
+        >>> gis = GIS(profile="your_online_admin_profile")
+
+        >>> shp_file_path = Path("path/to/your/zipped/shapefile.zip")
+
+        >>> new_folder = gis.content.folders.create("new_gis_data")
+        >>> add_item_job = new_folder.add(
+        >>>     item_properties=ItemProperties(
+        >>>         title="new_feature_layer_item",
+        >>>         item_type=ItemTypeEnum.SHAPEFILE,
+        >>>         snippet="A new feature layer create from shapefile.",
+        >>>         description="Feature layer item added through a folder add.",
+        >>>         tags=["shapefile", "gis_data"]
+        >>>     ),
+        >>>     file=str(shp_file_path)
+        >>> )
+
+        >>> type(add_item_job)
+
+          <class 'arcgis.gis._impl._content_manager.folder.core.Job'>
     """
 
     _item: _arcgis_gis.Item | None = None
@@ -121,10 +148,74 @@ class Job:
     def __repr__(self) -> str:
         return self.__str__()
 
+    def done(self) -> bool:
+        """
+        Method returning a Boolean value indicating whether job is complete.
+
+        .. code-block:: python
+
+            # Usage Example: Checking if a job is complted
+            >>> from arcgis.gis import GIS, ItemTypeEnum, ItemProperties
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> shp_file_path = "/path/to/your/zipped/shapefile.zip"
+
+            >>> new_data_item_job = gis_folder.add(
+            >>>     item_properties=ItemProperties(
+            >>>         title="new_source_shp_item",
+            >>>         item_type=ItemTypeEnum.SHAPEFILE,
+            >>>         snippet="A new shapefile item.",
+            >>>         description="Shapefile data item added through a folder add.",
+            >>>         tags=["shapefile_item", "gis_data"]
+            >>>     ),
+            >>>     file=shp_file_path
+            >>> )
+
+            >>> new_data_item_job.done()
+
+               True
+        """
+        return all([future.done() for future in self.futures])
+
+    def running(self) -> bool:
+        """
+        Method returning a Boolean value indicating whether job is running.
+        """
+        return all([future.running() for future in self.futures])
+
     def result(self) -> _arcgis_gis.Item:
         """
-        Returns the :class:`item <arcgis.gis.Item>` that was added by this
+        Method to return the :class:`item <arcgis.gis.Item>` that was added by this
         job.
+
+        .. code-block:: python
+
+            # Usage Example: Getting item resulting from a job
+
+            >>> from arcgis.gis import GIS, ItemTypeEnum, ItemProperties
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> csv_file_path = "/path/to/your/data.csv"
+
+            >>> new_data_item_job = gis_folder.add(
+            >>>     item_properties=ItemProperties(
+            >>>         title="new_source_csv_item",
+            >>>         item_type=ItemTypeEnum.CSV,
+            >>>         snippet="A new csv item.",
+            >>>         description="CSV data item added through a folder add.",
+            >>>         tags=["csv_item", "gis_data"]
+            >>>     ),
+            >>>     file=csv_file_path
+            >>> )
+
+            >>> if not new_data_item_job.done():
+            >>>     print("... job processing...")
+            >>> else:
+            >>>     csv_item = new_data_item_job.result()
+
+            >>> csv_item
+
+            <Item title:"new_source_csv_item" type:CSV owner:online_data_owner>
         """
         if self._item:
             return self._item
@@ -409,8 +500,8 @@ class Folder:
         """Deletes the user folder and all its :class`items <arcgis.gis.Item>`.
 
         .. note::
-            Only available on non-Root Folder
-            :class:`folders <arcgis.gis._impl._content_manger.Folder>`.
+            Only available on non-Root
+            :class:`folders <arcgis.gis._impl._content_manager.Folder>`.
 
         .. return::
             A boolean indicating success (True), or failure (False)
@@ -704,12 +795,21 @@ class Folder:
 
                               .. code-block:: python
 
+                                  # Creating a validated item_properties argument
+
                                   >>> from arcgis.gis import ItemProperties, ItemTypeEnum
 
                                   >>> item_props = ItemProperties(
                                                     title="<item_title>",
-                                                    item_type=ItemTypeEnum.SHAPEFILE.value
+                                                    item_type=ItemTypeEnum.SHAPEFILE,
+                                                    snippet="New shapefile item added to folder",
+                                                    tags=["shapefile_item", "gis_data"]
                                                    )
+                                  >>> folder_add_job = folder_obj.add(
+                                                         ...
+                                                         item_properties=item_props,
+                                                         ...
+                                                       )
         -----------------     --------------------------------------------------------------------
         file                  Optional string, io.StringIO, or io.BytesIO. Provide the data to the
                               item.
@@ -769,7 +869,7 @@ class Folder:
             # Usage Example:
             >>> from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 
-            >>> gis = GIS(profile="your_organization_profile")
+            >>> gis = GIS(profile="your_data_owner_profile")
 
             >>> data_path = r"<path_to_zipped_shapefile>"
             >>> item_props = ItemProperties(title="new_shapefile_item",
@@ -783,9 +883,13 @@ class Folder:
             >>> add_job = item_folder.add(item_properties=item_props,
                                           file=data_path)
             >>> if not add_job.done():
-            >>>     print("...job precessing...")
+            >>>     print("...job processing...")
             >>> else:
             >>>     new_shp_item = add_job.result()
+
+            >>> new_shp_item
+
+            <Item title:"new_shapefile_item" type:SHAPEFILE owner:data_owner>
 
             >>> new_flyr_item = new_shp_item.publish()
         """

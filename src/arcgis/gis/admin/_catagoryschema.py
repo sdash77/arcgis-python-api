@@ -43,7 +43,7 @@ class CategoryManager(object):
     @property
     def schema(self):
         """
-        Get/Set the catagory schema for a GIS.
+        Get/Set the category schema for a GIS.
 
         When schema is used as a getter, then operation returns the GIS'
         defined category schema is any.

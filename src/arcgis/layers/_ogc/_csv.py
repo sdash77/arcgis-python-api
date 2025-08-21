@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 
 from arcgis.gis import GIS, Item

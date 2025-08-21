@@ -2,6 +2,7 @@
 Connection Object that uses Python Requests
 """
 
+from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Union
 from arcgis.auth.tools._util import check_module_exists
@@ -2144,7 +2145,7 @@ class Connection(object):
             parsed = parse_url(url)
             expiration = 16000
             if parsed.port:
-                if parsed.port in parsed.netloc:
+                if str(parsed.port) in parsed.netloc:
                     server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
                 else:
                     server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'

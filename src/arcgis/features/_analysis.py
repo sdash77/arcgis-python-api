@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging as _logging
 import arcgis
 from datetime import datetime

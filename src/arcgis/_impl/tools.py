@@ -47,6 +47,7 @@ from arcgis.geoprocessing._job import RAJob, OMJob, RMJob
 from functools import lru_cache
 from arcgis.raster import Raster, ImageryLayer, _ImageServerRaster
 from arcgis.gis._impl._content_manager.folder import Folder
+from urllib.parse import urlparse
 
 _log = logging.getLogger(__name__)
 
@@ -8207,12 +8208,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         )
 
         final_job = None
-        if self._is_ortho:
-            job._is_ortho = True
-            final_job = OMJob(job)
-        else:
-            job._is_reality = True
-            final_job = RMJob(job)
+        job._is_ortho = True
+        final_job = OMJob(job)
         final_job._flight_details = flight_json_details
         if future:
             return final_job
@@ -8412,12 +8409,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         )
 
         final_job = None
-        if self._is_ortho:
-            job._is_ortho = True
-            final_job = OMJob(job)
-        else:
-            job._is_reality = True
-            final_job = RMJob(job)
+        job._is_ortho = True
+        final_job = OMJob(job)
         final_job._flight_details = flight_json_details
         if future:
             return final_job
@@ -8774,16 +8767,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 )
 
         final_job = None
-        if self._is_ortho:
-            job._is_ortho = True
-            job._item_properties = True
-            item = None
-            if output_dem:
-                item = output_dem
-            final_job = OMJob(job, item=item)
-        else:
-            job._is_reality = True
-            final_job = RMJob(job)
+        job._is_ortho = True
+        job._item_properties = True
+        item = None
+        if output_dem:
+            item = output_dem
+        final_job = OMJob(job, item=item)
         final_job._flight_details = flight_json_details
         if future:
             return final_job
@@ -8933,6 +8922,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         gis=None,
         future=False,
         flight_json_details=None,
+        context=None,
         **kwargs,
     ):
         """
@@ -8983,12 +8973,27 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 if report_format.lower() == element.lower():
                     report_format = element
 
-        job = tool(
-            image_collection=image_collection,
-            report_format=report_format,
-            gis=gis,
-            future=True,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (
+                (current_version is not None)
+                and current_version >= 12.0
+                and not self._is_ortho
+            ):
+                job = tool(
+                    image_collection=image_collection,
+                    report_format=report_format,
+                    context=context,
+                    gis=gis,
+                    future=True,
+                )
+            else:
+                job = tool(
+                    image_collection=image_collection,
+                    report_format=report_format,
+                    gis=gis,
+                    future=True,
+                )
 
         final_job = None
         if self._is_ortho:
@@ -9232,6 +9237,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         gis=None,
         future=False,
         flight_json_details=None,
+        context=None,
         **kwargs,
     ):
         """
@@ -9259,9 +9265,24 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         image_collection = self._set_image_collection_param(
             image_collection=image_collection
         )
-        job = self._tbx.reset_image_collection(
-            image_collection=image_collection, gis=gis, future=True
-        )
+
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (
+                (current_version is not None)
+                and current_version >= 12.0
+                and not self._is_ortho
+            ):
+                job = self._tbx.reset_image_collection(
+                    image_collection=image_collection,
+                    context=context,
+                    gis=gis,
+                    future=True,
+                )
+            else:
+                job = self._tbx.reset_image_collection(
+                    image_collection=image_collection, gis=gis, future=True
+                )
 
         final_job = None
         if self._is_ortho:
@@ -9612,6 +9633,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                         "title": output_dsm_mesh_name,
                     }
                 }
+            elif isinstance(output_dsm_mesh_name, Item):
+                output_dsm_mesh_dict = {
+                    "itemProperties": {"itemId": output_dsm_mesh_name.itemid}
+                }
             if folderId is not None:
                 output_dsm_mesh_dict["folderId"] = folderId
             output_products["dsm_mesh"] = output_dsm_mesh_dict
@@ -9624,6 +9649,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                         "title": output_point_cloud_name,
                     }
                 }
+            elif isinstance(output_point_cloud_name, Item):
+                output_point_cloud_dict = {
+                    "itemProperties": {"itemId": output_point_cloud_name.itemid}
+                }
             if folderId is not None:
                 output_point_cloud_dict["folderId"] = folderId
             output_products["point_cloud"] = output_point_cloud_dict
@@ -9635,6 +9664,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                         "name": output_mesh_name,
                         "title": output_mesh_name,
                     }
+                }
+            elif isinstance(output_mesh_name, Item):
+                output_mesh_dict = {
+                    "itemProperties": {"itemId": output_mesh_name.itemid}
                 }
             if folderId is not None:
                 output_mesh_dict["folderId"] = folderId
@@ -9677,6 +9710,148 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if future:
             return final_job
         return final_job.result()
+
+    # --------------------------------------------------------------------
+    def create_project(
+        self,
+        project_definition,
+        sensor_type,
+        scenario,
+        gis=None,
+        future=False,
+        **kwargs,
+    ):
+        """
+        The `create_project` method creates a Reality Mapping project on portal and sitescan
+
+        :return: project item
+
+        """
+        gis = self._gis
+        job = self._tbx.create_project(
+            project_definition=project_definition,
+            sensor_type=sensor_type,
+            scenario=scenario,
+            gis=gis,
+            future=True,
+        )
+
+        # job._is_reality = True
+        job = RMJob(job)
+        if future:
+            return job
+        return job.result()
+
+    # --------------------------------------------------------------------
+    def delete_project(self, project, gis=None, future=False, **kwargs):
+        """
+        The `delete_project` method deletes a Reality Mapping project on portal and sitescan
+
+        :return: project item
+
+        """
+        gis = self._gis
+        item_id = {}
+        if isinstance(project, arcgis.raster.realitymapping.Project):
+            item_id = {"itemId": project._project_item.itemid}
+        if isinstance(project, arcgis.gis.Item):
+            item_id = {"itemId": project.itemid}
+        job = self._tbx.delete_project(project_item=item_id, gis=gis, future=True)
+
+        # job._is_reality = True
+        job = RMJob(job)
+        if future:
+            return job
+        return job.result()
+
+    # --------------------------------------------------------------------
+    def create_mission(
+        self,
+        project_item,
+        mission_definition,
+        input_rasters,
+        image_collection,
+        raster_type=None,
+        context=None,
+        future=False,
+        output_service=None,
+        **kwargs,
+    ):
+        task = "CreateMission"
+        gis = self._gis
+
+        gpjob = self._tbx.create_mission(
+            project_item,
+            mission_definition,
+            input_rasters,
+            image_collection,
+            raster_type=raster_type,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        gpjob._is_reality = True
+        job = RMJob(gpjob, item=output_service)
+        if future:
+            return job
+        return job.result()
+
+    # ----------------------------------------------------------------------
+    def delete_mission(self, mission, future=False, **kwargs):
+        task = "DeleteMission"
+        gis = self._gis
+        mission = {"itemId": mission._mission_id}
+
+        gpjob = self._tbx.delete_mission(mission, gis=gis, future=True)
+
+        gpjob._is_reality = True
+        job = RMJob(gpjob)
+        if future:
+            return job
+        return job.result()
+
+    # ----------------------------------------------------------------------
+    def merge_missions(
+        self,
+        missions,
+        output_mission_name,
+        output_collection_name=None,
+        context=None,
+        mission_settings=None,
+        future=False,
+        **kwargs,
+    ):
+        task = "MergeMission"
+        gis = self._gis
+
+        missions = {"itemIds": [mission._mission_id for mission in missions]}
+        mission_def = {
+            "name": output_mission_name,
+        }
+        if mission_settings:
+            mission_def["settings"] = mission_settings
+
+        output_collection_name, _ = self._set_output_raster(
+            output_name=output_collection_name,
+            task=task,
+            output_properties=kwargs,
+        )
+
+        gpjob = self._tbx.merge_missions(
+            mission_list=missions,
+            mission_definition=mission_def,
+            output_collection_name=output_collection_name,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        gpjob._is_reality = True
+        job = RMJob(gpjob)
+        if future:
+            return job
+        return job.result()
 
 
 ###########################################################################
@@ -10006,6 +10181,20 @@ class _RasterAnalysisTools(BaseAnalytics):
         elif isinstance(output_name, Item):
             output_service = output_name
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
+        elif isinstance(output_name, dict):
+            output_service = self._create_output_image_service(
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
+            )
+            output_raster = {
+                "serviceProperties": {
+                    "name": output_name["portal_name"],
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
 
@@ -10102,6 +10291,13 @@ class _RasterAnalysisTools(BaseAnalytics):
     ):
         gis = self._gis
 
+        title = output_name
+        if isinstance(output_name, dict):
+            if "portal_name" in output_name:
+                title = output_name["portal_name"]
+            if "service_name" in output_name:
+                output_name = output_name["service_name"]
+
         ok = gis.content.is_service_name_available(
             output_name.replace(" ", "_"), "Image Service"
         )
@@ -10137,7 +10333,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             create_params=create_parameters,
             service_type="imageService",
             folder=folder,
-            item_properties={"title": output_name},
+            item_properties={"title": title},
         )
         if output_service is None:
             raise RuntimeError("Unable to create service")
@@ -10422,6 +10618,16 @@ class _RasterAnalysisTools(BaseAnalytics):
                         task=task,
                         output_properties=kwargs,
                     )
+        elif isinstance(image_collection, dict):
+            if "service_name" in image_collection and "portal_name" in image_collection:
+                (
+                    image_collection,
+                    output_service,
+                ) = self._set_output_raster(
+                    output_name=image_collection,
+                    task=task,
+                    output_properties=kwargs,
+                )
 
         if out_sr is not None:
             if isinstance(out_sr, int):
@@ -10634,6 +10840,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             }
         elif isinstance(output_name, Item):
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
+        elif isinstance(output_name, dict):
+            output_raster = {
+                "serviceProperties": {"name": output_name["portal_name"]},
+                "itemProperties": {},
+            }
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
 
@@ -10960,172 +11171,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
-
-    # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.2")
-    def calculate_distance(
-        self,
-        input_source_raster_or_features,  #
-        output_distance_name=None,
-        maximum_distance=None,
-        output_cell_size=None,
-        output_direction_name=None,
-        output_allocation_name=None,
-        allocation_field=None,
-        distance_method="PLANAR",
-        input_barrier_raster_or_features=None,
-        output_back_direction_name=None,
-        context=None,
-        future=False,
-        estimate=False,
-        **kwargs,
-    ):
-        """
-           input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
-
-           output_name: outputDistanceName (str). Required parameter.
-
-           maximum_distance: maximumDistance (LinearUnit). Optional parameter.
-
-           output_cell_size: outputCellSize (LinearUnit). Optional parameter.
-
-           output_direction_name: outputDirectionName (str). Optional parameter.
-
-           output_allocation_name: outputAllocationName (str). Optional parameter.
-
-           allocation_field: allocationField (str). Optional parameter.
-
-           context: context (str). Optional parameter.
-
-           gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-           future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
-
-
-        Returns the following as a named tuple:
-           output_distance_raster - outputDistanceRaster as a str
-           output_direction_raster - outputDirectionRaster as a str
-           output_allocation_raster - outputAllocationRaster as a str
-        """
-        task = "CalculateDistance"
-        gis = self._gis
-
-        context_param = {}
-        _set_raster_context(context_param, context)
-        if "context" in context_param.keys():
-            context = context_param["context"]
-
-        if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_source_raster_or_features = self._feature_input(
-                input_source_raster_or_features
-            )
-        elif isinstance(input_source_raster_or_features, Item):
-            input_source_raster_or_features = {
-                "itemId": input_source_raster_or_features.itemid
-            }
-        else:
-            input_source_raster_or_features = self._layer_input(
-                input_source_raster_or_features
-            )
-
-        if input_barrier_raster_or_features:
-            if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
-                input_barrier_raster_or_features = self._feature_input(
-                    input_barrier_raster_or_features
-                )
-            elif isinstance(input_barrier_raster_or_features, Item):
-                input_barrier_raster_or_features = {
-                    "itemId": input_source_raster_or_features.itemid
-                }
-            else:
-                input_barrier_raster_or_features = self._layer_input(
-                    input_barrier_raster_or_features
-                )
-
-        (
-            output_distance_raster,
-            output_distance_service,
-        ) = self._set_output_raster(
-            output_name=output_distance_name,
-            task=task,
-            output_properties=kwargs,
-            estimate=estimate,
-        )
-        output_direction_raster = None
-        if output_direction_name is not None:
-            (
-                output_direction_raster,
-                output_direction_service,
-            ) = self._set_output_raster(
-                output_name=output_direction_name,
-                task=task,
-                output_properties=kwargs,
-                estimate=estimate,
-            )
-
-        output_allocation_raster = None
-        if output_allocation_name is not None:
-            (
-                output_allocation_raster,
-                out_allocation_service,
-            ) = self._set_output_raster(
-                output_name=output_allocation_name,
-                task=task,
-                output_properties=kwargs,
-                estimate=estimate,
-            )
-
-        output_back_direction_raster = None
-        if output_back_direction_name is not None:
-            (
-                output_back_direction_raster,
-                out_back_direction_service,
-            ) = self._set_output_raster(
-                output_name=output_back_direction_name,
-                task=task,
-                output_properties=kwargs,
-                estimate=estimate,
-            )
-
-        if (
-            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
-        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
-            gpjob = self._tbx.calculate_distance(
-                input_source_raster_or_features=input_source_raster_or_features,
-                output_distance_name=output_distance_raster,
-                maximum_distance=maximum_distance,
-                output_cell_size=output_cell_size,
-                output_direction_name=output_direction_raster,
-                output_allocation_name=output_allocation_raster,
-                allocation_field=allocation_field,
-                distance_method=distance_method,
-                input_barrier_raster_or_features=input_barrier_raster_or_features,
-                output_back_direction_name=output_back_direction_raster,
-                context=context,
-                gis=self._gis,
-                future=True,
-                estimate=estimate,
-            )
-        else:
-            gpjob = self._tbx.calculate_distance(
-                input_source_raster_or_features=input_source_raster_or_features,
-                output_distance_name=output_distance_raster,
-                maximum_distance=maximum_distance,
-                output_cell_size=output_cell_size,
-                output_direction_name=output_direction_raster,
-                output_allocation_name=output_allocation_raster,
-                allocation_field=allocation_field,
-                context=context,
-                gis=self._gis,
-                future=True,
-                estimate=estimate,
-            )
-        gpjob._is_ra = True
-        gpjob._item_properties = True
-        if future:
-            return RAJob(gpjob)
-        return RAJob(gpjob).result()
 
     # ----------------------------------------------------------------------
     def calculate_statistics(
@@ -11963,7 +12008,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def delete_image(
-        self, image_collection, where, future=False, estimate=False, **kwargs
+        self,
+        image_collection,
+        where,
+        future=False,
+        estimate=False,
+        context=None,
+        **kwargs,
     ):
         """
         delete_image allows users to remove existing images from the image collection (mosaic dataset).
@@ -11991,13 +12042,26 @@ class _RasterAnalysisTools(BaseAnalytics):
         gis = self._gis
 
         image_collection = self._set_image_collection_param(image_collection)
-        gpjob = self._tbx.delete_image(
-            image_collection=image_collection,
-            where=where,
-            gis=self._gis,
-            future=True,
-            estimate=estimate,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if current_version is not None and current_version >= 12.0:
+                gpjob = self._tbx.delete_image(
+                    image_collection=image_collection,
+                    where=where,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
+            else:
+                gpjob = self._tbx.delete_image(
+                    image_collection=image_collection,
+                    where=where,
+                    gis=self._gis,
+                    future=True,
+                    estimate=estimate,
+                )
+
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
@@ -14486,7 +14550,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
-        if output_service:
+        if output_service and not isinstance(output_name, Item):
             item = output_service
         if future:
             return RAJob(gpjob, item=item)
@@ -23241,6 +23305,8 @@ class AGSSystemTools:
             base_service_url: str = (
                 layer._url.split("/services/")[0].lower() + "/services"
             )
+            # need split because sometimes the port is on the netloc
+            netloc: str = urlparse(base_service_url).netloc.split(":")[0]
             path: str = layer._url.split("/services/")[-1]
             service_type: str = os.path.basename(path)
             service_name: str = os.path.basename(os.path.dirname(path))
@@ -23255,6 +23321,8 @@ class AGSSystemTools:
             base_service_url: str = (
                 layer._engine_obj._url.split("/services/")[0].lower() + "/services"
             )
+            # need split because sometimes the port is on the netloc
+            netloc: str = urlparse(base_service_url).netloc.split(":")[0]
             service_type: str = os.path.basename(path)
             service_name: str = os.path.basename(os.path.dirname(path))
             folder: str = ""
@@ -23264,8 +23332,12 @@ class AGSSystemTools:
             raise ValueError(
                 "Input must be a service based `Raster` class or `ImageryLayer`"
             )
-        tbxs = self._tbx
-        if base_service_url in tbxs:
+        tbxs = {urlparse(k).netloc.split(":")[0]: v for k, v in self._tbx.items()}
+        if len(tbxs) == 1:
+            tbx = list(tbxs.values())[0]
+        elif netloc in tbxs:
+            tbx = tbxs[netloc]
+        elif base_service_url in tbxs:
             tbx = tbxs[base_service_url]
         else:
             raise ValueError(

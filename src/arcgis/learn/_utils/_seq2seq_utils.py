@@ -9,7 +9,7 @@ import warnings
 import traceback
 import pandas as pd
 from functools import partial
-from typing import List
+from typing import List, Union, Dict, AnyStr
 
 HAS_FASTAI = True
 try:
@@ -69,7 +69,7 @@ class SequenceToSequenceDataBunch(TextDataBunch):
         backwards=False,
         val_bs=None,
         collate_fn=None,
-        **dl_kwargs
+        **dl_kwargs,
     ):
         "Function that transform the `datasets` in a `DataBunch`. Passes `**dl_kwargs` on to `DataLoader()`"
         device = dl_kwargs.pop("device", None)
@@ -88,7 +88,7 @@ class SequenceToSequenceDataBunch(TextDataBunch):
             batch_size=bs,
             sampler=train_sampler,
             drop_last=True,
-            **dl_kwargs
+            **dl_kwargs,
         )
         dataloaders = [train_dl]
         for i, ds in enumerate(datasets[1:]):
@@ -103,7 +103,7 @@ class SequenceToSequenceDataBunch(TextDataBunch):
             path=path,
             collate_fn=collate_fn,
             no_check=no_check,
-            device=device
+            device=device,
         )
 
 
@@ -166,7 +166,7 @@ class SequenceToSequenceLearner(Learner):
     def predict_batch(self, batch_text, num_beams, max_length, min_length):
         tok = self.model._tokenizer
         encoded_input_batch = tok.batch_encode_plus(
-            batch_text, padding=True, return_tensors="pt"
+            batch_text, padding=True, return_tensors="pt", truncation=True
         )["input_ids"]
         encoded_output_batch = self.model._transformer.generate(
             encoded_input_batch.to(self.model._transformer.device.type),
@@ -180,19 +180,57 @@ class SequenceToSequenceLearner(Learner):
         return decoded_output_batch, encoded_output_batch
 
     def predict(
-        self, text_list, batch_size, show_progress, **kwargs
-    ):  # num_beams=4, max_len=50):
+        self,
+        text_list: Union[List, str],
+        batch_size: int,
+        show_progress: bool,
+        **kwargs: Dict,
+    ) -> Union[List]:
         tok = self.model._tokenizer
         num_beams = kwargs.get("num_beams", 1)
         max_length = kwargs.get("max_length", 20)
         min_length = kwargs.get("min_length", 10)
 
-        if isinstance(text_list, (list)):
-            decoded_output = []
-            for i in progress_bar(
-                range(0, len(text_list), batch_size), display=show_progress
-            ):
-                batch_text = text_list[i : i + batch_size]
+        if isinstance(
+            text_list, str
+        ):  # convert single string to list to leverage batch processing
+            text_list = [text_list]
+        decoded_output = []
+        for i in progress_bar(
+            range(0, len(text_list), batch_size), display=show_progress
+        ):
+            # Intercept and validate the length
+            batch = text_list[i : i + batch_size]
+            truncated_indices = self.get_truncated_indices(
+                batch, max_len=self.model._max_seq_len
+            )
+            offset = 0
+            main_index = []
+            auxillary_index = []
+            for sen_index in range(len(batch)):
+                if sen_index in truncated_indices:
+                    split_sentences = self._sliding_window_split(
+                        batch[sen_index + offset], self.model._max_seq_len
+                    )
+                    # insert in the batch the split sentences
+                    batch = (
+                        batch[: sen_index + offset]
+                        + split_sentences
+                        + batch[sen_index + offset + 1 :]
+                    )
+                    main_index.extend([sen_index] * len(split_sentences))
+                    auxillary_index.extend(
+                        [sen_index + offset + i for i in range(len(split_sentences))]
+                    )
+                    offset += len(split_sentences) - 1
+
+                else:
+                    main_index.append(sen_index)
+                    auxillary_index.append(sen_index + offset)
+
+            # Now we have the batch with the split sentences
+            for mini_batch_index in range(0, len(batch), batch_size):
+                batch_text = batch[mini_batch_index : mini_batch_index + batch_size]
                 decoded_output_batch, encoded_output_batch = self.predict_batch(
                     batch_text,
                     num_beams=num_beams,
@@ -200,17 +238,91 @@ class SequenceToSequenceLearner(Learner):
                     min_length=min_length,
                 )
                 decoded_output.extend(decoded_output_batch)
-        else:
-            encoded_input = text_list
-            # encoded_input.unsqueeze_(0)
-            encoded_output = self.model._transformer.generate(
-                encoded_input.to(self.model._transformer.device.type),
-                num_beams=num_beams,
-                max_length=max_length,
-                min_length=min_length,
+            # use pandas based merging based on main_index and auxillary_index
+            df = pd.DataFrame.from_dict(
+                {
+                    "main_index": main_index,
+                    "auxillary_index": auxillary_index,
+                    "decoded_output": decoded_output,
+                }
             )
-            decoded_output = tok.batch_decode(encoded_output, skip_special_tokens=True)
-        return decoded_output
+            df = df.groupby("main_index")["decoded_output"].agg(list)
+            df = df.apply(lambda x: " ".join(x) if isinstance(x, list) else x)
+            return df.tolist()
+
+    def _sliding_window_split(self, sentence: str, max_len: int) -> list:
+        """
+        Split the sentence into chunks of max_len size with a stride of 0.
+        Args:
+            sentence (str): The input sentence to be split.
+            max_len (int): The maximum length of each chunk.
+        """
+        # Split at the nearest sentence boundary, approximating max_len
+        sentences = re.split(r"(?<=[.!?])\s+", sentence)
+        tokens = []
+        current_chunk = []
+        for s in sentences:
+            s_tokens = self.model._tokenizer.tokenize(s)
+            if len(current_chunk) + len(s_tokens) > max_len:
+                if current_chunk:
+                    tokens.append(current_chunk)
+                current_chunk = s_tokens
+            else:
+                current_chunk += s_tokens
+
+        # Handle cases where a single sentence exceeds max_len. Cases where the sentence does not have any puctuations
+        if len(current_chunk) > max_len:
+            for i in range(0, len(current_chunk), max_len - 10):
+                tokens.append(current_chunk[i : i + max_len - 10])
+            current_chunk = []
+        elif current_chunk:
+            tokens.append(current_chunk)
+
+        # convert tokens back to sentences
+        for i in range(len(tokens)):
+            tokens[i] = self.model._tokenizer.convert_tokens_to_string(tokens[i])
+
+        return tokens
+
+    def get_truncated_indices(self, sentences: list, max_len: int = 256) -> List[int]:
+        """
+        Identify indices of sentences that are truncated by the tokenizer.
+
+        Args:
+            sentences (List[str]): List of input sentences.
+        Returns:
+            List[int]: Indices of sentences that exceed max token length and get truncated.
+        """
+        truncated_indices = []
+        # Tokenize with overflow tracking
+        encoding = self.model._tokenizer(
+            sentences,
+            max_length=max_len,
+            truncation=True,
+            return_overflowing_tokens=True,
+            return_attention_mask=False,
+            return_token_type_ids=False,
+        )
+        if "overflow_to_sample_mapping" in encoding:
+            # `overflow_to_sample_mapping` maps each output chunk to original sentence index
+            for i, sample_idx in enumerate(
+                encoding.get("overflow_to_sample_mapping", [])
+            ):
+                # If a sample produces more than one chunk, it's truncated
+                if (
+                    sample_idx not in truncated_indices
+                    and encoding["overflow_to_sample_mapping"].count(sample_idx) > 1
+                ):
+                    truncated_indices.append(sample_idx)
+        else:
+            # fetch all the indexes with postive value of `num_truncated_tokens`. Applied when tokenizer is
+            # not Fast tokenizer type
+            truncated_indices = [
+                i
+                for i, x in enumerate(encoding.get("num_truncated_tokens", []))
+                if x > 0
+            ]
+        return truncated_indices
 
 
 class NGram:

@@ -212,6 +212,7 @@ class MMDetection(ModelExtension):
         if not data_passed:
             frcnn.learn.data.single_ds.classes = frcnn._data.classes
             frcnn.learn.data.single_ds.y.classes = frcnn._data.classes
+        frcnn._model_emd = emd
 
         return frcnn
 

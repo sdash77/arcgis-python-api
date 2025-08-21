@@ -16,8 +16,11 @@ import mmengine
 from mmengine.runner.checkpoint import CheckpointLoader, load_state_dict
 from ._mmlab_utils import load_mmlab_checkpoint
 from ._prithvi_utils import init_prithvi
+from ._dofa_utils import DOFAEmbedding
 from einops import rearrange
 import numpy as np
+from ._dofa_utils import weight_download_url_clay
+import os
 
 
 def get_rel_pos(q_size, k_size, rel_pos):
@@ -192,6 +195,7 @@ class Attention(nn.Module):
         dim,
         num_heads=8,
         qkv_bias=True,
+        proj_bias=True,
         use_rel_pos=False,
         rel_pos_zero_init=True,
         input_size=None,
@@ -212,7 +216,7 @@ class Attention(nn.Module):
         self.scale = head_dim**-0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.proj = nn.Linear(dim, dim)
+        self.proj = nn.Linear(dim, dim, bias=proj_bias)
 
         self.use_rel_pos = use_rel_pos
         if self.use_rel_pos:
@@ -226,6 +230,8 @@ class Attention(nn.Module):
 
     def forward(self, x):
         if self.use_rel_pos:
+            return self.forward_2D(x)
+        elif len(x.shape) == 4:
             return self.forward_2D(x)
         else:
             B, N, C = x.shape
@@ -277,6 +283,7 @@ class Block(nn.Module):
         num_heads,
         mlp_ratio=4.0,
         qkv_bias=True,
+        proj_bias=True,
         drop_path=0.0,
         norm_layer=nn.LayerNorm,
         act_layer=nn.GELU,
@@ -291,6 +298,7 @@ class Block(nn.Module):
             dim,
             num_heads=num_heads,
             qkv_bias=qkv_bias,
+            proj_bias=proj_bias,
             use_rel_pos=use_rel_pos,
             rel_pos_zero_init=rel_pos_zero_init,
             input_size=input_size if window_size == 0 else (window_size, window_size),
@@ -371,6 +379,7 @@ class ViT(nn.Module):
         num_heads=12,
         mlp_ratio=4.0,
         qkv_bias=True,
+        proj_bias=True,
         drop_path_rate=0.1,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         act_layer=nn.GELU,
@@ -434,14 +443,25 @@ class ViT(nn.Module):
                 )
 
         if "dofa" in backbone_name:
-            from ._dofa_utils import DOFAEmbedding
-
             self.patch_embed = DOFAEmbedding(
                 dynamic_embed_dim=128,
                 kernel_size=16,
                 embed_dim=embed_dim,
                 wavelengths=self.wavelengths,
                 flatten=True if self.is_plain_vit else False,
+            )
+        elif "clay" in backbone_name:
+            self.patch_embed = DOFAEmbedding(
+                dynamic_embed_dim=128,
+                kernel_size=8,
+                embed_dim=embed_dim,
+                wavelengths=self.wavelengths,
+                flatten=True if self.is_plain_vit else False,
+                batch_first=True,
+                weight_scaler=0.02,
+                bias_scaler=1,
+                wavelength_scaler=1,
+                fc_activation="gelu",
             )
         else:
             self.patch_embed = PatchEmbed(
@@ -462,6 +482,11 @@ class ViT(nn.Module):
             num_patches = (self._grid_size) ** 2
             num_patches = num_patches + self._num_tokens
             self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
+        elif "clay_large" in backbone_name:
+            use_rel_pos = False
+            self.pos_embed = None
+            qkv_bias = False
+            proj_bias = False
         elif use_abs_pos:
             # Initialize absolute positional embedding with pretrain image size.
             num_patches = (pretrain_img_size // patch_size) * (
@@ -482,6 +507,7 @@ class ViT(nn.Module):
                     num_heads=num_heads,
                     mlp_ratio=mlp_ratio,
                     qkv_bias=qkv_bias,
+                    proj_bias=proj_bias,
                     drop_path=dpr[i],
                     norm_layer=norm_layer,
                     act_layer=act_layer,
@@ -510,6 +536,12 @@ class ViT(nn.Module):
                 init_prithvi(self, pretrained_path)
             elif self.is_plain_vit:
                 self._init_plain_pretrained(pretrained_path)
+            elif backbone_name == "clay_large":
+                temp_path = weight_download_url_clay("2363f050d6a846be959fc25473c7d3e8")
+                clay_state_dict = torch.load(
+                    os.path.join(temp_path, "clay-v1.5_encoder.pth")
+                )
+                load_state_dict(self, clay_state_dict, True, logging.getLogger())
             else:
                 load_mmlab_checkpoint(self, pretrained_path)
             logging.disable(0)
