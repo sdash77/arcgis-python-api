@@ -500,12 +500,9 @@ class Mission:
             project_adj_settings = project.settings
             if (
                 isinstance(project_adj_settings, dict)
-                and ("template" in project_adj_settings.keys())
-                and "adjustSettings" in project_adj_settings["template"].keys()
+                and "adjustSettings" in project_adj_settings.keys()
             ):
-                project_adj_settings = project_adj_settings["template"][
-                    "adjustSettings"
-                ]
+                project_adj_settings = project_adj_settings["adjustSettings"]
             keys_to_pop = ["parallelProcessingFactor"]
 
             if isinstance(context, dict):
