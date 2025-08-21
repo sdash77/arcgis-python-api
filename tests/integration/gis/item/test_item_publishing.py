@@ -16,7 +16,7 @@ from utils.decorators import integration_test, profiles
 from utils.data_utils import cleanup_published_items, cleanup_folders
 
 from arcgis.gis import ItemProperties, ItemTypeEnum, Item
-from arcgis.features import FeatureLayer
+from arcgis.features import FeatureLayer, Table
 from arcgis.layers import VectorTileLayer, Object3DLayer
 
 
@@ -26,7 +26,7 @@ def setUpModule():
     warnings.filterwarnings("ignore")
 
 
-@profiles.k8s
+@profiles.all
 @integration_test
 class Test_Item_publish_file_types(unittest.TestCase):
     @classmethod
@@ -59,7 +59,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
     def tearDown(self):
         elapsed_time = time.time() - self._start_time
         print(f"{' ' * 4}...test took {elapsed_time/60:.2f} minutes.\n")
-    @unittest.skip("for now")
+     
     def test_publish_csv(self):
         csv_source_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/RUS_cities.csv",
@@ -108,7 +108,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "No features found in published feature service.",
         )
-    @unittest.skip("for now")    
+
     def test_publish_fgdb(self):
         cities_fgdb_source = get_resource_path(
             relative_path="staging_data/item_class_test_data/set2_USAcities.zip",
@@ -160,7 +160,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "No features found in published feature service.",
         )
-    @unittest.skip("for now")
+
     def test_publish_vtpk(self):
         vtpk_package_file = get_web_resource_path(
             relative_path="set2_vtpk_worldgreen.vtpk",
@@ -207,7 +207,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             VectorTileLayer,
             "Layer type not published as a Vector Tile Layer.",
         )
-    @unittest.skip("for now")    
+         
     def test_publish_spk(self):
         if self.gis._is_kubernetes:
             self.skipTest("Scene package format spk not supported on Kubernetes.")
@@ -269,7 +269,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             Object3DLayer,
             f"{scn_item.title} layer is not a SceneLayer as expected.",
         )
-    @unittest.skip("for now")   
+        
     def test_publish_slpk(self):
         if self.gis.version >= [2024, 2]:
             if self.gis.properties.isPortal and not self.gis._is_kubernetes:
@@ -342,6 +342,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             f"{scn_item.title} layer is not a SceneLayer as expected.",
         )
 
+     
     def test_publish_tpk(self):
         if self.gis._is_kubernetes:
             self.skipTest("Tile package format tpk not supported on Kubernetes.")
@@ -384,6 +385,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             len(tile_lyr_item.layers) > 0, "No layers published in Map Service."
         )
     
+     
     def test_publish_tpkx(self):
         tpkx_package_file = get_web_resource_path(
             relative_path="redlands_testcase22.tpkx", unique_copy=True
@@ -424,11 +426,11 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Tile layer does not have layers as expected.",
         )
-    @unittest.skip("for now")    
+         
     def test_publish_flyr_sd(self):
         if self.gis.properties.isPortal:
             self.skipTest(
-                "Specific service definition file not able to publish to Kubernetes."
+                "Specific service definition file pbublishes to ArGIS Online only."
             )
         svcdef_file = get_resource_path(
             relative_path="staging_data/item_class_test_data/ago_multilyr_svc_grplyr_x4j2.sd",
@@ -481,7 +483,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             0,
             "Feature Service layer does not have features as expected.",
         )
-    @unittest.skip("for now")    
+         
     def test_publish_tlyr_sd(self):
         if self.gis.properties.isPortal:
             self.skipTest(
@@ -530,7 +532,7 @@ class Test_Item_publish_file_types(unittest.TestCase):
             len(svcdef_tile_lyr_item.layers) == 3,
             "Publishing item did not create 3 layers as expected in Map Service.",
         )
-    @unittest.skip("for now")    
+         
     def test_publish_shp(self):
         shp_source_file = get_resource_path(
             relative_path="staging_data/USA_Major_Cities.zip",
@@ -593,6 +595,36 @@ class Test_Item_publish_file_types(unittest.TestCase):
         pub_params["locationType"] = "none"
 
         hosted_table_item = csv_item.publish(publish_parameters=pub_params)
+        
+        self.assertEqual(
+            csv_item.type,
+            "CSV",
+            "Source item for table not a CSV as expected"
+        )
+        self.assertEqual(
+            hosted_table_item.type,
+            "Feature Service",
+            "Published item is not a feature service as expected."
+        )
+        self.assertTrue(
+            hosted_table_item.tables,
+            "Table layer failed to publish."
+        )
+        self.assertIsInstance(
+            hosted_table_item.tables[0],
+            Table,
+            "Table layer not published as expected"
+        )
+        self.assertEqual(
+            len(hosted_table_item.tables),
+            1,
+            "Only 1 table should be present."
+        )
+        self.assertGreater(
+            hosted_table_item.tables[0].query(return_count_only=True),
+            0,
+            "Table layer does not have any records as expected."
+        )
     
     def test_publish_tbl_from_xlsx(self):
         source_xlsx_file = get_resource_path(
@@ -618,8 +650,37 @@ class Test_Item_publish_file_types(unittest.TestCase):
         for idx, lyr in enumerate(pub_params["layers"]):
             pub_params["layers"][idx]["locationType"] = "none"
 
-        hosted_table_item = xlsx_item.publish(publish_parameters=pub_params)
-
+        hostedx_table_item = xlsx_item.publish(publish_parameters=pub_params)
+        
+        self.assertEqual(
+            xlsx_item.type,
+            "Microsoft Excel",
+            "Source item for table not a CSV as expected"
+        )
+        self.assertEqual(
+            hostedx_table_item.type,
+            "Feature Service",
+            "Published item is not a feature service as expected."
+        )
+        self.assertTrue(
+            hostedx_table_item.tables,
+            "Table layer failed to publish."
+        )
+        self.assertIsInstance(
+            hostedx_table_item.tables[0],
+            Table,
+            "Table layer not published as expected"
+        )
+        self.assertEqual(
+            len(hostedx_table_item.tables),
+            1,
+            "Only 1 table should be present."
+        )
+        self.assertGreater(
+            hostedx_table_item.tables[0].query(return_count_only=True),
+            0,
+            "Table layer does not have any records as expected."
+        )        
 
 if __name__ == "__main__":
     unittest.main()
