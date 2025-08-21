@@ -1,9 +1,12 @@
 import os
+import re
 import json
 import random
 import traceback
 from pathlib import Path
+from collections import OrderedDict
 from functools import partial
+from typing import List, Any, Dict, Tuple, Union
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
 
 HAS_FASTAI = True
@@ -669,8 +672,13 @@ class _TransformerEntityRecognizer(ArcGISModel):
         return cls_object
 
     def extract_entities(
-        self, text_list, batch_size=4, drop=True, debug=False, show_progress=True
-    ):
+        self,
+        text_list: Union[str, bytes, List],
+        batch_size: int = 4,
+        drop: bool = True,
+        debug: bool = False,
+        show_progress: bool = True,
+    ) -> Union[List[Dict[str, Any]], pd.DataFrame]:
         results, columns, file_names = [], [], []
         if isinstance(text_list, (str, bytes)):
             path = text_list
@@ -712,30 +720,189 @@ class _TransformerEntityRecognizer(ArcGISModel):
         for i in progress_bar(
             range(0, len(text_list), batch_size), display=show_progress
         ):
-            tokens, labels = self.learn.model.generate_inference(
-                text_list[i : i + batch_size], self._device
-            )
+            # intercept and check if it conforms to the maximum sequence length. Whether provided by the model or user
+            # tokenize the input and collect all the indexes which would be truncated
+            batch = text_list[i : i + batch_size]
+            truncated_indexes = self.get_truncated_indices(batch)
+            mini_results = []
+            offset = 0
+            main_index = []
+            auxillary_index = []
+            for sen_index in range(len(batch)):
+                if sen_index in truncated_indexes:
+                    split_sentences = self._sliding_window_split(
+                        batch[sen_index + offset], self.learn.model._max_seq_len
+                    )
+                    # insert in the batch the split sentences
+                    batch = (
+                        batch[: sen_index + offset]
+                        + split_sentences
+                        + batch[sen_index + offset + 1 :]
+                    )
+                    main_index.extend([sen_index] * len(split_sentences))
+                    auxillary_index.extend(
+                        [sen_index + offset + i for i in range(len(split_sentences))]
+                    )
+                    offset += len(split_sentences) - 1
+
+                else:
+                    main_index.append(sen_index)
+                    auxillary_index.append(sen_index + offset)
+
+            for mini_batch_index in range(0, len(batch), batch_size):
+                mini_batch = batch[mini_batch_index : mini_batch_index + batch_size]
+                tokens, labels = self.learn.model.generate_inference(
+                    mini_batch, self._device
+                )
+
+                if debug:
+                    batch_results = get_results(
+                        tokens,
+                        labels,
+                        tokenizer,
+                        id2label,
+                        model_type,
+                        len(tokens),
+                        main_index=main_index[
+                            mini_batch_index : mini_batch_index + batch_size
+                        ],
+                        auxillary_index=auxillary_index[
+                            mini_batch_index : mini_batch_index + batch_size
+                        ],
+                    )
+                    mini_results.extend(batch_results)
+                else:
+                    batch_results, columns = self._process_results(
+                        tokens,
+                        labels,
+                        return_dataframe=False,
+                        drop=drop,
+                        start_index=i,
+                        file_names=file_names[i : i + batch_size],
+                        main_index=main_index[
+                            mini_batch_index : mini_batch_index + batch_size
+                        ],
+                        auxillary_index=auxillary_index[
+                            mini_batch_index : mini_batch_index + batch_size
+                        ],
+                    )
+                    mini_results.extend(batch_results)
             if debug:
-                batch_results = get_results(
-                    tokens, labels, tokenizer, id2label, model_type, len(tokens)
-                )
-                results.extend(batch_results)
+                result_debug = []
+                prev_pointer = -9999
+                for record in mini_results:
+                    if record["main_index"] != prev_pointer:
+                        result_debug.append(record)
+                        prev_pointer = record["main_index"]
+                    else:
+                        # merge the record with the previous one
+                        for key in record.keys():
+                            if key not in ["main_index", "auxillary_index"]:
+                                if isinstance(record[key], list):
+                                    result_debug[-1][key].extend(record.get(key, []))
+                                else:
+                                    result_debug[-1][key] += record.get(key, "")
+                # remove the columns main_index and auxillary_index
+                for rec in result_debug:
+                    rec.pop("auxillary_index")
+                    rec.pop("main_index")
+                results.extend(result_debug)
             else:
-                batch_results, columns = self._process_results(
-                    tokens,
-                    labels,
-                    return_dataframe=False,
-                    drop=drop,
-                    start_index=i,
-                    file_names=file_names[i : i + batch_size],
+                temp_df = pd.DataFrame(mini_results, columns=columns)
+                temp_df = temp_df.groupby(["main_index"]).agg(
+                    lambda x: list(OrderedDict.fromkeys(x))
+                )  # added this in place of the set because of order
+                temp_df = temp_df.explode(
+                    "Address"
+                )  # other fields are submsumed. Adress needs to be split into multiple rows
+                temp_df.drop(columns=["auxillary_index"], inplace=True)
+                temp_df.reset_index(drop=True, inplace=True)
+                # convert all the list into string
+                temp_df = temp_df.applymap(
+                    lambda x: ", ".join(x) if isinstance(x, list) else x
                 )
-                results.extend(batch_results)
+                results.append(temp_df)
 
         if debug:
             return results
-        dataframe = pd.DataFrame(results, columns=columns)
-        dataframe.fillna("", inplace=True)
-        return dataframe
+        else:
+            results = pd.concat(results, axis=0, ignore_index=True)
+            return results
+
+    def _sliding_window_split(self, sentence: str, max_len: int) -> list:
+        """
+        Split the sentence into chunks of max_len size with a stride of 0.
+        Args:
+            sentence (str): The input sentence to be split.
+            max_len (int): The maximum length of each chunk.
+        """
+        # Split at the nearest sentence boundary, approximating max_len
+        sentences = re.split(r"(?<=[.!?])\s+", sentence)
+        tokens = []
+        current_chunk = []
+        for s in sentences:
+            s_tokens = self.learn.model._tokenizer.tokenize(s)
+            if len(current_chunk) + len(s_tokens) > max_len:
+                if current_chunk:
+                    tokens.append(current_chunk)
+                current_chunk = s_tokens
+            else:
+                current_chunk += s_tokens
+
+        # Handle cases where a single sentence exceeds max_len. Cases where the sentence does not have any puctuations
+        if len(current_chunk) > max_len:
+            for i in range(0, len(current_chunk), max_len - 10):
+                tokens.append(current_chunk[i : i + max_len - 10])
+            current_chunk = []
+        elif current_chunk:
+            tokens.append(current_chunk)
+
+        # convert tokens back to sentences
+        for i in range(len(tokens)):
+            tokens[i] = self.learn.model._tokenizer.convert_tokens_to_string(tokens[i])
+
+        return tokens
+
+    def get_truncated_indices(self, sentences: list):
+        """
+        Identify indices of sentences that are truncated by the tokenizer.
+
+        Args:
+            sentences (List[str]): List of input sentences.
+        Returns:
+            List[int]: Indices of sentences that exceed max token length and get truncated.
+        """
+        truncated_indices = []
+        # Tokenize with overflow tracking
+        encoding = self.learn.model._tokenizer(
+            sentences,
+            # max_length=self.learn.model._max_seq_len,
+            max_length=10,
+            truncation=True,
+            return_overflowing_tokens=True,
+            return_attention_mask=False,
+            return_token_type_ids=False,
+        )
+        if "overflow_to_sample_mapping" in encoding:
+            # `overflow_to_sample_mapping` maps each output chunk to original sentence index
+            for i, sample_idx in enumerate(
+                encoding.get("overflow_to_sample_mapping", [])
+            ):
+                # If a sample produces more than one chunk, it's truncated
+                if (
+                    sample_idx not in truncated_indices
+                    and encoding["overflow_to_sample_mapping"].count(sample_idx) > 1
+                ):
+                    truncated_indices.append(sample_idx)
+        else:
+            # fetch all the indexes with postive value of `num_truncated_tokens`. Applied when tokenizer is
+            # not Fast tokenizer type
+            truncated_indices = [
+                i
+                for i, x in enumerate(encoding.get("num_truncated_tokens", []))
+                if x > 0
+            ]
+        return truncated_indices
 
     def _process_results(
         self,
@@ -745,16 +912,28 @@ class _TransformerEntityRecognizer(ArcGISModel):
         drop=False,
         start_index=0,
         file_names=[],
+        main_index=None,
+        auxillary_index=None,
     ):
         data_list = []
         tokenizer = self.learn.model._tokenizer
         id2label = self.learn.model._config.id2label
         model_type = self.learn.model._transformer_architecture
         columns = {x.split("-")[-1] for x in self._data._unique_tags}
-
         results = get_results(
-            tokens, predictions, tokenizer, id2label, model_type, num_items=len(tokens)
+            tokens,
+            predictions,
+            tokenizer,
+            id2label,
+            model_type,
+            num_items=len(tokens),
+            main_index=main_index,
+            auxillary_index=auxillary_index,
         )
+        # filter out main_index and auxillary_index
+        for i in results:
+            i.pop("auxillary_index")
+            i.pop("main_index")
 
         columns.discard("O")
         address_tag, text_tag = self._address_tag, "Text"
@@ -777,28 +956,46 @@ class _TransformerEntityRecognizer(ArcGISModel):
                     address_list = [""]
 
                 file_name_column = (
-                    file_names[index]
+                    file_names[main_index[index]]
                     if len(file_names)
-                    else f"Example_{index + start_index}"
+                    else f"Example_{main_index[index] + start_index}"
                 )
                 for address in address_list:
-                    data_list.append([text, file_name_column, address, *values])
+                    data_list.append(
+                        [
+                            main_index[index],
+                            auxillary_index[index],
+                            text,
+                            file_name_column,
+                            address,
+                            *values,
+                        ]
+                    )
             else:
                 file_name_column = (
-                    file_names[index]
+                    file_names[main_index[index]]
                     if len(file_names)
-                    else f"Example_{index + start_index}"
+                    else f"Example_{main_index[index] + start_index}"
                 )
                 values = [", ".join(row.get(column, "")) for column in cols]
-                data_list.append([text, file_name_column, *values])
+                data_list.append(
+                    [
+                        main_index[index],
+                        auxillary_index[index],
+                        text,
+                        file_name_column,
+                        *values,
+                    ]
+                )
 
         # data_list = data_list[:self._data._bs]
 
         df_columns = (
-            [text_tag, "Filename", address_tag, *cols]
+            ["main_index", "auxillary_index", text_tag, "Filename", address_tag, *cols]
             if has_address
-            else [text_tag, "Filename", *cols]
+            else ["main_index", "auxillary_index", text_tag, "Filename", *cols]
         )
+
         if return_dataframe:
             dataframe = pd.DataFrame(data_list, columns=df_columns)
             dataframe.fillna("", inplace=True)
@@ -829,7 +1026,13 @@ class _TransformerEntityRecognizer(ArcGISModel):
         output = self.learn.model.forward(*x)
         predictions = output[1].argmax(2).tolist()
         tokens = x[0].tolist()
-        df = self._process_results(tokens, predictions)
+        df = self._process_results(
+            tokens,
+            predictions,
+            main_index=list(range(len(tokens))),
+            auxillary_index=list(range(len(tokens))),
+        )
+        df.drop(columns=["main_index", "auxillary_index"], inplace=True)
         return df
 
     def _calculate_model_metrics(self, metric_type="all"):
