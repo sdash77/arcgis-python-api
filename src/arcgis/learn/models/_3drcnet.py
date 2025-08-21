@@ -209,9 +209,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
             raise Exception("Dataset is required for compute metrics")
 
         acc = calc_accuracy(self.learn.model, self._data)
-        miou = compute_mIoU(
-            self.learn.model, self._data.valid_dl, self._data._num_classes
-        )
+        miou = compute_mIoU(self.learn.model, self._data, self._data._num_classes)
         return {"Accuracy (OA)": "{}".format(acc), "mIOU": "{}".format(miou)}
 
     def accuracy(self):

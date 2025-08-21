@@ -431,10 +431,11 @@ def calc_accuracy(model, data):
 
 
 def compute_mIoU(model, dataloader, num_classes):
+    valid_data = dataloader.valid_dl
     total_inter = torch.zeros(num_classes, dtype=torch.float32)
     total_union = torch.zeros(num_classes, dtype=torch.float32)
 
-    for inputs, labels in dataloader.valid_dl:
+    for inputs, labels in valid_data:
         preds = model_predict(model, inputs)
 
         preds = preds.cpu()
