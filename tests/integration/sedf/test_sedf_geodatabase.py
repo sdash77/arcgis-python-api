@@ -19,19 +19,16 @@ class TestSedfGeodatabase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        fgdb_zip_path = get_resource_path(
-            "staging_data/geodatabase/TestFileGDB.gdb.zip", unique_copy=True
+        fgdb_path = get_resource_path(
+            "staging_data/geodatabase/TestFileGDB.gdb.zip", unique_copy=True, unzip=True
         )
-
-        shutil.unpack_archive(fgdb_zip_path, os.path.dirname(fgdb_zip_path), "zip")
-
-        fgdb_path = os.path.join(os.path.dirname(fgdb_zip_path), "TestFileGDB.gdb")
-        assert os.path.exists(fgdb_zip_path), "Did not properly extract the fgdb zip"
+        fgdb_path = os.path.join(fgdb_path, "TestFileGDB.gdb")
+        assert os.path.exists(fgdb_path), "Did not properly extract the fgdb zip"
 
         cls.file_gdb_fc = os.path.join(fgdb_path, "HCADSubset2k")
 
         mobile_gdb_path = get_resource_path(
-            "staging_data/geodatabase/TestMobileGDB.geodatabase"
+            "staging_data/geodatabase/TestMobileGDB.geodatabase", unique_copy=True
         )
         cls.mobile_gdb_fc = os.path.join(mobile_gdb_path, "HCADSubset2k")
 
