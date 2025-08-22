@@ -14,7 +14,6 @@ from functools import partial
 from collections import OrderedDict
 import mmengine
 from mmengine.runner.checkpoint import CheckpointLoader, load_state_dict
-from ._mmlab_utils import load_mmlab_checkpoint
 from ._prithvi_utils import init_prithvi
 from ._dofa_utils import DOFAEmbedding, posemb_sincos_2d
 from einops import rearrange
@@ -514,7 +513,7 @@ class ViT(nn.Module):
             nn.init.trunc_normal_(self.pos_embed, std=0.02)
 
         if pretrained:
-            # logging.disable(logging.WARNING)
+            logging.disable(logging.WARNING)
             if backbone_name == "prithvi":
                 init_prithvi(self, pretrained_path)
             elif backbone_name == "clay_large":
@@ -526,12 +525,13 @@ class ViT(nn.Module):
                 pos_embed = posemb_sincos_2d(
                     self.grid_size, self.grid_size, embed_dim, cls_token=self.is_clf
                 )
-                clay_state_dict["pos_embed"] = pos_embed.unsqueeze(0)
-                load_state_dict(self, clay_state_dict, False)  # , logging.getLogger())
+                if not "pos_embed" in clay_state_dict.keys():
+                    clay_state_dict["pos_embed"] = pos_embed.unsqueeze(0)
+                load_state_dict(self, clay_state_dict, False, logging.getLogger())
 
             else:
                 self._init_plain_pretrained(pretrained_path)
-            # logging.disable(0)
+            logging.disable(0)
         else:
             self.apply(self._init_weights)
 
@@ -563,7 +563,7 @@ class ViT(nn.Module):
                 posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
                 state_dict[k] = posemb
 
-        load_state_dict(self, state_dict, False)  # , logging.getLogger())
+        load_state_dict(self, state_dict, False, logging.getLogger())
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -658,6 +658,8 @@ class ViTUpsample(nn.Module):
             nn.Conv2d(in_chans, in_chans, kernel_size=3, padding=1, bias=False),
             LayerNorm2D(in_chans),
         ]
+        if getattr(backbone, "backbone_name", "") == "clay_large":
+            upsameple_layers = []
         self.upsample = nn.Sequential(*upsameple_layers)
 
     def forward(self, x):
