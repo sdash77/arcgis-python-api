@@ -1,5 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\tests")
 import time
 import unittest
 from arcgis.map import Map

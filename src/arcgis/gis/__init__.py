@@ -8195,7 +8195,7 @@ class ContentManager(object):
                 elif item_properties["access"] == "private":
                     item.sharing.sharing_level = "PRIVATE"
                 elif item_properties["access"] == "shared":
-                    groups = item.shared_with["groups"]
+                    groups = item.sharing.shared_with["groups"]
                     grp_share = item.sharing.groups
                     for grp in groups:
                         grp_share.add(grp)
