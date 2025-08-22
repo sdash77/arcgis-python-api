@@ -322,7 +322,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_events-0.12.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server-2.16.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server_terminals-0.5.3-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_server-2.27.3-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_widgets-3.0.15-py313h06a4308_0.tar.bz2
@@ -508,7 +508,6 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/tiledb-2.3.3-h77177df_3.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tinycss2-1.4.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tk-8.6.14-h993c535_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/linux-64/tomli-2.2.1-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/toolz-1.0.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tornado-6.5.1-py313h5eee18b_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/traitlets-5.14.3-py313h06a4308_0.tar.bz2
@@ -708,7 +707,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_events-0.12.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server-2.16.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server_terminals-0.5.3-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_server-2.27.3-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_widgets-3.0.15-py313hecd8cb5_0.tar.bz2
@@ -854,7 +853,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/terminado-0.17.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tinycss2-1.4.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tk-8.6.14-h0a12a5f_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-64/tomli-2.2.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/toolz-1.0.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tornado-6.5.1-py313h46256e1_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/traitlets-5.14.3-py313hecd8cb5_0.tar.bz2
@@ -1036,7 +1034,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_events-0.12.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server-2.16.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server_terminals-0.5.3-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_server-2.27.3-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_widgets-3.0.15-py313hca03da5_0.tar.bz2
@@ -1182,7 +1180,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/terminado-0.17.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tinycss2-1.4.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tk-8.6.14-h6ba3021_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-arm64/tomli-2.2.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/toolz-1.0.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.5.1-py313h80987f9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/traitlets-5.14.3-py313hca03da5_0.tar.bz2
@@ -1363,7 +1360,7 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/jupyter_events-0.12.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server-2.16.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server_terminals-0.5.3-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_server-2.27.3-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_widgets-3.0.15-py313haa95532_0.tar.bz2
@@ -1518,7 +1515,6 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/terminado-0.17.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tinycss2-1.4.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tk-8.6.14-h5e9d12e_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/win-64/tomli-2.2.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/toolz-1.0.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tornado-6.5.1-py313h827c3e9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/traitlets-5.14.3-py313haa95532_0.tar.bz2
@@ -1724,7 +1720,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_events-0.12.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server-2.16.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server_terminals-0.5.3-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_server-2.27.3-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_widgets-3.0.15-py313h06a4308_0.tar.bz2
@@ -1910,7 +1906,6 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/tiledb-2.3.3-h77177df_3.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tinycss2-1.4.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tk-8.6.14-h993c535_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/linux-64/tomli-2.2.1-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/toolz-1.0.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tornado-6.5.1-py313h5eee18b_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/traitlets-5.14.3-py313h06a4308_0.tar.bz2
@@ -2108,7 +2103,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_events-0.12.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server-2.16.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server_terminals-0.5.3-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_server-2.27.3-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_widgets-3.0.15-py313hecd8cb5_0.tar.bz2
@@ -2254,7 +2249,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/terminado-0.17.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tinycss2-1.4.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tk-8.6.14-h0a12a5f_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-64/tomli-2.2.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/toolz-1.0.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tornado-6.5.1-py313h46256e1_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/traitlets-5.14.3-py313hecd8cb5_0.tar.bz2
@@ -2434,7 +2428,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_events-0.12.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server-2.16.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server_terminals-0.5.3-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_server-2.27.3-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_widgets-3.0.15-py313hca03da5_0.tar.bz2
@@ -2580,7 +2574,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/terminado-0.17.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tinycss2-1.4.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tk-8.6.14-h6ba3021_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-arm64/tomli-2.2.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/toolz-1.0.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.5.1-py313h80987f9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/traitlets-5.14.3-py313hca03da5_0.tar.bz2
@@ -2759,7 +2752,7 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/jupyter_events-0.12.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server-2.16.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server_terminals-0.5.3-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_server-2.27.3-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_widgets-3.0.15-py313haa95532_0.tar.bz2
@@ -2914,7 +2907,6 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/terminado-0.17.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tinycss2-1.4.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tk-8.6.14-h5e9d12e_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/win-64/tomli-2.2.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/toolz-1.0.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tornado-6.5.1-py313h827c3e9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/traitlets-5.14.3-py313haa95532_0.tar.bz2
@@ -3144,7 +3136,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.12.0-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server-2.16.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server_terminals-0.5.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
@@ -3370,7 +3362,6 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/timm-0.4.12-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_hd72426e_102.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.22.0-cpu_py313_hf8de91a_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-extra-decoders-0.0.2-py313hf1e760e_3.conda
@@ -3579,7 +3570,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.12.0-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server-2.16.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server_terminals-0.5.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
@@ -3781,7 +3772,6 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/timm-0.4.12-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/tk-8.6.13-hf689a15_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/torchvision-0.22.0-cpu_py313_h4b2a12b_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/torchvision-extra-decoders-0.0.2-py313h3093996_3.conda
@@ -3970,7 +3960,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.12.0-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server-2.16.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server_terminals-0.5.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
@@ -4175,7 +4165,6 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/timm-0.4.12-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tk-8.6.13-h892fb3f_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/torchvision-0.22.0-cpu_py313_h49053cb_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/torchvision-extra-decoders-0.0.2-py313hc37fbc8_3.conda
@@ -4362,7 +4351,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.12.0-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server-2.16.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server_terminals-0.5.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
@@ -4554,7 +4543,6 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/timm-0.4.12-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tk-8.6.13-h2c6b04d_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/torchvision-0.22.0-cpu_py313_h5cf2b77_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tornado-6.5.2-py313h5ea7bf4_0.conda
@@ -4750,7 +4738,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_events-0.12.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server-2.16.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server_terminals-0.5.3-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_server-2.27.3-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_widgets-3.0.15-py313h06a4308_0.tar.bz2
@@ -4938,7 +4926,6 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/tiledb-2.3.3-h77177df_3.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tinycss2-1.4.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tk-8.6.14-h993c535_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/linux-64/tomli-2.2.1-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/toolz-1.0.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tornado-6.5.1-py313h5eee18b_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/traitlets-5.14.3-py313h06a4308_0.tar.bz2
@@ -5136,7 +5123,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_events-0.12.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server-2.16.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server_terminals-0.5.3-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_server-2.27.3-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_widgets-3.0.15-py313hecd8cb5_0.tar.bz2
@@ -5284,7 +5271,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/terminado-0.17.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tinycss2-1.4.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tk-8.6.14-h0a12a5f_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-64/tomli-2.2.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/toolz-1.0.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tornado-6.5.1-py313h46256e1_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/traitlets-5.14.3-py313hecd8cb5_0.tar.bz2
@@ -5464,7 +5450,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_events-0.12.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server-2.16.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server_terminals-0.5.3-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_server-2.27.3-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_widgets-3.0.15-py313hca03da5_0.tar.bz2
@@ -5612,7 +5598,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/terminado-0.17.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tinycss2-1.4.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tk-8.6.14-h6ba3021_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-arm64/tomli-2.2.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/toolz-1.0.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.5.1-py313h80987f9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/traitlets-5.14.3-py313hca03da5_0.tar.bz2
@@ -5791,7 +5776,7 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/jupyter_events-0.12.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server-2.16.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server_terminals-0.5.3-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_server-2.27.3-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_widgets-3.0.15-py313haa95532_0.tar.bz2
@@ -5947,7 +5932,6 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/terminado-0.17.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tinycss2-1.4.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tk-8.6.14-h5e9d12e_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/win-64/tomli-2.2.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/toolz-1.0.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tornado-6.5.1-py313h827c3e9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/traitlets-5.14.3-py313haa95532_0.tar.bz2
@@ -15155,9 +15139,9 @@ packages:
   license_family: BSD
   size: 29369
   timestamp: 1744706973685
-- conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
-  sha256: f04c3ea921432794369760f259295eb23d58047ca6fb55b52718c62d5ac58324
-  md5: 7835e5012f167975629398c0836f3e7d
+- conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
+  sha256: 222fbebc52e013d52047a879fb6da79d8fb5cc2cc394154184c3e710fba55c20
+  md5: 59a3aea092949790917111926cf31f87
   depends:
   - async-lru >=1.0.0
   - httpx >=0.25.0
@@ -15172,13 +15156,12 @@ packages:
   - notebook-shim >=0.2
   - packaging
   - python >=3.8
-  - tomli
   - tornado >=6.2.0
   - traitlets
   license: BSD-3-Clause
   license_family: BSD
-  size: 8426945
-  timestamp: 1754685605575
+  size: 7953628
+  timestamp: 1755807940648
 - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
   sha256: dc24b900742fdaf1e077d9a3458fd865711de80bca95fe3c6d46610c532c6ef0
   md5: fd312693df06da3578383232528c468d
@@ -31418,58 +31401,6 @@ packages:
   license_family: BSD
   size: 3864026
   timestamp: 1748849710660
-- conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
-  sha256: 040a5a05c487647c089ad5e05ad5aff5942830db2a4e656f1e300d73436436f1
-  md5: 30a0a26c8abccf4b7991d590fe17c699
-  depends:
-  - python >=3.9
-  - python
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/tomli?source=compressed-mapping
-  size: 21238
-  timestamp: 1753796677376
-- conda: https://conda.anaconda.org/main/linux-64/tomli-2.2.1-py313h06a4308_0.tar.bz2
-  sha256: 279b9ff1a74294743266dade55d70205e74346b4036154464f641f604e06e64a
-  md5: 6802c91593340e203227a9d3e29345f4
-  depends:
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 35328
-  timestamp: 1753774637585
-- conda: https://conda.anaconda.org/main/osx-64/tomli-2.2.1-py313hecd8cb5_0.tar.bz2
-  sha256: 92d28dc49a8867561e30a63be949929a78e1730fffe912ebd593e59aef799824
-  md5: 829bc297dc29600c85bd5aa490cbb419
-  depends:
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 36525
-  timestamp: 1753774638506
-- conda: https://conda.anaconda.org/main/osx-arm64/tomli-2.2.1-py313hca03da5_0.tar.bz2
-  sha256: 035c1659c6cfe70b18da67194b17e31426ba16b1601b8d975aacab6b2f62c2c8
-  md5: e7de25ba9fac537bb812bfb8e8e56fb4
-  depends:
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 36546
-  timestamp: 1753774746500
-- conda: https://conda.anaconda.org/main/win-64/tomli-2.2.1-py313haa95532_0.tar.bz2
-  sha256: 4844ca914ed99eda26dc28164d29c81d260f73768033259efdc678c4abc12f10
-  md5: f7399baee774560534f34e7bebd4eb01
-  depends:
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 36397
-  timestamp: 1753774937493
 - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
   sha256: eda38f423c33c2eaeca49ed946a8d3bf466cc3364970e083a65eb2fd85258d87
   md5: 40d0ed782a8aaa16ef248e68c06c168d
