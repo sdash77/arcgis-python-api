@@ -2269,19 +2269,20 @@ class GeoAccessor(object):
             )
 
         elif self._USE_GDAL:
-            service_name = kwargs.pop("service_name", "a" + uuid.uuid4().hex[0:5])
             file_type = "Esri Shapefile" if location.endswith(".shp") else "OpenFileGDB"
             if file_type == "OpenFileGDB":
                 dir_name, file_name = os.path.split(location)
                 if dir_name.endswith(".gdb"):
                     gdb_path = dir_name
-                    service_name = file_name
+                    service_name = kwargs.pop("service_name", file_name)
                     d2 = os.path.split(dir_name)[0]
                     os.makedirs(d2, exist_ok=True)
                 elif file_name.endswith(".gdb"):
+                    service_name = kwargs.pop("service_name", "a" + uuid.uuid4().hex[0:5])
                     gdb_path = location
                     os.makedirs(dir_name, exist_ok=True)
                 else:
+                    service_name = kwargs.pop("service_name", "a" + uuid.uuid4().hex[0:5])
                     service_gdb = service_name + ".gdb"
                     gdb_path = os.path.join(location, service_gdb)
                     os.makedirs(gdb_path, exist_ok=True)
