@@ -446,7 +446,7 @@ class ViT(nn.Module):
         if "dofa" in backbone_name:
             self.patch_embed = DOFAEmbedding(
                 dynamic_embed_dim=128,
-                kernel_size=16,
+                kernel_size=patch_size,
                 embed_dim=embed_dim,
                 wavelengths=self.wavelengths,
                 flatten=self.is_plain_vit,
@@ -454,7 +454,7 @@ class ViT(nn.Module):
         elif "clay" in backbone_name:
             self.patch_embed = DOFAEmbedding(
                 dynamic_embed_dim=128,
-                kernel_size=8,
+                kernel_size=patch_size,
                 embed_dim=embed_dim,
                 wavelengths=self.wavelengths,
                 flatten=self.is_plain_vit,
