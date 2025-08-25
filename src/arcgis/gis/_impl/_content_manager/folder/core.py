@@ -961,7 +961,7 @@ class Folder:
 
         max_workers: int = 1
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as tp:
-            if stream == True and file:
+            if stream == True and file and item_id is None:
                 # upload by streaming data
                 logger.info("Adding Item by parts using streaming.")
                 upload_size = upload_file_size
@@ -982,6 +982,29 @@ class Folder:
                 )
 
                 return job
+            if (file or text or url) and item_id:
+                params["async"] = False
+                file_list["file"] = create_upload_tuple(
+                    file, file_name=item_properties.get("file_name", None)
+                )
+                if not url and "url" in params:
+                    url = params.get("url")
+                if url:
+                    params["url"] = url
+                if text:
+                    params["text"] = text
+                params = _process_parameters(params)
+                future = tp.submit(
+                    self._add_async_text,
+                    **{
+                        "url": curl,
+                        "params": params,
+                        "file_list": file_list,
+                        "check_status": params["async"],
+                    },
+                )
+                tp.shutdown(wait=True)
+                return future
             if (text and file is None and url is None and data_url is None) or (
                 text is None
                 and file is None
