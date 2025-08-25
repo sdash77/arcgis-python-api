@@ -574,9 +574,13 @@ class DeepLab(ArcGISModel):
             empty_data.emd_path = emd_path
             empty_data.emd = emd
             empty_data._band_names = emd.get("Bands")
-            return cls(empty_data, **model_params, pretrained_path=str(model_file))
+            model_obj = cls(empty_data, **model_params, pretrained_path=str(model_file))
+            model_obj._model_emd = emd
+            return model_obj
         else:
-            return cls(data, **model_params, pretrained_path=str(model_file))
+            model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+            model_obj._model_emd = emd
+            return model_obj
 
     def _get_emd_params(self, save_inference_file):
         import random

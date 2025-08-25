@@ -160,27 +160,28 @@ class ChildImageClassifier:
             [
                 {
                     "name": "padding",
-                    "dataType": "numeric",
+                    "dataType": "GPLong",
                     "value": int(self.json_info["ImageHeight"]) // 4,
-                    "required": False,
+                    "required": True,
                     "displayName": "Padding",
-                    "description": "Padding",
+                    "description": "Number of pixels at the border of image tiles from which predictions are blended for adjacent tiles. Increase its value to smooth the output while reducing edge artifacts. The maximum value of the padding can be half of the tile size value.",
                 },
                 {
                     "name": "batch_size",
-                    "dataType": "numeric",
-                    "required": False,
+                    "dataType": "GPLong",
+                    "required": True,
                     "value": 4,
                     "displayName": "Batch Size",
-                    "description": "Batch Size",
+                    "description": "Number of image tiles processed in each step of the model inference. This depends on the memory of your graphic card.",
                 },
                 {
                     "name": "direction",
-                    "dataType": "string",
+                    "dataType": "GPString",
                     "required": True,
                     "value": "AtoB",
-                    "displayName": "Image translation direction",
-                    "description": '"AtoB" or "BtoA" to generate raster of type A or B ',
+                    "domain": ["AtoB", "BtoA"],
+                    "displayName": "Direction",
+                    "description": '"AtoB" or "BtoA" to generate raster of type A or B.',
                 },
             ]
         )

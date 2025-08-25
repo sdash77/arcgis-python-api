@@ -196,4 +196,7 @@ class RandLANet(PointCNN):
             data._image_space_used = None
             data.dataset_type = "PointCloud"
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj

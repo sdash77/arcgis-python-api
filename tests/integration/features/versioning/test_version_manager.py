@@ -1,13 +1,12 @@
 import time
 import unittest
-from arcgis.gis import GIS
-from arcgis.features._version import VersionManager, Version
+from arcgis.features._version import Version
 from arcgis.features.layer import FeatureLayerCollection
 
-from parcels import parcel_fabric_utils as pfutils
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestVersionManagementSQL(unittest.TestCase):
     """Test VersionManagementServer methods"""
@@ -29,19 +28,11 @@ class TestVersionManagementSQL(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/WashingtonCountyLSA/"
         )
-        cls.gis = GIS(
-            "https://dev0016752.esri.com/portal/",
-            "admin",
-            "esri.agp",
-            verify_cert=False,
-        )
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
-        cls.parcel_fabric_flc = FeatureLayerCollection(
-            cls.service_urls["FeatureServer"], cls.gis
-        )
-        cls.vms = cls.parcel_fabric_flc.versions
-        cls.records_fl = pfutils.get_feature_layer(cls.parcel_fabric_flc, "Records")
+        cls.flc = FeatureLayerCollection(cls.service_urls["FeatureServer"], cls.gis)
+        cls.vms = cls.flc.versions
+        cls.records_fl = [l for l in cls.flc.layers if l.properties.name == "Records"]
 
         cls.timestamp = int(time.time())
         cls.record_name = f"api-{cls.timestamp}"
@@ -206,6 +197,12 @@ class TestVersionManagementSQL(unittest.TestCase):
         # Locks are flushed
         self.assertFalse(version.properties.isBeingEdited, "isBeingEdited not set")
         self.assertFalse(version.properties.isLocked, "The version is not locked")
+
+    @classmethod
+    def tearDownClass(cls):
+        for v in cls.vms.all:
+            if v.properties.versionName.lower().startswith("admin.api-"):
+                v.delete()
 
 
 if __name__ == "__main__":

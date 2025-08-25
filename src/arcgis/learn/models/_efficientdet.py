@@ -294,6 +294,7 @@ class EfficientDet(ArcGISModel):
         if not data_passed:
             efficientdet.learn.data.single_ds.classes = efficientdet._data.classes
             efficientdet.learn.data.single_ds.y.classes = efficientdet._data.classes
+        efficientdet._model_emd = emd
 
         return efficientdet
 

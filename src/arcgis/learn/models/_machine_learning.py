@@ -1028,12 +1028,12 @@ class MLModel(object):
         with open(model_file, "rb") as f:
             model = pickle.loads(f.read())
 
-        return cls(
-            data,
-            emd["ModelName"],
-            pretrained_model=model,
-            **model_parameters,
+        model_obj = cls(
+            data, emd["ModelName"], pretrained_model=model, **model_parameters
         )
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def _predict(self, data, group_data=None):
         if self._fairness and self.mitigation_method == "threshold_optimizer":

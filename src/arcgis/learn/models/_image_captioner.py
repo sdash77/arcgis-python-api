@@ -151,7 +151,10 @@ class ImageCaptioner(ArcGISModel):
             vocab_path = emd_path.parent / "vocab"
             data.vocab = Vocab.load(vocab_path)  # load vocab.
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def __str__(self):
         return self.__repr__()

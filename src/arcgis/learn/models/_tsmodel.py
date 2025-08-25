@@ -333,9 +333,10 @@ class TimeSeriesModel(ArcGISModel):
                 )
             class_object._data.emd = emd
             class_object._data.emd_path = emd_path
+            class_object._model_emd = emd
             return class_object
 
-        return cls(
+        class_object = cls(
             data,
             seq_len,
             model_arch=model_arch,
@@ -344,6 +345,9 @@ class TimeSeriesModel(ArcGISModel):
             multistep=multistep,
             **model_params,
         )
+        class_object._model_emd = emd
+
+        return class_object
 
     def save(
         self,

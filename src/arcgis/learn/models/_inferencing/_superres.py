@@ -160,19 +160,19 @@ class ChildImageClassifier:
             [
                 {
                     "name": "padding",
-                    "dataType": "numeric",
+                    "dataType": "GPLong",
                     "value": int(self.json_info["ImageHeight"]) // 4,
-                    "required": False,
+                    "required": True,
                     "displayName": "Padding",
-                    "description": "Padding",
+                    "description": "Number of pixels at the border of image tiles from which predictions are blended for adjacent tiles. Increase its value to smooth the output while reducing edge artifacts. The maximum value of the padding can be half of the tile size value.",
                 },
                 {
                     "name": "batch_size",
-                    "dataType": "numeric",
-                    "required": False,
+                    "dataType": "GPLong",
+                    "required": True,
                     "value": 4,
                     "displayName": "Batch Size",
-                    "description": "Batch Size",
+                    "description": "Number of image tiles processed in each step of the model inference. This depends on the memory of your graphic card.",
                 },
             ]
         )
@@ -182,36 +182,36 @@ class ChildImageClassifier:
                     [
                         {
                             "name": "sampling_type",
-                            "dataType": "string",
-                            "required": False,
-                            "domain": ("ddim", "ddpm"),
+                            "dataType": "GPString",
+                            "required": True,
                             "value": "ddim",
-                            "displayName": "Sampling_type",
+                            "domain": ["ddim", "ddpm"],
+                            "displayName": "Sampling Type",
                             "description": "Type of sampling",
                         },
                         {
                             "name": "schedule",
-                            "dataType": "string",
-                            "required": False,
-                            "domain": (
+                            "dataType": "GPString",
+                            "required": True,
+                            "domain": [
                                 "linear",
                                 "warmup10",
                                 "warmup50",
                                 "const",
                                 "jsd",
                                 "cosine",
-                            ),
+                            ],
                             "value": self.json_info["Kwargs"].get("schedule", "linear"),
-                            "displayName": "schedule",
+                            "displayName": "Schedule",
                             "description": "Type of scheduler",
                         },
                         {
                             "name": "n_timestep",
-                            "dataType": "numeric",
-                            "required": False,
+                            "dataType": "GPLong",
+                            "required": True,
                             "value": 200,
-                            "displayName": "n_timestep",
-                            "description": "Number of timesteps",
+                            "displayName": "Number of Time Steps",
+                            "description": "Number of time steps. Default: 200",
                         },
                     ]
                 )
