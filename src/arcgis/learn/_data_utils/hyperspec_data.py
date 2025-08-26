@@ -301,7 +301,7 @@ def predict_on_validation(net, window_size, max_min, r, t, batch_size=64):
 
     if isinstance(t, ArcGISMSImage):
         t = t.data
-    else:
+    elif isinstance(t, torch.Tensor):
         t = t.cpu().numpy()
 
     net.eval()

@@ -103,6 +103,8 @@ class Hyperspectral3DRCNet(ArcGISModel):
             )
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["Class_mapping"] = self._data.classes
+        _emd_template["ImageHeight"] = 256
+        _emd_template["ImageWidth"] = 256
         _emd_template["n_channels"] = self._data._n_channels
         _emd_template["window_size"] = self._data._window_size
         _emd_template["max_min"] = self._data._max_min
