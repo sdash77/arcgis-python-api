@@ -4163,6 +4163,13 @@ class GeoAccessor(object):
                     spatial_reference = {"wkid": spatial_reference}
                 elif isinstance(spatial_reference, str):
                     spatial_reference = {"wkt": spatial_reference}
+                elif isinstance(spatial_reference, _geometry.SpatialReference):
+                    if spatial_reference.get("wkid", None):
+                        spatial_reference = {
+                            "wkid": spatial_reference.get("wkid", None)
+                        }
+                    elif spatial_reference.get("wkt", None):
+                        spatial_reference = {"wkt": spatial_reference.get("wkt", None)}
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference,
