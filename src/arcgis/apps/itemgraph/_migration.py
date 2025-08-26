@@ -461,7 +461,7 @@ class _ImportPackage:
         added_items = []
 
         def _remap_json(json_text, remap_dict):
-            remap_dict.pop(None)  # remove None key if exists
+            remap_dict.pop(None, None)  # remove None key if exists
             if len(remap_dict) > 0:
                 json_text = json_text.replace("\\/", "/")
                 json_text = _text_replace(json_text, remap_dict)
@@ -586,6 +586,8 @@ class _ImportPackage:
                 except:
                     new_name = _get_unique_name(item_properties["title"])
                     new_name = new_name.replace("/", "_")
+                    if not self.gis._is_agol:
+                        new_name = new_name.replace("-", "_")
                     pub_params["name"] = new_name
                     new_item = service_item.publish(
                         publish_parameters=pub_params, item_id=new_item_id
