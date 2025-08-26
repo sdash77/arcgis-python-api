@@ -697,6 +697,8 @@ def pixel_classify_ts_image(model, tiles, device, model_info):
 
 def pixel_classify_hyperspectral_image(model, tiles, device, model_info):
     tiles = torch.tensor(tiles)  # torch.Size([4, 50, 256, 256])
+    _ = model_info.get("training_class_map", None)
+    training_class_map = {i - 1: j for i, j in _}
 
     y_preds = []
     for i in range(tiles.shape[0]):
@@ -710,6 +712,7 @@ def pixel_classify_hyperspectral_image(model, tiles, device, model_info):
             label,
         )
         cls_labels = get_classification_map(pred, label)
+        cls_labels = np.vectorize(training_class_map.get)(cls_labels)
         y_preds.append(cls_labels[None, None])
 
     y_preds = np.concatenate(y_preds, axis=0)

@@ -103,6 +103,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
             )
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["Class_mapping"] = self._data.classes
+        _emd_template["training_class_map"] = self._data._training_class_map
         _emd_template["ImageHeight"] = 256
         _emd_template["ImageWidth"] = 256
         _emd_template["n_channels"] = self._data._n_channels
@@ -162,6 +163,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
             data._class_map_dict = emd.get("Class_mapping", None)
             data._window_size = emd.get("window_size", None)
             data._num_classes = emd.get("num_classes", None)
+            data._training_class_map = emd.get("training_class_map", None)
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
@@ -200,7 +202,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
         **kwargs**
 
         """
-        show_results(self, rows=4, rgb_bands=[0, 1, 2], **kwargs)
+        show_results(self, rows, rgb_bands, **kwargs)
 
     def compute_metrics(self):
         """

@@ -51,7 +51,9 @@ def get_auto_workers():
         return 4
 
 
-def samples_extraction(path, window_size, max_num, min_num, workers=None):
+def samples_extraction(
+    path, window_size, max_num, min_num, training_class_map, workers=None
+):
     if workers is None:
         workers = get_auto_workers()  # auto decide
 
@@ -60,10 +62,17 @@ def samples_extraction(path, window_size, max_num, min_num, workers=None):
     images, labels = os.path.join(path, "images"), os.path.join(path, "labels")
 
     all_chips = [i for i in os.listdir(images) if i.endswith(".tif")]
+    training_class_map = {v: k for k, v in training_class_map.items()}
 
     for k in progress_bar(all_chips, comment="Processing chips and Extracting samples"):
         HSI_data = ArcGISMSImage.open(os.path.join(images, k)).data.numpy()
         HSI_gt = ArcGISMSImage.open(os.path.join(labels, k)).data.numpy()[0]
+
+        remapped = np.copy(HSI_gt)
+        for old_val, new_val in training_class_map.items():
+            remapped[HSI_gt == old_val] = new_val
+        HSI_gt = remapped
+
         HSI_data = np.transpose(HSI_data, (1, 2, 0))
         HSI_data = max_min_normalization(HSI_data, max_num, min_num)
         s = window_size
@@ -193,7 +202,9 @@ def create_train_val_sets(path, val_split_pct, **kwargs):
 
     if not save_dir.exists():
         save_dir.mkdir(parents=True, exist_ok=True)
-        samples_extraction(path, window_size, max_num, min_num)
+        samples_extraction(
+            path, window_size, max_num, min_num, kwargs["training_class_map"]
+        )
         samples_division_cv(save_dir / "data_list.txt", val_split_pct)
 
     data_list_train = save_dir / "data_list_train.txt"
@@ -424,6 +435,8 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
 
     ys_preds, ys_reals, xs_imgs = [], [], []
 
+    training_class_map = {j: i for i, j in self._data._training_class_map.items()}
+
     for i, (x, y) in enumerate(zip(xs, ys)):
         y_pred, y_new = predict_on_validation(
             self.learn.model, self._data._window_size, self._data._max_min, x, y
@@ -444,7 +457,6 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
 
     plt.subplots_adjust(top=top)
     fig.suptitle("Ground Truth / Predictions", fontsize=title_font_size)
-    inv_class_dict = {v: k for k, v in self._data.classes.items()}
 
     for k in range(rows):
         input_image = xs_imgs[k].data[rgb_bands].permute(1, 2, 0).cpu().numpy()
@@ -458,12 +470,10 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
                 (ys_preds[k][0].long(), "Prediction"),
             ]
         ):
-            ax = axs[k][col] if rows > 1 else axs[col]
+            if col == 0:
+                label_tensor = np.vectorize(training_class_map.get)(label_tensor)
 
-            lut = np.zeros(max(inv_class_dict.keys()) + 1, dtype=np.int32)
-            for old_val, new_val in inv_class_dict.items():
-                lut[old_val] = new_val
-            label_tensor = lut[label_tensor]
+            ax = axs[k][col] if rows > 1 else axs[col]
 
             overlay = color_array[label_tensor].cpu().numpy()
 
@@ -488,7 +498,8 @@ def prepare_hyperspec_data(
         emd_stats = json.load(f)
     kwargs["emd_stats"] = emd_stats
 
-    data.classes = dict(sorted(data.classes.items()))
+    training_class_map = {n + 1: i["Value"] for n, i in enumerate(emd_stats["Classes"])}
+    kwargs["training_class_map"] = training_class_map
 
     train_val_dataset, train_val_chips_dataset, max_num, min_num = (
         create_train_val_sets(path, val_split_pct, **kwargs)
@@ -530,6 +541,7 @@ def prepare_hyperspec_data(
         data.classes = original_classes
 
     data.classes = dict(sorted(data.classes.items()))
+    data._training_class_map = training_class_map
     data._num_classes = len([i for i in data.classes.values() if i != 0])
     data._dataset_type = "3DRCNet"
     data._n_channels = data.train_ds[0][0][0].shape[0]

@@ -434,25 +434,27 @@ def compute_mIoU(model, dataloader, num_classes):
     valid_data = dataloader.valid_dl
     total_inter = torch.zeros(num_classes, dtype=torch.float32)
     total_union = torch.zeros(num_classes, dtype=torch.float32)
+    training_class_map = {i - 1: j for i, j in dataloader._training_class_map.items()}
 
     for inputs, labels in valid_data:
         preds = model_predict(model, inputs)
 
         preds = preds.cpu()
         labels = labels.cpu()
+        preds = torch.tensor([training_class_map[int(i)] for i in preds.tolist()])
+        labels = torch.tensor([training_class_map[int(i)] for i in labels.tolist()])
 
         if labels.ndim == 4 and labels.shape[1] == 1:
             labels = labels.squeeze(1)
-
-        for cls in range(num_classes):
+        original_classes = [j for i, j in dataloader._training_class_map.items()]
+        for idx, cls in enumerate(original_classes):
             pred_inds = preds == cls
             label_inds = labels == cls
 
             intersection = (pred_inds & label_inds).sum().item()
             union = (pred_inds | label_inds).sum().item()
-
-            total_inter[cls] += intersection
-            total_union[cls] += union
+            total_inter[idx] += intersection
+            total_union[idx] += union
 
     iou_per_class = total_inter / (total_union + 1e-6)
 
