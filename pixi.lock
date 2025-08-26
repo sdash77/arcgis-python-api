@@ -207,10 +207,10 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/_openmp_mutex-5.1-1_gnu.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/linux-64/anyio-4.7.0-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/linux-64/aom-3.6.0-h6a678d5_0.tar.bz2
-      - conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_155.conda
-      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_666.conda
+      - conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_168.conda
+      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.33.0-py_743.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/argon2-cffi-bindings-21.2.0-py313h5eee18b_1.tar.bz2
       - conda: https://conda.anaconda.org/esri-build/linux-64/arrow-cpp-20.0.0-h83009cf_2.conda
@@ -322,7 +322,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_events-0.12.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server-2.16.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server_terminals-0.5.3-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_server-2.27.3-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_widgets-3.0.15-py313h06a4308_0.tar.bz2
@@ -508,7 +508,6 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/tiledb-2.3.3-h77177df_3.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tinycss2-1.4.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tk-8.6.14-h993c535_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/linux-64/tomli-2.2.1-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/toolz-1.0.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tornado-6.5.1-py313h5eee18b_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/traitlets-5.14.3-py313h06a4308_0.tar.bz2
@@ -599,11 +598,11 @@ environments:
       osx-64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/osx-64/anyio-4.7.0-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/osx-64/aom-3.6.0-hcec6c5f_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/appnope-0.1.4-py313hecd8cb5_0.tar.bz2
-      - conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_155.conda
-      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_666.conda
+      - conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_168.conda
+      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.33.0-py_743.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/argon2-cffi-bindings-21.2.0-py313h46256e1_1.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/arrow-cpp-19.0.0-hb704434_4.tar.bz2
@@ -708,7 +707,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_events-0.12.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server-2.16.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server_terminals-0.5.3-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_server-2.27.3-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_widgets-3.0.15-py313hecd8cb5_0.tar.bz2
@@ -854,7 +853,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/terminado-0.17.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tinycss2-1.4.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tk-8.6.14-h0a12a5f_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-64/tomli-2.2.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/toolz-1.0.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tornado-6.5.1-py313h46256e1_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/traitlets-5.14.3-py313hecd8cb5_0.tar.bz2
@@ -927,11 +925,11 @@ environments:
       osx-arm64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/anyio-4.7.0-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/aom-3.6.0-h313beb8_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/appnope-0.1.4-py313hca03da5_0.tar.bz2
-      - conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_155.conda
-      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_666.conda
+      - conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_168.conda
+      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.33.0-py_743.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/argon2-cffi-bindings-21.2.0-py313h80987f9_1.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/arrow-cpp-19.0.0-hf96bd71_4.tar.bz2
@@ -1036,7 +1034,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_events-0.12.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server-2.16.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server_terminals-0.5.3-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_server-2.27.3-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_widgets-3.0.15-py313hca03da5_0.tar.bz2
@@ -1182,7 +1180,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/terminado-0.17.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tinycss2-1.4.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tk-8.6.14-h6ba3021_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-arm64/tomli-2.2.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/toolz-1.0.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.5.1-py313h80987f9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/traitlets-5.14.3-py313hca03da5_0.tar.bz2
@@ -1255,10 +1252,10 @@ environments:
       win-64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/win-64/anyio-4.7.0-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/win-64/aom-3.12.1-h00a0c3c_0.tar.bz2
-      - conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_155.conda
-      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_666.conda
+      - conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_168.conda
+      - conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.33.0-py_743.conda
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/argon2-cffi-bindings-21.2.0-py313h827c3e9_1.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/arrow-cpp-19.0.0-h82e8c66_4.tar.bz2
@@ -1363,7 +1360,7 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/jupyter_events-0.12.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server-2.16.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server_terminals-0.5.3-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_server-2.27.3-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_widgets-3.0.15-py313haa95532_0.tar.bz2
@@ -1518,7 +1515,6 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/terminado-0.17.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tinycss2-1.4.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tk-8.6.14-h5e9d12e_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/win-64/tomli-2.2.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/toolz-1.0.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tornado-6.5.1-py313h827c3e9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/traitlets-5.14.3-py313haa95532_0.tar.bz2
@@ -1611,7 +1607,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/_openmp_mutex-5.1-1_gnu.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/linux-64/anyio-4.7.0-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/linux-64/aom-3.6.0-h6a678d5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/argon2-cffi-bindings-21.2.0-py313h5eee18b_1.tar.bz2
@@ -1724,7 +1720,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_events-0.12.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server-2.16.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server_terminals-0.5.3-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_server-2.27.3-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_widgets-3.0.15-py313h06a4308_0.tar.bz2
@@ -1910,7 +1906,6 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/tiledb-2.3.3-h77177df_3.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tinycss2-1.4.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tk-8.6.14-h993c535_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/linux-64/tomli-2.2.1-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/toolz-1.0.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tornado-6.5.1-py313h5eee18b_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/traitlets-5.14.3-py313h06a4308_0.tar.bz2
@@ -2001,7 +1996,7 @@ environments:
       osx-64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/osx-64/anyio-4.7.0-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/osx-64/aom-3.6.0-hcec6c5f_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/appnope-0.1.4-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
@@ -2108,7 +2103,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_events-0.12.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server-2.16.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server_terminals-0.5.3-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_server-2.27.3-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_widgets-3.0.15-py313hecd8cb5_0.tar.bz2
@@ -2254,7 +2249,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/terminado-0.17.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tinycss2-1.4.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tk-8.6.14-h0a12a5f_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-64/tomli-2.2.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/toolz-1.0.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tornado-6.5.1-py313h46256e1_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/traitlets-5.14.3-py313hecd8cb5_0.tar.bz2
@@ -2327,7 +2321,7 @@ environments:
       osx-arm64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/anyio-4.7.0-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/aom-3.6.0-h313beb8_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/appnope-0.1.4-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
@@ -2434,7 +2428,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_events-0.12.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server-2.16.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server_terminals-0.5.3-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_server-2.27.3-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_widgets-3.0.15-py313hca03da5_0.tar.bz2
@@ -2580,7 +2574,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/terminado-0.17.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tinycss2-1.4.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tk-8.6.14-h6ba3021_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-arm64/tomli-2.2.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/toolz-1.0.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.5.1-py313h80987f9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/traitlets-5.14.3-py313hca03da5_0.tar.bz2
@@ -2653,7 +2646,7 @@ environments:
       win-64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/win-64/anyio-4.7.0-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/win-64/aom-3.12.1-h00a0c3c_0.tar.bz2
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/argon2-cffi-bindings-21.2.0-py313h827c3e9_1.tar.bz2
@@ -2759,7 +2752,7 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/jupyter_events-0.12.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server-2.16.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server_terminals-0.5.3-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_server-2.27.3-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_widgets-3.0.15-py313haa95532_0.tar.bz2
@@ -2914,7 +2907,6 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/terminado-0.17.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tinycss2-1.4.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tk-8.6.14-h5e9d12e_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/win-64/tomli-2.2.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/toolz-1.0.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tornado-6.5.1-py313h827c3e9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/traitlets-5.14.3-py313haa95532_0.tar.bz2
@@ -3009,7 +3001,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/alsa-lib-1.2.14-h5eee18b_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.10.0-pyhe01879c_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/anywidget-0.9.13-pyhd8ed1ab_2.conda
+      - conda: https://conda.anaconda.org/main/linux-64/anywidget-0.9.18-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.9.1-hac33072_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/argon2-cffi-bindings-25.1.0-py313h07c4f96_0.conda
@@ -3144,7 +3136,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.12.0-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server-2.16.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server_terminals-0.5.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
@@ -3370,7 +3362,6 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/timm-0.4.12-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_hd72426e_102.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.22.0-cpu_py313_hf8de91a_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-extra-decoders-0.0.2-py313hf1e760e_3.conda
@@ -3458,7 +3449,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.10.0-pyhe01879c_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/anywidget-0.9.13-pyhd8ed1ab_2.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/aom-3.9.1-hf036a51_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/appnope-0.1.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
@@ -3579,7 +3570,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.12.0-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server-2.16.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server_terminals-0.5.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
@@ -3781,7 +3772,6 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/timm-0.4.12-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/tk-8.6.13-hf689a15_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/torchvision-0.22.0-cpu_py313_h4b2a12b_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/torchvision-extra-decoders-0.0.2-py313h3093996_3.conda
@@ -3801,6 +3791,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/uri-template-1.3.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/uriparser-0.9.8-h60e8073_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/urllib3-2.5.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/watchfiles-1.1.0-py313h3c055b9_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.2.13-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/webcolors-24.11.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/webencodings-0.5.1-pyhd8ed1ab_3.conda
@@ -3847,7 +3838,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.10.0-pyhe01879c_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/anywidget-0.9.13-pyhd8ed1ab_2.conda
+      - conda: https://conda.anaconda.org/main/osx-arm64/anywidget-0.9.18-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/aom-3.9.1-h7bae524_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/appnope-0.1.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
@@ -3970,7 +3961,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.12.0-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server-2.16.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server_terminals-0.5.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
@@ -4175,7 +4166,6 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/timm-0.4.12-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tk-8.6.13-h892fb3f_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/torchvision-0.22.0-cpu_py313_h49053cb_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/torchvision-extra-decoders-0.0.2-py313hc37fbc8_3.conda
@@ -4242,7 +4232,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.10.0-pyhe01879c_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/anywidget-0.9.13-pyhd8ed1ab_2.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/argon2-cffi-bindings-25.1.0-py313h5ea7bf4_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/arrow-1.3.0-pyhd8ed1ab_1.conda
@@ -4362,7 +4352,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.12.0-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server-2.16.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_server_terminals-0.5.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
@@ -4554,7 +4544,6 @@ environments:
       - conda: https://conda.anaconda.org/esri/noarch/timm-0.4.12-py_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tk-8.6.13-h2c6b04d_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/torchvision-0.22.0-cpu_py313_h5cf2b77_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tornado-6.5.2-py313h5ea7bf4_0.conda
@@ -4578,6 +4567,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.44.35208-h818238b_31.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vcomp14-14.44.35208-h818238b_31.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.44.35208-h38c0c73_31.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/watchfiles-1.1.0-py313hf3b5b86_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.2.13-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/webcolors-24.11.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/webencodings-0.5.1-pyhd8ed1ab_3.conda
@@ -4637,7 +4627,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/_openmp_mutex-5.1-1_gnu.tar.bz2
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/linux-64/anyio-4.7.0-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/linux-64/aom-3.6.0-h6a678d5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/argon2-cffi-bindings-21.2.0-py313h5eee18b_1.tar.bz2
@@ -4750,7 +4740,7 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_events-0.12.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server-2.16.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyter_server_terminals-0.5.3-py313h06a4308_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_server-2.27.3-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/jupyterlab_widgets-3.0.15-py313h06a4308_0.tar.bz2
@@ -4938,7 +4928,6 @@ environments:
       - conda: https://conda.anaconda.org/main/linux-64/tiledb-2.3.3-h77177df_3.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tinycss2-1.4.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tk-8.6.14-h993c535_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/linux-64/tomli-2.2.1-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/toolz-1.0.0-py313h06a4308_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/tornado-6.5.1-py313h5eee18b_0.tar.bz2
       - conda: https://conda.anaconda.org/main/linux-64/traitlets-5.14.3-py313h06a4308_0.tar.bz2
@@ -5029,7 +5018,7 @@ environments:
       osx-64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/osx-64/anyio-4.7.0-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/osx-64/aom-3.6.0-hcec6c5f_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/appnope-0.1.4-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
@@ -5136,7 +5125,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_events-0.12.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server-2.16.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyter_server_terminals-0.5.3-py313hecd8cb5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_server-2.27.3-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/jupyterlab_widgets-3.0.15-py313hecd8cb5_0.tar.bz2
@@ -5284,7 +5273,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-64/terminado-0.17.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tinycss2-1.4.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tk-8.6.14-h0a12a5f_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-64/tomli-2.2.1-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/toolz-1.0.0-py313hecd8cb5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/tornado-6.5.1-py313h46256e1_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-64/traitlets-5.14.3-py313hecd8cb5_0.tar.bz2
@@ -5357,7 +5345,7 @@ environments:
       osx-arm64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/anyio-4.7.0-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/aom-3.6.0-h313beb8_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/appnope-0.1.4-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
@@ -5464,7 +5452,7 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_events-0.12.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server-2.16.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyter_server_terminals-0.5.3-py313hca03da5_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_server-2.27.3-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/jupyterlab_widgets-3.0.15-py313hca03da5_0.tar.bz2
@@ -5612,7 +5600,6 @@ environments:
       - conda: https://conda.anaconda.org/main/osx-arm64/terminado-0.17.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tinycss2-1.4.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tk-8.6.14-h6ba3021_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/osx-arm64/tomli-2.2.1-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/toolz-1.0.0-py313hca03da5_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/tornado-6.5.1-py313h80987f9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/osx-arm64/traitlets-5.14.3-py313hca03da5_0.tar.bz2
@@ -5685,7 +5672,7 @@ environments:
       win-64:
       - conda: https://conda.anaconda.org/esri/noarch/annotated-types-0.6.0-py_2.conda
       - conda: https://conda.anaconda.org/main/win-64/anyio-4.7.0-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
       - conda: https://conda.anaconda.org/main/win-64/aom-3.12.1-h00a0c3c_0.tar.bz2
       - conda: https://conda.anaconda.org/main/noarch/argon2-cffi-21.3.0-pyhd3eb1b0_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/argon2-cffi-bindings-21.2.0-py313h827c3e9_1.tar.bz2
@@ -5791,7 +5778,7 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/jupyter_events-0.12.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server-2.16.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyter_server_terminals-0.5.3-py313haa95532_0.tar.bz2
-      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
+      - conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
       - conda: https://conda.anaconda.org/esri/noarch/jupyterlab_pygments-0.3.0-py_1.conda
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_server-2.27.3-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/jupyterlab_widgets-3.0.15-py313haa95532_0.tar.bz2
@@ -5947,7 +5934,6 @@ environments:
       - conda: https://conda.anaconda.org/main/win-64/terminado-0.17.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tinycss2-1.4.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tk-8.6.14-h5e9d12e_1.tar.bz2
-      - conda: https://conda.anaconda.org/main/win-64/tomli-2.2.1-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/toolz-1.0.0-py313haa95532_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/tornado-6.5.1-py313h827c3e9_0.tar.bz2
       - conda: https://conda.anaconda.org/main/win-64/traitlets-5.14.3-py313haa95532_0.tar.bz2
@@ -6219,32 +6205,44 @@ packages:
   license_family: MIT
   size: 255139
   timestamp: 1745334737805
-- conda: https://conda.anaconda.org/conda-forge/noarch/anywidget-0.9.13-pyhd8ed1ab_2.conda
-  sha256: bfc4d58b997dd6e8894743384b601e910299b919a6b8aaa63ae60b8470ff4c7c
-  md5: 654a598a86c17d73fc186f4d78b8d389
+- conda: https://conda.anaconda.org/esri-build/noarch/anywidget-0.9.18-py_0.conda
+  sha256: 5655268bbaa7fc284ea7b304d4a9758dc0f00f6aa731652bd0fb938ebfdcad05
+  md5: 6848d7f52b03d7c17e637d5bb9263057
   depends:
   - ipywidgets >=7.6.0
   - psygnal >=0.8.1
-  - python >=3.9
+  - python >=3.10
+  - typing_extensions >=4.2.0
+  - watchfiles
+  license: MIT
+  size: 67479
+  timestamp: 1750783978887
+- conda: https://conda.anaconda.org/main/linux-64/anywidget-0.9.18-py313h06a4308_0.tar.bz2
+  sha256: 6284199779b9b5c5657f013bdcd64515edc2f04cbc6dbf462b281c231ed5b083
+  md5: 87ee7f29af09d72ce294eeaa496f4888
+  depends:
+  - ipywidgets >=7.6.0
+  - psygnal >=0.8.1
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
   - typing_extensions >=4.2.0
   license: MIT
   license_family: MIT
-  purls:
-  - pkg:pypi/anywidget?source=hash-mapping
-  size: 65705
-  timestamp: 1737647226588
-- conda: https://conda.anaconda.org/esri/noarch/anywidget-0.9.13-py_1.conda
-  sha256: 574815ffa25d89b4f06dff5af26b7eca57577f251a52bc35e29d8f58dae6d57a
-  md5: fed249f8f17911887610da6421d4efa0
+  size: 109507
+  timestamp: 1742928134705
+- conda: https://conda.anaconda.org/main/osx-arm64/anywidget-0.9.18-py313hca03da5_0.tar.bz2
+  sha256: dc5284cac3d46447f297bbd2626c5b45c92b63ba48eff931ecfb1c56623dc108
+  md5: 1536aef856324212c1f6f432b01a218f
   depends:
-  - ipywidgets
-  - psygnal
-  - python >=3.7
-  - typing_extensions
-  - watchfiles
+  - ipywidgets >=7.6.0
+  - psygnal >=0.8.1
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - typing_extensions >=4.2.0
   license: MIT
-  size: 64993
-  timestamp: 1720630751543
+  license_family: MIT
+  size: 112275
+  timestamp: 1742928273737
 - conda: https://conda.anaconda.org/conda-forge/linux-64/aom-3.9.1-hac33072_0.conda
   sha256: b08ef033817b5f9f76ce62dfcac7694e7b6b4006420372de22494503decac855
   md5: 346722a0be40f6edc53f12640d301338
@@ -6348,9 +6346,9 @@ packages:
   license_family: BSD
   size: 15248
   timestamp: 1750774994951
-- conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_155.conda
-  sha256: bc6e2cd929355a199a5693408488d299af8b9dab709185338dd46e0ae938b435
-  md5: 709dbec6ef71a91655573fa7d0dc9418
+- conda: https://esri-forge.python.geocloud.com/linux-64/arcgis-2.4.2-py313_168.conda
+  sha256: 21dd3cec3b02160bd1359523356924d2731260b5fc753aa98905b3ce1ca2a217
+  md5: fb71fc4112243722ab25e42fbcc7246b
   depends:
   - cachetools
   - certifi
@@ -6382,11 +6380,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 7720680
-  timestamp: 1755087061176
-- conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_155.conda
-  sha256: 636687a1a8dd0b012479fc8f7125d63b9361edc060cf18d0a4caef155bbc70e6
-  md5: ed26e1818c46c7961c7245e1294c1b2b
+  size: 7672442
+  timestamp: 1755864632253
+- conda: https://esri-forge.python.geocloud.com/osx-64/arcgis-2.4.2-py313_168.conda
+  sha256: 55a13f74f4ddd1746906fb9e8e90eca5f8a93b466f6457d90d35db0cce84cc38
+  md5: d27722a961afdfb3f9d18ccfd276399b
   depends:
   - cachetools
   - certifi
@@ -6418,11 +6416,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 6775736
-  timestamp: 1755087075525
-- conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_155.conda
-  sha256: 8398a713c7082c122b3c046f54f0131a86dcfcaee581d24896e6d2a56919b83a
-  md5: 2e7911cbb1b83004ab300b920eab14dc
+  size: 6789351
+  timestamp: 1755864641203
+- conda: https://esri-forge.python.geocloud.com/osx-arm64/arcgis-2.4.2-py313_168.conda
+  sha256: 03f01751e34bfbf6ae1ec5ded3cd32f1eeb349a12b92e545f3f436c03d1c55ae
+  md5: 8fb95626e6b691c60d95aa4a89c833d5
   depends:
   - cachetools
   - certifi
@@ -6454,11 +6452,11 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 7702026
-  timestamp: 1755087075525
-- conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_155.conda
-  sha256: 3b5c69d4d025e1ed0874a915a1d959ee3b48e3f17a9a29ecf937920eb9a8916c
-  md5: d00cb86923f9d531e5e55d1e82dc9566
+  size: 7658792
+  timestamp: 1755864641203
+- conda: https://esri-forge.python.geocloud.com/win-64/arcgis-2.4.2-py313_168.conda
+  sha256: 7620154d0059e257ee3378167c2fc0ac9923f3e9eb5c4ad93ebb309f6bd1fc1b
+  md5: 848346f6470f38f75cb6dec0ff60c193
   depends:
   - cachetools
   - certifi
@@ -6491,23 +6489,23 @@ packages:
   - urllib3 >=2.1.0,<3
   - websocket-client >=1.2.3,<2.0.0
   license: Esri Master License Agreement (MLA)
-  size: 7620197
-  timestamp: 1755087345204
-- conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.32.0-py_666.conda
-  sha256: f25d6bf590666bf83d53a21b401a5eb65c92f84dd49b5a75b27be789e4d2f119
-  md5: 94c41b4283fc9f65ca61f087f37ec3ab
+  size: 7670337
+  timestamp: 1755864877679
+- conda: https://esri-forge.python.geocloud.com/noarch/arcgis-mapping-4.33.0-py_743.conda
+  sha256: f9eb7623e15328ddbfb5d37258a07673f28dfea75a1fa1df0b135060d866af47
+  md5: 1f46386c425c325c15aef1ab578cae4d
   depends:
-  - anywidget 0.9.13.*
+  - anywidget 0.9.18.*
   - arcgis >=2.4.0,<2.5.0
   - ipywidgets >=8.0.0
-  - jupyterlab >=4.0.7,<5
+  - jupyterlab >=4.0.7,!=4.4.*,<5
   - matplotlib-inline
   - pandas >=2.0.0,<2.4.0
   - pydantic >=2.8.2,<3
   - python >=3.10,<3.14
   license: Esri Master License Agreement (MLA)
-  size: 6351994
-  timestamp: 1751196041565
+  size: 6453626
+  timestamp: 1755861652600
 - conda: https://conda.anaconda.org/conda-forge/noarch/argon2-cffi-25.1.0-pyhd8ed1ab_0.conda
   sha256: bea62005badcb98b1ae1796ec5d70ea0fc9539e7d59708ac4e7d41e2f4bb0bad
   md5: 8ac12aff0860280ee0cff7fa2cf63f3b
@@ -15155,9 +15153,9 @@ packages:
   license_family: BSD
   size: 29369
   timestamp: 1744706973685
-- conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.4.5-py_0.conda
-  sha256: f04c3ea921432794369760f259295eb23d58047ca6fb55b52718c62d5ac58324
-  md5: 7835e5012f167975629398c0836f3e7d
+- conda: https://conda.anaconda.org/esri-build/noarch/jupyterlab-4.3.8-py_1.conda
+  sha256: 222fbebc52e013d52047a879fb6da79d8fb5cc2cc394154184c3e710fba55c20
+  md5: 59a3aea092949790917111926cf31f87
   depends:
   - async-lru >=1.0.0
   - httpx >=0.25.0
@@ -15172,13 +15170,12 @@ packages:
   - notebook-shim >=0.2
   - packaging
   - python >=3.8
-  - tomli
   - tornado >=6.2.0
   - traitlets
   license: BSD-3-Clause
   license_family: BSD
-  size: 8426945
-  timestamp: 1754685605575
+  size: 7953628
+  timestamp: 1755807940648
 - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_pygments-0.3.0-pyhd8ed1ab_2.conda
   sha256: dc24b900742fdaf1e077d9a3458fd865711de80bca95fe3c6d46610c532c6ef0
   md5: fd312693df06da3578383232528c468d
@@ -31418,58 +31415,6 @@ packages:
   license_family: BSD
   size: 3864026
   timestamp: 1748849710660
-- conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.2.1-pyhe01879c_2.conda
-  sha256: 040a5a05c487647c089ad5e05ad5aff5942830db2a4e656f1e300d73436436f1
-  md5: 30a0a26c8abccf4b7991d590fe17c699
-  depends:
-  - python >=3.9
-  - python
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/tomli?source=compressed-mapping
-  size: 21238
-  timestamp: 1753796677376
-- conda: https://conda.anaconda.org/main/linux-64/tomli-2.2.1-py313h06a4308_0.tar.bz2
-  sha256: 279b9ff1a74294743266dade55d70205e74346b4036154464f641f604e06e64a
-  md5: 6802c91593340e203227a9d3e29345f4
-  depends:
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 35328
-  timestamp: 1753774637585
-- conda: https://conda.anaconda.org/main/osx-64/tomli-2.2.1-py313hecd8cb5_0.tar.bz2
-  sha256: 92d28dc49a8867561e30a63be949929a78e1730fffe912ebd593e59aef799824
-  md5: 829bc297dc29600c85bd5aa490cbb419
-  depends:
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 36525
-  timestamp: 1753774638506
-- conda: https://conda.anaconda.org/main/osx-arm64/tomli-2.2.1-py313hca03da5_0.tar.bz2
-  sha256: 035c1659c6cfe70b18da67194b17e31426ba16b1601b8d975aacab6b2f62c2c8
-  md5: e7de25ba9fac537bb812bfb8e8e56fb4
-  depends:
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 36546
-  timestamp: 1753774746500
-- conda: https://conda.anaconda.org/main/win-64/tomli-2.2.1-py313haa95532_0.tar.bz2
-  sha256: 4844ca914ed99eda26dc28164d29c81d260f73768033259efdc678c4abc12f10
-  md5: f7399baee774560534f34e7bebd4eb01
-  depends:
-  - python >=3.13,<3.14.0a0
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 36397
-  timestamp: 1753774937493
 - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.0.0-pyhd8ed1ab_1.conda
   sha256: eda38f423c33c2eaeca49ed946a8d3bf466cc3364970e083a65eb2fd85258d87
   md5: 40d0ed782a8aaa16ef248e68c06c168d
@@ -32562,6 +32507,38 @@ packages:
   license_family: BSD
   size: 19128
   timestamp: 1752199762272
+- conda: https://conda.anaconda.org/conda-forge/osx-64/watchfiles-1.1.0-py313h3c055b9_0.conda
+  sha256: 118319c4b1f4bc9a2104c61e9b15b439e694ea82b619cafa89355452c18f6fd7
+  md5: 031f7426f9be8759d646c3cec4f30352
+  depends:
+  - __osx >=10.13
+  - anyio >=3.0.0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - __osx >=10.13
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/watchfiles?source=hash-mapping
+  size: 377217
+  timestamp: 1750054226372
+- conda: https://conda.anaconda.org/conda-forge/win-64/watchfiles-1.1.0-py313hf3b5b86_0.conda
+  sha256: dbe6ad52cae1b30c4147a4c97e7f0bdb7cf5bfc08bb8e8cf2301b4aa6956ee12
+  md5: c525096add47054427ea3a7ce8b30ffe
+  depends:
+  - anyio >=3.0.0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - ucrt >=10.0.20348.0
+  - vc >=14.2,<15
+  - vc14_runtime >=14.29.30139
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/watchfiles?source=hash-mapping
+  size: 308441
+  timestamp: 1750054555332
 - conda: https://conda.anaconda.org/main/linux-64/watchfiles-0.24.0-py313h4aa5aa6_2.tar.bz2
   sha256: 63cf88869d10f656c064cebc8005c73d1ec0f5f87dcf35486164b727cac982e9
   md5: 7e9104e63fc819aa2d330547b1f6b3c2
