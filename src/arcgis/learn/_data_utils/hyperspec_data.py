@@ -12,6 +12,8 @@ from collections import defaultdict
 from torch.utils.data import DataLoader
 import torch
 import json
+import os
+import multiprocessing
 from .._utils.cyclegan import image_extensions
 from .pix2pix_data import get_files, get_device
 from fastprogress.fastprogress import progress_bar
@@ -38,39 +40,52 @@ def padding(data, window_size):
     return pad_data
 
 
-def samples_extraction(path, window_size, max_num, min_num):
-    window_size = window_size
+def get_auto_workers():
+    try:
+        # Total logical CPUs
+        cpu_count = os.cpu_count() or multiprocessing.cpu_count()
+        # Leave some cores free for OS (e.g., 25%)
+        workers = max(1, cpu_count - max(1, cpu_count // 4))
+        return workers
+    except:
+        return 4
+
+
+def samples_extraction(path, window_size, max_num, min_num, workers=None):
+    if workers is None:
+        workers = get_auto_workers()  # auto decide
+
     save_dir = os.path.join(path, "DATA")
+    os.makedirs(save_dir, exist_ok=True)
     images, labels = os.path.join(path, "images"), os.path.join(path, "labels")
 
     all_chips = [i for i in os.listdir(images) if i.endswith(".tif")]
 
     for k in progress_bar(all_chips, comment="Processing chips and Extracting samples"):
-        HSI_data, HSI_gt = (
-            ArcGISMSImage.open(os.path.join(images, k)).data.numpy(),
-            ArcGISMSImage.open(os.path.join(labels, k)).data.numpy()[0],
-        )
+        HSI_data = ArcGISMSImage.open(os.path.join(images, k)).data.numpy()
+        HSI_gt = ArcGISMSImage.open(os.path.join(labels, k)).data.numpy()[0]
         HSI_data = np.transpose(HSI_data, (1, 2, 0))
         HSI_data = max_min_normalization(HSI_data, max_num, min_num)
         s = window_size
         HSI_data = padding(HSI_data, s)
 
-        [m, n] = HSI_gt.shape
+        coords = np.argwhere(HSI_gt > 0)
+        labels_vec = HSI_gt[HSI_gt > 0]
 
-        for i in range(m):
-            for j in range(n):
-                if HSI_gt[i, j] > 0:
-                    label = HSI_gt[i, j]
-                    data = HSI_data[i : i + s, j : j + s, :].transpose([2, 0, 1])[
-                        np.newaxis
-                    ]
-                    save_name = os.path.join(
-                        save_dir, "samples_{}_{}_{}.npy".format(k[:-4], i + 1, j + 1)
-                    )
-                    np.save(save_name, data)
-                    data_list_path = os.path.join(save_dir, "data_list.txt")
-                    with open(data_list_path, "a") as f:
-                        f.write(save_name + " {}\n".format(int(label)))
+        save_tasks, lines = [], []
+        for (i, j), label in zip(coords, labels_vec):
+            patch = HSI_data[i : i + s, j : j + s, :].transpose(2, 0, 1)[np.newaxis]
+            save_name = os.path.join(save_dir, f"samples_{k[:-4]}_{i+1}_{j+1}.npy")
+            save_tasks.append((save_name, patch))
+            lines.append(f"{save_name} {int(label)}\n")
+
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            executor.map(lambda x: np.save(*x), save_tasks)
+        data_list_path = os.path.join(save_dir, "data_list.txt")
+        with open(data_list_path, "a") as f:
+            f.writelines(lines)
 
 
 def samples_division_cv(list_dir, val_split_pct):
@@ -272,6 +287,7 @@ def show_batch(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
     # Plotting
     fig, axs = plt.subplots(nrows=rows, ncols=ncols, figsize=(ncols * 5, rows * 5))
     axs = axs.flatten() if n_images > 1 else [axs]
+    inv_class_dict = {v: k for k, v in self.classes.items()}
 
     for i in range(len(axs)):
         ax = axs[i]
@@ -283,6 +299,12 @@ def show_batch(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
             ax.imshow(img_np)
 
             label_mask = y_batch[i][0].long().to(color_array.device)
+
+            lut = np.zeros(max(inv_class_dict.keys()) + 1, dtype=np.int32)
+            for old_val, new_val in inv_class_dict.items():
+                lut[old_val] = new_val
+            label_mask = lut[label_mask]
+
             label_rgb = color_array[label_mask].cpu().numpy()
             ax.imshow(label_rgb, alpha=alpha)
         else:
@@ -422,6 +444,7 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
 
     plt.subplots_adjust(top=top)
     fig.suptitle("Ground Truth / Predictions", fontsize=title_font_size)
+    inv_class_dict = {v: k for k, v in self._data.classes.items()}
 
     for k in range(rows):
         input_image = xs_imgs[k].data[rgb_bands].permute(1, 2, 0).cpu().numpy()
@@ -436,7 +459,13 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
             ]
         ):
             ax = axs[k][col] if rows > 1 else axs[col]
-            overlay = color_array[label_tensor.to(color_array.device)].cpu().numpy()
+
+            lut = np.zeros(max(inv_class_dict.keys()) + 1, dtype=np.int32)
+            for old_val, new_val in inv_class_dict.items():
+                lut[old_val] = new_val
+            label_tensor = lut[label_tensor]
+
+            overlay = color_array[label_tensor].cpu().numpy()
 
             ax.imshow(input_image)  # Show input RGB image
             ax.imshow(overlay, alpha=alpha)  # Overlay label map
@@ -458,6 +487,8 @@ def prepare_hyperspec_data(
     with open(emd_path) as f:
         emd_stats = json.load(f)
     kwargs["emd_stats"] = emd_stats
+
+    data.classes = dict(sorted(data.classes.items()))
 
     train_val_dataset, train_val_chips_dataset, max_num, min_num = (
         create_train_val_sets(path, val_split_pct, **kwargs)
