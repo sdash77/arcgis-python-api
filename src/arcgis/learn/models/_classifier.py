@@ -525,9 +525,6 @@ class FeatureClassifier(ArcGISModel):
         """
         from .._utils.image_classification import IC_show_results
 
-        # if self._is_multispectral and gradcam:
-        #     raise Exception("This feature is not supported for multispectral datasets.")
-
         return_fig = kwargs.get("return_fig", False)
         fig = IC_show_results(self, nrows=rows, gradcam_show_result=gradcam, **kwargs)
         if return_fig:

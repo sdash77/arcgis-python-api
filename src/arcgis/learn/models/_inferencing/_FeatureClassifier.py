@@ -73,8 +73,8 @@ class ChildObjectDetector:
         ):
             required_parameters.append(
                 {
-                    "name": "score_threshold",
-                    "dataType": "numeric",
+                    "name": "threshold",
+                    "dataType": "GPDouble",
                     "value": 0.5,
                     "required": False,
                     "displayName": "Confidence Score Threshold [0.0, 1.0]",
@@ -117,9 +117,7 @@ class ChildObjectDetector:
         else:
             self.batch_size = int(self.emd["BatchSize"])
 
-        self.thresh = float(
-            scalars.get("score_threshold", 0.5)
-        )  # Default 0.5 threshold
+        self.thresh = float(scalars.get("threshold", 0.5))  # Default 0.5 threshold
 
         self.use_tta = scalars.get("test_time_augmentation", "false").lower() in [
             "true",
@@ -187,8 +185,6 @@ class ChildObjectDetector:
         return torch.stack(tta_pred_combined).mean(0)
 
     def vectorize(self, **pixelBlocks):
-        import torch
-
         # Get pixel blocks - tuple of 3-d rasters: ([bands,height,width],[bands,height.width],...)
         # Convert tuple to 4-d numpy array
         batch_images = np.asarray(pixelBlocks["rasters_pixels"])
@@ -216,7 +212,7 @@ class ChildObjectDetector:
             predictions = self.tta_predict(batch_images)
             # predictions: torch.tensor(B,C), where B is the batch size and C is the number of classe
         else:
-            # ##Convert to torch tensor, set device and convert to float
+            # Convert to torch tensor, set device and convert to float
             batch_images = torch.tensor(batch_images).to(self.device).float()
 
             # the second element in the passed tuple is hardcoded to make fastai's pred_batch work
@@ -440,10 +436,8 @@ class ChildObjectDetector:
                     grad_values.append(blob_string)
 
                 return rings, confidences, labels, grad_values
-            except Exception as e:
-                raise Exception(e)
+            except:
                 # returning the empty grad_values
-
                 return rings, confidences, labels, grad_values
 
         else:

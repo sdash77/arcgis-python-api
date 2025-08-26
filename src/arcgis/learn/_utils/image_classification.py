@@ -85,9 +85,7 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
     # Get Batch
     n_items = min(nrows, len(data_loader.x))
     nbatches = math.ceil(n_items / self._data.batch_size)
-    # print(data_loader)
     x_batch, y_batch = get_nbatches(data_loader, nbatches)
-    # print(x_batch)
     x_batch = torch.cat(x_batch)
     y_batch = torch.cat(y_batch)
     x_batch_copy = x_batch.clone()
@@ -219,10 +217,6 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
     dataloader_image_path = [item for item in self._data.valid_dl.items]
     idx = 0
     for r in range(n_items):
-
-        # raise Exception("stop at 237")
-        # print(batch_preds)
-
         if n_items == 1:
             ax_i = axs
         else:
@@ -243,8 +237,7 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
 
             else:
                 pred = (None, torch.tensor(class_idxs[idx]), batch_preds[idx])  # cl =
-            # im = open_image(dataloader_image_path[r])
-            # pred = self.learn.predict(im)
+
             # multi_all_cam setting it to True will return gradcam zero for the class not predicted
             grad_cam_outputs, _, xb, _ = self._generate_grad_cam(
                 im, pred, self._data.dataset_type, multi_all_cam=True
