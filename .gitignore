@@ -94,3 +94,11 @@ tests/.coverage*
 # pixi environments
 .pixi
 *.egg-info
+
+# performance test results
+/tests/performance/results
+
+# TestRail reporting
+/tests/testrail_reporting/
+!/tests/testrail_reporting/*.py
+!/tests/testrail_reporting/*.json
