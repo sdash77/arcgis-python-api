@@ -126,11 +126,11 @@ class Mission:
                 if prod_type in dataprod_mapping
                 else prod_type
             )
+            self._prod_to_id_map[prod_type] = product["id"]
             try:
                 mission_products[prod_type] = Item(
                     self._gis, product["arcgisItem"]["itemId"]
                 )
-                self._prod_to_id_map[prod_type] = product["id"]
             except:
                 _LOGGER.warning(
                     f"Failed to create item for product {product['name']}"
@@ -1127,6 +1127,7 @@ class Mission:
         products = self.products
         if "ortho" in products:
             out_ortho = products["ortho"]
+        if "ortho" in self._prod_to_id_map:
             context["dataproduct_id"] = self._prod_to_id_map["ortho"]
 
         context["mission"] = self.mission_id
