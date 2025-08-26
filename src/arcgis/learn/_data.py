@@ -1635,7 +1635,7 @@ def prepare_data(
                     emdstats = json.load(f)
                 if emdstats.get("IsMultidimensional", False):
                     dataset_type = "PSETAE"
-            if dataset_type == "Export_Tiles":
+            if dataset_type == "Classified_Tiles":
                 il = ArcGISImageList.from_folder(os.path.join(path, "images"))
                 if il[0].shape[0] > 15:
                     dataset_type = "3DRCNet"
