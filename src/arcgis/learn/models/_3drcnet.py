@@ -179,7 +179,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
 
     @staticmethod
     def _supported_datasets():
-        return ["Export_Tiles"]
+        return ["Classified_Tiles"]
 
     def show_results(self, rows=4, rgb_bands=[0, 1, 2], **kwargs):
         """
