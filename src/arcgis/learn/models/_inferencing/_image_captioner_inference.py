@@ -62,19 +62,19 @@ class ChildObjectDetector:
             [
                 {
                     "name": "beam_width",
-                    "dataType": "numeric",
+                    "dataType": "GPLong",
                     "value": 5,
-                    "required": False,
-                    "displayName": "The number of captions to consider.",
-                    "description": "The number of captions to consider.",
+                    "required": True,
+                    "displayName": "Beam Width",
+                    "description": "The size of beam to be used during beam search decoding. Default is 5.",
                 },
                 {
                     "name": "max_length",
-                    "dataType": "numeric",
+                    "dataType": "GPLong",
                     "value": 20,
-                    "required": False,
-                    "displayName": "Maximum length of the caption.",
-                    "description": "Maximum length of the caption.",
+                    "required": True,
+                    "displayName": "Max Length",
+                    "description": "The maximum length of the sentence to be decoded. Default is 20.",
                 },
             ]
         )

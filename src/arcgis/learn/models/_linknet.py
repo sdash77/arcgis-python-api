@@ -253,7 +253,10 @@ class LinkNet(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def show_results(self, rows=5, **kwargs):
         """

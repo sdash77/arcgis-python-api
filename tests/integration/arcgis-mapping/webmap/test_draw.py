@@ -13,13 +13,13 @@ class TestDrawOnMap(unittest.TestCase):
 
     def setUp(self):
         # create webmap
-        self.wm = Map(gis=self.gis)
+        self.wm = Map(location="Dallas, TX", gis=self.gis)
         assert self.wm
 
     def test_point(self):
         """Test drawing a point"""
 
-        pt = Point({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
+        pt = Point({"x": -96.80, "y": 32.78, "spatialReference": {"wkid": 4326}})
         assert pt
         simple_symbol = symbols.SimpleMarkerSymbolEsriSMS(
             style=symbols.SimpleMarkerSymbolStyle.esri_sms_diamond,
@@ -43,9 +43,9 @@ class TestDrawOnMap(unittest.TestCase):
         fc_lyr = fc.properties["layers"][0]
         assert "featureSet" in list(fc_lyr.keys())
         assert (
-            self.wm.content.layers[
-                0
-            ].properties.layers[0].layerDefinition.drawingInfo.renderer.symbol.style
+            self.wm.content.layers[0]
+            .properties.layers[0]
+            .layerDefinition.drawingInfo.renderer.symbol.style
             == "esriSMSDiamond"
         )
 
@@ -55,29 +55,45 @@ class TestDrawOnMap(unittest.TestCase):
         line = {
             "paths": [
                 [
-                    [-97.06138],
+                    [-97.06138, 32.838],
                     [-97.06133, 32.836],
                     [-97.06124, 32.834],
                     [-97.06127, 32.832],
+                    [-97.06121, 32.830],
                 ],
                 [[-97.06326, 32.759], [-97.06298, 32.755]],
             ],
             "spatialReference": {"wkid": 4326},
         }
+
+        simple_line_symbol = symbols.SimpleLineSymbolEsriSLS(
+            style=symbols.SimpleLineSymbolStyle.esri_sls_solid,
+            color=[51, 51, 255, 255],
+            width=4,
+        )
+
         polyline = Polyline(line)
 
-        self.wm.content.draw(polyline)
+        self.wm.content.draw(shape=polyline, symbol=simple_line_symbol)
+
         assert self.wm.content.layers
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureCollection)
-        assert self.wm.content.layers[0].properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"]["symbol"].style == "esriSLSSolid"
+        assert (
+            self.wm.content.layers[0]
+            .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
+                "symbol"
+            ]
+            .style
+            == "esriSLSSolid"
+        )
 
     def test_polygon(self):
         """Test drawing a polygon"""
 
         polygon1 = Polygon(
             {
-                "spatialReference": {"latestWkid": 4326},
+                "spatialReference": {"wkid": 4326},
                 "rings": [
                     [
                         [-97.06587202923951, 32.75656343500563],
@@ -95,12 +111,38 @@ class TestDrawOnMap(unittest.TestCase):
                 ],
             }
         )
+
+        simple_poly_symbol = symbols.SimpleFillSymbolEsriSFS(
+            style=symbols.SimpleFillSymbolStyle.esri_sfs_solid,
+            color=[255, 51, 0, 255],
+            outline=symbols.SimpleLineSymbolEsriSLS(
+                style=symbols.SimpleLineSymbolStyle.esri_sls_solid,
+                color=[128, 128, 128, 255],
+                width=2,
+            ),
+        )
+
         self.wm.content.draw(polygon1)
+
         assert self.wm.content.layers
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureCollection)
-        assert self.wm.content.layers[0].properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"]["symbol"].outline.style == "esriSLSSolid"
-        assert self.wm.content.layers[0].properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"]["symbol"].style == "esriSFSSolid"
+        assert (
+            self.wm.content.layers[0]
+            .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
+                "symbol"
+            ]
+            .outline.style
+            == "esriSLSSolid"
+        )
+        assert (
+            self.wm.content.layers[0]
+            .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
+                "symbol"
+            ]
+            .style
+            == "esriSFSSolid"
+        )
 
 
 if __name__ == "__main__":

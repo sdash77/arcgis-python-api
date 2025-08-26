@@ -512,6 +512,7 @@ class RetinaNet(ArcGISModel):
             ret.learn.data.single_ds.classes = ret._data.classes
             ret.learn.data.single_ds.y.classes = ret._data.classes
 
+        ret._model_emd = emd
         return ret
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):

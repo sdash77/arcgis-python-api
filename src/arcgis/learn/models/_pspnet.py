@@ -420,7 +420,10 @@ class PSPNetClassifier(ArcGISModel):
             data.emd = emd
             data._is_empty = True
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()

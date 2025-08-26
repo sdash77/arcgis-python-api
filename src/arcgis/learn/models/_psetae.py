@@ -214,7 +214,11 @@ class PSETAE(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
-        return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
+
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
+        model_obj._model_emd = emd
+
+        return model_obj
 
     @property
     def _model_metrics(self):

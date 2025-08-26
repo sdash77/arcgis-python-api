@@ -316,13 +316,17 @@ class DeepSort(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data._dataset_type = "Imagenet"
-        return cls(
+
+        model_obj = cls(
             data,
             **model_params,
             pretrained_path=pretrained_path,
             num_classes=num_classes,
             infer_config=infer_config
         )
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def update(self, frame, detections=None, labels=None, scores=None, **kwargs):
         """

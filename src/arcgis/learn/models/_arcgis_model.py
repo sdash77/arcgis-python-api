@@ -1518,6 +1518,11 @@ class ArcGISModel(object):
             if hasattr(self, "_gradCAM"):
                 _emd_template["ExpMap"] = kwargs.get("gradcam", False)
 
+        if hasattr(self, "_model_emd"):
+            for emd_key in self._model_emd:
+                if emd_key not in _emd_template:
+                    _emd_template[emd_key] = self._model_emd[emd_key]
+
         return _emd_template
 
     @staticmethod
