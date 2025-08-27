@@ -230,7 +230,10 @@ class Pix2PixHD(ArcGISModel):
             data.norm_stats = norm_stats
             data.imagery_type = emd.get("ImageryType")
 
-        return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}

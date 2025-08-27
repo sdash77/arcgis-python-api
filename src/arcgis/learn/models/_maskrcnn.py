@@ -683,9 +683,12 @@ class MaskRCNN(ArcGISModel):
                 data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
 
-        return cls(
+        model_obj = cls(
             data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs
         )
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def _save_pytorch_torchscript(self, name, save=True):
         model = self.learn.model

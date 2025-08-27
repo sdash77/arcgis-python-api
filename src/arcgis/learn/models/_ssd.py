@@ -743,6 +743,7 @@ class SingleShotDetector(ArcGISModel):
             ssd.learn.data.single_ds.classes = ssd._data.classes
             ssd.learn.data.single_ds.y.classes = ssd._data.classes
 
+        ssd._model_emd = emd
         return ssd
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):

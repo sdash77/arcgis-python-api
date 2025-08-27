@@ -792,11 +792,11 @@ def variable_tile_size_check(json_info, parameters):
             [
                 {
                     "name": "tile_size",
-                    "dataType": "numeric",
+                    "dataType": "GPLong",
                     "value": int(json_info["ImageHeight"]),
-                    "required": False,
+                    "required": True,
                     "displayName": "Tile Size",
-                    "description": "Tile size used for inferencing",
+                    "description": "The width and height of image tiles into which the imagery is split for prediction.",
                 }
             ]
         )
@@ -1014,7 +1014,8 @@ def tta_predict(child_image_classifier, normalized_image_tensor, test_time_aug=T
 
     transforms = [0]
     if test_time_aug:
-        if child_image_classifier.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+        image_space_used = child_image_classifier.json_info.get("ImageSpaceUsed")
+        if image_space_used == "MAP_SPACE":
             transforms = list(range(8))
         else:
             transforms = [

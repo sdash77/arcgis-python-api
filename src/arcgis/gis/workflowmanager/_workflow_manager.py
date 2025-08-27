@@ -4,11 +4,14 @@ import datetime
 import functools
 import json
 import logging
+import os
 import sys
 import threading
 import urllib.parse
+from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Callable
+from contextlib import ExitStack
 
 logger = logging.getLogger(__name__)
 
@@ -281,11 +284,14 @@ class WorkflowManagerAdmin:
     def export_item(
         self,
         item,  # TODO TypeHint removed in order to avoid import
-        job_template_ids: Optional[str] = None,
-        diagram_ids: Optional[str] = None,
+        job_template_ids: list[str] | None = None,
+        diagram_ids: list[str] | None = None,
         include_other_configs: bool = True,
-        passphrase: Optional[str] = None,
-    ):
+        passphrase: str | None = None,
+        run_async: bool = False,
+        save_path: str | None = None,
+        export_mapping: bool | None = None,
+    ) -> str | ItemExecution:
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
         includes the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and
@@ -309,11 +315,48 @@ class WorkflowManagerAdmin:
         ---------------------  ---------------------------------------------------------
         passphrase             Optional. If exporting encrypted user defined settings, define a passphrase.
                                If no passphrase is specified, the keys for encrypted user defined settings will be
-                               exported without their values.
+                               exported without their values. Starting at 12.0, this property is deprecated.
+        ---------------------  ---------------------------------------------------------
+        run_async              Optional. A boolean indicating whether to run export item asynchronously. If set to true,
+                               export_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`. The download
+                               location can then be found by prompting for the export_location.
+        ---------------------  ---------------------------------------------------------
+        save_path              Optional. The directory location to save the wmc file and optional mapping file after
+                               export finishes. If not set, the file(s) will download to the default location.
+        ---------------------  ---------------------------------------------------------
+        export_mapping         Optional. Export a mapping file along with the item configuration. If not defined,
+                               no mapping file will be generated. This option will only apply if run_async is True.
         =====================  =========================================================
 
         :return:
-            success object
+           String if run_async is False or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
+
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Export An Item Asynchronously
+
+            # create a Workflow Manager object from the workflow item
+            workflow_manager_admin = WorkflowManagerAdmin(gis)
+
+            item = gis.content.search('title:"Python Sample"')[0]
+            export_execution = workflow_manager_admin.export_item(item,
+                                                                  run_async=True,
+                                                                  save_path='/path/to/item',
+                                                                  export_mapping=True)
+            # result() blocks execution until the asynchronous work is finished and returns the last message received.
+            result = export_execution.result()
+            print(f'Result = {result}\n')
+
+            # Use .done() in a loop if you want to perform other actions while waiting for export to complete
+            # while not export_execution.done():
+            #     print(f'Progress = {export_execution.status}')
+            #     print(f'{export_execution.messages}')
+            #     time.sleep(5)
+
+            print(f'Here is the Exported ID: {export_execution.export_id}')
+            print(f'Here is the Exported File Location: {export_execution.export_location}\n')
+            print(f'Here is the Exported Mapping File Location: {export_execution.export_mapping_location}\n')
 
         """
         params = {"includeOtherConfiguration": include_other_configs}
@@ -324,19 +367,107 @@ class WorkflowManagerAdmin:
         if passphrase is not None:
             params["passphrase"] = passphrase
 
+        if run_async:
+            return self._export_item_async(
+                item, params, save_path, export_mapping is True
+            )
+
         url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
         return_obj = self._gis._con.post(
-            url, params=params, try_json=False, json_encode=False, post_json=True
+            url,
+            params=params,
+            try_json=False,
+            json_encode=False,
+            post_json=True,
+            out_folder=save_path,
         )
 
         if "error" in return_obj:
             return_obj = json.loads(return_obj)
             self._gis._con._handle_json_error(return_obj["error"], 0)
+
         return return_obj
 
+    def _export_item_async(
+        self,
+        item,
+        params,
+        save_path: str | None = None,
+        export_mapping: bool = False,
+    ):
+        # Create a ItemExecution object
+        ie = ItemExecution(item, ExecutionType.EXPORT)
+        ie._before_completion = lambda: self._retrieve_completed_export(
+            item, ie, save_path, export_mapping
+        )
+        # Subscribe to this job
+        nm = NotificationManager(item, self, ie._callback)
+
+        nm.connect()
+
+        try:
+            # Call the actual endpoint
+            url = f"{self._url}/admin/{item.id}/exportAsync"
+
+            return_obj = self._gis._con.post(
+                url,
+                params=params,
+                try_json=False,
+                json_encode=False,
+                post_json=True,
+                out_folder=save_path,
+            )
+
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception("Unexpected error when exporting configuration")
+
+        except:
+            nm.disconnect()
+            raise
+
+        # If it succeeds, return the JobExecution
+        ie._started()
+        return ie
+
+    def _retrieve_completed_export(
+        self, item, ie: ItemExecution, save_path: str | None, export_mapping: bool
+    ):
+        export_id = ie._export_id
+        logger.debug(f"Retrieving completed export {export_id}")
+        url = "{base}/admin/{id}/exportAsync/{exportId}".format(
+            base=self._url, id=item.id, exportId=export_id
+        )
+        return_obj = self._gis._con.get(
+            url, try_json=False, json_encode=False, post_json=True, out_folder=save_path
+        )
+
+        if "error" in return_obj:
+            return_obj = json.loads(return_obj)
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        ie._export_location = return_obj
+
+        if export_mapping:
+            # Get the configuration mapping file
+            logger.debug(f"Retrieving mapping file for completed export {export_id}")
+            return_mapping_obj = self._gis._con.get(
+                url, {"fileType": "json"}, out_folder=save_path
+            )
+            if '"error"' in return_mapping_obj:
+                return_mapping_obj = json.loads(return_mapping_obj)
+                self._gis._con._handle_json_error(return_mapping_obj["error"], 0)
+            ie._export_mapping_location = return_mapping_obj
+
     def import_item(
-        self, item, config_file, passphrase: Optional[str] = None
-    ):  # TODO TypeHint removed in order to avoid import
+        self,
+        item,  # TODO TypeHint removed in order to avoid import
+        config_file,
+        passphrase: str | None = None,
+        run_async: bool = False,
+        overwrite_configuration: bool = True,
+        import_mapping_file: str | None = None,
+    ) -> bool | ItemExecution:
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatibility. This will
@@ -346,48 +477,135 @@ class WorkflowManagerAdmin:
         and will need the value updated. Importing will fail if any jobs exist in the destination item.
         Excess scheduled tasks will be dropped based on the portal limit.
 
-        ==================  =========================================================
-        **Argument**        **Description**
-        ------------------  ---------------------------------------------------------
-        item                Required Item. The Workflow Manager Item that to import the configuration to.
-        ------------------  ---------------------------------------------------------
-        config_file         Required. The file path to the workflow manager configuration file.
-        ------------------  ---------------------------------------------------------
-        passphrase          Optional. If importing encrypted user defined settings, specify the same passphrase
-                            used when exporting the configuration file. If no passphrase is specified, the keys for
-                            encrypted user defined settings will be imported without their values.
-        ==================  =========================================================
+        =======================  =========================================================
+        **Argument**             **Description**
+        -----------------------  ---------------------------------------------------------
+        item                     Required Item. The Workflow Manager Item that to import the configuration to.
+        -----------------------  ---------------------------------------------------------
+        config_file              Required. The file path to the Workflow Manager configuration file.
+        -----------------------  ---------------------------------------------------------
+        passphrase               Optional. If importing encrypted user defined settings, specify the same passphrase
+                                 used when exporting the configuration file. If no passphrase is specified, the keys for
+                                 encrypted user defined settings will be imported without their values. Starting at 12.0, this property is deprecated.
+        -----------------------  ---------------------------------------------------------
+        run_async                Optional. A boolean indicating whether to run import item asynchronously. If set to true,
+                                 import_item will return a :class:`~arcgis.gis.workflowmanager.ItemExecution`
+        -----------------------  ---------------------------------------------------------
+        overwrite_configuration  Optional. A boolean indicating whether to overwrite the current item's contents.
+                                 When set to true, the current item must not have existing jobs, and its contents will
+                                 be deleted and replaced by the contents of the imported configuration file. When set to False,
+                                 importing merges the source configuration with the current item. By default this setting is true.
+        -----------------------  ---------------------------------------------------------
+        import_mapping_file      Optional. Should only be used when run_async is True. The file path to the Workflow Manager
+                                 mapping file to be used during the import process.
+        =======================  =========================================================
 
         :return:
-            success object
+            bool if run_async is False or :class:`~arcgis.gis.workflowmanager.ItemExecution` if run_async is True
+
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Import An Item Asynchronously
+
+            # Create a new item using workflow_manager_admin
+            new_item_id = workflow_manager_admin.create_item(name='New Workflow Item')
+            new_item = gis.content.get(new_item_id)
+
+            # Path to location of .wmc file from a previous exported item.
+            filepath = 'C:\\Users\\exampleUser\\Desktop\\test.wmc'
+            mappingfilepath = 'C:\\Users\\exampleUser\\Desktop\\testmappingfile.json'
+
+            import_execution = workflow_manager_admin.import_item(new_item, filepath, run_async=True, overwrite_configuration=False, import_mapping_file=mappingfilepath)
+
+            # result() blocks execution until the asynchronous work is finished and returns the last message received.
+            result = export_execution.result()
+            print(f'Result = {result}\n')
+
+            # Use .done() in a loop if you want to perform other actions while waiting for import to complete
+            # while not import_execution.done():
+            #     print(f'Progress = {import_execution.status}')
+            #     print(f'{import_execution.messages}')
+            #     time.sleep(5)
+
+            print(f'Status = {import_execution.status}')
+            print(f'Time elapsed {import_execution.elapse_time}')
+            print(f'Messages received: ')
+            for m in import_execution.messages:
+                print(f'{m.message} ')
 
         """
 
-        url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+        def call_post(url, files, data):
+            return_obj = self._gis._con.post_multipart(
+                url,
+                files=files,
+                params=data,
+                try_json=False,
+                json_encode=False,
+                post_json=False,
+            )
+            return_obj = json.loads(return_obj)
+
+            if "error" in return_obj:
+                raise Exception(return_obj["error"].get("message"))
+            elif "success" in return_obj:
+                return return_obj["success"]
+            return return_obj
+
         data = {}
-        if passphrase is not None:
-            data["passphrase"] = passphrase
 
-        return_obj = self._gis._con.post(
-            url,
-            files={"file": config_file},
-            params=data,
-            try_json=False,
-            json_encode=False,
-            post_json=False,
-        )
-        return_obj = json.loads(return_obj)
+        with ExitStack() as stack:
+            # Set up file handles
+            wmc_fh = stack.enter_context(open(config_file, "rb"))
+            maybe_mapping_fh = (
+                stack.enter_context(open(import_mapping_file, "rb"))
+                if import_mapping_file is not None
+                else None
+            )
 
-        if "error" in return_obj:
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        return return_obj
+            files = {"file": (os.path.basename(config_file), wmc_fh, "application/zip")}
+
+            if passphrase is not None:
+                data["passphrase"] = passphrase
+
+            if run_async:
+                # Create a ItemExecution object
+                ie = ItemExecution(item, ExecutionType.IMPORT)
+                # Subscribe to this job
+                nm = NotificationManager(item, self, ie._callback)
+
+                nm.connect()
+
+                # Call the actual endpoint
+                url = "{base}/admin/{id}/importAsync".format(base=self._url, id=item.id)
+                try:
+                    data["overwriteConfiguration"] = overwrite_configuration
+
+                    if maybe_mapping_fh is not None:
+                        files["mappingFile"] = (
+                            os.path.basename(import_mapping_file),
+                            maybe_mapping_fh,
+                            "application/json",
+                        )
+                    return_obj = call_post(url, files, data)
+                    if return_obj is False:
+                        raise Exception("Unexpected error when importing configuration")
+                except:
+                    nm.disconnect()
+                    raise
+
+                # If it succeeds, return the JobExecution
+                ie._started()
+                return ie
+            else:
+                url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+                return call_post(url, files, data)
 
 
 class JobManager:
     """
-    Represents a helper class for workflow manager jobs. Accessible as the
+    Represents a helper class for Workflow Manager jobs. Accessible as the
     :attr:`~arcgis.gis.workflowmanager.WorkflowManager.jobs` property of the
     :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
 
@@ -460,21 +678,21 @@ class JobManager:
         self,
         template: str,
         count: int = 1,
-        name: Optional[str] = None,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-        priority: Optional[str] = None,
-        description: Optional[str] = None,
-        owner: Optional[str] = None,
-        group: Optional[str] = None,
-        assigned: Optional[str] = None,
-        complete: Optional[str] = None,
-        notes: Optional[str] = None,
-        parent: Optional[str] = None,
+        name: str | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        priority: str | None = None,
+        description: str | None = None,
+        owner: str | None = None,
+        group: str | None = None,
+        assigned: str | None = None,
+        complete: str | None = None,
+        notes: str | None = None,
+        parent: str | None = None,
         location: Optional = None,  # TODO TypeHint removed in order to avoid import
-        extended_properties: Optional[dict] = None,
-        related_properties: Optional[dict] = None,
-        job_id: Optional[str] = None,
+        extended_properties: dict | None = None,
+        related_properties: dict | None = None,
+        job_id: str | None = None,
     ):
         """
         Adds a job to the Workflow Manager instance given a user-defined template
@@ -674,11 +892,11 @@ class JobManager:
 
     def search(
         self,
-        query: Optional[str] = None,
-        search_string: Optional[str] = None,
-        fields: Optional[str] = None,
-        display_names: Optional[str] = [],
-        sort_by: Optional[str] = [],
+        query: str | None = None,
+        search_string: str | None = None,
+        fields: str | None = None,
+        display_names: str | None = [],
+        sort_by: str | None = [],
         num: int = 10,
         start_num: int = 0,
     ):
@@ -724,11 +942,11 @@ class JobManager:
 
     def statistics(
         self,
-        query: Optional[str] = None,
-        search_str: Optional[str] = None,
-        group_by: Optional[str] = None,
-        spatial_extent: Optional[str] = None,
-        has_location: Optional[bool] = None,
+        query: str | None = None,
+        search_str: str | None = None,
+        group_by: str | None = None,
+        spatial_extent: str | None = None,
+        has_location: bool | None = None,
     ):
         """
         Runs a search against the jobs stored inside the Workflow Manager instance
@@ -796,7 +1014,7 @@ class JobManager:
         self,
         job_id: str,
         update_object: dict,
-        allow_running_step_id: Optional[str] = None,
+        allow_running_step_id: str | None = None,
     ):
         """
         Updates a job object by ID
@@ -1044,7 +1262,7 @@ class WorkflowManager:
     def evaluate_arcade(
         self,
         expression: str,
-        context: Optional[str] = None,
+        context: str | None = None,
         context_type: str = "BaseContext",
         mode: str = "Standard",
     ):
@@ -1203,7 +1421,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def searches(self, search_type: Optional[str] = None):
+    def searches(self, search_type: str | None = None):
         """
         Returns a list of all saved searches.
 
@@ -1677,8 +1895,8 @@ class WorkflowManager:
         category: str = "",
         job_duration: int = 0,
         assigned_to: str = "",
-        default_due_date: Optional[str] = None,
-        default_start_date: Optional[str] = None,
+        default_due_date: str | None = None,
+        default_start_date: str | None = None,
         start_date_type: str = "CreationDate",
         diagram_id: str = "",
         diagram_name: str = "",
@@ -1687,7 +1905,7 @@ class WorkflowManager:
         default_description: str = "",
         state: str = "Draft",
         last_updated_by: str = "",
-        last_updated_date: Optional[str] = None,
+        last_updated_date: str | None = None,
         extended_property_table_definitions: list = [],
     ):
         """
@@ -1815,7 +2033,7 @@ class WorkflowManager:
         active: bool = False,
         annotations: list = [],
         data_sources: list = [],
-        diagram_id: Optional[str] = None,
+        diagram_id: str | None = None,
         centralized_data_references: list = [],
         use_centralized_data_references: bool = False,
     ):
@@ -2457,7 +2675,7 @@ class WorkflowManager:
         template_type: str,
         template_name: str,
         template_details: dict,
-        template_id: Optional[str] = None,
+        template_id: str | None = None,
     ):
         """
         Returns the newly created template id.
@@ -2640,7 +2858,7 @@ class Template(object):
 
 class SavedSearchesManager:
     """
-    Represents a helper class for workflow manager saved searches. Accessible as the
+    Represents a helper class for Workflow Manager saved searches. Accessible as the
     :attr:`~arcgis.gis.workflowmanager.WorkflowManager.saved_searches` property.
 
     ===============     ====================================================================
@@ -2668,11 +2886,11 @@ class SavedSearchesManager:
         self,
         name: str,
         search_type: str,
-        folder: Optional[str] = None,
-        definition: Optional[str] = None,
-        color_ramp: Optional[str] = None,
-        sort_index: Optional[str] = None,
-        search_id: Optional[str] = None,
+        folder: str | None = None,
+        definition: str | None = None,
+        color_ramp: str | None = None,
+        sort_index: str | None = None,
+        search_id: str | None = None,
     ):
         """
         Create a saved search or chart by specifying the search parameters in the json body.
@@ -3005,7 +3223,7 @@ class Job(object):
         return return_obj
 
     def add_attachment(
-        self, attachment: str, alias: Optional[str] = None, folder: Optional[str] = None
+        self, attachment: str, alias: str | None = None, folder: str | None = None
     ):
         """
         Adds an attachment to the job
@@ -3221,10 +3439,10 @@ class Job(object):
 
     def add_hold(
         self,
-        step_ids: Optional[list],
-        dependent_job_id: Optional[str] = None,
-        dependent_step_id: Optional[str] = None,
-        hold_scheduled_release: Optional[str] = None,
+        step_ids: list | None,
+        dependent_job_id: str | None = None,
+        dependent_step_id: str | None = None,
+        hold_scheduled_release: str | None = None,
     ):
         """
         Applies a hold or a dependency to a step. The Run and Finish actions cannot be performed
@@ -3290,9 +3508,9 @@ class Job(object):
 
     def release_hold(
         self,
-        step_ids: Optional[list],
-        dependent_job_id: Optional[str] = None,
-        dependent_step_id: Optional[str] = None,
+        step_ids: list | None,
+        dependent_job_id: str | None = None,
+        dependent_step_id: str | None = None,
     ):
         """
         Releases a hold from a step, allowing the Run and Finish actions to be once again performed on the step.
@@ -3540,7 +3758,7 @@ class Job(object):
         }
         return return_obj
 
-    def _execute_step(self, step_ids: Optional[list], execution_type: ExecutionType):
+    def _execute_step(self, step_ids: list | None, execution_type: ExecutionType):
         # Create a JobExecution object
         je = JobExecution(self, execution_type)
         # Subscribe to this job
@@ -3571,7 +3789,6 @@ class Job(object):
                     json_encode=False,
                 )
             )
-            # If it fails, unsubscribe then throw
             if "error" in return_obj:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
@@ -3584,7 +3801,7 @@ class Job(object):
         je._started()
         return je
 
-    def run(self, step_ids: Optional[list] = None):
+    def run(self, step_ids: list | None = None):
         """
         Starts running the current step(s). Running a step marks it as finished, if the step is set to proceed to next.
 
@@ -3629,7 +3846,7 @@ class Job(object):
         """
         return self._execute_step(step_ids, execution_type=ExecutionType.RUN)
 
-    def stop(self, step_ids: Optional[list] = None):
+    def stop(self, step_ids: list | None = None):
         """
         Stops the current running step(s). The step(s) can be Run again or Finish can be used to complete it. In case of
         GP step and question step, the processing of the step is cancelled. In case of manual and open app step,
@@ -3677,7 +3894,7 @@ class Job(object):
         """
         return self._execute_step(step_ids, execution_type=ExecutionType.STOP)
 
-    def finish(self, step_ids: Optional[list] = None):
+    def finish(self, step_ids: list | None = None):
         """
         Finishes the current step(s).
 
@@ -3723,9 +3940,110 @@ class Job(object):
         return self._execute_step(step_ids, execution_type=ExecutionType.FINISH)
 
 
-class JobExecution:
+class WorkflowManagerExecution:
+    """Base class that JobExecution and ItemExecution derive from"""
+
+    _start_time = None
+    _end_time = None
+
+    def __init__(self):
+        self._messages = []
+        self._event = threading.Event()
+        self._err = None
+
+    @abstractmethod
+    def _callback(self, msg: Notification, nm: NotificationManager):
+        raise NotImplemented()
+
+    def _started(self):
+        self._start_time = datetime.datetime.now()
+
+    @property
+    def messages(self):
+        """
+        Gets the messages collected during execution
+
+        :return:
+            List of :class:`~arcgis.gis.workflowmanager.Notification`
+
+        """
+        return self._messages
+
+    @property
+    def status(self):
+        """
+        Returns the execution status
+
+        :return:
+            string
+
+        """
+        return (
+            ExecutionStatus.COMPLETE
+            if self._event.is_set()
+            else ExecutionStatus.RUNNING
+        )
+
+    def result(self, timeout: int | None = 300):
+        """
+        Returns the last :class:`~arcgis.gis.workflowmanager.Notification` message received at the end of the execution
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        timeout             Optional integer. The timeout argument specifies a timeout for the operation in seconds.
+        ===============     ====================================================================
+
+        :return:
+            string
+
+        """
+        if self._event.wait(timeout):
+            if self._err:
+                raise Exception(self._err)
+            else:
+                return self._messages[-1]
+
+        raise TimeoutError("Timeout waiting for result")
+
+    @property
+    def elapse_time(self):
+        """
+        Get the amount of time that passed while the
+        :class:`~arcgis.gis.workflowmanager.JobExecution` ran.
+        """
+        if self._end_time:
+            return self._end_time - self._start_time
+
+        return datetime.datetime.now() - self._start_time
+
+    def running(self):
+        """
+        Returns a boolean indicating whether the execution is running.
+
+        :return:
+            boolean
+
+        """
+        return self._start_time and not self._event.is_set()
+
+    def done(self):
+        """
+        Returns a boolean indicating whether the execution is done.
+
+        :return:
+            boolean
+
+        """
+        return not self.running()
+
+    def __repr__(self):
+        return f'Execution({{"status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
+
+
+class JobExecution(WorkflowManagerExecution):
     """
-    Represents a single step executing in a workflow manager job.  The `JobExecution` class allows for the asynchronous
+    Represents a single step executing in a Workflow Manager job.  The `JobExecution` class allows for the asynchronous
     operation of an executing step. The status of the step execution can then be queried by the class properties,
     status, result, elapse_time and messages. This class is not intended for users to call directly.
 
@@ -3742,14 +4060,9 @@ class JobExecution:
 
     """
 
-    _start_time = None
-    _end_time = None
-    _execution_type = None
-
     def __init__(self, job: Job, execution_type: ExecutionType):
+        super().__init__()
         self._job = job
-        self._messages = []
-        self._event = threading.Event()
         self._execution_type = execution_type
 
     def _callback(self, msg: Notification, nm: NotificationManager):
@@ -3790,87 +4103,119 @@ class JobExecution:
                     self._event.set()
                     nm._disconnect_check(self._job.job_id)
 
-    def _started(self):
-        self._start_time = datetime.datetime.now()
-
-    @property
-    def messages(self):
-        """
-        Gets the messages collected during execution
-
-        :return:
-            List of :class:`~arcgis.gis.workflowmanager.Notification`
-
-        """
-        return self._messages
-
-    @property
-    def status(self):
-        """
-        Returns the execution status
-
-        :return:
-            string
-
-        """
-        return (
-            ExecutionStatus.COMPLETE
-            if self._event.is_set()
-            else ExecutionStatus.RUNNING
-        )
-
-    def result(self, timeout: Optional[int] = 300):
-        """
-        Returns the last :class:`~arcgis.gis.workflowmanager.Notification` message received at the end of the execution
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        timeout             Optional integer. The timeout argument specifies a timeout for the operation in seconds.
-        ===============     ====================================================================
-
-        :return:
-            string
-
-        """
-        if self._event.wait(timeout):
-            return self._messages[-1]
-
-        raise TimeoutError("Timeout waiting for result")
-
-    @property
-    def elapse_time(self):
-        """
-        Get the amount of time that passed while the
-        :class:`~arcgis.gis.workflowmanager.JobExecution` ran.
-        """
-        if self._end_time:
-            return self._end_time - self._start_time
-
-        return datetime.datetime.now() - self._start_time
-
-    def running(self):
-        """
-        Returns a boolean indicating whether the execution is running.
-
-        :return:
-            boolean
-
-        """
-        return self._start_time and not self._event.is_set()
-
-    def done(self):
-        """
-        Returns a boolean indicating whether the execution is done.
-
-        :return:
-            boolean
-
-        """
-        return not self.running()
-
     def __repr__(self):
         return f'JobExecution({{"job": {self._job.job_id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
+
+
+class ItemExecution(WorkflowManagerExecution):
+    """
+    Represents some execution on the workflow item level.  The `ItemExecution` class allows for the asynchronous
+    operation of an executing Workflow Manager admin operations. The status of the step execution can then be queried
+    by the class properties, status, result, elapse_time and messages. This class is not intended for users to call directly.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                Required Item. The Workflow Manager Item to be imported or exported
+    ---------------     --------------------------------------------------------------------
+    execution_type      Required :class:`~arcgis.gis.workflowmanager.ExecutionType`. The execution type
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, item, execution_type: ExecutionType):
+        super().__init__()
+        self._item = item
+        self._execution_type = execution_type
+        self._export_location = None
+        self._export_mapping_location = None
+        self._before_completion = None
+
+    def _callback(self, msg: Notification, nm: NotificationManager):
+        if (
+            "itemId" in msg.message
+            and msg.message["itemId"] == self._item.id
+            and (
+                (
+                    self._execution_type == ExecutionType.EXPORT
+                    and msg.msg_type
+                    in [MessageType.EXPORT_COMPLETED, MessageType.EXPORT_FAILED]
+                )
+                or (
+                    self._execution_type == ExecutionType.IMPORT
+                    and msg.msg_type
+                    in [MessageType.IMPORT_COMPLETED, MessageType.IMPORT_FAILED]
+                )
+            )
+        ):
+            logger.debug(f"Received {msg}")
+            self._messages.append(msg)
+
+            if self._execution_type is ExecutionType.EXPORT:
+                self._export_id = msg.message["exportId"]
+                logger.debug(f"Set export id {self._export_id}")
+
+            if msg.msg_type in [MessageType.EXPORT_FAILED, MessageType.IMPORT_FAILED]:
+                self._err = (
+                    msg.message["msg"] if "msg" in msg.message else "Unexpected error"
+                )
+            elif (
+                self._before_completion
+            ):  # Don't do the before completion when there was an error
+                try:
+                    self._before_completion()
+                except:
+                    self._err = sys.exc_info()[1]
+
+            self._end_time = datetime.datetime.now()
+            self._event.set()
+            nm.disconnect()
+
+    @property
+    def export_id(self) -> str | None:
+        """
+        Get the export id from executing the item export.
+
+        :return:
+            str
+
+        """
+        if not self.running() and self._execution_type is ExecutionType.EXPORT:
+            return self._export_id
+        return None
+
+    @property
+    def export_location(self) -> str | None:
+        """
+        Get the exported file location on the local machine. If the save_path optional parameter was specified
+        in :func:`~arcgis.gis.workflowmanageradmin.export_item`, the file was exported to that directory location.
+        Otherwise, the default location was used.
+
+        :return:
+            str
+
+        """
+        if not self.running() and self._execution_type is ExecutionType.EXPORT:
+            return self._export_location
+        return None
+
+    @property
+    def export_mapping_location(self) -> str | None:
+        """
+        Get the exported mapping file location on the local machine. If the save_path optional parameter was specified
+        in :func:`~arcgis.gis.workflowmanageradmin.export_item`, the file was exported to that directory location.
+        Otherwise, the default location was used.
+
+        :return:
+            str
+
+        """
+        if not self.running() and self._execution_type is ExecutionType.EXPORT:
+            return self._export_mapping_location
+        return None
+
+    def __repr__(self):
+        return f'ItemExecution({{"item": {self._item.id},  "status": {ExecutionStatus.RUNNING if self.running() else ExecutionStatus.COMPLETE}}}'
 
 
 class WMRole(object):
@@ -4377,7 +4722,7 @@ class JobLocation(object):
 
 class NotificationManager:
     """
-    Represents a helper class for workflow manager websocket notifications. Accessible as the
+    Represents a helper class for Workflow Manager websocket notifications. Accessible as the
     :attr:`~arcgis.gis.workflowmanager.WorkflowManager.notifications` property of the
     :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
 
@@ -4389,7 +4734,12 @@ class NotificationManager:
 
     """
 
-    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager):
+    def __init__(
+        self,
+        item: arcgis.gis.Item,
+        workflow_manager: WorkflowManager | WorkflowManagerAdmin,
+        item_exec_callback=None,
+    ):
         self._item = item
         _initialize(self, item._gis)
         self.workflow_item_id = item.id
@@ -4402,6 +4752,7 @@ class NotificationManager:
         self._received_connected_msg = None
         self._timeout = 30
         self._subscription_lock = threading.RLock()
+        self.item_exec_callback = item_exec_callback
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self._server_url.replace("http://", "ws://").replace(
@@ -4429,7 +4780,6 @@ class NotificationManager:
     def _subscriber(self, message):
         try:
             message_dict = json.loads(message)
-
             # ensure we are connected via setting an event before subscribing
             if message_dict.get("connected"):
                 self._received_connected_msg.set()
@@ -4442,6 +4792,8 @@ class NotificationManager:
                     if job_id in self.subscribed_jobs.keys():
                         callback = self.subscribed_jobs[job_id]
                         callback(msg, self)
+                elif "itemId" in msg.message and self.item_exec_callback is not None:
+                    self.item_exec_callback(msg, self)
         except:
             logger.exception(f"Error with messages and callbacks")
 
@@ -4458,7 +4810,7 @@ class NotificationManager:
 
     def connect(self):
         """
-        Establishes a websocket connection to the workflow manager server.
+        Establishes a websocket connection to the Workflow Manager server.
 
         .. code-block:: python
             # USAGE EXAMPLE: Manage websocket connection manually
@@ -4481,7 +4833,7 @@ class NotificationManager:
 
     def disconnect(self):
         """
-        Removes and disconnects the websocket connection to the workflow manager server.
+        Removes and disconnects the websocket connection to the Workflow Manager server.
         """
         if self.websocket_connection:
             self.websocket_connection.disconnect()
@@ -4649,6 +5001,10 @@ class MessageType(Enum):
     STEP_ERROR = "STEPERROR"
     STEP_INFO_REQUIRED = "STEPINFOREQUIRED"
     STEP_INFORMATION = "STEPINFORMATION"
+    EXPORT_COMPLETED = "EXPORTCOMPLETED"
+    EXPORT_FAILED = "EXPORTFAILED"
+    IMPORT_COMPLETED = "IMPORTCOMPLETED"
+    IMPORT_FAILED = "IMPORTFAILED"
 
 
 class ExecutionType(Enum):
@@ -4661,6 +5017,8 @@ class ExecutionType(Enum):
     RUN = "RUN"
     STOP = "STOP"
     FINISH = "FINISH"
+    IMPORT = "IMPORT"
+    EXPORT = "EXPORT"
 
 
 class ExecutionStatus(Enum):

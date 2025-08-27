@@ -332,6 +332,7 @@ class DETReg(ModelExtension):
         if not data_passed:
             detreg.learn.data.single_ds.classes = detreg._data.classes
             detreg.learn.data.single_ds.y.classes = detreg._data.classes
+        detreg._model_emd = emd
 
         return detreg
 
