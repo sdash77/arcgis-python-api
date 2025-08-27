@@ -298,7 +298,7 @@ def show_batch(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
     # Plotting
     fig, axs = plt.subplots(nrows=rows, ncols=ncols, figsize=(ncols * 5, rows * 5))
     axs = axs.flatten() if n_images > 1 else [axs]
-    inv_class_dict = {v: k for k, v in self.classes.items()}
+    training_class_map = {j: i for i, j in self._training_class_map.items()}
 
     for i in range(len(axs)):
         ax = axs[i]
@@ -310,11 +310,7 @@ def show_batch(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
             ax.imshow(img_np)
 
             label_mask = y_batch[i][0].long().to(color_array.device)
-
-            lut = np.zeros(max(inv_class_dict.keys()) + 1, dtype=np.int32)
-            for old_val, new_val in inv_class_dict.items():
-                lut[old_val] = new_val
-            label_mask = lut[label_mask]
+            label_mask = np.vectorize(training_class_map.get)(label_mask)
 
             label_rgb = color_array[label_mask].cpu().numpy()
             ax.imshow(label_rgb, alpha=alpha)
@@ -532,14 +528,17 @@ def prepare_hyperspec_data(
     data.path = final_path
     data._temp_folder = _prepare_working_dir(final_path)
 
-    original_classes = {n: i["Value"] for n, i in enumerate(emd_stats["Classes"])}
+    original_classes = {i["Value"]: n for n, i in enumerate(emd_stats["Classes"])}
     if class_mapping:
-        for k in original_classes:
-            class_mapping.setdefault(int(k), str(k))
-        data.classes = class_mapping
+        for i, j in original_classes.items():
+            if i in class_mapping.keys():
+                original_classes[i] = class_mapping[i]
+        data.classes = original_classes
     else:
         data.classes = original_classes
 
+    data.num_class_mapping = training_class_map
+    data.class_mapping = data.classes
     data.classes = dict(sorted(data.classes.items()))
     data._training_class_map = training_class_map
     data._num_classes = len([i for i in data.classes.values() if i != 0])

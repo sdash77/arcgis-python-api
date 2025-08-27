@@ -111,6 +111,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
         _emd_template["max_min"] = self._data._max_min
         _emd_template["num_classes"] = self._data._num_classes
         _emd_template["_dataset_type"] = self._data._dataset_type
+        _emd_template["Num_class_mapping"] = self._data.num_class_mapping
 
         return _emd_template
 

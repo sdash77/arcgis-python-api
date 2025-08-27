@@ -458,7 +458,9 @@ def compute_mIoU(model, dataloader, num_classes):
 
     iou_per_class = total_inter / (total_union + 1e-6)
 
-    class_names = [j for i, j in dataloader.classes.items()]
+    class_names = [
+        j if isinstance(j, str) else i for i, j in dataloader.classes.items()
+    ]
     iou_dict = {
         class_names[i]: round(iou_per_class[i].item(), 4) for i in range(num_classes)
     }
