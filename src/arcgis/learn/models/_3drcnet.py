@@ -3,7 +3,7 @@ import json
 import traceback
 import torch.nn as nn
 
-from .._data import _raise_fastai_import_error
+from .._data import prepare_data, _raise_fastai_import_error
 from ._arcgis_model import ArcGISModel, _EmptyData
 
 try:
@@ -64,6 +64,9 @@ class Hyperspectral3DRCNet(ArcGISModel):
         super().__init__(data, pretrained_path=None, *args, **kwargs)
 
         self.kwargs = kwargs
+        init_kwargs = data.arcgis_init_kwargs
+        init_kwargs["dataset_type"] = "3DRCNet"
+        self._data = self.data = data = prepare_data(**init_kwargs)
         hyperspectral3drcnetet = ConvNeXt(
             in_chans=1, num_classes=data._num_classes, **kwargs
         )
@@ -83,6 +86,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
             self.load(pretrained_path)
         self._code = imagets_classifier_prf
         self._backbone = None
+        self._is_multispectral = False
 
         def __str__(self):
             return self.__repr__()
@@ -214,7 +218,9 @@ class Hyperspectral3DRCNet(ArcGISModel):
             raise Exception("Dataset is required for compute metrics")
 
         acc = calc_accuracy(self.learn.model, self._data)
-        miou = compute_mIoU(self.learn.model, self._data, self._data._num_classes)
+        miou = compute_mIoU(
+            self.learn.model, self._data, self._data._num_classes, mean=False
+        )
         return {"Accuracy (OA)": "{}".format(acc), "mIOU": "{}".format(miou)}
 
     def accuracy(self):

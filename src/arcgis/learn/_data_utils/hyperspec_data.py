@@ -550,7 +550,7 @@ def prepare_hyperspec_data(
     data.class_mapping = data.classes
     data.classes = dict(sorted(data.classes.items()))
     data._training_class_map = training_class_map
-    data._num_classes = len([i for i in data.classes.values() if i != 0])
+    data._num_classes = len([i for i in data.classes.values()])
     data._dataset_type = "3DRCNet"
     data._n_channels = data.train_ds[0][0][0].shape[0]
     data._max_min = (max_num, min_num)

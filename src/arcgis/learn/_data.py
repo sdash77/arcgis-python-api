@@ -1635,10 +1635,6 @@ def prepare_data(
                     emdstats = json.load(f)
                 if emdstats.get("IsMultidimensional", False):
                     dataset_type = "PSETAE"
-            if dataset_type == "Classified_Tiles":
-                il = ArcGISImageList.from_folder(os.path.join(path, "images"))
-                if il[0].shape[0] > 15:
-                    dataset_type = "3DRCNet"
         # elif os.path.exists(path/'images_before') and os.path.exists(path/'images_after'):
         #     dataset_type = 'ChangeDetection'
         elif _check_esri_files(path / "A") and _check_esri_files(path / "B"):
