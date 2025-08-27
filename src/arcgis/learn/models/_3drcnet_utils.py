@@ -430,7 +430,7 @@ def calc_accuracy(model, data):
     return total_correct / total_pixels
 
 
-def compute_mIoU(model, dataloader, num_classes):
+def compute_mIoU(model, dataloader, num_classes, mean):
     valid_data = dataloader.valid_dl
     total_inter = torch.zeros(num_classes, dtype=torch.float32)
     total_union = torch.zeros(num_classes, dtype=torch.float32)
@@ -461,8 +461,11 @@ def compute_mIoU(model, dataloader, num_classes):
     class_names = [
         j if isinstance(j, str) else i for i, j in dataloader.classes.items()
     ]
-    iou_dict = {
-        class_names[i]: round(iou_per_class[i].item(), 4) for i in range(num_classes)
-    }
-    iou_dict["mean_IoU"] = round(iou_per_class.mean().item(), 4)
-    return iou_dict
+    if mean:
+        return round(iou_per_class.mean().item(), 4)
+    else:
+        iou_dict = {
+            class_names[i]: round(iou_per_class[i].item(), 4)
+            for i in range(num_classes)
+        }
+        return iou_dict
