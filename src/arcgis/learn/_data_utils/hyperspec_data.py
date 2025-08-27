@@ -293,12 +293,12 @@ def show_batch(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
     symbology_x_batch = image_tensor_checks_plotting(symbology_x_batch)
 
     color_array = self._multispectral_color_array.clone()
-    color_array[1:, 3] = alpha  # Apply transparency to labels
+    color_array[:, 3] = alpha  # Apply transparency to labels
 
     # Plotting
     fig, axs = plt.subplots(nrows=rows, ncols=ncols, figsize=(ncols * 5, rows * 5))
     axs = axs.flatten() if n_images > 1 else [axs]
-    training_class_map = {j: i for i, j in self._training_class_map.items()}
+    training_class_map = {j: i - 1 for i, j in self._training_class_map.items()}
 
     for i in range(len(axs)):
         ax = axs[i]
@@ -310,10 +310,11 @@ def show_batch(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
             ax.imshow(img_np)
 
             label_mask = y_batch[i][0].long().to(color_array.device)
-            lut = np.zeros(max(training_class_map.keys()) + 1, dtype=np.int32)
-            for old_val, new_val in training_class_map.items():
-                lut[old_val] = new_val
-            label_mask = lut[label_mask]
+
+            for i in range(label_mask.shape[0]):
+                for j in range(label_mask.shape[1]):
+                    if int(label_mask[i][j]) in training_class_map.keys():
+                        label_mask[i][j] = training_class_map[int(label_mask[i][j])]
 
             label_rgb = color_array[label_mask].cpu().numpy()
             ax.imshow(label_rgb, alpha=alpha)
@@ -434,7 +435,7 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
 
     ys_preds, ys_reals, xs_imgs = [], [], []
 
-    training_class_map = {j: i for i, j in self._data._training_class_map.items()}
+    training_class_map = {j: i - 1 for i, j in self._data._training_class_map.items()}
 
     for i, (x, y) in enumerate(zip(xs, ys)):
         y_pred, y_new = predict_on_validation(
@@ -447,7 +448,7 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
         xs_imgs.append(x)
 
     color_array = self._data._multispectral_color_array.clone()
-    color_array[1:, 3] = alpha  # apply alpha to all but background
+    color_array[:, 3] = alpha
 
     # Plotting: 2 columns (GT and Prediction) per row, both overlaid on input image
     fig, axs = plt.subplots(nrows=rows, ncols=2, figsize=(12, rows * 5))
@@ -470,10 +471,12 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
             ]
         ):
             if col == 0:
-                lut = np.zeros(max(training_class_map.keys()) + 1, dtype=np.int32)
-                for old_val, new_val in training_class_map.items():
-                    lut[old_val] = new_val
-                label_tensor = lut[label_tensor]
+                for i in range(label_tensor.shape[0]):
+                    for j in range(label_tensor.shape[1]):
+                        if int(label_tensor[i][j]) in training_class_map.keys():
+                            label_tensor[i][j] = training_class_map[
+                                int(label_tensor[i][j])
+                            ]
 
             ax = axs[k][col] if rows > 1 else axs[col]
 
@@ -581,7 +584,9 @@ def prepare_hyperspec_data(
         )
         alpha_tensor = torch.tensor([alpha] * len(color_array)).view(-1, 1).float()
         color_array = torch.cat([color_array, alpha_tensor], dim=-1)
-        background_color = torch.tensor([[0, 0, 0, 0]]).float()
-        data._multispectral_color_array = torch.cat([background_color, color_array])
+        # background_color = torch.tensor([[0, 0, 0, 0]]).float()
+        data._multispectral_color_array = (
+            color_array  # torch.cat([background_color, color_array])
+        )
 
     return data

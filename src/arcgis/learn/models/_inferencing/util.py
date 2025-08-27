@@ -712,7 +712,10 @@ def pixel_classify_hyperspectral_image(model, tiles, device, model_info):
             label,
         )
         cls_labels = get_classification_map(pred, label)
-        cls_labels = np.vectorize(training_class_map.get)(cls_labels)
+        for i in range(cls_labels.shape[0]):
+            for j in range(cls_labels.shape[1]):
+                if cls_labels[i][j] in training_class_map.keys():
+                    cls_labels[i][j] = training_class_map[cls_labels[i][j]]
         y_preds.append(cls_labels[None, None])
 
     y_preds = np.concatenate(y_preds, axis=0)
