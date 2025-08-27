@@ -310,7 +310,10 @@ def show_batch(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
             ax.imshow(img_np)
 
             label_mask = y_batch[i][0].long().to(color_array.device)
-            label_mask = np.vectorize(training_class_map.get)(label_mask)
+            lut = np.zeros(max(training_class_map.keys()) + 1, dtype=np.int32)
+            for old_val, new_val in training_class_map.items():
+                lut[old_val] = new_val
+            label_mask = lut[label_mask]
 
             label_rgb = color_array[label_mask].cpu().numpy()
             ax.imshow(label_rgb, alpha=alpha)
@@ -467,7 +470,10 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
             ]
         ):
             if col == 0:
-                label_tensor = np.vectorize(training_class_map.get)(label_tensor)
+                lut = np.zeros(max(training_class_map.keys()) + 1, dtype=np.int32)
+                for old_val, new_val in training_class_map.items():
+                    lut[old_val] = new_val
+                label_tensor = lut[label_tensor]
 
             ax = axs[k][col] if rows > 1 else axs[col]
 
