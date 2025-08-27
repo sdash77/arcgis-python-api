@@ -330,7 +330,7 @@ def predict_on_validation(net, window_size, max_min, r, t, batch_size=64):
     if isinstance(r, ArcGISMSImage):
         r = np.transpose(r.data, (1, 2, 0))  # [H, W, Bands]
     else:
-        r = r.permute(1, 2, 0).cpu().numpy()  # convert from [C, H, W] to [H, W, C]
+        r = r.permute(1, 2, 0).cpu().numpy()  # [H, W, C]
 
     if isinstance(t, ArcGISMSImage):
         t = t.data
@@ -339,14 +339,12 @@ def predict_on_validation(net, window_size, max_min, r, t, batch_size=64):
 
     net.eval()
     s = window_size
-    hst_img, hst_label = r, t
-    hst_img = max_min_normalization(hst_img, max_min[0], max_min[1])
+    hst_img = max_min_normalization(r, max_min[0], max_min[1])
     hst_img = padding(hst_img, s)
-    m, n = hst_label.shape
+    m, n = t.shape
 
-    valid_positions = np.argwhere(hst_label > 0)
+    valid_positions = np.argwhere(t > 0)
     total_samples = len(valid_positions)
-
     if total_samples == 0:
         return np.array([]), np.array([])
 
@@ -355,46 +353,20 @@ def predict_on_validation(net, window_size, max_min, r, t, batch_size=64):
 
     for idx in range(0, total_samples, batch_size):
         batch = valid_positions[idx : idx + batch_size]
-
-        batch_data = []
-        batch_label = []
-
-        for i, j in batch:
-            patch = hst_img[i : i + s, j : j + s, :]  # [H, W, Bands]
-            patch = patch.transpose(2, 0, 1)  # [Bands, H, W]
-            patch = patch[np.newaxis, ...]  # [1, Bands, H, W] → 1 channel
-            batch_data.append(patch)
-            batch_label.append(hst_label[i, j])
-
-        hst_data = torch.tensor(
-            batch_data, dtype=torch.float32
-        ).cuda()  # [B, 1, D, H, W]
+        B = len(batch)
+        batch_data = np.empty((B, hst_img.shape[2], s, s), dtype=np.float32)
+        batch_label = np.empty(B, dtype=np.int64)
+        for k, (i, j) in enumerate(batch):
+            patch = hst_img[i : i + s, j : j + s, :]  # [H, W, C]
+            batch_data[k] = patch.transpose(2, 0, 1)  # [C, H, W]
+            batch_label[k] = t[i, j]
+        hst_data = torch.from_numpy(batch_data).cuda()[:, None, :, :, :]
         outputs = net(hst_data)
-        preds = torch.argmax(outputs, dim=1).cpu().numpy()  # [B]
-
+        preds = outputs.argmax(dim=1).cpu().numpy()
         y_pred_test.append(preds)
-        y_test.append(np.array(batch_label))
+        y_test.append(batch_label)
 
-    y_pred_test = np.concatenate(y_pred_test)
-    y_test = np.concatenate(y_test)
-    return y_pred_test, y_test
-
-
-def get_classification_map(y_pred, y):
-    height = y.shape[0]
-    width = y.shape[1]
-    k = 0
-    cls_labels = np.zeros((height, width))
-    for i in range(height):
-        for j in range(width):
-            target = int(y[i, j])
-            if target == 0:
-                continue
-            else:
-                cls_labels[i][j] = y_pred[k] + 1
-                k += 1
-
-    return cls_labels
+    return np.concatenate(y_pred_test), np.concatenate(y_test)
 
 
 def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
