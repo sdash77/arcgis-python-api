@@ -132,9 +132,7 @@ class Mission:
                     self._gis, product["arcgisItem"]["itemId"]
                 )
             except:
-                _LOGGER.warning(
-                    f"Failed to create item for product {product['name']}"
-                )
+                pass
 
         return mission_products
 
@@ -1657,7 +1655,6 @@ class Mission:
         group = self._project.group
         context["group"] = group.id
 
-        products = self.products
         prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]
         dataproduct_ids = {
             k: v for k, v in self._prod_to_id_map.items() if k in prod_types
