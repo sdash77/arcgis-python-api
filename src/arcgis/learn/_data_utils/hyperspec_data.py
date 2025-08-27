@@ -369,6 +369,23 @@ def predict_on_validation(net, window_size, max_min, r, t, batch_size=64):
     return np.concatenate(y_pred_test), np.concatenate(y_test)
 
 
+def get_classification_map(y_pred, y):
+    height = y.shape[0]
+    width = y.shape[1]
+    k = 0
+    cls_labels = np.zeros((height, width))
+    for i in range(height):
+        for j in range(width):
+            target = int(y[i, j])
+            if target == 0:
+                continue
+            else:
+                cls_labels[i][j] = y_pred[k] + 1
+                k += 1
+
+    return cls_labels
+
+
 def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
     """
     Show prediction results with input, ground truth, and predicted label masks overlaid on input raster.
