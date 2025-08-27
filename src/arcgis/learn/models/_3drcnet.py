@@ -64,9 +64,10 @@ class Hyperspectral3DRCNet(ArcGISModel):
         super().__init__(data, pretrained_path=None, *args, **kwargs)
 
         self.kwargs = kwargs
-        init_kwargs = data.arcgis_init_kwargs
-        init_kwargs["dataset_type"] = "3DRCNet"
-        self._data = self.data = data = prepare_data(**init_kwargs)
+        if not isinstance(data, _EmptyData):
+            init_kwargs = data.arcgis_init_kwargs
+            init_kwargs["dataset_type"] = "3DRCNet"
+            self._data = self.data = data = prepare_data(**init_kwargs)
         hyperspectral3drcnetet = ConvNeXt(
             in_chans=1, num_classes=data._num_classes, **kwargs
         )
