@@ -1,0 +1,80 @@
+[
+  {
+      "testrail_run": "27678",
+      "xml_path": "./apps/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.apps"
+  },
+  {
+      "testrail_run": "27714",
+      "xml_path": "./auth/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.auth"
+  },
+  {
+      "testrail_run": "27698",
+      "xml_path": "./features/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.features"
+  },
+  {
+      "testrail_run": "27715",
+      "xml_path": "./geoenrichment/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.geoenrichment"
+  },
+  {
+      "testrail_run": "27699",
+      "xml_path": "./geometry/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.geometry"
+  },
+  {
+      "testrail_run": "27702",
+      "xml_path": "./gis/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.mapping"
+  },
+  {
+      "testrail_run": "27713",
+      "xml_path": "./graph/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.graph"
+  },
+  {
+      "testrail_run": "27695",
+      "xml_path": "./layers/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.layers"
+  },
+  {
+      "testrail_run": "27716",
+      "xml_path": "./mapping/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.mapping"
+  },
+  {
+      "testrail_run": "27717",
+      "xml_path": "./notebook/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.notebook"
+  },
+  {
+      "testrail_run": "27719",
+      "xml_path": "./raster/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.raster"
+  },
+  {
+      "testrail_run": "27718",
+      "xml_path": "./realtime*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.realtime"
+  },
+  {
+      "testrail_run": "27680",
+      "xml_path": "./sedf/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.sedf"
+  }
+]
