@@ -1928,9 +1928,9 @@ class ArcGISImageTsClassifier:
         attribute_table["features"] = []
         for i, c in enumerate(class_info):
             if color_mapping:
-                red, green, blue = color_mapping.get(int(key_vals[i][0]), (random.randint(0, 255),
-                                                                    random.randint(0, 255),
-                                                                    random.randint(0, 255)))
+                red, green, blue = color_mapping.get(key_vals[i][0], (random.randint(0, 255),
+                                                                      random.randint(0, 255),
+                                                                      random.randint(0, 255)))
             else:
                 red, green, blue = [random.randint(0, 255) for _ in range(3)]
             attribute_table["features"].append(
