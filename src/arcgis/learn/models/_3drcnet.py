@@ -67,6 +67,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
         if not isinstance(data, _EmptyData):
             init_kwargs = data.arcgis_init_kwargs
             init_kwargs["dataset_type"] = "3DRCNet"
+            init_kwargs["batch_size"] = init_kwargs["batch_size"] * 32
             self._data = self.data = data = prepare_data(**init_kwargs)
 
         hyperspectral3drcnetet = ConvNeXt(
