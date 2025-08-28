@@ -424,7 +424,7 @@ def show_results(self, rows=4, rgb_bands=[0, 1, 2], alpha=0.5, **kwargs):
 
     ys_preds, ys_reals, xs_imgs = [], [], []
 
-    training_class_map = {j: i - 1 for i, j in self._data._training_class_map.items()}
+    training_class_map = {j: i for i, j in self._data._training_class_map.items()}
 
     for i, (x, y) in enumerate(zip(xs, ys)):
         y_pred, y_new = predict_on_validation(
