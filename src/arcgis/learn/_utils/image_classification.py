@@ -88,6 +88,7 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
     x_batch, y_batch = get_nbatches(data_loader, nbatches)
     x_batch = torch.cat(x_batch)
     y_batch = torch.cat(y_batch)
+    x_batch_copy = x_batch.clone()
 
     # Get Predictions
     predictions_class_store = []
@@ -221,8 +222,22 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
         else:
             ax_i = axs[r]
         if gradcam_show_result:
-            im = open_image(dataloader_image_path[r])
-            pred = self.learn.predict(im)
+            im = x_batch_copy[idx]
+            if self._data.dataset_type == "MultiLabeled_Tiles":
+                # self. thresh is 0.5
+                pred = (
+                    None,
+                    torch.where(
+                        batch_preds[idx] > 0.5,
+                        torch.tensor(1.0),
+                        torch.tensor(0.0),
+                    ),
+                    batch_preds[idx],
+                )
+
+            else:
+                pred = (None, torch.tensor(class_idxs[idx]), batch_preds[idx])  # cl =
+
             # multi_all_cam setting it to True will return gradcam zero for the class not predicted
             grad_cam_outputs, _, xb, _ = self._generate_grad_cam(
                 im, pred, self._data.dataset_type, multi_all_cam=True
