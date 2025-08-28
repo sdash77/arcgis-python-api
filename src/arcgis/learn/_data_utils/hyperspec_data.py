@@ -575,9 +575,7 @@ def prepare_hyperspec_data(
         )
         alpha_tensor = torch.tensor([alpha] * len(color_array)).view(-1, 1).float()
         color_array = torch.cat([color_array, alpha_tensor], dim=-1)
-        # background_color = torch.tensor([[0, 0, 0, 0]]).float()
-        data._multispectral_color_array = (
-            color_array  # torch.cat([background_color, color_array])
-        )
+        background_color = torch.tensor([[0, 0, 0, 0]]).float()
+        data._multispectral_color_array = torch.cat([background_color, color_array])
 
     return data
