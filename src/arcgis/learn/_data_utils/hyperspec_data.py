@@ -536,7 +536,9 @@ def prepare_hyperspec_data(
         data.classes = original_classes
 
     data.num_class_mapping = training_class_map
-    data.class_mapping = data.classes
+    data.class_mapping = {
+        i: (i if not isinstance(j, str) else j) for i, j in data.classes.items()
+    }
     data.classes = dict(sorted(data.classes.items()))
     data._training_class_map = training_class_map
     data._num_classes = len([i for i in data.classes.values()])

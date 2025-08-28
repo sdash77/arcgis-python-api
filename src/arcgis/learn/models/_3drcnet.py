@@ -68,6 +68,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
             init_kwargs = data.arcgis_init_kwargs
             init_kwargs["dataset_type"] = "3DRCNet"
             self._data = self.data = data = prepare_data(**init_kwargs)
+
         hyperspectral3drcnetet = ConvNeXt(
             in_chans=1, num_classes=data._num_classes, **kwargs
         )
@@ -107,7 +108,8 @@ class Hyperspectral3DRCNet(ArcGISModel):
                 "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTsClassifier.py"
             )
         _emd_template["ModelType"] = "ImageClassification"
-        _emd_template["Class_mapping"] = self._data.classes
+        _emd_template["Class_mapping"] = self._data.class_mapping
+        _emd_template["color_mapping"] = self._data.color_mapping
         _emd_template["training_class_map"] = self._data._training_class_map
         _emd_template["ImageHeight"] = 256
         _emd_template["ImageWidth"] = 256
@@ -178,7 +180,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return self.compute_metrics()
+        return self.per_class_metrics()
 
     @property
     def supported_datasets(self):
