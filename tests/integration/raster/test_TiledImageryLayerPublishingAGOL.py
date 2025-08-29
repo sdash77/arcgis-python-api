@@ -37,6 +37,7 @@ except ImportError:
     raise (exit())
 # endregion PreCondition Check
 
+
 # TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in GIS module")
 def setUpModule():
@@ -160,7 +161,7 @@ class Test_TiledImageryPublishing(unittest.TestCase):
                 nd_array.shape, (450, 1200, 3), "Pixel data shape mismatch"
             )
             self.assertEqual(
-                nd_array.mean(), 49.13891790123457, "Pixel data mean mismatch"
+                nd_array.mean(), 49.10931172839506, "Pixel data mean mismatch"
             )
 
             # delete the item

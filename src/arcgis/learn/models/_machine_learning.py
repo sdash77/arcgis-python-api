@@ -796,7 +796,7 @@ class MLModel(object):
 
         MLModel._save_encoders(self._data._encoder_mapping, path, base_file_name)
 
-        if self._fairness:
+        if self._fairness and self._data._is_classification:
             MLModel._save_encoders(
                 self.fairness_label_encoder, path, base_file_name + "_fairness"
             )

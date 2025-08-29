@@ -1512,11 +1512,10 @@ class ArcGISModel(object):
                             self.per_class_metrics().to_json()
                         )
 
-        if (
-            getattr(self._data, "_dataset_type", None) == "Labeled_Tiles"
-            or getattr(self._data, "_dataset_type", None) == "Imagenet"
-        ):
-            if hasattr(self, "_gradCAM") and not (self._data._is_multispectral):
+        # adding Expmap flag to True for feature classifier
+        _is_dataset_type = getattr(self._data, "_dataset_type", None)
+        if _is_dataset_type in {"Labeled_Tiles", "Imagenet", "MultiLabeled_Tiles"}:
+            if hasattr(self, "_gradCAM"):
                 _emd_template["ExpMap"] = kwargs.get("gradcam", False)
 
         if hasattr(self, "_model_emd"):
