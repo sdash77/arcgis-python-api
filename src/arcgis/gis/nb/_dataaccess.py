@@ -538,11 +538,18 @@ class NotebookDataAccess:
         response = self._gis.session.get(url, params=params).json()
         # When creating subfolders the name should always have the folder to which it belongs as the prefix
 
-        folders = [
-            NotebookFolder(f["Name"], self)
-            for f in response.get("Blobs", [])
-            if f["Properties"].get("ResourceType", "").lower() == "directory"
-        ]
+        if self._gis._is_agol:
+            folders = [
+                NotebookFolder(f["Name"], self)
+                for f in response.get("Blobs", [])
+                if f["Properties"].get("ResourceType", "").lower() == "directory"
+            ]
+        else:
+            folders = [
+                NotebookFolder(f["Name"], self)
+                for f in response.get("Blobs", [])
+                if f["Name"].endswith("/") and f["Name"] != parent_folder
+            ]
 
         # Include root folder only if folder_name is None
         if parent_folder is None:
