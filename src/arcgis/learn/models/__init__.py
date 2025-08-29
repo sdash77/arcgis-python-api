@@ -45,3 +45,4 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._climax import ClimaX
     from ._point_transformerv3 import PTv3Seg
     from ._ptv3_det import PTv3Det
+    from ._3drcnet import Hyperspectral3DRCNet
