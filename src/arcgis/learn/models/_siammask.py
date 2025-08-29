@@ -242,9 +242,12 @@ class SiamMask(ArcGISModel):
             for key, value in emd["DataAttributes"].items():
                 setattr(data, key, value)
 
-        return cls(
+        model_obj = cls(
             data, **model_params, pretrained_path=str(model_file), load_from_model=True
         )
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}

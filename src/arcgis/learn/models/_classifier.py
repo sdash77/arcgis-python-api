@@ -525,9 +525,6 @@ class FeatureClassifier(ArcGISModel):
         """
         from .._utils.image_classification import IC_show_results
 
-        if self._is_multispectral and gradcam:
-            raise Exception("This feature is not supported for multispectral datasets.")
-
         return_fig = kwargs.get("return_fig", False)
         fig = IC_show_results(self, nrows=rows, gradcam_show_result=gradcam, **kwargs)
         if return_fig:
@@ -897,7 +894,10 @@ class FeatureClassifier(ArcGISModel):
         resize_to = emd.get("resize_to")
         data.resize_to = resize_to
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def plot_confusion_matrix(self, **kwargs):
         """
@@ -1982,12 +1982,16 @@ class FeatureClassifier(ArcGISModel):
             # gives dimension- 1 to the scalar tensor of SingleCategory types
             cat_pred = cl[1].unsqueeze(0)
         m = self.learn.model.eval()  # Set the model to evaluation mode
-        xb_norm, _ = self._data.one_item(
-            im, detach=False, denorm=True
-        )  # Normalized batch
-        xb, _ = self._data.one_item(
-            im, detach=False, denorm=False
-        )  # Batch without normalization
+        if isinstance(im, torch.Tensor):
+            xb = im.unsqueeze(0)
+            xb_norm = None
+        else:
+            xb_norm, _ = self._data.one_item(
+                im, detach=False, denorm=True
+            )  # Normalized batch
+            xb, _ = self._data.one_item(
+                im, detach=False, denorm=False
+            )  # Batch without normalization
         grad_cam_outputs = []
         pred_class_label = []
         for class_label, pred_cat1 in enumerate(cat_pred.cpu().numpy()):

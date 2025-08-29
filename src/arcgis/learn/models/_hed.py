@@ -323,7 +323,10 @@ class HEDEdgeDetector(ModelExtension):
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = emd["DatasetType"]
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
         """
