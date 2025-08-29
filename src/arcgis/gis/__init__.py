@@ -2057,6 +2057,7 @@ class OfflineContentManager(object):
         folder: Folder | str = None,
         failure_rollback: bool = False,
         item_mapping: dict = {},
+        search_existing_items: bool = False,
     ) -> list:
         """
         Reads a `.contentexport` file (see
@@ -2073,38 +2074,43 @@ class OfflineContentManager(object):
             * Survey123 Forms
             * Geoprocessing Services
 
-        ================     ======================================================================
-        **Parameter**         **Description**
-        ----------------     ----------------------------------------------------------------------
-        package_path         Required string. The path to the `.contentexport` file to import.
-        ----------------     ----------------------------------------------------------------------
-        item_ids             Optional list of strings. The item ids to import from the package.
-                             If none provided, all items in the package will be imported.
-        ----------------     ----------------------------------------------------------------------
-        preserve_ids         Optional boolean. If True, the original item ids will be preserved,
-                             if available. Default is *False*.
+        =====================     ======================================================================
+        **Parameter**              **Description**
+        ---------------------     ----------------------------------------------------------------------
+        package_path              Required string. The path to the `.contentexport` file to import.
+        ---------------------     ----------------------------------------------------------------------
+        item_ids                  Optional list of strings. The item ids to import from the package.
+                                  If none provided, all items in the package will be imported.
+        ---------------------     ----------------------------------------------------------------------
+        preserve_ids              Optional boolean. If True, the original item ids will be preserved,
+                                  if available. Default is *False*.
 
-                             .. note::
-                                 Only available for ArcGIS Enterprise.
-        ----------------     ----------------------------------------------------------------------
-        folder               Optional :class:`~arcgis.gis._impl._content_manager.Folder` or string.
-                             The folder to import the content into. If no argument provided, content
-                             placed in the logged-in user's root folder.
-        ----------------     ----------------------------------------------------------------------
-        failure_rollback     Optional boolean.
+                                  .. note::
+                                    Only available for ArcGIS Enterprise.
+        ---------------------     ----------------------------------------------------------------------
+        folder                    Optional :class:`~arcgis.gis._impl._content_manager.Folder` or string.
+                                  The folder to import the content into. If no argument provided, content
+                                  placed in the logged-in user's root folder.
+        ---------------------     ----------------------------------------------------------------------
+        failure_rollback          Optional boolean.
 
-                             * If *True*, the import will be rolled back and the created items will
-                               be deleted if any error occurs during the process.
-                             * If *False*, any item that fails to import will be skipped and the
-                               process will continue. Default is *False*.
-        ----------------     ----------------------------------------------------------------------
-        item_mapping         A mapping of item IDs from the offline package to item IDs that
-                             already exist in the target organization. The keys represent the item
-                             IDs of dependencies in the offline package, while the values are the
-                             corresponding item IDs to be used as replacements during import. This
-                             prevents duplication by reusing existing items when certain
-                             dependencies have already been uploaded.
-        ================     ======================================================================
+                                  * If *True*, the import will be rolled back and the created items will
+                                  be deleted if any error occurs during the process.
+                                  * If *False*, any item that fails to import will be skipped and the
+                                  process will continue. Default is *False*.
+        ---------------------     ----------------------------------------------------------------------
+        item_mapping              A mapping of item IDs from the offline package to item IDs that
+                                  already exist in the target organization. The keys represent the item
+                                  IDs of dependencies in the offline package, while the values are the
+                                  corresponding item IDs to be used as replacements during import. This
+                                  prevents duplication by reusing existing items when certain
+                                  dependencies have already been uploaded.
+        ---------------------     ----------------------------------------------------------------------
+        search_existing_items     Optional boolean. Indicating whether items that have already been
+                                  cloned should be searched for in the GIS and reused rather than cloned
+                                  again. Existent items will be reused in other new created items, as
+                                  appropriate. Default is *False*.
+        =====================     ======================================================================
 
         :return:
             A List of the created :class:`~arcgis.gis.Item` objects.
@@ -2134,6 +2140,7 @@ class OfflineContentManager(object):
             item_mapping=item_mapping,
             folder=folder,
             failure_rollback=failure_rollback,
+            search_existing_items=search_existing_items,
         )
 
     # ----------------------------------------------------------------------
