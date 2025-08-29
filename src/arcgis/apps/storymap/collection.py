@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Union
+
 import uuid
 from arcgis.auth.tools import LazyLoader
 import re
@@ -38,9 +38,9 @@ class Collection(object):
 
     def __init__(
         self,
-        item: Optional[Union[arcgis.gis.Item, str]] = None,
-        gis: Optional[arcgis.gis.GIS] = None,
-    ):
+        item: arcgis.gis.Item | str | None = None,
+        gis: arcgis.gis.GIS | None = None,
+    ) -> None:
         # Section: Set up gis
         if gis is None:
             # If no gis, find active env
@@ -87,7 +87,7 @@ class Collection(object):
         self._url = self._get_url()
 
     # ----------------------------------------------------------------------
-    def _create_existing_collection(self):
+    def _create_existing_collection(self) -> None:
         # Get properties from most recent resource file.
         # Can have multiple drafts so need to account for this.
         # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
@@ -128,7 +128,7 @@ class Collection(object):
             self._properties = data
 
     # ----------------------------------------------------------------------
-    def _create_new_collection(self):
+    def _create_new_collection(self) -> None:
         # Get template from _util module
         template = copy.deepcopy(utils._TEMPLATES["collection"])
         # Add correct by-line and locale
@@ -184,23 +184,23 @@ class Collection(object):
         self._resources = self._item.resources.list()
 
     # ----------------------------------------------------------------------
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """
         HTML Representation for IPython Notebook
         """
         return self._item._repr_html_()
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the url of the storymap"""
         return self._url
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def _refresh(self):
+    def _refresh(self) -> None:
         """Load the latest data from the item"""
         if self._item:
             self._properties = json.loads(self._item.get_data())
@@ -236,7 +236,7 @@ class Collection(object):
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
-    def show(self, width: int | None = None, height: int | None = None):
+    def show(self, width: int | None = None, height: int | None = None) -> object:
         """
         Show a preview of the collection. The default is a width of 700 and height of 300.
 
@@ -264,7 +264,7 @@ class Collection(object):
         return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: storymap.Themes | str | None = None):
+    def theme(self, theme: storymap.Themes | str | None = None) -> bool:
         """
         Each collection has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -299,7 +299,7 @@ class Collection(object):
         publish: bool = False,
         make_copyable: bool | None = None,
         no_seo: bool | None = None,
-    ):
+    ) -> object:
         """
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
@@ -346,7 +346,7 @@ class Collection(object):
         return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
-    def delete_collection(self):
+    def delete_collection(self) -> bool:
         """
         Deletes the collection item.
         """
@@ -354,7 +354,7 @@ class Collection(object):
         return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
-    def _get_content_type(self, obj):
+    def _get_content_type(self, obj) -> str:
         """
         Determines the content type from a given object.
         - If it's a known class instance, returns its type name.
@@ -375,7 +375,7 @@ class Collection(object):
         else:
             return "Unknown"
 
-    def _iterate_content(self):
+    def _iterate_content(self) -> object:
         """
         Internal generator method to iterate through the content of the collection.
         """
@@ -421,7 +421,7 @@ class Collection(object):
 
     # ----------------------------------------------------------------------
     @property
-    def content(self):
+    def content(self) -> list:
         """
         Returns the content of the collection. This includes the cover and navigation.
         """
@@ -429,7 +429,7 @@ class Collection(object):
 
     # ----------------------------------------------------------------------
     @property
-    def content_info(self):
+    def content_info(self) -> object:
         """
         Returns the content as a table with the following columns:
         - Index
@@ -460,7 +460,7 @@ class Collection(object):
         index: int | list[int],
         custom_title: str | list[str] | None = None,
         visible: bool | None = None,
-    ):
+    ) -> object:
         """
         Update the content item in the collection.
 
@@ -504,7 +504,7 @@ class Collection(object):
         return self.content_info
 
     # ----------------------------------------------------------------------
-    def remove(self, index):
+    def remove(self, index: int) -> bool:
         """
         Remove an item from the collection. Specify this item with the index position
         of the item in the collection. The list of items in the collection can be found
@@ -551,11 +551,11 @@ class Collection(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        item: content.Image | content.Video | content.Embed | _gis.Item | str,
+        item: content.Image | content.Video | content.Embed | arcgis.gis.Item | str,
         title: str | None = None,
         thumbnail: str | None = None,
         position: int | None = None,
-    ):
+    ) -> object:
         """
         Add an item to the collection. Specify this item with the item object.
         The item can be a portal item, file resource, or a story content of type

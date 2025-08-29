@@ -1,6 +1,7 @@
 from __future__ import annotations
 import uuid
 from enum import Enum
+
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 import re
@@ -68,18 +69,18 @@ class StoryMap(object):
         self,
         item: arcgis.gis.Item | str | None = None,
         gis: arcgis.gis.GIS | None = None,
-    ):
+    ) -> None:
         # Section: Set up gis
         self._setup_gis(gis)
         self._setup_storymap(item)
 
-    def _setup_gis(self, gis):
+    def _setup_gis(self, gis: arcgis.gis.GIS | None) -> None:
         self._gis = gis or arcgis.env.active_gis
 
         if not (self._gis and self._gis._portal.is_logged_in):
             raise ValueError("Must be logged into a Portal Account")
 
-    def _setup_storymap(self, item):
+    def _setup_storymap(self, item: arcgis.gis.Item | str | None) -> None:
         if item and isinstance(item, str):
             # Get item using the item id
             item = self._gis.content.get(item)
@@ -105,7 +106,7 @@ class StoryMap(object):
         self._resources = self._item.resources.list()
 
     # ----------------------------------------------------------------------
-    def _setup_existing_storymap(self, item):
+    def _setup_existing_storymap(self, item: arcgis.gis.Item) -> None:
         saved_drafts = [
             resource["resource"]
             for resource in item.resources.list()
@@ -121,15 +122,15 @@ class StoryMap(object):
         self._itemid = item.itemid
 
     @staticmethod
-    def _is_draft(resource):
+    def _is_draft(resource: str) -> object:
         return re.match(r"draft_[0-9]{13}\.json|draft\.json", resource)
 
-    def _get_most_recent_draft(self, drafts):
+    def _get_most_recent_draft(self, drafts: list[str]) -> str | None:
         drafts.remove("draft.json") if "draft.json" in drafts else None
         return max(drafts, key=lambda x: x[6:19]) if drafts else None
 
     # ----------------------------------------------------------------------
-    def _create_new_storymap(self):
+    def _create_new_storymap(self) -> None:
         # Step 1: Get template from _ref folder
         template = self._get_storymap_template()
 
@@ -178,22 +179,22 @@ class StoryMap(object):
             access="private",
         )
 
-    def _get_storymap_template(self):
+    def _get_storymap_template(self) -> object:
         return copy.deepcopy(utils._TEMPLATES["storymap_2"])
 
-    def _customize_template(self, template):
+    def _customize_template(self, template: object) -> None:
         template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
         template["nodes"]["n-4xkUEe"]["config"]["storyLocale"] = (
             self._gis.users.me.culture or "en-US"
         )
 
-    def _create_unique_story_node(self, template):
+    def _create_unique_story_node(self, template: object) -> None:
         story_node = "n-" + uuid.uuid4().hex[:6]
         template["root"] = story_node
         template["nodes"][story_node] = template["nodes"]["n-4xkUEe"]
         del template["nodes"]["n-4xkUEe"]
 
-    def _get_keywords(self, draft):
+    def _get_keywords(self, draft: str) -> str:
         sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
             "version"
         ]
@@ -211,23 +212,23 @@ class StoryMap(object):
         )
 
     # ----------------------------------------------------------------------
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """
         HTML Representation for IPython Notebook
         """
         return self._item._repr_html_()
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the url of the storymap"""
         return self._url
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def _refresh(self):
+    def _refresh(self) -> None:
         """Load the latest data from the item"""
         if self._item:
             self._properties = json.loads(self._item.get_data())
@@ -259,7 +260,7 @@ class StoryMap(object):
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
-    def show(self, width: int | None = None, height: int | None = None):
+    def show(self, width: int | None = None, height: int | None = None) -> object:
         """
         Show a preview of the story. The default is a width of 700 and height of 300.
 
@@ -295,7 +296,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @story_locale.setter
-    def story_locale(self, locale: str):
+    def story_locale(self, locale: str) -> str:
         """
         See story_locale property above
         """
@@ -365,7 +366,7 @@ class StoryMap(object):
             return None
 
     # ----------------------------------------------------------------------
-    def get_logo(self):
+    def get_logo(self) -> object:
         """
         Get the logo image for the story. The logo is seen in the header of the story.
         """
@@ -382,7 +383,7 @@ class StoryMap(object):
         image: str | None = None,
         link: str | None = None,
         alt_text: str | None = None,
-    ):
+    ) -> bool:
         """
         Set the logo for the story. The logo is seen in the header of the story.
 
@@ -423,7 +424,7 @@ class StoryMap(object):
         return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Themes | str | None = None):
+    def theme(self, theme: Themes | str | None = None) -> bool:
         """
         Each story has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -456,7 +457,7 @@ class StoryMap(object):
         attribution: str | None = None,
         heading: str | None = None,
         description: str | None = None,
-    ):
+    ) -> list:
         """
         Credits are found at the end of the story and thus are always the last node.
 
@@ -524,17 +525,19 @@ class StoryMap(object):
         self._properties["nodes"][credits_node_id]["children"] = children
         return self._properties["nodes"][credits_node_id]["children"]
 
-    def _get_credits_node_id(self):
+    def _get_credits_node_id(self) -> str:
         # Find credit node
         dict_node = utils.get(story=self, type="credits")[0]
         # Get credit node id
         for key, _ in dict_node.items():
             return key
 
-    def _generate_unique_node_id(self):
+    def _generate_unique_node_id(self) -> str:
         return "n-" + uuid.uuid4().hex[:6]
 
-    def _add_content_and_attribution(self, content, attribution):
+    def _add_content_and_attribution(
+        self, content: str | None, attribution: str | None
+    ) -> list:
         nodes = []
         if content or attribution:
             # Create new content node
@@ -546,7 +549,7 @@ class StoryMap(object):
             nodes.append(node_id)
         return nodes
 
-    def _update_or_add_heading(self, heading, children):
+    def _update_or_add_heading(self, heading: str, children: list) -> list:
         # Create new content node
         # Create new heading node
         node_id = self._generate_unique_node_id()
@@ -558,7 +561,7 @@ class StoryMap(object):
         children.insert(0, node_id)
         return children
 
-    def _update_or_add_description(self, description, children):
+    def _update_or_add_description(self, description: str, children: list) -> list:
         node_id = self._generate_unique_node_id()
         self._properties["nodes"][node_id] = {
             "type": "text",
@@ -574,7 +577,7 @@ class StoryMap(object):
         )
         return children
 
-    def _credit_child_exists(self, child, node_type, data_type):
+    def _credit_child_exists(self, child: str, node_type: str, data_type: str) -> bool:
         if (
             self._properties["nodes"][child]["type"] == node_type
             and self._properties["nodes"][child]["data"]["type"] == data_type
@@ -582,7 +585,7 @@ class StoryMap(object):
             return True
         return False
 
-    def _update_node(self, children, node_type, data_type):
+    def _update_node(self, children: list, node_type: str, data_type: str) -> list:
         # remove the old node if it exists
         for child in children:
             if self._credit_child_exists(child, node_type, data_type):
@@ -612,7 +615,7 @@ class StoryMap(object):
         alt_text: str | None = None,
         display: str | None = None,
         position: int | None = None,
-    ):
+    ) -> str:
         """
         Use this method to add content to your StoryMap. content can be of various class types and when
         you add this content you can specify a caption, alt_text, display style, and the position
@@ -706,7 +709,7 @@ class StoryMap(object):
         node_id: str,
         position: int | None = None,
         delete_current: bool = False,
-    ):
+    ) -> None:
         """
         Move a node to another position. The node currently at that position will
         be moved down one space. The node at the current position can be deleted
@@ -762,9 +765,9 @@ class StoryMap(object):
         tags: list | None = None,
         access: str | None = None,
         publish: bool = False,
-        make_copyable: bool = None,
-        no_seo: bool = None,
-    ):
+        make_copyable: bool | None = None,
+        no_seo: bool | None = None,
+    ) -> object:
         """
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
@@ -811,7 +814,7 @@ class StoryMap(object):
         return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
-    def delete_story(self):
+    def delete_story(self) -> bool:
         """
         Deletes the story item.
         """
@@ -820,7 +823,7 @@ class StoryMap(object):
         return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
-    def duplicate(self, title: str | None = None):
+    def duplicate(self, title: str | None = None) -> object:
         """
         Duplicate the story. All items will be duplicated as they are. This allows you to create
         a story template and duplicate it when you want to work with it.
@@ -855,7 +858,7 @@ class StoryMap(object):
         return utils.duplicate(self, title)
 
     # ----------------------------------------------------------------------
-    def copy_content(self, target_story: StoryMap, node_list: list):
+    def copy_content(self, target_story: StoryMap, node_list: list) -> bool:
         """
         Copy the content from one story to another. This will copy the content
         indicated to the target story in the order they are provided. To change the
