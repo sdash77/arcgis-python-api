@@ -388,7 +388,7 @@ class Mission:
             context=context,
             gis=gis,
             future=future,
-            **kwargs
+            **kwargs,
         )
 
         return image_collection.url
@@ -433,7 +433,7 @@ class Mission:
             gis=gis,
             future=future,
             estimate=estimate,
-            **kwargs
+            **kwargs,
         )
 
         return image_collection.url
