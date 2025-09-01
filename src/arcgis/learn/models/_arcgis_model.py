@@ -802,32 +802,13 @@ class ArcGISModel(object):
                     f"Enter only compatible datasets from {', '.join(self.supported_datasets)}"
                 )
 
-    def _is_vitdet_model(self):
-        model = self.learn.model
-        backbone = None
-        if getattr(model, "_is_vitdet", False):
-            backbone = model
-        elif hasattr(model, "backbone"):
-            backbone = model.backbone
-            if hasattr(backbone, "_is_vitdet"):
-                backbone = backbone[0].backbone
-
-        if (
-            getattr(backbone, "_is_prithvi", False)
-            or getattr(backbone, "backbone_name", None) == "prithvi"
-        ):
-            # if backbone is Prithvi train patch_embed since it is pre-trained on 6 bands
-            for _, param in backbone.patch_embed.named_parameters():
-                param.requires_grad = True
-            return True
-        elif getattr(backbone, "_is_vitdet", False):
-            return True
-
-        return False
-
     def _arcgis_init_callback(self):
-        vitdet_model = self._is_vitdet_model()
-
+        vitdet_model = False
+        if (
+            hasattr(self.learn.model, "backbone")
+            and getattr(self.learn.model.backbone, "_is_vitdet", False)
+        ) or getattr(self.learn.model, "_is_vitdet", False):
+            vitdet_model = True
         if self._is_multispectral and not vitdet_model:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
