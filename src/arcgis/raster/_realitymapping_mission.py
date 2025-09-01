@@ -255,6 +255,10 @@ class Mission:
         raster_type_name: Optional[str] = None,
         raster_type_params: Optional[dict[str, Any]] = None,
         context: Optional[dict[str, Any]] = None,
+        *,
+        gis: Optional[GIS] = None,
+        future: bool = False,
+        **kwargs,
     ):
         """
         Add a collection of images to existing image collection of the mission. It provides
@@ -383,12 +387,22 @@ class Mission:
             raster_type_params=raster_type_params,
             context=context,
             gis=gis,
-            future=True,
+            future=future,
+            **kwargs
         )
 
         return image_collection.url
 
-    def delete_image(self, where: str):
+    def delete_image(
+        self,
+        where: str,
+        context: Optional[dict] = None,
+        *,
+        gis: Optional[GIS] = None,
+        future: bool = False,
+        estimate: Optional[bool] = False,
+        **kwargs,
+    ):
         """
 
         ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset) of a mission.
@@ -415,9 +429,11 @@ class Mission:
         gpjob = delete_image(
             image_collection=image_collection,
             where=where,
-            gis=gis,
-            future=True,
             context=context,
+            gis=gis,
+            future=future,
+            estimate=estimate,
+            **kwargs
         )
 
         return image_collection.url
