@@ -969,7 +969,7 @@ class NotebookDataAccess:
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
-        details="Use the files property found in a NotebookFolder instead or the get_file method.",
+        details="Use the files property found in a NotebookFolder instead or the get method with DATAACCESSTYPE.FILE.",
     )
     def files(self) -> list[NotebookFile]:
         """
