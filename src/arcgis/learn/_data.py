@@ -1571,10 +1571,6 @@ def prepare_data(
     if getattr(arcgis.env, "_processorType", "") == "CPU":
         databunch_kwargs["device"] = torch.device("cpu")
 
-    if ARCGIS_ENABLE_TF_BACKEND:
-        databunch_kwargs["device"] = torch.device("cpu")
-        databunch_kwargs["pin_memory"] = False
-
     kwargs_transforms = {}
     if resize_to:
         kwargs_transforms["size"] = resize_to
