@@ -809,6 +809,8 @@ class ArcGISModel(object):
             backbone = model
         elif hasattr(model, "backbone"):
             backbone = model.backbone
+            if hasattr(backbone, "_is_vitdet"):
+                backbone = backbone[0].backbone
 
         if (
             getattr(backbone, "_is_prithvi", False)
