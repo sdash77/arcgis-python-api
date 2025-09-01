@@ -639,7 +639,7 @@ class NotebookDataAccess:
         return result
 
     # ---------------------------------------------------------------------
-    def _get_file(self, file_name: str) -> NotebookFile:
+    def _get_file(self, file_name: str) -> NotebookFile | None:
         """
         Returns a specific file in the workspace directory (/arcgis/home) of the user making the request.
         If you have multiple files with the same name, this method will return the first one found.
@@ -651,7 +651,7 @@ class NotebookDataAccess:
                                 The file name must be a simple, non-empty name without slashes.
         ====================    ==========================================================================
 
-        :return: NotebookFile - A NotebookFile object representing the requested file.
+        :return: NotebookFile - A NotebookFile object representing the requested file, or None if not found.
         """
         if not isinstance(file_name, str):
             raise ValueError("file_name must be a string.")
@@ -668,14 +668,20 @@ class NotebookDataAccess:
             "comp": "list",
             "token": self._gis.session.auth.token,
         }
-        response = self._gis.session.get(url, params=params).json()
+        try:
+            response = self._gis.session.get(url, params=params).json()
+        except Exception as ex:
+            raise RuntimeError(f"Failed to fetch files: {ex}")
+
         for f in response.get("Blobs", []):
-            if (
-                f["Properties"].get("ResourceType")
-                and f["Properties"].get("ResourceType").lower() == "file"
-                and f["Name"].endswith(file_name)
-            ):
-                return NotebookFile(f, self)
+            if self._gis._is_agol:
+                if f.get("Properties", {}).get(
+                    "ResourceType", ""
+                ).lower() == "file" and f["Name"].endswith(file_name):
+                    return NotebookFile(f, self)
+            else:
+                if f["Name"].endswith(file_name) and not f["Name"].endswith("/"):
+                    return NotebookFile(f, self)
         return None
 
     # ---------------------------------------------------------------------
