@@ -809,11 +809,6 @@ class ArcGISModel(object):
             backbone = model
         elif hasattr(model, "backbone"):
             backbone = model.backbone
-            backbone = (
-                backbone[0].backbone
-                if isinstance(backbone, torch.nn.Sequential)
-                else backbone
-            )
 
         if (
             getattr(backbone, "_is_prithvi", False)
