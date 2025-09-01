@@ -1750,7 +1750,7 @@ class _DeepCloner:
                 resources=item.resources.export(),
                 preserve_item_id=self._preserve_item_id,
             )
-        elif item["type"] == "Web Experience":
+        elif item["type"] in ["Web Experience", "Web Experience Template"]:
             from arcgis._impl.common._itemdef._expbuilder import _WebExperience
 
             return _WebExperience(

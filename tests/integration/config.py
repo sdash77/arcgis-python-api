@@ -28,18 +28,19 @@ WEB_RESOURCE_ROOT_PATH = os.environ.get(
 )
 
 
-def get_resource_path(relative_path=None, verify=True, unique_copy=False):
+def get_resource_path(relative_path=None, verify=True, unique_copy=False, unzip=False):
     """
     Get the absolute path to a resource file within this repository. e.g. `./geosaurus/tests/resources`
 
     If `relative_path` is None, it returns the root path of the resources.
     If `verify` is True, it checks if the resource exists and raises FileNotFoundError if it does not.
     If `unique_copy` is True, it creates a unique copy of the resource in a temporary directory.
+    If `unzip` is True, it unzips the resource into the destination directory.  If True and the file is not a zip file, it raises an error.
     """
-    relative_path = relative_path or '' # use empty string for root path
+    relative_path = relative_path or ""  # use empty string for root path
     # Normalize the path to use forward slashes and remove leading slashes
-    relative_path = relative_path.replace('\\', '/').lstrip('/')
-    resource = pathlib.Path(RESOURCES_ROOT_PATH) / (relative_path or '')
+    relative_path = relative_path.replace("\\", "/").lstrip("/")
+    resource = pathlib.Path(RESOURCES_ROOT_PATH) / (relative_path or "")
     if verify and not resource.exists():
         raise FileNotFoundError(f"Resource not found: {resource}")
     if unique_copy:
@@ -48,7 +49,12 @@ def get_resource_path(relative_path=None, verify=True, unique_copy=False):
         temp_resource_copy = pathlib.Path(temp_dir, unique_name)
         shutil.copy(resource, temp_resource_copy)
         resource = temp_resource_copy
+    if unzip:
+        resource_dirname = os.path.dirname(resource)
+        shutil.unpack_archive(resource, resource_dirname, "zip")
+        resource = resource_dirname
     return str(resource)
+
 
 def get_json_resource(relative_path):
     """
@@ -69,11 +75,11 @@ def copy_as_tempfile(staging_data_path: str):
     return str(temp_resource_copy)
 
 
-def get_web_resource_path(relative_path, unique_copy=False):
+def get_web_resource_path(relative_path, unique_copy=False, unzip=False):
     _resource_cache_path = f"_web/{relative_path}"
     try:
         cached_resource = get_resource_path(
-            _resource_cache_path, verify=True, unique_copy=unique_copy
+            _resource_cache_path, verify=True, unique_copy=unique_copy, unzip=unzip
         )
         return cached_resource
     except FileNotFoundError:
@@ -96,4 +102,6 @@ def get_web_resource_path(relative_path, unique_copy=False):
     # first pass is only working with files <1MB
     with open(resource_path, "wb") as f:
         f.write(content)
-    return get_resource_path(_resource_cache_path, verify=True, unique_copy=unique_copy)
+    return get_resource_path(
+        _resource_cache_path, verify=True, unique_copy=unique_copy, unzip=unzip
+    )

@@ -176,14 +176,6 @@ class AutoML(object):
     ):
         try:
             import platform
-
-            if platform.system() == "Linux":
-                message = """
-                        Please enable tensorflow by setting the required environment variable 'ARCGIS_ENABLE_TF_BACKEND' to '1' before importing arcgis
-                        \n for example the following code block needs to be executed before importing arcgis
-                        \n\n`import os; os.environ['ARCGIS_ENABLE_TF_BACKEND'] = '1'`
-                        """
-                print(message)
             from supervised.automl import AutoML as base_AutoML
         except Exception as e:
             import_exception = "\n".join(

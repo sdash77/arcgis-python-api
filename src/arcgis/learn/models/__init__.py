@@ -36,7 +36,6 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._wnet_cgan import WNet_cGAN
     from ._detreg_detector import DETReg
     from ._RandLANet import RandLANet
-    from ._efficientdet import EfficientDet
     from ._SQNSeg import SQNSeg
     from ._psetae import PSETAE
     from ._mmdet3d import MMDetection3D
@@ -45,3 +44,4 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._climax import ClimaX
     from ._point_transformerv3 import PTv3Seg
     from ._ptv3_det import PTv3Det
+    from ._3drcnet import Hyperspectral3DRCNet

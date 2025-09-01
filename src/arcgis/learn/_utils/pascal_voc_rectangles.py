@@ -20,6 +20,7 @@ from matplotlib import patheffects
 from fastai.basic_data import DatasetType
 from fastai.torch_core import grab_idx
 from .._utils.env import is_arcgispronotebook
+from .._utils.common import raise_unsupported_backend_error
 from typing import Callable
 import warnings
 
@@ -475,16 +476,7 @@ def show_results_multispectral(
                     x_batch[i : i + self._data.batch_size]
                 )
         elif self._backend == "tensorflow":
-            from .fastai_tf_fit import _pytorch_to_tf_batch
-
-            _classes_sparse, _activations = self.learn.model(
-                _pytorch_to_tf_batch(x_batch[i : i + self._data.batch_size])
-            )
-            _classes_sparse, _activations = (
-                _classes_sparse.detach().numpy(),
-                _activations.detach().numpy(),
-            )
-            predictions = (torch.tensor(_classes_sparse), torch.tensor(_activations))
+            raise_unsupported_backend_error("tensorflow")
 
         if getattr(self, "_is_model_extension", False):
             pred_model_external.extend(analyzed_pred_ext)
