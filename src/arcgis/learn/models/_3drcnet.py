@@ -8,7 +8,13 @@ from ._arcgis_model import ArcGISModel, _EmptyData
 
 try:
     from IPython.display import display
-    from ._3drcnet_utils import ConvNeXt, acc, calc_accuracy, compute_mIoU
+    from ._3drcnet_utils import (
+        ConvNeXt,
+        acc,
+        calc_accuracy,
+        compute_mIoU,
+        compute_metrics_df,
+    )
     from .._data_utils.hyperspec_data import show_results
     from .._utils.common import _get_emd_path
     from pathlib import Path
@@ -221,11 +227,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
         if not hasattr(self._data, "load_empty"):
             raise Exception("Dataset is required for compute metrics")
 
-        acc = calc_accuracy(self.learn.model, self._data)
-        miou = compute_mIoU(
-            self.learn.model, self._data, self._data._num_classes, mean=False
-        )
-        return {"Accuracy (OA)": "{}".format(acc), "mIOU": "{}".format(miou)}
+        return compute_metrics_df(self.learn.model, self._data, self._data._num_classes)
 
     def accuracy(self):
         """
