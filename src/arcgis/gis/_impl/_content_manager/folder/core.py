@@ -984,9 +984,12 @@ class Folder:
                 return job
             if (file or text or url) and item_id:
                 params["async"] = False
-                file_list["file"] = create_upload_tuple(
-                    file, file_name=item_properties.get("file_name", None)
-                )
+                if file:
+                    file_list["file"] = create_upload_tuple(
+                        file, file_name=item_properties.get("file_name", None)
+                    )
+                else:
+                    file = None
                 if not url and "url" in params:
                     url = params.get("url")
                 if url:
