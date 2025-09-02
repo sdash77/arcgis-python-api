@@ -67,6 +67,7 @@ try:
     from ._inferencing.util import actn_to_bb, hw2corners, nms_jit
     from fastprogress.fastprogress import progress_bar
     from .._utils.env import is_arcgispronotebook
+    from .._utils.common import raise_unsupported_backend_error
     import matplotlib.pyplot as plt
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
@@ -294,7 +295,7 @@ class SingleShotDetector(ArcGISModel):
     backend                 Optional string. Controls the backend framework to be used
                             for this model, which is 'pytorch' by default.
 
-                            valid options are 'pytorch', 'tensorflow'
+                            valid option is 'pytorch'
     ---------------------   -------------------------------------------
     wavelengths             Optional list. A list of central wavelengths
                             corresponding to each data band (in micrometers).
@@ -333,17 +334,7 @@ class SingleShotDetector(ArcGISModel):
 
         self._backend = backend
         if self._backend == "tensorflow":
-            self._intialize_tensorflow(
-                data,
-                grids,
-                zooms,
-                ratios,
-                backbone,
-                drop,
-                bias,
-                pretrained_path,
-                location_loss_factor,
-            )
+            raise_unsupported_backend_error(backend="tensorflow")
         else:
             self._check_dataset_support(self._data)
             if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
@@ -683,10 +674,9 @@ class SingleShotDetector(ArcGISModel):
         if isinstance(resize_to, list):
             resize_to = (resize_to[0], resize_to[1])
 
-        # Tensorflow support
         backend = emd.get("ModelParameters", {}).get("backend", "pytorch")
         if backend == "tensorflow":
-            backbone = emd["ModelParameters"].get("backbone", "ResNet50")
+            raise_unsupported_backend_error(backend="tensorflow")
 
         data_passed = True
         # Create an image Staunch for when loading the model using emd (without training data)
@@ -743,6 +733,7 @@ class SingleShotDetector(ArcGISModel):
             ssd.learn.data.single_ds.classes = ssd._data.classes
             ssd.learn.data.single_ds.y.classes = ssd._data.classes
 
+        ssd._model_emd = emd
         return ssd
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
@@ -955,72 +946,6 @@ class SingleShotDetector(ArcGISModel):
             return [traced_model_cpu, traced_model_gpu]
         return [save_path_cpu, save_path_gpu]
 
-    def _save_pytorch_tflite(self, name):
-        import tensorflow as tf
-        import logging
-
-        tf.get_logger().setLevel(logging.ERROR)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            import onnx
-            import onnx_tf
-            from onnx_tf.backend import prepare
-
-        traced_models = self._save_pytorch_torchscript(name, False)
-        if traced_models[0] is None:
-            return ["", ""]
-
-        cpu = torch.device("cpu")
-        device = cpu
-        traced_model = traced_models[0].to(device)
-        if hasattr(self._data, "chip_size"):
-            chip_size = self._data.chip_size
-            if not isinstance(chip_size, tuple):
-                chip_size = (chip_size, chip_size)
-        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
-        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(
-            device
-        )
-
-        save_path_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
-        save_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
-        save_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            torch.onnx.export(
-                traced_model,
-                inp,
-                save_path_onnx,
-                export_params=True,
-                do_constant_folding=False,
-                verbose=True,
-                input_names=["input"],
-                output_names=["output"],
-                opset_version=11,
-            )
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            arcgis_onnx = onnx.load(save_path_onnx)
-            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
-            tf_onnx.export_graph(str(save_path_pb))
-
-        converter = tf.lite.TFLiteConverter.from_saved_model(str(save_path_pb))
-        converter.experimental_new_converter = True
-        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
-        converter.target_ops = [
-            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
-            tf.lite.OpsSet.SELECT_TF_OPS,
-        ]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            tflite_model = converter.convert()
-        with tf.io.gfile.GFile(save_path_tflite, "wb") as f:
-            f.write(tflite_model)
-
-        return [save_path_tflite, save_path_onnx]
-
     def _get_emd_params(self, save_inference_file):
         import random
 
@@ -1062,9 +987,6 @@ class SingleShotDetector(ArcGISModel):
             _emd_template["Classes"].append(class_data.copy())
 
         return _emd_template
-
-    def _get_tfonnx_emd_params(self):
-        return {"ModelConfiguration": "_SSDTensorflow"}
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
@@ -1593,161 +1515,6 @@ class SingleShotDetector(ArcGISModel):
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
-
-    ## Tensorflow specific functions start ##
-    def _intialize_tensorflow(
-        self,
-        data,
-        grids,
-        zooms,
-        ratios,
-        backbone,
-        drop,
-        bias,
-        pretrained_path,
-        location_loss_factor,
-    ):
-        self._check_tf()
-
-        from .._utils.fastai_tf_fit import TfLearner
-        import tensorflow as tf
-        from tensorflow.keras.losses import BinaryCrossentropy
-        from tensorflow.keras.models import Model
-        from tensorflow.keras import applications
-        from tensorflow.keras.optimizers import Adam
-        from fastai.basics import defaults
-        from .._utils.object_detection import get_ssd_head_output
-
-        if data._is_multispectral:
-            raise Exception(
-                'Multispectral data is not supported with backend="tensorflow"'
-            )
-
-        # prepare color array
-        alpha = 0.7
-        color_mapping = getattr(data, "color_mapping", None)
-        if color_mapping is None:
-            color_array = torch.tensor([[1.0, 1.0, 1.0]]).float()
-        else:
-            color_array = torch.tensor(list(color_mapping.values())).float() / 255
-        alpha_tensor = torch.tensor([alpha] * len(color_array)).view(-1, 1).float()
-        color_array = torch.cat([color_array, alpha_tensor], dim=-1)
-        background_color = torch.tensor([[0, 0, 0, 0]]).float()
-        data._multispectral_color_array = torch.cat([background_color, color_array])
-
-        self.ssd_version = 1  # ssd_version
-        if backbone is None:
-            backbone = "ResNet50"
-
-        if type(backbone) == str:
-            backbone = getattr(applications, backbone)
-
-        self._backbone = backbone
-
-        x, y = next(iter(data.train_dl))
-        if tf.keras.backend.image_data_format() == "channels_last":
-            in_shape = [x.shape[-1], x.shape[-1], 3]
-        else:
-            in_shape = [3, x.shape[-1], x.shape[-1]]
-
-        self._backbone_initalized = self._backbone(
-            input_shape=in_shape,
-            include_top=False,
-            # weights='imagenet'
-        )
-        self._backbone_initalized.trainable = False
-
-        self._device = torch.device("cpu")
-        self._data = data
-
-        # self._loss_function_classification = BinaryCrossentropy(from_logits=True, reduction=Reduction.SUM) #2.0.0
-        self._loss_function_classification = BinaryCrossentropy(
-            from_logits=True, reduction="sum"
-        )
-        self.location_loss_factor = location_loss_factor
-
-        if grids is None:
-            # find most suitable centroids for dataset
-            height_width = np.array(data.height_width)
-            centroid = kmeans(height_width, 1)
-            avg = avg_iou(height_width, centroid)
-
-            for num_anchor in range(2, 5):
-                new_centroid = kmeans(height_width, num_anchor)
-                new_avg = avg_iou(height_width, new_centroid)
-                if (new_avg - avg) < 0.05:
-                    break
-                avg = new_avg
-                centroid = new_centroid.copy()
-
-            # find grid size
-            grids = list(
-                map(int, map(round, data.chip_size / np.sort(np.max(centroid, axis=1))))
-            )
-
-            grids = list(set(grids))
-            grids.sort(reverse=True)
-            if grids[-1] == 0:
-                grids[-1] = 1
-            grids = list(set(grids))
-
-        self.grids = grids
-        self.zooms = zooms
-        self.ratios = ratios
-
-        self._create_anchors(grids, zooms, ratios)
-
-        output_layer = get_ssd_head_output(self)
-
-        model = Model(inputs=self._backbone_initalized.input, outputs=output_layer)
-
-        self.learn = TfLearner(
-            data,
-            model,
-            opt_func=Adam,
-            loss_func=self._loss_func_tf,
-            true_wd=True,
-            bn_wd=True,
-            wd=defaults.wd,
-            train_bn=True,
-        )
-
-        self.learn.unfreeze()
-        self.learn.freeze_to(len(self._backbone_initalized.layers))
-
-        self.show_results = self._show_results_multispectral
-
-        self._code = code
-        if pretrained_path is not None:
-            self.load(pretrained_path)
-
-    def _loss_func_tf(self, y_bboxes, y_classes, predictions):
-        from .._utils.object_detection import tf_loss_function_single_image
-        import tensorflow as tf
-
-        predicted_classes = predictions[0]
-        predicted_bboxes = predictions[1]
-
-        localization_loss, classification_loss = tf.constant(0.0), tf.constant(0.0)
-        # Now we will iterate over each image and calculate loss for a single image
-        for image_y_bboxes, image_y_calsses, image_p_bboxes, image_p_classes in zip(
-            y_bboxes, y_classes, predicted_bboxes, predicted_classes
-        ):
-            _localization_loss, _classification_loss = tf_loss_function_single_image(
-                self, image_y_bboxes, image_y_calsses, image_p_bboxes, image_p_classes
-            )
-            classification_loss += _classification_loss
-            localization_loss += _localization_loss
-
-        if self.location_loss_factor is None:
-            return localization_loss + classification_loss
-        else:
-            return (
-                self.location_loss_factor * localization_loss
-                + (1 - self.location_loss_factor) * classification_loss
-            )
-
-    ## Tensorflow specific functions end ##
 
     def fit(
         self,

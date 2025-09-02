@@ -796,7 +796,7 @@ class MLModel(object):
 
         MLModel._save_encoders(self._data._encoder_mapping, path, base_file_name)
 
-        if self._fairness:
+        if self._fairness and self._data._is_classification:
             MLModel._save_encoders(
                 self.fairness_label_encoder, path, base_file_name + "_fairness"
             )
@@ -1028,12 +1028,12 @@ class MLModel(object):
         with open(model_file, "rb") as f:
             model = pickle.loads(f.read())
 
-        return cls(
-            data,
-            emd["ModelName"],
-            pretrained_model=model,
-            **model_parameters,
+        model_obj = cls(
+            data, emd["ModelName"], pretrained_model=model, **model_parameters
         )
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def _predict(self, data, group_data=None):
         if self._fairness and self.mitigation_method == "threshold_optimizer":

@@ -191,6 +191,7 @@ class FullyConnectedNetwork(ArcGISModel):
 
         model = cls(data, layers=layers, pretrained_path=str(emd_path))
         model.learn.loss_func.func.label_smoothing = 0.0
+        model._model_emd = emd
         return model
 
     def save(
@@ -213,10 +214,8 @@ class FullyConnectedNetwork(ArcGISModel):
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
                                 model. (Only supported by :class:`~arcgis.learn.SingleShotDetector`, currently.)
-                                If framework used is ``TF-ONNX``, ``batch_size`` can be
-                                passed as an optional keyword argument.
 
-                                Framework choice: 'PyTorch' and 'TF-ONNX'
+                                Framework choice: 'PyTorch'.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------

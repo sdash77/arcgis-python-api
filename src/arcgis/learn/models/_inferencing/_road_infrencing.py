@@ -203,19 +203,19 @@ class ChildImageClassifier:
             [
                 {
                     "name": "padding",
-                    "dataType": "numeric",
+                    "dataType": "GPLong",
                     "value": int(self.json_info["ImageHeight"]) // 4,
-                    "required": False,
+                    "required": True,
                     "displayName": "Padding",
-                    "description": "Padding",
+                    "description": "Number of pixels at the border of image tiles from which predictions are blended for adjacent tiles. Increase its value to smooth the output while reducing edge artifacts. The maximum value of the padding can be half of the tile size value.",
                 },
                 {
                     "name": "batch_size",
-                    "dataType": "numeric",
-                    "required": False,
+                    "dataType": "GPLong",
+                    "required": True,
                     "value": 4,
                     "displayName": "Batch Size",
-                    "description": "Batch Size",
+                    "description": "Number of image tiles processed in each step of the model inference. This depends on the memory of your graphic card.",
                 },
             ]
         )
@@ -227,19 +227,21 @@ class ChildImageClassifier:
                 [
                     {
                         "name": "return_probability_raster",
-                        "dataType": "string",
-                        "required": False,
+                        "dataType": "GPString",
+                        "required": True,
                         "value": "False",
+                        "domain": ["True", "False"],
                         "displayName": "Return Probability Raster",
                         "description": "If True, will return the probability surface of the result.",
                     },
                     {
                         "name": "threshold",
-                        "dataType": "numeric",
+                        "dataType": "GPDouble",
                         "value": 0.5,
-                        "required": False,
-                        "displayName": "Confidence Score Threshold [0.0, 1.0]",
-                        "description": "Confidence score threshold value [0.0, 1.0]",
+                        "required": True,
+                        "domain": [0.0, 1.0],
+                        "displayName": "Box Threshold",
+                        "description": "The confidence score used for selecting the detections to be included in the results. The allowed values range from 0 to 1.0.",
                     },
                 ]
             )
@@ -248,23 +250,21 @@ class ChildImageClassifier:
             [
                 {
                     "name": "test_time_augmentation",
-                    "dataType": "string",
-                    "required": False,
-                    "value": (
-                        "False"
-                        if "test_time_augmentation" not in self.json_info
-                        else str(self.json_info["test_time_augmentation"])
-                    ),
-                    "displayName": "Perform test time augmentation while predicting",
-                    "description": "If True, will merge predictions from flipped and rotated images.",
+                    "dataType": "GPString",
+                    "required": True,
+                    "value": "False",
+                    "domain": ["True", "False"],
+                    "displayName": "Test Time Augmentation",
+                    "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },
                 {
                     "name": "merge_policy",
-                    "dataType": "string",
-                    "required": False,
+                    "dataType": "GPString",
+                    "required": True,
                     "value": "max",
-                    "displayName": "Policy for merging augmented predictions",
-                    "description": "Policy for merging predictions('mean', 'max' or 'min'). Applicable when test_time_augmentation is True.",
+                    "domain": ["mean", "max", "min"],
+                    "displayName": "Merge Policy",
+                    "description": "Policy for merging predictions (mean, min, or max). Applicable when test_time_augmentation is True.",
                 },
             ]
         )
@@ -410,7 +410,8 @@ class ChildImageClassifier:
 
         transforms = [0]
         if test_time_aug:
-            if self.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+            image_space_used = self.json_info.get("ImageSpaceUsed")
+            if image_space_used == "MAP_SPACE":
                 transforms = list(range(8))
             else:
                 transforms = [
