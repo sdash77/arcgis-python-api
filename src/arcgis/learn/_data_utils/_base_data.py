@@ -213,10 +213,6 @@ class ArcgisData(object):
         # if getattr(arcgis.env, "_processorType", "") == "CPU":
         #    self.databunch_kwargs["device"] = torch.device('cpu')
 
-        if ARCGIS_ENABLE_TF_BACKEND:
-            self.databunch_kwargs["device"] = torch.device("cpu")
-            self.databunch_kwargs["pin_memory"] = False
-
     def get_databunch(self):
         raise NotImplementedError(
             f"Dataset of class {self.__name__} is not implemented."

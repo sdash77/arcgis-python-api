@@ -1598,12 +1598,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
         :rtype:
             bool
+
         """
         if HAS_ARCPY:
             if isinstance(self, Envelope):
                 return False
             return getattr(self.as_arcpy, "isMultipart", None)
-
+        elif HAS_SHAPELY:
+            if self.as_shapely.geom_type.lower().find("multi") <= -1:
+                return True
         return self._is_multipart_fallback()
 
     @abstractmethod

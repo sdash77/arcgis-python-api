@@ -13,7 +13,7 @@ from utils.decorators import integration_test, profiles
 from utils.data_utils import cleanup_published_items
 
 
-@profiles.all
+@profiles.enterprise_and_agol
 @integration_test
 class TestAddUpdateDeleteDef(unittest.TestCase):
     """
