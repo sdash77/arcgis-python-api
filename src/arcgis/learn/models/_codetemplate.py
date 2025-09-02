@@ -1039,12 +1039,12 @@ class ArcGISImageClassifier:
                 params.append(
                     {
                             "name": "radiometric_offset_correction",
-                            "dataType": "string",
+                            "dataType": "GPString",
                             "required": False,
                             "value": "False"
                             if "radiometric_offset_correction" not in self.json_info
                             else str(self.json_info["radiometric_offset_correction"]),
-                            "displayName": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
+                            "displayName": "Radiometric Offset Correction",
                             "description": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
                     }
                 )
@@ -1340,12 +1340,12 @@ class ArcGISInstanceDetector:
                 params.append(
                     {
                             "name": "radiometric_offset_correction",
-                            "dataType": "string",
+                            "dataType": "GPString",
                             "required": False,
                             "value": "False"
                             if "radiometric_offset_correction" not in self.json_info
                             else str(self.json_info["radiometric_offset_correction"]),
-                            "displayName": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
+                            "displayName": "Radiometric Offset Correction",
                             "description": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
 
         return params
