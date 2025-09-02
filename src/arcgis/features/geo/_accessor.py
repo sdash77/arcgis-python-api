@@ -937,10 +937,17 @@ class GeoSeriesAccessor:
         return pd.Series(res, index=self._index, name="position_along_line")
 
     # ----------------------------------------------------------------------
-    def project_as(self, spatial_reference, transformation_name=None):
+    def project_as(
+        self,
+        spatial_reference: _geometry.SpatialReference,
+        transformation_name: str = None,
+    ):
         """
         The ``project_as`` method projects a :class:`~arcgis.geometry.Geometry`and optionally applies a
         ``geotransformation``.
+
+        .. note::
+            The ``project_as`` method requires ArcPy or pyproj v4 and shapely.
 
         ====================     ====================================================================
         **Parameter**             **Description**
@@ -949,7 +956,7 @@ class GeoSeriesAccessor:
                                  The new spatial reference. This can be a
                                  :class:`~arcgis.geometry.SpatialReference` object or the coordinate system name.
         --------------------     --------------------------------------------------------------------
-        transformation_name      Required String. The `geotransformation` name.
+        transformation_name      Optional String. The `geotransformation` name.
         ====================     ====================================================================
 
         :return:
@@ -4090,13 +4097,17 @@ class GeoAccessor(object):
         )
 
     # ----------------------------------------------------------------------
-    def project(self, spatial_reference, transformation_name=None):
+    def project(
+        self,
+        spatial_reference: _geometry.SpatialReference,
+        transformation_name: str = None,
+    ):
         """
         The ``project`` method reprojects the who dataset into a new :class:`~arcgis.geometry.SpatialReference`.
         This is an inplace operation meaning that it will update the defined geometry column from the ``set_geometry``.
 
         .. note::
-            The ``project`` method requires ArcPy or pyproj v4.
+            The ``project`` method requires ArcPy or pyproj v4 and shapely.
 
         ====================     ====================================================================
         **Parameter**             **Description**
