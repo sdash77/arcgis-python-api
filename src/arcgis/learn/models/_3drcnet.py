@@ -187,7 +187,7 @@ class Hyperspectral3DRCNet(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return self.per_class_metrics()
+        return 0.0
 
     @property
     def supported_datasets(self):
