@@ -228,26 +228,23 @@ class ImageryModel(ArcGISModel):
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
         framework               Optional string. Exports the model in the
-                                specified framework format ('PyTorch', 'tflite'
-                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                specified framework format ('PyTorch' and 'torchscript').
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
-                                ``tflite`` framework (experimental support) is
-                                supported by :class:`~arcgis.learn.SingleShotDetector`,
-                                :class:`~arcgis.learn.FeatureClassifier` and  :class:`~arcgis.learn.RetinaNet` .
                                 ``torchscript`` format is supported by
-                                :class:`~arcgis.learn.SiamMask` .
-                                For usage of SiamMask model in ArcGIS Pro 2.8,
+                                :class:`~arcgis.learn.SiamMask`,
+                                :class:`~arcgis.learn.MaskRCNN`,
+                                :class:`~arcgis.learn.SingleShotDetector`,
+                                :class:`~arcgis.learn.YOLOv3` and
+                                :class:`~arcgis.learn.RetinaNet`.
+                                For usage of SiamMask model in ArcGIS Pro >= 2.8,
                                 load the ``PyTorch`` framework saved model
                                 and export it with ``torchscript`` framework
-                                using ArcGIS API for Python v1.8.5.
+                                using ArcGIS API for Python >= v1.8.5.
                                 For usage of SiamMask model in ArcGIS Pro 2.9,
                                 set framework to ``torchscript`` and use the
                                 model files additionally generated inside
                                 'torch_scripts' folder.
-                                If framework is ``TF-ONNX`` (Only supported for
-                                :class:`~arcgis.learn.SingleShotDetector`), ``batch_size`` can
-                                be passed as an optional keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------

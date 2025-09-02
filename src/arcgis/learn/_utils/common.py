@@ -398,13 +398,19 @@ def get_multispectral_data_params_from_emd(data, emd):
     return data
 
 
+def raise_unsupported_backend_error(backend="tensorflow"):
+    # Custom error message
+    import_exception = f"Error: Unsupported backend '{backend}'"
+    message = "TensorFlow backend support has been removed from ArcGIS Python API version 2.4.2."
+    remedial_steps = "Please change your backend to PyTorch."
+
+    # Raise the exception with the custom message
+    raise Exception(f"{import_exception}\n\n{message}\n{remedial_steps}")
+
+
 def get_post_processed_model(arcgis_model, input_normalization=True):
     if arcgis_model._backend == "tensorflow":
-        from .postprocessing_tf import get_post_processed_model_tf
-
-        return get_post_processed_model_tf(
-            arcgis_model, input_normalization=input_normalization
-        )
+        raise_unsupported_backend_error(backend="tensorflow")
 
 
 def get_color_array(color_mapping: dict, alpha=0.7):
@@ -595,9 +601,7 @@ def predict_batch(self, imagetensor_batch):
         # predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach()
         return predictions
     elif self._backend == "tensorflow":
-        from .common_tf import predict_batch_tf
-
-        return predict_batch_tf(self, imagetensor_batch)
+        raise_unsupported_backend_error(backend="tensorflow")
 
 
 ## show_batch() show_results() helper functions end ##

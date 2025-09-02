@@ -1,6 +1,5 @@
 import unittest
 from arcgis.map import Map
-from arcgis.gis import GIS
 from utils.decorators import integration_test, profiles
 
 

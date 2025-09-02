@@ -1571,10 +1571,6 @@ def prepare_data(
     if getattr(arcgis.env, "_processorType", "") == "CPU":
         databunch_kwargs["device"] = torch.device("cpu")
 
-    if ARCGIS_ENABLE_TF_BACKEND:
-        databunch_kwargs["device"] = torch.device("cpu")
-        databunch_kwargs["pin_memory"] = False
-
     kwargs_transforms = {}
     if resize_to:
         kwargs_transforms["size"] = resize_to
@@ -1767,6 +1763,7 @@ def prepare_data(
             "ObjectTracking",
             "PSETAE",
             "SR3",
+            "3DRCNet",
         ]
         and has_esri_files
     ):
@@ -2709,6 +2706,8 @@ def prepare_data(
         _is_multispec = False
 
         def check_ms(il, il2):
+            from osgeo import gdal
+
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
@@ -3014,6 +3013,19 @@ def prepare_data(
             **kwargs,
         )
         data._estimate_batch = _estimate_batch
+        return data
+
+    elif dataset_type == "3DRCNet":
+        from ._data_utils.hyperspec_data import prepare_hyperspec_data
+
+        data = prepare_hyperspec_data(
+            path=path,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            working_dir=working_dir,
+            class_mapping=class_mapping,
+            **kwargs,
+        )
         return data
 
     elif dataset_type == "ClimaX":
