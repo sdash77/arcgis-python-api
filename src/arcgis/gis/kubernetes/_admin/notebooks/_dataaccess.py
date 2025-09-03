@@ -117,6 +117,8 @@ class KubeNotebookDataAccess:
     # ---------------------------------------------------------------------
     def switch_workspaces(self, username: str) -> bool:
         """Allows administrators to switch into different user's workspaces"""
+        if isinstance(username, str) == False and hasattr(username, "username"):
+            username = getattr(username, "username")
         if self._check_user_has_workspace(username):
             self._username = username
             user = self._gis.users.get(self._username)
