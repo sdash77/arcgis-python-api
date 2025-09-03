@@ -12839,8 +12839,7 @@ class User(dict):
 
 
         """
-        if self._gis._portal.is_arcgisonline is False:
-            return None
+
         _lu = {
             "big_data_file": "bigDataFileShare",
             "notebook": "notebookWorkspace",
@@ -12852,6 +12851,8 @@ class User(dict):
             "expiration": expiration or 1440,
             "storeType": _lu[store_type.lower()],
         }
+        if self._gis._is_kubernetes and self._portal.con.token:
+            params["token"] = self._portal.con.token
         if subfolder:
             params["subPath"] = subfolder
 
