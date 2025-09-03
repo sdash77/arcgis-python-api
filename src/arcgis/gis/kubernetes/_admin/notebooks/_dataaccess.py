@@ -115,6 +115,31 @@ class KubeNotebookDataAccess:
         return self.__repr__()
 
     # ---------------------------------------------------------------------
+    def switch_workspaces(self, username: str) -> bool:
+        """Allows administrators to switch into different user's workspaces"""
+        if self._check_user_has_workspace(username):
+            self._username = username
+            user = self._gis.users.get(self._username)
+            url: str = user.generate_direct_access_url("notebook").get("url")
+            url = url.replace("/notebookworkspace", "")
+            self._url = url
+        else:
+            raise ValueError(f"Notebook workspace for user {username} does not exist.")
+
+    # ---------------------------------------------------------------------
+    @property
+    def workspaces(self) -> list[str]:
+        """returns a list of available workspaces"""
+        workspace_url = f"{self._url}/listUserWorkspaces".replace("/azureblob/", "/")
+
+        try:
+            res = self._gis.session.get(workspace_url, params={"f": "json"}).json()
+        except Exception as ex:
+            raise RuntimeError(f"Failed to fetch workspaces: {ex}")
+
+        return [container.get("Name", None) for container in res.get("Containers", [])]
+
+    # ---------------------------------------------------------------------
     @property
     def files(self) -> List[KubeNotebookFile]:
         """
