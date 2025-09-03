@@ -124,14 +124,7 @@ DETReg
     :members:
     :inherited-members:
     :undoc-members:
-
-EfficientDet
-^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.learn.EfficientDet
-    :members:
-    :inherited-members:
-    :undoc-members:
-
+    
 Pixel Classification Models
 ---------------------------
 UnetClassifier
