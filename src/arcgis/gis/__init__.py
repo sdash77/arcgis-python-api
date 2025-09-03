@@ -357,7 +357,7 @@ class GIS(object):
         # Usage Example 6: PKI Login to ArcGIS Enterprise, using PKCS12 user certificate
 
         gis = GIS(url="https://pkienterprise.esri.com/portal",
-                  cert_file="C:\\users\\someuser\\mycert.pfx", password="password1")
+                  cert_file="/path/to/mycert.pfx", password="password1")
 
     .. code-block:: python
 
@@ -10390,7 +10390,7 @@ class ResourceManager(object):
             # Usage Example
 
             >>> Item.resources.export(
-                save_path = "C:\my_path\my_folder",
+                save_path = "/path/to/output",
                 file_name = "my_resources")
 
         :return:
@@ -15182,7 +15182,7 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.download("C:\\ARCGIS\\Projects\\", "hurricane_data")
+            >>> item.download("/path/to/output", "hurricane_data")
 
         """
         data_path: str = "content/items/" + self.itemid + "/data"
