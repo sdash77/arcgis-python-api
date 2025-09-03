@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\tests")
-from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
 from arcgis.map import Map
 from arcgis.map.forms import (
@@ -35,7 +32,7 @@ class TestFormInfo(unittest.TestCase):
 
     def test_update_form(self):
         fl = FeatureLayer(
-            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
+            "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities_/FeatureServer/0",
             gis=self.gis,
         )
         assert fl

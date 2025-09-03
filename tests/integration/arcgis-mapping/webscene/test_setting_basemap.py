@@ -1,7 +1,7 @@
 import time
 import unittest
 from arcgis.map import Scene
-from arcgis.layers import VectorTileLayer, MapServiceLayer, MapFeatureLayer
+from arcgis.layers import VectorTileLayer
 from utils.decorators import integration_test, profiles
 
 
@@ -56,12 +56,12 @@ class TestAddLayersToScene(unittest.TestCase):
 
     def test_different_sr(self):
         """Test adding a basemap with a different spatial reference than original."""
-        current_scene_sr = self.ws.extent["spatialReference"]["wkid"]
+        current_scene_sr = self.ws._webscene.spatial_reference.wkid
         self.ws.basemap.basemap = self.gis.content.get(
             "e67de4be72b349fd8f8ca114bac82a8c"
         )
         # TODO: reminder for adding item to future k8s portal
-        assert self.ws.extent["spatialReference"]["wkid"] != current_scene_sr
+        assert self.ws._webscene.spatial_reference.wkid != current_scene_sr
 
 
 if __name__ == "__main__":

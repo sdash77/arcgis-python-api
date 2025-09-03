@@ -1598,12 +1598,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
         :rtype:
             bool
+
         """
         if HAS_ARCPY:
             if isinstance(self, Envelope):
                 return False
             return getattr(self.as_arcpy, "isMultipart", None)
-
+        elif HAS_SHAPELY:
+            if self.as_shapely.geom_type.lower().find("multi") <= -1:
+                return True
         return self._is_multipart_fallback()
 
     @abstractmethod
@@ -2837,7 +2840,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         ``geotransformation``.
 
         .. note::
-            The ``project_as`` method requires ArcPy or pyproj>=1.9 and PROJ.4
+            The ``project_as`` method requires ArcPy or pyproj>=1.9 and shapely
 
         ====================     ====================================================================
         **Parameter**             **Description**
@@ -2845,7 +2848,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  :class:`~arcgis.geometry.SpatialReference` object or the coordinate system name.
         --------------------     --------------------------------------------------------------------
-        transformation_name      Required String. The ``geotransformation`` name.
+        transformation_name      Optional String. The ``geotransformation`` name.
         ====================     ====================================================================
 
         :return:
@@ -2859,8 +2862,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             >>>               [-97.06326,32.759]]],
             >>>   "spatialReference" : {"wkid" : 4326}
             >>>                 })
-            >>> geom2 = geom.project_as(spatial_reference="GCS",
-                                        transformation_name = "transformation")
+            >>> target_sr = SpatialReference({"wkid" : 3857"})
+            >>> geom2 = geom.project_as(spatial_reference=target_sr)
             >>> geom2.type
                 arcgis.geometry.Geometry
         """
@@ -3633,46 +3636,10 @@ class Polygon(Geometry):
             Esri-JSON polygon with keys: "rings", "hasZ", "hasM",
             and optionally "spatialReference".
         """
-        from arcgis._impl.common._arcgis2geojson import ringIsClockwise, closeRing
+        from arcgis._impl.common._geojson2arcgis import convert_polygon
 
-        sr = sr or {"wkid": 4326}
-        gtype = data.get("type")
-        if gtype == "Polygon":
-            polys = [data["coordinates"]]  # wrap as multipolygon
-        elif gtype == "MultiPolygon":
-            polys = data["coordinates"]
-        else:
-            raise ValueError(f"Unsupported geometry type: {gtype!r}")
-
-        rings = []  # flat list of all rings for Esri JSON
-
-        for poly in polys:
-            if not poly:
-                continue  # skip empty parts
-
-            # ---- outer ring ----------------------------------------------------
-            outer = closeRing(poly[0])
-            if not ringIsClockwise(outer):  # GeoJSON outer is CCW -> flip
-                outer = outer[::-1]
-            rings.append(outer)
-
-            # ---- holes ---------------------------------------------------------
-            for hole in poly[1:]:
-                hole = closeRing(hole)
-                if ringIsClockwise(hole):  # GeoJSON hole is CW -> flip
-                    hole = hole[::-1]
-                rings.append(hole)
-
-        max_dim = len(polys[0][0][0]) if polys else 2
-
-        esri = {
-            "rings": rings,
-            "hasZ": max_dim >= 3,  # by default assume the third dim is z
-            "hasM": max_dim >= 4,
-            "spatialReference": sr,
-        }
-
-        return cls(esri)
+        esri_json = convert_polygon(data, sr=sr)
+        return cls(esri_json)
 
     @property
     def __geo_interface__(self) -> dict:
