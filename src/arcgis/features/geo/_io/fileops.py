@@ -143,10 +143,10 @@ def _infer_type(df, col):
 def _geojson_to_esrijson(geojson):
     """converts the geojson spec to esri json spec"""
     if geojson["type"] in ["Polygon", "MultiPolygon"]:
-        return {
-            "rings": geojson["coordinates"],
-            "spatialReference": {"wkid": 4326},
-        }
+        from arcgis._impl.common._geojson2arcgis import convert_polygon
+
+        esri_json = convert_polygon(geojson)
+        return esri_json
     elif geojson["type"] == "Point":
         return {
             "x": geojson["coordinates"][0],
@@ -174,10 +174,11 @@ def _geojson_to_esrijson(geojson):
 # --------------------------------------------------------------------------
 def _geometry_to_geojson(geom):
     """converts the esri json spec to geojson"""
-    if "rings" in geom and len(geom["rings"]) == 1:
-        return {"type": "Polygon", "coordinates": geom["rings"]}
-    elif "rings" in geom and len(geom["rings"]) > 1:
-        return {"type": "MultiPolygon", "coordinates": geom["rings"]}
+    if "rings" in geom:
+        # will always convert Esri Polygon to GeoJSON MultiPolygon
+        from arcgis._impl.common._arcgis2geojson import convertRingsToGeoJSONUnchecked
+
+        return convertRingsToGeoJSONUnchecked(geom["rings"])
     elif geom["type"] == "Point":
         return {"coordinates": [geom["x"], geom["y"]], "type": "Point"}
     elif geom["type"] == "MultiPoint":
