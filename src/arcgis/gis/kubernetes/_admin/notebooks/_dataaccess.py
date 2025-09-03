@@ -87,16 +87,24 @@ class KubeNotebookDataAccess:
 
     _url = None
     _gis = None
+    _urls: dict | None = None
 
     # ---------------------------------------------------------------------
     def __init__(self, url, gis):
-        self._url = url
+        self._url = url.replace("/admin/notebooks", "/notebooks/admin")
         self._gis = gis
         self._username = gis.users.me.username
         if not self._check_user_has_workspace(self._username):
             raise ValueError(
                 f"User {self._username} does not have a notebook workspace in the organization."
             )
+        self._urls = {
+            "base": self._url,
+            "move": "{BASE_URL}/{USERNAME}/notebookworkspace/move",
+            "delete_file": "{BASE_URL}/{USERNAME}/notebookworkspace/deleteFile",
+            "download_file": "{BASE_URL}/{USERNAME}/notebookworkspace/downloadFile",
+            "list_file": "{BASE_URL}/{USERNAME}/notebookworkspace?restype=container&comp=list&f=json",
+        }
 
     # --------------------------------------------------------------------
     def __repr__(self):
@@ -125,6 +133,28 @@ class KubeNotebookDataAccess:
         return [
             KubeNotebookFile(f, self)
             for f in self._gis._con.get(url, params).pop("Blobs", [])
+            if f.get("Name").endswith("/") == False
+        ]
+
+    # ---------------------------------------------------------------------
+    @property
+    def _folders(self) -> List[str]:
+        """
+        Lists folders within the workspace.
+
+        :return: List[str]
+        """
+        url = f"{self._url}/notebookworkspace"
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "token": self._gis._con.token,
+        }
+        return [
+            f["Name"]
+            for f in self._gis._con.get(url, params).pop("Blobs", [])
+            if f.get("Name").endswith("/")
         ]
 
     # ---------------------------------------------------------------------
