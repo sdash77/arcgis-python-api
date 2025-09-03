@@ -292,7 +292,11 @@ class NotebookFolder:
                 for f in response.get("Blobs", [])
                 if f["Properties"].get("ResourceType", "").lower() == "file"
             ]
-        return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
+        return [
+            NotebookFile(f, self._da)
+            for f in response.get("Blobs", [])
+            if not f["Name"].endswith("/")
+        ]
 
     # ---------------------------------------------------------------------
     def create_folder(self, folder_name: str) -> NotebookFolder:
