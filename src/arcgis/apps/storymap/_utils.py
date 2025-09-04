@@ -1,7 +1,6 @@
 from __future__ import annotations
 import warnings
 import tempfile
-from time import sleep
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
@@ -146,7 +145,7 @@ def _get_thumbnail(gis) -> str:
 
 
 # ----------------------------------------------------------------------
-def show(item, width: Optional[int] = None, height: Optional[int] = None):
+def show(item, width: int | None = None, height: int | None = None):
     """
     Show a preview. The default is a width of 700 and height of 300.
     """

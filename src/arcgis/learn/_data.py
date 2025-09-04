@@ -220,9 +220,9 @@ def _get_bbox_classes(
         d_xyz = []
         occluded = []
         rot_yaxis = []
-        start_space = re.compile("^\s+")  # pattern to capture leading spaces
+        start_space = re.compile(r"^\s+")  # pattern to capture leading spaces
         spaces_to_be_replaced = re.compile(
-            "(?<=[0-9])(\s+)(?=[0-9])"
+            r"(?<=[0-9])(\s+)(?=[0-9])"
         )  # pattern to capture spaces between numeric values
 
         with open(label_file) as f:  # reading the bbox and class labels
@@ -379,9 +379,9 @@ def _get_class_mapping(path, **kwargs):
     dataset_type = kwargs.get("dataset_type", None)
     class_mapping = {}
     if dataset_type == "KITTI_rectangles":
-        start_space = re.compile("^\s+")  # pattern to capture leading spaces
+        start_space = re.compile(r"^\s+")  # pattern to capture leading spaces
         spaces_to_be_replaced = re.compile(
-            "(?<=[0-9])(\s+)(?=[0-9])"
+            r"(?<=[0-9])(\s+)(?=[0-9])"
         )  # pattern to capture spaces between numeric values
 
         for txtfile in os.listdir(path):

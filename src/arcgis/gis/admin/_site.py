@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 from typing import Optional
 from ._base import BasePortalAdmin
 
@@ -125,7 +126,7 @@ class Site(BasePortalAdmin):
         return con.post(url, params, files=license_file)
 
     # ----------------------------------------------------------------------
-    def export_site(self, location: str):
+    def export_site(self, location: str, location_config: dict | None = None):
         """
         This operation exports the portal site configuration to a location
         you specify. The exported file includes the following information:
@@ -141,6 +142,11 @@ class Site(BasePortalAdmin):
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. The path to the folder accessible to the portal
                                         where the exported site configuration will be written.
+        ---------------------------     --------------------------------------------------------------------
+        location_config                 Optional Dict. The location configuration defines where the storage
+                                        type is.  If using cloud storage, connection information such as
+                                        bucket or container, and credentials, and cloud region are defined
+                                        here.
         ===========================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -162,10 +168,12 @@ class Site(BasePortalAdmin):
         """
         url = "%s/exportSite" % self._url
         params = {"f": "json", "location": location}
+        if location_config is not None:
+            params["locationConfig"] = json.dumps(location_config)
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def import_site(self, location: str):
+    def import_site(self, location: str, location_config: dict):
         """
         The importSite operation lets you restore your site from a backup
         site configuration file that you created using the exportSite
@@ -181,6 +189,11 @@ class Site(BasePortalAdmin):
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. A file path to an exported configuration.
+        ---------------------------     --------------------------------------------------------------------
+        location_config                 Optional Dict. The location configuration defines where the storage
+                                        type is.  If using cloud storage, connection information such as
+                                        bucket or container, and credentials, and cloud region are defined
+                                        here.
         ===========================     ====================================================================
 
         :return: Boolean. True if successful else False.
@@ -192,6 +205,8 @@ class Site(BasePortalAdmin):
                 "You must access portal not using the web adaptor (port 7443)"
             )
         params = {"f": "json", "location": location}
+        if location_config:
+            params["locationConfig"] = json.dumps(location_config)
         res = self._con.post(path=url, postdata=params)
         if "status" in res:
             return res["status"] == "success"
