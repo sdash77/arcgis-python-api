@@ -1041,6 +1041,7 @@ class ArcGISImageClassifier:
                             "name": "radiometric_offset_correction",
                             "dataType": "GPString",
                             "required": False,
+                            "domain": ["True", "False"],
                             "value": "False"
                             if "radiometric_offset_correction" not in self.json_info
                             else str(self.json_info["radiometric_offset_correction"]),
@@ -1342,6 +1343,7 @@ class ArcGISInstanceDetector:
                             "name": "radiometric_offset_correction",
                             "dataType": "GPString",
                             "required": False,
+                            "domain": ["True", "False"],
                             "value": "False"
                             if "radiometric_offset_correction" not in self.json_info
                             else str(self.json_info["radiometric_offset_correction"]),
