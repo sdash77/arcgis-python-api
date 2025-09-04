@@ -45,6 +45,11 @@ class TestItemUsage(unittest.TestCase):
                 self.assertIsNotNone(
                     result, "Usage returning None when should return dataframe"
                 )
+                self.assertIn(
+                    "Usage",
+                    list(result.columns),
+                    "DataFrame should have a column named Usage.",
+                )
                 if not result[result["Usage"] != 0].empty:
                     non_empty.append(f"{date} contained non empty rows")
         except:
@@ -62,6 +67,9 @@ class TestItemUsage(unittest.TestCase):
         result = item.usage(date_range=(self.less_six_months, self.now))
 
         self.assertIsNotNone(result, "usage method should return a dataframe.")
+        self.assertIn(
+            "Usage", list(result.columns), "DataFrame should have a column named Usage."
+        )
         self.assertGreater(
             len(result[result["Usage"] != 0]),
             0,
@@ -75,6 +83,9 @@ class TestItemUsage(unittest.TestCase):
 
         self.assertIsNotNone(
             result, "Item usage method should always return a dataframe."
+        )
+        self.assertIn(
+            "Usage", list(result.columns), "DataFrame should have a column named Usage."
         )
         self.assertGreater(
             len(result[result["Usage"] != 0]),
@@ -92,6 +103,9 @@ class TestItemUsage(unittest.TestCase):
 
         self.assertIsNotNone(
             result, "Item usage method should always return a dataframe."
+        )
+        self.assertIn(
+            "Usage", list(result.columns), "DataFrame should have a column named Usage."
         )
         self.assertGreater(
             len(result[result["Usage"] != 0]),
