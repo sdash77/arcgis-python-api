@@ -522,7 +522,7 @@ def compute_metrics_df(model, dataloader, num_classes):
             ]
             for idx, cls in enumerate(class_names)
         },
-        index=["Precision", "Recall", "F1"],
+        index=["precision", "recall", "f1"],
     )
 
     return df
