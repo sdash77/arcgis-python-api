@@ -1,0 +1,104 @@
+import unittest
+import datetime as dt
+from dateutil.relativedelta import relativedelta
+
+from utils.decorators import integration_test, profiles
+from utils.data_utils import INTEGRATION_TEST_ITEM_TAG
+
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
+
+
+VERIFY_CERT = False
+TRUST_ENV = True
+
+
+@integration_test
+@profiles.agol
+class TestItemUsage(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Get a hosted feature layer owned by known to contain usage at 6M and 1Y ranges.
+        """
+
+        cls.now = dt.datetime.now()
+        cls.less_six_months = cls.now - relativedelta(months=3)
+        cls.six_months_ago = cls.now - relativedelta(months=6)
+
+        cls.hosted_flyr_item = cls.gis.content.get("d5986892a770415ba724692b56019214")
+        cls.assertIsNotNone(cls.hosted_flyr_item, "No feature layer item to test.")
+
+    def test_preset(self):
+        """tests the preset times we can use for date range"""
+        item = self.hosted_flyr_item
+
+        # use the item so you do not get empty dataframe
+        date_ranges = ["24H", "7D", "14D", "30D", "60D", "6M", "1Y"]
+
+        non_empty = []
+        try:
+            for date in date_ranges:
+                result = item.usage(date_range=date)
+                self.assertIsNotNone(
+                    result, "Usage returning None when should return dataframe"
+                )
+                if not result[result["Usage"] != 0].empty:
+                    non_empty.append(f"{date} contained non empty rows")
+        except:
+            print("Test failed at date range: ", date)
+
+        self.assertGreater(
+            len(non_empty),
+            0,
+            "At least one date range should have returned non-zero rows for this feature layer.",
+        )
+
+    def test_custom_less_6_months(self):
+        item = self.hosted_flyr_item
+
+        result = item.usage(date_range=(self.less_six_months, self.now))
+
+        self.assertIsNotNone(result, "usage method should return a dataframe.")
+        self.assertGreater(
+            len(result[result["Usage"] != 0]),
+            0,
+            "This hosted feature layer has been queried within 5 months.",
+        )
+
+    def test_custom_more_6_months(self):
+        item = self.hosted_flyr_item
+
+        result = item.usage(date_range=(self.six_months_ago, self.now))
+
+        self.assertIsNotNone(
+            result, "Item usage method should always return a dataframe."
+        )
+        self.assertGreater(
+            len(result[result["Usage"] != 0]),
+            0,
+            "This hosted feature layer has been queried within 6 months.",
+        )
+
+    def test_custom_11_days(self):
+        item = self.hosted_flyr_item
+
+        # use the item so you do not get empty dataframe
+        date_1 = self.now - relativedelta(days=11)
+
+        result = item.usage(date_range=(date_1, self.now))
+
+        self.assertIsNotNone(
+            result, "Item usage method should always return a dataframe."
+        )
+        self.assertGreater(
+            len(result[result["Usage"] != 0]),
+            0,
+            "This hosted feature layer has been queried within last 11 days.",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
