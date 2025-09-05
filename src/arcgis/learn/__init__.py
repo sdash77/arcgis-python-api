@@ -68,7 +68,6 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
             WNet_cGAN,
             DETReg,
             RandLANet,
-            EfficientDet,
             SQNSeg,
             PSETAE,
             MMDetection3D,

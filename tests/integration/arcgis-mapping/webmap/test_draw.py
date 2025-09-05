@@ -1,6 +1,5 @@
 from arcgis.features import FeatureCollection
 from arcgis.geometry import Point, Polyline, Polygon
-from arcgis.gis import GIS
 from arcgis.map import Map
 import unittest
 from arcgis.map import symbols
@@ -83,8 +82,7 @@ class TestDrawOnMap(unittest.TestCase):
             self.wm.content.layers[0]
             .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
                 "symbol"
-            ]
-            .style
+            ]["style"]
             == "esriSLSSolid"
         )
 
@@ -122,7 +120,7 @@ class TestDrawOnMap(unittest.TestCase):
             ),
         )
 
-        self.wm.content.draw(polygon1)
+        self.wm.content.draw(polygon1, symbol=simple_poly_symbol)
 
         assert self.wm.content.layers
         assert len(self.wm.content.layers) == 1
@@ -131,16 +129,14 @@ class TestDrawOnMap(unittest.TestCase):
             self.wm.content.layers[0]
             .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
                 "symbol"
-            ]
-            .outline.style
+            ]["outline"]["style"]
             == "esriSLSSolid"
         )
         assert (
             self.wm.content.layers[0]
             .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
                 "symbol"
-            ]
-            .style
+            ]["style"]
             == "esriSFSSolid"
         )
 
