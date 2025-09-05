@@ -859,8 +859,11 @@ class ArcGISModel(object):
         self._check_requisites()
         temp1 = self.learn.path
         metrics = None
-        start_lr = kwargs.get("start_lr", 1e-07)
-        end_lr = kwargs.get("end_lr", 10)
+        # take slice to handule layer_gropus to take multiple lrs
+        start_lr = kwargs.get("start_lr", 1e-6)
+        end_lr = kwargs.get("end_lr", 0.1)
+        start_lr = slice(start_lr / 10, start_lr)
+        end_lr = slice(end_lr / 10, end_lr)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             try:
@@ -871,6 +874,7 @@ class ArcGISModel(object):
                     self.learn.lr_find(
                         start_lr=start_lr,
                         end_lr=end_lr,
+                        num_it=150,
                         mixed_precision=mixed_precision,
                     )
                     distrib_barrier()
@@ -887,6 +891,7 @@ class ArcGISModel(object):
                         self.learn.lr_find(
                             start_lr=start_lr,
                             end_lr=end_lr,
+                            num_it=150,
                             mixed_precision=mixed_precision,
                         )
             except Exception as e:
@@ -1117,6 +1122,12 @@ class ArcGISModel(object):
                 if self._slice_lr is True and len(self.learn.layer_groups) > 1:
                     lr = slice(lr / 10, lr)
 
+            if (
+                not isinstance(lr, slice)
+                and self._slice_lr is True
+                and len(self.learn.layer_groups) > 1
+            ):
+                lr = slice(lr / 10, lr)
             self._learning_rate = lr
             self._model_metrics_cache = None
             if (
