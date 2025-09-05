@@ -357,7 +357,7 @@ class GIS(object):
         # Usage Example 6: PKI Login to ArcGIS Enterprise, using PKCS12 user certificate
 
         gis = GIS(url="https://pkienterprise.esri.com/portal",
-                  cert_file="C:\\users\\someuser\\mycert.pfx", password="password1")
+                  cert_file="/path/to/mycert.pfx", password="password1")
 
     .. code-block:: python
 
@@ -8202,7 +8202,7 @@ class ContentManager(object):
                 elif item_properties["access"] == "private":
                     item.sharing.sharing_level = "PRIVATE"
                 elif item_properties["access"] == "shared":
-                    groups = item.shared_with["groups"]
+                    groups = item.sharing.shared_with["groups"]
                     grp_share = item.sharing.groups
                     for grp in groups:
                         grp_share.add(grp)
@@ -10401,7 +10401,7 @@ class ResourceManager(object):
             # Usage Example
 
             >>> Item.resources.export(
-                save_path = "C:\my_path\my_folder",
+                save_path = "/path/to/output",
                 file_name = "my_resources")
 
         :return:
@@ -12850,8 +12850,7 @@ class User(dict):
 
 
         """
-        if self._gis._portal.is_arcgisonline is False:
-            return None
+
         _lu = {
             "big_data_file": "bigDataFileShare",
             "notebook": "notebookWorkspace",
@@ -12863,6 +12862,8 @@ class User(dict):
             "expiration": expiration or 1440,
             "storeType": _lu[store_type.lower()],
         }
+        if self._gis._is_kubernetes and self._portal.con.token:
+            params["token"] = self._portal.con.token
         if subfolder:
             params["subPath"] = subfolder
 
@@ -15193,7 +15194,7 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.download("C:\\ARCGIS\\Projects\\", "hurricane_data")
+            >>> item.download("/path/to/output", "hurricane_data")
 
         """
         data_path: str = "content/items/" + self.itemid + "/data"
