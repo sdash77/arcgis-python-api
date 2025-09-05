@@ -51,7 +51,7 @@ class TestItemUsage(unittest.TestCase):
                 "DataFrame should have a column named Usage.",
             )
             if not result[result["Usage"] != 0].empty:
-                non_empty.append(f"{date} contained non empty rows")
+                non_empty.append(f"{date} contained non-empty rows")
 
         self.assertGreater(
             len(non_empty),
