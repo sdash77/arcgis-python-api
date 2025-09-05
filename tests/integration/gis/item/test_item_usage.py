@@ -18,7 +18,9 @@ class TestItemUsage(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Get a hosted feature layer owned by known to contain usage at 6M and 1Y ranges.
+        Get a hosted feature layer known to contain usage at 6M and 1Y ranges.
+        A new item will not be helpful to evaluate usage results, so making
+        use of an existing item allows for checking values of returns.
         """
 
         cls.now = dt.datetime.now()
