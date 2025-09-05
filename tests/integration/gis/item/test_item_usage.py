@@ -71,7 +71,7 @@ class TestItemUsage(unittest.TestCase):
         self.assertGreater(
             len(result[result["Usage"] != 0]),
             0,
-            "This hosted feature layer has been queried within 5 months.",
+            "This hosted feature layer has been queried within 3 months.",
         )
 
     def test_custom_more_6_months(self):
