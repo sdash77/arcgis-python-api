@@ -7,9 +7,6 @@ from utils.data_utils import INTEGRATION_TEST_ITEM_TAG
 
 from arcgis.auth.tools import LazyLoader
 
-arcgismapping = LazyLoader("arcgis.map")
-
-
 VERIFY_CERT = False
 TRUST_ENV = True
 
@@ -28,7 +25,8 @@ class TestItemUsage(unittest.TestCase):
         cls.less_six_months = cls.now - relativedelta(months=3)
         cls.six_months_ago = cls.now - relativedelta(months=6)
 
-        cls.hosted_flyr_item = cls.gis.content.get("d5986892a770415ba724692b56019214")
+        cls.item_id = "d5986892a770415ba724692b56019214"
+        cls.hosted_flyr_item = cls.gis.content.get(cls.item_id)
         cls.assertIsNotNone(cls.hosted_flyr_item, "No feature layer item to test.")
 
     def test_preset(self):
@@ -39,21 +37,19 @@ class TestItemUsage(unittest.TestCase):
         date_ranges = ["24H", "7D", "14D", "30D", "60D", "6M", "1Y"]
 
         non_empty = []
-        try:
-            for date in date_ranges:
-                result = item.usage(date_range=date)
-                self.assertIsNotNone(
-                    result, "Usage returning None when should return dataframe"
-                )
-                self.assertIn(
-                    "Usage",
-                    list(result.columns),
-                    "DataFrame should have a column named Usage.",
-                )
-                if not result[result["Usage"] != 0].empty:
-                    non_empty.append(f"{date} contained non empty rows")
-        except:
-            print("Test failed at date range: ", date)
+
+        for date in date_ranges:
+            result = item.usage(date_range=date)
+            self.assertIsNotNone(
+                result, "Usage returning None when should return dataframe"
+            )
+            self.assertIn(
+                "Usage",
+                list(result.columns),
+                "DataFrame should have a column named Usage.",
+            )
+            if not result[result["Usage"] != 0].empty:
+                non_empty.append(f"{date} contained non empty rows")
 
         self.assertGreater(
             len(non_empty),
