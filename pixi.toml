@@ -80,9 +80,9 @@ truststore = ">=0.10.0"
 ujson = ">=3"
 urllib3 = ">=2.1.0,<3"
 websocket-client = ">=1.2.3,<2"
-anywidget = "==0.9.13"
+anywidget = "==0.9.18"
 ipywidgets = ">=8.0.0"
-jupyterlab = ">=4.0.7,<5"
+jupyterlab = ">=4.0.7,!=4.4.*,<5"
 black = "~=24.0"
 "keyrings.alt" = "*"
 selenium = "*"
@@ -106,7 +106,7 @@ channels = ["https://esri-forge.python.geocloud.com"]
 
 [feature.daily.dependencies]
 arcgis = "~=2.4.2"
-arcgis-mapping = "~=4.32"
+arcgis-mapping = "~=4.33"
 
 [feature.docs]
 channels = ["conda-forge"]

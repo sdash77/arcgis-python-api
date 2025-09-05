@@ -49,7 +49,6 @@ unsupported_models = [
     "AutoML",
     "AutoDL",
     "ImageryModel",
-    "EfficientDet",
     "PSETAE",
     "EntityRecognizer",
     "SequenceToSequence",
@@ -78,8 +77,7 @@ def estimate_batch_size(model, mode="train", **kwargs):
                             instance for which batch size should be estimated.
                             Not supported for text, tabular, timeseries
                             or tracking models such as FullyConnectedNetwork,
-                            MLModel, TimeSeriesModel, SiamMask, PSETAE
-                            and EfficientDet models.
+                            MLModel, TimeSeriesModel, SiamMask and PSETAE models.
     ---------------------   -------------------------------------------
     mode                    Optional string. Default train. The mode for
                             which batch size is estimated. Supported 'train'
