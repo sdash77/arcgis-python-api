@@ -9,12 +9,11 @@ import json
 import logging
 from .._data import _raise_fastai_import_error
 from .._utils.env import (
-    HAS_TENSORFLOW,
-    raise_tensorflow_import_error,
     _LAMBDA_TEXT_CLASSIFICATION,
     is_arcgispronotebook,
     reload_IPython,
 )
+from .._utils.common import raise_unsupported_backend_error
 from warnings import warn
 import contextlib
 import io
@@ -837,47 +836,6 @@ class ArcGISModel(object):
         ):
             raise Exception("Can't call this function without data.")
 
-    # function for checking if tensorflow is installed otherwise raise error.
-    def _check_tf(self):
-        if not HAS_TENSORFLOW:
-            raise_tensorflow_import_error()
-
-    def _init_tensorflow(self, data, backbone):
-        self._check_tf()
-
-        from .._utils.common import get_color_array
-        from .._utils.common_tf import (
-            handle_backbone_parameter,
-            get_input_shape,
-            check_backbone_is_mobile_optimized,
-        )
-
-        # Get color Array
-        color_array = get_color_array(data.color_mapping)
-        if len(data.color_mapping) == (data.c - 1):
-            # Add Background color
-            color_array = np.concatenate(
-                [np.array([[0.0, 0.0, 0.0, 0.0]]), color_array]
-            )
-        data._multispectral_color_array = color_array
-
-        # Handle Backbone
-        self._backbone = handle_backbone_parameter(backbone)
-
-        self._backbone_mobile_optimized = check_backbone_is_mobile_optimized(
-            self._backbone
-        )
-
-        # Initialize Backbone
-        in_shape = get_input_shape(data.chip_size)
-        self._backbone_initalized = self._backbone(
-            input_shape=in_shape, include_top=False, weights="imagenet"
-        )
-
-        self._backbone_initalized.trainable = False
-        self._device = torch.device("cpu")
-        self._data = data
-
     def lr_find(self, allow_plot=True, mixed_precision=False, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
@@ -1184,7 +1142,7 @@ class ArcGISModel(object):
                 not (type(self).__name__) == "EfficientDet"
                 and getattr(self, "_backend", "pytorch") == "tensorflow"
             ):
-                checkpoint = False
+                raise_unsupported_backend_error("tensorflow")
 
             callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
             kwargs.pop("callbacks", None)
@@ -1309,7 +1267,7 @@ class ArcGISModel(object):
             _emd_template = self._data.emd
             _emd_template["ModelFormat"] = "NCHW"
             if self._backend == "tensorflow" and self._framework == "tflite":
-                _emd_template["ModelFormat"] = "NHWC"
+                raise_unsupported_backend_error("tensorflow")
             _emd_template["ModelFile"] = path.name
             if not _emd_template.get("ModelName"):
                 _emd_template["ModelName"] = type(self).__name__
@@ -1332,7 +1290,7 @@ class ArcGISModel(object):
             backbone = self._backbone
         else:
             if self._backend == "tensorflow":
-                backbone = self._backbone._keras_api_names[-1].split(".")[-1]
+                raise_unsupported_backend_error("tensorflow")
             else:
                 if "timm" in self._backbone.__module__:
                     backbone = "timm:" + self._backbone.__name__
@@ -1347,7 +1305,7 @@ class ArcGISModel(object):
 
         _emd_template["ModelFormat"] = "NCHW"
         if self._backend == "tensorflow" and self._framework == "tflite":
-            _emd_template["ModelFormat"] = "NHWC"
+            raise_unsupported_backend_error("tensorflow")
         if getattr(self, "_data", None) is not None:
             _emd_template["MinCellSize"] = getattr(self._data, "_emd", {}).get(
                 "MinCellSize", None
@@ -1512,11 +1470,10 @@ class ArcGISModel(object):
                             self.per_class_metrics().to_json()
                         )
 
-        if (
-            getattr(self._data, "_dataset_type", None) == "Labeled_Tiles"
-            or getattr(self._data, "_dataset_type", None) == "Imagenet"
-        ):
-            if hasattr(self, "_gradCAM") and not (self._data._is_multispectral):
+        # adding Expmap flag to True for feature classifier
+        _is_dataset_type = getattr(self._data, "_dataset_type", None)
+        if _is_dataset_type in {"Labeled_Tiles", "Imagenet", "MultiLabeled_Tiles"}:
+            if hasattr(self, "_gradCAM"):
                 _emd_template["ExpMap"] = kwargs.get("gradcam", False)
 
         if hasattr(self, "_model_emd"):
@@ -1715,7 +1672,7 @@ class ArcGISModel(object):
         save_inference_file=True,
         **kwargs,
     ):
-        save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
+        save_format = kwargs.get("save_format", "default")  # 'default'
         post_processed = kwargs.get("post_processed", True)  # True, False
         quantized = kwargs.get("quantized", False)  # True, False
         self._framework = framework
@@ -1772,26 +1729,15 @@ class ArcGISModel(object):
 
         script_paths = []
         onnx_paths = []
-        tflite_paths = []
         try:
             _framework = framework.lower()
             if self._backend == "tensorflow" and _framework == "tflite":
-                saved_path = self._save_tflite(
-                    name, post_processed=post_processed, quantized=quantized
-                )
+                raise_unsupported_backend_error("tensorflow")
             else:
                 if self._backend != "tensorflow" and _framework == "tflite":
-                    supported_models = [
-                        "FeatureClassifier",
-                    ]
-                    if type(self).__name__ in supported_models:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            tflite_paths = self._save_pytorch_tflite(name)
-                    else:
-                        raise Exception(
-                            "This pytorch model cannot be saved in tflite format"
-                        )
+                    raise Exception(
+                        "This pytorch model cannot be saved in tflite format"
+                    )
                 if self._backend == "pytorch" and _framework == "torchscript":
                     supported_models = [
                         "MaskRCNN",
@@ -1887,23 +1833,10 @@ class ArcGISModel(object):
                 **kwargs,
             )
         if framework.lower() == "tf-onnx":
-            batch_size = kwargs.get("batch_size", 16)
-
-            with nostdout():
-                self._save_as_tfonnx(saved_path, batch_size)
-
-            self._create_tfonnx_emd_template(
-                _emd_template, saved_path.with_suffix(".onnx"), batch_size
-            )
-            os.remove(saved_path.with_suffix(".pth"))
+            raise Exception("This pytorch model cannot be saved in tf-onnx format")
 
         if self._backend != "tensorflow" and framework.lower() == "tflite":
-            if len(tflite_paths) != 0:
-                _script_save_params = {
-                    "tf": tflite_paths[0],
-                    "sm": tflite_paths[1],
-                }
-                _emd_template["TFLite"] = _script_save_params
+            raise Exception("This pytorch model cannot be saved in torchscript format")
 
         if framework.lower() == "onnx":
             if len(onnx_paths) != 0:
@@ -2109,7 +2042,7 @@ class ArcGISModel(object):
         if not _emd_template.get("ModelName"):
             _emd_template["ModelName"] = type(self).__name__
         if self._backend == "tensorflow" and self._framework == "tflite":
-            _emd_template["ModelFormat"] = "NHWC"
+            raise_unsupported_backend_error("tensorflow")
         if getattr(self, "_data", None) is not None:
             _emd_template["MinCellSize"] = getattr(self._data, "_emd", {}).get(
                 "MinCellSize", None
@@ -2134,23 +2067,6 @@ class ArcGISModel(object):
             _emd_template.update(self._model_metrics_cache)
 
         return _emd_template
-
-    def _save_tflite(self, name, post_processed=True, quantized=False):
-        if post_processed or quantized:
-            input_normalization = quantized is False
-            return self.learn._save_tflite(
-                name,
-                return_path=True,
-                model_to_save=self._get_post_processed_model(
-                    input_normalization=input_normalization
-                ),
-                quantized=quantized,
-                data=self._data,
-            )
-        return self.learn._save_tflite(name)
-
-    def _save_pytorch_tflite(self, name):
-        pass
 
     def _script(self, model, inp):
         scripted_model = torch.jit.script(model, inp)
@@ -2304,43 +2220,6 @@ class ArcGISModel(object):
 
         item.update(item_properties={"screenshots": screenshots})
 
-    def _create_tfonnx_emd_template(self, _emd_template, saved_path, batch_size):
-        _emd_template.update(self._get_tfonnx_emd_params())
-        _emd_template["BatchSize"] = batch_size
-        _emd_template["ModelFile"] = saved_path.name
-
-        return _emd_template
-
-    def _get_tfonnx_emd_params(self):
-        # Raises error if framework specified is TF-ONNX but is not supported by the model
-        raise NotImplementedError(
-            "TF-ONNX framework is currently not supported by this model."
-        )
-
-    def _save_as_tfonnx(self, saved_path, batch_size):
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                import onnx
-                from onnx_tf.backend import prepare
-        except:
-            raise Exception(
-                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/."
-            )
-
-        batch_size = int(math.sqrt(int(batch_size))) ** 2
-        dummy_input = torch.randn(
-            batch_size,
-            3,
-            self._data.chip_size,
-            self._data.chip_size,
-            device=self._device,
-            requires_grad=True,
-        )
-        torch.onnx.export(
-            self.learn.model, dummy_input, saved_path.with_suffix(".onnx")
-        )
-
     def save(
         self,
         name_or_path,
@@ -2366,16 +2245,10 @@ class ArcGISModel(object):
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
         framework               Optional string. Exports the model in the
-                                specified framework format ('PyTorch', 'tflite'
-                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                specified framework format ('PyTorch' and 'torchscript').
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
-                                ``tflite`` framework (experimental support) is
-                                supported by :class:`~arcgis.learn.SingleShotDetector`
-                                - tensorflow backend only,
-                                :class:`~arcgis.learn.FeatureClassifier`and
-                                :class:`~arcgis.learn.RetinaNet` - tensorflow
-                                backend only.``torchscript`` format is supported by
+                                ``torchscript`` format is supported by
                                 :class:`~arcgis.learn.SiamMask`,
                                 :class:`~arcgis.learn.MaskRCNN`,
                                 :class:`~arcgis.learn.SingleShotDetector`,
@@ -2389,10 +2262,6 @@ class ArcGISModel(object):
                                 set framework to ``torchscript`` and use the
                                 model files additionally generated inside
                                 'torch_scripts' folder.
-                                If framework is ``TF-ONNX`` (Only supported for
-                                :class:`~arcgis.learn.SingleShotDetector`),
-                                ``batch_size`` can be passed as an optional
-                                keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
