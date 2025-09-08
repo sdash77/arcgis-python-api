@@ -1119,8 +1119,6 @@ class ArcGISModel(object):
                 print("Finding optimum learning rate.")
 
                 lr = self.lr_find(allow_plot=False, mixed_precision=mixed_precision)
-                if self._slice_lr is True and len(self.learn.layer_groups) > 1:
-                    lr = slice(lr / 10, lr)
 
             if (
                 not isinstance(lr, slice)
