@@ -861,9 +861,10 @@ class ArcGISModel(object):
         metrics = None
         # take slice to handule layer_gropus to take multiple lrs
         start_lr = kwargs.get("start_lr", 1e-6)
-        end_lr = kwargs.get("end_lr", 0.1)
+        end_lr = kwargs.get("end_lr", 0.01)
         start_lr = slice(start_lr / 10, start_lr)
         end_lr = slice(end_lr / 10, end_lr)
+        num_it = min(150, len(self.learn.data.train_dl))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             try:
@@ -874,7 +875,7 @@ class ArcGISModel(object):
                     self.learn.lr_find(
                         start_lr=start_lr,
                         end_lr=end_lr,
-                        num_it=150,
+                        num_it=num_it,
                         mixed_precision=mixed_precision,
                     )
                     distrib_barrier()
@@ -891,7 +892,7 @@ class ArcGISModel(object):
                         self.learn.lr_find(
                             start_lr=start_lr,
                             end_lr=end_lr,
-                            num_it=150,
+                            num_it=num_it,
                             mixed_precision=mixed_precision,
                         )
             except Exception as e:
