@@ -1014,7 +1014,7 @@ TEXT_DATA = {
 
 
 @integration_test
-@profiles.admin_agol
+@profiles.admin_all
 class TestFolderAddContent(unittest.TestCase):
 
     @classmethod
