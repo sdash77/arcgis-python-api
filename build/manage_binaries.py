@@ -29,7 +29,7 @@ SRC_PATH = os.path.abspath(
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 ARCGIS_VERSION = get_version(os.path.join(SRC_PATH, "__init__.py"))
 PIP_PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13"]
-LEARN_PYTHON_VERSIONS = ["3.10", "3.11"]
+LEARN_PYTHON_VERSIONS = ["3.10", "3.11", "3.13"]
 
 
 def copy_binaries(bin_root_path, arcgis_src_path):
