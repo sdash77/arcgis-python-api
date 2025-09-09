@@ -10082,7 +10082,6 @@ class ContentManager(object):
             or db_item.get("type", None) != "Dashboard"
         ):
             raise ValueError("Valid Dashboard Item or Item ID must be provided.")
-        db_data = db_item.get_data()
         try:
             dash_url = self._gis.properties["helperServices"]["dashboardsUtility"][
                 "url"
@@ -10091,15 +10090,27 @@ class ContentManager(object):
             raise RuntimeError(
                 "Dashboard API functionality is currently unavailable for this ArcGIS organization."
             )
+        db_data = db_item.get_data()
         if isinstance(mappings, dict):
             mappings = [mappings]
         try:
             # if not force, go through each mapping and check items for legit
             dash_endpoint = dash_url + "/replaceAllDependencies"
+            # gather resources to pass to endpoint
+            resources = []
+            for res in db_item.resources.list():
+                r_path = res["resource"]
+                r_type, r_name = os.path.splitext(r_path)[0].split("/")
+                res_dict = {
+                    "type": r_type,
+                    "name": r_name,
+                    "resource": db_item.resources.get(r_path),
+                }
+                resources.append(res_dict)
             resp = self._gis._con.post(
                 dash_endpoint,
                 {
-                    "item": {"data": db_data},
+                    "item": {"data": db_data, "resources": resources},
                     "mappings": mappings,
                     "options": {
                         "includeLayers": include_layers,

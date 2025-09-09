@@ -292,7 +292,11 @@ class NotebookFolder:
                 for f in response.get("Blobs", [])
                 if f["Properties"].get("ResourceType", "").lower() == "file"
             ]
-        return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
+        return [
+            NotebookFile(f, self._da)
+            for f in response.get("Blobs", [])
+            if not f["Name"].endswith("/")
+        ]
 
     # ---------------------------------------------------------------------
     def create_folder(self, folder_name: str) -> NotebookFolder:
@@ -522,27 +526,34 @@ class NotebookDataAccess:
 
     # ---------------------------------------------------------------------
     def _get_folders(self, parent_folder: str | None) -> list[NotebookFolder]:
-        if self._gis._is_agol:
-            url = f"{self._url}/{self._username}"
-        else:
-            url = f"{self._url}/{self._username}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
             "comp": "list",
-            "delimiter": "/",
             "token": self._gis.session.auth.token,
         }
+        if self._gis._is_agol:
+            url = f"{self._url}/{self._username}"
+            params["delimiter"] = "/"
+        else:
+            url = f"{self._url}/{self._username}/notebookworkspace"
         if parent_folder:
             params["prefix"] = parent_folder
         response = self._gis.session.get(url, params=params).json()
         # When creating subfolders the name should always have the folder to which it belongs as the prefix
 
-        folders = [
-            NotebookFolder(f["Name"], self)
-            for f in response.get("Blobs", [])
-            if f["Properties"].get("ResourceType", "").lower() == "directory"
-        ]
+        if self._gis._is_agol:
+            folders = [
+                NotebookFolder(f["Name"], self)
+                for f in response.get("Blobs", [])
+                if f["Properties"].get("ResourceType", "").lower() == "directory"
+            ]
+        else:
+            folders = [
+                NotebookFolder(f["Name"], self)
+                for f in response.get("Blobs", [])
+                if f["Name"].endswith("/") and f["Name"] != parent_folder
+            ]
 
         # Include root folder only if folder_name is None
         if parent_folder is None:
@@ -632,7 +643,7 @@ class NotebookDataAccess:
         return result
 
     # ---------------------------------------------------------------------
-    def _get_file(self, file_name: str) -> NotebookFile:
+    def _get_file(self, file_name: str) -> NotebookFile | None:
         """
         Returns a specific file in the workspace directory (/arcgis/home) of the user making the request.
         If you have multiple files with the same name, this method will return the first one found.
@@ -644,7 +655,7 @@ class NotebookDataAccess:
                                 The file name must be a simple, non-empty name without slashes.
         ====================    ==========================================================================
 
-        :return: NotebookFile - A NotebookFile object representing the requested file.
+        :return: NotebookFile - A NotebookFile object representing the requested file, or None if not found.
         """
         if not isinstance(file_name, str):
             raise ValueError("file_name must be a string.")
@@ -661,14 +672,20 @@ class NotebookDataAccess:
             "comp": "list",
             "token": self._gis.session.auth.token,
         }
-        response = self._gis.session.get(url, params=params).json()
+        try:
+            response = self._gis.session.get(url, params=params).json()
+        except Exception as ex:
+            raise RuntimeError(f"Failed to fetch files: {ex}")
+
         for f in response.get("Blobs", []):
-            if (
-                f["Properties"].get("ResourceType")
-                and f["Properties"].get("ResourceType").lower() == "file"
-                and f["Name"].endswith(file_name)
-            ):
-                return NotebookFile(f, self)
+            if self._gis._is_agol:
+                if f.get("Properties", {}).get(
+                    "ResourceType", ""
+                ).lower() == "file" and f["Name"].endswith(file_name):
+                    return NotebookFile(f, self)
+            else:
+                if f["Name"].endswith(file_name) and not f["Name"].endswith("/"):
+                    return NotebookFile(f, self)
         return None
 
     # ---------------------------------------------------------------------
@@ -956,7 +973,7 @@ class NotebookDataAccess:
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
-        details="Use the files property found in a NotebookFolder instead or the get_file method.",
+        details="Use the files property found in a NotebookFolder instead or the get method with DATAACCESSTYPE.FILE.",
     )
     def files(self) -> list[NotebookFile]:
         """
