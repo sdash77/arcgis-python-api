@@ -61,7 +61,8 @@ def samples_extraction(
     os.makedirs(save_dir, exist_ok=True)
     images, labels = os.path.join(path, "images"), os.path.join(path, "labels")
 
-    all_chips = [i for i in os.listdir(images) if i.endswith(".tif")]
+    valid_exts = (".tif", ".png", ".mrf", ".jpeg", ".jpg")
+    all_chips = [i for i in os.listdir(images) if i.endswith(valid_exts)]
     training_class_map = {v: k for k, v in training_class_map.items()}
 
     for k in progress_bar(all_chips, comment="Processing chips and Extracting samples"):
