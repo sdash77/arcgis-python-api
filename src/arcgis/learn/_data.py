@@ -1482,6 +1482,10 @@ def prepare_data(
                             Only those spectral bands will be considered for training.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
+    window_size             pixel width and height of each square patch extracted
+                            around a labeled pixel for training. Required int.
+                            Applicable only for dataset_type='3DRCNet'.
+    ---------------------   -------------------------------------------
     n_temporal              Required int. Number of temporal observations or time steps.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------

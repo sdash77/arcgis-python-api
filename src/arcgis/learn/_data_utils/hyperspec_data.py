@@ -1,5 +1,6 @@
 import os
 import sys
+from osgeo import gdal
 from pathlib import Path
 import numpy as np
 from torch.utils import data
@@ -45,7 +46,7 @@ def get_auto_workers():
         # Total logical CPUs
         cpu_count = os.cpu_count() or multiprocessing.cpu_count()
         # Leave some cores free for OS (e.g., 25%)
-        workers = max(1, cpu_count - max(1, cpu_count // 4))
+        workers = max(1, cpu_count - max(1, cpu_count // 10))
         return workers
     except:
         return 4
@@ -66,8 +67,8 @@ def samples_extraction(
     training_class_map = {v: k for k, v in training_class_map.items()}
 
     for k in progress_bar(all_chips, comment="Processing chips and Extracting samples"):
-        HSI_data = ArcGISMSImage.open(os.path.join(images, k)).data.numpy()
-        HSI_gt = ArcGISMSImage.open(os.path.join(labels, k)).data.numpy()[0]
+        HSI_data = gdal.Open(os.path.join(images, k)).ReadAsArray()
+        HSI_gt = gdal.Open(os.path.join(labels, k)).ReadAsArray()
 
         remapped = np.copy(HSI_gt)
         for old_val, new_val in training_class_map.items():
