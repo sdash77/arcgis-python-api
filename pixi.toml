@@ -24,6 +24,7 @@ version = "0.1.0"
 "test:performance" = "cd tests && python -m unittest performance.test_simple_performance.TestSimplePerformance"
 "test:smoke" = {cmd = "cd tests && python -m nose2 -v -s smoke --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path='smoke_testreport.xml'", description = "Run all smoke tests from tests/smoke"}
 "test:config:profiles" = {cmd = "python tests/integration/config_profiles.py", description = "Create profiles for tests (e.g. `GIS(profile='your_enterprise_profile')`)"}
+"test:cleanup-published-items" = {cmd = "python cleanup_published_items.py", description = "Cleanup published items based on date range", args = [{arg = "day_difference", default = "7"}, {arg = "dry_run", default = "true"}]}
 
 # tasks with names prefixed with "_" are not listed in `pixi task list`
 # and are not intended to be run directly
@@ -54,7 +55,7 @@ azure-storage-blob = "<=12.9"
 cachetools = "*"
 certifi = "*"
 cryptography = "*"
-dask = ">=2024.12.1,<2025.1.0"
+dask = ">=2024.12.1,<2025.3"
 gdal = ">=3.6.2,<4"
 geomet = "*"
 keyring = ">=23.3.0"
@@ -67,7 +68,7 @@ numpy = ">=2.2.0,<3"
 pandas = ">=2.0.0,<2.4.0"
 pillow = "*"
 puremagic = ">=1.15,<2"
-pyarrow = ">=16,<20"
+pyarrow = ">=16,<21"
 pylerc = "*"
 pyspnego = ">=0.8.0"
 pydantic = ">=2.8.2,<3"
@@ -80,9 +81,9 @@ truststore = ">=0.10.0"
 ujson = ">=3"
 urllib3 = ">=2.1.0,<3"
 websocket-client = ">=1.2.3,<2"
-anywidget = "==0.9.13"
+anywidget = "==0.9.18"
 ipywidgets = ">=8.0.0"
-jupyterlab = ">=4.0.7,<5"
+jupyterlab = ">=4.0.7,!=4.4.*,<5"
 black = "~=24.0"
 "keyrings.alt" = "*"
 selenium = "*"
@@ -107,7 +108,7 @@ channels = ["https://esri-forge.python.geocloud.com"]
 
 [feature.daily.dependencies]
 arcgis = "~=2.4.2"
-arcgis-mapping = "~=4.32"
+arcgis-mapping = "~=4.33"
 
 [feature.docs]
 channels = ["conda-forge"]

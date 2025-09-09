@@ -50,7 +50,14 @@ Group
     :members:
     :undoc-members:
     :show-inheritance:
-
+    
+CloningJob
+----------
+.. autoclass:: arcgis.gis.clone.CloningJob
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
 Datastore
 --------------------
 .. autoclass:: arcgis.gis.Datastore

@@ -16,7 +16,6 @@ from ...apps.tracker._location_tracking import LocationTrackingManager
 from ._dsmgr import DataStoreMetricsManager
 from ._partnercollab import PartneredCollabManager
 from arcgis.auth.tools import LazyLoader
-import urllib.parse
 from arcgis.gis.tasks._schedule import Task
 from ._stokenmgr import DeveloperCredentialManager
 

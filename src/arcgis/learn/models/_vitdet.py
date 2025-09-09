@@ -14,10 +14,12 @@ from functools import partial
 from collections import OrderedDict
 import mmengine
 from mmengine.runner.checkpoint import CheckpointLoader, load_state_dict
-from ._mmlab_utils import load_mmlab_checkpoint
 from ._prithvi_utils import init_prithvi
+from ._dofa_utils import DOFAEmbedding, posemb_sincos_2d
 from einops import rearrange
 import numpy as np
+from ._dofa_utils import weight_download_url_clay
+import os
 
 
 def get_rel_pos(q_size, k_size, rel_pos):
@@ -192,6 +194,7 @@ class Attention(nn.Module):
         dim,
         num_heads=8,
         qkv_bias=True,
+        proj_bias=True,
         use_rel_pos=False,
         rel_pos_zero_init=True,
         input_size=None,
@@ -212,7 +215,7 @@ class Attention(nn.Module):
         self.scale = head_dim**-0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.proj = nn.Linear(dim, dim)
+        self.proj = nn.Linear(dim, dim, bias=proj_bias)
 
         self.use_rel_pos = use_rel_pos
         if self.use_rel_pos:
@@ -226,6 +229,8 @@ class Attention(nn.Module):
 
     def forward(self, x):
         if self.use_rel_pos:
+            return self.forward_2D(x)
+        elif len(x.shape) == 4:
             return self.forward_2D(x)
         else:
             B, N, C = x.shape
@@ -277,6 +282,7 @@ class Block(nn.Module):
         num_heads,
         mlp_ratio=4.0,
         qkv_bias=True,
+        proj_bias=True,
         drop_path=0.0,
         norm_layer=nn.LayerNorm,
         act_layer=nn.GELU,
@@ -291,6 +297,7 @@ class Block(nn.Module):
             dim,
             num_heads=num_heads,
             qkv_bias=qkv_bias,
+            proj_bias=proj_bias,
             use_rel_pos=use_rel_pos,
             rel_pos_zero_init=rel_pos_zero_init,
             input_size=input_size if window_size == 0 else (window_size, window_size),
@@ -371,6 +378,7 @@ class ViT(nn.Module):
         num_heads=12,
         mlp_ratio=4.0,
         qkv_bias=True,
+        proj_bias=True,
         drop_path_rate=0.1,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         act_layer=nn.GELU,
@@ -379,8 +387,6 @@ class ViT(nn.Module):
         rel_pos_zero_init=True,
         window_size=14,
         window_block_indexes=None,
-        pretrain_img_size=224,
-        pretrain_use_cls_token=True,
         pretrained_path=None,
         pretrained=True,
         backbone_name=None,
@@ -404,15 +410,19 @@ class ViT(nn.Module):
             rel_pos_zero_init (bool): If True, zero initialize relative positional parameters.
             window_size (int): Window size for window attention blocks.
             window_block_indexes (list): Indexes for blocks using window attention.
-            pretrain_img_size (int): input image size for pretraining models.
-            pretrain_use_cls_token (bool): If True, pretrainig models use class token.
         """
         super().__init__()
         self._is_vitdet = True
-        self.pretrain_use_cls_token = pretrain_use_cls_token
-        self.is_plain_vit = kwargs.get("is_plain_vit", None)
-        self.is_clf = kwargs.get("is_clf", None)
+        self.is_plain_vit = kwargs.get("is_plain_vit", False)
+        self.is_clf = kwargs.get("is_clf", False)
         self.patch_size = patch_size
+        self.backbone_name = backbone_name
+        self.grid_size = img_size // patch_size
+        self.num_tokens = 1 if self.is_clf else 0
+        if self.is_plain_vit:
+            # to keep plain vit
+            window_block_indexes = []
+            use_rel_pos = False
         if window_block_indexes is None:
             # 2, 5, 8 11 for global attention
             window_block_indexes = [0, 1, 3, 4, 6, 7, 9, 10]
@@ -434,14 +444,25 @@ class ViT(nn.Module):
                 )
 
         if "dofa" in backbone_name:
-            from ._dofa_utils import DOFAEmbedding
-
             self.patch_embed = DOFAEmbedding(
                 dynamic_embed_dim=128,
-                kernel_size=16,
+                kernel_size=patch_size,
                 embed_dim=embed_dim,
                 wavelengths=self.wavelengths,
-                flatten=True if self.is_plain_vit else False,
+                flatten=self.is_plain_vit,
+            )
+        elif "clay" in backbone_name:
+            self.patch_embed = DOFAEmbedding(
+                dynamic_embed_dim=128,
+                kernel_size=patch_size,
+                embed_dim=embed_dim,
+                wavelengths=self.wavelengths,
+                flatten=self.is_plain_vit,
+                batch_first=True,
+                weight_scaler=0.02,
+                bias_scaler=1,
+                wavelength_scaler=1,
+                fc_activation="gelu",
             )
         else:
             self.patch_embed = PatchEmbed(
@@ -449,26 +470,12 @@ class ViT(nn.Module):
                 stride=(patch_size, patch_size),
                 in_chans=in_chans,
                 embed_dim=embed_dim,
-                flatten=True if self.is_plain_vit else False,
+                flatten=self.is_plain_vit,
             )
 
-        if self.is_plain_vit:
-            # to keep plain vit
-            window_block_indexes = []
-            use_rel_pos = False
-            self._grid_size = img_size // patch_size
-            self._num_tokens = 1 if self.is_clf else 0
-            self.pretrain_use_cls_token = True if self.is_clf else False
-            num_patches = (self._grid_size) ** 2
-            num_patches = num_patches + self._num_tokens
+        if use_abs_pos:
+            num_patches = (self.grid_size) ** 2 + self.num_tokens
             self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
-        elif use_abs_pos:
-            # Initialize absolute positional embedding with pretrain image size.
-            num_patches = (pretrain_img_size // patch_size) * (
-                pretrain_img_size // patch_size
-            )
-            num_positions = (num_patches + 1) if pretrain_use_cls_token else num_patches
-            self.pos_embed = nn.Parameter(torch.zeros(1, num_positions, embed_dim))
         else:
             self.pos_embed = None
 
@@ -482,6 +489,7 @@ class ViT(nn.Module):
                     num_heads=num_heads,
                     mlp_ratio=mlp_ratio,
                     qkv_bias=qkv_bias,
+                    proj_bias=proj_bias,
                     drop_path=dpr[i],
                     norm_layer=norm_layer,
                     act_layer=act_layer,
@@ -508,10 +516,21 @@ class ViT(nn.Module):
             logging.disable(logging.WARNING)
             if backbone_name == "prithvi":
                 init_prithvi(self, pretrained_path)
-            elif self.is_plain_vit:
-                self._init_plain_pretrained(pretrained_path)
+            elif backbone_name == "clay_large":
+                temp_path = weight_download_url_clay("2363f050d6a846be959fc25473c7d3e8")
+                clay_state_dict = torch.load(
+                    os.path.join(temp_path, "clay-v1.5_encoder.pth")
+                )
+                # intialize patch_embeding
+                pos_embed = posemb_sincos_2d(
+                    self.grid_size, self.grid_size, embed_dim, cls_token=self.is_clf
+                )
+                if not "pos_embed" in clay_state_dict.keys():
+                    clay_state_dict["pos_embed"] = pos_embed.unsqueeze(0)
+                load_state_dict(self, clay_state_dict, False, logging.getLogger())
+
             else:
-                load_mmlab_checkpoint(self, pretrained_path)
+                self._init_plain_pretrained(pretrained_path)
             logging.disable(0)
         else:
             self.apply(self._init_weights)
@@ -534,13 +553,13 @@ class ViT(nn.Module):
                 ).permute(0, 3, 1, 2)
                 posemb_grid = F.interpolate(
                     posemb_grid,
-                    size=(self._grid_size, self._grid_size),
+                    size=(self.grid_size, self.grid_size),
                     mode="bilinear",
                 )
                 posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(
-                    1, self._grid_size**2, -1
+                    1, self.grid_size**2, -1
                 )
-                posemb_tok = posemb_tok[:, : self._num_tokens, :]
+                posemb_tok = posemb_tok[:, : self.num_tokens, :]
                 posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
                 state_dict[k] = posemb
 
@@ -567,7 +586,7 @@ class ViT(nn.Module):
         if self.pos_embed is not None:
             x = x + get_abs_pos(
                 self.pos_embed,
-                self.pretrain_use_cls_token,
+                self.is_clf,
                 (patch_height, patch_width),
                 self.is_plain_vit,
             )
@@ -639,6 +658,8 @@ class ViTUpsample(nn.Module):
             nn.Conv2d(in_chans, in_chans, kernel_size=3, padding=1, bias=False),
             LayerNorm2D(in_chans),
         ]
+        if getattr(backbone, "backbone_name", "") == "clay_large":
+            upsameple_layers = []
         self.upsample = nn.Sequential(*upsameple_layers)
 
     def forward(self, x):

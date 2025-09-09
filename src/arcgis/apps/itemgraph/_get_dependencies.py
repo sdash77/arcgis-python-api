@@ -4,6 +4,7 @@ from arcgis.features import FeatureLayer
 import itertools
 import re
 from collections import OrderedDict
+import os
 
 # any item that can contain another item or require another to exist
 _COMPLEX_ITEMS = frozenset(
@@ -319,9 +320,47 @@ def _parse_webmap(item):
 
 
 def _parse_dashboard(item):
-    # shoutout Dan Yaw for first iteration of this function
     deps = set()
     structure = item.get_data()
+    try:
+        # grab endpoint to find all dependencies
+        dash_endpoint = (
+            item._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+            + "/findAllDependencies"
+        )
+        # gather resources to pass to endpoint
+        resources = []
+        for res in item.resources.list():
+            r_path = res["resource"]
+            r_type, r_name = os.path.splitext(r_path)[0].split("/")
+            res_dict = {
+                "type": r_type,
+                "name": r_name,
+                "resource": item.resources.get(r_path),
+            }
+            resources.append(res_dict)
+
+        dash_response = item._gis._con.post(
+            dash_endpoint,
+            {
+                "item": {"data": structure, "resources": resources},
+                "options": {
+                    "includeLayers": False,
+                    "includeFields": False,
+                },
+            },
+            add_headers={"Content-Type": "application/json"},
+            json_encode=False,
+            post_json=True,
+        )
+
+        for item_dict in dash_response["results"]:
+            item_id = item_dict.get("itemId", None)
+            if item_id:
+                deps.add(item_id)
+    except:
+        pass
+
     widgets1 = structure.get("widgets", [])
     widgets2 = structure.get("desktopView", {}).get("widgets", [])
     widgets = widgets1 + widgets2

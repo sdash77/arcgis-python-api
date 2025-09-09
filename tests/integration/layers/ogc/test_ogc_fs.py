@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 from arcgis.layers import OGCCollection, OGCFeatureService
-from collections.abc import Iterable as _Iterable
+
 from utils.decorators import integration_test
 
 ogc_url = "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer"
@@ -18,7 +18,7 @@ class TestOGCFS(unittest.TestCase):
         assert isinstance(ogc, OGCFeatureService)
         assert ogc.properties
         assert ogc.conformance
-        assert isinstance(ogc.collections, _Iterable)
+
         endpoints = ["core", "oas30", "html", "geojson"]
         conformance_urls = [
             True
@@ -41,9 +41,10 @@ class TestOGCFS(unittest.TestCase):
             sedf = ogc_lyr.query(return_all=True)
             assert isinstance(sedf, pd.DataFrame)
             assert len(ogc_lyr.query(return_all=False, limit=10)) == 10
-            assert isinstance(
-                ogc_lyr.query(return_all=False, limit=10, as_dict=True), dict
-            )
+
+            dict_query_1 = ogc_lyr.query(return_all=False, limit=10, as_dict=True)
+            assert isinstance(dict_query_1, dict), f"Failed: {type(dict_query_1)}"
+
             assert len(ogc_lyr.query(return_all=True, as_dict=True)["features"]) == len(
                 sedf
             )

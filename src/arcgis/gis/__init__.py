@@ -33,15 +33,17 @@ import copy
 from arcgis.auth.tools import LazyLoader
 
 _imports = LazyLoader("arcgis._impl.imports")
-from arcgis.gis._impl._dataclasses._contentds import (
-    ItemProperties,
-    ItemTypeEnum,
-)
+from arcgis.gis._impl._dataclasses._contentds import ItemProperties, ItemTypeEnum
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
 from arcgis.gis._impl._dataclasses._sfilters import (
     SpatialFilter,
     SpatialRelationship,
+)
+from arcgis.gis._impl._content_manager.sharing import (
+    SharingLevel,
+    SharingGroupManager,
+    SharingManager,
 )
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter
 from arcgis._impl.common._utils import _validate_url
@@ -355,7 +357,7 @@ class GIS(object):
         # Usage Example 6: PKI Login to ArcGIS Enterprise, using PKCS12 user certificate
 
         gis = GIS(url="https://pkienterprise.esri.com/portal",
-                  cert_file="C:\\users\\someuser\\mycert.pfx", password="password1")
+                  cert_file="/path/to/mycert.pfx", password="password1")
 
     .. code-block:: python
 
@@ -1507,7 +1509,7 @@ class GIS(object):
 
         :returns:
             * ArcGIS Online: list of :class:`~arcgis.gis.agoserver.AGOLServicesDirectory` objects
-            * ArcGIS Enteprise and ArcGIS Enterprise on Kubernetes: list of :class:`~arcgis.gis.server.catalog.ServicesDirectory` objects.
+            * ArcGIS Enterprise and ArcGIS Enterprise on Kubernetes: list of :class:`~arcgis.gis.server.catalog.ServicesDirectory` objects.
 
         .. code-block:: python
 
@@ -1665,7 +1667,7 @@ class GIS(object):
         """
         The ``map`` method creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
-        using the GIS's configured geocoders. Provided a match is found, the geographic
+        using the GIS's configured geocoder. Provided a match is found, the geographic
         extent of the matched address is used as the extent of the map.
         See :class:`~arcgis.map.Map` for more information.
 
@@ -1704,12 +1706,6 @@ class GIS(object):
         :return:
           A :class:`map<arcgis.map.Map>` or :class:`scene<arcgis.map.Scene>`.
         """
-        try:
-            from arcgis.geocoding import get_geocoders, geocode, Geocoder
-        except Error as err:
-            _log.error("ipywidgets packages is required for the map widget.")
-            _log.error("Please install it:\n\tconda install ipywidgets")
-
         arcgismapping = _imports.get_arcgis_map_mod(True)
 
         if isinstance(location, Item) and location.type == "Web Map":
@@ -2061,6 +2057,7 @@ class OfflineContentManager(object):
         folder: Folder | str = None,
         failure_rollback: bool = False,
         item_mapping: dict = {},
+        search_existing_items: bool = False,
     ) -> list:
         """
         Reads a `.contentexport` file (see
@@ -2077,38 +2074,43 @@ class OfflineContentManager(object):
             * Survey123 Forms
             * Geoprocessing Services
 
-        ================     ======================================================================
-        **Parameter**         **Description**
-        ----------------     ----------------------------------------------------------------------
-        package_path         Required string. The path to the `.contentexport` file to import.
-        ----------------     ----------------------------------------------------------------------
-        item_ids             Optional list of strings. The item ids to import from the package.
-                             If none provided, all items in the package will be imported.
-        ----------------     ----------------------------------------------------------------------
-        preserve_ids         Optional boolean. If True, the original item ids will be preserved,
-                             if available. Default is *False*.
+        =====================     ======================================================================
+        **Parameter**              **Description**
+        ---------------------     ----------------------------------------------------------------------
+        package_path              Required string. The path to the `.contentexport` file to import.
+        ---------------------     ----------------------------------------------------------------------
+        item_ids                  Optional list of strings. The item ids to import from the package.
+                                  If none provided, all items in the package will be imported.
+        ---------------------     ----------------------------------------------------------------------
+        preserve_ids              Optional boolean. If True, the original item ids will be preserved,
+                                  if available. Default is *False*.
 
-                             .. note::
-                                 Only available for ArcGIS Enterprise.
-        ----------------     ----------------------------------------------------------------------
-        folder               Optional :class:`~arcgis.gis._impl._content_manager.Folder` or string.
-                             The folder to import the content into. If no argument provided, content
-                             placed in the logged-in user's root folder.
-        ----------------     ----------------------------------------------------------------------
-        failure_rollback     Optional boolean.
+                                  .. note::
+                                    Only available for ArcGIS Enterprise.
+        ---------------------     ----------------------------------------------------------------------
+        folder                    Optional :class:`~arcgis.gis._impl._content_manager.Folder` or string.
+                                  The folder to import the content into. If no argument provided, content
+                                  placed in the logged-in user's root folder.
+        ---------------------     ----------------------------------------------------------------------
+        failure_rollback          Optional boolean.
 
-                             * If *True*, the import will be rolled back and the created items will
-                               be deleted if any error occurs during the process.
-                             * If *False*, any item that fails to import will be skipped and the
-                               process will continue. Default is *False*.
-        ----------------     ----------------------------------------------------------------------
-        item_mapping         A mapping of item IDs from the offline package to item IDs that
-                             already exist in the target organization. The keys represent the item
-                             IDs of dependencies in the offline package, while the values are the
-                             corresponding item IDs to be used as replacements during import. This
-                             prevents duplication by reusing existing items when certain
-                             dependencies have already been uploaded.
-        ================     ======================================================================
+                                  * If *True*, the import will be rolled back and the created items will
+                                  be deleted if any error occurs during the process.
+                                  * If *False*, any item that fails to import will be skipped and the
+                                  process will continue. Default is *False*.
+        ---------------------     ----------------------------------------------------------------------
+        item_mapping              A mapping of item IDs from the offline package to item IDs that
+                                  already exist in the target organization. The keys represent the item
+                                  IDs of dependencies in the offline package, while the values are the
+                                  corresponding item IDs to be used as replacements during import. This
+                                  prevents duplication by reusing existing items when certain
+                                  dependencies have already been uploaded.
+        ---------------------     ----------------------------------------------------------------------
+        search_existing_items     Optional boolean. Indicating whether items that have already been
+                                  cloned should be searched for in the GIS and reused rather than cloned
+                                  again. Existent items will be reused in other new created items, as
+                                  appropriate. Default is *False*.
+        =====================     ======================================================================
 
         :return:
             A List of the created :class:`~arcgis.gis.Item` objects.
@@ -2138,6 +2140,7 @@ class OfflineContentManager(object):
             item_mapping=item_mapping,
             folder=folder,
             failure_rollback=failure_rollback,
+            search_existing_items=search_existing_items,
         )
 
     # ----------------------------------------------------------------------
@@ -4463,6 +4466,10 @@ class UserManager(object):
                 and self._gis.properties["defaultUserCreditAssignment"] != -1
             ):  # get the credits
                 credits: int = self._gis.properties["defaultUserCreditAssignment"]
+
+            groups: list[str] = [
+                grp.id if isinstance(grp, Group) else grp for grp in groups
+            ]
             params: dict = {
                 "f": "json",
                 "invitationList": {
@@ -4560,8 +4567,11 @@ class UserManager(object):
                 d.reverse()
                 username = "@".join(d)
             user = self.get(username)
-            for grp in [self._gis.groups.get(g) for g in groups]:
-                grp.add_users([username])
+            for grp in [
+                self._gis.groups.get(g) if isinstance(g, str) else g for g in groups
+            ]:
+                if grp:
+                    grp.add_users([username])
             if thumbnail is not None:
                 ret = user.update(thumbnail=thumbnail)
                 if not ret:
@@ -5579,8 +5589,7 @@ class UserManager(object):
             for k, v in inputs.items():
                 if k in allowed_keys:
                     kwargs[k] = v
-            import concurrent.futures
-            import math, copy
+            import math
 
             num = 10
             steps = range(math.ceil(max_items / num))
@@ -6592,7 +6601,8 @@ class GroupManager(object):
         file_name             Optional str. The name of the file without an extension.
         ====================  =========================================================
 
-        :returns: list[CloningJob]
+        :returns:
+            A list of [:class:`~arcgis.gis.clone.CloningJob` objects].
 
         .. code-block:: python
 
@@ -7241,7 +7251,7 @@ class ContentManager(object):
 
 
         """
-        from typing import Iterator, Tuple
+        from typing import Tuple
         from io import BytesIO
 
         def chunk_by_file_size(
@@ -8192,7 +8202,7 @@ class ContentManager(object):
                 elif item_properties["access"] == "private":
                     item.sharing.sharing_level = "PRIVATE"
                 elif item_properties["access"] == "shared":
-                    groups = item.shared_with["groups"]
+                    groups = item.sharing.shared_with["groups"]
                     grp_share = item.sharing.groups
                     for grp in groups:
                         grp_share.add(grp)
@@ -10057,6 +10067,65 @@ class ContentManager(object):
                 Item(gis=self._gis, itemid=item)._hydrated = False
         return res
 
+    def _replace_dashboard(
+        self,
+        db_item: Union[str, Item],
+        mappings: Union[list, dict],
+        include_layers: bool = False,
+        include_fields: bool = False,
+    ):
+        if isinstance(db_item, str):
+            db_item = self.get(db_item)
+        if (
+            not db_item
+            or not isinstance(db_item, Item)
+            or db_item.get("type", None) != "Dashboard"
+        ):
+            raise ValueError("Valid Dashboard Item or Item ID must be provided.")
+        try:
+            dash_url = self._gis.properties["helperServices"]["dashboardsUtility"][
+                "url"
+            ]
+        except:
+            raise RuntimeError(
+                "Dashboard API functionality is currently unavailable for this ArcGIS organization."
+            )
+        db_data = db_item.get_data()
+        if isinstance(mappings, dict):
+            mappings = [mappings]
+        try:
+            # if not force, go through each mapping and check items for legit
+            dash_endpoint = dash_url + "/replaceAllDependencies"
+            # gather resources to pass to endpoint
+            resources = []
+            for res in db_item.resources.list():
+                r_path = res["resource"]
+                r_type, r_name = os.path.splitext(r_path)[0].split("/")
+                res_dict = {
+                    "type": r_type,
+                    "name": r_name,
+                    "resource": db_item.resources.get(r_path),
+                }
+                resources.append(res_dict)
+            resp = self._gis._con.post(
+                dash_endpoint,
+                {
+                    "item": {"data": db_data, "resources": resources},
+                    "mappings": mappings,
+                    "options": {
+                        "includeLayers": include_layers,
+                        "includeFields": include_fields,
+                    },
+                },
+                add_headers={"Content-Type": "application/json"},
+                json_encode=False,
+                post_json=True,
+            )
+            updated_data = resp["item"]
+            return updated_data
+        except Exception as e:
+            raise (e)
+
 
 ########################################################################
 class CategorySchemaManager(object):
@@ -10281,30 +10350,39 @@ class CategorySchemaManager(object):
 
 class ResourceManager(object):
     """
-    The ``ResourceManager`` class is a helper class for managing resource files of an item.
+    The ``ResourceManager`` class is a helper class for managing resource files of an item or user.
     An instance of this class is available as a property of the :class:`~arcgis.gis.Item` object
-    (See :attr:`~arcgis.gis.Item.resources` for more information on this property).
-    Users call methods on this :attr:`~arcgis.gis.Item.resources` object to manage
-    (add, remove, update, list, get) item resources.
+    (See :attr:`~arcgis.gis.Item.resources` for more information on this property) or :class:`~arcgis.gis.User` object.
+
+    Users call methods on this class to manage (add, remove, update, list, get) item or user resources.
 
     .. note::
-        Users do not create this class directly.
+        Users do not create this class directly. Use the `resources` property to create the class instance.
     """
 
     _user_id = None
+    _user = None
 
-    def __init__(self, item, gis):
+    def __init__(
+        self, item: Item | None = None, gis: GIS | None = None, user: User | None = None
+    ):
         self._gis = gis
         self._portal = gis._portal
         self._item = item
-
-        owner = self._item.owner
-        user = gis.users.get(owner)
+        if item:
+            owner = self._item.owner
+            user = gis.users.get(owner)
+        if user is None:
+            user = gis.users.me
+        # DO NOT REMOVE THIS CHECK, it is necessary even though looks redundant.
+        # This is the way...
         if (hasattr(user, "id")) and (user.id != "null"):
             self._user_id = user.username
+            self._user = user
             # self._user_id = user.id
         else:
             self._user_id = user.username
+            self._user = user
 
     def export(
         self,
@@ -10312,17 +10390,27 @@ class ResourceManager(object):
         file_name: Optional[str] = None,
     ):
         """
-        The ``export`` method export's the data's resources as a zip file
+        This method exports all resources as a zip file to the specified path.
+
+        .. note ::
+            Only supported for item resources, not user resources.
+
 
         .. code-block:: python
 
             # Usage Example
 
-            >>> Item.resources.export("file_name")
+            >>> Item.resources.export(
+                save_path = "/path/to/output",
+                file_name = "my_resources")
 
         :return:
-            A .zip file containing the data's resources
+            A string to the '.zip' file.
         """
+        if self._item is None:
+            raise ValueError(
+                "This method is not supported for User resources, only Item resources."
+            )
         url = (
             "content/users/"
             + self._user_id
@@ -10350,83 +10438,10 @@ class ResourceManager(object):
         )
         return resources
 
-    def add(
-        self,
-        file: Optional[str] = None,
-        folder_name: Optional[str] = None,
-        file_name: Optional[str] = None,
-        text: Optional[str] = None,
-        archive: bool = False,
-        access: Optional[str] = None,
-        properties: Optional[dict] = None,
+    # -----------------------------------------------------------------------
+    def _add_item_resource(
+        self, file, folder_name, file_name, text, archive, access, properties
     ):
-        """
-        The ``add`` operation adds new file resources to an existing item. For example, an image that is
-        used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
-        resources use storage space from your quota and are scanned for viruses. The item size is updated to
-        include the size of added resource files.
-
-        .. note::
-            Each file added should be no more than 25 Mb.
-
-        Supported item types that allow adding file resources are: Vector Tile Service, Vector Tile Package,
-        Style, Code Attachment, Report Template, Web Mapping Application, Feature Service, Web Map,
-        Statistical Data Collection, Scene Service, and Web Scene.
-
-        Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, MP3, MP4, and ZIP.
-        This operation is only available to the item owner and the organization administrator.
-
-        ================  ===============================================================
-        **Parameter**      **Description**
-        ----------------  ---------------------------------------------------------------
-        file              Optional string. The path to the file that needs to be added.
-        ----------------  ---------------------------------------------------------------
-        folder_name       Optional string. Provide a folder name if the file has to be
-                          added to a folder under resources.
-        ----------------  ---------------------------------------------------------------
-        file_name         Optional string. The file name used to rename an existing file
-                          resource uploaded, or to be used together with text as file name for it.
-        ----------------  ---------------------------------------------------------------
-        text              Optional string. Text input to be added as a file resource,
-                          used together with file_name. If this resource is used, then
-                          file_name becomes required.
-        ----------------  ---------------------------------------------------------------
-        archive           Optional boolean. Default is False.  If True, file resources
-                          added are extracted and files are uploaded to respective folders.
-        ----------------  ---------------------------------------------------------------
-        access            Optional String. Set file resource to be private regardless of
-                          the item access level, or revert it by setting it to `inherit`
-                          which makes the item resource have the same access as the item.
-
-                          Supported values: `private` or `inherit`.
-        ----------------  ---------------------------------------------------------------
-        properties        Optional Dictionary. Set the properties for the resources such
-                          as the `editInfo`.
-        ================  ===============================================================
-
-        :return:
-            Python dictionary in the following format (if successful):
-            {
-                "success": True,
-                "itemId": "<item id>",
-                "owner": "<owner username>",
-                "folder": "<folder id>"}
-
-            else like the following if it failed:
-            {"error": {
-                        "code": 400,
-                        "messageCode": "CONT_0093",
-                        "message": "File type not allowed for addResources",
-                        "details": []
-                        }}
-
-         .. code-block:: python
-
-            # Usage Example
-
-            >>> Item.resources.add("file_path", "folder_name", "file_name", access = "private")
-
-        """
         if not file and (not text or not file_name):
             raise ValueError("Please provide a valid file or text/file_name.")
         query_url = (
@@ -10460,6 +10475,161 @@ class ResourceManager(object):
         resp = self._portal.con.post(query_url, params, files=files, compress=False)
         return resp
 
+    def _add_user_resource(self, file, file_name, text, access):
+        if not file and not text:
+            raise ValueError("Please provide a valid bytes file or JSON text.")
+        if not file_name:
+            raise ValueError("Please provide a valid file_name for user resources.")
+
+        url = f"{self._gis.resturl}community/users/{self._user_id}/addResource"
+        params = {
+            "f": "json",
+            "key": file_name,
+        }
+
+        if file:
+            if not os.path.isfile(os.path.abspath(file)):
+                raise RuntimeError("File(" + file + ") not found.")
+            params["file"] = file
+        if text:
+            if isinstance(text, str):
+                params["text"] = text
+
+        if access:
+            if access not in [
+                "userappprivate",
+                "allorgusersprivateapp",
+                "public",
+                "userprivateallapps",
+            ]:
+                raise ValueError(
+                    "Invalid access type. Supported values are: "
+                    "'userappprivate', 'allorgusersprivateapp', 'public', 'userprivateallapps'."
+                )
+            params["access"] = access
+
+        resp = self._gis.session.post(url, params=params).json()
+        return resp
+
+    def add(
+        self,
+        file: Optional[str] = None,
+        folder_name: Optional[str] = None,
+        file_name: Optional[str] = None,
+        text: Optional[str] = None,
+        archive: bool = False,
+        access: Optional[str] = None,
+        properties: Optional[dict] = None,
+    ):
+        """
+        The ``add`` operation adds new file resources to an existing item's or user's resources. For example, an image that is
+        used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
+        resources use storage space from your quota and are scanned for viruses. For an item, the item size is updated to
+        include the size of added resource files.
+
+        .. note::
+            Each file added should be no more than 25 Mb.
+
+        Supported item types that allow adding file resources are: Vector Tile Service, Vector Tile Package,
+        Style, Code Attachment, Report Template, Web Mapping Application, Feature Service, Web Map,
+        Statistical Data Collection, Scene Service, and Web Scene.
+
+        Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, MP3, MP4, and ZIP.
+        This operation is only available to the item owner and the organization administrator.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        file              Optional string. The path to the file that needs to be added.
+
+                          For user resources, this is a binary file.
+        ----------------  ---------------------------------------------------------------
+        folder_name       Optional string. Provide a folder name if the file has to be
+                          added to a folder under resources.
+                          Not applicable for user resources, only item resources.
+        ----------------  ---------------------------------------------------------------
+        file_name         Optional string. The file name used to rename an existing file
+                          resource uploaded, or to be used together with text as file name for it.
+                          Applicable to user and item resources. Required for user resources.
+        ----------------  ---------------------------------------------------------------
+        text              Optional string. Text input to be added as a file resource,
+                          used together with file_name. For an item, if this resource is used, then
+                          file_name becomes required.
+        ----------------  ---------------------------------------------------------------
+        archive           Optional boolean. Default is False.  If True, file resources
+                          added are extracted and files are uploaded to respective folders.
+                          Only applicable for item resources.
+        ----------------  ---------------------------------------------------------------
+        access            Optional String. Set file resource to be private regardless of
+                          the item access level, or revert it by setting it to `inherit`
+                          which makes the item resource have the same access as the item.
+
+                          Supported values for item resources: `private` or `inherit`.
+
+                          Supported values for user resources: `userappprivate` | `allorgusersprivateapp` | `public` | `userprivateallapps`
+
+                           * userappprivate: resource is available only to the user through the app from which the resource was uploaded.
+                           * allorgusersprivateapp: resource is available to all members of the organization where the resource owner is part of and through the app where the resource was uploaded.
+                           * public: resource is available to everyone (including anonymous access) through any app.
+                           * userprivateallapps: resource is available through any app but only to the user that uploaded the resource.`private`, `inherit`, or `public`.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
+                          Only applicable for item resources.
+        ================  ===============================================================
+
+        :return:
+        For User resources:
+            A Python dictionary in the following format (if successful):
+            {
+                "success": True,
+            }
+        For Item resources:
+            Python dictionary in the following format (if successful):
+            {
+                "success": True,
+                "itemId": "<item id>",
+                "owner": "<owner username>",
+                "folder": "<folder id>"}
+
+        For Both:
+            A Python dictionary in the following format (if it failed):
+            {"error": {
+                        "code": 400,
+                        "messageCode": "CONT_0093",
+                        "message": "File type not allowed for addResources",
+                        "details": []
+                        }}
+
+         .. code-block:: python
+
+            # Usage Example: Item Resources
+
+            >>> Item.resources.add("file_path", "folder_name", "file_name", access = "private")
+
+            # Usage Example: User Resources
+            >>> User.resources.add(file="file_path", file_name="file_name")
+        """
+        if self._item:
+            # Item resources workflow
+            return self._add_item_resource(
+                file=file,
+                folder_name=folder_name,
+                file_name=file_name,
+                text=text,
+                archive=archive,
+                access=access,
+                properties=properties,
+            )
+
+        # User resources workflow
+        return self._add_user_resource(
+            file=file,
+            file_name=file_name,
+            text=text,
+            access=access,
+        )
+
     def update(
         self,
         file: Optional[str] = None,
@@ -10474,6 +10644,9 @@ class ResourceManager(object):
 
         Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, and ZIP.
         This operation is only available to the item owner and the organization administrator.
+
+        .. note ::
+            Only supported for item resources, not user resources.
 
         ================  ===============================================================
         **Parameter**      **Description**
@@ -10550,16 +10723,20 @@ class ResourceManager(object):
         resp = self._portal.con.post(query_url, params, files=files)
         return resp
 
-    def list(self):
+    def list(self, as_list=True):
         """
         The ``list`` method provides a lists all file resources of an existing item.
 
-        .. note::
-            This resource is only available to
-            the item owner and the organization administrator.
+        ================    ===============================================================
+        **Parameter**       **Description**
+        ----------------    ---------------------------------------------------------------
+        as_list             Optional boolean. If True, returns a Python list of dictionaries.
+                            If False, returns a Iterator.
+                            Default is True.
+        ================    ===============================================================
 
         :return:
-            A Python list of dictionaries of the form:
+            For item resources a Python list of dictionaries of the form:
             [
                 {
                   "resource": "<resource1>"
@@ -10571,30 +10748,58 @@ class ResourceManager(object):
                   "resource": "<resource3>"
                 }
             ]
+
+            For user resources, a Python list of dictionaries of the form:
+            [
+                {
+                    "key": "<resource1>",
+                    "size": <size in bytes>,
+                    "clientId": "<client id>",
+                    "created": "<creation date>",
+                    "access": "<access type>",
+                }
+            ]
         """
-        query_url = "content/items/" + self._item.itemid + "/resources"
-        params = {"f": "json", "num": 500}
-        resp = self._portal.con.get(query_url, params)
-        resp_resources = resp.get("resources")
-        count = int(resp.get("num"))
-        next_start = int(
-            resp.get("nextStart", -999)
-        )  # added for back support for portal (10.4.1)
 
-        # loop through pages
-        while next_start > 0:
-            params2 = {"f": "json", "num": 500, "start": next_start}
+        def resource_generator():
+            if self._item:
+                query_url = (
+                    f"{self._gis.resturl}content/items/{self._item.itemid}/resources"
+                )
+            else:
+                query_url = (
+                    f"{self._gis.resturl}community/users/{self._user_id}/resources"
+                )
 
-            resp2 = self._portal.con.get(query_url, params2)
-            resp_resources.extend(resp2.get("resources"))
-            count += int(resp2.get("num"))
-            next_start = int(
-                resp2.get("nextStart", -999)
-            )  # added for back support for portal (10.4.1)
-            if next_start == -999:
-                break
+            params = {"f": "json", "num": 500}
+            resp = self._gis.session.get(query_url, params=params).json()
+            resp_resources = (
+                resp.get("resources", [])
+                if self._item
+                else resp.get("userResources", [])
+            )
+            for res in resp_resources:
+                yield res
+            next_start = int(resp.get("nextStart", -999))
+            while next_start > 0:
+                params2 = {"f": "json", "num": 500, "start": next_start}
+                resp2 = self._gis.session.get(query_url, params=params2).json()
+                resources2 = (
+                    resp2.get("resources")
+                    if self._item
+                    else resp2.get("userResources", [])
+                )
+                for res in resources2:
+                    yield res
+                next_start = int(resp2.get("nextStart", -999))
+                if next_start == -999:
+                    break
 
-        return resp_resources
+        gen = resource_generator()
+        if as_list:
+            return list(gen)
+        else:
+            return gen
 
     def get(
         self,
@@ -10604,10 +10809,10 @@ class ResourceManager(object):
         out_file_name: Optional[str] = None,
     ):
         """
-        The ``get`` method retrieves a specific file resource of an existing item.
+        The ``get`` method retrieves a specific resource of an existing item or user.
 
         .. note::
-            This operation is only available to the item owner and the organization administrator.
+            This operation is only available to the user, item owner, and the organization administrator.
 
         ================  ===============================================================
         **Parameter**      **Description**
@@ -10616,6 +10821,7 @@ class ResourceManager(object):
                           For files in the root, just specify the file name. For files in
                           folders (prefixes), specify using the format
                           <foldername>/<foldername>./../<filename>
+                          For a user resource this is the key name.
         ----------------  ---------------------------------------------------------------
         try_json          Optional boolean. If True, will attempt to convert JSON files to
                           Python dictionary objects. Default is True.
@@ -10639,14 +10845,21 @@ class ResourceManager(object):
 
             >>> Item.resources.get("file_path", try_json=True, out_folder="out_folder_name")
 
+            >>> User.resources.get("file_name", try_json=True, out_folder="out_folder_name")
+
         """
         out_folder: str = out_folder or tempfile.gettempdir()
         safe_file_format: str = file.replace(r"\\", "/")
         safe_file_format: str = safe_file_format.replace("//", "/")
 
-        query_url: str = (
-            "content/items/" + self._item.itemid + "/resources/" + safe_file_format
-        )
+        if self._item:
+            query_url: str = (
+                f"{self._gis.resturl}content/items/{self._item.itemid}/resources/{safe_file_format}"
+            )
+        else:
+            query_url: str = (
+                f"{self._gis.resturl}community/users/{self._user_id}/resources/{safe_file_format}"
+            )
 
         resp: requests.Response = self._portal.con.get(
             query_url,
@@ -10699,22 +10912,69 @@ class ResourceManager(object):
         else:
             raise Exception("Resource does not exist or is inaccessible.")
 
+    def _remove_item_resource(self, file: Optional[str] = None):
+        safe_file_format = ""
+        delete_all = "false"
+        if file:
+            safe_file_format = file.replace(r"\\", "/")
+            safe_file_format = safe_file_format.replace("//", "/")
+        else:
+            delete_all = "true"
+
+        query_url = f"{self._gis.resturl}content/users/{self._user_id}/items/{self._item.itemid}/removeResources"
+        params = {
+            "f": "json",
+            "resource": safe_file_format if safe_file_format else "",
+            "deleteAll": delete_all,
+        }
+        res = self._portal.con.post(query_url, postdata=params)
+        if "success" in res:
+            return res["success"]
+        return res
+
+    def _remove_user_resource(self, file_name: Optional[str]):
+        # If no file_name provided, remove all user resources
+        if file_name is None:
+            # get all the key names
+            user_resources = self.list()
+            file_names = [res["key"] for res in user_resources]
+            if not file_names:
+                return {"success": True}
+        else:
+            file_name = [file_name]
+
+        url = f"{self._gis.resturl}community/users/{self._user_id}/removeResource"
+        for name in file_name:
+            params = {
+                "f": "json",
+                "key": name,
+            }
+            try:
+                res = self._gis.session.post(url, params=params).json()
+            except Exception as e:
+                raise RuntimeError(f"Failed to remove resource '{name}': {str(e)}")
+        if "success" in res:
+            return res["success"]
+        return res
+
     def remove(self, file: Optional[str] = None):
         """
-        The ``remove`` method removes a single resource file or all resources. The item size is updated once
+        The ``remove`` method removes a single resource file or all resources. For an Item resource, the item size is updated once
         resource files are deleted.
 
         .. note::
-            This operation is only available to the item owner
+            This operation is only available to the user, item owner,
             and the organization administrator.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        file              Optional string. The path to the file to be removed.
+        file              Optional string. For an Item resource, the path to the file to be removed.
                           For files in the root, just specify the file name. For files in
                           folders (prefixes), specify using the format
                           <foldername>/<foldername>./../<filename>
+
+                          For a User resource, the file name of the resource to be removed.
 
                           If not specified, all resource files will be removed.
         ================  ===============================================================
@@ -10735,30 +10995,12 @@ class ResourceManager(object):
 
             >>> Item.resources.remove("file_path")
         """
-        safe_file_format = ""
-        delete_all = "false"
-        if file:
-            safe_file_format = file.replace(r"\\", "/")
-            safe_file_format = safe_file_format.replace("//", "/")
-        else:
-            delete_all = "true"
+        if self._item:
+            # Item resources workflow
+            return self._remove_item_resource(file=file)
 
-        query_url = (
-            "content/users/"
-            + self._user_id
-            + "/items/"
-            + self._item.itemid
-            + "/removeResources"
-        )
-        params = {
-            "f": "json",
-            "resource": safe_file_format if safe_file_format else "",
-            "deleteAll": delete_all,
-        }
-        res = self._portal.con.post(query_url, postdata=params)
-        if "success" in res:
-            return res["success"]
-        return res
+        # User resources workflow
+        return self._remove_user_resource(file_name=file)
 
 
 class Group(dict):
@@ -12090,7 +12332,7 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     modified                 The date the user was last modified. Shown in milliseconds since the Unix epoch.
     ---------------------    ---------------------------------------------------------
-    groups                   A JSON array of groups the user belongs to. See Group for properties of a group.
+    groups                   A list of groups the user belongs to as `Group` classes.
     ---------------------    ---------------------------------------------------------
     provider                 The identity provider for the organization.<br>Values: arcgis (for built-in users) ,enterprise (for external users managed by an enterprise identity store), facebook (for public accounts in ArcGIS Online), google (for public accounts in ArcGIS Online)
     ---------------------    ---------------------------------------------------------
@@ -12110,6 +12352,7 @@ class User(dict):
         self._workdir = tempfile.gettempdir()
         self._invitemgr = None
         self._hydrated = False
+        self._resource_manager = None
         if userdict:
             if (
                 "groups" in userdict and len(userdict["groups"]) == 0
@@ -12202,6 +12445,17 @@ class User(dict):
 
             return RecycleBin(gis=self._gis, user=self.username)
         return None
+
+    # ----------------------------------------------------------------------
+    @property
+    def resources(self) -> ResourceManager:
+        """
+        Creates a :class:`~arcgis.gis.ResourceManager` object for the user.
+        You can use the methods and properties in this class to work with user app resources.
+        """
+        if self._resource_manager is None:
+            self._resource_manager = ResourceManager(gis=self._gis, user=self)
+        return self._resource_manager
 
     # ----------------------------------------------------------------------
     def user_types(self):
@@ -12596,8 +12850,7 @@ class User(dict):
 
 
         """
-        if self._gis._portal.is_arcgisonline is False:
-            return None
+
         _lu = {
             "big_data_file": "bigDataFileShare",
             "notebook": "notebookWorkspace",
@@ -12609,6 +12862,8 @@ class User(dict):
             "expiration": expiration or 1440,
             "storeType": _lu[store_type.lower()],
         }
+        if self._gis._is_kubernetes and self._portal.con.token:
+            params["token"] = self._portal.con.token
         if subfolder:
             params["subPath"] = subfolder
 
@@ -13902,6 +14157,21 @@ class User(dict):
             [i.delete() for i in self.recyclebin.content]
         return self._portal.delete_user(self._user_id, reassign_to)
 
+    def _check_existence(self, username: str) -> bool:
+        """checks if a username exists"""
+        gis: GIS = self._gis
+        session: EsriSession = gis.session
+        url: str = f"{gis.url}/sharing/rest/community/users/{username}"
+        params: dict = {
+            "f": "json",
+        }
+        resp: requests.Response = session.get(url, params=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+        if data.get("error"):
+            return False
+        return True
+
     def reassign_to(self, target_username: str):
         """
         The ``reassign_to`` method reassigns all of this user's items and groups to another user.
@@ -13932,29 +14202,46 @@ class User(dict):
 
 
         """
+        if (
+            isinstance(target_username, str)
+            and self._check_existence(username=target_username) == False
+        ):
+            raise ValueError(f"The destination user {target_username} does not exist.")
         if isinstance(target_username, User):
             target_username = target_username.username
+
         # currently issue with REST API method, so we try/except for it
-        try:
-            return self._portal.reassign_user(self._user_id, target_username)
-        except Exception:
-            # variables to ensure that every item & group is assigned
-            # issue with dependencies for these methods too, so try/except/pass
-            items_success = True
-            group_success = True
-            for item in self.items():
-                try:
-                    if not item.reassign_to(target_username):
-                        items_success = False
-                except Exception:
-                    pass
-            for group in self.groups:
-                try:
-                    if not group.reassign_to(target_username):
-                        group_success = False
-                except Exception:
-                    pass
-            return items_success and group_success
+
+        params: dict = {
+            "f": "json",
+        }
+        params["targetUsername"] = target_username
+        url: str = (
+            f"{self._gis.url}/sharing/rest/community/users/{self.username}/reassign"
+        )
+
+        resp: requests.Response = self._gis.session.post(url, data=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+        if "error" in data:
+            raise Exception(data.get("error"))
+        else:
+            status = data.get("success")
+            # validate all items are moved:
+            if status == True:
+
+                checker_items = [
+                    item.reassign_to(target_username) for item in self.items()
+                ]
+                checker_groups = [
+                    group.reassign_to(target_username) for group in self.groups
+                ]
+                if len(checker_items) > 0:
+                    assert all(checker_items)
+                if len(checker_groups) > 0:
+                    assert all(checker_groups)
+            return status
+        return False
 
     def get_thumbnail(self):
         """
@@ -14208,7 +14495,6 @@ class Item(dict):
     """
 
     _uid = None
-    _snapeshots = None
 
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
@@ -14311,11 +14597,9 @@ class Item(dict):
             and len(self._gis.notebook_server) > 0
         ):
             nbs = self._gis.notebook_server[0]
-            if self._gis._portal.is_arcgisonline is False:
-                return nbs.notebooks.snapshots.list(self)
-            elif self._gis._portal.is_arcgisonline:
-                sm = nbs.snaphots
-                return sm.list(self)
+            if self._gis._is_arcgisonline:
+                return nbs.snapshots.list(self)
+            return nbs.notebooks.snapshots.list(self)
         return []
 
     # ----------------------------------------------------------------------
@@ -14336,13 +14620,13 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @_lazy_property
-    def resources(self):
+    def resources(self) -> ResourceManager:
         """
         The ``resources`` property returns the Item's Resource Manager
 
         :return: A :class:`~arcgis.gis.ResourceManager` object
         """
-        return ResourceManager(self, self._gis)
+        return ResourceManager(item=self, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -14910,10 +15194,10 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.download("C:\\ARCGIS\\Projects\\", "hurricane_data")
+            >>> item.download("/path/to/output", "hurricane_data")
 
         """
-        data_path: str = f"content/items/" + self.itemid + "/data"
+        data_path: str = "content/items/" + self.itemid + "/data"
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -17347,7 +17631,10 @@ class Item(dict):
             in the ArcGIS REST API documentation.
         """
 
-        if self.type == "Vector Tile Package" and build_initial_cache == False:
+        if (
+            self.type in ["Vector Tile Package", "Scene Package", "Tile Package"]
+            and build_initial_cache == False
+        ):
             build_initial_cache = True
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -17658,6 +17945,21 @@ class Item(dict):
                     publish_parameters["name"], "featureService"
                 ):
                     raise Exception("Service name already exists in your org.")
+        elif publish_parameters and self.type in ["Scene Package"]:
+            if not "maxRecordCount" in publish_parameters:
+                publish_parameters["maxRecordCount"] = 2000
+            if not "name" in publish_parameters:
+                service_name: str = self.title
+                while (
+                    self._gis.content.is_service_name_available(
+                        service_name, "featureService"
+                    )
+                    == False
+                ):
+                    service_name = (
+                        re.sub(r"[\W_]+", "_", service_name) + uuid.uuid4().hex[:2]
+                    )
+                publish_parameters["name"] = service_name
 
         # New parameter that affects arcgis Online and Enterprise 11.4+
         # Applied to geojson, csv, excel
@@ -17687,7 +17989,7 @@ class Item(dict):
             and self._gis._portal.is_arcgisonline
             and fileType.lower() in ["tilepackage", "compacttilepackage"]
         ):
-            from ..mapping._types import MapImageLayer
+            from ..layers._msl import MapImageLayer
             from ..raster._layer import ImageryLayer
 
             if len(ret) > 0 and "success" in ret[0] and ret[0]["success"] is False:
@@ -17813,6 +18115,8 @@ class Item(dict):
         max_scale: float,
         cache_info: Optional[dict[str, Any]] = None,
         build_cache: bool = False,
+        *,
+        extent: list[float] | None = None,
     ):
         """
         The ``create_tile_service`` method allows publishers and administrators to publish hosted feature
@@ -17875,6 +18179,12 @@ class Item(dict):
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
+        original_cache_value: bool = copy.deepcopy(build_cache)
+        if build_cache == True:
+            # build_cache needs to be false as of 4/16/2025 for ArcGIS Online
+            # and cache built later in the process. Enterprise automatically
+            # builds the cache.
+            build_cache = False
         if self.type.lower() == "Feature Service".lower():
             if cache_info is None:
                 cache_info = {
@@ -18002,10 +18312,17 @@ class Item(dict):
                         },
                     ],
                 }
+            storage_format: str = "esriMapCacheStorageModeExploded"
+            if (
+                self._gis._is_kubernetes == False
+                and self._gis._is_arcgisonline == False
+            ):
+                storage_format: str = "esriMapCacheStorageModeCompactV2"
             pp = {
                 "minScale": min_scale,
                 "maxScale": max_scale,
                 "name": title,
+                "layers": [],
                 "tilingSchema": {
                     "tileCacheInfo": cache_info,
                     "tileImageInfo": {
@@ -18014,14 +18331,21 @@ class Item(dict):
                         "antialiasing": True,
                     },
                     "cacheStorageInfo": {
-                        "storageFormat": "esriMapCacheStorageModeExploded",
+                        "storageFormat": storage_format,
                         "packetSize": 128,
                     },
                 },
                 "cacheOnDemand": True,
-                "cacheOnDemandMinScale": 144448,
+                "cacheOnDemandMinScale": min_scale,
                 "capabilities": "Map,ChangeTracking",
             }
+            if (
+                self._gis._is_arcgisonline == False
+                and self._gis._is_kubernetes == False
+            ):
+                pp.pop("capabilities", None)
+                pp.pop("cacheOnDemandMinScale", None)
+                pp["cacheOnDemand"] = False
             params = {
                 "f": "json",
                 "outputType": "tiles",
@@ -18030,17 +18354,40 @@ class Item(dict):
                 "filetype": "featureService",
                 "publishParameters": json.dumps(pp),
             }
-            url = "%s/content/users/%s/publish" % (
+            url = "%scontent/users/%s/publish" % (
                 self._portal.resturl,
                 self._user_id,
             )
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res["services"], folder=None)
-            if self._gis._portal.is_arcgisonline:
-                from ..mapping._types import MapImageLayer
+            if original_cache_value and self._gis._is_arcgisonline == False:
+                from arcgis.layers import Service
 
                 ms_url = self._gis.content.get(serviceitem_id).url
-                ms = MapImageLayer(url=ms_url, gis=self._gis)
+                ms = Service(ms_url, server=self._gis)
+                mgr = ms.manager
+                if extent is None:
+                    extent = " ".join(
+                        [
+                            str(ms.properties["fullExtent"]["xmin"]),
+                            str(ms.properties["fullExtent"]["ymin"]),
+                            str(ms.properties["fullExtent"]["xmax"]),
+                            str(ms.properties["fullExtent"]["ymax"]),
+                        ]
+                    )
+                lods = []
+                for lod in cache_info["lods"]:
+                    if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
+                        lods.append(str(lod["scale"]))
+                levels = ";".join(lods)
+                mgr.build_cache(levels=levels, extent=extent)
+                return self._gis.content.get(serviceitem_id)
+            elif self._gis._portal.is_arcgisonline and original_cache_value:
+                from arcgis.layers import Service
+
+                ms_url = self._gis.content.get(serviceitem_id).url
+
+                ms = Service(ms_url, server=self._gis)
                 extent = ",".join(
                     [
                         str(ms.properties["fullExtent"]["xmin"]),
@@ -18053,7 +18400,13 @@ class Item(dict):
                 for lod in cache_info["lods"]:
                     if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
                         lods.append(str(lod["level"]))
-                ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                try:
+
+                    ms.manager.update_tiles(levels=",".join(lods), extent=extent)
+                except Exception as ex:
+                    print(
+                        f"An issue building the cache occurred: {ex}. Please see the item homepage for more details."
+                    )
             return self._gis.content.get(serviceitem_id)
         else:
             raise ValueError("Input must of type FeatureService")
@@ -19176,7 +19529,7 @@ class Item(dict):
         return url
 
     # ----------------------------------------------------------------------
-    def remap_data(self, item_mapping: dict[str, str], force=False):
+    def remap_data(self, item_mapping: dict[str, str], force=False, **kwargs):
         """
         Method to help users easily replace data in web maps, applications, and other item types
         that may contain references to other items. Users pass in a dictionary of item ids
@@ -19236,7 +19589,6 @@ class Item(dict):
         _TEXT_BASED_ITEM_TYPES = [
             "Web Map",
             "Map Service",
-            "Dashboard",
             "Feature Collection",
             "Web Mapping Application",
             "Application",
@@ -19406,6 +19758,36 @@ class Item(dict):
                 tfile.write(new_string)
                 tfile.close()
             return self.update(item_properties={}, data=tfile.name)
+
+        elif self.type == "Dashboard":
+            db_data = self.get_data()
+            db_mapping = kwargs.get("db_mapping", None)
+            dash_url = (
+                self._gis.properties["helperServices"]
+                .get("dashboardsUtility", {})
+                .get("url")
+            )
+            if db_mapping and dash_url:
+                try:
+                    updated_data = self._gis.content._replace_dashboard(
+                        self.id, db_mapping, True, True
+                    )
+                except:
+                    updated_data = db_data
+            else:
+                if db_mapping:
+                    warnings.warn(
+                        "Dashboard API functionality is currently unavailable for this ArcGIS organization."
+                    )
+                updated_data = db_data
+
+            old_string = json.dumps(updated_data)
+            if expanded_dict:
+                new_string = _common_utils._text_replace(old_string, expanded_dict)
+            else:
+                new_string = old_string
+            new_data = json.loads(new_string)
+            return self.update(item_properties={}, data=new_data)
 
         else:
             raise ValueError(
@@ -20439,6 +20821,5 @@ class Layer(_GISResource):
 
 
 from arcgis.gis._impl._profile import ProfileManager
-from ._impl import SharingLevel
 
 login_profiles = ProfileManager()

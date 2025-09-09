@@ -29,7 +29,11 @@ try:
         predict_batch,
         show_results_multispectral,
     )
-    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from .._utils.common import (
+        get_multispectral_data_params_from_emd,
+        _get_emd_path,
+        raise_unsupported_backend_error,
+    )
     from .._utils.classified_tiles import per_class_metrics
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
@@ -71,7 +75,7 @@ class UnetClassifier(ArcGISModel):
     backend                 Optional string. Controls the backend framework to be used
                             for this model, which is 'pytorch' by default.
 
-                            valid options are 'pytorch', 'tensorflow'
+                            valid option is 'pytorch'
     =====================   ===========================================
 
     **kwargs**
@@ -137,8 +141,7 @@ class UnetClassifier(ArcGISModel):
 
         self._backend = backend
         if self._backend == "tensorflow":
-            super().__init__(data, None)
-            self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
+            raise_unsupported_backend_error("tensorflow")
         else:
             super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
             data = self._data
@@ -491,8 +494,10 @@ class UnetClassifier(ArcGISModel):
             data._is_empty = True
 
         data.resize_to = resize_to
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        return model_obj
 
     @property
     def _model_metrics(self):
@@ -656,83 +661,6 @@ class UnetClassifier(ArcGISModel):
                 for i in range(len(miou))
                 if i not in self._ignore_mapped_class
             }
-
-    ## Tensorflow specific functions start ##
-    def _intialize_tensorflow(self, data, backbone, pretrained_path, kwargs):
-        self._check_tf()
-        self._ignore_mapped_class = []
-
-        import tensorflow as tf
-        from .._utils.common import get_color_array
-        from .._utils.common_tf import handle_backbone_parameter, get_input_shape
-        from .._model_archs.unet_tf import get_unet_tf_model
-        from tensorflow.keras.losses import (
-            SparseCategoricalCrossentropy,
-            BinaryCrossentropy,
-        )
-        from .._utils.fastai_tf_fit import TfLearner, defaults
-        from tensorflow.keras.models import Model
-        from tensorflow.keras.optimizers import Adam
-        from .._utils.common import kwarg_fill_none
-
-        if data._is_multispectral:
-            raise Exception(
-                'Multispectral data is not supported with backend="tensorflow"'
-            )
-
-        # Intialize Tensorflow
-        self._init_tensorflow(data, backbone)
-
-        # Loss Function
-        # self._loss_function_tf_ = BinaryCrossentropy(from_logits=True)
-        self._loss_function_tf_ = SparseCategoricalCrossentropy(
-            from_logits=True, reduction="auto"
-        )
-
-        self._mobile_optimized = kwarg_fill_none(
-            kwargs, "mobile_optimized", self._backbone_mobile_optimized
-        )
-
-        # Create Unet Model
-        model = get_unet_tf_model(
-            self._backbone_initalized, data, mobile_optimized=self._mobile_optimized
-        )
-
-        self.learn = TfLearner(
-            data,
-            model,
-            opt_func=Adam,
-            loss_func=self._loss_function_tf,
-            true_wd=True,
-            bn_wd=True,
-            wd=defaults.wd,
-            train_bn=True,
-        )
-
-        self.learn.unfreeze()
-        self.learn.freeze_to(len(self._backbone_initalized.layers))
-
-        self.show_results = self._show_results_multispectral
-
-        self._code = image_classifier_prf
-
-    def _loss_function_tf(self, target, predictions):
-        import tensorflow as tf
-
-        # print(target.shape, predictions.shape)
-        # print(target.dtype, predictions.dtype)
-        # print(tf.unique(tf.reshape(target, [-1]))[0])
-        # print('\n', tf.unique(tf.reshape(predictions, [-1]))[0])
-        # print(tf.unique(tf.reshape(target, [-1])).numpy(), tf.unique(tf.reshape(predictions, [-1])))
-        target = tf.squeeze(target, axis=1)
-
-        # from .._utils.pixel_classification import segmentation_mask_to_one_hot
-        # from .._utils.fastai_tf_fit import _pytorch_to_tf
-        # target = _pytorch_to_tf(segmentation_mask_to_one_hot(target.cpu().numpy(), self._data.c).permute(0, 2, 3, 1))
-
-        return self._loss_function_tf_(target, predictions)
-
-    ## Tensorflow specific functions end ##
 
     def per_class_metrics(self, ignore_classes=[]):
         """

@@ -7,6 +7,35 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
 from torch import Tensor
+from pathlib import Path
+import arcgis
+import os
+import traceback
+
+try:
+    from .._utils.common import _temp_dlpk
+    import arcgis
+    from arcgis.gis import GIS
+except Exception as e:
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
+
+
+def posemb_sincos_2d(
+    h, w, dim, temperature=10000, dtype=torch.float32, cls_token=False
+):
+    y, x = torch.meshgrid(torch.arange(h), torch.arange(w), indexing="ij")
+    assert (dim % 4) == 0, "feature dimension must be multiple of 4 for sincos emb"
+    omega = torch.arange(dim // 4) / (dim // 4 - 1)
+    omega = 1.0 / (temperature**omega)
+
+    y = y.flatten()[:, None] * omega[None, :]
+    x = x.flatten()[:, None] * omega[None, :]
+    pe = torch.cat((x.sin(), x.cos(), y.sin(), y.cos()), dim=1)
+    if cls_token:
+        pe = torch.cat([torch.zeros([1, dim]), pe], dim=0)
+    return pe.type(dtype)
 
 
 def position_embedding(embed_dim: int, pos: Tensor) -> Tensor:
@@ -48,6 +77,7 @@ class TransformerWeightGenerator(nn.Module):
         embed_dim: int,
         num_heads: int = 4,
         num_layers: int = 1,
+        **kwargs,
     ) -> None:
         """Initialize a new TransformerWeightGenerator instance.
 
@@ -71,7 +101,7 @@ class TransformerWeightGenerator(nn.Module):
             nhead=num_heads,
             activation="gelu",
             norm_first=False,
-            batch_first=False,
+            batch_first=kwargs.get("batch_first", False),
             dropout=False,
         )
         self.transformer_encoder = nn.TransformerEncoder(
@@ -112,7 +142,7 @@ class TransformerWeightGenerator(nn.Module):
 class FCResLayer(nn.Module):
     """Fully-connected residual layer."""
 
-    def __init__(self, linear_size: int = 128) -> None:
+    def __init__(self, linear_size: int = 128, **kwargs) -> None:
         """Initialize a new FCResLayer instance.
 
         Args:
@@ -120,8 +150,16 @@ class FCResLayer(nn.Module):
         """
         super().__init__()
         self.l_size = linear_size
-        self.nonlin1 = nn.ReLU(inplace=True)
-        self.nonlin2 = nn.ReLU(inplace=True)
+
+        act_type = kwargs.get("fc_activation", "relu")
+
+        if act_type == "gelu":
+            self.nonlin1 = nn.GELU()
+            self.nonlin2 = nn.GELU()
+        else:
+            self.nonlin1 = nn.ReLU(inplace=True)
+            self.nonlin2 = nn.ReLU(inplace=True)
+
         self.w1 = nn.Linear(self.l_size, self.l_size)
         self.w2 = nn.Linear(self.l_size, self.l_size)
 
@@ -152,6 +190,7 @@ class DOFAEmbedding(nn.Module):
         embed_dim=1024,
         wavelengths=3,
         flatten=True,
+        **kwargs,
     ):
         """Initialize a new DOFAEmbedding instance.
 
@@ -171,11 +210,15 @@ class DOFAEmbedding(nn.Module):
         self.flatten = flatten
 
         self.weight_generator = TransformerWeightGenerator(
-            dynamic_embed_dim, self._num_kernel, embed_dim
+            dynamic_embed_dim, self._num_kernel, embed_dim, **kwargs
         )
-        self.scaler = 0.01
 
-        self.fclayer = FCResLayer(dynamic_embed_dim)
+        self.weight_scaler = kwargs.get("weight_scaler", 0.01)
+        self.bias_scaler = kwargs.get("bias_scaler", 0.01)
+
+        self.wavelength_scaler = kwargs.get("wavelength_scaler", 1000)
+
+        self.fclayer = FCResLayer(dynamic_embed_dim, **kwargs)
 
         self._init_weights()
 
@@ -206,7 +249,9 @@ class DOFAEmbedding(nn.Module):
         self.wavelengths = self.wavelengths.to(x.device)
 
         # wv_feats: 9,128 -> 9, 3x3x3
-        waves = position_embedding(self.dynamic_embed_dim, self.wavelengths * 1000)
+        waves = position_embedding(
+            self.dynamic_embed_dim, self.wavelengths * self.wavelength_scaler
+        )
         waves = self.fclayer(waves)
         weight, bias = self.weight_generator(waves)  # 3x3x3
         dynamic_weight = weight.view(
@@ -216,9 +261,9 @@ class DOFAEmbedding(nn.Module):
         dynamic_weight = dynamic_weight.permute([3, 0, 1, 2])
 
         if bias is not None:
-            bias = bias.view([self.embed_dim]) * self.scaler
+            bias = bias.view([self.embed_dim]) * self.bias_scaler
 
-        weights = dynamic_weight * self.scaler
+        weights = dynamic_weight * self.weight_scaler
 
         x = F.conv2d(
             x, weights, bias=bias, stride=self.kernel_size, padding=1, dilation=1
@@ -229,3 +274,24 @@ class DOFAEmbedding(nn.Module):
         else:
             x = x.permute(0, 2, 3, 1)  # BCHW -> BHWC
         return x, patch_height, patch_width
+
+
+def weight_download_url_clay(item_id):
+    """
+    Returns a function that downloads the weights from the given URL.
+    """
+    # check Arcgis pro cache dir
+    cache_dir = Path.home() / "AppData/Local/ESRI/DeepLearning/clay_model"
+    gis = arcgis.env.active_gis
+    if gis is None:
+        raise Exception(
+            "Use GIS() to log into your ArcGIS Online or ArcGIS Enterprise account first. A GIS must be provided and/or set as active."
+        )
+    online_model = gis.content.get(item_id)
+    # download the model using arcgis python
+    if not os.path.exists(cache_dir / online_model.name):
+        download_path = online_model.download(save_path=cache_dir)
+    else:
+        download_path = cache_dir / online_model.name
+    extracted_path = _temp_dlpk(download_path)
+    return extracted_path

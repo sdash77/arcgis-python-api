@@ -191,8 +191,12 @@ class _DeepCloner:
         if cloned_db_list:
             cloned_db = cloned_db_list[0]
             cloned_item_list.append(cloned_db)
-
-            if not self.target._is_agol:
+            dash_url = (
+                self.target.properties["helperServices"]
+                .get("dashboardsUtility", {})
+                .get("url")
+            )
+            if not dash_url:
                 cdb_data = cloned_db.get_data()
                 selectors = _deep_get(cdb_data, "desktopView", "header", "selectors")
                 if selectors:
@@ -209,7 +213,18 @@ class _DeepCloner:
                                             stat_def["onStatisticField"].lower()
                                         )
 
-            cloned_db.remap_data(item_mapping=map_dict, force=True)
+                cloned_db.remap_data(item_mapping=map_dict, force=True)
+            else:
+                try:
+                    mappings = []
+                    for k, v in map_dict.items():
+                        m = {"sourceItemId": k, "targetItemId": v}
+                        mappings.append(m)
+                    cloned_db.remap_data(
+                        item_mapping={}, force=True, db_mapping=mappings
+                    )
+                except:
+                    cloned_db.remap_data(item_mapping=map_dict, force=True)
 
         return cloned_item_list
 
@@ -1735,7 +1750,7 @@ class _DeepCloner:
                 resources=item.resources.export(),
                 preserve_item_id=self._preserve_item_id,
             )
-        elif item["type"] == "Web Experience":
+        elif item["type"] in ["Web Experience", "Web Experience Template"]:
             from arcgis._impl.common._itemdef._expbuilder import _WebExperience
 
             return _WebExperience(
@@ -3054,7 +3069,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
                 name = re.sub(r"\W+", "_", name)
-                name = self._get_unique_name(self.target, name)
+                if not self.target.content.is_service_name_available(
+                    name, "featureService"
+                ):
+                    name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
                 if self.folder:
                     folder = self.target.content.folders.get(
@@ -4415,16 +4433,17 @@ class _WebMapDefinition(_TextItemDefinition):
                         and vector_tile["itemId"] in self._clone_mapping["Item IDs"]
                     ):
                         new_id = self._clone_mapping["Item IDs"][vector_tile["itemId"]]
-                        portal_url = "http://www.arcgis.com/"
+                        new_item = self.target.content.get(new_id)
                         if self.target.properties.isPortal:
-                            portal_url = _get_org_url(self.target)
-                        if self.target.properties.isPortal:
-                            portal_url = _get_org_url(self.target)
-                            root_json = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
-                                portal_url, new_id
-                            )
+                            if new_item:
+                                root_json = new_item.url + "/resources/styles/root.json"
+                            else:
+                                portal_url = _get_org_url(self.target)
+                                root_json = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
+                                    portal_url, new_id
+                                )
                         else:
-                            new_item = self.target.content.get(new_id)
+                            portal_url = "http://www.arcgis.com/"
                             root_json = f"https://tiles.arcgis.com/tiles/{self.target.properties.id}/arcgis/rest/services/{new_item.layers[0].properties.name}/VectorTileServer/resources/styles/root.json"
                         vector_tile["styleUrl"] = root_json
                         vector_tile["itemId"] = new_id
@@ -5568,9 +5587,18 @@ class _FormDefinition(_ItemDefinition):
                                             os.path.join(zip_dir, path),
                                             field_mapping,
                                         )
-
+                        try:
+                            connect_version = original_item["properties"][
+                                "websiteVersion"
+                            ]
+                        except:
+                            connect_version = original_item["properties"].get(
+                                "connectVersion", None
+                            )
                         SurveyManager._xform2webform(
-                            os.path.join(zip_dir, path), self.target.url
+                            os.path.join(zip_dir, path),
+                            self.target.url,
+                            connect_version,
                         )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
@@ -7323,7 +7351,11 @@ def _deep_get(dictionary, *keys):
     dictionary - The dictionary to search for the value
     *keys - The keys used to fetch the desired value"""
 
-    return reduce(lambda d, key: d.get(key) if d else None, keys, dictionary)
+    return reduce(
+        lambda d, key: d.get(key) if d and isinstance(d, dict) else None,
+        keys,
+        dictionary,
+    )
 
 
 # endregion

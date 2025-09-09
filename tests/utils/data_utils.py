@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 from arcgis import GIS, features
@@ -126,6 +126,18 @@ def cleanup_published_items(items: list[Item]) -> None:
             item.delete(permanent=True)
         except Exception as ex:
             print("Failed to delete item:", item, ex)
+
+
+def cleanup_notebook_files(nb_dataaccess, items: List[str]):
+    for filename in items:
+        try:
+            file_obj = next(
+                (f for f in nb_dataaccess.files if f.properties.name == filename), None
+            )
+            if file_obj:
+                file_obj.delete()
+        except Exception as ex:
+            print("Failed to delete notebook file:", filename)
 
 
 class ServerTypeEnum(Enum):

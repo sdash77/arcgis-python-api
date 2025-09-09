@@ -321,7 +321,14 @@ class TransformerNERDataBunch(DataBunch):
             self.train_ds.id2label,
             self.train_ds.model_type,
             num_items,
+            main_index=list(range(num_items)),
+            auxillary_index=list(range(num_items)),
         )
+
+        for rec in results:
+            rec.pop("auxillary_index")
+            rec.pop("main_index")
+
         df = pd.DataFrame(
             results,
         )
@@ -371,7 +378,16 @@ def get_next_tokens(token_ids, index, model_type, tok):
     return whole_word_ids
 
 
-def get_results(batch_tokens, batch_labels, tokenizer, id2label, model_type, num_items):
+def get_results(
+    batch_tokens,
+    batch_labels,
+    tokenizer,
+    id2label,
+    model_type,
+    num_items,
+    main_index,
+    auxillary_index,
+):
     results = []
     for index, (tokens, labels) in enumerate(zip(batch_tokens, batch_labels)):
         labels = [id2label[x] for x in labels]
@@ -400,7 +416,6 @@ def get_results(batch_tokens, batch_labels, tokenizer, id2label, model_type, num
         entity_list = []
         for item in entities:
             token_list, entity = item
-            # print("Before - ", tokenizer.decode([x[1] for x in token_list]))
             prev_tokens = get_previous_tokens(
                 tokens, token_list[0][0], model_type, tokenizer
             )
@@ -409,7 +424,6 @@ def get_results(batch_tokens, batch_labels, tokenizer, id2label, model_type, num
             )
 
             token_list = prev_tokens + [x[1] for x in token_list[1:]] + end_tokens
-            # print("After - ", tokenizer.decode(token_list))
             entity_text = process_text(
                 tokenizer.decode(token_list, skip_special_tokens=True)
             )
@@ -420,6 +434,8 @@ def get_results(batch_tokens, batch_labels, tokenizer, id2label, model_type, num
         text = process_text(
             tokenizer.decode(batch_tokens[index], skip_special_tokens=True)
         )
+        entity_dict["main_index"] = main_index[index]
+        entity_dict["auxillary_index"] = auxillary_index[index]
         entity_dict["Text"] = text
         _ = [entity_dict.setdefault(x[1], []).append(x[0]) for x in entity_list if x[0]]
         results.append(entity_dict)

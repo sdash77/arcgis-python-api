@@ -311,7 +311,7 @@ class PartneredCollabManager:
     def properties(self) -> dict[str, Any]:
         """
         Returns various attributes about partnered collaborations of the
-        current organzations.
+        current organizations.
 
         .. note::
             ArcGIS Hub is implemented with a similar mechanism to Partnered

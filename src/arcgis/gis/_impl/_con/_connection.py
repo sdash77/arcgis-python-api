@@ -2145,7 +2145,7 @@ class Connection(object):
             parsed = parse_url(url)
             expiration = 16000
             if parsed.port:
-                if parsed.port in parsed.netloc:
+                if str(parsed.port) in parsed.netloc:
                     server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
                 else:
                     server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
