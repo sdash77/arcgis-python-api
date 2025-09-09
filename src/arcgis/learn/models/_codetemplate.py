@@ -1819,6 +1819,7 @@ import numpy as np
 import json
 import sys, os, importlib
 import math
+import random
 
 def get_available_device(max_memory=0.8):
     '''
@@ -1872,12 +1873,30 @@ attribute_table = {
     "fieldAliases": {
         "OID": "OID",
         "Value": "Value",
-        "Class": "Class"
+        "Class": "Class",
+        'Red': 'Red',
+        'Green': 'Green',
+        'Blue': 'Blue'
     },
     "fields": [
         {"name": "OID", "type": "esriFieldTypeOID", "alias": "OID"},
         {"name": "Value", "type": "esriFieldTypeInteger", "alias": "Value"},
-        {"name": "Class", "type": "esriFieldTypeString", "alias": "Class"}
+        {"name": "Class", "type": "esriFieldTypeString", "alias": "Class"},
+        {
+            'name': 'Red',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Red'
+        },
+        {
+            'name': 'Green',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Green'
+        },
+        {
+            'name': 'Blue',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Blue'
+        }
     ],
     "features": [],
 }
@@ -1978,6 +1997,7 @@ class ArcGISImageTsClassifier:
     def updateRasterInfo(self, **kwargs):
         kwargs["output_info"]["bandCount"] = 1
         kwargs["output_info"]["pixelType"] = "i4"
+        color_mapping = self.json_info.get("color_mapping", None)
         class_info = self.json_info.get("Class_mapping", None)
         num_class_info = self.json_info.get("Num_class_mapping", None)
         if num_class_info == None:
@@ -1985,12 +2005,21 @@ class ArcGISImageTsClassifier:
         key_vals, num_key_vals = list(class_info.items()), list(num_class_info.items())
         attribute_table["features"] = []
         for i, c in enumerate(class_info):
+            if color_mapping:
+                red, green, blue = color_mapping.get(key_vals[i][0], (random.randint(0, 255),
+                                                                      random.randint(0, 255),
+                                                                      random.randint(0, 255)))
+            else:
+                red, green, blue = [random.randint(0, 255) for _ in range(3)]
             attribute_table["features"].append(
                 {
                     "attributes": {
                         "OID": i + 1,
                         "Value": num_key_vals[i][1],
                         "Class": key_vals[i][1],
+                        "Red": red,
+                        "Green": green,
+                        "Blue": blue, 
                     }
                 }
             )

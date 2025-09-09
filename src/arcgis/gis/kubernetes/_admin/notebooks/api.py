@@ -104,8 +104,14 @@ class KubernetesNotebook:
 
         """
         if self._da is None:
-
-            url = self._url + "/dataaccess"
+            try:
+                url: str = (
+                    self._gis.users.me.generate_direct_access_url("notebook")
+                    .get("url")
+                    .replace("/notebookworkspace", "")
+                )
+            except:
+                url = self._url + "/dataaccess"
             self._da = KubeNotebookDataAccess(url, self._gis)
         return self._da
 

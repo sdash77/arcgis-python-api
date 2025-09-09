@@ -307,11 +307,8 @@ class ImageCaptioner(ArcGISModel):
         framework               Optional string. Defines the framework of the
                                 model.
                                 (Only supported by :class:`~arcgis.learn.SingleShotDetector`.)
-                                If framework used is ``TF-ONNX``,
-                                ``batch_size`` can be passed as an optional
-                                keyword argument.
 
-                                Framework choice: 'PyTorch' and 'TF-ONNX'
+                                Framework choice: 'PyTorch'
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an
                                 item.

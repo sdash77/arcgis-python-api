@@ -165,6 +165,14 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
+    def ssl(self) -> SSLCertificates:
+        if self._ssl is None:
+            url: str = f"{self._url}/sslCertificates"
+            self._ssl = SSLCertificates(url=url, gis=self._gis)
+        return self._ssl
+
+    # ----------------------------------------------------------------------
+    @property
     def groups(self):
         """
         provides access to managing Enterprise Groups with Portal
