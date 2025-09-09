@@ -1,4 +1,3 @@
-from arcgis.gis import GIS
 from arcgis.map import Map
 from arcgis.geocoding import geocode
 import unittest

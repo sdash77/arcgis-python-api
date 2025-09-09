@@ -390,6 +390,7 @@ class ModelExtension(ArcGISModel):
             mextnsn.learn.data.single_ds.classes = mextnsn._data.classes
             mextnsn.learn.data.single_ds.y.classes = mextnsn._data.classes
 
+        mextnsn._model_emd = emd
         return mextnsn
 
     @property

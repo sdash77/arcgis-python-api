@@ -1,10 +1,8 @@
 from __future__ import annotations
-from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
-from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -54,9 +52,9 @@ class Briefing(object):
 
     def __init__(
         self,
-        item: Optional[Union[arcgis.gis.Item, str]] = None,
-        gis: Optional[arcgis.gis.GIS] = None,
-    ):
+        item: arcgis.gis.Item | str | None = None,
+        gis: arcgis.gis.GIS | None = None,
+    ) -> None:
         self._gis = gis or arcgis.env.active_gis
         self._validate_gis()
 
@@ -74,11 +72,11 @@ class Briefing(object):
         self._url = self._get_url()
 
     # ----------------------------------------------------------------------
-    def _validate_gis(self):
+    def _validate_gis(self) -> None:
         if not self._gis._portal.is_logged_in:
             raise Exception("Must be logged into a Portal Account")
 
-    def _get_item_by_id(self, item_id):
+    def _get_item_by_id(self, item_id: str) -> arcgis.gis.Item:
         item = self._gis.content.get(item_id)
         if item is None:
             raise ValueError(
@@ -86,7 +84,7 @@ class Briefing(object):
             )
         return item
 
-    def _validate_item(self, item):
+    def _validate_item(self, item: arcgis.gis.Item) -> None:
         if not isinstance(item, arcgis.gis.Item):
             raise ValueError("Invalid item provided")
 
@@ -98,11 +96,11 @@ class Briefing(object):
         self._itemid = item.itemid
         self._resources = item.resources.list()
 
-    def _is_existing_briefing(self, item):
+    def _is_existing_briefing(self, item) -> bool:
         return isinstance(item, arcgis.gis.Item)
 
     # ----------------------------------------------------------------------
-    def _create_existing_briefing(self):
+    def _create_existing_briefing(self) -> None:
         saved_drafts = [
             val
             for resource in self._resources
@@ -120,7 +118,7 @@ class Briefing(object):
         self._properties = data
 
     # ----------------------------------------------------------------------
-    def _create_new_briefing(self):
+    def _create_new_briefing(self) -> None:
         # Get template from _util module
         template = copy.deepcopy(utils._TEMPLATES["briefing"])
         # Add correct by-line and locale
@@ -176,23 +174,23 @@ class Briefing(object):
         self._resources = self._item.resources.list()
 
     # ----------------------------------------------------------------------
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """
         HTML Representation for IPython Notebook
         """
         return self._item._repr_html_()
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the url of the storymap"""
         return self._url
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def _refresh(self):
+    def _refresh(self) -> None:
         """Load the latest data from the item"""
         if self._item:
             self._properties = json.loads(self._item.get_data())
@@ -224,7 +222,7 @@ class Briefing(object):
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
-    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+    def show(self, width: int | None = None, height: int | None = None) -> object:
         """
         Show a preview of the briefing. The default is a width of 700 and height of 300.
 
@@ -244,7 +242,7 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     @property
-    def slides(self):
+    def slides(self) -> list:
         """
         Get a list of all the content instances in order of appearance in the story.
         This returns a list of class instances for the content in the story.
@@ -259,7 +257,7 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     @property
-    def actions(self):
+    def actions(self) -> list:
         """
         Get list of action nodes. These are nodes that trigger an action to occur, for
         example when text is linked to an image, map, etc.
@@ -274,7 +272,7 @@ class Briefing(object):
         return actions
 
     # ----------------------------------------------------------------------
-    def get_logo(self):
+    def get_logo(self) -> object:
         """
         Get the logo image for the briefing. The logo is seen in the header of the briefing.
         """
@@ -288,10 +286,10 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     def set_logo(
         self,
-        image: Optional[str] = None,
-        link: Optional[str] = None,
-        alt_text: Optional[str] = None,
-    ):
+        image: str | None = None,
+        link: str | None = None,
+        alt_text: str | None = None,
+    ) -> bool:
         """
         Set the logo for the briefing. The logo is seen in the header of the story.
 
@@ -332,7 +330,7 @@ class Briefing(object):
         return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
+    def theme(self, theme: storymap.Themes | str | None = None) -> bool:
         """
         Each briefing has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -353,6 +351,7 @@ class Briefing(object):
             >>> briefing = Briefing()
             >>> briefing.theme(Themes.TIDAL)
         """
+        theme = theme or storymap.Themes.SUMMIT
         # call method to update theme
         utils.theme(self, theme)
         return True
@@ -362,12 +361,12 @@ class Briefing(object):
         self,
         layout: str,
         *,
-        sublayout: Optional[str] = None,
-        title: Optional[str] = None,
-        subtitle: Optional[str] = None,
-        section_position: Optional[str] = None,
-        position: Optional[int] = None,
-    ):
+        sublayout: str | None = None,
+        title: str | None = None,
+        subtitle: str | None = None,
+        section_position: str | None = None,
+        position: int | None = None,
+    ) -> object:
         """
         Use this method to add content to your StoryMap. content can be of various class types and when
         you add this content you can specify a caption, alt_text, display style, and the position
@@ -420,9 +419,9 @@ class Briefing(object):
     def move(
         self,
         slide: int,
-        position: Optional[int] = None,
+        position: int | None = None,
         delete_current: bool = False,
-    ):
+    ) -> bool:
         """
         Move a slide to another position. The slide currently at that position will
         be moved down one space. The slide at the current position can be deleted
@@ -472,13 +471,13 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     def save(
         self,
-        title: Optional[str] = None,
-        tags: Optional[list] = None,
-        access: str = None,
+        title: str | None = None,
+        tags: list | None = None,
+        access: str | None = None,
         publish: bool = False,
         make_copyable: bool = None,
         no_seo: bool = None,
-    ):
+    ) -> object:
         """
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
@@ -525,7 +524,7 @@ class Briefing(object):
         return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
-    def delete_briefing(self):
+    def delete_briefing(self) -> bool:
         """
         Deletes the briefing item.
         """
@@ -533,7 +532,7 @@ class Briefing(object):
         return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
-    def duplicate(self, title: Optional[str] = None):
+    def duplicate(self, title: str | None = None) -> object:
         """
         Duplicate the story. All items will be duplicated as they are. This allows you to create
         a briefing template and duplicate it when you want to work with it.
@@ -567,7 +566,7 @@ class Briefing(object):
         return utils.duplicate(self, title)
 
     # ----------------------------------------------------------------------
-    def copy_content(self, target_briefing: Briefing, content: list):
+    def copy_content(self, target_briefing: Briefing, content: list) -> bool:
         """
         Copy the content from one briefing to another. This will copy the content
         indicated to the target briefing in the order they are provided.

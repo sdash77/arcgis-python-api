@@ -324,7 +324,10 @@ class MMSegmentation(ModelExtension):
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = emd["DatasetType"]
 
-        return cls(data, pretrained_path=str(model_file), **kwargs)
+        model_obj = cls(data, pretrained_path=str(model_file), **kwargs)
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def show_results(self, rows=5, thresh=0.5, thinning=True, **kwargs):
         """

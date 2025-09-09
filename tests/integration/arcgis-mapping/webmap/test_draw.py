@@ -1,6 +1,5 @@
 from arcgis.features import FeatureCollection
 from arcgis.geometry import Point, Polyline, Polygon
-from arcgis.gis import GIS
 from arcgis.map import Map
 import unittest
 from arcgis.map import symbols
@@ -110,7 +109,7 @@ class TestDrawOnMap(unittest.TestCase):
             .properties.layers[0]
             .layerDefinition.drawingInfo.renderer.symbol.style,
             "esriSLSSolid",
-            "Line style not solid as expected.",
+            "Line style not solid as expected."
         )
 
     def test_polygon(self):

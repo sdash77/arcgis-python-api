@@ -8,6 +8,10 @@ import math
 
 from typing import Union, Tuple, Optional, List
 from .._unet_utils import is_contiguous as is_cont
+from arcgis.learn._data_utils.hyperspec_data import (
+    predict_on_validation,
+    get_classification_map,
+)
 
 
 def A(*a):
@@ -691,6 +695,33 @@ def pixel_classify_ts_image(model, tiles, device, model_info):
     return tile_rshp
 
 
+def pixel_classify_hyperspectral_image(model, tiles, device, model_info):
+    tiles = torch.tensor(tiles)  # torch.Size([4, 50, 256, 256])
+    _ = model_info.get("training_class_map", None)
+    training_class_map = {int(i) - 1: j for i, j in _.items()}
+
+    y_preds = []
+    for i in range(tiles.shape[0]):
+        img_arr = torch.tensor(tiles[i]).cuda()
+        label = np.ones((img_arr.shape[1], img_arr.shape[2]))
+        pred, _ = predict_on_validation(
+            model,
+            model_info.get("window_size", 27),
+            tuple(model_info.get("max_min", None)),
+            img_arr,
+            label,
+        )
+        cls_labels = get_classification_map(pred, label)
+        for i in range(cls_labels.shape[0]):
+            for j in range(cls_labels.shape[1]):
+                if cls_labels[i][j] in training_class_map.keys():
+                    cls_labels[i][j] = training_class_map[cls_labels[i][j]]
+        y_preds.append(cls_labels[None, None])
+
+    y_preds = np.concatenate(y_preds, axis=0)
+    return torch.tensor(y_preds)
+
+
 def pixel_classify_pix2pix_image(model, tiles, device, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
 
@@ -792,11 +823,11 @@ def variable_tile_size_check(json_info, parameters):
             [
                 {
                     "name": "tile_size",
-                    "dataType": "numeric",
+                    "dataType": "GPLong",
                     "value": int(json_info["ImageHeight"]),
-                    "required": False,
+                    "required": True,
                     "displayName": "Tile Size",
-                    "description": "Tile size used for inferencing",
+                    "description": "The width and height of image tiles into which the imagery is split for prediction.",
                 }
             ]
         )
@@ -1014,7 +1045,8 @@ def tta_predict(child_image_classifier, normalized_image_tensor, test_time_aug=T
 
     transforms = [0]
     if test_time_aug:
-        if child_image_classifier.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+        image_space_used = child_image_classifier.json_info.get("ImageSpaceUsed")
+        if image_space_used == "MAP_SPACE":
             transforms = list(range(8))
         else:
             transforms = [

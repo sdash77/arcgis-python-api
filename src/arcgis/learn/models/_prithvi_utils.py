@@ -20,6 +20,8 @@ from timm.models.vision_transformer import VisionTransformer
 from collections import OrderedDict
 from mmengine.runner.checkpoint import load_state_dict
 import logging
+import timm
+import math
 
 pretrained_path = "https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt"
 
@@ -34,6 +36,29 @@ def init_prithvi(model, pretrained_path):
     for k, v in raw_stdict.items():
         if "encoder" in k:
             k = k.replace("encoder.", "")
+            if "patch_embed.proj.weight" in k:
+                model_in_chanls = model.patch_embed.proj.weight.shape[1]
+                # since pre-traine in_channels = 6:
+                repeat = int(math.ceil(model_in_chanls / 6))
+                v = v.data.float().repeat(1, repeat, 1, 1, 1)[
+                    :, :model_in_chanls, :, :, :
+                ]
+                if model_in_chanls > 6:
+                    v *= 6 / float(model_in_chanls)
+                # for 2dConv
+                if model.patch_embed.proj.weight.ndim == 4:
+                    # squeeze time dims
+                    v = v.squeeze(2)
+            new_stdict[k] = v
+
+        if "pos_embed" in k and "decoder" not in k and v.shape != model.pos_embed.shape:
+            # there are 589 poistion encoding but interpolation needed in grid_size*2 + 1(cls_token)
+            num_token = min(577, model.pos_embed.shape[1])
+            v = v[:, :num_token]
+            if v.shape[1] != model.pos_embed.shape[1]:
+                v = timm.models.vision_transformer.resize_pos_embed(
+                    v, model.pos_embed, 1, model.patch_embed.grid_size[1:]
+                )
             new_stdict[k] = v
 
     load_state_dict(model, new_stdict, False, logging.getLogger())

@@ -142,7 +142,10 @@ class WNet_cGAN(ArcGISModel):
             data.emd = emd
             data.chip_size = chip_size
         data.resize_to = chip_size
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     @property
     def _model_metrics(self):
