@@ -7,7 +7,7 @@ from arcgis.gis._impl._content_manager import Folder, Folders
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
 from integration.config import get_resource_path, get_web_resource_path
-from config import INTEGRATION_TEST_ITEM_TAG
+from integration.config import INTEGRATION_TEST_ITEM_TAG
 from utils.data_utils import cleanup_published_items
 import pandas as pd
 from arcgis.gis._impl._content_manager.folder import FolderException
