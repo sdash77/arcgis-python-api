@@ -1019,8 +1019,12 @@ class TestFolderAddContent(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.small_shp = get_resource_path("staging_data/folders/shapefile.zip", unique_copy=True)
-        cls.large_sd = get_web_resource_path("data/servicedefinition.sd", unique_copy=True)
+        cls.small_shp = get_resource_path(
+            "staging_data/folders/shapefile.zip", unique_copy=True
+        )
+        cls.large_sd = get_web_resource_path(
+            "data/servicedefinition.sd", unique_copy=True
+        )
 
         cls.folder_mgr = cls.gis.content.folders
         cls.root_folder = cls.folder_mgr.get()
@@ -1059,7 +1063,7 @@ class TestFolderAddContent(unittest.TestCase):
                 title=f"Airline Passenger IO Data {uuid.uuid4().hex[:4]}",
                 item_type=ItemTypeEnum.CSV,
                 tags=INTEGRATION_TEST_ITEM_TAG,
-                file_name=f"airline_{uuid.uuid4().hex[:5]}.csv"
+                file_name=f"airline_{uuid.uuid4().hex[:5]}.csv",
             ),
             file=buffer,
         ).result()
@@ -1115,7 +1119,7 @@ class TestFolderAddContent(unittest.TestCase):
                 title=f"root small file {uuid.uuid4().hex[:4]}",
                 item_type=ItemTypeEnum.SHAPEFILE,
                 tags=INTEGRATION_TEST_ITEM_TAG,
-        ),
+            ),
             file=self.small_shp,
         )
         item = item.result()
@@ -1221,7 +1225,7 @@ class TestFolder(unittest.TestCase):
         unique_folder_name = f"folder_{uuid.uuid4().hex[:4]}"
         folder = self.gis.content.folders.create(folder=unique_folder_name)
         assert folder.properties
-        assert folder.properties['title'] == unique_folder_name
+        assert folder.properties["title"] == unique_folder_name
         assert folder.delete(permanent=True)
 
     def test_folder_name(self):
@@ -1257,7 +1261,9 @@ class TestFolders(unittest.TestCase):
         assert isinstance(self.gis.content.folders, Folders)
 
     def test_create_folder(self):
-        folder = self.gis.content.folders.create(folder=f"folder_{uuid.uuid4().hex[:4]}")
+        folder = self.gis.content.folders.create(
+            folder=f"folder_{uuid.uuid4().hex[:4]}"
+        )
         assert isinstance(folder, Folder)
         assert folder.delete(permanent=True)
 
@@ -1266,7 +1272,9 @@ class TestFolders(unittest.TestCase):
             if user["username"] != self.gis.users.me.username:
                 owner = user["username"]
                 break
-        folder = self.gis.content.folders.create(folder=f"folder_{uuid.uuid4().hex[:4]}", owner=owner)
+        folder = self.gis.content.folders.create(
+            folder=f"folder_{uuid.uuid4().hex[:4]}", owner=owner
+        )
         assert isinstance(folder, Folder)
         assert folder.delete(permanent=True)
 
@@ -1289,7 +1297,7 @@ class TestFolders(unittest.TestCase):
             folder_name = p[1]
             folder: Folder = mgr.get(folder_name)
             assert folder.name.lower() == folder_name.lower()
-            assert folder.properties['username'] == self.gis.users.me.username
+            assert folder.properties["username"] == self.gis.users.me.username
 
     def test_list_folders_current_user(self):
         """lists the folders of the current user"""
