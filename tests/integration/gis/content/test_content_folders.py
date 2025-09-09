@@ -7,12 +7,13 @@ from arcgis.gis._impl._content_manager import Folder, Folders
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
 from integration.config import get_resource_path, get_web_resource_path
-from integration.config import INTEGRATION_TEST_ITEM_TAG
+from config import INTEGRATION_TEST_ITEM_TAG
 from utils.data_utils import cleanup_published_items
 import pandas as pd
 from arcgis.gis._impl._content_manager.folder import FolderException
 
-#enable_verbose_logging()
+enable_verbose_logging()
+
 TEXT_DATA = {
     "operationalLayers": [
         {
@@ -1190,7 +1191,6 @@ class TestFolderAddContent(unittest.TestCase):
 
 @integration_test
 @profiles.all
-@unittest.skip("for now")
 class TestFolder(unittest.TestCase):
 
     def test_folder_delete_exists_ok(self):
@@ -1250,7 +1250,6 @@ class TestFolder(unittest.TestCase):
 
 @integration_test
 @profiles.admin_all
-@unittest.skip("for now")
 class TestFolders(unittest.TestCase):
 
     def test_property_folders(self):
