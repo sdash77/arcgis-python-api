@@ -1349,6 +1349,8 @@ class ArcGISInstanceDetector:
                             else str(self.json_info["radiometric_offset_correction"]),
                             "displayName": "Radiometric Offset Correction",
                             "description": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
+                    }
+                )
 
         return params
 
