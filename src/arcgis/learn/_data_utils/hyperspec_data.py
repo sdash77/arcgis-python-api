@@ -22,6 +22,8 @@ from fastai.vision import random
 from .._data import _prepare_working_dir
 from .._utils.env import is_arcgispronotebook
 from .._utils.common import get_top_padding
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
 
 def max_min_normalization(data, max_num, min_num):
@@ -56,19 +58,23 @@ def samples_extraction(
     path, window_size, max_num, min_num, training_class_map, workers=None
 ):
     if workers is None:
-        workers = get_auto_workers()  # auto decide
+        workers = get_auto_workers()
 
     save_dir = os.path.join(path, "DATA")
     os.makedirs(save_dir, exist_ok=True)
-    images, labels = os.path.join(path, "images"), os.path.join(path, "labels")
+    images_dir, labels_dir = os.path.join(path, "images"), os.path.join(path, "labels")
 
     valid_exts = (".tif", ".png", ".mrf", ".jpeg", ".jpg")
-    all_chips = [i for i in os.listdir(images) if i.endswith(valid_exts)]
+    all_chips = [i for i in os.listdir(images_dir) if i.endswith(valid_exts)]
     training_class_map = {v: k for k, v in training_class_map.items()}
 
-    for k in progress_bar(all_chips, comment="Processing chips and Extracting samples"):
-        HSI_data = gdal.Open(os.path.join(images, k)).ReadAsArray()
-        HSI_gt = gdal.Open(os.path.join(labels, k)).ReadAsArray()
+    global_lines = []
+
+    def process_chip(k):
+        img_path = os.path.join(images_dir, k)
+        lbl_path = os.path.join(labels_dir, k)
+        HSI_data = gdal.Open(img_path).ReadAsArray()
+        HSI_gt = gdal.Open(lbl_path).ReadAsArray()
 
         remapped = np.copy(HSI_gt)
         for old_val, new_val in training_class_map.items():
@@ -83,20 +89,53 @@ def samples_extraction(
         coords = np.argwhere(HSI_gt > 0)
         labels_vec = HSI_gt[HSI_gt > 0]
 
-        save_tasks, lines = [], []
-        for (i, j), label in zip(coords, labels_vec):
-            patch = HSI_data[i : i + s, j : j + s, :].transpose(2, 0, 1)[np.newaxis]
-            save_name = os.path.join(save_dir, f"samples_{k[:-4]}_{i+1}_{j+1}.npy")
-            save_tasks.append((save_name, patch))
-            lines.append(f"{save_name} {int(label)}\n")
+        if coords.shape[0] == 0:
+            return []
+        M = coords.shape[0]
+        C = HSI_data.shape[2]
+        patches = np.empty((M, C, s, s), dtype=np.float32)
+        labels = np.empty((M,), dtype=np.int32)
 
-        from concurrent.futures import ThreadPoolExecutor
+        idx = 0
+        for (i, j), lab in zip(coords, labels_vec):
+            patch = (
+                HSI_data[i : i + s, j : j + s, :].transpose(2, 0, 1).astype(np.float32)
+            )
+            patches[idx] = patch
+            labels[idx] = int(lab)
+            idx += 1
 
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            executor.map(lambda x: np.save(*x), save_tasks)
-        data_list_path = os.path.join(save_dir, "data_list.txt")
-        with open(data_list_path, "a") as f:
-            f.writelines(lines)
+        base = os.path.splitext(k)[0]
+        patches_file = os.path.join(save_dir, f"samples_{base}_patches.npy")
+        labels_file = os.path.join(save_dir, f"samples_{base}_labels.npy")
+
+        np.save(patches_file, patches)
+        np.save(labels_file, labels)
+
+        # "<patches_filename> <labels_filename> <local_idx> <label>"
+        file_lines = []
+        patches_name = os.path.basename(patches_file)
+        labels_name = os.path.basename(labels_file)
+        for local_idx in range(M):
+            file_lines.append(
+                f"{patches_name} {labels_name} {local_idx} {int(labels[local_idx])}\n"
+            )
+        return file_lines
+
+    results = []
+    with ThreadPoolExecutor(max_workers=workers) as exe:
+        # wrap exe.map with tqdm to show chip progress
+        for res in progress_bar(
+            exe.map(process_chip, all_chips),
+            total=len(all_chips),
+            comment="Processing chips and Extracting samples",
+        ):
+            if res:
+                results.extend(res)
+
+    data_list_path = os.path.join(save_dir, "data_list.txt")
+    with open(data_list_path, "w") as f:
+        f.writelines(results)
 
 
 def samples_division_cv(list_dir, val_split_pct):
@@ -104,8 +143,12 @@ def samples_division_cv(list_dir, val_split_pct):
         samples_txt = f.readlines()
     label_dict = defaultdict(list)
     for line in samples_txt:
-        path, label = line.strip().rsplit(" ", 1)
-        label_dict[label].append(f"{path} {label}\n")
+        stripped = line.strip()
+        if not stripped:
+            continue
+        parts = stripped.split()
+        label = parts[-1]
+        label_dict[label].append(line)
     test_entries = []
     test_set = set()
     sorted_labels = sorted(label_dict.keys(), key=lambda x: int(x))
@@ -116,31 +159,49 @@ def samples_division_cv(list_dir, val_split_pct):
         test_entries.extend(selected)
         test_set.update(selected)
     train_entries = [line for line in samples_txt if line not in test_set]
-    train_entries.sort(key=lambda x: int(x.strip().rsplit(" ", 1)[1]))
-    test_entries.sort(key=lambda x: int(x.strip().rsplit(" ", 1)[1]))
+    train_entries.sort(key=lambda x: int(x.strip().split()[-1]))
+    test_entries.sort(key=lambda x: int(x.strip().split()[-1]))
 
-    with open(os.path.join(os.path.dirname(list_dir), "data_list_test.txt"), "w") as f:
+    base_dir = os.path.dirname(list_dir)
+    with open(os.path.join(base_dir, "data_list_test.txt"), "w") as f:
         f.writelines(test_entries)
-    with open(os.path.join(os.path.dirname(list_dir), "data_list_train.txt"), "w") as f:
+    with open(os.path.join(base_dir, "data_list_train.txt"), "w") as f:
         f.writelines(train_entries)
+    return os.path.join(base_dir, "data_list_train.txt"), os.path.join(
+        base_dir, "data_list_test.txt"
+    )
 
 
 class HyperspectralDataset(data.Dataset):
     def __init__(self, list_dir, path, augmentation=False):
-        f = open(list_dir)
-        self.list_txt = f.readlines()
-        self.length = len(self.list_txt)
+        with open(list_dir, "r") as f:
+            lines = [ln.strip() for ln in f if ln.strip()]
+        parsed = []
+        for ln in lines:
+            parts = ln.split()
+            patches_fn, labels_fn, local_idx, label = parts
+            parsed.append((patches_fn, labels_fn, int(local_idx), int(label)))
+        self.list_entries = parsed
+        self.length = len(self.list_entries)
         self.au = augmentation
         self.path = path
+        self._opened = {}
+        first_patches = parsed[0][0]
+        patches_path = os.path.join(self.path, "DATA", first_patches)
+        arr = np.load(patches_path, mmap_mode="r")
+        example_shape = arr[0].shape
+        self.tensor_shape = (1,) + example_shape
 
     def __getitem__(self, index):
-        sample_path = self.list_txt[index].split(" ")
-        data_path = os.path.join(self.path, "DATA", sample_path[0].split("\\")[-1])
-        label = sample_path[1][:-1]
-        if not self.au:
-            data = np.load(data_path)
-        else:
-            data = self.random_flip_lr(np.load(data_path))
+        patches_fn, labels_fn, local_idx, label = self.list_entries[index]
+        patches_path = os.path.join(self.path, "DATA", patches_fn)
+        if patches_fn not in self._opened:
+            self._opened[patches_fn] = np.load(patches_path, mmap_mode="r")
+        patches_mem = self._opened[patches_fn]
+        data = patches_mem[local_idx]
+        data = data[np.newaxis, ...]
+        if self.au:
+            data = self.random_flip_lr(data)
             data = self.random_flip_tb(data)
             data = self.random_rot(data)
         label = int(label) - 1
@@ -150,8 +211,7 @@ class HyperspectralDataset(data.Dataset):
         return self.length
 
     def __repr__(self):
-        item = self.__getitem__(0)
-        return f"{self.__class__.__name__}, Tensor:{(item[0][0].shape)}, items:{self.length}"
+        return f"{self.__class__.__name__}, Tensor:{self.tensor_shape}, items:{self.length}"
 
     def random_flip_lr(self, data):
         if np.random.randint(0, 2):
