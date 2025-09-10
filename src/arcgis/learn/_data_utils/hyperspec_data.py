@@ -43,23 +43,7 @@ def padding(data, window_size):
     return pad_data
 
 
-def get_auto_workers():
-    try:
-        # Total logical CPUs
-        cpu_count = os.cpu_count() or multiprocessing.cpu_count()
-        # Leave some cores free for OS (e.g., 25%)
-        workers = max(1, cpu_count - max(1, cpu_count // 10))
-        return workers
-    except:
-        return 4
-
-
-def samples_extraction(
-    path, window_size, max_num, min_num, training_class_map, workers=None
-):
-    if workers is None:
-        workers = get_auto_workers()
-
+def samples_extraction(path, window_size, max_num, min_num, training_class_map):
     save_dir = os.path.join(path, "DATA")
     os.makedirs(save_dir, exist_ok=True)
     images_dir, labels_dir = os.path.join(path, "images"), os.path.join(path, "labels")
@@ -123,15 +107,12 @@ def samples_extraction(
         return file_lines
 
     results = []
-    with ThreadPoolExecutor(max_workers=workers) as exe:
-        # wrap exe.map with tqdm to show chip progress
-        for res in progress_bar(
-            exe.map(process_chip, all_chips),
-            total=len(all_chips),
-            comment="Processing chips and Extracting samples",
-        ):
-            if res:
-                results.extend(res)
+    for res in progress_bar(
+        all_chips, comment="Processing chips and Extracting samples"
+    ):
+        file_lines = process_chip(res)
+        if file_lines:
+            results.extend(file_lines)
 
     data_list_path = os.path.join(save_dir, "data_list.txt")
     with open(data_list_path, "w") as f:
