@@ -1176,6 +1176,17 @@ def prepare_tabulardata(
 
                             .. note::
                                 Applies to timeseries
+    ---------------------   -------------------------------------------
+    use_loc_embeddings      Optional boolean. If set to True, enables embedding of the spatial
+                            geometry as continuous feature representations when geometry data is available.
+                            For Polygon and Line geometries, the centroid is used as the representative
+                            location for embedding.
+    ---------------------   -------------------------------------------
+    location_column         Optional List. The column names that will be used to get
+                            the lat long value from the `csv` or `json` file types. lon and lat
+                            order should be maintained in the list.  This argument is valid
+                            only for `dataset-type` location.
+                            Default value is set to ['lon', 'lat'].
     =====================   ===========================================
 
     :return: `TabularData` object
