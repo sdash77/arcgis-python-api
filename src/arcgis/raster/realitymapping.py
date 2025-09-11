@@ -34,7 +34,10 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _generate_reality_url(gis: GIS) -> str:
-    return gis._url[: gis._url.find(".com") + 4] + ":6443/arcgis/reality/api"
+    if is_supported(gis):
+        url = gis.properties.helperServices["realityMapping"]["url"]
+        return url[:url.find("/rest/")] + "/reality/api"
+    raise ValueError("The GIS does not support reality mapping.")
 
 
 ###################################################################################################
