@@ -698,7 +698,7 @@ def pixel_classify_ts_image(model, tiles, device, model_info):
 def pixel_classify_hyperspectral_image(model, tiles, device, model_info):
     tiles = torch.tensor(tiles)  # torch.Size([4, 50, 256, 256])
     _ = model_info.get("training_class_map", None)
-    training_class_map = {int(i) - 1: j for i, j in _.items()}
+    training_class_map = {int(i): j for i, j in _.items()}
 
     y_preds = []
     for i in range(tiles.shape[0]):

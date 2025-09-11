@@ -4433,16 +4433,17 @@ class _WebMapDefinition(_TextItemDefinition):
                         and vector_tile["itemId"] in self._clone_mapping["Item IDs"]
                     ):
                         new_id = self._clone_mapping["Item IDs"][vector_tile["itemId"]]
-                        portal_url = "http://www.arcgis.com/"
+                        new_item = self.target.content.get(new_id)
                         if self.target.properties.isPortal:
-                            portal_url = _get_org_url(self.target)
-                        if self.target.properties.isPortal:
-                            portal_url = _get_org_url(self.target)
-                            root_json = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
-                                portal_url, new_id
-                            )
+                            if new_item:
+                                root_json = new_item.url + "/resources/styles/root.json"
+                            else:
+                                portal_url = _get_org_url(self.target)
+                                root_json = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
+                                    portal_url, new_id
+                                )
                         else:
-                            new_item = self.target.content.get(new_id)
+                            portal_url = "http://www.arcgis.com/"
                             root_json = f"https://tiles.arcgis.com/tiles/{self.target.properties.id}/arcgis/rest/services/{new_item.layers[0].properties.name}/VectorTileServer/resources/styles/root.json"
                         vector_tile["styleUrl"] = root_json
                         vector_tile["itemId"] = new_id
