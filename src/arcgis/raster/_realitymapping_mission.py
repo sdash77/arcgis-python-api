@@ -126,10 +126,13 @@ class Mission:
                 if prod_type in dataprod_mapping
                 else prod_type
             )
-            mission_products[prod_type] = Item(
-                self._gis, product["arcgisItem"]["itemId"]
-            )
             self._prod_to_id_map[prod_type] = product["id"]
+            try:
+                mission_products[prod_type] = Item(
+                    self._gis, product["arcgisItem"]["itemId"]
+                )
+            except:
+                pass
 
         return mission_products
 
@@ -252,6 +255,10 @@ class Mission:
         raster_type_name: Optional[str] = None,
         raster_type_params: Optional[dict[str, Any]] = None,
         context: Optional[dict[str, Any]] = None,
+        *,
+        gis: Optional[GIS] = None,
+        future: bool = False,
+        **kwargs,
     ):
         """
         Add a collection of images to existing image collection of the mission. It provides
@@ -380,12 +387,22 @@ class Mission:
             raster_type_params=raster_type_params,
             context=context,
             gis=gis,
-            future=True,
+            future=future,
+            **kwargs,
         )
 
         return image_collection.url
 
-    def delete_image(self, where: str):
+    def delete_image(
+        self,
+        where: str,
+        context: Optional[dict] = None,
+        *,
+        gis: Optional[GIS] = None,
+        future: bool = False,
+        estimate: Optional[bool] = False,
+        **kwargs,
+    ):
         """
 
         ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset) of a mission.
@@ -412,9 +429,11 @@ class Mission:
         gpjob = delete_image(
             image_collection=image_collection,
             where=where,
-            gis=gis,
-            future=True,
             context=context,
+            gis=gis,
+            future=future,
+            estimate=estimate,
+            **kwargs,
         )
 
         return image_collection.url
@@ -500,12 +519,9 @@ class Mission:
             project_adj_settings = project.settings
             if (
                 isinstance(project_adj_settings, dict)
-                and ("template" in project_adj_settings.keys())
-                and "adjustSettings" in project_adj_settings["template"].keys()
+                and "adjustSettings" in project_adj_settings.keys()
             ):
-                project_adj_settings = project_adj_settings["template"][
-                    "adjustSettings"
-                ]
+                project_adj_settings = project_adj_settings["adjustSettings"]
             keys_to_pop = ["parallelProcessingFactor"]
 
             if isinstance(context, dict):
@@ -779,6 +795,8 @@ class Mission:
         gis = arcgis.env.active_gis if gis is None else gis
 
         image_collection = self.image_collection
+        context = context or {}
+        context["mission"] = self.mission_id
 
         return gis._tools.realitymapping.match_control_points(
             image_collection=image_collection,
@@ -1029,7 +1047,7 @@ class Mission:
         ===================================     ====================================================================
         **Parameter**                           **Description**
         -----------------------------------     --------------------------------------------------------------------
-        out_ortho                               Optional String or dict. This is the ortho-mosaicked image converted from the image
+        out_ortho                               Required String or dict. This is the ortho-mosaicked image converted from the image
                                                 collection after the block adjustment.
                                                 It can be a url, uri, portal item, or string representing the name of output dem
                                                 (either existing or to be created.)
@@ -1123,6 +1141,7 @@ class Mission:
         products = self.products
         if "ortho" in products:
             out_ortho = products["ortho"]
+        if "ortho" in self._prod_to_id_map:
             context["dataproduct_id"] = self._prod_to_id_map["ortho"]
 
         context["mission"] = self.mission_id
@@ -1652,7 +1671,6 @@ class Mission:
         group = self._project.group
         context["group"] = group.id
 
-        products = self.products
         prod_types = ["dtm", "dsm", "true_ortho", "dsm_mesh", "point_cloud", "mesh"]
         dataproduct_ids = {
             k: v for k, v in self._prod_to_id_map.items() if k in prod_types
