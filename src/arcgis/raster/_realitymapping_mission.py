@@ -1047,7 +1047,7 @@ class Mission:
         ===================================     ====================================================================
         **Parameter**                           **Description**
         -----------------------------------     --------------------------------------------------------------------
-        out_ortho                               Optional String or dict. This is the ortho-mosaicked image converted from the image
+        out_ortho                               Required String or dict. This is the ortho-mosaicked image converted from the image
                                                 collection after the block adjustment.
                                                 It can be a url, uri, portal item, or string representing the name of output dem
                                                 (either existing or to be created.)
