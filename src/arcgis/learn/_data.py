@@ -1493,6 +1493,10 @@ def prepare_data(
                             Only those spectral bands will be considered for training.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
+    window_size             Optional int. default set to 27. pixel width and height of each
+                            square patch extracted around a labeled pixel for training.
+                            Applicable only for Hyperspectral3DRCNet model.
+    ---------------------   -------------------------------------------
     n_temporal              Required int. Number of temporal observations or time steps.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------

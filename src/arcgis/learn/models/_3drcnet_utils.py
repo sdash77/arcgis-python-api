@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import pandas as pd
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
@@ -469,3 +470,59 @@ def compute_mIoU(model, dataloader, num_classes, mean):
             for i in range(num_classes)
         }
         return iou_dict
+
+
+def compute_metrics_df(model, dataloader, num_classes):
+    valid_data = dataloader.valid_dl
+    total_inter = torch.zeros(num_classes, dtype=torch.float32)  # TP
+    total_pred = torch.zeros(num_classes, dtype=torch.float32)  # TP+FP
+    total_label = torch.zeros(num_classes, dtype=torch.float32)  # TP+FN
+
+    training_class_map = {i - 1: j for i, j in dataloader._training_class_map.items()}
+
+    for inputs, labels in valid_data:
+        preds = model_predict(model, inputs)
+
+        preds = preds.cpu()
+        labels = labels.cpu()
+
+        preds = torch.tensor([training_class_map[int(i)] for i in preds.tolist()])
+        labels = torch.tensor([training_class_map[int(i)] for i in labels.tolist()])
+
+        if labels.ndim == 4 and labels.shape[1] == 1:
+            labels = labels.squeeze(1)
+
+        original_classes = [j for i, j in dataloader._training_class_map.items()]
+        for idx, cls in enumerate(original_classes):
+            pred_inds = preds == cls
+            label_inds = labels == cls
+
+            intersection = (pred_inds & label_inds).sum().item()  # TP
+            total_inter[idx] += intersection
+            total_pred[idx] += pred_inds.sum().item()  # TP+FP
+            total_label[idx] += label_inds.sum().item()  # TP+FN
+
+    precision_per_class = total_inter / (total_pred + 1e-6)
+    recall_per_class = total_inter / (total_label + 1e-6)
+    f1_per_class = (
+        2
+        * precision_per_class
+        * recall_per_class
+        / (precision_per_class + recall_per_class + 1e-6)
+    )
+    class_names = [
+        j if isinstance(j, str) else i for i, j in dataloader.classes.items()
+    ]
+    df = pd.DataFrame(
+        {
+            cls: [
+                round(precision_per_class[idx].item(), 4),
+                round(recall_per_class[idx].item(), 4),
+                round(f1_per_class[idx].item(), 4),
+            ]
+            for idx, cls in enumerate(class_names)
+        },
+        index=["precision", "recall", "f1"],
+    )
+
+    return df
