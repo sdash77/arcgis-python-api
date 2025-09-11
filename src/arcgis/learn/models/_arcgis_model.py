@@ -1462,7 +1462,10 @@ class ArcGISModel(object):
                 _emd_template["n_channel_rev"] = len(
                     _emd_template["NormalizationStats"]["band_min_values"]
                 )
-        if getattr(self._data, "_dataset_type", None) == "Classified_Tiles":
+        if getattr(self._data, "_dataset_type", None) in [
+            "Classified_Tiles",
+            "3DRCNet",
+        ]:
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
                     if compute_metrics:
