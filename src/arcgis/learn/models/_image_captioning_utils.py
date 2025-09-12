@@ -176,16 +176,6 @@ class DecoderAttention(nn.Module):
         self.hx = self.hidden_init(features.mean(1))
         self.cx = self.c_init(features.mean(1))
 
-    def load_embedding(self, pretrained_embedding, vocab):
-        # Initialize zeros vectors
-        vectors = torch.zeros(len(vocab.itos), pretrained_embedding.get_dimension())
-        # Load vectors from pretrained embeddings.
-        for index, token in enumerate(vocab.itos):
-            vectors[index] = torch.tensor(pretrained_embedding.get_word_vector(token))
-        # Using pretrained vectors from fastext to initialize embeddings.
-        layer = nn.Embedding.from_pretrained(vectors)
-        return layer
-
     def decode_step(self, current_words, im, hidden):
         # This function is used in nucleus decoding for which
         # we have not given support
