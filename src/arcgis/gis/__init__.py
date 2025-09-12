@@ -17124,12 +17124,12 @@ class Item(dict):
         # Handle Vector Tile Service
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
-            
+
         # Handle Map Service (hosted tile layers)
         if self.type == "Map Service" and "Hosted Service" in self.typeKeywords:
             params["name"] = self.title.replace(" ", "_")
             params["stype"] = "tiles"
-            
+
         # Date Range Handling
         if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
             sd = date_range[0]
