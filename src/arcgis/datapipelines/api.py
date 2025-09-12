@@ -34,10 +34,10 @@ def run_data_pipeline(
 
     .. note::
         This method is experimental. All parameters and return types are subject to change.
-        
+
     .. note::
-        This method is supported with ArcGIS Online only. 
-    
+        This method is supported with ArcGIS Online only.
+
 
     =================================================     ========================================================================
     **Parameter**                                         **Description**
@@ -52,7 +52,7 @@ def run_data_pipeline(
 
     :return:
         A :class:`~arcgis.datapipelines._pipelines.PipelineRun` object.
-        
+
     .. note::
         Raises an Exception if the user or organization does not have access to Data Pipelines
         or if a run is already in progress for the item.
