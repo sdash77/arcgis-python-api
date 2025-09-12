@@ -36,6 +36,12 @@
       "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.gis"
   },
   {
+      "testrail_run": "27702",
+      "xml_path": "./gis_admin/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.gis_admin"
+  },
+  {
       "testrail_run": "27713",
       "xml_path": "./graph/*.xml",
       "environment": "Windows",
