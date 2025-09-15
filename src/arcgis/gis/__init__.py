@@ -357,7 +357,7 @@ class GIS(object):
         # Usage Example 6: PKI Login to ArcGIS Enterprise, using PKCS12 user certificate
 
         gis = GIS(url="https://pkienterprise.esri.com/portal",
-                  cert_file="C:\\users\\someuser\\mycert.pfx", password="password1")
+                  cert_file="/path/to/mycert.pfx", password="password1")
 
     .. code-block:: python
 
@@ -10082,7 +10082,6 @@ class ContentManager(object):
             or db_item.get("type", None) != "Dashboard"
         ):
             raise ValueError("Valid Dashboard Item or Item ID must be provided.")
-        db_data = db_item.get_data()
         try:
             dash_url = self._gis.properties["helperServices"]["dashboardsUtility"][
                 "url"
@@ -10091,15 +10090,27 @@ class ContentManager(object):
             raise RuntimeError(
                 "Dashboard API functionality is currently unavailable for this ArcGIS organization."
             )
+        db_data = db_item.get_data()
         if isinstance(mappings, dict):
             mappings = [mappings]
         try:
             # if not force, go through each mapping and check items for legit
             dash_endpoint = dash_url + "/replaceAllDependencies"
+            # gather resources to pass to endpoint
+            resources = []
+            for res in db_item.resources.list():
+                r_path = res["resource"]
+                r_type, r_name = os.path.splitext(r_path)[0].split("/")
+                res_dict = {
+                    "type": r_type,
+                    "name": r_name,
+                    "resource": db_item.resources.get(r_path),
+                }
+                resources.append(res_dict)
             resp = self._gis._con.post(
                 dash_endpoint,
                 {
-                    "item": {"data": db_data},
+                    "item": {"data": db_data, "resources": resources},
                     "mappings": mappings,
                     "options": {
                         "includeLayers": include_layers,
@@ -10390,7 +10401,7 @@ class ResourceManager(object):
             # Usage Example
 
             >>> Item.resources.export(
-                save_path = "C:\my_path\my_folder",
+                save_path = "/path/to/output",
                 file_name = "my_resources")
 
         :return:
@@ -12839,8 +12850,7 @@ class User(dict):
 
 
         """
-        if self._gis._portal.is_arcgisonline is False:
-            return None
+
         _lu = {
             "big_data_file": "bigDataFileShare",
             "notebook": "notebookWorkspace",
@@ -12852,6 +12862,8 @@ class User(dict):
             "expiration": expiration or 1440,
             "storeType": _lu[store_type.lower()],
         }
+        if self._gis._is_kubernetes and self._portal.con.token:
+            params["token"] = self._portal.con.token
         if subfolder:
             params["subPath"] = subfolder
 
@@ -15182,7 +15194,7 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.download("C:\\ARCGIS\\Projects\\", "hurricane_data")
+            >>> item.download("/path/to/output", "hurricane_data")
 
         """
         data_path: str = "content/items/" + self.itemid + "/data"
@@ -19755,11 +19767,14 @@ class Item(dict):
                 .get("dashboardsUtility", {})
                 .get("url")
             )
+            updated_resources = []
             if db_mapping and dash_url:
                 try:
-                    updated_data = self._gis.content._replace_dashboard(
+                    dash_resp = self._gis.content._replace_dashboard(
                         self.id, db_mapping, True, True
                     )
+                    updated_data = dash_resp["data"]
+                    updated_resources = dash_resp["resources"]
                 except:
                     updated_data = db_data
             else:
@@ -19768,6 +19783,18 @@ class Item(dict):
                         "Dashboard API functionality is currently unavailable for this ArcGIS organization."
                     )
                 updated_data = db_data
+
+            for resource in updated_resources:
+                with tempfile.NamedTemporaryFile(
+                    mode="w+", suffix=".json", delete=False
+                ) as tfile:
+                    json.dump(resource["resource"], tfile)
+                    tfile.close()
+                self.resources.update(
+                    folder_name=resource["type"],
+                    file_name=resource["name"] + ".json",
+                    file=tfile.name,
+                )
 
             old_string = json.dumps(updated_data)
             if expanded_dict:

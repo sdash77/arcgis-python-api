@@ -2276,16 +2276,27 @@ class GeoAccessor(object):
             )
 
         elif self._USE_GDAL:
-            service_name = kwargs.pop("service_name", "a" + uuid.uuid4().hex[0:5])
             file_type = "Esri Shapefile" if location.endswith(".shp") else "OpenFileGDB"
-            if file_type == "OpenFileGDB" and not service_name.endswith(".gdb"):
-                service_name = service_name + ".gdb"
-
-            # Define the full path for the geodatabase
-            gdb_path = os.path.join(location, service_name)
-
-            # Ensure the base directory exists
-            os.makedirs(location, exist_ok=True)
+            if file_type == "OpenFileGDB":
+                dir_name, file_name = os.path.split(location)
+                if dir_name.endswith(".gdb"):
+                    gdb_path = dir_name
+                    service_name = kwargs.pop("service_name", file_name)
+                    d2 = os.path.split(dir_name)[0]
+                    os.makedirs(d2, exist_ok=True)
+                elif file_name.endswith(".gdb"):
+                    service_name = kwargs.pop(
+                        "service_name", "a" + uuid.uuid4().hex[0:5]
+                    )
+                    gdb_path = location
+                    os.makedirs(dir_name, exist_ok=True)
+                else:
+                    service_name = kwargs.pop(
+                        "service_name", "a" + uuid.uuid4().hex[0:5]
+                    )
+                    service_gdb = service_name + ".gdb"
+                    gdb_path = os.path.join(location, service_gdb)
+                    os.makedirs(gdb_path, exist_ok=True)
 
             # Create the feature class using GDAL
             table = _gdal_to_fc(
@@ -2293,6 +2304,7 @@ class GeoAccessor(object):
                 gdb_path,
                 file_type,
                 layer_name=service_name,
+                gdb_table=True,
                 overwrite=True,
             )
 

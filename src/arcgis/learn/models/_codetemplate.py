@@ -182,7 +182,7 @@ class ArcGISObjectDetector:
                         else str(self.json_info["tta_scales"])
                     ),
                     "displayName": "TTA Scales",
-                    "description": "Performs test time augmentation while predicting by changing the scale of the image. The values in the range of 0.5 to 1.5 are recommended. Multiple scale values separated by commas can also be provided, for example, 0.9, 1, 1.1.",
+                    "description": "Performs test-time augmentation by resampling the input imagery at different scales. Each scale value specifies how the image will be resized before inference. The default is 1 (no scaling). For example, specifying 0.9,1,1.1 means the pixel block will be processed three times: once at 90% of the original resolution, once at the original resolution, and once at 110% of the original resolution. The predictions from these multiple scales are then aggregated, which helps the model adapt to variations in resolution and improves robustness.",
                 },
             ]
         )
@@ -1033,6 +1033,23 @@ class ArcGISImageClassifier:
                 if param['name'] == 'predict_background':
                     param['value'] = 'False'
                     break
+                    
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                params.append(
+                    {
+                            "name": "radiometric_offset_correction",
+                            "dataType": "GPString",
+                            "required": False,
+                            "domain": ["True", "False"],
+                            "value": "False"
+                            if "radiometric_offset_correction" not in self.json_info
+                            else str(self.json_info["radiometric_offset_correction"]),
+                            "displayName": "Radiometric Offset Correction",
+                            "description": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
+                    }
+                )
+
         return params
 
     def getConfiguration(self, **scalars):
@@ -1041,6 +1058,16 @@ class ArcGISImageClassifier:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
         configuration['inheritProperties'] = 2|4|8
         configuration['inputMask'] = True
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                self.correct_offset = scalars.get("radiometric_offset_correction", "false").lower() in [
+                    "true",
+                    "1",
+                    "t",
+                    "y",
+                    "yes",
+                ]
+
         return configuration
 
     def updateRasterInfo(self, **kwargs):
@@ -1078,11 +1105,19 @@ class ArcGISImageClassifier:
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
 
-        if "Preprocessing" in self.json_info
-            if self.json_info["Preprocessing"] == "LandsatService":
-                if raster_pixels.shape[0] == 7 and raster_pixels.dtype == np.float32:
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "LandsatService": 
+                if raster_pixels.shape[0] == 7 and raster_pixels.dtype == np.float32: # conversion for esri service
                     raster_pixels = np.clip(raster_pixels, 0, 1)
                     raster_pixels =  (raster_pixels + 0.2) / 0.0000275
+
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                if raster_pixels.shape[0] == 12 and raster_pixels.dtype == np.float32: # conversion for esri service
+                    raster_pixels = np.round(raster_pixels * 10000)
+                    raster_pixels = np.clip(raster_pixels, 0, 65535)
+                if self.correct_offset: # for sentinel imagery released after jan 2022
+                    raster_pixels -= 1000
 
         pixelBlocks['raster_pixels'] = raster_pixels
 
@@ -1298,8 +1333,26 @@ class ArcGISInstanceDetector:
                 'displayName': 'Device ID',
                 'description': 'Device ID'
             }
-        ]     
-        return self.child_instance_detector.getParameterInfo(required_parameters)
+        ]
+
+        params = self.child_instance_detector.getParameterInfo(required_parameters)
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                params.append(
+                    {
+                            "name": "radiometric_offset_correction",
+                            "dataType": "GPString",
+                            "required": False,
+                            "domain": ["True", "False"],
+                            "value": "False"
+                            if "radiometric_offset_correction" not in self.json_info
+                            else str(self.json_info["radiometric_offset_correction"]),
+                            "displayName": "Radiometric Offset Correction",
+                            "description": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
+                    }
+                )
+
+        return params
 
 
     def getConfiguration(self, **scalars):         
@@ -1308,6 +1361,16 @@ class ArcGISInstanceDetector:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
         configuration['inheritProperties'] = 2|4|8
         configuration['inputMask'] = True
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                self.correct_offset = scalars.get("radiometric_offset_correction", "false").lower() in [
+                    "true",
+                    "1",
+                    "t",
+                    "y",
+                    "yes",
+                ]
+
         return configuration
 
     def getFields(self):
@@ -1321,6 +1384,21 @@ class ArcGISInstanceDetector:
         raster_mask = pixelBlocks['raster_mask']
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
+
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "LandsatService": 
+                if raster_pixels.shape[0] == 7 and raster_pixels.dtype == np.float32: # conversion for esri service
+                    raster_pixels = np.clip(raster_pixels, 0, 1)
+                    raster_pixels =  (raster_pixels + 0.2) / 0.0000275
+
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                if raster_pixels.shape[0] == 12 and raster_pixels.dtype == np.float32: # conversion for esri service
+                    raster_pixels = np.round(raster_pixels * 10000)
+                    raster_pixels = np.clip(raster_pixels, 0, 65535)
+                if self.correct_offset: # for sentinel imagery released after jan 2022
+                    raster_pixels -= 1000
+
         pixelBlocks['raster_pixels'] = raster_pixels
 
         masks, pred_class, pred_score = self.child_instance_detector.vectorize(**pixelBlocks)
