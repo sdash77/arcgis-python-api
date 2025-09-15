@@ -13,7 +13,7 @@ from arcgis.gis import GIS, User, Item, Group, Folder, ItemTypeEnum
 enable_verbose_logging()
 
 
-@profiles.admin_k8s
+@profiles.admin_all
 @integration_test
 class TestUserContentMethods(unittest.TestCase):
     @classmethod
