@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torchvision.models as models
 from torch.nn.utils.rnn import pack_padded_sequence
 from fastai.vision import create_body
 from fastai.basic_train import Learner
@@ -20,13 +19,6 @@ from .._utils.image_captioning_data import BeamSearchAttention as BeamSearch
 from random import choice
 from .._utils.image_captioning_data import normalize
 from fastai.torch_core import split_model_idx, flatten_model
-from pathlib import Path
-import shutil
-import os
-import sys
-import tempfile
-import fasttext
-import fasttext.util
 
 
 EPS = 1e-5
@@ -109,7 +101,6 @@ class DecoderAttention(nn.Module):
         vocab_size,
         attention_size,
         max_seq_length=20,
-        pretrained_embeddings=False,
         vocab=None,
         teacher_forcing=True,
         dropout=0.5,
@@ -121,11 +112,7 @@ class DecoderAttention(nn.Module):
         """
         super(DecoderAttention, self).__init__()
         self.vocab = vocab
-        if pretrained_embeddings is not False:
-            self.embed = self.load_embedding(pretrained_embeddings, vocab)
-        else:
-            self.embed = nn.Embedding(vocab_size, embed_size)
-
+        self.embed = nn.Embedding(vocab_size, embed_size)
         self.lstm = nn.LSTMCell(2 * embed_size, hidden_size)
         self.linear = nn.Linear(hidden_size, vocab_size)
         self.embed_features = nn.Linear(feature_size, embed_size)
@@ -188,16 +175,6 @@ class DecoderAttention(nn.Module):
         # mean does work of adaptive average pool
         self.hx = self.hidden_init(features.mean(1))
         self.cx = self.c_init(features.mean(1))
-
-    def load_embedding(self, pretrained_embedding, vocab):
-        # Initialize zeros vectors
-        vectors = torch.zeros(len(vocab.itos), pretrained_embedding.get_dimension())
-        # Load vectors from pretrained embeddings.
-        for index, token in enumerate(vocab.itos):
-            vectors[index] = torch.tensor(pretrained_embedding.get_word_vector(token))
-        # Using pretrained vectors from fastext to initialize embeddings.
-        layer = nn.Embedding.from_pretrained(vectors)
-        return layer
 
     def decode_step(self, current_words, im, hidden):
         # This function is used in nucleus decoding for which
@@ -308,31 +285,10 @@ def loss_function_attention(inputs, captions, lengths):
     return F.cross_entropy(inputs[0], packed[0])
 
 
-def load_fasttext_embeddings(language="en"):
-    embeddings_file = f"cc.{language}.300.bin"
-    embeddings_path = os.path.join(Path.home(), ".cache", "embeddings")
-    if not os.path.exists(embeddings_path):
-        os.makedirs(embeddings_path)
-    embeddings_file_path = os.path.join(embeddings_path, embeddings_file)
-    # print(embeddings_file_path, os.path.exists(embeddings_file_path))
-    if not os.path.exists(embeddings_file_path):
-        fasttext.util.download_model(language, if_exists="ignore")
-        shutil.move(embeddings_file, embeddings_path)
-        os.remove(embeddings_file + ".gz")
-
-    orig_stderr = sys.stderr
-    temp_f = tempfile.TemporaryFile(mode="w")
-    sys.stderr = temp_f
-    ft = fasttext.load_model(embeddings_file_path)
-    sys.stderr = orig_stderr
-    return ft
-
-
 def image_captioner_learner(
     data, backbone, attention=True, decoder_params=None, metrics=None, pretrained=True
 ):
     if attention:
-        pretrained_embeddings = decoder_params.get("pretrained_embeddings", False)
 
         decoder_params = {
             "embed_size": decoder_params.get("embed_size", 100),
@@ -342,13 +298,6 @@ def image_captioner_learner(
             "teacher_forcing": decoder_params.get("teacher_forcing", 1),
             "dropout": decoder_params.get("dropout", 0.1),
         }
-
-        # Download pretrained embeddings if not already present.
-        if pretrained_embeddings:
-            ft = load_fasttext_embeddings(data.lang)
-            if ft.get_dimension() != decoder_params["embed_size"]:
-                decoder_params["embed_size"] = ft.get_dimension()
-            decoder_params["pretrained_embeddings"] = ft
 
         decoder_params["vocab"] = data.vocab
         decoder_params["vocab_size"] = len(data.vocab.itos)
