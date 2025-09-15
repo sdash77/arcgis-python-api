@@ -254,9 +254,9 @@ class Embeddings:
     @staticmethod
     def _get_text_compatible_backbones():
         return [
-            "sentence-transformers/all-MiniLM-L6-v2",
-            "sentence-transformers/all-MiniLM-L12-v1",
-            "sentence-transformers/all-mpnet-base-v2",
+            "sentence-transformers/distilbert-base-nli-stsb-mean-tokens",
+            "sentence-transformers/bert-base-nli-max-tokens",
+            "sentence-transformers/bert-base-nli-cls-token",
         ] + [
             "See all `TextEmbedding` models at https://huggingface.co/sentence-transformers"
         ]
@@ -345,11 +345,13 @@ class Embeddings:
         if backbone is None:
             backbone = "sentence-transformers/distilbert-base-nli-stsb-mean-tokens"
         self.backbone = backbone
-        # try:
-        model = AutoModel.from_pretrained(backbone)
-        self._tokenizer = AutoTokenizer.from_pretrained(backbone, config=model.config)
-        # except Exception as e:
-        #     raise Exception(self._error_message)
+        try:
+            model = AutoModel.from_pretrained(backbone)
+            self._tokenizer = AutoTokenizer.from_pretrained(
+                backbone, config=model.config
+            )
+        except Exception as e:
+            raise Exception(self._error_message)
 
         return model.eval()
 
@@ -1141,7 +1143,6 @@ class Embeddings:
             np.array(items_dataset).tolist(),
         )
         hf.close()
-        print(embeddings, item_list)
         # For using DBSCAN clustering take `eps`, `metric` and `min_samples` in **kwargs and pass to below method
         cluster_df = self._do_clustering(
             embeddings, item_list, n_clusters=n_clusters, dimensions=dimensions
