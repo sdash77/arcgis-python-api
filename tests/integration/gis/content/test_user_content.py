@@ -80,7 +80,7 @@ class TestUserContentMethods(unittest.TestCase):
             1,
             "Folder does not have a least one shapefile.",
         )
-        root_folder_list = user.items(folder=folder, max_items=300)
+        root_folder_list = user.items(folder=folder, max_items=-1)
         test_content_list = [
             i
             for i in root_folder_list
