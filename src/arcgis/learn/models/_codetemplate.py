@@ -182,7 +182,7 @@ class ArcGISObjectDetector:
                         else str(self.json_info["tta_scales"])
                     ),
                     "displayName": "TTA Scales",
-                    "description": "Performs test time augmentation while predicting by changing the scale of the image. The values in the range of 0.5 to 1.5 are recommended. Multiple scale values separated by commas can also be provided, for example, 0.9, 1, 1.1.",
+                    "description": "Performs test-time augmentation by resampling the input imagery at different scales. Each scale value specifies how the image will be resized before inference. The default is 1 (no scaling). For example, specifying 0.9,1,1.1 means the pixel block will be processed three times: once at 90% of the original resolution, once at the original resolution, and once at 110% of the original resolution. The predictions from these multiple scales are then aggregated, which helps the model adapt to variations in resolution and improves robustness.",
                 },
             ]
         )
