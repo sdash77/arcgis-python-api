@@ -23,6 +23,7 @@ try:
     from ._codetemplate import feature_classifier_prf
     import torch
     import torch.nn.functional as F
+    from torch import nn
     from torchvision import models
     import fastai
     from fastai.metrics import accuracy, MultiLabelFbeta
@@ -298,9 +299,12 @@ class FeatureClassifier(ArcGISModel):
                         metrics=metrics,
                     )
                     idx = self._freeze()
-                    if trnsfrmr_model[0].__class__.__name__ == "CoaT":
-                        idx = 8
-                    self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                    if backbone not in FeatureClassifier.foundation_model_backbones():
+                        if trnsfrmr_model[0].__class__.__name__ == "CoaT":
+                            idx = 8
+                        self.learn.layer_groups = split_model_idx(
+                            self.learn.model, [idx]
+                        )
                     self.learn.create_opt(lr=3e-3)
                 else:
                     self.learn = cnn_learner(
@@ -351,6 +355,14 @@ class FeatureClassifier(ArcGISModel):
 
     def _freeze(self):
         layers = flatten_model(self.learn.model[0])
+        if self._backbone.__name__ in FeatureClassifier.foundation_model_backbones():
+            pretrained_layers, random_layers = self.learn.model[0]._freeze()
+            random_layers.extend(flatten_model(self.learn.model)[len(layers) :])
+            self.learn.layer_groups = [
+                nn.Sequential(*pretrained_layers),
+                nn.Sequential(*random_layers),
+            ]
+            return
         idx = len(layers) // 2
         start_idx = 0
         if self._is_multispectral:
