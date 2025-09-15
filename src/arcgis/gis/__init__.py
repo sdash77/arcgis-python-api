@@ -19767,11 +19767,14 @@ class Item(dict):
                 .get("dashboardsUtility", {})
                 .get("url")
             )
+            updated_resources = []
             if db_mapping and dash_url:
                 try:
-                    updated_data = self._gis.content._replace_dashboard(
+                    dash_resp = self._gis.content._replace_dashboard(
                         self.id, db_mapping, True, True
                     )
+                    updated_data = dash_resp["data"]
+                    updated_resources = dash_resp["resources"]
                 except:
                     updated_data = db_data
             else:
@@ -19780,6 +19783,18 @@ class Item(dict):
                         "Dashboard API functionality is currently unavailable for this ArcGIS organization."
                     )
                 updated_data = db_data
+
+            for resource in updated_resources:
+                with tempfile.NamedTemporaryFile(
+                    mode="w+", suffix=".json", delete=False
+                ) as tfile:
+                    json.dump(resource["resource"], tfile)
+                    tfile.close()
+                self.resources.update(
+                    folder_name=resource["type"],
+                    file_name=resource["name"] + ".json",
+                    file=tfile.name,
+                )
 
             old_string = json.dumps(updated_data)
             if expanded_dict:

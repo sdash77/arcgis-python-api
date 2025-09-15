@@ -65,7 +65,7 @@ dependencies = [
     "ujson >=3",
     "truststore>=0.10.0",
     'pywin32 >=223;platform_system=="Windows"',
-    "geomet",
+    "geomet >=1.0.0",
     "requests >=2.32.3,<3",
     "requests-oauthlib",
     "requests_toolbelt",
