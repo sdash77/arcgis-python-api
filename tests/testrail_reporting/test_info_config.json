@@ -33,7 +33,13 @@
       "testrail_run": "27702",
       "xml_path": "./gis/*.xml",
       "environment": "Windows",
-      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.mapping"
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.gis"
+  },
+  {
+      "testrail_run": "27702",
+      "xml_path": "./gis_admin/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.gis_admin"
   },
   {
       "testrail_run": "27713",
@@ -52,6 +58,12 @@
       "xml_path": "./mapping/*.xml",
       "environment": "Windows",
       "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.mapping"
+  },
+  {
+      "testrail_run": "28233",
+      "xml_path": "./network/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.network"
   },
   {
       "testrail_run": "27717",

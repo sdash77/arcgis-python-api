@@ -50,8 +50,7 @@ class ImageCaptioner(ArcGISModel):
     ---------------------   -------------------------------------------
     decoder_params          Optional dictionary. The keys of the dictionary are
                             `embed_size`, `hidden_size`, `attention_size`,
-                            `teacher_forcing`, `dropout` and
-                            `pretrained_embeddings`.
+                            `teacher_forcing`, `dropout`.
 
                             Default values:
 
@@ -61,7 +60,6 @@ class ImageCaptioner(ArcGISModel):
                                 |                     'attention_size':100,
                                 |                     'teacher_forcing':1,
                                 |                     'dropout':0.1,
-                                |                     'pretrained_emb':False
                                 |                 }
 
                             Parameter Explanation:
@@ -71,7 +69,6 @@ class ImageCaptioner(ArcGISModel):
                             - 'attention_size': Size of intermediate attention layer.
                             - 'teacher_forcing': Probability of teacher forcing.
                             - 'dropout': Dropout probability.
-                            - 'pretrained_emb': If true, it will use fasttext embeddings.
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.ImageCaptioner`  Object

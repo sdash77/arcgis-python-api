@@ -1,7 +1,10 @@
-name: Run reportToTestRail Script with Multiple Configurations
+name: Integration Test Report to TestRail
 
 on:
-  workflow_dispatch: # Allows manual triggering of the workflow
+  workflow_dispatch:
+  schedule:
+    # Every day at 2:05 PM UTC
+    - cron: '5 14 * * *'
 
 jobs:
   run-script:
