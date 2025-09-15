@@ -32,20 +32,30 @@ def run_data_pipeline(
     """
     Runs the data pipeline item. Running data pipelines consumes credits for the time it takes the run to complete.
 
-    NOTE: This method is experimental. All parameters and return types are subject to change.
+    .. note::
+        This method is experimental. All parameters and return types are subject to change.
+
+    .. note::
+        This method is supported with ArcGIS Online only.
+
 
     =================================================     ========================================================================
     **Parameter**                                         **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
-    item                                                  Required Item. The `Data Pipeline` type item to run.
+    item                                                  Required :class:`~arcgis.gis.Item`. The item of type *Data Pipeline* to
+                                                          run.
     -------------------------------------------------     ------------------------------------------------------------------------
-    gis                                                   Optional GIS. The WebGIS connection class used to run the `run_data_pipeline`
-                                                          operation.  If the value is `None`, then the item's GIS object will be
-                                                          used.
+    gis                                                   Optional :class:`~arcgis.gis.GIS`. The Web GIS connection used to run
+                                                          the operation.  If the value is *None*, then the item's GIS object will
+                                                          be used.
     =================================================     ========================================================================
 
-    :return: PipelineRun
-    :raises: Exception if the user or organization does not have access to Data Pipelines, or if a run is already in progress for the item.
+    :return:
+        A :class:`~arcgis.datapipelines._pipelines.PipelineRun` object.
+
+    .. note::
+        Raises an Exception if the user or organization does not have access to Data Pipelines
+        or if a run is already in progress for the item.
     """
     if gis is None:
         gis = item._gis
