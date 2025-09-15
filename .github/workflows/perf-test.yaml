@@ -20,4 +20,4 @@ jobs:
             local
           frozen: true
       - run: |
-            cd geosaurus && pixi run test:performance
+            cd geosaurus && pixi run -e local test:performance
