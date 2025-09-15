@@ -23,6 +23,8 @@ except:
     SKIP_TESTS = True
 
 
+@unittest.skip("Test portal not ready yet")
+#TODO: update profile and set decorator for velocity tests when portal is ready
 @unittest.skipIf(SKIP_TESTS, reason="GIS connection failed")
 @integration_test
 class TestFeedsApiMethods(unittest.TestCase):

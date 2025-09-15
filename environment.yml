@@ -18,7 +18,7 @@ dependencies:
 - cryptography
 - dask >=2024.12.1,<2025.1.0
 - gdal >=3.6.2, <4
-- geomet
+- geomet >=1.0.0
 - keyring>=23.3.0
 - lxml
 - matplotlib

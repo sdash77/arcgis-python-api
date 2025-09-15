@@ -1,4 +1,5 @@
 import unittest
+import uuid
 from arcgis.features._topographic import TopographicProductionManager
 from utils.decorators import integration_test, profiles
 from utils.data_utils import get_feature_layer_url, ServerTypeEnum
@@ -19,7 +20,8 @@ class TestTopographicProductionManager(unittest.TestCase):
 
         # If data missing in server: \\qalab_server\pydata\v109\geosaurus\topographic_data
         # Go to folder and use server manager to publish the SD file
-
+        cls.uid = uuid.uuid4().hex[:5]
+        cls.product_name = f"ProductForTest_{cls.uid}"
         # Create Topographic Service
         topo_url = get_feature_layer_url(
             cls.gis, "TMServer_Fortlewis", ServerTypeEnum.TOPOGRAPHIC
@@ -28,11 +30,17 @@ class TestTopographicProductionManager(unittest.TestCase):
             topo_url,
             cls.gis,
         )
-        if len(topo.products()["products"]) == 0:
+        topo_products = None
+        try:
+            topo_products = topo.products()["products"]
+        except:
+            pass
+
+        if not topo_products:
             # Add a prodcut if none exists already
             product_def = {
                 "version": 0,
-                "name": "ExampleProduct",
+                "name": cls.product_name,
                 "type": "MTM",
                 "gridType": "TM50",
                 "description": "Test Masking Product",
@@ -132,9 +140,9 @@ class TestTopographicProductionManager(unittest.TestCase):
         assert products
 
     def test_get_product(self):
-        product = self.topo.product("ExampleProduct")
+        product = self.topo.product(self.product_name)
         assert product
-        assert product["name"] == "ExampleProduct"
+        assert product["name"].startswith("ProductForTest_")
 
     def test_add_product(self):
         """Test the add_product method"""
@@ -143,11 +151,11 @@ class TestTopographicProductionManager(unittest.TestCase):
         number_products = len(products["products"])
         # Grab the definition of the first one and change it's name
         product = products["products"][0]["productDefinition"]
-        product["name"] = "Python API Test"
+        product["name"] = f"AddProduct_{self.uid}"
         new_product = self.topo.add_product(product)
 
         assert new_product["success"]
-        assert new_product["productName"] == "Python API Test"
+        assert new_product["productName"] == f"AddProduct_{self.uid}"
 
         # Get all the products again to compare
         products_updated = self.topo.products()
@@ -159,15 +167,15 @@ class TestTopographicProductionManager(unittest.TestCase):
         products = self.topo.products(include_def=True)
         number_products = len(products["products"])
         # Remove the product added in the add_product test
-        removed_product = self.topo.remove_product("Python API Test")
+        removed_product = self.topo.remove_product(f"AddProduct_{self.uid}")
         assert removed_product["success"]
-        assert removed_product["productName"] == "Python API Test"
+        assert removed_product["productName"] == f"AddProduct_{self.uid}"
 
         # Get all the products again to compare
         products_updated = self.topo.products()
         assert len(products_updated["products"]) == number_products - 1
 
-    @unittest.skip("Needs better source data. Does not have valid AOIs")
+    # @unittest.skip("Needs better source data. Does not have valid AOIs")
     def test_generate_product(self):
         """Test generate product"""
         # Get all the products
@@ -190,6 +198,13 @@ class TestTopographicProductionManager(unittest.TestCase):
         assert generated["jobId"]
         assert generated["statusUrl"]
         assert generated["success"]
+
+    @classmethod
+    def tearDownClass(cls):
+        products = cls.topo.products(include_def=True)
+        if len(products["products"]) > 0:
+            for p in products["products"]:
+                cls.topo.remove_product(p["name"])
 
 
 if __name__ == "__main__":

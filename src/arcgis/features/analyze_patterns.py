@@ -991,7 +991,8 @@ def find_outliers(
     ------------------------------------------------------------------  ---------------------------------------------------------------
     analysis_layer                                                      Required feature layer. The point or polygon feature layer for which outliers will be calculated. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    analysis_field (Required if the analysis_layer contains polygons)   Optional string. The numeric field that will be analyzed. The field you select might represent:
+    analysis_field                                                      Optional string. **Required** if the analysis_layer contains polygons.
+                                                                        The numeric field that will be analyzed. The field you select might represent:
 
                                                                         * counts (such as the number of traffic accidents)
                                                                         * rates (such as the number of crimes per square mile)
