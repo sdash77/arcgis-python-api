@@ -347,9 +347,7 @@ class Embeddings:
         self.backbone = backbone
         # try:
         model = AutoModel.from_pretrained(backbone)
-        self._tokenizer = AutoTokenizer.from_pretrained(
-            backbone, config=model.config
-        )
+        self._tokenizer = AutoTokenizer.from_pretrained(backbone, config=model.config)
         # except Exception as e:
         #     raise Exception(self._error_message)
 
