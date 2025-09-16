@@ -60,6 +60,12 @@
       "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.mapping"
   },
   {
+      "testrail_run": "28233",
+      "xml_path": "./network/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.network"
+  },
+  {
       "testrail_run": "27717",
       "xml_path": "./notebook/*.xml",
       "environment": "Windows",

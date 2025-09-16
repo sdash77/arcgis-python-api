@@ -6,7 +6,7 @@ from arcgis.map import symbols
 from utils.decorators import integration_test, profiles
 
 
-@profiles.agol
+@profiles.all
 @integration_test
 class TestDrawOnMap(unittest.TestCase):
 
@@ -19,7 +19,7 @@ class TestDrawOnMap(unittest.TestCase):
         """Test drawing a point"""
 
         pt = Point({"x": -96.80, "y": 32.78, "spatialReference": {"wkid": 4326}})
-        assert pt
+        self.assertIsInstance(pt, Point, "Object is not a Point instance as expected.")
         simple_symbol = symbols.SimpleMarkerSymbolEsriSMS(
             style=symbols.SimpleMarkerSymbolStyle.esri_sms_diamond,
             color=[255, 140, 0, 255],
@@ -31,21 +31,36 @@ class TestDrawOnMap(unittest.TestCase):
             ),
         )
         self.wm.content.draw(
-            pt,
+            shape=pt,
             symbol=simple_symbol,
         )
-        assert self.wm.content.layers
-        assert len(self.wm.content.layers) == 1
-        assert isinstance(self.wm.content.layers[0], FeatureCollection)
+        self.assertIsNotNone(
+            self.wm.content.layers,
+            "Feature Collection not added to layers as expected.",
+        )
+        self.assertEqual(
+            len(self.wm.content.layers), 1, "Map content layers values should be 1."
+        )
+
         fc = self.wm.content.layers[0]
-        assert fc.properties.layers
+        self.assertIsInstance(
+            fc, FeatureCollection, "Layer is expected to be a Feature Collection."
+        )
+        self.assertTrue(
+            fc.properties.layers, "Feature collection does not have layers as expected."
+        )
         fc_lyr = fc.properties["layers"][0]
-        assert "featureSet" in list(fc_lyr.keys())
-        assert (
+        self.assertIn(
+            "featureSet",
+            list(fc_lyr.keys()),
+            "Feature layer does not have a featureSet as expected.",
+        )
+        self.assertEqual(
             self.wm.content.layers[0]
             .properties.layers[0]
-            .layerDefinition.drawingInfo.renderer.symbol.style
-            == "esriSMSDiamond"
+            .layerDefinition.drawingInfo.renderer.symbol.style,
+            "esriSMSDiamond",
+            "Feature layer symbol style is not as expected.",
         )
 
     def test_polyline(self):
@@ -75,15 +90,26 @@ class TestDrawOnMap(unittest.TestCase):
 
         self.wm.content.draw(shape=polyline, symbol=simple_line_symbol)
 
-        assert self.wm.content.layers
-        assert len(self.wm.content.layers) == 1
-        assert isinstance(self.wm.content.layers[0], FeatureCollection)
-        assert (
+        self.assertTrue(
+            self.wm.content.layers,
+            "Feature Collection not added to layers as expected.",
+        )
+        self.assertEqual(
+            len(self.wm.content.layers),
+            1,
+            "Only one layer should be present in Map Content layers.",
+        )
+        self.assertIsInstance(
+            self.wm.content.layers[0],
+            FeatureCollection,
+            "Map content layer not a Feature Collection as expected.",
+        )
+        self.assertEqual(
             self.wm.content.layers[0]
-            .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
-                "symbol"
-            ]["style"]
-            == "esriSLSSolid"
+            .properties.layers[0]
+            .layerDefinition.drawingInfo.renderer.symbol.style,
+            "esriSLSSolid",
+            "Line style not solid as expected."
         )
 
     def test_polygon(self):
@@ -120,24 +146,35 @@ class TestDrawOnMap(unittest.TestCase):
             ),
         )
 
-        self.wm.content.draw(polygon1, symbol=simple_poly_symbol)
+        self.wm.content.draw(shape=polygon1, symbol=simple_poly_symbol)
 
-        assert self.wm.content.layers
-        assert len(self.wm.content.layers) == 1
-        assert isinstance(self.wm.content.layers[0], FeatureCollection)
-        assert (
-            self.wm.content.layers[0]
-            .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
-                "symbol"
-            ]["outline"]["style"]
-            == "esriSLSSolid"
+        self.assertTrue(
+            self.wm.content.layers,
+            "Geometry not added to layers as Feature Collection as expected.",
         )
-        assert (
+        self.assertEqual(
+            len(self.wm.content.layers),
+            1,
+            "Map content layers does not have 1 layer as expected.",
+        )
+        self.assertIsInstance(
+            self.wm.content.layers[0],
+            FeatureCollection,
+            "Geometry added to map content layers as a Feature Collection as expected.",
+        )
+        self.assertEqual(
             self.wm.content.layers[0]
-            .properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"][
-                "symbol"
-            ]["style"]
-            == "esriSFSSolid"
+            .properties.layers[0]
+            .layerDefinition.drawingInfo.renderer.symbol.outline.style,
+            "esriSLSSolid",
+            "Polygon not rendered with solid outline as expected.",
+        )
+        self.assertEqual(
+            self.wm.content.layers[0]
+            .properties.layers[0]
+            .layerDefinition.drawingInfo.renderer.symbol.style,
+            "esriSFSSolid",
+            "Polygon not rendered with solid fill as expected.",
         )
 
 

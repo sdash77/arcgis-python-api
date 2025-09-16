@@ -8,6 +8,8 @@ import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from fastai.torch_core import ParameterModule
+from fastai.vision import flatten_model
 from timm.models.layers import DropPath, Mlp
 import math
 from functools import partial
@@ -419,6 +421,7 @@ class ViT(nn.Module):
         self.backbone_name = backbone_name
         self.grid_size = img_size // patch_size
         self.num_tokens = 1 if self.is_clf else 0
+        self.in_chans = in_chans
         if self.is_plain_vit:
             # to keep plain vit
             window_block_indexes = []
@@ -574,6 +577,52 @@ class ViT(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
 
+    def _freeze(self):
+        pretrained_layers, random_layers = [], []
+
+        if self.pos_embed is not None:
+            pretrained_layers.append(ParameterModule(self.pos_embed))
+
+        if self.is_clf:
+            if "clay" in self.backbone_name:
+                random_layers.append(ParameterModule(self.cls_token))
+            else:
+                pretrained_layers.append(ParameterModule(self.cls_token))
+            random_layers.append(self.norm)
+
+        if (
+            isinstance(self.patch_embed, DOFAEmbedding)
+            or (self.in_chans == 3 and "prithvi" not in self.backbone_name)
+            or (self.in_chans == 6 and "prithvi" in self.backbone_name)
+        ):
+            # not needed to train
+            for layer in flatten_model(self.patch_embed):
+                if not isinstance(layer, nn.LayerNorm):
+                    for p in layer.parameters():
+                        p.requires_grad = False
+                pretrained_layers.append(layer)
+        else:
+            if self.in_chans < 7 and "prithvi" in self.backbone_name:
+                pretrained_layers.extend(flatten_model(self.patch_embed))
+            else:
+                # need to train with high lr
+                random_layers.extend(flatten_model(self.patch_embed))
+
+        # freeze first half of backbone blocks
+        freeze_depth = len(flatten_model(self.blocks[: len(self.blocks) // 2]))
+
+        for idx, layer in enumerate(flatten_model(self.blocks)):
+            if isinstance(layer, ParameterModule):
+                random_layers.append(layer)
+            else:
+                if idx < freeze_depth:
+                    if not isinstance(layer, nn.LayerNorm):
+                        for p in layer.parameters():
+                            p.requires_grad = False
+                pretrained_layers.append(layer)
+
+        return pretrained_layers, random_layers
+
     def forward(self, x):
         if self.qa_idx is not None:
             x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
@@ -662,6 +711,11 @@ class ViTUpsample(nn.Module):
             upsameple_layers = []
         self.upsample = nn.Sequential(*upsameple_layers)
 
+    def _freeze(self):
+        pretrained_layers, random_layers = self.backbone._freeze()
+        random_layers.extend(flatten_model(self.upsample))
+        return pretrained_layers, random_layers
+
     def forward(self, x):
         return self.upsample(self.backbone(x))
 
@@ -734,6 +788,12 @@ class SimpleFeaturePyramid(nn.Module):
         if top_block is not None:
             self.stage_names.append("pool")
 
+    def _freeze(self):
+        pretrained_layers, random_layers = self.backbone._freeze()
+        random_layers.extend(flatten_model(self.fpn_stages))
+        random_layers.extend(flatten_model(self.top_block))
+        return pretrained_layers, random_layers
+
     def forward(self, x):
         """
         Args:
@@ -767,6 +827,10 @@ class BackboneFastai(nn.Module):
 
         # create dummy layer to set cut=1 in create_body of fastai
         self.dummy = nn.MaxPool2d(kernel_size=2)
+
+    def _freeze(self):
+        pretrained_layers, random_layers = self.backbone_fpn._freeze()
+        return pretrained_layers, random_layers
 
     def forward(self, x):
         return self.backbone_fpn(x)
