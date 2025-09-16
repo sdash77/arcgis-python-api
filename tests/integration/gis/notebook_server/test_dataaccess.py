@@ -148,10 +148,10 @@ class TestNotebookDataAccess(unittest.TestCase):
             file = get_resource_path(f"staging_data/{file_name}")
 
             home = self.da.folders[0]
-            folder1 = home.create_folder(f"move_src_{uuid.uuid4().hex[:4]}")
+            folder1 = home.create_folder(f"move_src")
             file_uploaded = folder1.upload(file)
             self.assertTrue(file_uploaded[0], "File upload failed")
-            folder2 = home.create_folder(f"move_dest_{uuid.uuid4().hex[:4]}")
+            folder2 = home.create_folder(f"move_dest")
 
             # Move folder1 into folder2
             moved = folder1.move(folder2)
