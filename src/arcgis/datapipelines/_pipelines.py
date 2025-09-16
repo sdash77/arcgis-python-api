@@ -18,14 +18,15 @@ class PipelineRun:
     """
     Represents a **single** run of a `Data Pipeline` process.
 
-    NOTE: This class is experimental. All properties, methods, and responses are subject to change.
+    .. note::
+        This class is experimental. All properties, methods, and responses are subject to change.
 
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required String. The `url` of the data pipeline endpoint.
     ---------------     --------------------------------------------------------------------
-    session             Required EsriSession. The connection object.
+    session             Required *EsriSession*. The connection object.
     ===============     ====================================================================
 
 
