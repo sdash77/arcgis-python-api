@@ -574,9 +574,13 @@ class DeepLab(ArcGISModel):
             empty_data.emd_path = emd_path
             empty_data.emd = emd
             empty_data._band_names = emd.get("Bands")
-            return cls(empty_data, **model_params, pretrained_path=str(model_file))
+            model_obj = cls(empty_data, **model_params, pretrained_path=str(model_file))
+            model_obj._model_emd = emd
+            return model_obj
         else:
-            return cls(data, **model_params, pretrained_path=str(model_file))
+            model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+            model_obj._model_emd = emd
+            return model_obj
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -692,32 +696,36 @@ class DeepLab(ArcGISModel):
     def _freeze(self):
         "Freezes the pretrained backbone."
         if self._backbone.__name__ in DeepLab.transformer_backbones():
-            backbone = self.learn.model.backbone[0].backbone
+            backbone = self.learn.model.backbone[0]
+            pretrained_layers, random_layers = backbone._freeze()
+            random_layers.extend(flatten_model(self.learn.model.classifier))
+            random_layers.extend(flatten_model(self.learn.model.aux_classifier))
+            self.learn.layer_groups = [
+                nn.Sequential(*pretrained_layers),
+                nn.Sequential(*random_layers),
+            ]
         else:
             backbone = self.learn.model.backbone
-        layers = flatten_model(backbone)
-        start_idx = 0
-        if self._is_multispectral:
-            start_idx = 1
-        for idx, i in enumerate(layers[start_idx:]):
-            if (
-                isinstance(i, (torch.nn.BatchNorm2d))
-                or isinstance(i, (fastai.torch_core.ParameterModule))
-                or isinstance(i, (torch.nn.BatchNorm1d))
-                or isinstance(i, (torch.nn.LayerNorm))
-            ):
-                continue
-            if hasattr(i, "dilation"):
-                dilation = i.dilation
-                dilation = dilation[0] if isinstance(dilation, tuple) else dilation
-                if dilation > 1:
-                    break
-            for p in i.parameters():
-                p.requires_grad = False
-
-        self.learn.layer_groups = split_model_idx(
-            self.learn.model, [idx]
-        )  ## Could also call self.learn.freeze after this line because layer groups are now present.
+            layers = flatten_model(backbone)
+            start_idx = 0
+            if self._is_multispectral:
+                start_idx = 1
+            for idx, layer in enumerate(layers[start_idx:]):
+                if (
+                    isinstance(layer, (torch.nn.BatchNorm2d))
+                    or isinstance(layer, (fastai.torch_core.ParameterModule))
+                    or isinstance(layer, (torch.nn.BatchNorm1d))
+                    or isinstance(layer, (torch.nn.LayerNorm))
+                ):
+                    continue
+                if hasattr(layer, "dilation"):
+                    dilation = layer.dilation
+                    dilation = dilation[0] if isinstance(dilation, tuple) else dilation
+                    if dilation > 1:
+                        break
+                for p in layer.parameters():
+                    p.requires_grad = False
+            self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
     def unfreeze(self):

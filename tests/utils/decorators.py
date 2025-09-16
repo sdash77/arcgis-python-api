@@ -127,7 +127,7 @@ class credentials:
         "enterprise_pki",
         environ.get("ENTERPRISE_PKI_URL", "https://rqawinpki03pt.ags.esri.com/gis"),
         None,
-        environ.get("ENTERPRISE_PKI_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_PKI_PASSWORD", "portalpassword01"),
         environ.get(
             "ENTERPRISE_PKI_CERT",
             get_resource_path("esri_requests/certs/creator2.pfx"),
@@ -140,7 +140,7 @@ class credentials:
             "https://rqawinjpki06pt.ags.esri.com/gis",
         ),
         None,
-        environ.get("ENTERPRISE_JAVA_PKI_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_JAVA_PKI_PASSWORD", "portalpassword01"),
         environ.get(
             "ENTERPRISE_JAVA_PKI_CERT",
             get_resource_path("esri_requests/certs/creator2.pfx"),
@@ -150,7 +150,7 @@ class credentials:
         "enterprise_linux_pki",
         environ.get("ENTERPRISE_LINUX_PKI_URL", "https://rqalnxpki03pt.esri.com/gis"),
         None,
-        environ.get("ENTERPRISE_LINUX_PKI_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_LINUX_PKI_PASSWORD", "portalpassword01"),
         environ.get(
             "ENTERPRISE_LINUX_PKI_CERT",
             get_resource_path("esri_requests/certs/creator2.pfx"),

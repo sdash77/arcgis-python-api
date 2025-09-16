@@ -220,9 +220,9 @@ def _get_bbox_classes(
         d_xyz = []
         occluded = []
         rot_yaxis = []
-        start_space = re.compile("^\s+")  # pattern to capture leading spaces
+        start_space = re.compile(r"^\s+")  # pattern to capture leading spaces
         spaces_to_be_replaced = re.compile(
-            "(?<=[0-9])(\s+)(?=[0-9])"
+            r"(?<=[0-9])(\s+)(?=[0-9])"
         )  # pattern to capture spaces between numeric values
 
         with open(label_file) as f:  # reading the bbox and class labels
@@ -379,9 +379,9 @@ def _get_class_mapping(path, **kwargs):
     dataset_type = kwargs.get("dataset_type", None)
     class_mapping = {}
     if dataset_type == "KITTI_rectangles":
-        start_space = re.compile("^\s+")  # pattern to capture leading spaces
+        start_space = re.compile(r"^\s+")  # pattern to capture leading spaces
         spaces_to_be_replaced = re.compile(
-            "(?<=[0-9])(\s+)(?=[0-9])"
+            r"(?<=[0-9])(\s+)(?=[0-9])"
         )  # pattern to capture spaces between numeric values
 
         for txtfile in os.listdir(path):
@@ -1176,6 +1176,17 @@ def prepare_tabulardata(
 
                             .. note::
                                 Applies to timeseries
+    ---------------------   -------------------------------------------
+    use_loc_embeddings      Optional boolean. If set to True, enables embedding of the spatial
+                            geometry as continuous feature representations when geometry data is available.
+                            For Polygon and Line geometries, the centroid is used as the representative
+                            location for embedding.
+    ---------------------   -------------------------------------------
+    location_column         Optional List. The column names that will be used to get
+                            the lat long value from the `csv` or `json` file types. lon and lat
+                            order should be maintained in the list.  This argument is valid
+                            only for `dataset-type` location.
+                            Default value is set to ['lon', 'lat'].
     =====================   ===========================================
 
     :return: `TabularData` object
@@ -1482,6 +1493,10 @@ def prepare_data(
                             Only those spectral bands will be considered for training.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
+    window_size             Optional int. default set to 27. pixel width and height of each
+                            square patch extracted around a labeled pixel for training.
+                            Applicable only for Hyperspectral3DRCNet model.
+    ---------------------   -------------------------------------------
     n_temporal              Required int. Number of temporal observations or time steps.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
@@ -1570,10 +1585,6 @@ def prepare_data(
 
     if getattr(arcgis.env, "_processorType", "") == "CPU":
         databunch_kwargs["device"] = torch.device("cpu")
-
-    if ARCGIS_ENABLE_TF_BACKEND:
-        databunch_kwargs["device"] = torch.device("cpu")
-        databunch_kwargs["pin_memory"] = False
 
     kwargs_transforms = {}
     if resize_to:
@@ -1767,6 +1778,7 @@ def prepare_data(
             "ObjectTracking",
             "PSETAE",
             "SR3",
+            "3DRCNet",
         ]
         and has_esri_files
     ):
@@ -2709,6 +2721,8 @@ def prepare_data(
         _is_multispec = False
 
         def check_ms(il, il2):
+            from osgeo import gdal
+
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
@@ -3014,6 +3028,19 @@ def prepare_data(
             **kwargs,
         )
         data._estimate_batch = _estimate_batch
+        return data
+
+    elif dataset_type == "3DRCNet":
+        from ._data_utils.hyperspec_data import prepare_hyperspec_data
+
+        data = prepare_hyperspec_data(
+            path=path,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            working_dir=working_dir,
+            class_mapping=class_mapping,
+            **kwargs,
+        )
         return data
 
     elif dataset_type == "ClimaX":

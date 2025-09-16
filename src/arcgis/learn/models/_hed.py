@@ -6,6 +6,7 @@ from ._arcgis_model import _EmptyData
 try:
     from fastai.vision import flatten_model
     import torch
+    from torch import nn
     import fastai
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
@@ -151,34 +152,41 @@ class HEDEdgeDetector(ModelExtension):
     def _freeze(self):
         "Freezes the pretrained backbone."
         layers = flatten_model(self.learn.model.backbone)
-        start_idx = 0
-        if self._is_multispectral:
-            start_idx = 1
-        count = 0
-        count_strided_conv = 0
-        for idx, i in enumerate(layers[start_idx:]):
-            if (
-                isinstance(i, (torch.nn.BatchNorm2d))
-                or isinstance(i, (fastai.torch_core.ParameterModule))
-                or isinstance(i, (torch.nn.BatchNorm1d))
-                or isinstance(i, (torch.nn.LayerNorm))
-            ):
-                continue
+        if self._backbone.__name__ in list(vit_config.keys()):
+            pretrained_layers, random_layers = self.learn.model.backbone._freeze()
+            random_layers.extend(flatten_model(self.learn.model)[len(layers) :])
+            self.learn.layer_groups = [
+                nn.Sequential(*pretrained_layers),
+                nn.Sequential(*random_layers),
+            ]
+        else:
+            start_idx = 0
+            if self._is_multispectral:
+                start_idx = 1
+            count = 0
+            count_strided_conv = 0
+            for idx, layer in enumerate(layers[start_idx:]):
+                if (
+                    isinstance(layer, (torch.nn.BatchNorm2d))
+                    or isinstance(layer, (fastai.torch_core.ParameterModule))
+                    or isinstance(layer, (torch.nn.BatchNorm1d))
+                    or isinstance(layer, (torch.nn.LayerNorm))
+                ):
+                    continue
 
-            for p in i.parameters():
-                p.requires_grad = False
+                for p in layer.parameters():
+                    p.requires_grad = False
 
-            if isinstance(i, torch.nn.MaxPool2d):
-                count += 1
-                if count == 3:
-                    break
-            if isinstance(i, torch.nn.Conv2d):
-                if i.stride[0] == 2:
-                    count_strided_conv += 1
-                    if count_strided_conv == 4:
+                if isinstance(layer, torch.nn.MaxPool2d):
+                    count += 1
+                    if count == 3:
                         break
-
-        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                if isinstance(layer, torch.nn.Conv2d):
+                    if layer.stride[0] == 2:
+                        count_strided_conv += 1
+                        if count_strided_conv == 4:
+                            break
+            self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
     @staticmethod
@@ -323,7 +331,10 @@ class HEDEdgeDetector(ModelExtension):
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = emd["DatasetType"]
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
         """

@@ -29,7 +29,8 @@ SRC_PATH = os.path.abspath(
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 ARCGIS_VERSION = get_version(os.path.join(SRC_PATH, "__init__.py"))
 PIP_PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13"]
-LEARN_PYTHON_VERSIONS = ["3.10", "3.11"]
+LEARN_KNN_PYTHON_VERSIONS = ["3.10", "3.11", "3.13"]
+LEARN_TRACKING_PYTHON_VERSIONS = ["3.10", "3.11"]
 
 
 def copy_binaries(bin_root_path, arcgis_src_path):
@@ -86,7 +87,7 @@ def download_binaries(
             download_file(url, dest)
 
     if mode == "conda" and all(
-        python_version in LEARN_PYTHON_VERSIONS for python_version in python_versions
+        python_version in LEARN_KNN_PYTHON_VERSIONS for python_version in python_versions
     ):
         knn_dest = os.path.join(arcgis_src_path, "learn/_utils")
         os.makedirs(knn_dest, exist_ok=True)
@@ -104,7 +105,14 @@ def download_binaries(
             },
         )
         download_files(knn_files[conda_platform], knn_dest)
+    elif mode == "conda":
+        print(
+            "Skipping arcgis_learn knn binaries, python version not supported.  If Local, automated tests may fail."
+        )
 
+    if mode == "conda" and all(
+        python_version in LEARN_TRACKING_PYTHON_VERSIONS for python_version in python_versions
+    ):
         tracking_engine_dest = os.path.join(arcgis_src_path, "learn/_tracking")
         os.makedirs(tracking_engine_dest, exist_ok=True)
         tracking_engine_files = expand_urls(
@@ -123,7 +131,7 @@ def download_binaries(
         download_files(tracking_engine_files[conda_platform], tracking_engine_dest)
     elif mode == "conda":
         print(
-            "Skipping arcgis_learn binaries, python version not supported.  If Local, automated tests may fail."
+            "Skipping arcgis_learn tracking_engine binaries, python version not supported.  If Local, automated tests may fail."
         )
 
     graph_dest = os.path.join(arcgis_src_path, "graph")

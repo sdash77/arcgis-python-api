@@ -24,7 +24,7 @@ requirements:
   - certifi
   - cryptography
   - dask >=2024.12.1,<2025.3
-  - geomet
+  - geomet >=1.0.0
   - keyring >=23.3.0
   - lxml
   - matplotlib

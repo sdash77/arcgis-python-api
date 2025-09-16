@@ -17,7 +17,7 @@ jobs:
           path: geosaurus
       - uses: actions/checkout@v4
         name: Checkout arcgis-mapping
-        if: github.repository == 'ArcGIS/geosaurus'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'ArcGIS/geosaurus'
         with:
           repository: ArcGIS/geoserpent
           path: geoserpent
@@ -49,7 +49,7 @@ jobs:
       - name: Deploy doc to s3
       # https://esri-forge.python.geocloud.com/docs/$ARCGIS_DOCS_LABEL/json.zip
       # https://esri-forge.python.geocloud.com/docs/$ARCGIS_DOCS_LABEL/html.zip
-        if: github.repository == 'ArcGIS/geosaurus'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'ArcGIS/geosaurus'
         env:
           # label:
           # - branch name for docs built for successful builds or manually triggered workflows

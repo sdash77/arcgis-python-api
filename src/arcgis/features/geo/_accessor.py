@@ -937,10 +937,17 @@ class GeoSeriesAccessor:
         return pd.Series(res, index=self._index, name="position_along_line")
 
     # ----------------------------------------------------------------------
-    def project_as(self, spatial_reference, transformation_name=None):
+    def project_as(
+        self,
+        spatial_reference: _geometry.SpatialReference,
+        transformation_name: str = None,
+    ):
         """
         The ``project_as`` method projects a :class:`~arcgis.geometry.Geometry`and optionally applies a
         ``geotransformation``.
+
+        .. note::
+            The ``project_as`` method requires ArcPy or pyproj v4 and shapely.
 
         ====================     ====================================================================
         **Parameter**             **Description**
@@ -949,7 +956,7 @@ class GeoSeriesAccessor:
                                  The new spatial reference. This can be a
                                  :class:`~arcgis.geometry.SpatialReference` object or the coordinate system name.
         --------------------     --------------------------------------------------------------------
-        transformation_name      Required String. The `geotransformation` name.
+        transformation_name      Optional String. The `geotransformation` name.
         ====================     ====================================================================
 
         :return:
@@ -2269,16 +2276,27 @@ class GeoAccessor(object):
             )
 
         elif self._USE_GDAL:
-            service_name = kwargs.pop("service_name", "a" + uuid.uuid4().hex[0:5])
             file_type = "Esri Shapefile" if location.endswith(".shp") else "OpenFileGDB"
-            if file_type == "OpenFileGDB" and not service_name.endswith(".gdb"):
-                service_name = service_name + ".gdb"
-
-            # Define the full path for the geodatabase
-            gdb_path = os.path.join(location, service_name)
-
-            # Ensure the base directory exists
-            os.makedirs(location, exist_ok=True)
+            if file_type == "OpenFileGDB":
+                dir_name, file_name = os.path.split(location)
+                if dir_name.endswith(".gdb"):
+                    gdb_path = dir_name
+                    service_name = kwargs.pop("service_name", file_name)
+                    d2 = os.path.split(dir_name)[0]
+                    os.makedirs(d2, exist_ok=True)
+                elif file_name.endswith(".gdb"):
+                    service_name = kwargs.pop(
+                        "service_name", "a" + uuid.uuid4().hex[0:5]
+                    )
+                    gdb_path = location
+                    os.makedirs(dir_name, exist_ok=True)
+                else:
+                    service_name = kwargs.pop(
+                        "service_name", "a" + uuid.uuid4().hex[0:5]
+                    )
+                    service_gdb = service_name + ".gdb"
+                    gdb_path = os.path.join(location, service_gdb)
+                    os.makedirs(gdb_path, exist_ok=True)
 
             # Create the feature class using GDAL
             table = _gdal_to_fc(
@@ -2286,6 +2304,7 @@ class GeoAccessor(object):
                 gdb_path,
                 file_type,
                 layer_name=service_name,
+                gdb_table=True,
                 overwrite=True,
             )
 
@@ -4090,13 +4109,17 @@ class GeoAccessor(object):
         )
 
     # ----------------------------------------------------------------------
-    def project(self, spatial_reference, transformation_name=None):
+    def project(
+        self,
+        spatial_reference: _geometry.SpatialReference,
+        transformation_name: str = None,
+    ):
         """
         The ``project`` method reprojects the who dataset into a new :class:`~arcgis.geometry.SpatialReference`.
         This is an inplace operation meaning that it will update the defined geometry column from the ``set_geometry``.
 
         .. note::
-            The ``project`` method requires ArcPy or pyproj v4.
+            The ``project`` method requires ArcPy or pyproj v4 and shapely.
 
         ====================     ====================================================================
         **Parameter**             **Description**
@@ -4163,6 +4186,13 @@ class GeoAccessor(object):
                     spatial_reference = {"wkid": spatial_reference}
                 elif isinstance(spatial_reference, str):
                     spatial_reference = {"wkt": spatial_reference}
+                elif isinstance(spatial_reference, _geometry.SpatialReference):
+                    if spatial_reference.get("wkid", None):
+                        spatial_reference = {
+                            "wkid": spatial_reference.get("wkid", None)
+                        }
+                    elif spatial_reference.get("wkt", None):
+                        spatial_reference = {"wkt": spatial_reference.get("wkt", None)}
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference,

@@ -1,11 +1,14 @@
 from __future__ import annotations
-import copy
-from enum import Enum
 import os
+import re
+import copy
+import tempfile
+from enum import Enum
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import User
+import requests
 
 
 class DATAACCESSTYPE(Enum):
@@ -289,7 +292,11 @@ class NotebookFolder:
                 for f in response.get("Blobs", [])
                 if f["Properties"].get("ResourceType", "").lower() == "file"
             ]
-        return [NotebookFile(f, self._da) for f in response.get("Blobs", [])]
+        return [
+            NotebookFile(f, self._da)
+            for f in response.get("Blobs", [])
+            if not f["Name"].endswith("/")
+        ]
 
     # ---------------------------------------------------------------------
     def create_folder(self, folder_name: str) -> NotebookFolder:
@@ -519,27 +526,34 @@ class NotebookDataAccess:
 
     # ---------------------------------------------------------------------
     def _get_folders(self, parent_folder: str | None) -> list[NotebookFolder]:
-        if self._gis._is_agol:
-            url = f"{self._url}/{self._username}"
-        else:
-            url = f"{self._url}/{self._username}/notebookworkspace"
         params = {
             "f": "json",
             "restype": "container",
             "comp": "list",
-            "delimiter": "/",
             "token": self._gis.session.auth.token,
         }
+        if self._gis._is_agol:
+            url = f"{self._url}/{self._username}"
+            params["delimiter"] = "/"
+        else:
+            url = f"{self._url}/{self._username}/notebookworkspace"
         if parent_folder:
             params["prefix"] = parent_folder
         response = self._gis.session.get(url, params=params).json()
         # When creating subfolders the name should always have the folder to which it belongs as the prefix
 
-        folders = [
-            NotebookFolder(f["Name"], self)
-            for f in response.get("Blobs", [])
-            if f["Properties"].get("ResourceType", "").lower() == "directory"
-        ]
+        if self._gis._is_agol:
+            folders = [
+                NotebookFolder(f["Name"], self)
+                for f in response.get("Blobs", [])
+                if f["Properties"].get("ResourceType", "").lower() == "directory"
+            ]
+        else:
+            folders = [
+                NotebookFolder(f["Name"], self)
+                for f in response.get("Blobs", [])
+                if f["Name"].endswith("/") and f["Name"] != parent_folder
+            ]
 
         # Include root folder only if folder_name is None
         if parent_folder is None:
@@ -629,7 +643,7 @@ class NotebookDataAccess:
         return result
 
     # ---------------------------------------------------------------------
-    def _get_file(self, file_name: str) -> NotebookFile:
+    def _get_file(self, file_name: str) -> NotebookFile | None:
         """
         Returns a specific file in the workspace directory (/arcgis/home) of the user making the request.
         If you have multiple files with the same name, this method will return the first one found.
@@ -641,7 +655,7 @@ class NotebookDataAccess:
                                 The file name must be a simple, non-empty name without slashes.
         ====================    ==========================================================================
 
-        :return: NotebookFile - A NotebookFile object representing the requested file.
+        :return: NotebookFile - A NotebookFile object representing the requested file, or None if not found.
         """
         if not isinstance(file_name, str):
             raise ValueError("file_name must be a string.")
@@ -658,14 +672,20 @@ class NotebookDataAccess:
             "comp": "list",
             "token": self._gis.session.auth.token,
         }
-        response = self._gis.session.get(url, params=params).json()
+        try:
+            response = self._gis.session.get(url, params=params).json()
+        except Exception as ex:
+            raise RuntimeError(f"Failed to fetch files: {ex}")
+
         for f in response.get("Blobs", []):
-            if (
-                f["Properties"].get("ResourceType")
-                and f["Properties"].get("ResourceType").lower() == "file"
-                and f["Name"].endswith(file_name)
-            ):
-                return NotebookFile(f, self)
+            if self._gis._is_agol:
+                if f.get("Properties", {}).get(
+                    "ResourceType", ""
+                ).lower() == "file" and f["Name"].endswith(file_name):
+                    return NotebookFile(f, self)
+            else:
+                if f["Name"].endswith(file_name) and not f["Name"].endswith("/"):
+                    return NotebookFile(f, self)
         return None
 
     # ---------------------------------------------------------------------
@@ -816,16 +836,93 @@ class NotebookDataAccess:
         else:
             raise ValueError(f"Unknown error during workspace transfer: {res}")
 
+    def _extract_filename(self, content_disposition_string: str) -> str | None:
+        """
+        Extracts the filename from a Content-Disposition header string.
+        Handles both quoted and unquoted filenames, and prioritizes filename* for UTF-8.
+        """
+
+        if not content_disposition_string:
+            return None
+
+        # Try to extract filename* (for UTF-8 encoded filenames) first
+        match_utf8 = re.search(
+            r"filename\*=UTF-8''([^;]+)", content_disposition_string, re.IGNORECASE
+        )
+        if match_utf8:
+            # Decode URL-encoded characters
+            import urllib.parse
+
+            return urllib.parse.unquote(match_utf8.group(1))
+
+        # Then try to extract quoted filename
+        match_quoted = re.search(
+            r'filename="([^"]+)"', content_disposition_string, re.IGNORECASE
+        )
+        if match_quoted:
+            return match_quoted.group(1)
+
+        # Finally, try to extract unquoted filename
+        match_unquoted = re.search(
+            r"filename=([^;]+)", content_disposition_string, re.IGNORECASE
+        )
+        if match_unquoted:
+            return match_unquoted.group(1).strip()
+
+        return None
+
+    def _is_file(self, response: requests.Response) -> bool:
+        """checks if the response contains a file"""
+        content_type = response.headers.get("Content-Type")
+        content_disposition = response.headers.get("Content-Disposition")
+        file_name: str | None = self._extract_filename(content_disposition)
+        is_file = False, file_name
+
+        if content_disposition and "attachment" in content_disposition:
+            is_file = True, file_name
+        elif (
+            content_type
+            and "text/html" not in content_type
+            and "application/json" not in content_type
+        ):
+            is_file = True, file_name
+        return is_file
+
     # ---------------------------------------------------------------------
     def _download(self, filename: str) -> str:
         """
-        downloads a file from the
+        downloads a file from the notebook server
         """
-        url = f"{self._url}/notebookworkspace/downloadFile"
-        params = {
-            "f": "json",
-            "fileName": filename,
-        }
+
+        if self._gis._is_arcgisonline:
+            url = f"{self._url.replace('/azureblob', '')}/{self._gis.users.me.username}/downloadFile"
+            params = {
+                "fileName": filename,
+            }
+            response: requests.Response = self._gis.session.get(url, params=params)
+            is_file, file_name = self._is_file(response)
+            if is_file:
+
+                folder: str = tempfile.gettempdir()
+                fp = os.path.join(folder, file_name)
+                with open(fp, "wb") as writer:
+                    writer.write(response.content)
+                return fp
+        else:
+            url = f"{self._url}/notebookworkspace/downloadFile"
+            params = {
+                "f": "json",
+                "fileName": filename,
+            }
+            response: requests.Response = self._gis.session.post(url, data=params)
+            is_file, file_name = self._is_file(response)
+            if is_file:
+
+                folder: str = tempfile.gettempdir()
+                fp = os.path.join(folder, file_name)
+                with open(fp, "wb") as writer:
+                    writer.write(response.content)
+                return fp
         return self._gis.session.post(url, data=params).json()
 
     # ---------------------------------------------------------------------
@@ -876,7 +973,7 @@ class NotebookDataAccess:
     @deprecated(
         deprecated_in="2.4.2",
         removed_in="2.5.0",
-        details="Use the files property found in a NotebookFolder instead or the get_file method.",
+        details="Use the files property found in a NotebookFolder instead or the get method with DATAACCESSTYPE.FILE.",
     )
     def files(self) -> list[NotebookFile]:
         """

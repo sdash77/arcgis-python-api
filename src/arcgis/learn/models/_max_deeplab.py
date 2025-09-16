@@ -181,7 +181,10 @@ class MaXDeepLab(ModelExtension):
             data.K = emd["Kwargs"]["n_masks"]
             data.instance_classes = emd["Kwargs"]["instance_classes"]
 
-        return cls(data, backbone, pretrained_path=str(model_file))
+        model_obj = cls(data, backbone, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def compute_n_masks(self):
         """

@@ -15,6 +15,10 @@ try:
     from fastai.vision.transform import dihedral
     import io
     import base64
+    from arcgis.learn._utils.common import get_nbatches, image_batch_stretcher
+    from arcgis.learn.models._inferencing.util import normalize_batch
+    import torch.nn.functional as F
+    from matplotlib import cm
 
     HAS_PYTORCH_FA = True
 
@@ -70,21 +74,23 @@ class ChildObjectDetector:
             required_parameters.append(
                 {
                     "name": "threshold",
-                    "dataType": "numeric",
+                    "dataType": "GPDouble",
                     "value": 0.5,
-                    "required": False,
-                    "displayName": "Confidence Score Threshold [0.0, 1.0]",
-                    "description": "Confidence score threshold value [0.0, 1.0]",
+                    "required": True,
+                    "domain": [0.0, 1.0],
+                    "displayName": "Confidence Threshold",
+                    "description": "The confidence score used for selecting the detections to be included in the results. The allowed values range from 0 to 1.0.",
                 }
             )
         if "ExpMap" in self.emd and self.emd["ExpMap"] == True:
             required_parameters.append(
                 {
                     "name": "explainability_map",
-                    "dataType": "string",
+                    "dataType": "GPString",
                     "value": str(self.emd["ExpMap"]),
-                    "required": False,
-                    "displayName": "Display the heatmaps.",
+                    "required": True,
+                    "domain": ["True", "False"],
+                    "displayName": "Explainability Map",
                     "description": "Display the heatmaps.",
                 }
             )
@@ -92,15 +98,16 @@ class ChildObjectDetector:
         required_parameters.append(
             {
                 "name": "test_time_augmentation",
-                "dataType": "string",
-                "required": False,
+                "dataType": "GPString",
+                "required": True,
                 "value": (
                     "False"
                     if "test_time_augmentation" not in self.emd
                     else str(self.emd["test_time_augmentation"])
                 ),
-                "displayName": "Perform test time augmentation while predicting",
-                "description": "If True, will merge predictions from flipped and rotated images.",
+                "domain": ["True", "False"],
+                "displayName": "Test Time Augmentation",
+                "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
             }
         )
         return required_parameters
@@ -254,76 +261,182 @@ class ChildObjectDetector:
         grad_values = []
         if self.exp_map:
             try:
-                for index, image in enumerate(
-                    pixelBlocks["rasters_pixels"]
-                ):  # batch_images:
+
+                def sniff_rgb_bands(band_names):
+                    band_mapping_reverse = {
+                        k.lower(): i for i, k in enumerate(band_names)
+                    }
+                    rgb_bands = []
+                    for b in ["red", "green", "blue"]:
+                        bi = band_mapping_reverse.get(b, None)
+                        if bi is None:
+                            return
+                        rgb_bands.append(bi)
+                    return rgb_bands
+
+                if self.cf._is_multispectral:  # self._is_multispectral
+                    rgb_band = sniff_rgb_bands(self.emd["Bands"])
+
+                    symbology_bands = []
+                    if (rgb_band == None) or (not len(rgb_band) == 3):
+                        # setting to default BGR
+                        rgb_band = [0, 1, 2]
+                    for b in rgb_band:
+                        if type(b) == str:
+                            b_index = self.cf._bands.index(b)
+                        elif type(b) == int:
+                            self.cf._bands[
+                                b
+                            ]  # To check if the band index specified by the user really exists.
+                            b_index = b
+                        else:
+                            raise (e)
+                        b_index = self.cf._data._extract_bands.index(b_index)
+                        symbology_bands.append(b_index)
+                    x_batch = (
+                        self.cf._data._scaled_std_values[self.cf._data._extract_bands]
+                        .view(1, -1, 1, 1)
+                        .to(batch_images)
+                        * batch_images
+                    ) + self.cf._data._scaled_mean_values[
+                        self.cf._data._extract_bands
+                    ].view(
+                        1, -1, 1, 1
+                    ).to(
+                        batch_images
+                    )
+                    # Extract RGB Bands
+                    symbology_x_batch = x_batch[:, symbology_bands]
+                    stretch_type = "minmax"
+                    statistics_type = "dataset"
+                    if stretch_type is not None:
+                        symbology_x_batch = image_batch_stretcher(
+                            symbology_x_batch, stretch_type, statistics_type
+                        )
+                else:
+
+                    norm_mean = (
+                        torch.tensor(imagenet_stats[0])
+                        .to(batch_images)
+                        .view(1, -1, 1, 1)
+                    )
+                    norm_std = (
+                        torch.tensor(imagenet_stats[1])
+                        .to(batch_images)
+                        .view(1, -1, 1, 1)
+                    )
+                    symbology_x_batch = (batch_images * norm_std) + norm_mean
+
+                symbology_x_batch = F.interpolate(
+                    symbology_x_batch,
+                    size=(self.emd["ImageWidth"], self.emd["ImageHeight"]),
+                    mode="bilinear",
+                    align_corners=False,
+                )
+                # Channel first to channel last for plotting
+                symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+                # Clamp float values to range 0 - 1
+                if symbology_x_batch.mean() < 1:
+                    symbology_x_batch = symbology_x_batch.clamp(0, 1)
+
+                for index, image in enumerate(batch_images):
+
                     _, height, width = image.shape
-                    from PIL import Image
-
-                    original_image_pil = Image.fromarray(np.moveaxis(image, 0, -1))
-
-                    # to handle the partial image getting clipped due to extent or feature shape
-                    if original_image_pil.size != (
-                        self.emd["ImageWidth"],
-                        self.emd["ImageHeight"],
+                    if (
+                        width != self.emd["ImageWidth"]
+                        or height != self.emd["ImageHeight"]
                     ):
-                        original_image_pil = original_image_pil.resize(
-                            (self.emd["ImageWidth"], self.emd["ImageHeight"])
+                        image = image.unsqueeze(1)
+                        image = F.interpolate(
+                            image,
+                            size=(self.emd["ImageWidth"], self.emd["ImageHeight"]),
+                            mode="bilinear",
+                            align_corners=False,
+                        )
+                        image = image.squeeze(1)
+
+                    if self.emd["MetaDataMode"] == "MultiLabeled_Tiles":
+                        # Utilizing the previous predictions "cl" , required for _generate_grad_cam method
+                        cl = (
+                            None,
+                            torch.where(
+                                predictions[index] > self.thresh,
+                                torch.tensor(1.0),
+                                torch.tensor(0.0),
+                            ),
+                            predictions[index],
                         )
 
-                    from fastai.vision import Image, pil2tensor
-
-                    fastai_image = Image(
-                        pil2tensor(original_image_pil, dtype=np.float32).div_(255)
-                    )
-
-                    cl = (None, torch.tensor(class_idxs[index]), predictions[index])
-
-                    grad_cam_outputs, pred_class_label, xb, xb_norm = (
+                    else:
+                        cl = (None, torch.tensor(class_idxs[index]), predictions[index])
+                    (grad_cam_outputs, pred_class_label, xb, xb_norm) = (
                         self.cf._generate_grad_cam(
-                            fastai_image,
-                            cl,
-                            self.emd["MetaDataMode"],
-                            heatmap_thresh=16,
-                            device_=self.device,
+                            image, cl, self.emd["MetaDataMode"], heatmap_thresh=16
                         )
                     )
 
-                    # overlaying the gradcam on the image encoding it in base64
-
-                    heatmap_rescaled1 = grad_cam_outputs[0] / grad_cam_outputs[0].max()
-                    heatmap = heatmap_rescaled1.cpu().numpy()
-                    from PIL import Image
-
-                    heatmap_rescaled = np.array(
-                        Image.fromarray(heatmap).resize(
-                            (self.emd["ImageWidth"], self.emd["ImageHeight"]),
-                            resample=Image.BILINEAR,
-                        )
-                    )
-                    from matplotlib import cm
-
+                    if self.emd["MetaDataMode"] == "MultiLabeled_Tiles":
+                        if torch.all(cl[1] == 0).item():
+                            grad_values.append([])
+                            continue  # return rings, confidences, labels, grad_values
+                        # mapped list = Batch * [[Predicted_Label_Name1, Grad-CAM_Output1], [Predicted_Label_Name2, Grad-CAM_Output2], ...]
+                        mapped_list = [
+                            [k, v]
+                            for k, v in zip(labels[index].split(";"), grad_cam_outputs)
+                        ]
+                    else:
+                        mapped_list = [[labels[index], grad_cam_outputs[0]]]
                     colormap = cm.get_cmap("hot")
-                    heatmap_colored = colormap(heatmap_rescaled)[
-                        :, :, :3
-                    ]  # Apply colormap and discard alpha channel
-                    heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
-                    heatmap_pil = Image.fromarray(heatmap_colored)
-                    alpha = 0.4
-                    overlayed_image = Image.blend(
-                        original_image_pil.convert("RGBA"),
-                        heatmap_pil.convert("RGBA"),
-                        alpha=alpha,
+                    label_grad = []
+                    for i in mapped_list:
+                        grad_cam_outputs = i[1]
+                        heatmap_rescaled1 = grad_cam_outputs / grad_cam_outputs.max()
+
+                        heatmap1 = heatmap_rescaled1.cpu().numpy()
+                        from PIL import Image
+
+                        heatmap_rescaled_resized = np.array(
+                            Image.fromarray(heatmap1).resize(
+                                (self.emd["ImageWidth"], self.emd["ImageHeight"]),
+                                resample=Image.BILINEAR,
+                            )
+                        )
+                        heatmap_colored = colormap(heatmap_rescaled_resized)[
+                            :, :, :3
+                        ]  # Apply colormap and discard alpha channel
+                        heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
+
+                        img_255 = (symbology_x_batch[index].cpu().numpy() * 255).astype(
+                            np.uint8
+                        )
+                        from PIL import Image
+
+                        img_255pil = Image.fromarray(img_255)
+                        heatmap_pil = Image.fromarray(heatmap_colored)
+
+                        alpha = 0.4
+                        overlayed_image = Image.blend(
+                            img_255pil.convert("RGBA"),
+                            heatmap_pil.convert("RGBA"),
+                            alpha=alpha,
+                        )
+                        byte_io = io.BytesIO()
+                        rgb_image = overlayed_image.convert("RGB")
+                        rgb_image.save(byte_io, format="JPEG")
+                        array_bytes = byte_io.getvalue()
+
+                        import base64
+
+                        encoded_data = base64.b64encode(array_bytes).decode("utf-8")
+                        label_grad.append(
+                            [f"Explainability map for class : {i[0]}", encoded_data]
+                        )
+
+                    json_string = json.dumps(label_grad)
+                    blob_string = base64.b64encode(json_string.encode("utf-8")).decode(
+                        "utf-8"
                     )
-                    byte_io = io.BytesIO()
-                    rgb_image = overlayed_image.convert("RGB")
-                    rgb_image.save(byte_io, format="JPEG")
-                    array_bytes = byte_io.getvalue()
-
-                    import base64
-
-                    encoded_data = base64.b64encode(array_bytes).decode("utf-8")
-                    grad_values.append(encoded_data)
+                    grad_values.append(blob_string)
 
                 return rings, confidences, labels, grad_values
             except:
