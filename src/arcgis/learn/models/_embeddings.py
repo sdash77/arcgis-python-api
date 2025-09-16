@@ -198,7 +198,7 @@ class Embeddings:
         else:
             self.working_dir = Path.cwd()
 
-        _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
+        # _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
 
         self._file_path = None
         self.backbone = None
@@ -457,14 +457,6 @@ class Embeddings:
         """
         if not HAS_NUMPY:
             raise Exception("This module requires numpy.")
-
-        file_name = f"embeddings_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.h5"
-        self._file_path = os.path.join(self.working_dir, "embeddings", file_name)
-        if os.path.exists(self._file_path):
-            raise Exception(
-                f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
-                f"or move the file to another location to proceed."
-            )
         text_img_df = kwargs.get("dataframe", False)
         spatial_reference = kwargs.get("spatial_reference", 4326)
         if isinstance(text_img_df, pd.DataFrame):
@@ -541,6 +533,15 @@ class Embeddings:
                     out_sr=SpatialReference(4326),
                 )
             item_list = [i.centroid for i in item_list]
+        # create the filepath as it is base on the return embeddings
+        if not return_embeddings:
+            file_name = f"embeddings_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.h5"
+            self._file_path = os.path.join(self.working_dir, "embeddings", file_name)
+            if os.path.exists(self._file_path):
+                raise Exception(
+                    f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
+                    f"or move the file to another location to proceed."
+                )
         if self._dataset_type == "image":
             ret = self._get_image(
                 item_list, batch_size, show_progress, return_embeddings, **kwargs
