@@ -420,14 +420,14 @@ def filter_timm_models(flt=[]):
     return sorted(set(models) - set(flt_models))
 
 
-def _get_feature_size(arch, cut, chip_size=(64, 64), channel_in=3):
+def _get_feature_size(arch, cut, chip_size=(64, 64), channel_in=3, use_custom=False):
     try:
         m = nn.Sequential(*create_body(arch, False, cut).children())
     except urllib.error.URLError as e:
         raise ConnectionError(
             f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
         )
-    if "tresnet" in arch.__module__:
+    if "tresnet" in arch.__module__ or use_custom:
         with hook_outputs(m) as hooks:
             dummy_batch = (
                 one_param(m)

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from rtree import RTreeError
 from rtree import RTree
 

@@ -242,6 +242,9 @@ def crop(data1, data2, crop_h, crop_w):
     _, _, h2, w2 = data2.size()
     assert h2 <= h1 and w2 <= w1
     data = data1[:, :, crop_h : crop_h + h2, crop_w : crop_w + w2]
+    _, _, h, w = data.size()
+    if h != h2 or w != w2:
+        data = F.interpolate(data, (h2, w2), mode="bilinear", align_corners=False)
     return data
 
 

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 from __future__ import absolute_import
+import json
 from .._common import BaseServer
 from . import _machines, _clusters
 from . import _data, _info
@@ -491,7 +492,9 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _export(self, location: Optional[str] = None) -> dict:
+    def _export(
+        self, location: Optional[str] = None, location_config: dict | None = None
+    ) -> dict:
         """
         Exports the site configuration to a location you specify as input
         to this operation.
@@ -504,6 +507,11 @@ class Server(BaseServer):
                                not specified, the server writes the exported site configuration
                                file to directory owned by the server and returns a virtual path
                                (an HTTP URL) to that location from where it can be downloaded.
+        ------------------     --------------------------------------------------------------------
+        location_config        Optional Dict. The location configuration defines where the storage
+                               type is.  If using cloud storage, connection information such as
+                               bucket or container, and credentials, and cloud region are defined
+                               here.
         ==================     ====================================================================
 
 
@@ -514,10 +522,13 @@ class Server(BaseServer):
         params = {"f": "json"}
         if location is not None:
             params["location"] = location
+        if location_config is not None:
+
+            params["locationConfig"] = json.dumps(location_config)
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _import_site(self, location: str) -> dict:
+    def _import_site(self, location: str, location_config: dict | None = None) -> dict:
         """
         This operation imports a site configuration into the currently
         running site. Importing a site means replacing all site
@@ -538,6 +549,11 @@ class Server(BaseServer):
         ------------------     --------------------------------------------------------------------
         location               Required string. A file path to an exported configuration or an ID
                                referencing the stored configuration on the server.
+        ------------------     --------------------------------------------------------------------
+        location_config        Optional Dict. The location configuration defines where the storage
+                               type is.  If using cloud storage, connection information such as
+                               bucket or container, and credentials, and cloud region are defined
+                               here.
         ==================     ====================================================================
 
 
@@ -546,6 +562,8 @@ class Server(BaseServer):
         """
         url = self._url + "/importSite"
         params = {"f": "json", "location": location}
+        if location_config:
+            params["locationConfig"] = json.dumps(location_config)
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
@@ -1125,7 +1143,9 @@ class SiteManager(object):
         return self._sm._delete()
 
     # ----------------------------------------------------------------------
-    def export(self, location: Optional[str] = None) -> dict:
+    def export(
+        self, location: Optional[str] = None, location_config: dict | None = None
+    ) -> dict:
         """
         Exports the site configuration to a location you specify as input
         to this operation.
@@ -1138,6 +1158,11 @@ class SiteManager(object):
                                is not specified, the server writes the exported site configuration
                                file to directory owned by the server and returns a virtual path
                                (an HTTP URL) to that location from where it can be downloaded.
+        ------------------     --------------------------------------------------------------------
+        location_config        Optional Dict. The location configuration defines where the storage
+                               type is.  If using cloud storage, connection information such as
+                               bucket or container, and credentials, and cloud region are defined
+                               here.
         ==================     ====================================================================
 
         :return:
@@ -1145,10 +1170,10 @@ class SiteManager(object):
 
 
         """
-        return self._sm._export(location)
+        return self._sm._export(location, location_config=location_config)
 
     # ----------------------------------------------------------------------
-    def import_site(self, location: str) -> dict:
+    def import_site(self, location: str, location_config: dict | None = None) -> dict:
         """
         This operation imports a site configuration into the currently
         running site. Importing a site means replacing all site
@@ -1170,13 +1195,18 @@ class SiteManager(object):
         ------------------     --------------------------------------------------------------------
         location               Required string. A file path to an exported configuration or an ID
                                referencing the stored configuration on the server.
+        ------------------     --------------------------------------------------------------------
+        location_config        Optional Dict. The location configuration defines where the storage
+                               type is.  If using cloud storage, connection information such as
+                               bucket or container, and credentials, and cloud region are defined
+                               here.
         ==================     ====================================================================
 
 
         :return:
            A status indicating success (along with site details) or failure.
         """
-        return self._sm._import_site(location=location)
+        return self._sm._import_site(location=location, location_config=location_config)
 
     # ----------------------------------------------------------------------
     def upgrade(self, run_async: bool = False) -> dict:

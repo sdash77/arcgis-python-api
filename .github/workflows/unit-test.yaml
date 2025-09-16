@@ -4,7 +4,7 @@ on:
   schedule:
     # Mondays at 12:30 PM UTC (4:30 AM Pacific/7:30 AM Eastern) (all platforms, all python versions)
     - cron: '30 12 * * 1'
-    # Tuesday-Sunday at 12:30 PM UTC (Windows & Linux, Python 3.11)(Default supported platforms for ArcGIS Pro/Enterprise)
+    # Tuesday-Sunday at 12:30 PM UTC (Windows & Linux, Python 3.13)(Default supported platforms for ArcGIS Pro/Enterprise)
     - cron: '30 12 * * 0,2-6'
   workflow_dispatch:
     inputs:
@@ -32,12 +32,17 @@ on:
         type: boolean
         description: Run unit tests on Python 3.11?
         required: false
-        default: true
+        default: false
       py312:
         type: boolean
         description: Run unit tests on Python 3.12?
         required: false
         default: false
+      py313:
+        type: boolean
+        description: Run unit tests on Python 3.13?
+        required: false
+        default: true
 
 jobs:
   preflight:
@@ -45,34 +50,31 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-      run-tests: ${{ github.event_name != 'pull_request' || steps.changed-files.outputs.any_changed }}
     steps:
-      - uses: tj-actions/changed-files@v41
-        name: Check changed files
-        if: github.event_name == 'pull_request'
+      - uses: tj-actions/changed-files@v46
         id: changed-files
+        if: github.event_name == 'pull_request'
         with:
           files: |
-            .github/workflows/*.yaml
-            .github/workflows/*.yml
-            environment.yml
-            build/arcgis/meta.yaml
-            src/**/*.*
-            tests/smoke/**/*.*
-            tests/unit/**/*.*
-            tests/utils/**/*.*
+            environment.yml  
+            pixi.toml
+            pixi.lock
+            .github/workflows/unit-test.yaml
+            build/manage_binaries.py
       - name: Get parameters or defaults
         id: get-parameters
-        # defaults to running linux and python 3.11 on pull requests
+        # defaults to running linux and python 3.13 on most pull requests
+        # defaults to running on all platforms and python versions on pull requests where certain key files were changed
         # defaults to running all platforms and python versions on Monday schedule
         # uses inputs to determine which platforms and python versions to run on for workflow_dispatch
         run: |
           echo "linux=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.linux }}" >> $GITHUB_OUTPUT
-          echo "macos=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.macos }}" >> $GITHUB_OUTPUT
-          echo "windows=${{ github.event_name == 'schedule' || github.event.inputs.windows }}" >> $GITHUB_OUTPUT
-          echo "py310=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py310 }}" >> $GITHUB_OUTPUT
-          echo "py311=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.py311 }}" >> $GITHUB_OUTPUT
-          echo "py312=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py312 }}" >> $GITHUB_OUTPUT
+          echo "macos=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || (github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true') || github.event.inputs.macos }}" >> $GITHUB_OUTPUT
+          echo "windows=${{ github.event_name == 'schedule' || (github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true') || github.event.inputs.windows }}" >> $GITHUB_OUTPUT
+          echo "py310=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || (github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true') || github.event.inputs.py310 }}" >> $GITHUB_OUTPUT
+          echo "py311=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || (github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true') || github.event.inputs.py311 }}" >> $GITHUB_OUTPUT
+          echo "py312=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || (github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true') || github.event.inputs.py312 }}" >> $GITHUB_OUTPUT
+          echo "py313=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.py313 }}" >> $GITHUB_OUTPUT
       - name: Construct matrix
         id: set-matrix
         run: |
@@ -101,18 +103,23 @@ jobs:
             echo "Running on Python 3.12"
             matrix=$(echo $matrix | jq '.python_version += ["3.12"]' | jq -r tostring)
           fi
+          if [ "${{ steps.get-parameters.outputs.py313 }}" = 'true' ]; then
+            echo "Running on Python 3.13"
+            matrix=$(echo $matrix | jq '.python_version += ["3.13"]' | jq -r tostring)
+          fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
   unit-test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     needs: [preflight]
-    if: needs.preflight.outputs.run-tests == 'true'
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.preflight.outputs.matrix)}}
     defaults:
       run:
         shell: bash -el {0}
+    env:
+      ALLOW_INSTALLED_ARCGIS: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -122,46 +129,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
+      - name: Configure python
+        run: |
+          python -m pip install pyyaml
+      - name: Preprocess environment.yml
+        run: |
+          import re, yaml
+          with open('environment.yml', 'r') as env_file:
+              env = yaml.safe_load(env_file)
+          is_python = lambda dep: type(dep) is str and re.split('=|==|<=|>=| |,|!=|~', dep)[0] == 'python'
+          env['dependencies'] = [dep for dep in env['dependencies'] if not is_python(dep)]
+          with open('environment.yml', 'w') as env_file:
+              yaml.safe_dump(env, env_file)
+        shell: python
+      - name: Print environment.yml
+        run: |
+          cat environment.yml
       - name: Configure conda
         uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: ${{ matrix.python_version }}
+          environment-file: environment.yml
+          auto-update-conda: true
       - name: Get conda environment path
         id: conda-info
         run: |
           echo "conda-env-path=$CONDA_PREFIX" >> $GITHUB_OUTPUT
-      - name: Get arcgis release info
-        id: arcgis-info
-        run: |
-          # due to https://github.com/conda/conda/issues/14569 we can't use conda search
-          # hardcoding the latest version for now
-          # echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-          echo "latest-version=2.4.0.1" >> $GITHUB_OUTPUT
       - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
-          key: conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
-      - name: Install shared dependencies
-        run: |
-          # testing dependencies
-          conda install -c main nose2 --yes --quiet
-          pip install requests-mock
-          conda install -c main protobuf --yes --quiet
-
-          # new dependencies
-          conda install -c main "websocket-client>=1.2.3,<2" --yes --quiet
-          conda install -c main "networkx>=3.3,<4" --yes --quiet
-
-          # core dependencies
-          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes --quiet
-          
-          # updated dependencies
-          conda install -c esri "pyarrow>=16,<17" --yes --quiet
-          conda install "pydantic>=2.8.2,<3" --yes --quiet
-          conda install -c main "dask>=2024.12.1,<2025.1.0" --yes --quiet
-        if: steps.restore-cache.outputs.cache-hit != 'true'
+          key: conda-arcgis-${{ matrix.os }}-py${{ matrix.python_version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
       - name: Save dependency cache
         id: save-cache
         if: steps.restore-cache.outputs.cache-hit != 'true'
@@ -169,10 +168,6 @@ jobs:
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
-      - name: Install Linux-specific dependencies
-        if: runner.os == 'Linux'
-        run: |
-          conda install -c main keyrings.alt --yes
       - name: Show conda environment
         run: |
           conda list
@@ -182,7 +177,7 @@ jobs:
           python build/manage_binaries.py copy --local
       - name: Install arcgis from source
         run: |
-          python -m pip install -e ./src --no-deps
+          python -m pip install ./src --no-deps
       - name: Run smoke tests
         working-directory: ./tests
         run: |
@@ -201,7 +196,7 @@ jobs:
           name: test-results-py${{ matrix.python_version }}-${{ matrix.os }}
           path: ./tests/*_testreport.xml
           if-no-files-found: ignore
-          retention-days: 1
+          retention-days: 30
         # always upload test results, except for cancellation
         if: success() || failure()
 

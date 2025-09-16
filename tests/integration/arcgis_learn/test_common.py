@@ -5,8 +5,34 @@
 
 
 import os
+import glob
 import warnings
+
 warnings.filterwarnings('ignore')
+import sys
+from pathlib import Path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+parent_dir = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(parent_dir))
+
+from utils._common import *
+print("Smoke tests are running...")
+TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
+smoke_test_paths = glob.glob(
+        os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
+    )
+smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
+run_unittest_on(
+    smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
+)
+print("Smoke tests Ends...")
+
+import arcgis
+print("Working arcgis file:", arcgis.__file__)
+
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import unittest
@@ -15,11 +41,10 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
-import glob
 import gc
 from sys import platform
 import pandas as pd
-from integration.arcgis_learn.properties import (
+from properties import (
     data,
     data_folder,
     setuposenviron,
@@ -109,15 +134,15 @@ accuracy_values = {
         "maxdeeplab": 0,
         "detreg": 0,
         "samlora": 0,
-        "mm3d":0,
-        "sqnseg":0,
-        "randlanet":0,
-        "psetae":0,
-        "wnet_cgan":0,
-        "pix2pixhd":0,
-        "ptv3seg":0,
-        "ptv3det":0,
-        "mmdetection_dino":0,
+        "mm3d": 0,
+        "sqnseg": 0,
+        "randlanet": 0,
+        "psetae": 0,
+        "wnet_cgan": 0,
+        "pix2pixhd": 0,
+        "ptv3seg": 0,
+        "ptv3det": 0,
+        "mmdetection_dino": 0,
         "rtdetrv2": 0,
         "climax": 0,
     }
@@ -300,9 +325,7 @@ def CommonTestUsingDF(
             random_state=43,
         )
     else:
-        model_object = model_type(
-            data_base_model
-        )
+        model_object = model_type(data_base_model)
 
     model_object.fit()
     model_object.save(f"{os.path.join(data_folder_path, data_path, model_test)}")
@@ -332,30 +355,6 @@ def CommonTestUsingDF(
     model_object = model_type.from_model(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
-
-
-# def CommonTestAutoDLMS(
-#     model_name,
-#     datapath,
-#     datapath_ms,
-#     model,
-#     model_test,
-#     prepare_data_rgb,
-#     prepare_data_ms,
-#     network,
-#     time,
-# ):
-#     data = prepare_data(**prepare_data_ms)
-#     model_object = model(data, total_time_limit=1)
-#     model_object.fit()
-#     best_model_path = os.path.join(data_folder_ms, datapath_ms, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
-#     emd_path = glob.glob(best_model_path)[0]
-#     img_model = ImageryModel()
-#     img_model.load(emd_path, data)
-#     img_model.fit()
-#     fine_tuned_model = os.path.join(data_folder_ms, datapath_ms, 'models', 'fine_tuned_model')
-#     img_model.save(fine_tuned_model)
-
 
 def CommonTestUsingFL(
     query,
@@ -500,7 +499,7 @@ def commonTestCases(
         model_object = model_type(data, model=all_models[0])
     elif model_test == "mmdetection_dino_test":
         all_models = model_type.supported_models
-        model_object = model_type(data, model="dino")  
+        model_object = model_type(data, model="dino")
     elif model_test == "psetae_test":
         model_object = model_type(data, gamma=2, dropout=0.2)
     else:
@@ -512,6 +511,15 @@ def commonTestCases(
     # Fit for 1 epochs without LR.
     model_object.fit(1, lr=lr_val, checkpoint=False)
     # # Fit for 1 epochs with LR.
+
+    # Test shap feature for textclassifier
+    if model_test == "textclassifier_test":
+        # testing for single text
+        model_object.predict("Thanks for the support", explain=True)
+        # testing for list of texts with and without explain_index argument
+        txt_list = ["awwww, I never noticed this", "Thanks for the support"]
+        model_object.predict(txt_list, explain=True)
+        model_object.predict(txt_list, explain=True, explain_index=[1])
 
     # save model
     d_path = os.path.join(data_folder, data_path, "models", model_test)
@@ -833,6 +841,7 @@ def CommonTestTextModels(model_name, model, data, labels):
 
 
 def update_parameter():
+    parameter = []
     check_ms = False
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"]:
@@ -858,6 +867,7 @@ def update_parameter():
 
 def update_parameter_ms():
     check_ms = True
+    parameter = []
     for key, val in data.items():
         if (
             val["should_test"]
@@ -885,6 +895,7 @@ def update_parameter_ms():
 
 
 def update_parameter_fl():
+    parameter_fl = []
     for key, val in data.items():
         if (
             val["should_test"]
@@ -910,6 +921,7 @@ def update_parameter_fl():
 
 
 def update_parameter_df():
+    parameter_df = []
     for key, val in data.items():
         if val["should_test"] and val["model_name"] in ["automl", "mlmodel"]:
             parameter_df.append(
@@ -933,6 +945,7 @@ def update_parameter_df():
 
 
 def text_models():
+    parameter_text = []
     for key, val in data_inference_only.items():
         parameter_text.append(
             [key, val["model_name"], val["model"], val["data"], val["labels"]]
@@ -1114,11 +1127,12 @@ class TestTraining(unittest.TestCase):
             ms_flag,
             data_folder_path,
             num_epochs,
+            self,
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_ms, skip_on_empty=True)
-    def test(
+    def test_ms(
         self,
         name,
         model_test,
@@ -1136,21 +1150,22 @@ class TestTraining(unittest.TestCase):
     ):
         if os.environ.get("run_nightly") != "1":
             commonTestCases(
-            model,
-            model_test,
-            datapath,
-            preparedata,
-            regression_parameter,
-            regression_test_score,
-            inferencing_parameter,
-            model_name,
-            inferencing_image_server,
-            ms_flag,
-            data_folder_path,
-            num_epochs,
-            self,
-        )
+                model,
+                model_test,
+                datapath,
+                preparedata,
+                regression_parameter,
+                regression_test_score,
+                inferencing_parameter,
+                model_name,
+                inferencing_image_server,
+                ms_flag,
+                data_folder_path,
+                num_epochs,
+                self,
+            )
         else:
+            print("ignoring nightly training for ms data")
             pass
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
@@ -1247,7 +1262,7 @@ def tearDownModule():
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
-        updateFailureModels()
+        # updateFailureModels()
     for key, val in data.items():
         try:
             os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
@@ -1259,3 +1274,8 @@ def tearDownModule():
             continue
 
     print("**End Common Arcgis Learn module Training**")
+
+
+
+if __name__ == "__main__":
+    unittest.main()

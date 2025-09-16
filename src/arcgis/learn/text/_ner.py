@@ -6,11 +6,11 @@ import warnings
 import pandas as pd
 
 from ._llm import LLM
+from arcgis.features import FeatureSet
 
 try:
     from ._ner_spacy import _SpacyEntityRecognizer
     from .._utils._ner_utils import spaCyNERDatabunch
-    from arcgis.features import FeatureSet
 
     warnings.filterwarnings("ignore", category=UserWarning)
     HAS_SPACY = True
@@ -482,8 +482,8 @@ class EntityRecognizer:
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Path to Deep Learning Package
-                                (DLPK) or Esri Model Definition(EMD) file.
+        name_or_path            Required string. Name or Path to
+                                Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
         if self.model_extension:
@@ -690,9 +690,9 @@ class EntityRecognizer:
                                 Errors). Default is set to 4.
                                 Not applicable for models with `spaCy` backbone.
         ---------------------   -------------------------------------------
-        show_progress           optional Bool. If set to True, will display a
+        show_progress           Optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
-                                Applicable only when a list of text is passed
+                                Applicable only when a list of text is passed.
         =====================   ===========================================
 
         **kwargs**
@@ -701,9 +701,9 @@ class EntityRecognizer:
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_field             Optional string.
-                                input field name in the feature set. Supported
-                                in model extension
-                                Deafult value: input_str
+                                Input field name in the feature set. Supported
+                                in model extension.
+                                Default value: input_str
         =====================   ===========================================
 
         :return: Pandas DataFrame

@@ -32,10 +32,12 @@ from arcgis.geometry import (
 )
 from arcgis.gis import Layer
 
-from arcgis._impl._geometry_engine import HAS_ARCPY
+from arcgis._impl._geometry_engine import HAS_ARCPY, HAS_SHAPELY
 
 if HAS_ARCPY:
     arcpy = LazyLoader("arcpy", strict=True)
+if HAS_SHAPELY:
+    shapely = LazyLoader("shapely", strict=True)
 
 
 class Feature(object):
@@ -1110,10 +1112,13 @@ class FeatureSet(object):
             geom = feature["geometry"]
             if HAS_ARCPY:
                 geom = arcpy.AsShape(geom)
-                geometry = Geometry(geom)
-            else:
-                geometry = Geometry(geomet.esri.dumps(geom))
-            return geometry
+                return Geometry(geom)
+            if HAS_SHAPELY:
+                from shapely.geometry import shape
+
+                return Geometry.from_shapely(shape(geom))
+
+            return Geometry(geomet.esri.dumps(geom))
 
         return FeatureSet.from_dict(geo_to_esri(geojson))
 
@@ -1397,9 +1402,9 @@ class FeatureSet(object):
 
             # Obtain a feature from a feature layer:
 
-            >>> feat_set = feature_layer.save(save_location = "C:\ArcGISProjects\"
+            >>> feat_set = feature_layer.save(save_location = "/path/to/output"
             >>>                               out_name = "Power_Plant_Data")
-            "C:\ArcGISProjects\Power_Plant_Data"
+            "/path/to/output/Power_Plant_Data"
 
         """
         _, file_extension = os.path.splitext(out_name)

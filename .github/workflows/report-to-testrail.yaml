@@ -1,0 +1,52 @@
+name: Integration Test Report to TestRail
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every day at 2:05 PM UTC
+    - cron: '5 14 * * *'
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13.5'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install xmltodict
+
+    - name: Fetch test reports
+      working-directory: ./tests/testrail_reporting
+      run: |
+        wget https://esri-forge.python.geocloud.com/_/report/test/latest.zip -O latest.zip
+        unzip latest.zip
+
+    - name: Run Test Reports to TestRail
+      working-directory: ./tests/testrail_reporting
+      run: |
+        TESTRAIL_CONFIG=./test_info_config.json
+        TESTRAIL_CONFIG_JSON=$(cat $TESTRAIL_CONFIG | jq -r tostring)
+        echo $TESTRAIL_CONFIG_JSON
+        echo $TESTRAIL_CONFIG_JSON | jq -c '.[]'
+        echo $TESTRAIL_CONFIG_JSON | jq -c '.[]' | while read -r config; do
+          TESTRAIL_RUN=$(echo $config | jq -r '.testrail_run')
+          XML_PATH=$(echo $config | jq -r '.xml_path')
+          JENKINS_URL=$(echo $config | jq -r '.jenkins_url')
+          echo "Running report for TestRail Run: $TESTRAIL_RUN, XML Path: $XML_PATH, Jenkins URL: $JENKINS_URL"
+          python reportToTestRail.py \
+            -environment Windows \
+            -tu ${{ secrets.TESTRAIL_USERNAME }} \
+            -tp ${{ secrets.TESTRAIL_PASSWORD }} \
+            -tr "$TESTRAIL_RUN" \
+            -xml "$XML_PATH" \
+            -jenkins "$JENKINS_URL"
+        done

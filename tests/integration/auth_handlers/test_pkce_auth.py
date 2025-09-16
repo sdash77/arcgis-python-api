@@ -14,7 +14,7 @@ class TestPkceAuthHandler(unittest.TestCase):
         """tests the esri session auth"""
         gis = self.gis
         username, password, url = gis._username, gis._password, gis.url
-        auth = EsriPKCEAuth(url, username, password)
+        auth = EsriPKCEAuth(url, username, password, verify_cert=False)
         with EsriSession(
             auth=auth, proxies=self.proxies, verify_cert=False
         ) as session:
@@ -32,7 +32,7 @@ class TestPkceAuthHandler(unittest.TestCase):
         username, password, url = gis._username, gis._password, gis.url
         del gis
 
-        auth = EsriPKCEAuth(url, username, password)
+        auth = EsriPKCEAuth(url, username, password, verify_cert=False)
         gis = GIS(url=url, custom_auth=auth)
         assert gis.users.me
         assert gis.users.me.username

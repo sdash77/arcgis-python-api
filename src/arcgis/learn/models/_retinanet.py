@@ -288,72 +288,6 @@ class RetinaNet(ArcGISModel):
             return [traced_model_cpu, traced_model_gpu]
         return [save_path_cpu, save_path_gpu]
 
-    def _save_pytorch_tflite(self, name):
-        import tensorflow as tf
-        import logging
-
-        tf.get_logger().setLevel(logging.ERROR)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            import onnx
-            import onnx_tf
-            from onnx_tf.backend import prepare
-
-        traced_models = self._save_pytorch_torchscript(name, False)
-        if traced_models[0] is None:
-            return ["", ""]
-        cpu = torch.device("cpu")
-        device = cpu
-        traced_model = traced_models[0].to(device)
-
-        if hasattr(self._data, "chip_size"):
-            chip_size = self._data.chip_size
-            if not isinstance(chip_size, tuple):
-                chip_size = (chip_size, chip_size)
-        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
-        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(
-            device
-        )
-
-        save_path_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
-        save_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
-        save_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            torch.onnx.export(
-                traced_model,
-                inp,
-                save_path_onnx,
-                export_params=True,
-                do_constant_folding=False,
-                verbose=True,
-                input_names=["input"],
-                output_names=["output"],
-                opset_version=11,
-            )
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            arcgis_onnx = onnx.load(save_path_onnx)
-            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
-            tf_onnx.export_graph(str(save_path_pb))
-
-        converter = tf.lite.TFLiteConverter.from_saved_model(str(save_path_pb))
-        converter.experimental_new_converter = True
-        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
-        converter.target_ops = [
-            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
-            tf.lite.OpsSet.SELECT_TF_OPS,
-        ]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            tflite_model = converter.convert()
-        with tf.io.gfile.GFile(save_path_tflite, "wb") as f:
-            f.write(tflite_model)
-
-        return [save_path_tflite, save_path_onnx]
-
     @staticmethod
     def _available_metrics():
         return ["valid_loss", "average_precision"]
@@ -512,6 +446,7 @@ class RetinaNet(ArcGISModel):
             ret.learn.data.single_ds.classes = ret._data.classes
             ret.learn.data.single_ds.y.classes = ret._data.classes
 
+        ret._model_emd = emd
         return ret
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
@@ -783,7 +718,7 @@ class RetinaNet(ArcGISModel):
                                 trained on).
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
-                                during tiled inferencing. Deafult value 1.
+                                during tiled inferencing. Default value 1.
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image

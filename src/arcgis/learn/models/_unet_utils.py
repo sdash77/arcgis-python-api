@@ -3,7 +3,7 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
-from fastai.core import is_listy
+from fastai.core import is_listy, split_kwargs_by_func
 from .._utils.common import (
     ArcGISMSImage,
     get_top_padding,
@@ -292,6 +292,7 @@ def map_to_contiguous(tensor, mapping):
 
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
+
     _processor = SegmentationProcessor
 
     def __init__(
@@ -355,6 +356,7 @@ class ArcGISSegmentationLabelList(ImageList):
 
 class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
+
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
     _div = None
     _imagery_type = None
@@ -548,6 +550,17 @@ def show_results_multispectral(
     activation_store = []
     for i in range(0, x_batch.shape[0], self._data.batch_size):
         activations = predict_batch(self, x_batch[i : i + self._data.batch_size])
+        if getattr(self, "_is_edge_detection", False):
+            if i == 0:
+                analyze_kwargs, kwargs = split_kwargs_by_func(
+                    kwargs, data_loader.dataset.y.analyze_pred
+                )
+            activations = data_loader.dataset.y.analyze_pred(
+                activations, **analyze_kwargs
+            )
+            if type(activations) == list:
+                activations = torch.stack(activations)
+
         activation_store.append(activations)
 
     # Analyze Pred
@@ -556,7 +569,10 @@ def show_results_multispectral(
     predictions = analyze_pred_pixel_classification(self, activation_store)
 
     # Denormalize X
-    x_batch = denorm_x(x_batch, self)
+    if getattr(self, "_is_edge_detection", False):
+        x_batch = self.learn.data.denorm(x_batch)
+    else:
+        x_batch = denorm_x(x_batch, self)
 
     # Extract RGB Bands for plotting
     symbology_x_batch = x_batch[:, symbology_bands]

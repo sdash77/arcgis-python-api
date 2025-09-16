@@ -1,14 +1,14 @@
 from __future__ import annotations
-from typing import Optional, Union
 import uuid
 from enum import Enum
+
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
 
 arcgis = LazyLoader("arcgis")
-Content = LazyLoader("arcgis.apps.storymap.story_content")
+story_content = LazyLoader("arcgis.apps.storymap.story_content")
 json = LazyLoader("json")
 time = LazyLoader("time")
 utils = LazyLoader("arcgis.apps.storymap._utils")
@@ -17,7 +17,7 @@ utils = LazyLoader("arcgis.apps.storymap._utils")
 class Themes(Enum):
     """
     Represents the Supported Theme Type Enumerations.
-    Example: story_map.theme(Theme.Slate)
+    Example: story_map.theme(Themes.Slate)
     """
 
     SUMMIT = "summit"
@@ -67,23 +67,20 @@ class StoryMap(object):
 
     def __init__(
         self,
-        item: Optional[Union[arcgis.gis.Item, str]] = None,
-        gis: Optional[arcgis.gis.GIS] = None,
-    ):
+        item: arcgis.gis.Item | str | None = None,
+        gis: arcgis.gis.GIS | None = None,
+    ) -> None:
         # Section: Set up gis
         self._setup_gis(gis)
         self._setup_storymap(item)
 
-    def _setup_gis(self, gis):
-        if gis is None:
-            # If no gis, find active env
-            gis = arcgis.env.active_gis
-        self._gis = gis
+    def _setup_gis(self, gis: arcgis.gis.GIS | None) -> None:
+        self._gis = gis or arcgis.env.active_gis
 
-        if not (gis and gis._portal.is_logged_in):
+        if not (self._gis and self._gis._portal.is_logged_in):
             raise ValueError("Must be logged into a Portal Account")
 
-    def _setup_storymap(self, item):
+    def _setup_storymap(self, item: arcgis.gis.Item | str | None) -> None:
         if item and isinstance(item, str):
             # Get item using the item id
             item = self._gis.content.get(item)
@@ -109,7 +106,7 @@ class StoryMap(object):
         self._resources = self._item.resources.list()
 
     # ----------------------------------------------------------------------
-    def _setup_existing_storymap(self, item):
+    def _setup_existing_storymap(self, item: arcgis.gis.Item) -> None:
         saved_drafts = [
             resource["resource"]
             for resource in item.resources.list()
@@ -125,15 +122,15 @@ class StoryMap(object):
         self._itemid = item.itemid
 
     @staticmethod
-    def _is_draft(resource):
+    def _is_draft(resource: str) -> object:
         return re.match(r"draft_[0-9]{13}\.json|draft\.json", resource)
 
-    def _get_most_recent_draft(self, drafts):
+    def _get_most_recent_draft(self, drafts: list[str]) -> str | None:
         drafts.remove("draft.json") if "draft.json" in drafts else None
         return max(drafts, key=lambda x: x[6:19]) if drafts else None
 
     # ----------------------------------------------------------------------
-    def _create_new_storymap(self):
+    def _create_new_storymap(self) -> None:
         # Step 1: Get template from _ref folder
         template = self._get_storymap_template()
 
@@ -182,22 +179,22 @@ class StoryMap(object):
             access="private",
         )
 
-    def _get_storymap_template(self):
+    def _get_storymap_template(self) -> object:
         return copy.deepcopy(utils._TEMPLATES["storymap_2"])
 
-    def _customize_template(self, template):
+    def _customize_template(self, template: object) -> None:
         template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
         template["nodes"]["n-4xkUEe"]["config"]["storyLocale"] = (
             self._gis.users.me.culture or "en-US"
         )
 
-    def _create_unique_story_node(self, template):
+    def _create_unique_story_node(self, template: object) -> None:
         story_node = "n-" + uuid.uuid4().hex[:6]
         template["root"] = story_node
         template["nodes"][story_node] = template["nodes"]["n-4xkUEe"]
         del template["nodes"]["n-4xkUEe"]
 
-    def _get_keywords(self, draft):
+    def _get_keywords(self, draft: str) -> str:
         sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
             "version"
         ]
@@ -215,23 +212,23 @@ class StoryMap(object):
         )
 
     # ----------------------------------------------------------------------
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """
         HTML Representation for IPython Notebook
         """
         return self._item._repr_html_()
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the url of the storymap"""
         return self._url
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def _refresh(self):
+    def _refresh(self) -> None:
         """Load the latest data from the item"""
         if self._item:
             self._properties = json.loads(self._item.get_data())
@@ -263,7 +260,7 @@ class StoryMap(object):
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
-    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+    def show(self, width: int | None = None, height: int | None = None) -> object:
         """
         Show a preview of the story. The default is a width of 700 and height of 300.
 
@@ -283,41 +280,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(
-        deprecated_in="2.4.0",
-        removed_in="2.4.2",
-        details="Use the `arcgis.apps.storymap.Cover` class instead found when calling `content_list` property.",
-    )
-    def cover_date(self):
-        """
-        Get/Set the date type shown on the story cover.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        date_type           Optional String. Set the desired date type for the story cover.
-
-                            ``Values: "first-published" | "last-published" | "none"``
-        ===============     ====================================================================
-
-        """
-        root = self._properties["root"]
-        return self._properties["nodes"][root]["config"]["coverDate"]
-
-    # ----------------------------------------------------------------------
-    @cover_date.setter
-    def cover_date(self, date_type):
-        """
-        See cover_date property doc
-        """
-        # cover date is found in story node (i.e. root node id)
-        root = self._properties["root"]
-        self._properties["nodes"][root]["config"]["coverDate"] = date_type
-        return self.cover_date
-
-    # ----------------------------------------------------------------------
-    @property
-    def story_locale(self):
+    def story_locale(self) -> str:
         """
         Get/Set the locale and language of the story.
 
@@ -333,7 +296,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @story_locale.setter
-    def story_locale(self, locale):
+    def story_locale(self, locale: str) -> str:
         """
         See story_locale property above
         """
@@ -344,13 +307,13 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """This property returns the storymap's JSON."""
         return self._properties
 
     # ----------------------------------------------------------------------
     @property
-    def content_list(self):
+    def content_list(self) -> list:
         """
         Get a list of all the content instances in order of appearance in the story.
         This returns a list of class instances for the content in the story.
@@ -365,7 +328,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
-    def actions(self):
+    def actions(self) -> list:
         """
         Get list of action nodes.
         """
@@ -377,13 +340,17 @@ class StoryMap(object):
         return actions
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.2",
+        details="Get the Navigation class from the `content_list` property.",
+    )
     @property
-    def navigation_list(self):
+    def navigation_list(self) -> list:
         """
         Get a list of the nodes that are linked in the navigation.
         """
         # navigation item has list of links corresponding to the text nodes in the navigation
-        nav = self.get(type="navigation")[0]
+        nav = utils.get(story=self, type="navigation")[0]
         for key, value in nav.items():
             node_id = key
         try:
@@ -399,107 +366,7 @@ class StoryMap(object):
             return None
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.2.0",
-        details="`get` method has been deprecated, use `content_list` property instead.",
-    )
-    def get(self, node: Optional[str] = None, type: Optional[str] = None):
-        """
-        Get node(s) by type or by their id. Using this function will help grab a specific node
-        from the story if a node id is provided. Set this to a variable and this way edits can be
-        made on the node in the story.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        node                Optional string. The node id for the node that should be returned.
-                            This will return the class of the node if of type story content.
-        ---------------     --------------------------------------------------------------------
-        type                Optional string. The type of nodes that user wants returned.
-                            If none specified, list of all nodes returned.
-
-
-                            Values: `image` | `video` | `audio` | `embed` | `webmap` | `text` |
-                            `button` | `separator` | `expressmap` | `webscene` | `immersive` | `code`
-        ===============     ====================================================================
-
-        :return:
-            If type specified: List of node ids and their types in order of appearance in the story map.
-
-            If node_id specified: The node itself.
-
-
-        .. code-block:: python
-
-            >>> story = StoryMap(<story item>)
-
-            # Example get by type
-            >>> story.get(type = "text")
-            Returns a list of all nodes of type text
-
-            # Example by id
-            >>> text = story.get(node= "<id for text node>")
-            >>> text.properties
-            Returns a specific node of type text
-
-        """
-        return utils.get(self, node, type)
-
-    # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.4.0",
-        removed_in="2.4.2",
-        details="Use the `arcgis.apps.storymap.Cover` class instead found when calling `content_list` property.",
-    )
-    def cover(
-        self,
-        title: Optional[str] = None,
-        type: str = None,
-        summary: Optional[str] = None,
-        by_line: Optional[str] = None,
-        image: Optional[Content.Image] = None,
-    ):
-        """
-        A story's cover is at the top of the story and always the first node.
-        This method allows the cover to be edited by updating the title, byline, image, and more.
-        Changing one part of the story cover will not change the rest of the story cover. If just the
-        image is passed in then only the image will change.
-
-        .. note::
-            To change the date seen on the story cover, use the ``cover_date`` property.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the StoryMap cover.
-        ---------------     --------------------------------------------------------------------
-        type                Optional string. The type of story cover to be used in the story.
-
-                            ``Values: "full" | "sidebyside" | "minimal"``
-        ---------------     --------------------------------------------------------------------
-        summary             Optional string. The description of the story.
-        ---------------     --------------------------------------------------------------------
-        by_line             Optional string. Crediting the author(s).
-        ---------------     --------------------------------------------------------------------
-        image               Optional url or file path or :class:`~arcgis.apps.storymap.story_content.Image`
-                            object. The cover image for the story cover.
-        ===============     ====================================================================
-
-        :return: Dictionary representation of the story cover node.
-
-        .. code-block:: python
-
-            story = StoryMap(<story item>)
-            story.cover(title="My Story Title", type="minimal", summary="My little summary", by_line="python_dev")
-            story.save()
-
-        """
-        # call method to update cover
-        utils.cover(self, title, type, summary, by_line, image)
-        return True
-
-    # ----------------------------------------------------------------------
-    def get_logo(self):
+    def get_logo(self) -> object:
         """
         Get the logo image for the story. The logo is seen in the header of the story.
         """
@@ -513,10 +380,10 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def set_logo(
         self,
-        image: Optional[str] = None,
-        link: Optional[str] = None,
-        alt_text: Optional[str] = None,
-    ):
+        image: str | None = None,
+        link: str | None = None,
+        alt_text: str | None = None,
+    ) -> bool:
         """
         Set the logo for the story. The logo is seen in the header of the story.
 
@@ -548,81 +415,6 @@ class StoryMap(object):
         return utils.set_logo(self, image, link, alt_text)
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.4.0",
-        removed_in="2.4.2",
-        details="Use the `arcgis.apps.storymap.Navigation` class instead found when calling `content_list` property.",
-    )
-    def navigation(
-        self,
-        nodes: Optional[list[str]] = None,
-        hidden: Optional[bool] = None,
-    ):
-        """
-        Story navigation is a way for authors to add headings as
-        links to allow readers to navigate between different sections
-        of a story. The story navigation node takes ``TextStyle.HEADING`` text styles
-        as its only allowed children.
-        You can only have 30 :class:`~arcgis.apps.storymap.story_content.Text` child nodes
-        as visible and act as links within a story.
-
-        The text nodes must already exist in the story. Pass the list of node ids for the heading
-        text nodes to assign them to the navigation.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        nodes               Optional list of nodes to include in the navigation. These nodes can
-                            only be of style heading ("h2").
-                            Include in order. This will override current list and order.
-
-                            To see current list use ``navigation_list`` property.
-        ---------------     --------------------------------------------------------------------
-        hidden              Optional boolean. If True, the navigation is hidden.
-        ===============     ====================================================================
-
-        :return:
-            List of nodes in the navigation.
-
-        .. code-block:: python
-
-            #Example
-            >>> story = StoryMap("<existing story id>")
-            >>> story.navigation_list
-
-            >>> story.navigation(["<header node id>", "<header node id>"], False)
-        """
-
-        # Check if navigation node already exists
-        for node, node_info in self._properties["nodes"].items():
-            for key, val in node_info.items():
-                if key == "type" and val == "navigation":
-                    node_id = node
-
-        links = []
-        # If none is provided, set to what is already there
-        if nodes is not None:
-            # check nodes are correct and add in order with linkType
-            for node in nodes:
-                if self._properties["nodes"][node]["data"]["type"] == "h2":
-                    links.append({"nodeId": node, "linkType": "story-heading"})
-                elif self._properties["nodes"][node]["data"]["type"] == "h4":
-                    links.append({"nodeId": node, "linkType": "credits-heading"})
-        else:
-            links = self._properties["nodes"][node_id]["data"]["links"]
-        if hidden is None:
-            hidden = self._properties["nodes"][node_id]["config"]["isHidden"]
-
-        # Update navigation
-        self._properties["nodes"][node_id] = {
-            "type": "navigation",
-            "data": {"links": links},
-            "config": {"isHidden": hidden},
-        }
-
-        return self.navigation_list
-
-    # ----------------------------------------------------------------------
     def get_theme(self) -> str:
         """
         Get the theme name or the theme item that is used in the story.
@@ -632,7 +424,7 @@ class StoryMap(object):
         return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
+    def theme(self, theme: Themes | str | None = None) -> bool:
         """
         Each story has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -654,17 +446,18 @@ class StoryMap(object):
             >>> story.theme(Themes.TIDAL)
         """
         # call method to update theme
+        theme = theme or Themes.SUMMIT
         utils.theme(self, theme)
         return True
 
     # ----------------------------------------------------------------------
     def credits(
         self,
-        content: Optional[str] = None,
-        attribution: Optional[str] = None,
-        heading: Optional[str] = None,
-        description: Optional[str] = None,
-    ):
+        content: str | None = None,
+        attribution: str | None = None,
+        heading: str | None = None,
+        description: str | None = None,
+    ) -> list:
         """
         Credits are found at the end of the story and thus are always the last node.
 
@@ -718,9 +511,6 @@ class StoryMap(object):
         # Get existing children or initialize an empty list
         children = self._properties["nodes"][credits_node_id].get("children", [])
 
-        # Add content and attribution if provided
-        children.extend(self._add_content_and_attribution(content, attribution))
-
         # Update or add heading
         if heading:
             children = self._update_or_add_heading(heading, children)
@@ -729,32 +519,37 @@ class StoryMap(object):
         if description:
             children = self._update_or_add_description(description, children)
 
+        # Add content and attribution if provided
+        children.extend(self._add_content_and_attribution(content, attribution))
+
         self._properties["nodes"][credits_node_id]["children"] = children
         return self._properties["nodes"][credits_node_id]["children"]
 
-    def _get_credits_node_id(self):
+    def _get_credits_node_id(self) -> str:
         # Find credit node
-        dict_node = self.get(type="credits")[0]
+        dict_node = utils.get(story=self, type="credits")[0]
         # Get credit node id
-        for key, value in dict_node.items():
+        for key, _ in dict_node.items():
             return key
 
-    def _generate_unique_node_id(self):
+    def _generate_unique_node_id(self) -> str:
         return "n-" + uuid.uuid4().hex[:6]
 
-    def _add_content_and_attribution(self, content, attribution):
+    def _add_content_and_attribution(
+        self, content: str | None, attribution: str | None
+    ) -> list:
         nodes = []
         if content or attribution:
             # Create new content node
             node_id = self._generate_unique_node_id()
             self._properties["nodes"][node_id] = {
                 "type": "attribution",
-                "data": {"content": content, "attribution": attribution},
+                "data": {"attribution": attribution, "content": content},
             }
             nodes.append(node_id)
         return nodes
 
-    def _update_or_add_heading(self, heading, children):
+    def _update_or_add_heading(self, heading: str, children: list) -> list:
         # Create new content node
         # Create new heading node
         node_id = self._generate_unique_node_id()
@@ -763,26 +558,37 @@ class StoryMap(object):
             "data": {"text": heading, "type": "h4"},
         }
         children = self._update_node(children, "text", "h4")
-        children.append(node_id)
+        children.insert(0, node_id)
         return children
 
-    def _update_or_add_description(self, description, children):
+    def _update_or_add_description(self, description: str, children: list) -> list:
         node_id = self._generate_unique_node_id()
         self._properties["nodes"][node_id] = {
             "type": "text",
             "data": {"text": description, "type": "paragraph"},
         }
         children = self._update_node(children, "text", "paragraph")
-        children.append(node_id)
+
+        # If a heading exists make this the second child, otherwise it is first child
+        (
+            children.insert(1, node_id)
+            if self._credit_child_exists(children[0], "text", "h4")
+            else children.insert(0, node_id)
+        )
         return children
 
-    def _update_node(self, children, node_type, data_type):
+    def _credit_child_exists(self, child: str, node_type: str, data_type: str) -> bool:
+        if (
+            self._properties["nodes"][child]["type"] == node_type
+            and self._properties["nodes"][child]["data"]["type"] == data_type
+        ):
+            return True
+        return False
+
+    def _update_node(self, children: list, node_type: str, data_type: str) -> list:
         # remove the old node if it exists
         for child in children:
-            if (
-                self._properties["nodes"][child]["type"] == node_type
-                and self._properties["nodes"][child]["data"]["type"] == data_type
-            ):
+            if self._credit_child_exists(child, node_type, data_type):
                 del self._properties["nodes"][child]
                 children.remove(child)
         return children
@@ -790,27 +596,26 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        content: Optional[
-            Union[
-                Content.Image,
-                Content.Video,
-                Content.Audio,
-                Content.Embed,
-                Content.Map,
-                Content.Button,
-                Content.Text,
-                Content.Gallery,
-                Content.Timeline,
-                Content.Sidecar,
-                Content.Code,
-                Content.Table,
-            ]
-        ] = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = None,
-        position: Optional[int] = None,
-    ):
+        content: (
+            story_content.Image
+            | story_content.Video
+            | story_content.Audio
+            | story_content.Embed
+            | story_content.Map
+            | story_content.Button
+            | story_content.Text
+            | story_content.Gallery
+            | story_content.Timeline
+            | story_content.Sidecar
+            | story_content.Code
+            | story_content.Table
+            | None
+        ) = None,
+        caption: str | None = None,
+        alt_text: str | None = None,
+        display: str | None = None,
+        position: int | None = None,
+    ) -> str:
         """
         Use this method to add content to your StoryMap. content can be of various class types and when
         you add this content you can specify a caption, alt_text, display style, and the position
@@ -886,7 +691,7 @@ class StoryMap(object):
 
         # Find instance of content and call correct method
         if not content:
-            content = Content.Separator(story=self, node_id=node_id)
+            content = story_content.Separator(story=self, node_id=node_id)
         content._add_to_story(
             story=self,
             caption=caption,
@@ -902,9 +707,9 @@ class StoryMap(object):
     def move(
         self,
         node_id: str,
-        position: Optional[int] = None,
+        position: int | None = None,
         delete_current: bool = False,
-    ):
+    ) -> None:
         """
         Move a node to another position. The node currently at that position will
         be moved down one space. The node at the current position can be deleted
@@ -956,13 +761,13 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def save(
         self,
-        title: Optional[str] = None,
-        tags: Optional[list] = None,
-        access: str = None,
+        title: str | None = None,
+        tags: list | None = None,
+        access: str | None = None,
         publish: bool = False,
-        make_copyable: bool = None,
-        no_seo: bool = None,
-    ):
+        make_copyable: bool | None = None,
+        no_seo: bool | None = None,
+    ) -> object:
         """
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
@@ -1009,7 +814,7 @@ class StoryMap(object):
         return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
-    def delete_story(self):
+    def delete_story(self) -> bool:
         """
         Deletes the story item.
         """
@@ -1018,7 +823,7 @@ class StoryMap(object):
         return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
-    def duplicate(self, title: Optional[str] = None):
+    def duplicate(self, title: str | None = None) -> object:
         """
         Duplicate the story. All items will be duplicated as they are. This allows you to create
         a story template and duplicate it when you want to work with it.
@@ -1053,7 +858,7 @@ class StoryMap(object):
         return utils.duplicate(self, title)
 
     # ----------------------------------------------------------------------
-    def copy_content(self, target_story: StoryMap, node_list: list):
+    def copy_content(self, target_story: StoryMap, node_list: list) -> bool:
         """
         Copy the content from one story to another. This will copy the content
         indicated to the target story in the order they are provided. To change the

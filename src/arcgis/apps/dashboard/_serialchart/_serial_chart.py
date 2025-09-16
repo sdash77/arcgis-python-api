@@ -1,3 +1,4 @@
+from __future__ import annotations
 import arcgis
 from .._utils._basewidget import _BaseWidget
 from .._utils._basewidget import Legend

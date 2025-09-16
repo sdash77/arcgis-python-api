@@ -82,12 +82,26 @@ DataStore
     :undoc-members:
     :show-inheritance:
 
+DeploymentManager
+^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.DeploymentManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Deployment
 ^^^^^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.Deployment
     :members:
     :undoc-members:
     :show-inheritance:
+    
+DeploymentProperty
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.DeploymentProperty
+    :members:
+    :undoc-members:
+    :show-inheritance:    
 
 Job
 ^^^
@@ -249,6 +263,48 @@ KubeService
     :members:
     :undoc-members:
     :show-inheritance:
+
+HealthCheckManager
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.HealthCheckManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+SuitesManager
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.SuitesManager
+    :members:
+    :undoc-members:
+    :show-inheritance:	
+
+Suite
+^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Suite
+    :members:
+    :undoc-members:
+    :show-inheritance:	
+
+ReportManager
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.ReportManager
+    :members:
+    :undoc-members:
+    :show-inheritance:	
+
+Report
+^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.Report
+    :members:
+    :undoc-members:
+    :show-inheritance:	
+
+ReportJob
+^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes.ReportJob
+    :members:
+    :undoc-members:
+    :show-inheritance:	
     
 GPJobManager
 ^^^^^^^^^^^^
@@ -270,6 +326,13 @@ Container
     :members:
     :undoc-members:
     :show-inheritance:
+
+EnterpriseFunctions
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin._system.EnterpriseFunctions
+    :members:
+    :undoc-members:
+    :show-inheritance:
     
 Indexer
 ^^^^^^^
@@ -278,6 +341,62 @@ Indexer
     :undoc-members:
     :show-inheritance:
 
+KubernetesNotebook
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks.KubernetesNotebook
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeNotebookDataAccess
+^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._dataaccess.KubeNotebookDataAccess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeNotebookFile
+^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._dataaccess.KubeNotebookFile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeNotebook
+^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._nbm.KubeNotebook
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeNotebookManager
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._nbm.KubeNotebookManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+KubeRuntime
+^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._nbm.KubeRuntime
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeSnapshot
+^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._snapshot.KubeSnapshot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubeSnapshotManager
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis.kubernetes._admin.notebooks._snapshot.KubeSnapshotManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+ 
 Server
 ^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.Server
@@ -330,6 +449,13 @@ Uploads
 UsageStatistics
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.gis.kubernetes.UsageStatistics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+AboutManager
+------------
+.. autoclass:: arcgis.gis.admin.AboutManager
     :members:
     :undoc-members:
     :show-inheritance:
@@ -407,6 +533,27 @@ DataStoreTimeUnit
 DataStoreMetric
 -----------------------
 .. autoclass:: arcgis.gis.admin.DataStoreMetric
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DeveloperCredential
+-------------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.DeveloperCredential
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DeveloperCredentialManager
+--------------------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.DeveloperCredentialManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+TokenPrivilege
+--------------
+.. autoclass:: arcgis.gis.admin._stokenmgr.TokenPrivilege
     :members:
     :undoc-members:
     :show-inheritance:

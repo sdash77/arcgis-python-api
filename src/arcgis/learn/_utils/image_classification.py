@@ -1,35 +1,7 @@
 import math
 from itertools import compress
-from .env import HAS_TENSORFLOW
 
-if HAS_TENSORFLOW:
-    import tensorflow as tf
-    from tensorflow.keras.layers import (
-        Input,
-        Conv2D,
-        Dropout,
-        ReLU,
-        BatchNormalization,
-        UpSampling2D,
-        Reshape,
-        Layer,
-        AveragePooling2D,
-        MaxPool2D,
-        GlobalAveragePooling2D,
-        GlobalMaxPool2D,
-        Concatenate,
-        Flatten,
-        Dense,
-    )
-    from tensorflow.keras import Model
-    from .._utils.fastai_tf_fit import (
-        _tf_to_pytorch,
-        _pytorch_to_tf_batch,
-        _pytorch_to_tf,
-    )
-    from .common_tf import NormalizationLayerRGB
-
-from .common import get_nbatches, image_batch_stretcher
+from .common import get_nbatches, image_batch_stretcher, raise_unsupported_backend_error
 
 try:
     import torch
@@ -88,6 +60,7 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
     x_batch, y_batch = get_nbatches(data_loader, nbatches)
     x_batch = torch.cat(x_batch)
     y_batch = torch.cat(y_batch)
+    x_batch_copy = x_batch.clone()
 
     # Get Predictions
     predictions_class_store = []
@@ -108,10 +81,7 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
                 predictions_class_store.extend(class_idxs)
 
         elif self._backend == "tensorflow":
-            class_idxs, _confidences = TF_IC_predict_batch(
-                self, x_batch[i : i + self._data.batch_size]
-            )
-            predictions_class_store.extend(class_idxs)
+            raise_unsupported_backend_error("tensorflow")
 
     # predictions will only hold values with Multilabel_Tiles
     # convert predictions from List[torch.tensor] to a torch.tensor
@@ -221,11 +191,25 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
         else:
             ax_i = axs[r]
         if gradcam_show_result:
-            im = open_image(dataloader_image_path[r])
-            pred = self.learn.predict(im)
+            im = x_batch_copy[idx]
+            if self._data.dataset_type == "MultiLabeled_Tiles":
+                # self. thresh is 0.5
+                pred = (
+                    None,
+                    torch.where(
+                        batch_preds[idx] > 0.5,
+                        torch.tensor(1.0),
+                        torch.tensor(0.0),
+                    ),
+                    batch_preds[idx],
+                )
+
+            else:
+                pred = (None, torch.tensor(class_idxs[idx]), batch_preds[idx])  # cl =
+
             # multi_all_cam setting it to True will return gradcam zero for the class not predicted
             grad_cam_outputs, _, xb, _ = self._generate_grad_cam(
-                im, pred, multi_all_cam=True
+                im, pred, self._data.dataset_type, multi_all_cam=True
             )
 
         # Get ground truth and prediction class names
@@ -286,104 +270,6 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
 
 
 ## Common section ends
-
-
-## Tensorflow specific utils start ##
-
-
-def TF_IC_predict_batch(self, imagetensor_batch):
-    predictions = (
-        self.learn.model(_pytorch_to_tf_batch(imagetensor_batch)).detach().numpy()
-    )
-    predictions_conf = (predictions.max(axis=-1) * 100).tolist()
-    predicted_classes = predictions.argmax(axis=-1).tolist()
-    return predicted_classes, predictions_conf
-
-
-def TF_IC_get_head_output(arcgis_model_fc):
-    backbone_name = arcgis_model_fc._backbone_initalized.name
-    if "resnet" in backbone_name and any(
-        x in backbone_name for x in ["50", "101", "151"]
-    ):
-        pyramid_scheme = [2048, 512]
-    else:
-        pyramid_scheme = [512]
-
-    data_format = (
-        tf.keras.backend.image_data_format()
-    )  #'channels_first' or 'channels_last'
-    if data_format == "channels_last":
-        channel_axis = -1
-    else:
-        channel_axis = 1
-
-    ## FC Head
-
-    # Zero Block
-    input_layer = arcgis_model_fc._backbone_initalized.output
-
-    # First Block
-    in_spatial_size = input_layer.shape[1]
-    # head_block1_avgpool1 = AveragePooling2D(pool_size=(in_spatial_size, in_spatial_size), name="head_block1_globalavgpool1")(input_layer)
-    # head_block1_avgpool1 = Flatten()(head_block1_avgpool1)
-    head_block1_avgpool1 = GlobalAveragePooling2D(name="head_block1_globalavgpool1")(
-        input_layer
-    )
-
-    # Because tflite (tensorflow 2.0.0) does not support REDUCE_MAX operation MaxPool2D is used and the output is
-    # flatten that instead of directly using GlobalMaxPool2D
-    # head_block1_maxpool1 = GlobalMaxPool2D(name="head_block1_globalmaxpool1")(input_layer)
-    head_block1_maxpool1 = MaxPool2D(
-        pool_size=(in_spatial_size, in_spatial_size), name="head_block1_globalmaxpool1"
-    )(input_layer)
-    head_block1_maxpool1 = Flatten()(head_block1_maxpool1)
-
-    head_block1_concat1 = Concatenate(axis=channel_axis, name="head_block1_concat1")(
-        [head_block1_avgpool1, head_block1_maxpool1]
-    )
-
-    # Out layer for further use
-    out_layer = head_block1_concat1
-
-    if arcgis_model_fc._fpn:
-        # Fpn Block
-        for pyramid_size in pyramid_scheme:
-            fpn_dense = Dense(
-                pyramid_size,
-                activation="relu",
-                name=f"head_fpnblock_dense_{pyramid_size}",
-            )(out_layer)
-            fpn_bn = BatchNormalization(
-                axis=channel_axis, name=f"head_fpnblock_bn_{pyramid_size}"
-            )(fpn_dense)
-            out_layer = fpn_bn
-
-    # Final Block
-    head_final_drop1 = Dropout(0.3, name="head_final_drop1")(out_layer)
-    head_final_logits_dense1 = Dense(
-        arcgis_model_fc._data.c, name="head_final_logits_dense1"
-    )(head_final_drop1)
-
-    return head_final_logits_dense1
-
-
-def get_TFIC_post_processed_model(arcgis_model, input_normalization=True):
-    model = arcgis_model.learn.model
-    input_layer = model.input
-    model_output = model.output
-
-    if input_normalization:
-        input_layer = Input(tuple(input_layer.shape[1:]))
-        x = NormalizationLayerRGB()(input_layer)
-        model_output = model(x)
-    output_layer = tf.nn.softmax(model_output, axis=-1)
-    new_model = Model(input_layer, output_layer)
-    return new_model
-
-
-## Tensorflow specific utils end ##
-
-
 ## Funtions required for custom fastai databunch
 def add_ms_attributes(data):
     if len(data.train_ds) < 300:

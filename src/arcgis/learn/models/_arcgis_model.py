@@ -9,12 +9,11 @@ import json
 import logging
 from .._data import _raise_fastai_import_error
 from .._utils.env import (
-    HAS_TENSORFLOW,
-    raise_tensorflow_import_error,
     _LAMBDA_TEXT_CLASSIFICATION,
     is_arcgispronotebook,
     reload_IPython,
 )
+from .._utils.common import raise_unsupported_backend_error
 from warnings import warn
 import contextlib
 import io
@@ -57,8 +56,11 @@ try:
     from .._utils.evaluate_batchsize import estimate_batch_size
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
-    from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
-    from ._dofa_utils import dofa_backbone, dofa_backbones_downstream
+    from ._transformer_backbone import (
+        custom_backbone,
+        transformer_backbone_downstream,
+        wavelengths_required_models,
+    )
     from ._wavelengths import wavelength_dict
 
     # EarlyStoppingCallback should run as one
@@ -455,13 +457,13 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-
-    if hasattr(model, "_is_dofa"):
-        return model
-    if hasattr(model, "backbone") and (
-        getattr(model.backbone, "_is_prithvi", False)
-        or getattr(model.backbone, "_is_dofa", False)
-    ):
+    if (
+        hasattr(model, "backbone")
+        and (
+            getattr(model.backbone, "_is_prithvi", False)
+            or getattr(model.backbone, "_is_vitdet", False)
+        )
+    ) or getattr(model, "_is_vitdet", False):
         return model
 
     tail_name, tail = _get_tail(model)
@@ -584,9 +586,33 @@ def get_wavelengths_from_bandnames(band_names):
             wavelengths.append(float(cleaned_wavelength_dict[bandname]))
         except KeyError:
             raise Exception(
-                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. \nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.'
+                f'Band name "{cleaned2original_bandname_map[bandname]}" is not recognized and hence its wavelength cannot be inferred. This models require a list of central wavelengths corresponding to each data band (in micrometers).Please provide a value (list of floats) for the "wavelengths" keyword argument.'
             )
     return wavelengths
+
+
+def get_wavelenths_bandnames(data, in_channels, **kwargs):
+    wavelengths = kwargs.get("wavelengths", None)
+    band_names = None
+    if wavelengths is None:
+        if data._emd.get("InputRastersProps", None) is not None:
+            band_names = data._emd.get("InputRastersProps").get("BandNames")
+        elif data._emd.get("AllTilesStats", None) is not None:
+            band_names = [x.get("BandName") for x in data._emd.get("AllTilesStats")]
+        else:
+            raise Exception(
+                '\nThis backbone require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
+            )
+        wavelengths = get_wavelengths_from_bandnames(band_names)
+        assert len(wavelengths) == in_channels
+        band_names = band_names
+    else:
+        if len(wavelengths) != in_channels:
+            raise Exception(
+                'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
+            )
+
+    return wavelengths, band_names
 
 
 def get_backbone_func(backbone, data, **kwargs):
@@ -607,57 +633,39 @@ def get_backbone_func(backbone, data, **kwargs):
             bckbn = backbone.split(":")[1]
             from . import _hf_weightutils as hfwu
 
-            if "resnet" in bckbn:
+            supported_hf_backbones = {"resnet", "swin"}
+            if any(name in bckbn for name in supported_hf_backbones):
                 backbone = getattr(hfwu, bckbn)
+            else:
+                raise ValueError(f"Unsupported backbone: 'hf:{bckbn}'")
+
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
                 len(data._extract_bands) if hasattr(data, "_extract_bands") else 3
             )
+
+            wavelengths = None
+            band_names = None
+            if backbone in wavelengths_required_models:
+                wavelengths, band_names = get_wavelenths_bandnames(
+                    data, in_channels, **kwargs
+                )
+
             backbone = partial(
                 custom_backbone,
                 backbone_name=backbone,
                 img_size=int(kwargs.get("chip_size", data.chip_size)),
                 in_chans=in_channels,
                 is_fpn=kwargs.get("is_fpn", False),
-            )
-            backbone.__name__ = backbone_name
-        elif backbone in dofa_backbones_downstream:
-            backbone_name = backbone
-            wavelengths = kwargs.get("wavelengths", None)
-            band_names = None
-            if wavelengths is None:
-                if data._emd.get("InputRastersProps", None) is not None:
-                    band_names = data._emd.get("InputRastersProps").get("BandNames")
-                elif data._emd.get("AllTilesStats", None) is not None:
-                    band_names = [
-                        x.get("BandName") for x in data._emd.get("AllTilesStats")
-                    ]
-                else:
-                    raise Exception(
-                        '\nDOFA and CLAY models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value (list of floats) for the "wavelengths" keyword argument.',
-                    )
-                wavelengths = get_wavelengths_from_bandnames(band_names)
-                assert len(wavelengths) == len(data._extract_bands)
-                band_names = band_names
-            else:
-                if len(wavelengths) != len(data._extract_bands):
-                    raise Exception(
-                        'The number of wavelengths provided in the "wavelengths" keyword argument does not match the number of bands \nin the input data. Please provide a wavelength for each band in the data.',
-                    )
-
-            backbone = partial(
-                dofa_backbone,
-                backbone_name=backbone,
-                img_size=int(kwargs.get("chip_size", data.chip_size)),
-                pretrained=True,
                 wavelengths=wavelengths,
-                is_clf=kwargs.get("is_clf", False),
-                num_classes=kwargs.get("num_classes", data.c),
                 band_names=band_names,
+                is_clf=kwargs.get("is_clf", False),
+                is_plain_vit=kwargs.get("is_plain_vit", False),
+                num_classes=kwargs.get("num_classes", data.c),
             )
             backbone.__name__ = backbone_name
-
+            backbone._wavelengths = wavelengths
     else:
         backbone = backbone
     return backbone
@@ -735,6 +743,8 @@ class ArcGISModel(object):
         self._pretrained_path = kwargs.get("pretrained_path", None)
         if hasattr(self._data, "arcgis_init_kwargs"):
             self._check_data_support_with_pretrained_path()
+        if getattr(self._backbone, "_wavelengths", False):
+            kwargs["wavelengths"] = self._backbone._wavelengths
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
             if not getattr(data, "_is_empty", False) and hasattr(
@@ -792,7 +802,13 @@ class ArcGISModel(object):
                 )
 
     def _arcgis_init_callback(self):
-        if self._is_multispectral:
+        vitdet_model = False
+        if (
+            hasattr(self.learn.model, "backbone")
+            and getattr(self.learn.model.backbone, "_is_vitdet", False)
+        ) or getattr(self.learn.model, "_is_vitdet", False):
+            vitdet_model = True
+        if self._is_multispectral and not vitdet_model:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
                 next(params_iterator).requires_grad = (
@@ -820,47 +836,6 @@ class ArcGISModel(object):
         ):
             raise Exception("Can't call this function without data.")
 
-    # function for checking if tensorflow is installed otherwise raise error.
-    def _check_tf(self):
-        if not HAS_TENSORFLOW:
-            raise_tensorflow_import_error()
-
-    def _init_tensorflow(self, data, backbone):
-        self._check_tf()
-
-        from .._utils.common import get_color_array
-        from .._utils.common_tf import (
-            handle_backbone_parameter,
-            get_input_shape,
-            check_backbone_is_mobile_optimized,
-        )
-
-        # Get color Array
-        color_array = get_color_array(data.color_mapping)
-        if len(data.color_mapping) == (data.c - 1):
-            # Add Background color
-            color_array = np.concatenate(
-                [np.array([[0.0, 0.0, 0.0, 0.0]]), color_array]
-            )
-        data._multispectral_color_array = color_array
-
-        # Handle Backbone
-        self._backbone = handle_backbone_parameter(backbone)
-
-        self._backbone_mobile_optimized = check_backbone_is_mobile_optimized(
-            self._backbone
-        )
-
-        # Initialize Backbone
-        in_shape = get_input_shape(data.chip_size)
-        self._backbone_initalized = self._backbone(
-            input_shape=in_shape, include_top=False, weights="imagenet"
-        )
-
-        self._backbone_initalized.trainable = False
-        self._device = torch.device("cpu")
-        self._data = data
-
     def lr_find(self, allow_plot=True, mixed_precision=False, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
@@ -884,8 +859,12 @@ class ArcGISModel(object):
         self._check_requisites()
         temp1 = self.learn.path
         metrics = None
-        start_lr = kwargs.get("start_lr", 1e-07)
-        end_lr = kwargs.get("end_lr", 10)
+        # take slice to handule layer_gropus to take multiple lrs
+        start_lr = kwargs.get("start_lr", 1e-6)
+        end_lr = kwargs.get("end_lr", 0.1)
+        start_lr = slice(start_lr / 10, start_lr)
+        end_lr = slice(end_lr / 10, end_lr)
+        num_it = min(150, len(self.learn.data.train_dl))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             try:
@@ -896,6 +875,7 @@ class ArcGISModel(object):
                     self.learn.lr_find(
                         start_lr=start_lr,
                         end_lr=end_lr,
+                        num_it=num_it,
                         mixed_precision=mixed_precision,
                     )
                     distrib_barrier()
@@ -912,6 +892,7 @@ class ArcGISModel(object):
                         self.learn.lr_find(
                             start_lr=start_lr,
                             end_lr=end_lr,
+                            num_it=num_it,
                             mixed_precision=mixed_precision,
                         )
             except Exception as e:
@@ -1096,6 +1077,7 @@ class ArcGISModel(object):
         mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
                                 training. If set to `True`, model training will be done in
                                 mixed precision mode. Only `Pytorch` based models are supported.
+                                This feature is experimental.
                                 The default value is 'False'.
         =====================   ===========================================
         """
@@ -1106,12 +1088,24 @@ class ArcGISModel(object):
         if getattr(self, "_is_mm3d", False):
             self.learn.model.prediction = False
 
+        import platform
+
+        _is_linux = lambda: platform.system() == "Linux"
+        _is_notebook_server = lambda: os.getenv("NB_AUTH_FILE") is not None
+
+        import matplotlib
+
+        _stored_matplotlib_backend = matplotlib.get_backend()
+
+        if not _is_notebook_server() and _is_linux():
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()
 
             if lr is None:
-
                 if len(self.learn.data.train_dl) == 0:
                     print(
                         f"Warning: Your training dataloader is empty. Cannot find the optimal learning rate."
@@ -1126,9 +1120,13 @@ class ArcGISModel(object):
                 print("Finding optimum learning rate.")
 
                 lr = self.lr_find(allow_plot=False, mixed_precision=mixed_precision)
-                if self._slice_lr is True and len(self.learn.layer_groups) > 1:
-                    lr = slice(lr / 10, lr)
 
+            if (
+                not isinstance(lr, slice)
+                and self._slice_lr is True
+                and len(self.learn.layer_groups) > 1
+            ):
+                lr = slice(lr / 10, lr)
             self._learning_rate = lr
             self._model_metrics_cache = None
             if (
@@ -1154,7 +1152,7 @@ class ArcGISModel(object):
                 not (type(self).__name__) == "EfficientDet"
                 and getattr(self, "_backend", "pytorch") == "tensorflow"
             ):
-                checkpoint = False
+                raise_unsupported_backend_error("tensorflow")
 
             callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
             kwargs.pop("callbacks", None)
@@ -1247,6 +1245,9 @@ class ArcGISModel(object):
                     mixed_precision=mixed_precision,
                     **kwargs,
                 )
+            if not _is_notebook_server() and _is_linux():
+                matplotlib.use(_stored_matplotlib_backend)
+                import matplotlib.pyplot as plt
 
     def unfreeze(self):
         """
@@ -1265,7 +1266,7 @@ class ArcGISModel(object):
             raise Exception("You need to train your model to compute losses")
 
     def _create_emd_template(
-        self, path, compute_metrics=True, save_inference_file=True
+        self, path, compute_metrics=True, save_inference_file=True, **kwargs
     ):
         _emd_template = {}
 
@@ -1276,7 +1277,7 @@ class ArcGISModel(object):
             _emd_template = self._data.emd
             _emd_template["ModelFormat"] = "NCHW"
             if self._backend == "tensorflow" and self._framework == "tflite":
-                _emd_template["ModelFormat"] = "NHWC"
+                raise_unsupported_backend_error("tensorflow")
             _emd_template["ModelFile"] = path.name
             if not _emd_template.get("ModelName"):
                 _emd_template["ModelName"] = type(self).__name__
@@ -1299,7 +1300,7 @@ class ArcGISModel(object):
             backbone = self._backbone
         else:
             if self._backend == "tensorflow":
-                backbone = self._backbone._keras_api_names[-1].split(".")[-1]
+                raise_unsupported_backend_error("tensorflow")
             else:
                 if "timm" in self._backbone.__module__:
                     backbone = "timm:" + self._backbone.__name__
@@ -1314,7 +1315,7 @@ class ArcGISModel(object):
 
         _emd_template["ModelFormat"] = "NCHW"
         if self._backend == "tensorflow" and self._framework == "tflite":
-            _emd_template["ModelFormat"] = "NHWC"
+            raise_unsupported_backend_error("tensorflow")
         if getattr(self, "_data", None) is not None:
             _emd_template["MinCellSize"] = getattr(self._data, "_emd", {}).get(
                 "MinCellSize", None
@@ -1382,18 +1383,10 @@ class ArcGISModel(object):
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
 
-        if (
-            model_params.get("backbone", None) is not None
-            and model_params["backbone"] in dofa_backbones_downstream
-        ):
-            if self._model_kwargs.get("wavelengths", None) is not None:
-                _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[
-                    "wavelengths"
-                ]
-            else:
-                _emd_template["ModelParameters"]["wavelengths"] = (
-                    get_wavelengths_from_bandnames(self._data._band_names)
-                )
+        if self._model_kwargs.get("wavelengths", False):
+            _emd_template["ModelParameters"]["wavelengths"] = self._model_kwargs[
+                "wavelengths"
+            ]
 
         if compute_metrics:
             if self._model_metrics_cache == None:
@@ -1409,7 +1402,14 @@ class ArcGISModel(object):
 
         # Check if model is Multispectral and dump parameters for that
         _emd_template["IsMultispectral"] = getattr(self, "_is_multispectral", False)
-        if _emd_template.get("IsMultispectral", False):
+        # Check if data is not 8 bit RGB then don't use imagenet normalization
+        _emd_template["IsImageNetNormalization"] = not getattr(
+            self._data, "_is_non8bit_rgb", False
+        )
+        if (
+            _emd_template.get("IsMultispectral", False)
+            or not _emd_template["IsImageNetNormalization"]
+        ):
             _emd_template["Bands"] = self._data._bands
             _emd_template["ImageryType"] = self._data._imagery_type
             if getattr(self._data, "_dataset_type", None) != "ChangeDetection":
@@ -1472,13 +1472,28 @@ class ArcGISModel(object):
                 _emd_template["n_channel_rev"] = len(
                     _emd_template["NormalizationStats"]["band_min_values"]
                 )
-        if getattr(self._data, "_dataset_type", None) == "Classified_Tiles":
+        if getattr(self._data, "_dataset_type", None) in [
+            "Classified_Tiles",
+            "3DRCNet",
+        ]:
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
                     if compute_metrics:
                         _emd_template["per_class_metrics"] = (
                             self.per_class_metrics().to_json()
                         )
+
+        # adding Expmap flag to True for feature classifier
+        _is_dataset_type = getattr(self._data, "_dataset_type", None)
+        if _is_dataset_type in {"Labeled_Tiles", "Imagenet", "MultiLabeled_Tiles"}:
+            if hasattr(self, "_gradCAM"):
+                _emd_template["ExpMap"] = kwargs.get("gradcam", False)
+
+        if hasattr(self, "_model_emd"):
+            for emd_key in self._model_emd:
+                if emd_key not in _emd_template:
+                    _emd_template[emd_key] = self._model_emd[emd_key]
+
         return _emd_template
 
     @staticmethod
@@ -1670,7 +1685,7 @@ class ArcGISModel(object):
         save_inference_file=True,
         **kwargs,
     ):
-        save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
+        save_format = kwargs.get("save_format", "default")  # 'default'
         post_processed = kwargs.get("post_processed", True)  # True, False
         quantized = kwargs.get("quantized", False)  # True, False
         self._framework = framework
@@ -1727,26 +1742,15 @@ class ArcGISModel(object):
 
         script_paths = []
         onnx_paths = []
-        tflite_paths = []
         try:
             _framework = framework.lower()
             if self._backend == "tensorflow" and _framework == "tflite":
-                saved_path = self._save_tflite(
-                    name, post_processed=post_processed, quantized=quantized
-                )
+                raise_unsupported_backend_error("tensorflow")
             else:
                 if self._backend != "tensorflow" and _framework == "tflite":
-                    supported_models = [
-                        "FeatureClassifier",
-                    ]
-                    if type(self).__name__ in supported_models:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            tflite_paths = self._save_pytorch_tflite(name)
-                    else:
-                        raise Exception(
-                            "This pytorch model cannot be saved in tflite format"
-                        )
+                    raise Exception(
+                        "This pytorch model cannot be saved in tflite format"
+                    )
                 if self._backend == "pytorch" and _framework == "torchscript":
                     supported_models = [
                         "MaskRCNN",
@@ -1839,25 +1843,13 @@ class ArcGISModel(object):
                 saved_path.with_suffix(".pth"),
                 compute_metrics,
                 save_inference_file,
+                **kwargs,
             )
         if framework.lower() == "tf-onnx":
-            batch_size = kwargs.get("batch_size", 16)
-
-            with nostdout():
-                self._save_as_tfonnx(saved_path, batch_size)
-
-            self._create_tfonnx_emd_template(
-                _emd_template, saved_path.with_suffix(".onnx"), batch_size
-            )
-            os.remove(saved_path.with_suffix(".pth"))
+            raise Exception("This pytorch model cannot be saved in tf-onnx format")
 
         if self._backend != "tensorflow" and framework.lower() == "tflite":
-            if len(tflite_paths) != 0:
-                _script_save_params = {
-                    "tf": tflite_paths[0],
-                    "sm": tflite_paths[1],
-                }
-                _emd_template["TFLite"] = _script_save_params
+            raise Exception("This pytorch model cannot be saved in torchscript format")
 
         if framework.lower() == "onnx":
             if len(onnx_paths) != 0:
@@ -2063,7 +2055,7 @@ class ArcGISModel(object):
         if not _emd_template.get("ModelName"):
             _emd_template["ModelName"] = type(self).__name__
         if self._backend == "tensorflow" and self._framework == "tflite":
-            _emd_template["ModelFormat"] = "NHWC"
+            raise_unsupported_backend_error("tensorflow")
         if getattr(self, "_data", None) is not None:
             _emd_template["MinCellSize"] = getattr(self._data, "_emd", {}).get(
                 "MinCellSize", None
@@ -2088,23 +2080,6 @@ class ArcGISModel(object):
             _emd_template.update(self._model_metrics_cache)
 
         return _emd_template
-
-    def _save_tflite(self, name, post_processed=True, quantized=False):
-        if post_processed or quantized:
-            input_normalization = quantized is False
-            return self.learn._save_tflite(
-                name,
-                return_path=True,
-                model_to_save=self._get_post_processed_model(
-                    input_normalization=input_normalization
-                ),
-                quantized=quantized,
-                data=self._data,
-            )
-        return self.learn._save_tflite(name)
-
-    def _save_pytorch_tflite(self, name):
-        pass
 
     def _script(self, model, inp):
         scripted_model = torch.jit.script(model, inp)
@@ -2258,43 +2233,6 @@ class ArcGISModel(object):
 
         item.update(item_properties={"screenshots": screenshots})
 
-    def _create_tfonnx_emd_template(self, _emd_template, saved_path, batch_size):
-        _emd_template.update(self._get_tfonnx_emd_params())
-        _emd_template["BatchSize"] = batch_size
-        _emd_template["ModelFile"] = saved_path.name
-
-        return _emd_template
-
-    def _get_tfonnx_emd_params(self):
-        # Raises error if framework specified is TF-ONNX but is not supported by the model
-        raise NotImplementedError(
-            "TF-ONNX framework is currently not supported by this model."
-        )
-
-    def _save_as_tfonnx(self, saved_path, batch_size):
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                import onnx
-                from onnx_tf.backend import prepare
-        except:
-            raise Exception(
-                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/."
-            )
-
-        batch_size = int(math.sqrt(int(batch_size))) ** 2
-        dummy_input = torch.randn(
-            batch_size,
-            3,
-            self._data.chip_size,
-            self._data.chip_size,
-            device=self._device,
-            requires_grad=True,
-        )
-        torch.onnx.export(
-            self.learn.model, dummy_input, saved_path.with_suffix(".onnx")
-        )
-
     def save(
         self,
         name_or_path,
@@ -2320,16 +2258,10 @@ class ArcGISModel(object):
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
         framework               Optional string. Exports the model in the
-                                specified framework format ('PyTorch', 'tflite'
-                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                specified framework format ('PyTorch' and 'torchscript').
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
-                                ``tflite`` framework (experimental support) is
-                                supported by :class:`~arcgis.learn.SingleShotDetector`
-                                - tensorflow backend only,
-                                :class:`~arcgis.learn.FeatureClassifier`and
-                                :class:`~arcgis.learn.RetinaNet` - tensorflow
-                                backend only.``torchscript`` format is supported by
+                                ``torchscript`` format is supported by
                                 :class:`~arcgis.learn.SiamMask`,
                                 :class:`~arcgis.learn.MaskRCNN`,
                                 :class:`~arcgis.learn.SingleShotDetector`,
@@ -2343,10 +2275,6 @@ class ArcGISModel(object):
                                 set framework to ``torchscript`` and use the
                                 model files additionally generated inside
                                 'torch_scripts' folder.
-                                If framework is ``TF-ONNX`` (Only supported for
-                                :class:`~arcgis.learn.SingleShotDetector`),
-                                ``batch_size`` can be passed as an optional
-                                keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
@@ -2389,7 +2317,6 @@ class ArcGISModel(object):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
-                                Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
 

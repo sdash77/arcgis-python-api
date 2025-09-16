@@ -1,4 +1,8 @@
 "Functions for calling the Deep Learning Tools."
+
+import torchvision
+
+torchvision.disable_beta_transforms_warning()
 from . import _utils
 from ._utils.env import _LAMBDA_TEXT_CLASSIFICATION
 from arcgis.geoprocessing._support import (
@@ -64,7 +68,6 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
             WNet_cGAN,
             DETReg,
             RandLANet,
-            EfficientDet,
             SQNSeg,
             PSETAE,
             MMDetection3D,
@@ -73,6 +76,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
             ClimaX,
             PTv3Seg,
             PTv3Det,
+            Hyperspectral3DRCNet,
         )
 
         from ._object_tracker import ObjectTracker
@@ -1282,7 +1286,7 @@ def train_model(
     future=False,
     **kwargs,
 ):
-    """
+    r"""
     Function can be used to train a deep learning model using the output from the
     export_training_data function.
     It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.

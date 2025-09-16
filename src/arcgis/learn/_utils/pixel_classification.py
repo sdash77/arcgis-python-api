@@ -1,9 +1,4 @@
 import math
-from .env import ARCGIS_ENABLE_TF_BACKEND
-
-if ARCGIS_ENABLE_TF_BACKEND:
-    import tensorflow as tf
-    from .common_tf import get_channel_axis
 
 try:
     import torch
@@ -11,6 +6,7 @@ try:
     import numpy as np
     import matplotlib.pyplot as plt
     from fastai.vision import imagenet_stats
+    from .common import raise_unsupported_backend_error
 
     HAS_FASTAI = True
 except:
@@ -48,16 +44,13 @@ def analyze_pred_pixel_classification(self, activations):
         if type(activations) == list:
             activations = torch.cat(activations)
 
+        if getattr(self, "_is_edge_detection", False):
+            return activations.squeeze(1).cpu().numpy().astype(int)
+
         if not getattr(self, "_is_model_extension", False):
             if self._ignore_mapped_class != []:
                 for k in self._ignore_mapped_class:
                     activations[:, k] = activations.min() - 1
         return activations.max(dim=1)[1].cpu().numpy()
     elif self._backend == "tensorflow":
-        if type(activations) == list:
-            activations = tf.concat(activations, 0)
-        return analyze_pred_TFPC(activations).numpy()
-
-
-def analyze_pred_TFPC(activations):
-    return tf.argmax(activations, axis=get_channel_axis())
+        raise_unsupported_backend_error("tensorflow")

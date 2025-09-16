@@ -68,8 +68,8 @@ class ImageryModel(ArcGISModel):
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        path                    Required string. Path to
-                                Esri Model Definition(EMD) or DLPK file.
+        path                    Required string. Name or Path to
+                                Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required ImageryDataObject. Returned data
                                 object from :meth:`~arcgis.learn.prepare_data`  function.
@@ -112,7 +112,6 @@ class ImageryModel(ArcGISModel):
                 "imagery_model",
                 getattr(ag.learn, modelname).from_model(path, data),
             )
-        getattr(self, "imagery_model").load(path)
 
     def fit(
         self,
@@ -229,26 +228,23 @@ class ImageryModel(ArcGISModel):
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
         framework               Optional string. Exports the model in the
-                                specified framework format ('PyTorch', 'tflite'
-                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                specified framework format ('PyTorch' and 'torchscript').
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
-                                ``tflite`` framework (experimental support) is
-                                supported by :class:`~arcgis.learn.SingleShotDetector`,
-                                :class:`~arcgis.learn.FeatureClassifier` and  :class:`~arcgis.learn.RetinaNet` .
                                 ``torchscript`` format is supported by
-                                :class:`~arcgis.learn.SiamMask` .
-                                For usage of SiamMask model in ArcGIS Pro 2.8,
+                                :class:`~arcgis.learn.SiamMask`,
+                                :class:`~arcgis.learn.MaskRCNN`,
+                                :class:`~arcgis.learn.SingleShotDetector`,
+                                :class:`~arcgis.learn.YOLOv3` and
+                                :class:`~arcgis.learn.RetinaNet`.
+                                For usage of SiamMask model in ArcGIS Pro >= 2.8,
                                 load the ``PyTorch`` framework saved model
                                 and export it with ``torchscript`` framework
-                                using ArcGIS API for Python v1.8.5.
+                                using ArcGIS API for Python >= v1.8.5.
                                 For usage of SiamMask model in ArcGIS Pro 2.9,
                                 set framework to ``torchscript`` and use the
                                 model files additionally generated inside
                                 'torch_scripts' folder.
-                                If framework is ``TF-ONNX`` (Only supported for
-                                :class:`~arcgis.learn.SingleShotDetector`), ``batch_size`` can
-                                be passed as an optional keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
@@ -353,14 +349,14 @@ class ImageryModel(ArcGISModel):
         :return: `dict` if mean is False otherwise `float`
         """
         if self._modeltype is not None:
-            if self._modeltype == "ObjectDetection":
-                print("This method is not supported with Object Detection models")
-                return
-            else:
+            if self._modeltype in ["ImageClassification"]:
                 try:
                     return getattr(self, "imagery_model").mIOU()
                 except Exception as E:
                     print("Load the model first using load()")
+            else:
+                print("This method is not supported with the current model type.")
+                return
         else:
             print("Train the model first using fit()")
             return
@@ -389,14 +385,15 @@ class ImageryModel(ArcGISModel):
         :return: `dict` if mean is False otherwise `float`
         """
         if self._modeltype is not None:
-            if self._modeltype != "ObjectDetection":
-                print("This method is not supported with pixel classification model")
-                return
-            else:
+            if self._modeltype in ["ObjectDetection", "InstanceDetection"]:
                 try:
                     return getattr(self, "imagery_model").average_precision_score()
                 except Exception as E:
                     print("Load the model first using load()")
+            else:
+                print("This method is not supported with the current model type.")
+                return
+
         else:
             print("Train the model first using fit()")
             return
@@ -1043,7 +1040,7 @@ class AutoDL:
         valid_loss = np.array(metrics["val_losses"])[-1]
         name_time = time.strftime("%Y-%m-%d_%H-%M-%S")
         if model_type == "classification":
-            accuracy = np.array(metrics["metrics"])[-1][0]
+            accuracy = getattr(self, model).mIOU(mean=True)
             miou = getattr(self, model).mIOU()
             miou["Model"] = str(model)
             self._mIOU_df = pd.concat(
@@ -1062,7 +1059,7 @@ class AutoDL:
                     "Model": [model],
                     "train_loss": [train_loss],
                     "valid_loss": [valid_loss],
-                    "accuracy": [accuracy],
+                    "Mean IoU": [accuracy],
                     "dice": [dice],
                     "lr": [lr_val],
                     "training time": [t],
@@ -1203,7 +1200,7 @@ class AutoDL:
                     "Model",
                     "train_loss",
                     "valid_loss",
-                    "accuracy",
+                    "Mean IoU",
                     "dice",
                     "lr",
                     "training time",
@@ -1316,7 +1313,7 @@ class AutoDL:
         self._dataset_type = m_type
         if m_type == "classification":
             self._train_df = self._train_df.sort_values(
-                "accuracy", ascending=False
+                "Mean IoU", ascending=False
             ).reset_index(drop=True)
         if m_type == "detection":
             self._train_df = self._train_df.sort_values(
@@ -1414,7 +1411,7 @@ class AutoDL:
                         "Model": list([model] * sorted_df.shape[0]),
                         "train_loss": list(sorted_df["train_loss"]),
                         "valid_loss": list(sorted_df["valid_loss"]),
-                        "accuracy": list(sorted_df["value"]),
+                        "Mean IoU": list(sorted_df["value"]),
                         "dice": list(sorted_df["dice"]),
                         "lr": list(sorted_df["params_lr"]),
                         "training time": list(sorted_df["duration"]),
@@ -1511,7 +1508,7 @@ class AutoDL:
 
         if m_type == "classification":
             self._train_df = self._train_df.sort_values(
-                "accuracy", ascending=False
+                "Mean IoU", ascending=False
             ).reset_index(drop=True)
         if m_type == "detection":
             self._train_df = self._train_df.sort_values(
@@ -1577,7 +1574,7 @@ class AutoDL:
             if allow_plot:
                 if self._model_type == "Classified_Tiles":
                     self._display_plot(
-                        self._train_df["Model"], self._train_df["accuracy"]
+                        self._train_df["Model"], self._train_df["Mean IoU"]
                     )
                 else:
                     self._display_plot(

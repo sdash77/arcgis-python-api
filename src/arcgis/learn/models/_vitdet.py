@@ -8,14 +8,20 @@ import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from fastai.torch_core import ParameterModule
+from fastai.vision import flatten_model
 from timm.models.layers import DropPath, Mlp
 import math
 from functools import partial
 from collections import OrderedDict
 import mmengine
-from mmengine.runner.checkpoint import CheckpointLoader
-from ._mmlab_utils import load_mmlab_checkpoint
+from mmengine.runner.checkpoint import CheckpointLoader, load_state_dict
 from ._prithvi_utils import init_prithvi
+from ._dofa_utils import DOFAEmbedding, posemb_sincos_2d
+from einops import rearrange
+import numpy as np
+from ._dofa_utils import weight_download_url_clay
+import os
 
 
 def get_rel_pos(q_size, k_size, rel_pos):
@@ -135,7 +141,7 @@ def window_unpartition(windows, window_size, pad_hw, hw):
     return x
 
 
-def get_abs_pos(abs_pos, has_cls_token, hw):
+def get_abs_pos(abs_pos, has_cls_token, hw, is_plain_vit=True):
     """
     Calculate absolute positional embeddings. If needed, resize embeddings and remove cls_token
         dimension for the original embeddings.
@@ -155,16 +161,19 @@ def get_abs_pos(abs_pos, has_cls_token, hw):
     assert size * size == xy_num
 
     if size != h or size != w:
-        new_abs_pos = F.interpolate(
+        abs_pos = F.interpolate(
             abs_pos.reshape(1, size, size, -1).permute(0, 3, 1, 2),
             size=(h, w),
             mode="bicubic",
             align_corners=False,
-        )
-
-        return new_abs_pos.permute(0, 2, 3, 1)
+        ).permute(0, 2, 3, 1)
     else:
-        return abs_pos.reshape(1, h, w, -1)
+        abs_pos = abs_pos.reshape(1, h, w, -1)
+
+    if is_plain_vit:
+        return abs_pos.reshape(1, h * w, -1)
+    else:
+        return abs_pos
 
 
 def load_checkpoint_custom(filename, map_location=None, logger=None):
@@ -187,6 +196,7 @@ class Attention(nn.Module):
         dim,
         num_heads=8,
         qkv_bias=True,
+        proj_bias=True,
         use_rel_pos=False,
         rel_pos_zero_init=True,
         input_size=None,
@@ -207,7 +217,7 @@ class Attention(nn.Module):
         self.scale = head_dim**-0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.proj = nn.Linear(dim, dim)
+        self.proj = nn.Linear(dim, dim, bias=proj_bias)
 
         self.use_rel_pos = use_rel_pos
         if self.use_rel_pos:
@@ -220,6 +230,24 @@ class Attention(nn.Module):
                 nn.init.trunc_normal_(self.rel_pos_w, std=0.02)
 
     def forward(self, x):
+        if self.use_rel_pos:
+            return self.forward_2D(x)
+        elif len(x.shape) == 4:
+            return self.forward_2D(x)
+        else:
+            B, N, C = x.shape
+            qkv = (
+                self.qkv(x)
+                .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+                .permute(2, 0, 3, 1, 4)
+            )
+            q, k, v = qkv[0], qkv[1], qkv[2]
+            x = F.scaled_dot_product_attention(q, k, v, dropout_p=0.0)
+            x = rearrange(x, "b h n d -> b n (h d)")
+            x = self.proj(x)
+            return x
+
+    def forward_2D(self, x):
         B, H, W, _ = x.shape
         # qkv with shape (3, B, nHead, H * W, C)
         qkv = (
@@ -256,6 +284,7 @@ class Block(nn.Module):
         num_heads,
         mlp_ratio=4.0,
         qkv_bias=True,
+        proj_bias=True,
         drop_path=0.0,
         norm_layer=nn.LayerNorm,
         act_layer=nn.GELU,
@@ -270,6 +299,7 @@ class Block(nn.Module):
             dim,
             num_heads=num_heads,
             qkv_bias=qkv_bias,
+            proj_bias=proj_bias,
             use_rel_pos=use_rel_pos,
             rel_pos_zero_init=rel_pos_zero_init,
             input_size=input_size if window_size == 0 else (window_size, window_size),
@@ -314,18 +344,23 @@ class PatchEmbed(nn.Module):
         padding=(0, 0),
         in_chans=3,
         embed_dim=768,
+        flatten=False,
     ):
         super().__init__()
-
+        self.flatten = flatten
         self.proj = nn.Conv2d(
             in_chans, embed_dim, kernel_size=kernel_size, stride=stride, padding=padding
         )
 
     def forward(self, x):
         x = self.proj(x)
-        # B C H W -> B H W C
-        x = x.permute(0, 2, 3, 1)
-        return x
+        patch_height, patch_width = x.shape[-2:]
+        if self.flatten:
+            x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
+        else:
+            x = x.permute(0, 2, 3, 1)  # BCHW -> BHWC
+
+        return x, patch_height, patch_width
 
 
 class ViT(nn.Module):
@@ -345,6 +380,7 @@ class ViT(nn.Module):
         num_heads=12,
         mlp_ratio=4.0,
         qkv_bias=True,
+        proj_bias=True,
         drop_path_rate=0.1,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         act_layer=nn.GELU,
@@ -353,8 +389,6 @@ class ViT(nn.Module):
         rel_pos_zero_init=True,
         window_size=14,
         window_block_indexes=None,
-        pretrain_img_size=224,
-        pretrain_use_cls_token=True,
         pretrained_path=None,
         pretrained=True,
         backbone_name=None,
@@ -378,29 +412,73 @@ class ViT(nn.Module):
             rel_pos_zero_init (bool): If True, zero initialize relative positional parameters.
             window_size (int): Window size for window attention blocks.
             window_block_indexes (list): Indexes for blocks using window attention.
-            pretrain_img_size (int): input image size for pretraining models.
-            pretrain_use_cls_token (bool): If True, pretrainig models use class token.
         """
         super().__init__()
-        self.pretrain_use_cls_token = pretrain_use_cls_token
+        self._is_vitdet = True
+        self.is_plain_vit = kwargs.get("is_plain_vit", False)
+        self.is_clf = kwargs.get("is_clf", False)
+        self.patch_size = patch_size
+        self.backbone_name = backbone_name
+        self.grid_size = img_size // patch_size
+        self.num_tokens = 1 if self.is_clf else 0
+        self.in_chans = in_chans
+        if self.is_plain_vit:
+            # to keep plain vit
+            window_block_indexes = []
+            use_rel_pos = False
         if window_block_indexes is None:
             # 2, 5, 8 11 for global attention
             window_block_indexes = [0, 1, 3, 4, 6, 7, 9, 10]
 
-        self.patch_embed = PatchEmbed(
-            kernel_size=(patch_size, patch_size),
-            stride=(patch_size, patch_size),
-            in_chans=in_chans,
-            embed_dim=embed_dim,
-        )
+        self.qa_idx = None
+        self._band_names = kwargs.get("band_names", None)
+        self.wavelengths = kwargs.get("wavelengths", None)
+
+        if self._band_names is not None:
+            cleaned_bandnames = [
+                band_name.lower().replace("_", "").replace(" ", "")
+                for band_name in self._band_names
+            ]
+            if "qa" in cleaned_bandnames:
+                self.qa_idx = cleaned_bandnames.index("qa")
+                self.wavelengths = (
+                    self.wavelengths[: self.qa_idx]
+                    + self.wavelengths[self.qa_idx + 1 :]
+                )
+
+        if "dofa" in backbone_name:
+            self.patch_embed = DOFAEmbedding(
+                dynamic_embed_dim=128,
+                kernel_size=patch_size,
+                embed_dim=embed_dim,
+                wavelengths=self.wavelengths,
+                flatten=self.is_plain_vit,
+            )
+        elif "clay" in backbone_name:
+            self.patch_embed = DOFAEmbedding(
+                dynamic_embed_dim=128,
+                kernel_size=patch_size,
+                embed_dim=embed_dim,
+                wavelengths=self.wavelengths,
+                flatten=self.is_plain_vit,
+                batch_first=True,
+                weight_scaler=0.02,
+                bias_scaler=1,
+                wavelength_scaler=1,
+                fc_activation="gelu",
+            )
+        else:
+            self.patch_embed = PatchEmbed(
+                kernel_size=(patch_size, patch_size),
+                stride=(patch_size, patch_size),
+                in_chans=in_chans,
+                embed_dim=embed_dim,
+                flatten=self.is_plain_vit,
+            )
 
         if use_abs_pos:
-            # Initialize absolute positional embedding with pretrain image size.
-            num_patches = (pretrain_img_size // patch_size) * (
-                pretrain_img_size // patch_size
-            )
-            num_positions = (num_patches + 1) if pretrain_use_cls_token else num_patches
-            self.pos_embed = nn.Parameter(torch.zeros(1, num_positions, embed_dim))
+            num_patches = (self.grid_size) ** 2 + self.num_tokens
+            self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
         else:
             self.pos_embed = None
 
@@ -414,6 +492,7 @@ class ViT(nn.Module):
                     num_heads=num_heads,
                     mlp_ratio=mlp_ratio,
                     qkv_bias=qkv_bias,
+                    proj_bias=proj_bias,
                     drop_path=dpr[i],
                     norm_layer=norm_layer,
                     act_layer=act_layer,
@@ -426,6 +505,11 @@ class ViT(nn.Module):
             ]
         )
 
+        if self.is_clf:
+            self.norm = norm_layer(embed_dim)
+            self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+            self.head = nn.Linear(embed_dim, kwargs.get("num_classes"))
+
         # last layer output shape
         self.output_shape = dict(channels=embed_dim, stride=patch_size)
         if self.pos_embed is not None:
@@ -435,11 +519,54 @@ class ViT(nn.Module):
             logging.disable(logging.WARNING)
             if backbone_name == "prithvi":
                 init_prithvi(self, pretrained_path)
+            elif backbone_name == "clay_large":
+                temp_path = weight_download_url_clay("2363f050d6a846be959fc25473c7d3e8")
+                clay_state_dict = torch.load(
+                    os.path.join(temp_path, "clay-v1.5_encoder.pth")
+                )
+                # intialize patch_embeding
+                pos_embed = posemb_sincos_2d(
+                    self.grid_size, self.grid_size, embed_dim, cls_token=self.is_clf
+                )
+                if not "pos_embed" in clay_state_dict.keys():
+                    clay_state_dict["pos_embed"] = pos_embed.unsqueeze(0)
+                load_state_dict(self, clay_state_dict, False, logging.getLogger())
+
             else:
-                load_mmlab_checkpoint(self, pretrained_path)
+                self._init_plain_pretrained(pretrained_path)
             logging.disable(0)
         else:
             self.apply(self._init_weights)
+
+    def _init_plain_pretrained(self, pretrained_path):
+        state_dict = load_checkpoint_custom(
+            pretrained_path,
+            map_location=torch.device("cpu"),
+            logger=logging.getLogger(),
+        )
+        for k, v in state_dict.items():
+            if k == "pos_embed" and v.shape != self.pos_embed.shape:
+                # get feature size(height, width)
+                pretrained_grid_size = int(np.sqrt(v.shape[1]))
+                # get number of tokens
+                num_tokens = v.shape[1] - pretrained_grid_size**2
+                posemb_tok, posemb_grid = v[:, :num_tokens], v[0, num_tokens:]
+                posemb_grid = posemb_grid.reshape(
+                    1, pretrained_grid_size, pretrained_grid_size, -1
+                ).permute(0, 3, 1, 2)
+                posemb_grid = F.interpolate(
+                    posemb_grid,
+                    size=(self.grid_size, self.grid_size),
+                    mode="bilinear",
+                )
+                posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(
+                    1, self.grid_size**2, -1
+                )
+                posemb_tok = posemb_tok[:, : self.num_tokens, :]
+                posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
+                state_dict[k] = posemb
+
+        load_state_dict(self, state_dict, False, logging.getLogger())
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -450,17 +577,92 @@ class ViT(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
 
+    def _freeze(self):
+        pretrained_layers, random_layers = [], []
+
+        if self.pos_embed is not None:
+            pretrained_layers.append(ParameterModule(self.pos_embed))
+
+        if self.is_clf:
+            if "clay" in self.backbone_name:
+                random_layers.append(ParameterModule(self.cls_token))
+            else:
+                pretrained_layers.append(ParameterModule(self.cls_token))
+            random_layers.append(self.norm)
+
+        if (
+            isinstance(self.patch_embed, DOFAEmbedding)
+            or (self.in_chans == 3 and "prithvi" not in self.backbone_name)
+            or (self.in_chans == 6 and "prithvi" in self.backbone_name)
+        ):
+            # not needed to train
+            for layer in flatten_model(self.patch_embed):
+                if not isinstance(layer, nn.LayerNorm):
+                    for p in layer.parameters():
+                        p.requires_grad = False
+                pretrained_layers.append(layer)
+        else:
+            if self.in_chans < 7 and "prithvi" in self.backbone_name:
+                pretrained_layers.extend(flatten_model(self.patch_embed))
+            else:
+                # need to train with high lr
+                random_layers.extend(flatten_model(self.patch_embed))
+
+        # freeze first half of backbone blocks
+        freeze_depth = len(flatten_model(self.blocks[: len(self.blocks) // 2]))
+
+        for idx, layer in enumerate(flatten_model(self.blocks)):
+            if isinstance(layer, ParameterModule):
+                random_layers.append(layer)
+            else:
+                if idx < freeze_depth:
+                    if not isinstance(layer, nn.LayerNorm):
+                        for p in layer.parameters():
+                            p.requires_grad = False
+                pretrained_layers.append(layer)
+
+        return pretrained_layers, random_layers
+
     def forward(self, x):
-        x = self.patch_embed(x)
+        if self.qa_idx is not None:
+            x = torch.cat([x[:, : self.qa_idx], x[:, self.qa_idx + 1 :]], dim=1)
+        if x.shape[-2] < self.patch_size or x.shape[-1] < self.patch_size:
+            h = max(x.shape[-2], self.patch_size * 2)
+            w = max(x.shape[-1], self.patch_size * 2)
+            x = F.interpolate(x, (h, w), mode="bilinear", align_corners=False)
+        x, patch_height, patch_width = self.patch_embed(x)
+
         if self.pos_embed is not None:
             x = x + get_abs_pos(
-                self.pos_embed, self.pretrain_use_cls_token, (x.shape[1], x.shape[2])
+                self.pos_embed,
+                self.is_clf,
+                (patch_height, patch_width),
+                self.is_plain_vit,
             )
 
-        for blk in self.blocks:
-            x = blk(x)
+        if self.is_clf:
+            cls_token = self.cls_token + self.pos_embed[:, :1, :]
+            cls_tokens = cls_token.expand(x.shape[0], -1, -1)
+            x = torch.cat((cls_tokens, x), dim=1)
 
-        x = x.permute(0, 3, 1, 2)
+        no_of_block = len(self.blocks)
+        for idx, blk in enumerate(self.blocks):
+            x = blk(x)
+            if self.is_clf and (idx == no_of_block - 3):
+                x_grad_cam = x
+
+        if self.is_clf:
+            x = self.norm(x)
+            return x_grad_cam, x[:, 0]
+
+        if self.is_plain_vit:
+            batch_size, _, hidden_dim = x.shape
+            x = x.permute(0, 2, 1).reshape(
+                batch_size, hidden_dim, patch_height, patch_width
+            )
+        else:
+            x = x.permute(0, 3, 1, 2)
+
         return x
 
 
@@ -505,7 +707,14 @@ class ViTUpsample(nn.Module):
             nn.Conv2d(in_chans, in_chans, kernel_size=3, padding=1, bias=False),
             LayerNorm2D(in_chans),
         ]
+        if getattr(backbone, "backbone_name", "") == "clay_large":
+            upsameple_layers = []
         self.upsample = nn.Sequential(*upsameple_layers)
+
+    def _freeze(self):
+        pretrained_layers, random_layers = self.backbone._freeze()
+        random_layers.extend(flatten_model(self.upsample))
+        return pretrained_layers, random_layers
 
     def forward(self, x):
         return self.upsample(self.backbone(x))
@@ -579,6 +788,12 @@ class SimpleFeaturePyramid(nn.Module):
         if top_block is not None:
             self.stage_names.append("pool")
 
+    def _freeze(self):
+        pretrained_layers, random_layers = self.backbone._freeze()
+        random_layers.extend(flatten_model(self.fpn_stages))
+        random_layers.extend(flatten_model(self.top_block))
+        return pretrained_layers, random_layers
+
     def forward(self, x):
         """
         Args:
@@ -606,9 +821,16 @@ class BackboneFastai(nn.Module):
             self.backbone_fpn = SimpleFeaturePyramid(backbone=backbone)
         else:
             self.backbone_fpn = ViTUpsample(backbone=backbone)
+        if hasattr(backbone, "_is_vitdet"):
+            self.backbone_fpn._is_vitdet = backbone._is_vitdet
+            self._is_vitdet = backbone._is_vitdet
 
         # create dummy layer to set cut=1 in create_body of fastai
         self.dummy = nn.MaxPool2d(kernel_size=2)
+
+    def _freeze(self):
+        pretrained_layers, random_layers = self.backbone_fpn._freeze()
+        return pretrained_layers, random_layers
 
     def forward(self, x):
         return self.backbone_fpn(x)

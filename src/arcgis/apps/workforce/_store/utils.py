@@ -1,6 +1,7 @@
 """ Utility functions internally used by the store.
 """
 
+from __future__ import annotations
 from arcgis.features import FeatureSet
 from arcgis.apps import workforce
 

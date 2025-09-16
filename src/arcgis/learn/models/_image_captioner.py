@@ -50,8 +50,7 @@ class ImageCaptioner(ArcGISModel):
     ---------------------   -------------------------------------------
     decoder_params          Optional dictionary. The keys of the dictionary are
                             `embed_size`, `hidden_size`, `attention_size`,
-                            `teacher_forcing`, `dropout` and
-                            `pretrained_embeddings`.
+                            `teacher_forcing`, `dropout`.
 
                             Default values:
 
@@ -61,7 +60,6 @@ class ImageCaptioner(ArcGISModel):
                                 |                     'attention_size':100,
                                 |                     'teacher_forcing':1,
                                 |                     'dropout':0.1,
-                                |                     'pretrained_emb':False
                                 |                 }
 
                             Parameter Explanation:
@@ -71,7 +69,6 @@ class ImageCaptioner(ArcGISModel):
                             - 'attention_size': Size of intermediate attention layer.
                             - 'teacher_forcing': Probability of teacher forcing.
                             - 'dropout': Dropout probability.
-                            - 'pretrained_emb': If true, it will use fasttext embeddings.
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.ImageCaptioner`  Object
@@ -151,7 +148,10 @@ class ImageCaptioner(ArcGISModel):
             vocab_path = emd_path.parent / "vocab"
             data.vocab = Vocab.load(vocab_path)  # load vocab.
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def __str__(self):
         return self.__repr__()
@@ -304,11 +304,8 @@ class ImageCaptioner(ArcGISModel):
         framework               Optional string. Defines the framework of the
                                 model.
                                 (Only supported by :class:`~arcgis.learn.SingleShotDetector`.)
-                                If framework used is ``TF-ONNX``,
-                                ``batch_size`` can be passed as an optional
-                                keyword argument.
 
-                                Framework choice: 'PyTorch' and 'TF-ONNX'
+                                Framework choice: 'PyTorch'
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an
                                 item.
@@ -347,7 +344,6 @@ class ImageCaptioner(ArcGISModel):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
-                                Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
         """

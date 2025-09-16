@@ -22,7 +22,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 
 _log = logging.getLogger(__name__)
 
@@ -1361,7 +1361,7 @@ class Portal(object):
             username          string, name of user
             ================  ========================================================
         """
-        return self.con.post("community/users/" + username, self._postdata())
+        return self.con.get("community/users/" + username, self._postdata())
 
     def get_item(self, itemid: str):
         """Returns the item information for the specified item.
@@ -2688,7 +2688,7 @@ class Portal(object):
         # If we've never retrieved the version before, or the caller is
         # forcing a check of the server, then check the server
         if not self._version or force:
-            resp = self.con.post("", self._postdata())
+            resp = self.con.get("", self._postdata())
             if not resp:
                 old_resturl = _normalize_url(self.url) + "sharing/"
                 resp = self.con.post(old_resturl, self._postdata(), ssl=True)

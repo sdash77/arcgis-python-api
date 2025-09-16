@@ -583,7 +583,8 @@ class YOLOLayer(nn.Module):
             target[..., np.r_[0:4, 5:n_ch]] *= tgt_mask
             target[..., 2:4] *= tgt_scale
 
-            with torch.autocast(device_type="cuda", enabled=False):
+            _output_device_type = output.device.type
+            if _output_device_type == "cpu":
                 bceloss = nn.BCELoss(
                     weight=(tgt_scale * tgt_scale).float(), reduction="sum"
                 )  # weighted BCEloss
@@ -593,21 +594,48 @@ class YOLOLayer(nn.Module):
                 loss_cls = self.bce_loss(
                     output[..., 5:].float(), target[..., 5:].float()
                 )
+                loss_wh = self.l2_loss(output[..., 2:4], target[..., 2:4]) / 2
+                loss_l2 = self.l2_loss(output, target)
 
-            loss_wh = self.l2_loss(output[..., 2:4], target[..., 2:4]) / 2
-            loss_l2 = self.l2_loss(output, target)
+                loss = (loss_xy + loss_wh + loss_obj + loss_cls).to(torch.float)
 
-            loss = (loss_xy + loss_wh + loss_obj + loss_cls).to(torch.float)
+                return (
+                    loss,
+                    pred_train.view(batchsize, -1, n_ch).data,
+                    loss_xy,
+                    loss_wh,
+                    loss_obj,
+                    loss_cls,
+                    loss_l2,
+                )
+            else:
+                with torch.autocast(device_type=_output_device_type, enabled=False):
+                    bceloss = nn.BCELoss(
+                        weight=(tgt_scale * tgt_scale).float(), reduction="sum"
+                    )  # weighted BCEloss
 
-            return (
-                loss,
-                pred_train.view(batchsize, -1, n_ch).data,
-                loss_xy,
-                loss_wh,
-                loss_obj,
-                loss_cls,
-                loss_l2,
-            )
+                    loss_xy = bceloss(output[..., :2].float(), target[..., :2].float())
+                    loss_obj = self.bce_loss(
+                        output[..., 4].float(), target[..., 4].float()
+                    )
+                    loss_cls = self.bce_loss(
+                        output[..., 5:].float(), target[..., 5:].float()
+                    )
+
+                loss_wh = self.l2_loss(output[..., 2:4], target[..., 2:4]) / 2
+                loss_l2 = self.l2_loss(output, target)
+
+                loss = (loss_xy + loss_wh + loss_obj + loss_cls).to(torch.float)
+
+                return (
+                    loss,
+                    pred_train.view(batchsize, -1, n_ch).data,
+                    loss_xy,
+                    loss_wh,
+                    loss_obj,
+                    loss_cls,
+                    loss_l2,
+                )
 
 
 class YOLOv3_Loss(nn.Module):

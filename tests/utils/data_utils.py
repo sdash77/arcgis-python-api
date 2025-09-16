@@ -1,9 +1,9 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 from arcgis import GIS, features
-from arcgis.gis import ItemProperties, Item
+from arcgis.gis import ItemProperties, Item, Folder
 from integration.config import INTEGRATION_TEST_ITEM_TAG
 
 
@@ -16,8 +16,10 @@ def publish_test_item(
     override_capabilities: Optional[dict] = None,
     source_item: Optional[Item] = None,
     target_url: Optional[str] = None,
+    folder: Optional[str | Folder] = None,
 ) -> Item:
     """
+    Publish an item to portal with specific integration test tags and capabilities.
 
     :param gis: GIS: The target GIS instance
     :param layer_name: str: The name of the target feature service
@@ -32,31 +34,38 @@ def publish_test_item(
     """
     try:
         # Add the item to the portal
-        source_item = add_source_item(gis, layer_name, item_type, source_data_path, target_url)
+        source_item = add_source_item(
+            gis, layer_name, item_type, source_data_path, target_url, folder
+        )
 
         # Source item is good, try publishing
-        feature_layer_item = source_item.publish(
+        portal_item = source_item.publish(
             {"name": layer_name, "tags": INTEGRATION_TEST_ITEM_TAG}
         )
-        if not feature_layer_item:
+        if not portal_item:
             raise Exception(f"Could not update publish {layer_name}")
-        if prep_for_editing:
-            is_prepped_for_editing = prep_test_item(
-                feature_layer_item, override_capabilities
-            )
+
+        if prep_for_editing and portal_item.type == "Feature Service":
+            is_prepped_for_editing = prep_test_item(portal_item, override_capabilities)
             if not is_prepped_for_editing:
                 raise Exception("Could not update editing capabilities")
-        return feature_layer_item
+        return portal_item
 
     except Exception as ex:
-        # If publishing fails, don't leave the source item behind
+        # If publishing fails, try not to leave the source item behind
         if source_item:
             source_item.delete(permanent=True)
         raise Exception("Failed to add necessary item file to portal.", ex)
 
 
-def add_source_item(gis: GIS, layer_name: str, item_type: ItemTypeEnum, source_data_path: str, target_url: Optional[str] = None):
-    source_item = None
+def add_source_item(
+    gis: GIS,
+    layer_name: str,
+    item_type: ItemTypeEnum,
+    source_data_path: str,
+    target_url: Optional[str] = None,
+    folder: Optional[str | Folder] = None,
+):
     try:
         ip = ItemProperties(
             title=layer_name,
@@ -67,14 +76,17 @@ def add_source_item(gis: GIS, layer_name: str, item_type: ItemTypeEnum, source_d
 
         if target_url:
             ip.url = target_url
-        root_folder = gis.content.folders.get()
-        source_item = root_folder.add(
+        if not folder:
+            folder = gis.content.folders.get()
+        elif isinstance(folder, str):
+            folder = gis.content.folders._get_or_create(folder)
+        source_item = folder.add(
             item_properties=ip,
             file=source_data_path,
         ).result()
         return source_item
     except Exception as ex:
-        raise Exception("Failed to add necessary item file to portal.")
+        raise Exception(f"Failed to add necessary item file to portal. {ex}")
 
 
 def prep_test_item(feature_layer, capabilities):
@@ -114,6 +126,18 @@ def cleanup_published_items(items: list[Item]) -> None:
             item.delete(permanent=True)
         except Exception as ex:
             print("Failed to delete item:", item, ex)
+
+
+def cleanup_notebook_files(nb_dataaccess, items: List[str]):
+    for filename in items:
+        try:
+            file_obj = next(
+                (f for f in nb_dataaccess.files if f.properties.name == filename), None
+            )
+            if file_obj:
+                file_obj.delete()
+        except Exception as ex:
+            print("Failed to delete notebook file:", filename)
 
 
 class ServerTypeEnum(Enum):

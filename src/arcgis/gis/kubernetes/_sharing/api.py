@@ -24,7 +24,7 @@ from arcgis.gis._impl._con import (
 from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 
 _log = logging.getLogger(__name__)
 
@@ -254,10 +254,10 @@ class KbertnetesPy(object):
         # If we've never retrieved the version before, or the caller is
         # forcing a check of the server, then check the server
         if not self._version or force:
-            resp = self.con.post("", self._postdata())
+            resp = self.con.get("", self._postdata())
             if not resp:
                 old_resturl = _normalize_url(self.url) + "sharing/"
-                resp = self.con.post(old_resturl, self._postdata(), ssl=True)
+                resp = self.con.get(old_resturl, self._postdata(), ssl=True)
                 if resp:
                     _log.warning("Portal is pre-1.6.2; some things may not work")
                     self._is_pre_162 = True
@@ -1298,9 +1298,9 @@ class KbertnetesPy(object):
             username          string, name of user
             ================  ========================================================
         """
-        res = self.con.post("community/users/" + username, {"f": "json"})
+        res = self.con.get("community/users/" + username, {"f": "json"})
         res2 = self.con.get(
-            "/community/self", {"f": "json", "returnUserLicensedItems": True}
+            "community/self", {"f": "json", "returnUserLicensedItems": True}
         )
         res2.update(res)
         return res2
@@ -2024,7 +2024,9 @@ class KbertnetesPy(object):
                 metadata = request.urlretrieve(metadata)[0]
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
-            if _is_http_url(thumbnail):
+            if isinstance(thumbnail, io.BytesIO):
+                files.append(("thumbnail", thumbnail, "thumbnail.png"))
+            elif _is_http_url(thumbnail):
                 # find file ext from url
                 file_ext = find_puremagic_ext(thumbnail)
                 # download file
@@ -2034,7 +2036,9 @@ class KbertnetesPy(object):
                     new_thumbnail = thumbnail + "." + file_ext
                     os.rename(thumbnail, new_thumbnail)
                     thumbnail = new_thumbnail
-            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+                files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+            else:
+                files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
                 # find file ext from url

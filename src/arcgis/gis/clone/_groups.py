@@ -23,9 +23,33 @@ _logger = logging.getLogger()
 ###########################################################################
 class CloningJob:
     """
-    A Single Group Cloning Job
+    This class was not designed to be initialized directly, but rather instances
+    are returned by the :meth:`~arcgis.gis.GroupManager.clone` method on
+    a :class:`~arcgis.gis.GroupManager` object.
 
-    This class should not be created by users.
+    .. code-block:: python
+
+        # Usage Example: Cloning groups from one organization deployment to
+                         another
+
+        >>> from arcgis.gis import GIS
+        >>> source_gis = GIS(profile="your_online_admin_profile")
+        >>> target_gis = GIS(profile="your_enterprise_admin_profile")
+
+        >>> source_groups = source_gis.groups.search("Research *")
+        >>> source_groups
+
+        [<Group title:"Water Research a4" owner:gis_user>,
+        <Group title:"Research tests" owner:gis_user>,
+        <Group title:"Research items" owner:gis_user>]
+
+        >>> target_clone_jobs = target_gis.groups.clone(groups=[source_groups])
+        >>> target_clone_jobs
+
+        [< Group Cloning Job: True >,
+         < Group Cloning Job: True >,
+         < Group Cloning Job: True >]
+
     """
 
     _future: concurrent.futures.Future
@@ -47,29 +71,41 @@ class CloningJob:
     # ---------------------------------------------------------------------
     @property
     def status(self) -> bool:
-        """checks if the job completed"""
+        """
+        Returns the current state of the :class:`~arcgis.gis.clone.CloningJob`
+        job.
+        """
         return self._future.done()
 
     # ---------------------------------------------------------------------
     def cancel(self) -> bool:
-        """checks if the job completed"""
+        """
+        Cancels the :class:`~arcgis.gis.clone.CloningJob` job.
+        """
         return self._future.cancel()
 
     # ---------------------------------------------------------------------
     def result(self) -> Group:
-        """returns a group"""
+        """
+        Returns a :class:`~arcgis.gis.Group` object if successful or an
+        exception.
+        """
         return self._future.result()
 
     # ---------------------------------------------------------------------
     @property
     def running(self) -> bool:
-        """checks if the job was cancelled"""
+        """Returns whether a :class:`~arcgis.gis.clone.CloningJob` is currently
+        in the running state.
+        """
         return self._future.running()
 
     # ---------------------------------------------------------------------
     @property
     def cancelled(self) -> bool:
-        """checks if the job was cancelled"""
+        """Returns boolean value indicating whether the status of the
+        :class:`~arcgis.gis.clone.CloningJob` is cancelled.
+        """
         return self._future.cancelled()
 
 
@@ -162,7 +198,7 @@ class GroupCloner(BaseCloneGroup):
             tempfile.gettempdir(), uuid.uuid4().hex[:5]
         )  #  this is where we store the information on disk
         os.makedirs(
-            save_folder, exist_ok=True
+            working_folder, exist_ok=True
         )  # this ensures the save location of the cloner file exists
         group_json_file: str = os.path.join(working_folder, "group_def.json")
         fp: str = os.path.join(save_folder, file_name)
@@ -374,7 +410,7 @@ class GroupCloner(BaseCloneGroup):
 
         """
         self._tracker: dict[str, Any] = {}
-        ## 1). Check Existance and setup project
+        ## 1). Check Existence and setup project
         ##
         if offline:
             params = {

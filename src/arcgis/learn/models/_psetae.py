@@ -105,6 +105,7 @@ class PSETAE(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
         self._code = imagets_classifier_prf
+        self._backbone = None
 
         def __str__(self):
             return self.__repr__()
@@ -192,8 +193,9 @@ class PSETAE(ArcGISModel):
         chip_size = emd["ImageHeight"]
         kwargs = emd.get("Kwargs", {})
 
-        if "backbone" in kwargs.keys():
+        if "backbone" in kwargs or "backend" in kwargs:
             kwargs.pop("backbone")
+            kwargs.pop("backend")
 
         if data is None:
             data = _EmptyData(
@@ -212,7 +214,11 @@ class PSETAE(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
-        return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
+
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
+        model_obj._model_emd = emd
+
+        return model_obj
 
     @property
     def _model_metrics(self):
@@ -236,7 +242,7 @@ class PSETAE(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
-        =====================   ===========================================
+        ---------------------   -------------------------------------------
         total_sample_size       Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================

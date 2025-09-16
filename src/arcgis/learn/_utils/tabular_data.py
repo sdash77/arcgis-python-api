@@ -9,6 +9,7 @@ import traceback
 
 import arcgis
 from arcgis.features import FeatureLayer
+from arcgis.features import FeatureSet
 
 try:
     from fastai.tabular import TabularList
@@ -73,6 +74,7 @@ class TabularDataObject(object):
     _text_variables = []
     _image_variables = []
     dependent_variables = []
+    _fairness_encoder = None
 
     @classmethod
     def prepare_data_for_layer_learner(
@@ -82,7 +84,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         procs=None,
         val_split_pct=0.1,
@@ -136,6 +138,7 @@ class TabularDataObject(object):
         ]
         tabular_data._text_variables = tabular_data._field_mapping["text_variables"]
         tabular_data._image_variables = tabular_data._field_mapping["image_variables"]
+        tabular_data._location_field = tabular_data._field_mapping["location_field"]
         tabular_data._embedding_variables = tabular_data._field_mapping[
             "embed_variables"
         ]
@@ -333,6 +336,7 @@ class TabularDataObject(object):
             tabular_data._is_classification = True
 
         tabular_data.path = Path(os.getcwd())
+        tabular_data._use_loc_embeddings = kwargs.get("use_loc_embeddings", False)
         return tabular_data
 
     @staticmethod
@@ -1284,7 +1288,10 @@ class TabularDataObject(object):
         # Check whether the index is timestamp
         sample_ticks = False
         index_data_copy = self._index_data
-        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
+        if not (
+            pd.api.types.is_datetime64_any_dtype(index_data_copy)
+            or pd.api.types.is_timedelta64_dtype(index_data_copy)
+        ):
             # Try to convert the datatype to timestamp
             warnings.warn("Index field is not timestamp. Converting it to timestamp.")
             try:
@@ -1391,7 +1398,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         index_field=None,
         **kwargs,
@@ -1535,12 +1542,71 @@ class TabularDataObject(object):
         )
 
         # Vectorize consumes a lot of memory. Refer bug 11894. Alternative is to use applymap as below.
-        col_length = dataframe.astype(str).applymap(len).max(axis=0)
+        # col_length = dataframe.astype(str).applymap(len).max(axis=0)
+        col_length = {}
+        for col_name in dataframe.columns:
+            try:
+                # Convert only the current Series (column) to string, then calculate lengths
+                # .str.len() is more optimized than .apply(len) for string Series
+                current_col_max_len = dataframe[col_name].astype(str).str.len().max()
+                col_length[col_name] = current_col_max_len
+            except MemoryError as e:
+                # Fallback if a single column's string conversion is still too large
+                # This iterates item by item, which is very slow but memory-safe for problematic columns
+                max_len_for_problem_col = 0
+                for item in dataframe[col_name]:
+                    try:
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, len(str(item))
+                        )
+                    except Exception as item_e:
+                        # Decide how to handle unprocessable items (e.g., skip, or assign a default length)
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, 0
+                        )  # Assume length 0 if error
+                col_length[col_name] = max_len_for_problem_col
+            except Exception as e:
+                # Generic fallback for other errors
+                max_len_for_problem_col = 0
+                for item in dataframe[col_name]:
+                    try:
+                        max_len_for_problem_col = max(
+                            max_len_for_problem_col, len(str(item))
+                        )
+                    except Exception:  # Catch all if above fails
+                        max_len_for_problem_col = max(max_len_for_problem_col, 0)
+                col_length[col_name] = max_len_for_problem_col
 
         unique_values = {}
+        use_loc_embeddings = kwargs.get("use_loc_embeddings", False)
+        location_values = kwargs.get("location_column", [])
+        if use_loc_embeddings:
+            if len(location_values) > 2:
+                raise Exception("Exactly two fields are required")
+            elif len(location_values) == 0:
+                location_values = ["SHAPE"]
+
+            location_field_signature = []
+
+            for i in location_values:
+                if i in dataframe.columns:
+                    location_field_signature.append(True)
+                else:
+                    location_field_signature.append(False)
+            if not (
+                len(location_values)
+                and len(location_field_signature)
+                and all(location_field_signature)
+            ):
+                raise Exception(
+                    f"Provided location field '{location_values}' or the default value 'SHAPE' does not exist in the dataset. "
+                    "Either disable the 'use_loc_embeddings' option or specify a valid location field."
+                )
+
         for i in dataframe.columns:
             if i != "SHAPE":
                 unique_values[i] = len(dataframe[i].unique())
+
         total_rows = dataframe.count().max()
         for col in categorical_variables:
             if unique_values[col] / total_rows > 0.5 and col_length[col] > 200:
@@ -1555,10 +1621,15 @@ class TabularDataObject(object):
                 image_variables.append(col)
             else:
                 pass
+
         new_embd_cols = []
-        if len(text_variables + image_variables) > 0:
+        if len(text_variables + image_variables + location_values) > 0:
             dataframe, new_embd_cols = _extract_embeddings(
-                text_variables, image_variables, dataframe
+                text_variables,
+                image_variables,
+                [location_values],
+                dataframe,
+                kwargs.get("is_old_dlpk", False),
             )
             # continuous_variables = continuous_variables + new_embd_cols
             # feature_field_variables = feature_field_variables + new_embd_cols
@@ -1576,7 +1647,12 @@ class TabularDataObject(object):
                 if h3_field in dataframe_columns:
                     categorical_variables.append(h3_field)
 
-        fields_to_keep = continuous_variables + categorical_variables + new_embd_cols
+        fields_to_keep = (
+            continuous_variables
+            + categorical_variables
+            + new_embd_cols
+            + location_values
+        )
         if isinstance(dependent_variable, str):
             dependent_variable = [dependent_variable]
 
@@ -1649,6 +1725,7 @@ class TabularDataObject(object):
                 ),
                 "text_variables": text_variables if text_variables else [],
                 "image_variables": image_variables if image_variables else [],
+                "location_field": location_values if location_values else [],
                 "embed_variables": new_embd_cols if new_embd_cols else [],
                 "index_data": index_data,
                 "feature_field_variables": (
@@ -1806,7 +1883,7 @@ class TabularDataObject(object):
                                 )
                                 value = raster_value[0][0]
                             except:
-                                value = [np.NaN]
+                                value = [np.nan]
                             for i in range(len(value)):
                                 if i == 0:
                                     rasters_data[raster.name].append(value[i])
@@ -2232,6 +2309,8 @@ class TabularDataObject(object):
         text_variables=None,
         image_variables=None,
         embedding_variables=None,
+        use_loc_embeddings=False,
+        location_field=None,
     ):
         class_object = cls()
         class_object._dependent_variable = dependent_variable
@@ -2244,7 +2323,8 @@ class TabularDataObject(object):
         class_object._is_empty = True
         class_object._procs = procs
         class_object.path = Path(os.path.abspath("."))
-
+        class_object._location_field = location_field
+        class_object._use_loc_embeddings = use_loc_embeddings
         return class_object
 
 
@@ -2515,12 +2595,20 @@ def show_local_interpretation(
                     explainer.expected_value, shap_values, processed_df, matplotlib=True
                 )
             else:
-                shap.plots.force(
-                    explainer.expected_value[0],
-                    shap_values[0][:, 0],
-                    processed_df,
-                    matplotlib=True,
-                )
+                try:
+                    shap.plots.force(
+                        explainer.expected_value[0],
+                        shap_values[0],
+                        processed_df,
+                        matplotlib=True,
+                    )
+                except:
+                    shap.plots.force(
+                        explainer.expected_value[0],
+                        shap_values[0][:, 0],
+                        processed_df,
+                        matplotlib=True,
+                    )
     elif method == "KernelRegressor":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
@@ -2685,16 +2773,33 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
     return
 
 
-def _extract_embeddings(text_variables, image_variables, dataframe):
+def _extract_embeddings(
+    text_variables, image_variables, location_values, dataframe, is_old_dlpk=False
+):
     new_cols = []
     import tempfile
     from arcgis.learn import Embeddings
 
-    for cnt1, var in enumerate(text_variables + image_variables):
+    if not is_old_dlpk:
+        column_prefix = {
+            "text": "text_emb_",
+            "image": "img_emb_",
+            "location": "loc_emb_",
+        }
+    else:
+        column_prefix = {"text": "emb_", "image": "emb_", "location": "emb_"}
+
+    for cnt1, var in enumerate(text_variables + image_variables + location_values):
         if var in text_variables:
             embeddings = Embeddings(dataset_type="text")
+            type_var = "text"
+        elif var in location_values:
+            embeddings = Embeddings(dataset_type="location")
+            type_var = "location"
         else:
             embeddings = Embeddings(dataset_type="image")
+            type_var = "image"
+
         emb_array = embeddings.get(
             tempfile.TemporaryDirectory(),
             return_embeddings=True,
@@ -2703,7 +2808,8 @@ def _extract_embeddings(text_variables, image_variables, dataframe):
         )
         emb_list = emb_array.tolist()
         new_col_names = [
-            "emb_" + str(cnt1) + "_" + str(cnt) for cnt in range(len(emb_list[0]))
+            column_prefix[type_var] + str(cnt1) + "_" + str(cnt)
+            for cnt in range(len(emb_list[0]))
         ]
         for col in new_col_names:
             new_cols.append(col)

@@ -2471,7 +2471,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
-    rows                    Optional rows. Number of rows to show. Deafults
+    rows                    Optional rows. Number of rows to show. Default
                             value is 2.
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
@@ -3258,7 +3258,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
-    rows                    Optional rows. Number of rows to show. Deafults
+    rows                    Optional rows. Number of rows to show. Default
                             value is 2.
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value

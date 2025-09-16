@@ -1,13 +1,9 @@
 import os
-import sys
-import json
-import unittest
 import tempfile
-from arcgis.features.geo._tools._metadata import _Metadata
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._isd import InsensitiveDict
+import unittest
+
 import pandas as pd
-import arcgis
+from arcgis._impl.common._isd import InsensitiveDict
 from utils.decorators import integration_test
 
 
@@ -36,7 +32,7 @@ class TestSeDFRenderer(unittest.TestCase):
         ] * 5
         data = {"SHAPE": geoms, "L1": [1, 2, 3, 4, 5]}
         df = pd.DataFrame(data=data)
-        df.spatial.sr
+
         assert df.spatial._meta
         assert df.spatial.renderer
         assert df.spatial._meta
@@ -51,17 +47,17 @@ class TestSeDFRenderer(unittest.TestCase):
             "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         sdf = fl.query(as_df=True)
-        with tempfile.TemporaryDirectory() as tmpdirectory:
-            fp = os.path.join(tmpdirectory, "states.shp")
-            data = sdf.spatial.to_featureclass(fp)
-            sdf2 = pd.DataFrame.spatial.from_featureclass(fp)
-            assert sdf2.spatial.renderer != InsensitiveDict(
-                fl.properties.drawingInfo.renderer
-            )
-            assert sdf2.spatial._meta
-            assert sdf2.spatial._meta.renderer
-            assert sdf2.spatial._meta.source
-            assert sdf2.spatial._meta.source_type
+        temp_dir = tempfile.mkdtemp()
+        fp = os.path.join(temp_dir, "states.shp")
+        data = sdf.spatial.to_featureclass(fp)
+        sdf2 = pd.DataFrame.spatial.from_featureclass(data)
+        assert sdf2.spatial.renderer != InsensitiveDict(
+            fl.properties.drawingInfo.renderer
+        )
+        assert sdf2.spatial._meta
+        assert sdf2.spatial._meta.renderer
+        assert sdf2.spatial._meta.source
+        assert sdf2.spatial._meta.source_type
 
 
 if __name__ == "__main__":

@@ -151,7 +151,10 @@ class ChangeDetector(ArcGISModel):
             for key, value in emd["DataAttributes"].items():
                 setattr(data, key, value)
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     @property
     def _model_metrics(self):

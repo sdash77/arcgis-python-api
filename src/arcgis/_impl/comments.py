@@ -2,6 +2,7 @@
 Represents messages left by users on a given Item in the GIS
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 import json
 from ..gis._impl._con import Connection

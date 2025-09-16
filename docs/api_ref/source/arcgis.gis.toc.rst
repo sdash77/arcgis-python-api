@@ -50,7 +50,14 @@ Group
     :members:
     :undoc-members:
     :show-inheritance:
-
+    
+CloningJob
+----------
+.. autoclass:: arcgis.gis.clone.CloningJob
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
 Datastore
 --------------------
 .. autoclass:: arcgis.gis.Datastore
@@ -110,6 +117,12 @@ Folder
     :members:
     :undoc-members:
     :show-inheritance:
+
+Job 
+---
+.. autoclass:: arcgis.gis._impl._content_manager.folder.core.Job
+    :members:
+    :undoc-members:
 
 UserManager
 ----------------------
@@ -303,6 +316,12 @@ SpatialFilter
     :members:
     :undoc-members:
     :show-inheritance:
+    
+StatisticFilter
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis._impl.common._filters.StatisticFilter
+    :members:
+    :undoc-members:
     
 Submodules
 --------------

@@ -8,6 +8,7 @@ import math
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
+from packaging import version
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
@@ -57,6 +58,10 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
+_FAIRNESS_CLASSIFICATION_SUPPORT = (
+    "This method only supports binary classification and regression currently."
+)
+_FAIRNESS_NOT_APPLIED = "Obtaining fairness score needs the ground truth and hence this method is not supported when model is instantiated for inferencing. "
 _FAIRNESS_NOT_SUPPORTED = "Fairness is not supported with this model type"
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
@@ -144,89 +149,102 @@ def raise_data_exception():
 
 class MLModel(object):
     """
-    Creates a machine learning model based on its implementation from scikit-learn, xgboost, lightgbm, catboost.
+    Creates a machine learning model based on its implementation from *scikit-learn*,
+    *xgboost*, *lightgbm*, or *catboost*.
+
     For supervised learning:
-    Refer `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_,
-    `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html>`_,
-    `lightgbm <https://lightgbm.readthedocs.io/en/latest/Python-API.html>`_ ,
-    `catboost <https://catboost.ai/en/docs/concepts/python-quickstart>`_ .
+    Refer to:
+
+    * `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_
+    * `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html>`_
+    * `lightgbm <https://lightgbm.readthedocs.io/en/latest/Python-API.html>`_
+    * `catboost <https://catboost.ai/en/docs/concepts/python-quickstart>`_
 
     For unsupervised learning:
+    Refer to : `Unsupervised Learning <https://scikit-learn.org/stable/unsupervised_learning.html>`_ documentation.
+
     1. Clustering Models
     2. Gaussian Mixture Models
     3. Novelty and outlier detection
-    Refer https://scikit-learn.org/stable/unsupervised_learning.html
 
-    =====================   ===========================================
-    **Parameter**            **Description**
-    ---------------------   -------------------------------------------
+    =====================   ===================================================
+    **Parameter**           **Description**
+    ---------------------   ---------------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :class:`~arcgis.learn.prepare_tabulardata` function.
-    ---------------------   -------------------------------------------
+    ---------------------   ---------------------------------------------------
     model_type              Required string path to the module.
-                            For example for SVM:
 
-                            `sklearn.svm.SVR <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html>`_ or `sklearn.svm.SVC <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html>`_
+                            * For example for SVM:
 
-                            For tree:
+                              `sklearn.svm.SVR <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html>`_ or `sklearn.svm.SVC <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html>`_
 
-                            `sklearn.tree.DecisionTreeRegressor <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html>`_ or `sklearn.tree.DecisionTreeClassifier <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html>`_
+                            * For tree:
 
-                            For gradient boosting:
+                              `sklearn.tree.DecisionTreeRegressor <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html>`_ or `sklearn.tree.DecisionTreeClassifier <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html>`_
 
-                            `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
+                            * For gradient boosting:
 
-                            For TabPFN:
-                            `Built with TabPFN - tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/blob/main/LICENSE>`
+                              `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
 
-    ---------------------   -------------------------------------------
-    Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
+                            * For TabPFN:
 
-                                                A dictionary to provide fairness args. Following are allowed keys and values
-                                                Keyword Args:                   Value Args:
-                                                <sensitive_feature> str:        Protected class column or feature name. Ony categorical variable is allowed.
-                                                <mitigation_type> str:          `reweighing` or `threshold_optimizer` or `exponentiated_gradient` (For Classification)
-                                                                                `grid_search` or `exponentiated_gradient` (For Regression)
-                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' (For Classification)
-                                                                                and `ZeroOneLoss` or `SquareLoss` (For Regression)
+                              `Built wtih TabPFN tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/blob/main/LICENSE>`_
+
+    ---------------------   ---------------------------------------------------
+    fairness_args           Optional dictionary. As of now we support only *binary
+                            classification* and *regression* in fairness evaluation.
+
+                            A dictionary to provide fairness args. Following are
+                            allowed keys and values:
+
+                            =====================   ===========================================
+                            **Key**                 **Value**
+                            ---------------------   -------------------------------------------
+                            sensitive_feature       *String* - the Protected class column or feature
+                                                    name. Only *categorical* variable is allowed.
+                            ---------------------   -------------------------------------------
+                            mitigation_type         *String* - `reweighing` or `threshold_optimizer`
+                                                    or `exponentiated_gradient` (For Classification)
+                                                    `grid_search` or `exponentiated_gradient` (For Regression)
+                            ---------------------   -------------------------------------------
+                            mitigation_constraint   *String* - `demographic_parity` or
+                                                    `equalized_odds' (For Classification) or
+                                                    `ZeroOneLoss` or `SquareLoss` (For Regression)
+                            =====================   ===========================================
 
 
-                            For example:
-                                                For classification :
+                            .. code-block:: python
+
+                                # Usage Example for classification;
+
+                                >>> mlmodel = MLModel(
+                                                ...
                                                 fairness_args = {
-                                                            'sensitive_feature': 'Gender',
-                                                            'mitigation_type': "threshold_optimizer",
-                                                            'mitigation_constraint':'demographic_parity'
-
+                                                            "sensitive_feature": "Gender",
+                                                            "mitigation_type": "threshold_optimizer",
+                                                            "mitigation_constraint": "demographic_parity"
                                                             }
 
-                                                For Regression :
+                                # Usage Example For regression :
 
                                                 fairness_args = {
-                                                            'sensitive_feature': 'Gender',
-                                                            'mitigation_type': "grid_search",
-                                                            'mitigation_constraint':'ZeroOneLoss'
-
+                                                            "sensitive_feature": "Gender",
+                                                            "mitigation_type": "grid_search",
+                                                            "mitigation_constraint": "ZeroOneLoss"
                                                             }
-    ---------------------   -------------------------------------------
-    ``**kwargs``            model_type specific arguments.
-                            Refer Parameters section
+    =====================   ===================================================
 
-                            `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_,
+    For additional argument options that can be entered in **kwargs** based upon
+    specific models, refer to parameters section documentation in:
 
-                            `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_
-
-                            `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
-
-                            `catboostregressor <https://catboost.ai/en/docs/concepts/python-reference_catboostregressor>`_
-
-                            `catboostclassifier <https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier>`_
-
-                            `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_
-
-                            `tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/tree/v1.0.0>`
-
-    =====================   ===========================================
+    * `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_
+    * `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_
+    * `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
+    * `catboostregressor <https://catboost.ai/en/docs/concepts/python-reference_catboostregressor>`_
+    * `catboostclassifier <https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier>`_
+    * `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_
+    * `tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/tree/v1.0.0>`_
 
     :return: :class:`~arcgis.learn.MLModel` Object
     """
@@ -268,13 +286,15 @@ class MLModel(object):
             self.protected_class = kwargs.get("protected_class")
 
             if self._fairness and self._data._is_classification:
-                self.fairness_label_encoder = LabelEncoder()
-                self._training_labels = self.fairness_label_encoder.fit_transform(
-                    self._training_labels
-                )
-                self._validation_labels = self.fairness_label_encoder.transform(
-                    self._validation_labels
-                )
+                self.fairness_label_encoder = self._data._fairness_encoder
+
+                if self._training_data is not None:
+                    self._training_labels = self.fairness_label_encoder.fit_transform(
+                        self._training_labels
+                    )
+                    self._validation_labels = self.fairness_label_encoder.transform(
+                        self._validation_labels
+                    )
 
         else:
             model = _get_model_type(model_type)
@@ -315,6 +335,13 @@ class MLModel(object):
             self.initialize_fair_model(fairness_args)
 
     def initialize_fair_model(self, fairness_args):
+        """
+        ==========================   ==========================================
+        **Parameter**                **Description**
+        --------------------------   ------------------------------------------
+        fairness_args                Required dictionary. Fairness arguments.
+        ==========================   ==========================================
+        """
         if not isinstance(fairness_args, dict):
             raise ValueError(_FAIRNESS_ARGS_NOT_DICT)
 
@@ -433,6 +460,9 @@ class MLModel(object):
                 raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
 
     def fit(self):
+        """
+        Fits the model with the training data and labels.
+        """
         if (
             not self._data._is_unsupervised
             and (self._training_data is None or self._training_labels is None)
@@ -484,42 +514,53 @@ class MLModel(object):
         visualize=False,
     ):
         """
+        As of now we support only binary classification in fairness evaluation.
+
         Shows sample fairness score and plots for the model.
 
         =====================   ===========================================
-        **Parameter**            **Description**
+        **Parameter**           **Description**
         ---------------------   -------------------------------------------
-        sensitive_feature        Column name of the protected class.
-        fairness_metrics         Allowed list of fairness metrics
-                                 1. for classification
-                                    [
-                                     "equalized_odds_difference",
-                                     "demographic_parity_difference",
-                                     "equalized_odds_ratio",
-                                     "demographic_parity_ratio"
-                                    ]
-                                 2. for Regression
-                                    [
-                                    "MAE",
-                                    "MSE",
-                                    "RMSE",
-                                    "MAPE"
-                                    ]
-                                 Metric should be one of the values mentioned in
-                                 the list.
+        sensitive_feature       Column name of the protected class.
+        ---------------------   -------------------------------------------
+        fairness_metrics        Allowed list of fairness metrics:
 
-        visualize                A boolean value to visualize plot of metrics
+                                * for classification
+
+                                  * *equalized_odds_difference*
+                                  * *demographic_parity_difference*
+                                  * *equalized_odds_ratio*
+                                  * *demographic_parity_ratio*
+
+                                * for regression
+
+                                  * *MAE*
+                                  * *MSE*
+                                  * *RMSE*
+                                  * *MAPE*
+        ---------------------   -------------------------------------------
+        visualize               A boolean value to visualize plot of metrics
         =====================   ===========================================
-        :return: dataframe
+
+        :return:
+            A dataframe object.
         """
+        if self._training_data is None:
+            raise ValueError(_FAIRNESS_NOT_APPLIED)
 
         if sensitive_feature not in self._data._categorical_variables:
             raise ValueError(_SENSITIVE_FEATURE_ERROR)
 
         self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
         if not self._fairness and self._data._is_classification:
-            labelEncoder = LabelEncoder()
+            if self._fairness:
+                labelEncoder = self.fairness_label_encoder
+            else:
+                labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
+            if len(np.unique(train_labels)) > 2:
+                raise ValueError(_FAIRNESS_CLASSIFICATION_SUPPORT)
+
             y_true = labelEncoder.transform(self._validation_labels)
             y_pred = self._predict(self._data._ml_data[2])
 
@@ -568,7 +609,7 @@ class MLModel(object):
         # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
 
-        if self._fairness and self.mitigation_method == "threshold_optimizer":
+        if self._fairness:
             validation_df_batch = self._validation_df.iloc[sample_batch, :]
             sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
             group_df = validation_df_batch.loc[:, self.protected_class]
@@ -755,6 +796,11 @@ class MLModel(object):
 
         MLModel._save_encoders(self._data._encoder_mapping, path, base_file_name)
 
+        if self._fairness and self._data._is_classification:
+            MLModel._save_encoders(
+                self.fairness_label_encoder, path, base_file_name + "_fairness"
+            )
+
         if self._data._procs:
             MLModel._save_transforms(self._data._procs, path, base_file_name)
 
@@ -919,17 +965,16 @@ class MLModel(object):
 
         cell_sizes = emd.get("cell_sizes", None)
 
-        if (
-            emd["version"] == str(sklearn.__version__)
-            or emd["version"] == str(xgboost.__version__)
-            or emd["version"] == str(lightgbm.__version__)
-            or emd["version"] == str(catboost.__version__)
+        _model_name = emd.get("ModelName", None)
+        if _model_name and not _model_name.lower().startswith(
+            ("lightgbm", "catboost", "xgboost", "tabpfn")
         ):
-            pass
-        else:
-            warnings.warn(
-                f"Sklearn/xgboost/lightgbm/catboost version has changed. Model Trained using version {emd['version']}"
-            )
+            if version.parse(emd["version"]) < version.parse(
+                str(sklearn.__version__)
+            ) and version.parse(str(sklearn.__version__)) >= version.parse("1.4.0"):
+                raise Exception(
+                    "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
+                )
 
         _is_classification = True
         if emd["_is_classification"] != "classification":
@@ -944,6 +989,16 @@ class MLModel(object):
             if os.path.exists(encoder_path):
                 with open(encoder_path, "rb") as f:
                     encoder_mapping = pickle.loads(f.read())
+
+        _fairness_encoder = None
+        if fairness:
+            fairness_encoder_path = os.path.join(
+                os.path.dirname(emd_path),
+                os.path.basename(emd_path).split(".")[0] + "_fairness_encoders.pkl",
+            )
+            if os.path.exists(fairness_encoder_path):
+                with open(fairness_encoder_path, "rb") as f:
+                    _fairness_encoder = pickle.loads(f.read())
 
         column_transformer = None
         transforms_path = os.path.join(
@@ -966,17 +1021,19 @@ class MLModel(object):
             data._cell_sizes = cell_sizes
 
         data._emd = emd
+        if _fairness_encoder:
+            data._fairness_encoder = _fairness_encoder
 
         model_file = os.path.join(os.path.dirname(emd_path), emd["ModelFile"])
         with open(model_file, "rb") as f:
             model = pickle.loads(f.read())
 
-        return cls(
-            data,
-            emd["ModelName"],
-            pretrained_model=model,
-            **model_parameters,
+        model_obj = cls(
+            data, emd["ModelName"], pretrained_model=model, **model_parameters
         )
+        model_obj._model_emd = emd
+
+        return model_obj
 
     def _predict(self, data, group_data=None):
         if self._fairness and self.mitigation_method == "threshold_optimizer":

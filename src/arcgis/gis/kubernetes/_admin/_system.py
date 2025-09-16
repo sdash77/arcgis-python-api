@@ -11,6 +11,7 @@ from ._adaptors import WebAdaptorManager
 from ._license import LicenseManager
 from typing import List, Dict, Any, Tuple, Optional
 from arcgis.gis.admin import LivingAtlas
+from arcgis.auth import EsriSession
 
 
 class Server(_BaseKube):
@@ -369,6 +370,20 @@ class SystemManager:
 
     # ----------------------------------------------------------------------
     @property
+    def container_images(self) -> dict:
+        """
+        Returns a list of the container images that have been pulled and
+        used to deploy applications for ArcGIS Enterprise on Kubernetes.
+
+        :returns: dict
+
+        """
+        url: str = f"{self._url}/containerimages"
+        params: dict = {"f": "json"}
+        return self._con.get(url, params=params)
+
+    # ----------------------------------------------------------------------
+    @property
     def recovery(self) -> RecoveryManager:
         """
         This resource allows an administrator the ability to manage
@@ -419,6 +434,15 @@ class SystemManager:
 
         """
         return LanguageManager(url=f"{self._url}/content", gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def enterprise_functions(self) -> "EnterpriseFunctions":
+        """
+        Returns the manager for working with enterprise functions.
+        """
+        url: str = f"{self._url}/enterprisefunctions"
+        return EnterpriseFunctions(url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -525,3 +549,145 @@ class SystemManager:
         if self._sm is None:
             self._sm = ServerManager(url=f"{self._url}/servers", gis=self._gis)
         return self._sm
+
+
+class EnterpriseFunctions:
+    """
+    The EnterpriseFunctions resource returns the premium capabilities that
+    are enabled for an organization. Currently, administrators can enable
+    it if the organization has been licensed to use these premium
+    capabilities.
+    """
+
+    _url: str | None = None
+    _gis: "GIS" | None = None
+    url: str
+    session: EsriSession
+
+    def __init__(self, url: str, gis: "GIS" = None) -> None:
+        """class initializer"""
+        super()
+        self._gis = gis
+        self.session = gis.session
+        self.url = url
+        self._url = url
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self) -> Dict[str, Any]:
+        """
+        returns the object properties
+        """
+
+        resp = self.session.get(
+            url=self.url,
+            params={
+                "f": "json",
+            },
+        )
+        resp.raise_for_status()
+        self._properties = resp.json()
+        return self._properties
+
+    @property
+    def enabled_functions(self) -> list[str]:
+        """returns a list of enabled functionality on the deployment"""
+        return self.properties["enterpriseFunctionsEnabled"]
+
+    @property
+    def licensed(self) -> list[str]:
+        """returns a list of available licensed functionality"""
+        return self.properties["enterpriseFunctionsLicensed"]
+
+    def disable(self, function: str) -> dict:
+        """
+        Disables licensed functionality on a kubernetes deployment
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        function            Required String. The service function to disable on the kubernetes site.
+        ===============     ====================================================================
+
+        """
+
+        if function in self.licensed and not function in self.enabled_functions:
+            raise Exception(f"The function {function} is already disabled.")
+        elif not function in self.licensed:
+            raise ValueError(f"The value must be {','.join(self.licensed)}")
+
+        url: str = f"{self._url}/remove"
+        params: dict = {
+            "f": "json",
+            "enterpriseFunction": function,
+        }
+        status_ends = ["COMPLETED", "FAILED", "ERROR"]
+        req = self.session.post(url, data=params)
+        req.raise_for_status()
+        response: dict = req.json()
+        if "jobsUrl" in response:
+            job_url: str = response.get("jobsUrl")
+            if not job_url:
+                raise Exception(response)
+            status_response = self.session.get(job_url, params={"f": "json"})
+            i: int = 1
+            import time
+
+            while not status_response.json().get("status") in status_ends:
+                time.sleep(i)
+                if i <= 10:
+                    i += 1
+                status_response = self.session.get(job_url, params={"f": "json"})
+            return status_response.json()
+        else:
+            return response
+
+    def enable(self, function: str) -> dict:
+        """
+        Enables the select licensed functionality
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        function            Required String. The service function to enable on the kubernetes site.
+        ===============     ====================================================================
+
+        """
+        if function in self.licensed and function in self.enabled_functions:
+            raise Exception(f"The function {function} is already enabled.")
+        elif not function in self.licensed:
+            raise ValueError(f"The value must be {','.join(self.licensed)}")
+
+        url: str = f"{self._url}/add"
+        params: dict = {
+            "f": "json",
+            "enterpriseFunction": function,
+        }
+        status_ends = ["COMPLETED", "FAILED", "ERROR"]
+        req = self.session.post(url, data=params)
+        req.raise_for_status()
+        response: dict = req.json()
+        if "jobsUrl" in response:
+            job_url: str = response.get("jobsUrl")
+            if not job_url:
+                raise Exception(response)
+            status_response = self.session.get(job_url, params={"f": "json"})
+            i: int = 1
+            import time
+
+            while not status_response.json().get("status") in status_ends:
+                time.sleep(i)
+                if i <= 10:
+                    i += 1
+                status_response = self.session.get(job_url, params={"f": "json"})
+            return status_response.json()
+        else:
+            return response

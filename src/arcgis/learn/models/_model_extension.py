@@ -373,7 +373,11 @@ class ModelExtension(ArcGISModel):
                 data.K = emd["Kwargs"]["n_masks"]
                 data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
-
+        if (
+            "wavelengths" not in kwargs.keys()
+            and "wavelengths" in emd["ModelParameters"].keys()
+        ):
+            kwargs["wavelengths"] = emd["ModelParameters"]["wavelengths"]
         mextnsn = cls(
             data,
             model_configuration,
@@ -386,6 +390,7 @@ class ModelExtension(ArcGISModel):
             mextnsn.learn.data.single_ds.classes = mextnsn._data.classes
             mextnsn.learn.data.single_ds.y.classes = mextnsn._data.classes
 
+        mextnsn._model_emd = emd
         return mextnsn
 
     @property
@@ -619,9 +624,18 @@ class ModelExtension(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
 
-        self._show_results_modified(
-            rows=rows, thresh=thresh, model=self, thinning=thinning, **kwargs
-        )
+        if not self._is_multispectral:
+            self._show_results_modified(
+                rows=rows, thresh=thresh, model=self, thinning=thinning, **kwargs
+            )
+        else:
+            return_fig = kwargs.get("return_fig", False)
+            ret_val = show_results_multispectral_segmentation(
+                self, nrows=rows, thresh=thresh, thinning=thinning, model=self, **kwargs
+            )
+            if return_fig:
+                fig, ax = ret_val
+                return fig
 
     def _show_results_multispectral(
         self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs
@@ -941,7 +955,7 @@ class ModelExtension(ArcGISModel):
                                 model was trained on).
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
-                                during tiled inferencing. Deafult value 1.
+                                during tiled inferencing. Default value 1.
         ---------------------   -------------------------------------------
         =====================   ===========================================
 

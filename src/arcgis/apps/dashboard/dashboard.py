@@ -1,3 +1,4 @@
+from __future__ import annotations
 import atexit
 import json
 import arcgis
@@ -8,7 +9,7 @@ _DASHBOARD_VERSION = 27
 _created_dashboards = []
 
 
-@deprecated(deprecated_in="2.0.1", removed_in=None, current_version="2.0.1")
+@deprecated(deprecated_in="2.0.1", removed_in=None)
 class Dashboard(object):
     """
     Creates a :class:`~arcgis.apps.dashboard.Dashboard` Object.

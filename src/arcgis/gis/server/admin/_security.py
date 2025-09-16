@@ -8,6 +8,7 @@ within it) could contain confidential data like passwords, it is
 recommended that this resource be accessed over HTTPS protocol.
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -1367,7 +1368,7 @@ class Role(dict):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        privilage              Required string. The capability to assign to the role. Choices are
+        privilege              Required string. The capability to assign to the role. Choices are
                                ADMINISTER, PUBLISH, ACCESS
         ==================     ====================================================================
 
@@ -1379,7 +1380,7 @@ class Role(dict):
         if privilege.lower() in allowed:
             privilege = privilege.upper()
         else:
-            raise ValueError("Invalid privilage.")
+            raise ValueError("Invalid privilege.")
         return self._security._assign_privilege(
             rolename=self.rolename, privilege=privilege
         )

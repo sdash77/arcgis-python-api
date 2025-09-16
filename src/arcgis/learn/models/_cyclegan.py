@@ -155,7 +155,10 @@ class CycleGAN(ArcGISModel):
 
         data.resize_to = resize_to
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+        model_obj._model_emd = emd
+
+        return model_obj
 
     @property
     def _model_metrics(self):

@@ -2,10 +2,11 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.features._parcel import ParcelFabricManager
 from arcgis.features.layer import FeatureLayerCollection
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from . import parcel_fabric_utils as pfutils
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestDeleteParcels(unittest.TestCase):
     """Delete parcels"""
@@ -22,11 +23,9 @@ class TestDeleteParcels(unittest.TestCase):
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
         cls.base_server_url = (
-            "https://krennic.esri.com/server/rest/services/WashingtonCountyLSA/"
+            "https://dev0016752.esri.com/server/rest/services/WashingtonCountyLSA/"
         )
-        cls.gis = GIS(
-            "https://krennic.esri.com/portal/", "admin", "esri.agp", verify_cert=False
-        )
+
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(
@@ -52,7 +51,8 @@ class TestDeleteParcels(unittest.TestCase):
 
             delete_parcels = self.parcelFabric.delete(parcels=parcel_features)
             edits = delete_parcels.get("serviceEdits")
-            self.assertEqual(4, len(edits), "Missing layer edits")
+            deletes = [i for i in edits if "deletes" in i["editedFeatures"].keys()]
+            self.assertEqual(3, len(deletes), "Missing layer edits")
             records_edits = [e["editedFeatures"] for e in edits if e["id"] == 1][0].get(
                 "updates"
             )

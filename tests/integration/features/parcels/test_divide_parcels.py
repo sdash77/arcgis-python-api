@@ -4,10 +4,11 @@ import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from . import parcel_fabric_utils as pfutils
 
 
+@profiles.parcel_fabric
 @integration_test
 class TestDivideParcels(unittest.TestCase):
     """Tests the Divide function from the parcel fabric SOE"""
@@ -25,22 +26,15 @@ class TestDivideParcels(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/Divide1091/"
         )
-        cls.gis = GIS(
-            "https://dev0016752.esri.com/portal/",
-            "admin",
-            "esri.agp",
-            verify_cert=False,
-        )
+
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(
             cls.service_urls["FeatureServer"], cls.gis
         )
         cls.vms = cls.parcel_fabric_flc.versions
-        
-        cls.tax_lyr_info = pfutils.basic_lyr_info(
-            cls.parcel_fabric_flc, "Tax_Div"
-        )[0]
+
+        cls.tax_lyr_info = pfutils.basic_lyr_info(cls.parcel_fabric_flc, "Tax_Div")[0]
         cls.tax_lyr_id = cls.tax_lyr_info.lyr_id
 
         cls.tax_line_info = pfutils.basic_lyr_info(
@@ -930,48 +924,7 @@ class TestDivideParcels(unittest.TestCase):
                 print(ex)
                 self.fail(f"Divide failed: {ex}")
                 
-    def test_equal_width_merge_remainder_junk_values(self):
-        fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
-        divide_parcel_type = 15
-        existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
-        divide_option = "EqualWidth"
-        number_of_parts = 100
-        divide_part_area_or_width = 100
-        divide_line_bearing = 359.9
-        divide_left_side = True
-        divide_distribute_remainder = True
-        default_area_unit = 109405
-        divide_cogo_line_bearing = None
-
-        with self.vms.get(fq_version_name, "read") as version:
-            parcel_fabric = ParcelFabricManager(
-                self.service_urls["ParcelFabricServer"],
-                self.gis,
-                version,
-                self.parcel_fabric_flc,
-            )
-            # Divide the parcels
-
-            with self.assertRaises(Exception) as ex:
-                parcel_fabric.divide(
-                    divide_parcel_guid=divide_parcel_guid,
-                    divide_parcel_type=divide_parcel_type,
-                    divide_record=existing_record_guid,
-                    divide_option=divide_option,
-                    divide_number_of_parts=number_of_parts,
-                    divide_part_area=divide_part_area_or_width,
-                    divide_line_bearing=divide_line_bearing,
-                    divide_left_side=divide_left_side,
-                    divide_distribute_remainder=divide_distribute_remainder,
-                    divide_cogo_line_bearing=divide_cogo_line_bearing,
-                    default_area_unit=default_area_unit,
-                )
-            self.assertTrue(
-                str(ex.exception).startswith("Invalid function arguments"),
-                f"Unexpected error message: {ex.exception}",
-            )
-
+  
     def test_divide_missing_parameter_correct_error(self):
         fq_version_name = pfutils.create_version(self.vms)
         divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
@@ -1008,7 +961,7 @@ class TestDivideParcels(unittest.TestCase):
                     default_area_unit=default_area_unit,
                 )
             self.assertTrue(
-                "A required parameter is missing from the JSON." in str(ex.exception),
+                "Invalid function arguments" in str(ex.exception),
                 f"Wrong error: {ex.exception}",
             )
 

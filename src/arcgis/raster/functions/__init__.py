@@ -9252,6 +9252,22 @@ def raster_collection_function(
     else:
         raster = "$$"
 
+    if isinstance(raster, dict):
+        if (
+            "rasterFunction" in raster
+            and raster["rasterFunction"] == "None"
+            and "rasterFunctionArguments" in raster
+            and "Raster" in raster["rasterFunctionArguments"]
+        ):
+            raster_args = raster["rasterFunctionArguments"]["Raster"]
+            raster = {
+                "renderingRule": {"rasterFunction": "None"},
+                "url": raster_args.get("url"),
+                "mosaicRule": raster_args.get("mosaicRule"),
+                "renderingRule": {"rasterFunction": "None"},
+            }
+            raster_ra = raster
+
     template_dict = {
         "rasterFunction": "RasterCollection",
         "rasterFunctionArguments": {"RasterCollection": raster},
@@ -14151,8 +14167,23 @@ class RFT:
                             if isinstance(v, (ImageryLayer, Raster)) or isinstance(
                                 v, _FeatureLayer
                             ):
+                                url = v.url
+                                try:
+                                    if url is not None and "?token" not in url:
+                                        from .utility import _generate_layer_token
+
+                                        token = _generate_layer_token(v, url)
+                                        if token is not None:
+                                            url = f"{url}?token={token}"
+                                except:
+                                    pass
                                 raster = _raster_input_rft(v)
                                 v = _input_rft(raster)
+                                if key == "RasterCollection":
+                                    v = {
+                                        "renderingRule": v,
+                                        "url": url,
+                                    }
                                 if isinstance(raster, str):
                                     value["value"] = v
                                     flag_rasters = 1
@@ -14162,6 +14193,19 @@ class RFT:
                                     else:
                                         input_dict.update({key: v})
                                 break
+
+                            elif key == "QueryGeometry" and isinstance(v, Geometry):
+                                from .utility import (
+                                    _to_process_raster_collection_geometry,
+                                )
+
+                                try:
+                                    new_v = _to_process_raster_collection_geometry(v)
+                                    v = new_v
+                                except Exception as e:
+                                    print(f"Error processing geometry: {e}")
+                                value["value"] = v
+
                             else:
                                 if "value" in value:
                                     if isinstance(value["value"], dict):
@@ -14481,71 +14525,12 @@ class RFT:
                         if raster_dict["value"][
                             "elements"
                         ]:  # if elements has any value in the list
-                            for e in raster_dict["value"]["elements"]:
-                                index = (raster_dict["value"]["elements"].index(e)) + 1
-                                if "name" in raster_dict:
-                                    scalar_name = _python_variable_name(
-                                        raster_dict["name"]
-                                    )
-                                if ("type" in e) and e[
-                                    "type"
-                                ] == "FunctionRasterDatasetName":
-                                    if (
-                                        self._is_public_flag is False
-                                        or ispublic == True
-                                        or (
-                                            ("isPublic" in raster_dict)
-                                            and raster_dict["isPublic"] is True
-                                        )
-                                    ):
-                                        raster_name = _python_variable_name(
-                                            raster_dict["name"]
-                                        )
-                                        raster_dict.update({"name": raster_name})
-                                        key_value_dict.update(
-                                            {
-                                                raster_name: e["arguments"]["Raster"][
-                                                    "datasetName"
-                                                ]["name"]
-                                            }
-                                        )
-                                        raster_dictionary.update(
-                                            {
-                                                raster_name: e["arguments"]["Raster"][
-                                                    "datasetName"
-                                                ]["name"]
-                                            }
-                                        )
-                                elif (
-                                    "function" in e.keys()
-                                ):  # if function template inside
-                                    _function_traversal(e)
-                                else:  # if raster dataset inside raster array
-                                    if function_arg_type == "LocalFunctionArguments":
-                                        if (
-                                            self._is_public_flag is False
-                                            or ispublic == True
-                                            or ("isPublic" not in e.keys())
-                                            or (
-                                                ("isPublic" in e.keys())
-                                                and e["isPublic"] is True
-                                            )
-                                        ):
-                                            _raster_function_traversal(
-                                                e, index, scalar_name, ispublic=True
-                                            )
-                                    elif (
-                                        self._is_public_flag is False
-                                        or ispublic == True
-                                        or ("isPublic" not in raster_dict.keys())
-                                        or (
-                                            ("isPublic" in raster_dict.keys())
-                                            and raster_dict["isPublic"] is True
-                                        )
-                                    ):
-                                        _raster_function_traversal(
-                                            e, index, scalar_name, ispublic=True
-                                        )
+                            _parse_raster_array(
+                                raster_dict["value"]["elements"],
+                                scalar_name,
+                                ispublic,
+                                function_arg_type,
+                            )
                         else:  # If elements is empty i.e Rasters has no value when rft was created
                             if (
                                 self._is_public_flag is False
@@ -14683,6 +14668,14 @@ class RFT:
                                 # scalar_name = "scalar"+''.join(e for e in str(datetime.now()) if e.isalnum())
                                 # raster_dict.update({"name":scalar_name})
                                 # key_value_dict.update({scalar_name:x})
+                        else:
+                            _parse_raster_array(
+                                raster_dict["value"],
+                                scalar_name,
+                                ispublic,
+                                function_arg_type,
+                            )
+
                 elif isinstance(raster_dict["value"], numbers.Number):
                     if (
                         self._is_public_flag is False
@@ -14710,6 +14703,60 @@ class RFT:
                     raster_dict.update({"name": raster_name})
                     key_value_dict.update({raster_name: None})
                     raster_dictionary.update({raster_name: None})
+
+        def _parse_raster_array(raster_dict, scalar_name, ispublic, function_arg_type):
+            for e in raster_dict:
+                index = (raster_dict.index(e)) + 1
+                if "name" in raster_dict:
+                    scalar_name = _python_variable_name(raster_dict["name"])
+                if ("type" in e) and e["type"] == "FunctionRasterDatasetName":
+                    if (
+                        self._is_public_flag is False
+                        or ispublic == True
+                        or (
+                            ("isPublic" in raster_dict)
+                            and raster_dict["isPublic"] is True
+                        )
+                    ):
+                        raster_name = _python_variable_name(raster_dict["name"])
+                        raster_dict.update({"name": raster_name})
+                        key_value_dict.update(
+                            {
+                                raster_name: e["arguments"]["Raster"]["datasetName"][
+                                    "name"
+                                ]
+                            }
+                        )
+                        raster_dictionary.update(
+                            {
+                                raster_name: e["arguments"]["Raster"]["datasetName"][
+                                    "name"
+                                ]
+                            }
+                        )
+                elif "function" in e.keys():  # if function template inside
+                    _function_traversal(e)
+                else:  # if raster dataset inside raster array
+                    if function_arg_type == "LocalFunctionArguments":
+                        if (
+                            self._is_public_flag is False
+                            or ispublic == True
+                            or ("isPublic" not in e.keys())
+                            or (("isPublic" in e.keys()) and e["isPublic"] is True)
+                        ):
+                            _raster_function_traversal(
+                                e, index, scalar_name, ispublic=True
+                            )
+                    elif (
+                        self._is_public_flag is False
+                        or ispublic == True
+                        or ("isPublic" not in raster_dict.keys())
+                        or (
+                            ("isPublic" in raster_dict.keys())
+                            and raster_dict["isPublic"] is True
+                        )
+                    ):
+                        _raster_function_traversal(e, index, scalar_name, ispublic=True)
 
         def _function_traversal(dictionary):
             if "function" in dictionary.keys():

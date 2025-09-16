@@ -1,8 +1,10 @@
-from arcgis.gis import GIS, Item
+from __future__ import annotations
+from arcgis.gis import Item
 from arcgis.features import FeatureLayer
 import itertools
 import re
 from collections import OrderedDict
+import os
 
 # any item that can contain another item or require another to exist
 _COMPLEX_ITEMS = frozenset(
@@ -208,16 +210,17 @@ def _get_related_items(item, forward=True, reverse=True):
 
     forward_deps = []
     reverse_deps = []
+    # leaving out Listed2ImplicitlyListed for now due to issues
     f_rel_types = [
         "Item2Attachment",
         "Item2Report",
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "SurveyAddIn2Data",
         "Solution2Item",
         "APIKey2Item",
@@ -247,16 +250,17 @@ def _get_related_item_dict(item, forward=True, reverse=True):
         raise ValueError("At least one direction must be specified.")
 
     rel_item_dict = {}
+    # leaving out Listed2ImplicitlyListed for now due to issues
     f_rel_types = [
         "Item2Attachment",
         "Item2Report",
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
-        "Listed2ImplicitlyListed",
+        # "Listed2ImplicitlyListed",
         "SurveyAddIn2Data",
         "Solution2Item",
         "APIKey2Item",
@@ -288,8 +292,8 @@ def _get_related_item_dict(item, forward=True, reverse=True):
 
 
 def _parse_webmap(item):
-    items = []
-    services = []
+    items = set()
+    services = set()
     webmap_json = item.get_data()
 
     def process_op_layer(layer):
@@ -299,64 +303,112 @@ def _parse_webmap(item):
 
         else:
             if "itemId" in layer:
-                if layer["itemId"] not in items:
-                    items.append(layer["itemId"])
+                items.add(layer["itemId"])
             elif "url" in layer:
                 try:
                     sid = FeatureLayer(layer["url"]).properties["serviceItemId"]
-                    if sid not in items:
-                        items.append(sid)
+                    items.add(sid)
                 except:
-                    if layer["url"] not in services:
-                        services.append(layer["url"])
+                    services.add(layer["url"])
 
     for op_layer in webmap_json.get("operationalLayers"):
         process_op_layer(op_layer)
 
-    items.extend(services)
-    return items
+    items.update(services)
+    items.update(_find_regex(webmap_json, _REGEX_GUID, []))
+    return list(items)
 
 
 def _parse_dashboard(item):
-    # shoutout Dan Yaw for first iteration of this function
-    deps = []
+    deps = set()
     structure = item.get_data()
+    try:
+        # grab endpoint to find all dependencies
+        dash_endpoint = (
+            item._gis.properties["helperServices"]["dashboardsUtility"]["url"]
+            + "/findAllDependencies"
+        )
+        # gather resources to pass to endpoint
+        resources = []
+        for res in item.resources.list():
+            r_path = res["resource"]
+            r_type, r_name = os.path.splitext(r_path)[0].split("/")
+            res_dict = {
+                "type": r_type,
+                "name": r_name,
+                "resource": item.resources.get(r_path),
+            }
+            resources.append(res_dict)
+
+        dash_response = item._gis._con.post(
+            dash_endpoint,
+            {
+                "item": {"data": structure, "resources": resources},
+                "options": {
+                    "includeLayers": False,
+                    "includeFields": False,
+                },
+            },
+            add_headers={"Content-Type": "application/json"},
+            json_encode=False,
+            post_json=True,
+        )
+
+        for item_dict in dash_response["results"]:
+            item_id = item_dict.get("itemId", None)
+            if item_id:
+                deps.add(item_id)
+    except:
+        pass
+
     widgets1 = structure.get("widgets", [])
     widgets2 = structure.get("desktopView", {}).get("widgets", [])
     widgets = widgets1 + widgets2
 
     for widget in widgets:
         if widget.get("type") == "mapWidget":
-            deps.append(widget.get("itemId"))
+            deps.add(widget.get("itemId"))
             continue
         try:
             for dataset in widget.get("datasets", []):
                 if dataset.get("type") == "serviceDataset":
                     data_source = dataset.get("dataSource", {})
                     if data_source.get("type") == "itemDataSource":
-                        deps.append(data_source.get("itemId"))
+                        deps.add(data_source.get("itemId"))
                     elif data_source.get("type") == "arcadeDataSource":
                         script = data_source.get("script")
-                        deps.extend(_find_regex(script, _REGEX_GUID, []))
+                        deps.update(_find_regex(script, _REGEX_GUID, []))
         except:
             pass
 
-    return deps
+    deps.update(_find_regex(structure, _REGEX_GUID, []))
+    return list(deps)
 
 
 def _parse_exb(item):
     pub_data = item.get_data()
     draft_data = item.resources.get("config/config.json")
 
-    itemids = []
+    itemids = set()
 
     for data in [pub_data, draft_data]:
         data_sources = data.get("dataSources", {})
         for ds in data_sources.values():
-            if "itemId" in ds and ds["itemId"] not in itemids:
-                itemids.append(ds["itemId"])
+            if "itemId" in ds:
+                itemids.add(ds["itemId"])
 
-    return itemids
+        widgets = data.get("widgets", [])
+        try:
+            for widg_dict in widgets.values():
+                config = widg_dict.get("config", {})
+                if "surveyItemId" in config:
+                    itemids.add(config["surveyItemId"])
+        except:
+            pass
+
+        itemids.update(_find_regex(data, _REGEX_GUID, []))
+
+    return list(itemids)
 
 
 def _parse_wma(item):
@@ -383,11 +435,12 @@ def _parse_wma(item):
     except:
         pass
 
+    itemids.update(_find_regex(data, _REGEX_GUID, []))
     return list(itemids)
 
 
 def _parse_storymap(item):
-    itemids = []
+    itemids = set()
     data_list = [item.get_data()]
     draft_name = None
     for res in item.resources.list():
@@ -418,12 +471,11 @@ def _parse_storymap(item):
             ]
         )
 
-        for ids in [web_maps, themes]:
-            for i in ids:
-                if i not in itemids:
-                    itemids.append(i)
+        itemids.update(web_maps)
+        itemids.update(themes)
+        itemids.update(_find_regex(draft, _REGEX_GUID, []))
 
-    return itemids
+    return list(itemids)
 
 
 def _parse_hub(item):
@@ -458,6 +510,7 @@ def _parse_hub(item):
     for data in [pub_data, draft_data]:
         if data:
             itemids.update(_parse_hub_sections(data))
+        itemids.update(_find_regex(data, _REGEX_GUID, []))
 
     return list(itemids)
 
@@ -477,6 +530,7 @@ def _parse_qc(item):
         deps.add(structure["basemap"]["itemId"])
         for ds in structure["dataSources"]:
             deps.add(ds["featureServiceItemId"])
+        deps.update(_find_regex(structure, _REGEX_GUID, []))
         return list(deps)
     except:
         return []

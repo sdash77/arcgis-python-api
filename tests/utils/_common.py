@@ -34,7 +34,7 @@ GEOSAURUS_PYTHON_EXEC = [
     "install",
     "-e",
     '"' + GEOSAURUS_SRC_DIR + '"',
-    "--no-deps",
+    "--no-deps", "--user",
     "&&",
     '"' + sys.executable + '"',
 ]
@@ -119,7 +119,7 @@ def setup_env():
         "pip",
         "install",
         "-e",
-        '"' + GEOSAURUS_SRC_DIR + '"',
+        '"' + GEOSAURUS_SRC_DIR + '"', "--user", 
         "--no-deps",
     ]
     run_shell_command(" ".join(pip_install_cmd))
@@ -150,11 +150,11 @@ def run_unittest_on(
     ):
         unittest_args = []
         if surround_paths_with_quotes:
-            unittest_args += [f'"{sys.executable}"', "-m", "nose", "-v", "-x"] + list(
+            unittest_args += [f'"{sys.executable}"', "-m", "nose", "-v"] + list(
                 f'"{x}"' for x in paths
             )
         else:
-            unittest_args += [sys.executable, "-m", "nose", "-v", "-x"] + paths
+            unittest_args += [sys.executable, "-m", "nose", "-v"] + paths
         unittest_args += ["--with-xunit", f"--xunit-file={output_xml_path}"]
         """
         if block_network_access:
