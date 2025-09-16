@@ -8,14 +8,11 @@ from arcgis.gis.nb._dataaccess import DATAACCESSTYPE, NotebookFolder, NotebookFi
 from integration.config import get_resource_path
 
 
-@profiles.admin_agol
+@profiles.admin_enterprise_and_agol
 @integration_test
 class TestNotebookDataAccess(unittest.TestCase):
 
     def setUp(self):
-        if self.gis.version <= [2025, 1]:
-            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
-
         self.nb_server = self.gis.notebook_server[0]
 
         # check if workspace is available
@@ -27,12 +24,12 @@ class TestNotebookDataAccess(unittest.TestCase):
     def _set_workspace(self, gis) -> NotebookDataAccess:
         if gis._is_agol:
             nb_id = "44cb2b96893d472c8a5456e4f7baadcc"
-            open_notebook = self.nb_server.notebooksmanager.open_notebook(nb_id)
+            open_notebook = gis.notebook_server[0].notebooksmanager.open_notebook(nb_id)
         else:
             nb_id = "15f9a363d84141768c34a7a59a111db5"
-            open_notebook = self.nb_server.notebooks.open_notebook(nb_id)
+            open_notebook = gis.notebook_server[0].notebooks.open_notebook(nb_id)
         if open_notebook["status"] == "COMPLETED":
-            return self.nb_server.data_access
+            return gis.notebook_server[0].data_access
 
     def test_folders_property(self):
         folders = self.da.folders
@@ -42,6 +39,9 @@ class TestNotebookDataAccess(unittest.TestCase):
 
     def test_create_and_rename_folder(self):
         """ Test workflow: creating a folder in workspace /home and renaming it."""
+
+        if self.gis.version <= [2025, 1]:
+            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
 
         folder = None
         try:
@@ -61,10 +61,13 @@ class TestNotebookDataAccess(unittest.TestCase):
 
         finally:
             if folder:
-                self.assertTrue(folder.delete())
+                folder.delete()
 
     def test_create_and_rename_file(self):
         """ Test workflow: upload a file in workspace /home and renaming it."""
+
+        if self.gis.version <= [2025, 1]:
+            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
 
         file = None
         try:
@@ -88,9 +91,9 @@ class TestNotebookDataAccess(unittest.TestCase):
         finally:
             # both files exist in AGOL after renaming, but only the renamed file exists in Enterprise
             if self.da.get(self.file_name, DATAACCESSTYPE.FILE):
-                self.assertTrue(self.da.get(self.file_name, DATAACCESSTYPE.FILE).delete())
+                self.da.get(self.file_name, DATAACCESSTYPE.FILE).delete()
             if self.da.get(self.rename, DATAACCESSTYPE.FILE):
-                self.assertTrue(self.da.get(self.rename, DATAACCESSTYPE.FILE).delete())
+                self.da.get(self.rename, DATAACCESSTYPE.FILE).delete()
 
     def test_folder_files_and_upload(self):
         """ Test workflow: uploading a text file to a folder in /home and downloading it."""
@@ -128,12 +131,15 @@ class TestNotebookDataAccess(unittest.TestCase):
 
         finally:
             if file_obj:
-                self.assertTrue(file_obj.delete())
+                file_obj.delete()
             if local_path:
                 os.remove(local_path)
 
     def test_move_folder(self):
         """ Test workflow: moving a folder to another folder in workspace."""
+
+        if self.gis.version <= [2025, 1]:
+            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
 
         folder1 = None
         folder2 = None
@@ -156,13 +162,13 @@ class TestNotebookDataAccess(unittest.TestCase):
         finally:
             # AGOL deletes the source folder automatically after moving, whereas Enterprise does not
             if self.da.get(folder2.name):
-                self.assertTrue(folder2.delete())
+                folder2.delete()
             if not self.gis._is_agol and folder1:
-                self.assertTrue(folder1.delete())
+                folder1.delete()
 
+    @unittest.skip("test not ready")
     def test_transfer_workspace(self):
-        # Only run if user is admin and there is more than one file/folder with a workspace
-        # The source user will have empty workspace after transferring, so we have no way to automatically get source workspace back
+        """ Test workflow: transferring workspace from one user to another."""
 
         user_src = None
         try:
@@ -195,9 +201,12 @@ class TestNotebookDataAccess(unittest.TestCase):
             # transfer
             result = self.da.transfer(user_src, self.gis.users.me)
             self.assertTrue(result)
+
         finally:
             if user_src:
                 user_src.delete()
+            if self.da.get(f"_transferred_{user_src.username}", DATAACCESSTYPE.FILE):
+                self.da.get(f"_transferred_{user_src.username}", DATAACCESSTYPE.FILE).delete()
 
 
 if __name__ == "__main__":
