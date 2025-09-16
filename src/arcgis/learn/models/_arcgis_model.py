@@ -913,7 +913,7 @@ class ArcGISModel(object):
             lr, index = self._find_lr()
             if allow_plot:
                 self._show_lr_plot(index)
-        if isinstance(lr, float):
+        if isinstance(lr, np.floating):
             lr = lr.item()
         return lr
 
