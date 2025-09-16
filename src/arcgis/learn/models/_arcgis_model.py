@@ -913,7 +913,7 @@ class ArcGISModel(object):
             lr, index = self._find_lr()
             if allow_plot:
                 self._show_lr_plot(index)
-        if self._slice_lr is True and len(self.learn.layer_groups) > 1:
+        if isinstance(lr, float):
             lr = lr.item()
         return lr
 
