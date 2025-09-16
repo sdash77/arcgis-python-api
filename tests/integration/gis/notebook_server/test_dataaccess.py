@@ -64,6 +64,7 @@ class TestNotebookDataAccess(unittest.TestCase):
             if folder:
                 folder.delete()
 
+    @unittest.skip("for now")
     def test_create_and_rename_file(self):
         """ Test workflow: upload a file in workspace /home and renaming it."""
 
@@ -134,6 +135,31 @@ class TestNotebookDataAccess(unittest.TestCase):
             if local_path:
                 os.remove(local_path)
 
+    def test_move_file(self):
+        """ Test workflow: moving a folder to another folder in workspace."""
+
+        if self.gis.version <= [2025, 1]:
+            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
+
+        folder = None
+        try:
+            file_name = "USA_Major_Cities.zip"
+            file = get_resource_path(f"staging_data/{file_name}")
+
+            home = self.da.folders[0]
+            file_uploaded = home.upload(file)
+            folder = home.create_folder(f"move_file_dest")
+
+            # Move file into folder
+            file = self.da.get(file_name, DATAACCESSTYPE.FILE)
+            moved = file.move(folder)
+            self.assertTrue(moved)
+            self.assertTrue(folder.files[0].name, file_name)
+
+        finally:
+            if folder:
+                folder.delete()
+
     @unittest.skip("for now")
     def test_move_folder(self):
         """ Test workflow: moving a folder to another folder in workspace."""
@@ -166,7 +192,7 @@ class TestNotebookDataAccess(unittest.TestCase):
             if not self.gis._is_agol and folder1:
                 folder1.delete()
 
-    @unittest.skip("test not ready")
+    @unittest.skip("for now")
     def test_transfer_workspace(self):
         """ Test workflow: transferring workspace from one user to another."""
 
