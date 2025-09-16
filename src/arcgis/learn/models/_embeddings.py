@@ -254,9 +254,9 @@ class Embeddings:
     @staticmethod
     def _get_text_compatible_backbones():
         return [
-            "sentence-transformers/distilbert-base-nli-stsb-mean-tokens",
-            "sentence-transformers/bert-base-nli-max-tokens",
-            "sentence-transformers/bert-base-nli-cls-token",
+            "sentence-transformers/all-MiniLM-L6-v2",
+            "sentence-transformers/all-mpnet-base-v2",
+            "sentence-transformers/all-MiniLM-L12-v2",
         ] + [
             "See all `TextEmbedding` models at https://huggingface.co/sentence-transformers"
         ]
@@ -958,7 +958,7 @@ class Embeddings:
         remove_html_tags = kwargs.get("remove_html_tags", False)
         pooling_strategy = kwargs.get("pooling_strategy", "mean")
 
-        all_batch_embedding = np.empty([0, 768])
+        all_batch_embedding = []
         if any([remove_urls, remove_html_tags]):
             item_list = TextModule.preprocess_text_list(
                 item_list, remove_urls, remove_html_tags
@@ -1009,13 +1009,12 @@ class Embeddings:
                     .detach()
                     .numpy()
                 )
-                all_batch_embedding = np.append(
-                    all_batch_embedding, batch_embeddings, axis=0
-                )
+                all_batch_embedding.append(batch_embeddings)
 
         except Exception as e:
             raise Exception(e)
-        return all_batch_embedding
+
+        return np.concatenate(all_batch_embedding, axis=0)
 
     @staticmethod
     def _do_clustering(embeddings, item_list=None, n_clusters=5, dimensions=3):
@@ -1077,7 +1076,7 @@ class Embeddings:
 
         if self._dataset_type == "image":
             for img_path in cluster_dataframe["item"]:
-                img = np.array(PIL_Image.open(img_path).convert("RGB"))
+                img = np.array(PIL_Image.open(img_path))
                 inmem_jpg = cv2.imencode(".png", cv2.cvtColor(img, cv2.COLOR_BGR2RGB))[
                     1
                 ].tobytes()

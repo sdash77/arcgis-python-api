@@ -22,7 +22,7 @@ try:
     from matplotlib import pyplot as plt
     import numpy as np
     import fnmatch
-    from timm.models.hub import (
+    from timm.models._hub import (
         has_hf_hub,
         load_state_dict_from_hf,
         hf_split,
@@ -31,7 +31,7 @@ try:
         load_state_dict_from_url,
     )
     from huggingface_hub import hf_hub_download
-    from timm.models.helpers import (
+    from timm.models._helpers import (
         adapt_input_conv,
         build_model_with_cfg,
         overlay_external_default_cfg,
@@ -164,7 +164,7 @@ def load_state_dict_from_hf(model_id: str, filename: str = "pytorch_model.bin"):
     return state_dict
 
 
-timm.models.hub.load_state_dict_from_hf = load_state_dict_from_hf
+timm.models._hub.load_state_dict_from_hf = load_state_dict_from_hf
 
 
 # same function with modification timm.models.helpers.load_pretrained
@@ -283,7 +283,7 @@ def load_timm_bckbn_pretrained(
     model.load_state_dict(state_dict, strict=strict)
 
 
-timm.models.helpers.load_pretrained = load_timm_bckbn_pretrained
+timm.models._helpers.load_pretrained = load_timm_bckbn_pretrained
 
 
 def _default_split(m):
