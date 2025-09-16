@@ -571,7 +571,7 @@ def get_bleu(self, data, beam_width=5, max_len=20):
         "bleu-2": n_precs[1],
         "bleu-3": n_precs[2],
         "bleu-4": n_precs[3],
-        "BLEU": bleu,
+        "BLEU": bleu.item(),
     }
 
     return BLEU
