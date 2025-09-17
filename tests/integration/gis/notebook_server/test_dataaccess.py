@@ -8,7 +8,7 @@ from arcgis.gis.nb._dataaccess import DATAACCESSTYPE, NotebookFolder, NotebookFi
 from integration.config import get_resource_path
 
 
-@profiles.admin_enterprise_and_agol
+@profiles.admin_enterprise
 @integration_test
 class TestNotebookDataAccess(unittest.TestCase):
 
@@ -37,12 +37,11 @@ class TestNotebookDataAccess(unittest.TestCase):
         self.assertTrue(any(isinstance(f, NotebookFolder) for f in folders))
         self.assertEqual(folders[0].name, "Home")
 
-    @unittest.skip("for now")
     def test_create_and_rename_folder(self):
         """ Test workflow: creating a folder in workspace /home and renaming it."""
 
-        if self.gis.version <= [2025, 1]:
-            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
+        # if self.gis.version <= [2025, 1]:
+        #     self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
 
         folder = None
         try:
@@ -64,12 +63,11 @@ class TestNotebookDataAccess(unittest.TestCase):
             if folder:
                 folder.delete()
 
-    @unittest.skip("for now")
     def test_create_and_rename_file(self):
         """ Test workflow: upload a file in workspace /home and renaming it."""
 
-        if self.gis.version <= [2025, 1]:
-            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
+        # if self.gis.version <= [2025, 1]:
+        #     self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
 
         file = None
         try:
@@ -94,7 +92,6 @@ class TestNotebookDataAccess(unittest.TestCase):
             if self.da.get(self.rename, DATAACCESSTYPE.FILE):
                 self.da.get(self.rename, DATAACCESSTYPE.FILE).delete()
 
-    @unittest.skip("for now")
     def test_folder_files_and_upload(self):
         """ Test workflow: uploading a text file to a folder in /home and downloading it."""
 
@@ -138,8 +135,8 @@ class TestNotebookDataAccess(unittest.TestCase):
     def test_move_file(self):
         """ Test workflow: moving a folder to another folder in workspace."""
 
-        if self.gis.version <= [2025, 1]:
-            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
+        # if self.gis.version <= [2025, 1]:
+        #     self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
 
         folder = None
         try:
@@ -160,12 +157,11 @@ class TestNotebookDataAccess(unittest.TestCase):
             if folder:
                 folder.delete()
 
-    @unittest.skip("for now")
     def test_move_folder(self):
         """ Test workflow: moving a folder to another folder in workspace."""
 
-        if self.gis.version <= [2025, 1]:
-            self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
+        # if self.gis.version <= [2025, 1]:
+        #     self.skipTest("Notebook Data Access features are fully supported in [2025, 1] versions and above.")
 
         folder1 = None
         folder2 = None
@@ -192,7 +188,6 @@ class TestNotebookDataAccess(unittest.TestCase):
             if not self.gis._is_agol and folder1:
                 folder1.delete()
 
-    @unittest.skip("for now")
     def test_transfer_workspace(self):
         """ Test workflow: transferring workspace from one user to another."""
 
