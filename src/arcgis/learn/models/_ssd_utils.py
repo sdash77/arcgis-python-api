@@ -460,7 +460,7 @@ def compute_class_AP(
             clas.extend(clas1)
 
     aps = compute_ap_score(tps, p_scores, clas, n_gts, n_classes)
-    return aps
+    return aps.tolist()
 
 
 def compute_cm(
