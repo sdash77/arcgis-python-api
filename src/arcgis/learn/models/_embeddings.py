@@ -964,7 +964,15 @@ class Embeddings:
             item_list = TextModule.preprocess_text_list(
                 item_list, remove_urls, remove_html_tags
             )
-        # batch_embedding_list = []
+        if isinstance(item_list, pd.Series):
+            item_list = item_list.tolist()
+        elif isinstance(item_list, pd.DataFrame):
+            item_list = item_list.values.tolist()
+        elif isinstance(item_list, (np.ndarray, list)):
+            item_list = item_list
+        else:
+            raise Exception("Input item_list is not of valid type.")
+
         try:
             for i in progress_bar(
                 range(0, len(item_list), batch_size), display=show_progress
