@@ -659,7 +659,7 @@ def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
             aps.append(compute_ap(precision, recall))
         else:
             aps.append(0.0)
-    return aps
+    return aps.item()
 
 
 def compute_ap(precision, recall):
