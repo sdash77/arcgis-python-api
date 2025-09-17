@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from enum import Enum
 
@@ -8,14 +9,13 @@ class GeometryEngine(Enum):
     GDAL = "gdal"
     SHAPELY = "shapely"
     SHAPEFILE = "shapefile"
-    FIONA = "fiona"
 
 
 class GeometryEngineManager:
     """
     Manages detection and selection of a spatial geometry engine.
 
-    Setting "ARCGIS_GEOMETRY_ENGINE" environment variable to "arcpy", "gdal", "fiona", or "shapely" will prioritize your preferred engine.
+    Setting "ARCGIS_GEOMETRY_ENGINE" environment variable to "arcpy", "gdal", or "shapely" will prioritize your preferred engine.
     """
 
     def __init__(self):
@@ -30,10 +30,9 @@ class GeometryEngineManager:
         """
         self.available_engines = {
             GeometryEngine.ARCPY: self._is_installed("arcpy"),
-            GeometryEngine.SHAPELY: self._is_installed("shapely"),
             GeometryEngine.SHAPEFILE: self._is_installed("shapefile"),
+            GeometryEngine.SHAPELY: self._is_installed("shapely"),
             GeometryEngine.GDAL: self._is_installed("osgeo"),
-            GeometryEngine.FIONA: self._is_installed("fiona"),
         }
 
     def _is_installed(self, module_name):
@@ -56,14 +55,13 @@ class GeometryEngineManager:
             if self.available_engines.get(selected_engine, False):
                 return selected_engine  # Use user-specified engine if available
 
-        # Default priority order: arcpy > gdal > shapely > fiona
+        # Default priority order: arcpy > gdal > shapefile
         # Iterate through the default engines and select the first available one
         for engine in [
             GeometryEngine.ARCPY,
             GeometryEngine.GDAL,
-            GeometryEngine.SHAPELY,
             GeometryEngine.SHAPEFILE,
-            GeometryEngine.FIONA,
+            GeometryEngine.SHAPELY,
         ]:
             if self.available_engines[engine]:
                 return engine  # Return the first available engine from the default priority order
@@ -76,4 +74,3 @@ HAS_ARCPY = ge.available_engines[GeometryEngine.ARCPY]
 HAS_PYSHP = ge.available_engines[GeometryEngine.SHAPEFILE]
 HAS_SHAPELY = ge.available_engines[GeometryEngine.SHAPELY]
 HAS_GDAL = ge.available_engines[GeometryEngine.GDAL]
-HAS_FIONA = ge.available_engines[GeometryEngine.FIONA]

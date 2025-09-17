@@ -3,6 +3,7 @@ All the spatial analysis tools from the analyze_patterns, enrich_data, find_loca
 use_proximity submodules, in one place for convenience.
 """
 
+from __future__ import annotations
 from .analyze_patterns import (
     calculate_density,
     find_hot_spots,

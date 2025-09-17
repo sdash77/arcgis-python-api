@@ -170,20 +170,12 @@ class AutoML(object):
         mode="Basic",
         algorithms=None,
         eval_metric="auto",
-        n_jobs=1,
+        n_jobs=-1,
         ml_task="auto",
         **kwargs,
     ):
         try:
             import platform
-
-            if platform.system() == "Linux":
-                message = """
-                        Please enable tensorflow by setting the required environment variable 'ARCGIS_ENABLE_TF_BACKEND' to '1' before importing arcgis
-                        \n for example the following code block needs to be executed before importing arcgis
-                        \n\n`import os; os.environ['ARCGIS_ENABLE_TF_BACKEND'] = '1'`
-                        """
-                print(message)
             from supervised.automl import AutoML as base_AutoML
         except Exception as e:
             import_exception = "\n".join(
@@ -339,11 +331,15 @@ class AutoML(object):
                 fairness_threshold=self._fairness_threshold,
                 privileged_groups=self._privileged_groups,
                 underprivileged_groups=self._underprivileged_groups,
+                stack_models=False,
             )
         else:
             result_path = self._data.path
             self._model = base_AutoML(results_path=result_path)
             self._model._results_path = self._data.path
+
+        # store the is_old_dlpk flag
+        self.is_old_dlpk = kwargs.get("is_old_dlpk", False)
 
     def get_ml_task(self, all_labels):
         try:
@@ -710,7 +706,6 @@ class AutoML(object):
             model_map = self._model._best_model.models_map
             required_model_folders.append(os.path.join(result_path, "Ensemble"))
             for i in self._model._best_model.selected_models:
-                # print(i['model'])
                 sub_path = list(model_map.keys())[
                     list(model_map.values()).index(i["model"])
                 ]
@@ -719,7 +714,6 @@ class AutoML(object):
         else:
             final_path = os.path.join(result_path, self._model._best_model._name)
             required_model_folders.append(final_path)
-
         for folder in required_model_folders:
             # copyfolder(folder,dest)
             try:
@@ -803,7 +797,8 @@ class AutoML(object):
             emd_params["_feature_field_variables"] = self._data._feature_field_variables
         if self._data._raster_field_variables:
             emd_params["_raster_field_variables"] = self._data._raster_field_variables
-
+        emd_params["use_loc_embeddings"] = self._data._use_loc_embeddings
+        emd_params["location_field"] = self._data._location_field
         emd_params["Framework"] = "arcgis.learn.models._inferencing"
         emd_params["ModelConfiguration"] = "_auto_ml"
         emd_params["InferenceFunction"] = "ArcGISImageClassifier.py"
@@ -859,12 +854,13 @@ class AutoML(object):
         continuous_variables = emd["continuous_variables"]
         text_variables = emd.get("text_variables", None)
         image_variables = emd.get("image_variables", None)
+        location_field = emd.get("location_field", None)
+        use_loc_embeddings = emd.get("use_loc_embeddings", False)
         embedding_variables = emd.get("embedding_variables", None)
 
-        if emd["version"] != str(sklearn.__version__):
-            warnings.warn(
-                f"Sklearn version has changed. Model Trained using version {emd['version']}"
-            )
+        # Ensure backward compatibility. As we have introduced a new naming convention for embedding variables
+        # after inclusion of location
+        is_old_dlpk = "use_loc_embeddings" not in emd
 
         _is_classification = True
         if emd["_is_classification"] != "classification":
@@ -898,6 +894,8 @@ class AutoML(object):
             text_variables=text_variables,
             image_variables=image_variables,
             embedding_variables=embedding_variables,
+            location_field=location_field,
+            use_loc_embeddings=use_loc_embeddings,
         )
         empty_data._is_classification = _is_classification
         if _is_classification:
@@ -915,7 +913,7 @@ class AutoML(object):
             )
         except:
             empty_data.explainer_path = None
-        return cls(data=empty_data)
+        return cls(data=empty_data, is_old_dlpk=is_old_dlpk)
 
     def _predict(self, data):
         data_df = pd.DataFrame(
@@ -925,13 +923,27 @@ class AutoML(object):
             + self._data._embedding_variables,
         )
         data_df = self._impute_missing_values(data=data_df)
-        return self._model.predict(data_df)
+        try:
+            pred = self._model.predict(data_df)
+        except Exception as e:
+            if "pickle has an incompatible dtype" in str(
+                e
+            ) or "object has no attribute" in str(e):
+                raise Exception(
+                    "This model was trained using a prior release of ArcGIS API for Python and is unsupported with the current release."
+                )
+            else:
+                raise Exception(
+                    "An error occured while getting the predictions from the trained model."
+                )
+        return pred
 
     def _shap_predict(self, data):
         data_df = pd.DataFrame(
             data,
             columns=self._data._continuous_variables
-            + self._data._categorical_variables,
+            + self._data._categorical_variables
+            + self._data._embedding_variables,
         )
         data_df = self._impute_missing_values(data=data_df)
         if self._model._get_ml_task() == "regression":
@@ -968,7 +980,7 @@ class AutoML(object):
         prediction_type="features",
         output_raster_path=None,
         match_field_names=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         confidence=True,
         get_local_explanations=False,
         **kwargs,
@@ -1041,6 +1053,9 @@ class AutoML(object):
             :class:`~arcgis.features.FeatureLayer` if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
+        if cell_sizes:
+            if 7 in cell_sizes:
+                cell_sizes.remove(7)
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if prediction_type in ["features", "dataframe"]:
@@ -1096,7 +1111,7 @@ class AutoML(object):
         input_features,
         rasters=None,
         datefield=None,
-        cell_sizes=[3, 4, 5, 6, 7],
+        cell_sizes=[3, 4, 5, 6],
         distance_feature_layers=None,
         output_name="Prediction Layer",
         gis=None,
@@ -1131,6 +1146,8 @@ class AutoML(object):
                 )
             except:
                 transformation = None
+            if transformation:
+                transformation = {"wkt": transformation}
             if cell_sizes and not rasters:
                 dataframe = input_features.query(
                     out_sr=4326, datum_transformation=transformation
@@ -1160,10 +1177,25 @@ class AutoML(object):
             dataframe_complete = True
             self._data._text_variables = self._data._text_variables or []
             self._data._image_variables = self._data._image_variables or []
-            if len(self._data._text_variables + self._data._image_variables) > 0:
-                dataframe, new_embd_cols = _extract_embeddings(
-                    self._data._text_variables, self._data._image_variables, dataframe
+            self._data._location_field = self._data._location_field or []
+            if not self._data._use_loc_embeddings:
+                self._data._use_loc_embeddings = False
+                self._data._location_field = []
+            if (
+                len(
+                    self._data._text_variables
+                    + self._data._image_variables
+                    + self._data._location_field
                 )
+                > 0
+            ):
+                dataframe, new_embd_cols = _extract_embeddings(
+                    self._data._text_variables,
+                    self._data._image_variables,
+                    self._data._location_field,
+                    dataframe,
+                )
+
         elif hasattr(input_features, "value"):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
@@ -1250,6 +1282,16 @@ class AutoML(object):
 
                     raster_columns.append((raster, categorical))
 
+            # Check if the location field is there or not
+            if self._data._use_loc_embeddings:
+                if self._data._location_field:
+                    # check if the location field is in the dataframe
+                    for field in self._data._location_field:
+                        if field not in dataframe.columns:
+                            raise Exception(
+                                f"Location field '{field}' not found in the input features."
+                            )
+
             with warnings.catch_warnings():
                 if not HAS_FASTAI:
                     _raise_fastai_import_error(import_exception=import_exception)
@@ -1265,6 +1307,9 @@ class AutoML(object):
                     datefield,
                     cell_sizes,
                     distance_feature_layers,
+                    location_column=self._data._location_field,
+                    use_loc_embeddings=self._data._use_loc_embeddings,
+                    is_old_dlpk=self.is_old_dlpk,
                 )
 
         if match_field_names:

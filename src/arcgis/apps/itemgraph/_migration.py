@@ -1,8 +1,10 @@
+from __future__ import annotations
 from ._item_graph import ItemGraph, ItemNode, load_from_file
 from ._get_dependencies import _get_related_item_dict
 from arcgis.gis import GIS
 from arcgis.gis._impl._content_manager.folder import Folder
 from arcgis._impl.common._utils import _text_replace, _get_unique_name
+from arcgis._impl.common._clone import _search_org_for_existing_item
 import os
 import shutil
 import tempfile
@@ -333,19 +335,43 @@ class _ImportPackage:
         item_folder,
         preserve_id: bool = False,
         folder: Folder | str = None,
+        search_existing: bool = False,
     ):
         # read the properties.json file
         with open(os.path.join(item_folder, "properties.json"), "r") as prop_file:
             item_properties = json.load(prop_file)
 
-        if item_properties["type"] in DISALLOWED_TYPES:
-            raise RuntimeError(
-                f"Item type '{item_properties['type']}' is not yet compatible with this functionality."
-            )
+        item_id = item_properties["id"]
 
         # read the relationships.json file
         with open(os.path.join(item_folder, "relationships.json"), "r") as rel_file:
             relationships = json.load(rel_file)
+
+        if search_existing:
+            # check if item already exists in the org
+            mini_dict = {"id": item_id, "type": item_properties["type"]}
+            existing_item = _search_org_for_existing_item(
+                self.gis,
+                mini_dict,
+            )
+            if existing_item:
+                self.created_item_mapping[item_id] = existing_item.id
+                self._name_mapping[item_id] = (
+                    item_properties["title"],
+                    existing_item.title,
+                )
+                self._service_mapping[item_id] = (
+                    item_properties["url"],
+                    existing_item.url,
+                )
+                # add the related_items relationships to dict for reconstruction
+                self._item_relationships[item_id] = relationships["related_items"]
+                return []
+
+        if item_properties["type"] in DISALLOWED_TYPES:
+            raise RuntimeError(
+                f"Item type '{item_properties['type']}' is not yet compatible with this functionality."
+            )
 
         # read the resources.json file
         with open(
@@ -390,7 +416,7 @@ class _ImportPackage:
             props["thumbnail"] = os.path.join(item_folder, "files", thumbnail_name)
         if "Metadata" in item_properties["typeKeywords"]:
             props["metadata"] = os.path.join(item_folder, "files/metadata.xml")
-        item_id = item_properties["id"]
+        props["typeKeywords"].append("source-%s" % item_id)
         new_item_id = None
         if (
             preserve_id
@@ -435,6 +461,7 @@ class _ImportPackage:
         added_items = []
 
         def _remap_json(json_text, remap_dict):
+            remap_dict.pop(None, None)  # remove None key if exists
             if len(remap_dict) > 0:
                 json_text = json_text.replace("\\/", "/")
                 json_text = _text_replace(json_text, remap_dict)
@@ -492,7 +519,7 @@ class _ImportPackage:
                             view_def["viewDefinitionQuery"] = query
                         view_layers[idx] = view_def
 
-            reqs = self.graph.get_item(item_id).requires("id")
+            reqs = self.graph.get_node(item_id).contains("id")
             if len(reqs) == 0:
                 raise RuntimeError("View Service does not have a valid data item.")
             elif len(reqs) == 1:
@@ -518,7 +545,7 @@ class _ImportPackage:
 
         elif item_properties["type"] in JSON_BASED_WITH_DATA_TYPES:
             # check if dependent file already was uploaded
-            reqs = self.graph.get_item(item_id).requires("id")
+            reqs = self.graph.get_node(item_id).requires("id")
             service_item = None
             if len(reqs) > 0:
                 # find the dependent file
@@ -559,6 +586,8 @@ class _ImportPackage:
                 except:
                     new_name = _get_unique_name(item_properties["title"])
                     new_name = new_name.replace("/", "_")
+                    if not self.gis._is_agol:
+                        new_name = new_name.replace("-", "_")
                     pub_params["name"] = new_name
                     new_item = service_item.publish(
                         publish_parameters=pub_params, item_id=new_item_id
@@ -603,7 +632,7 @@ class _ImportPackage:
                 new_item = _add_data_item(fp, item_properties["type"], props)
 
         elif item_properties["type"] in JSON_BASED_TYPES:
-            reqs = self.graph.get_item(item_id).requires("node")
+            reqs = self.graph.get_node(item_id).requires("node")
             for req in reqs:
                 if (
                     req.id in self.created_item_mapping
@@ -635,6 +664,20 @@ class _ImportPackage:
                 }
             )
             new_item = job.result()
+            if new_item.url:
+                if props["type"] == "Web Experience":
+                    if self.gis._portal.is_arcgisonline:
+                        url = f"https://experience.arcgis.com/experience/{new_item.id}"
+                    else:
+                        url = f"{self.gis._portal.url}/apps/experiencebuilder/experience/?id={new_item.id}"
+                    new_item.update({"url": url})
+
+                elif props["type"] == "StoryMap":
+                    if self.gis._portal.is_arcgisonline:
+                        url = f"https://storymaps.arcgis.com/stories/{new_item.id}"
+                    else:
+                        url = f"{self.gis._portal.url}/apps/storymaps/stories/{new_item.id}"
+                    new_item.update({"url": url})
 
         else:
             # if not a covered type, then skip
@@ -689,7 +732,36 @@ class _ImportPackage:
         item_mapping: dict = {},
         folder: Folder | str = None,
         failure_rollback: bool = False,
+        search_existing_items: bool = False,
     ):
+
+        if item_mapping != {}:
+            for og_id, new_id in item_mapping.items():
+                new_item = self.gis.content.get(new_id)
+                if new_item is None:
+                    warnings.warn(
+                        f"Item with id {new_id} not found in the portal. Skipping remapping.",
+                        RuntimeWarning,
+                    )
+                    continue
+                if og_id not in self.items:
+                    warnings.warn(
+                        f"Item with id {og_id} not found as a dependency. Skipping remapping.",
+                        RuntimeWarning,
+                    )
+                    continue
+                self.created_item_mapping[og_id] = new_id
+                og_folder = os.path.join(self._temp_package, og_id)
+                with open(os.path.join(og_folder, "properties.json"), "r") as prop_file:
+                    og_props = json.load(prop_file)
+                self._name_mapping[og_id] = (og_props["title"], new_item.title)
+                self._service_mapping[og_id] = (og_props["url"], new_item.url)
+                with open(
+                    os.path.join(og_folder, "relationships.json"), "r"
+                ) as rel_file:
+                    relationships = json.load(rel_file)
+                self._item_relationships[og_id] = relationships["related_items"]
+
         if len(items) == 0:
             nodes = set(self.graph.all_items())
         else:
@@ -700,7 +772,7 @@ class _ImportPackage:
                     raise ValueError(f"Item with id {itemid} not found in the package")
 
                 # if deep, make sure required items are also getting cloned
-                node = self.graph.get_item(itemid)
+                node = self.graph.get_node(itemid)
                 nodes.add(node)
                 if deep:
                     for req in node.requires():
@@ -722,7 +794,10 @@ class _ImportPackage:
                 continue
             try:
                 new_items = self._import_item(
-                    item_folder, preserve_id=preserve_ids, folder=folder
+                    item_folder,
+                    preserve_id=preserve_ids,
+                    folder=folder,
+                    search_existing=search_existing_items,
                 )
                 if new_items:
                     created_items.extend(new_items)

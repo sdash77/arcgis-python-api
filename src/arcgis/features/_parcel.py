@@ -1025,7 +1025,7 @@ class ParcelFabricManager(object):
     ):
         """
         .. note::
-            Least Squares Adjustment functionality introduced at version 10.8.1
+            Least Squares Adjustment functionality introduced at ArcGIS Enterprise version 10.8.1
 
         Analyzes the parcel fabric measurement network by running a least squares adjustment on the
         input parcels. A least-squares adjustment is a mathematical procedure that uses statistical
@@ -1109,7 +1109,7 @@ class ParcelFabricManager(object):
     ):
         """
         .. note::
-            Least Squares Adjustment functionality introduced at version 10.8.1
+            Least Squares Adjustment functionality introduced at ArcGIS Enterprise version 10.8.1
 
         Applies the results of a least squares adjustment to parcel fabric feature classes. Least squares adjustment results stored
         in the AdjustmentLines and AdjustmentPoints feature classes are applied to the corresponding parcel line, connection line,
@@ -1185,7 +1185,7 @@ class ParcelFabricManager(object):
     ):
         """
         .. note::
-            Divide functionality introduced at version 10.9.1
+            Divide functionality introduced at version ArcGIS Enterprise version 10.9.1
 
         Divide a polygon feature into multiple features that have proportional or equal areas, or equal widths.
 
@@ -1623,7 +1623,175 @@ class ParcelFabricManager(object):
             raise ValueError("Parameter `extent` must be None, Envelope or dict.")
 
     # ----------------------------------------------------------------------
+    def shrink_to_seed(
+        self,
+        parcel_features: list[dict[str, Any]],
+        future: bool = False,
+    ):
+        """
+        .. note::
+            Shrink to seed functionality introduced at ArcGIS Enterprise version 12.0
 
+        The :meth:`~shrink_to_seed` replaces selected parcel polygons with parcel seeds and leaves the
+        original parcel lines in place for editing and modification. The attributes of the original
+        polygons are copied to the parcel seeds.
+
+        =======================     =======================================================================
+        **Parameter**                **Description**
+        -----------------------     -----------------------------------------------------------------------
+        parcel_features             Required List. Parameter representing the input parcel polygon feature(s)
+                                    that will be set to parcel seeds.
+
+                                    .. code-block:: python
+
+                                        >>> parcel_features=[{"id":"<guid>",
+                                                                   "layerId":"<layerID>"},
+                                                                   {...}]
+
+        -----------------------     -----------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
+        =======================     =======================================================================
+
+        :return: Dictionary indicating 'success' or 'error' with a list of edited features
+
+        """
+        if self._gis.version < [2025, 2]:
+            raise Exception(
+                "This method is only supported starting at ArcGIS Enterprise 12.0"
+            )
+
+        url = "{base}/shrinkToSeed".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "parcelFeatures": parcel_features,
+            "async": future,
+            "f": "json",
+        }
+
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def merge_parcel_points(
+        self,
+        input_parcel_points: list[dict[str, Any]],
+        preserve_point_guid: str,
+        location_point_guid: str,
+        update_features: bool,
+        remove_lines: bool,
+        attribute_overrides: dict[str, Any] | None = None,
+        future: bool = False,
+    ):
+        """
+        .. note::
+            Merge Parcel Points functionality introduced at ArcGIS Enterprise version 12.0
+
+        The :meth:`~shrink_to_seed` replaces selected parcel polygons with parcel seeds and leaves the
+        original parcel lines in place for editing and modification. The attributes of the original
+        polygons are copied to the parcel seeds.
+
+        =======================     =======================================================================
+        **Parameter**                **Description**
+        -----------------------     -----------------------------------------------------------------------
+        input_parcel_points         Required List. Parameter representing the input parcel point feature(s)
+                                    that will be merged.
+
+                                    .. code-block:: python
+
+                                        >>> parcel_features=[{"<guid>","<guid>"},{...}]
+
+        -----------------------     -----------------------------------------------------------------------
+        preserve_point_guid         Required string. The GlobalID (guid) value of the point to preserve
+        -----------------------     -----------------------------------------------------------------------
+        location_point_guid         Required string. The GlobalID (guid) value of the location parcel point
+        -----------------------     -----------------------------------------------------------------------
+        update_features             Optional boolean. Merge the points or return only a response of what
+                                    points would be merged.
+
+                                    The default is `False`.
+        -----------------------     -----------------------------------------------------------------------
+        remove_lines                Optional boolean. Remove parcel lines and collapse parcels.
+
+                                    The default is `False`.
+        -----------------------     -----------------------------------------------------------------------
+        attribute_overrides         Optional List. A list of attributes to set on the child parcel, if
+                                     they exist. Pairs of field name and value.
+
+
+                                     :Syntax:
+
+                                     .. code-block:: python
+
+                                         >>> attribute_overrides = [
+                                                                   {
+                                                                    "type": "PropertySet",
+                                                                    "propertySetItems": [
+                                                                                         <field name>,
+                                                                                         <field value>
+                                                                                        ]
+                                                                   }
+                                                                  ]
+
+                                     .. note::
+                                         To set subtype, include subtype value in this list.
+        -----------------------     -----------------------------------------------------------------------
+                                    The default is `False`.
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
+        =======================     =======================================================================
+
+        :return: Dictionary indicating 'success' or 'error' with a list of edited features
+
+        """
+        if self._gis.version < [2025, 2]:
+            raise Exception(
+                "This method is only supported starting at ArcGIS Enterprise 12.0"
+            )
+
+        url = "{base}/mergeParcelPoints".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "points": input_parcel_points,
+            "preservePointGuid": preserve_point_guid,
+            "locationPointGuid": location_point_guid,
+            "updateFeatures": update_features,
+            "removeLines": remove_lines,
+            "attributeOverrides": attribute_overrides,
+            "async": future,
+            "f": "json",
+        }
+
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
         import concurrent.futures

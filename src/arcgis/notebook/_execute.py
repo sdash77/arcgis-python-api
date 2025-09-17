@@ -192,7 +192,7 @@ def execute_notebook(
             )
         else:
             mgr = gis.notebook_server[server_index].notebooks
-            assert isinstance(mgr, NotebookManager)
+            assert hasattr(mgr, "execute_notebook")
             return mgr.execute_notebook(
                 item=item,
                 update_portal_item=update_portal_item,

@@ -8,6 +8,8 @@ import warnings
 import traceback
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
 from .._utils._shap_masker import custom_tokenizer
+from arcgis.features import FeatureSet, GeoAccessor
+from typing import List, Tuple
 
 HAS_NUMPY = True
 HAS_FASTAI = True
@@ -47,8 +49,6 @@ try:
     from transformers import logging
     from .._utils.llm_utils import data_sanity_llm
     from ._model_extension_text import TextModelExtension
-    from arcgis.features import FeatureSet, GeoAccessor
-    from typing import List, Tuple
 
     logging.get_logger("filelock").setLevel(logging.ERROR)
 except Exception as e:
@@ -70,7 +70,7 @@ else:
 try:
     import numpy as np
 
-    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+    warnings.filterwarnings("ignore", category=np.exceptions.VisibleDeprecationWarning)
 except:
     HAS_NUMPY = False
 
@@ -721,8 +721,8 @@ class TextClassifier(ArcGISModel):
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Path to Deep Learning Package
-                                (DLPK) or Esri Model Definition(EMD) file.
+        name_or_path            Required string. Name or Path to
+                                Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
         if self.model_extension:
@@ -770,10 +770,8 @@ class TextClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
                                 model. (Only supported by :class:`~arcgis.learn.SingleShotDetector`, currently.)
-                                If framework used is ``TF-ONNX``, ``batch_size`` can be
-                                passed as an optional keyword argument.
 
-                                Framework choice: 'PyTorch' and 'TF-ONNX'
+                                Framework choice: 'PyTorch'.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
@@ -1052,7 +1050,7 @@ class TextClassifier(ArcGISModel):
                                 This parameter use to describe the task and guardrails for the task.
 
         ---------------------   -------------------------------------------
-        show_progress           optional Bool. If set to True, will display a
+        show_progress           Optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
                                 Applicable only when a list of text is passed
         ---------------------   -------------------------------------------
@@ -1083,9 +1081,9 @@ class TextClassifier(ArcGISModel):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_field             Optional string.
-                                input field name in the feature set. Supported
-                                in model extension
-                                Deafult value: input_str
+                                Input field name in the feature set. Supported
+                                in model extension.
+                                Default value: input_str
         =====================   ===========================================
 
         :return: * In case of single label classification problem, a tuple containing the text, its predicted class label and the confidence score.

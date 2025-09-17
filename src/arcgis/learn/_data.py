@@ -220,9 +220,9 @@ def _get_bbox_classes(
         d_xyz = []
         occluded = []
         rot_yaxis = []
-        start_space = re.compile("^\s+")  # pattern to capture leading spaces
+        start_space = re.compile(r"^\s+")  # pattern to capture leading spaces
         spaces_to_be_replaced = re.compile(
-            "(?<=[0-9])(\s+)(?=[0-9])"
+            r"(?<=[0-9])(\s+)(?=[0-9])"
         )  # pattern to capture spaces between numeric values
 
         with open(label_file) as f:  # reading the bbox and class labels
@@ -379,9 +379,9 @@ def _get_class_mapping(path, **kwargs):
     dataset_type = kwargs.get("dataset_type", None)
     class_mapping = {}
     if dataset_type == "KITTI_rectangles":
-        start_space = re.compile("^\s+")  # pattern to capture leading spaces
+        start_space = re.compile(r"^\s+")  # pattern to capture leading spaces
         spaces_to_be_replaced = re.compile(
-            "(?<=[0-9])(\s+)(?=[0-9])"
+            r"(?<=[0-9])(\s+)(?=[0-9])"
         )  # pattern to capture spaces between numeric values
 
         for txtfile in os.listdir(path):
@@ -1011,7 +1011,7 @@ def prepare_tabulardata(
     explanatory_variables=None,
     explanatory_rasters=None,
     date_field=None,
-    cell_sizes=[3, 4, 5, 6, 7],
+    cell_sizes=[3, 4, 5, 6],
     distance_features=None,
     preprocessors=None,
     val_split_pct=0.1,
@@ -1176,11 +1176,26 @@ def prepare_tabulardata(
 
                             .. note::
                                 Applies to timeseries
+    ---------------------   -------------------------------------------
+    use_loc_embeddings      Optional boolean. If set to True, enables embedding of the spatial
+                            geometry as continuous feature representations when geometry data is available.
+                            For Polygon and Line geometries, the centroid is used as the representative
+                            location for embedding.
+    ---------------------   -------------------------------------------
+    location_column         Optional List. The column names that will be used to get
+                            the lat long value from the `csv` or `json` file types. lon and lat
+                            order should be maintained in the list.  This argument is valid
+                            only for `dataset-type` location.
+                            Default value is set to ['lon', 'lat'].
     =====================   ===========================================
 
     :return: `TabularData` object
 
     """
+    if cell_sizes:
+        if 7 in cell_sizes:
+            cell_sizes.remove(7)
+
     if input_features is None and (
         explanatory_rasters is None or len(explanatory_rasters) == 0
     ):
@@ -1288,7 +1303,8 @@ def prepare_data(
     =====================   ===========================================
     **Parameter**           **Description**
     ---------------------   -------------------------------------------
-    path                    Required string. Path to data directory or a list of paths.
+    path                    Required string. Path to data directory or a list of paths
+                            in case of multi-folder training.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label. Not supported for MaskRCNN model.
@@ -1477,6 +1493,10 @@ def prepare_data(
                             Only those spectral bands will be considered for training.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
+    window_size             Optional int. default set to 27. pixel width and height of each
+                            square patch extracted around a labeled pixel for training.
+                            Applicable only for Hyperspectral3DRCNet model.
+    ---------------------   -------------------------------------------
     n_temporal              Required int. Number of temporal observations or time steps.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
@@ -1565,10 +1585,6 @@ def prepare_data(
 
     if getattr(arcgis.env, "_processorType", "") == "CPU":
         databunch_kwargs["device"] = torch.device("cpu")
-
-    if ARCGIS_ENABLE_TF_BACKEND:
-        databunch_kwargs["device"] = torch.device("cpu")
-        databunch_kwargs["pin_memory"] = False
 
     kwargs_transforms = {}
     if resize_to:
@@ -1762,6 +1778,7 @@ def prepare_data(
             "ObjectTracking",
             "PSETAE",
             "SR3",
+            "3DRCNet",
         ]
         and has_esri_files
     ):
@@ -1871,6 +1888,7 @@ def prepare_data(
 
     _infered = False
     sensor_name = "ms"
+    _is_non8bit_rgb = False
     if (
         has_esri_files
         and "InputRastersProps" in emd
@@ -1904,6 +1922,8 @@ def prepare_data(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 ds = gdal.Open(_im_path)
+            if ds.RasterCount == 3 and ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
+                _is_non8bit_rgb = True
             if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
@@ -2701,6 +2721,8 @@ def prepare_data(
         _is_multispec = False
 
         def check_ms(il, il2):
+            from osgeo import gdal
+
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
@@ -3008,6 +3030,19 @@ def prepare_data(
         data._estimate_batch = _estimate_batch
         return data
 
+    elif dataset_type == "3DRCNet":
+        from ._data_utils.hyperspec_data import prepare_hyperspec_data
+
+        data = prepare_hyperspec_data(
+            path=path,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            working_dir=working_dir,
+            class_mapping=class_mapping,
+            **kwargs,
+        )
+        return data
+
     elif dataset_type == "ClimaX":
         from ._data_utils.climax_data import prepare_climax_data
 
@@ -3258,6 +3293,7 @@ def prepare_data(
         data._do_normalize = True
         if kwargs.get("do_normalize", None) is not None:
             data._do_normalize = kwargs.get("do_normalize", True)
+        # multispectral normalization
         if data._do_normalize:
             data = data.normalize(
                 stats=(data._scaled_mean_values, data._scaled_std_values),
@@ -3576,6 +3612,11 @@ def prepare_data(
         if [data._bands[i] for i in data._extract_bands] == ["r", "g", "b"]:
             _train_tail = False
         data._train_tail = kwargs.get("train_tail", _train_tail)
+
+    if _is_non8bit_rgb:
+        data._is_multispectral = False
+        data._train_tail = False
+    data._is_non8bit_rgb = _is_non8bit_rgb
 
     if not_label_count[0]:
         logger = logging.getLogger()

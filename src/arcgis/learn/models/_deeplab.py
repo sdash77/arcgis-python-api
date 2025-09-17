@@ -454,19 +454,33 @@ class DeepLab(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
-    def dofa_backbones():
-        """Supported list of dofa backbones for this model."""
-        from ._dofa_utils import dofa_backbones_downstream
-
-        return dofa_backbones_downstream
-
-    @staticmethod
     def torchgeo_backbones():
         """Supported list of torchgeo backbones for this model."""
         from ._hf_weightutils import hf_resnet_cfgs
 
-        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" not in r]
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, resnet_keys))
         return torchgeo_backbone
+
+    @staticmethod
+    def satlas_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs, Swin_Weights
+
+        resnet_keys = [r for r in hf_resnet_cfgs.keys() if "_satlas" in r]
+
+        swin_keys = [
+            attr
+            for attr in dir(Swin_Weights)
+            if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
+        ]
+
+        satlas_backbone = list(
+            map(
+                lambda m: "hf:" + m,
+                resnet_keys + swin_keys,
+            )
+        )
+        return satlas_backbone
 
     @staticmethod
     def _supported_backbones():
@@ -486,14 +500,14 @@ class DeepLab(ArcGISModel):
 
         transformer_backbone = DeepLab.transformer_backbones()
         torchgeo_backbone = DeepLab.torchgeo_backbones()
-        dofa_backbone = DeepLab.dofa_backbones()
+        satlas_backbone = DeepLab.satlas_backbones()
 
         return (
             [*_resnet_family, *_densenet_family, *_vgg_family]
             + timm_backbones
             + transformer_backbone
             + torchgeo_backbone
-            + dofa_backbone
+            + satlas_backbone
         )
 
     @property
@@ -560,9 +574,13 @@ class DeepLab(ArcGISModel):
             empty_data.emd_path = emd_path
             empty_data.emd = emd
             empty_data._band_names = emd.get("Bands")
-            return cls(empty_data, **model_params, pretrained_path=str(model_file))
+            model_obj = cls(empty_data, **model_params, pretrained_path=str(model_file))
+            model_obj._model_emd = emd
+            return model_obj
         else:
-            return cls(data, **model_params, pretrained_path=str(model_file))
+            model_obj = cls(data, **model_params, pretrained_path=str(model_file))
+            model_obj._model_emd = emd
+            return model_obj
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -678,32 +696,36 @@ class DeepLab(ArcGISModel):
     def _freeze(self):
         "Freezes the pretrained backbone."
         if self._backbone.__name__ in DeepLab.transformer_backbones():
-            backbone = self.learn.model.backbone[0].backbone
+            backbone = self.learn.model.backbone[0]
+            pretrained_layers, random_layers = backbone._freeze()
+            random_layers.extend(flatten_model(self.learn.model.classifier))
+            random_layers.extend(flatten_model(self.learn.model.aux_classifier))
+            self.learn.layer_groups = [
+                nn.Sequential(*pretrained_layers),
+                nn.Sequential(*random_layers),
+            ]
         else:
             backbone = self.learn.model.backbone
-        layers = flatten_model(backbone)
-        start_idx = 0
-        if self._is_multispectral:
-            start_idx = 1
-        for idx, i in enumerate(layers[start_idx:]):
-            if (
-                isinstance(i, (torch.nn.BatchNorm2d))
-                or isinstance(i, (fastai.torch_core.ParameterModule))
-                or isinstance(i, (torch.nn.BatchNorm1d))
-                or isinstance(i, (torch.nn.LayerNorm))
-            ):
-                continue
-            if hasattr(i, "dilation"):
-                dilation = i.dilation
-                dilation = dilation[0] if isinstance(dilation, tuple) else dilation
-                if dilation > 1:
-                    break
-            for p in i.parameters():
-                p.requires_grad = False
-
-        self.learn.layer_groups = split_model_idx(
-            self.learn.model, [idx]
-        )  ## Could also call self.learn.freeze after this line because layer groups are now present.
+            layers = flatten_model(backbone)
+            start_idx = 0
+            if self._is_multispectral:
+                start_idx = 1
+            for idx, layer in enumerate(layers[start_idx:]):
+                if (
+                    isinstance(layer, (torch.nn.BatchNorm2d))
+                    or isinstance(layer, (fastai.torch_core.ParameterModule))
+                    or isinstance(layer, (torch.nn.BatchNorm1d))
+                    or isinstance(layer, (torch.nn.LayerNorm))
+                ):
+                    continue
+                if hasattr(layer, "dilation"):
+                    dilation = layer.dilation
+                    dilation = dilation[0] if isinstance(dilation, tuple) else dilation
+                    if dilation > 1:
+                        break
+                for p in layer.parameters():
+                    p.requires_grad = False
+            self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
     def unfreeze(self):

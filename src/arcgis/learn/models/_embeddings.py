@@ -1,6 +1,8 @@
 import os
 import re
 import json
+from typing import List, Union
+
 import arcgis
 import logging
 import warnings
@@ -12,9 +14,9 @@ HAS_FASTAI = True
 HAS_TRANSFORMER = True
 HAS_BEAUTIFULSOUP = True
 
-
 try:
     import torch
+    import json
     import pandas as pd
     from PIL import Image as PIL_Image
     from pathlib import Path
@@ -24,6 +26,8 @@ try:
     h5py = LazyLoader("h5py")
     px = LazyLoader("plotly.express")
     go = LazyLoader("plotly.graph_objs")
+    from arcgis.geometry import Geometry, Polygon, Polyline, Point, project
+    from arcgis.geometry import SpatialReference
     from torchvision import models
     from sklearn.cluster import DBSCAN, KMeans
     from sklearn.decomposition import PCA
@@ -35,6 +39,12 @@ try:
         _resnet_family,
         _vgg_family,
         _densenet_family,
+    )
+    from ._satclip import (
+        SphericalHarmonics,
+        SirenNet,
+        SatClipLocationEncoder,
+        weight_download_url,
     )
 except Exception as e:
     import_exception = "\n".join(
@@ -49,7 +59,7 @@ try:
 except Exception as e:
     HAS_NUMPY = False
 else:
-    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+    warnings.filterwarnings("ignore", category=np.exceptions.VisibleDeprecationWarning)
 
 try:
     from bs4 import BeautifulSoup
@@ -61,6 +71,7 @@ else:
 max_token_length = 512
 allowed_text_extensions = ["csv", "txt", "json"]
 allowed_image_extensions = ["png", "jpg", "jpeg", "tiff", "tif", "bmp"]
+allowed_location_extension = ["csv", "json"]
 
 
 class TextModule:
@@ -135,7 +146,7 @@ class Embeddings:
     ---------------------   -------------------------------------------
     dataset_type            Required string. The type of data for which
                             we would like to get the embedding vectors.
-                            Valid values are `text` & `image`. Default
+                            Valid values are `text`, `location` & `image`. Default
                             is set to `image`.
 
                             .. note::
@@ -144,7 +155,9 @@ class Embeddings:
     backbone                Optional string. Specify the backbone/model-name
                             to be used to get the embedding vectors.
                             Default backbone for `image` dataset-type is
-                            `resnet34` and for `text` dataset-type is
+                            `resnet34`,
+                             for `location` dataset-type is `satclip/sentinel-2_trained`
+                             and for `text` dataset-type is
                             `sentence-transformers/distilbert-base-nli-stsb-mean-tokens`
 
                             To learn more about the available models for
@@ -177,13 +190,15 @@ class Embeddings:
             self._allowed_extensions = allowed_image_extensions
         elif self._dataset_type == "text":
             self._allowed_extensions = allowed_text_extensions
+        elif self._dataset_type == "location":
+            self._allowed_extensions = allowed_location_extension
 
         if "working_dir" in kwargs:
             self.working_dir = kwargs.get("working_dir")
         else:
             self.working_dir = Path.cwd()
 
-        # _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
+        _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
 
         self._file_path = None
         self.backbone = None
@@ -211,8 +226,8 @@ class Embeddings:
         ---------------------   -------------------------------------------
         dataset_type            Required string. The type of data for which
                                 we would like to get the embedding vectors.
-                                Valid values are `text` & `image`. Default
-                                is set to `image`
+                                Valid values are `text`, `location` & `image`.
+                                Default is set to `image`
         =====================   ===========================================
 
         :return: a list containing the available models for the given `dataset-type`
@@ -221,6 +236,8 @@ class Embeddings:
             return cls._get_image_compatible_backbones()
         elif dataset_type == "text":
             return cls._get_text_compatible_backbones()
+        elif dataset_type == "location":
+            return cls._get_location_compatible_backbone()
         else:
             error_message = f"Wrong dataset-type - {dataset_type} provided. Valid values are 'image' or 'text'."
             raise Exception(error_message)
@@ -243,6 +260,10 @@ class Embeddings:
         ] + [
             "See all `TextEmbedding` models at https://huggingface.co/sentence-transformers"
         ]
+
+    @staticmethod
+    def _get_location_compatible_backbone():
+        return ["satclip/sentinel-2_trained"]
 
     def _get_device(self):
         move_to_cpu = _device_check()
@@ -269,10 +290,30 @@ class Embeddings:
             model = self._load_image_model(backbone)
         elif dataset_type == "text":
             model = self._load_text_model(backbone)
+        elif dataset_type == "location":
+            model = self._load_location_model(backbone)
         else:
-            error_message = f"Wrong dataset-type - {dataset_type} provided. Valid values are 'image' or 'text'."
+            error_message = f"Wrong dataset-type - {dataset_type} provided. Valid values are 'image', `location` or 'text'."
             raise Exception(error_message)
         return model
+
+    def _load_location_model(self, backbone="satclip/sentinel-2_trained"):
+        if backbone is None:
+            backbone = "satclip/sentinel-2_trained"
+        posenc = SphericalHarmonics(legendre_polys=40)
+        nnet = SirenNet(
+            dim_in=posenc.embedding_dim,
+            dim_hidden=256,
+            dim_out=256,
+            num_layers=2,
+            w0=1.0,
+            w0_initial=30.0,
+        )
+        encoder = SatClipLocationEncoder(posenc, nnet).double()
+        saved_path = weight_download_url("716bec23b9d346e485311523107629c0")
+        model = torch.load(f"{saved_path}/satclip.pth", map_location=self._device)
+        encoder.load_state_dict(model, strict=True)
+        return encoder.eval()
 
     def _load_image_model(self, backbone=None):
         if backbone is None:
@@ -316,10 +357,10 @@ class Embeddings:
 
     def get(
         self,
-        text_or_list,
-        batch_size=32,
-        show_progress=True,
-        return_embeddings=False,
+        text_or_list: Union[List[Path], Path],
+        batch_size: int = 32,
+        show_progress: bool = True,
+        return_embeddings: bool = False,
         **kwargs,
     ):
         """
@@ -329,9 +370,11 @@ class Embeddings:
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or List. String containing
-                                directory path or list of directory paths where
+                                file path, directory path or list of directory paths where
                                 image/text files are present for which the user wants
                                 to get the embedding vectors.
+                                For `dataset-type` location - The input should be
+                                the path to the file.
         ---------------------   -------------------------------------------
         batch_size              Optional integer. The number of items to process
                                 in one batch. Default is set to 32.
@@ -363,7 +406,8 @@ class Embeddings:
                                 ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'bmp']
                                 Allowed values for `dataset-type` text are -
                                 ['csv', 'txt', 'json']
-
+                                Allowed values for `dataset-type` location are -
+                                ['csv', 'json']
                                 .. note::
                                         For json files, if we have nested json structures, then text will be extracted only from the 1st level.
         ---------------------   -------------------------------------------
@@ -396,6 +440,17 @@ class Embeddings:
                                 Allowed values are - ['mean', 'max', 'first']
                                 This argument is valid only for `dataset-type` text.
                                 Default value is `mean`.
+        ---------------------   --------------------------------------------
+        location_column         Optional List. The column names that will be used to get
+                                the lat long value from the `csv` or `json` file types. lon and lat
+                                order should be maintained in the list.  This argument is valid
+                                only for `dataset-type` location.
+                                Default value is set to ['lon', 'lat'].
+        ---------------------   --------------------------------------------
+        spatial_reference       Optional int. The well-known id (WKID) of the spatial
+                                reference of the input geometry. This argument is valid
+                                only for `dataset-type` location.
+                                Default value is set to 4326 (WGS84).
         =====================   ===========================================
 
         :return: The path of the H5 file where items & corresponding embeddings are saved.
@@ -411,13 +466,88 @@ class Embeddings:
                 f"or move the file to another location to proceed."
             )
         text_img_df = kwargs.get("dataframe", False)
+        spatial_reference = kwargs.get("spatial_reference", 4326)
         if isinstance(text_img_df, pd.DataFrame):
             col = kwargs.get("text_column", "text")
-            item_list = text_img_df[col].values.tolist()
+            item_list = text_img_df[col]
         else:
-            item_list = self._get_items(text_or_list, **kwargs)
+            # add the datatype in the kwargs
+            if self._dataset_type == "location":
+                location_column = kwargs.get("location_column", ["lon", "lat"])
+                encoding = kwargs.get("encoding", "utf-8")
+                if isinstance(text_or_list, list):
+                    raise Exception(
+                        "Input path should be a string containing the file path for dataset type location."
+                    )
+
+                if os.path.isdir(text_or_list):
+                    raise Exception(
+                        "Input path should be a file path for dataset type location."
+                    )
+                item_list = self._get_location_item(
+                    [text_or_list], location_column, encoding
+                )
+            else:
+                item_list = self._get_items(text_or_list, **kwargs)
+
+        if self._dataset_type == "location":  # Extract the centroid of the geometry
+            # The item list may be a  numpy array and pandas series
+            if isinstance(item_list, pd.Series):
+                iterable_numpy_loc = item_list.to_numpy()
+            elif isinstance(item_list, pd.DataFrame):
+                iterable_numpy_loc = item_list.values
+            elif isinstance(item_list, (np.ndarray, list)):
+                iterable_numpy_loc = item_list
+            else:
+                raise Exception(
+                    "Input field is not of valid type (numpy array, list or pandas series)."
+                )
+
+            # validate the case if it is based on the lat,  long valuee or Geometry is supplied
+            if (
+                isinstance(iterable_numpy_loc[0], (list, tuple, np.ndarray))
+                and len(iterable_numpy_loc[0]) == 2
+            ):
+                try:
+                    iterable_numpy_loc = np.array(iterable_numpy_loc, dtype="float64")
+                except ValueError as e:
+                    raise Exception(
+                        "Input field contains non-numeric values. Kindly fix the input field or pass the correct "
+                    )
+                # build Point geometry with the specified points
+                item_list = [
+                    Point(
+                        {
+                            "x": i[0],
+                            "y": i[1],
+                            "spatialReference": {"wkid": spatial_reference},
+                        }
+                    )
+                    for i in iterable_numpy_loc
+                ]
+            elif isinstance(
+                iterable_numpy_loc[0], (list, tuple, np.ndarray)
+            ) and isinstance(iterable_numpy_loc[0][0], Geometry):
+                item_list = [Geometry(i[0]) for i in iterable_numpy_loc]
+            else:
+                raise Exception(
+                    "Input field is not of type Point, Polyline, or Polygon Geometry. Either disable process geometry or pass a field with valid Geometry."
+                )
+            geom = item_list[0]
+            if geom.spatial_reference.wkid != 4326:
+                item_list = project(
+                    item_list,
+                    in_sr=geom.spatial_reference,
+                    out_sr=SpatialReference(4326),
+                )
+            item_list = [i.centroid for i in item_list]
         if self._dataset_type == "image":
             ret = self._get_image(
+                item_list, batch_size, show_progress, return_embeddings, **kwargs
+            )
+        elif self._dataset_type == "location":
+            batch_size = 1024
+            ret = self._get_location(
                 item_list, batch_size, show_progress, return_embeddings, **kwargs
             )
         else:
@@ -488,9 +618,130 @@ class Embeddings:
         if load_to_memory:
             embeddings, items = np.array(embeddings_dataset), np.array(items_dataset)
             hf.close()
+            if isinstance(items[0], bytes):
+                items = [x.decode("utf-8") for x in items]
             return embeddings, items
         else:
+            if isinstance(items_dataset[0], bytes):
+                items_dataset = [x.decode("utf-8") for x in items_dataset]
+
             return hf, embeddings_dataset, items_dataset
+
+    def _get_location_item(self, item_list: List, location_column: List, encoding: str):
+        assert (
+            len(location_column) == 2
+        ), "location_column should contain exactly 2 elements - in `lon` and `lat` order."
+        # iterate through each item in the item_list and extract the location
+        all_items = []
+        for file in item_list:
+            if file.endswith(".csv"):
+                df = pd.read_csv(file, dtype="str", encoding=encoding)
+                if len(df.columns) < 2:
+                    raise Exception(
+                        f"CSV file - {file} doesn't contain the columns - `{location_column}`"
+                    )
+
+                # check if location_column is present in the dataframe columns
+                missing_cols = []
+                for col in location_column:
+                    if col not in df.columns:
+                        missing_cols.append(col)
+                if missing_cols:
+                    raise Exception(
+                        f"CSV file - {file} doesn't contain the column - `{missing_cols}`"
+                    )
+
+                df.dropna(axis=0, subset=location_column, inplace=True)
+                df = df[location_column]
+                # cast the values to float64
+                try:
+                    df = df.astype(
+                        {location_column[0]: "float64", location_column[1]: "float64"}
+                    )
+                except ValueError as e:
+                    raise Exception(
+                        f"CSV file - {file} contains non-numeric values in the columns - `{location_column}`."
+                        f"Kindly fix the CSV file or pass the correct value of the `location_column`."
+                    )
+                item_list = df.values.tolist()
+                all_items.append(item_list)
+            elif file.endswith(".json"):
+                with open(file, "r", encoding=encoding) as f:
+                    json_content = json.load(f)
+                df = pd.DataFrame.from_dict(json_content)
+                if len(df.columns) < 2:
+                    raise Exception(
+                        f"JSON file - {file} doesn't contain the columns - `{location_column}`"
+                    )
+                df.dropna(axis=0, subset=location_column, inplace=True)
+                df = df[location_column]
+                item_list = df.values.tolist()
+                all_items.append(item_list)
+            else:
+                raise Exception(
+                    f"Extension -`{file.split('.')[-1]}` is not a valid extension for dataset-type - "
+                    f"`{self._dataset_type}`. Allowed extension values are - {self._allowed_extensions}"
+                )
+        return np.concatenate(all_items, axis=0)
+
+    def _get_location(
+        self,
+        list_of_locations,
+        batch_size=32,
+        show_progress=True,
+        return_embeddings=False,
+        **kwargs,
+    ):
+        if not return_embeddings:
+            with h5py.File(self._file_path, "a") as hf:
+                batch_embeddings = self._extract_location_embeddings(
+                    list_of_locations,
+                    batch_size=batch_size,
+                    show_progress=show_progress,
+                    **kwargs,
+                )
+                self._insert_to_h5_file(hf, list_of_locations, batch_embeddings)
+            return self._file_path
+        else:
+            batch_embeddings = self._extract_location_embeddings(
+                list_of_locations,
+                batch_size=batch_size,
+                show_progress=show_progress,
+                **kwargs,
+            )
+            return batch_embeddings
+
+    def _extract_location_embeddings(
+        self, list_of_locations, batch_size=32, show_progress=True, **kwargs
+    ):
+        all_embeddings = []
+        for i in progress_bar(
+            range(0, len(list_of_locations), batch_size), display=show_progress
+        ):
+            try:
+                location_batch = list_of_locations[i : i + batch_size]
+                if isinstance(location_batch, str):
+                    location_batch = [location_batch]
+                if isinstance(location_batch, list):
+                    location_batch = torch.tensor(location_batch, dtype=torch.float64)
+                elif isinstance(location_batch, np.ndarray):
+                    location_batch = torch.tensor(location_batch, dtype=torch.float64)
+                else:
+                    raise Exception(
+                        f"Invalid type of location_batch - {type(location_batch)}. "
+                        f"Expected type is either `list` or `numpy.ndarray`."
+                    )
+
+                with torch.no_grad():
+                    embeddings = (
+                        self.model(location_batch.double().to(self._device))
+                        .detach()
+                        .cpu()
+                    )
+                    all_embeddings.append(embeddings)
+            except Exception as e:
+                raise Exception(e)
+        return np.concatenate(all_embeddings, axis=0)
 
     @staticmethod
     def _check_directory_validity(dir_paths):
@@ -554,7 +805,7 @@ class Embeddings:
 
         return text_list
 
-    def _get_items(self, dir_path, **kwargs):
+    def _get_items(self, dir_path: Union[List[Path], Path], **kwargs):
         item_list = []
         file_extensions = kwargs.get("file_extensions", self._allowed_extensions)
         if isinstance(file_extensions, (str, bytes)):
@@ -563,7 +814,9 @@ class Embeddings:
 
         self._check_file_extension_validity(file_extensions)
         text_column = kwargs.get("text_column", "text")
+        location_column = kwargs.get("location_column", ["lon", "lat"])
         encoding = kwargs.get("encoding", "utf-8")
+
         if isinstance(dir_path, (str, bytes)):
             dir_path = [dir_path]
         self._check_directory_validity(dir_path)
@@ -588,38 +841,12 @@ class Embeddings:
 
         if self._dataset_type == "text":
             item_list = self._get_text_items(item_list, text_column, encoding)
+        elif self._dataset_type == "location":
+            item_list = self._get_location_item(item_list, location_column, encoding)
         else:
             item_list = [x[0] for x in item_list]
 
         return item_list
-
-    @staticmethod
-    def _normalize(x, mean, std):
-        z = (x - mean[..., None, None]) / std[..., None, None]
-        return z
-
-    @staticmethod
-    def _insert_to_h5_file(file_handler, items, embeddings):
-        dt = h5py.special_dtype(vlen=bytes)
-        if len(file_handler.keys()) == 0:
-            file_handler.create_dataset(
-                "items", data=items, maxshape=(None,), dtype=dt, chunks=True
-            )
-            file_handler.create_dataset(
-                "embeddings",
-                data=embeddings,
-                maxshape=(None, embeddings.shape[1]),
-                chunks=True,
-            )
-        else:
-            file_handler["items"].resize(
-                (file_handler["items"].shape[0] + items.shape[0]), axis=0
-            )
-            file_handler["items"][-items.shape[0] :] = items
-            file_handler["embeddings"].resize(
-                (file_handler["embeddings"].shape[0] + embeddings.shape[0]), axis=0
-            )
-            file_handler["embeddings"][-embeddings.shape[0] :] = embeddings
 
     def _get_image(
         self,
@@ -716,7 +943,7 @@ class Embeddings:
                 batch_embeddings = self._extract_text_embeddings(
                     item_list, batch_size=32, show_progress=True, **kwargs
                 )
-                self._insert_to_h5_file(hf, img_list, batch_embeddings)
+                self._insert_to_h5_file(hf, item_list, batch_embeddings)
             return self._file_path
         else:
             batch_embeddings = self._extract_text_embeddings(
@@ -827,8 +1054,6 @@ class Embeddings:
                 .apply(lambda x: x.sample(n=num_items_per_group, replace=True))
                 .reset_index(drop=True)
             )
-
-        # print(len(random_sample))
         return random_sample
 
     def _visualize_with_items(self, cluster_dataframe, dimensions=3):
@@ -945,3 +1170,37 @@ class Embeddings:
             return fig
         else:
             return self._visualize_with_items(cluster_df, dimensions)
+
+    @staticmethod
+    def _normalize(x, mean, std):
+        z = (x - mean[..., None, None]) / std[..., None, None]
+        return z
+
+    @staticmethod
+    def _insert_to_h5_file(file_handler, items, embeddings):
+
+        if len(file_handler.keys()) == 0:
+            if isinstance(items[0], str):
+                dt = h5py.special_dtype(vlen=bytes)
+                file_handler.create_dataset(
+                    "items", data=items, maxshape=(None,), dtype=dt, chunks=True
+                )
+            elif isinstance(items[0], (list, tuple, np.ndarray)):
+                file_handler.create_dataset(
+                    "items", data=items, maxshape=(None, len(items[0])), chunks=True
+                )
+            file_handler.create_dataset(
+                "embeddings",
+                data=embeddings,
+                maxshape=(None, embeddings.shape[1]),
+                chunks=True,
+            )
+        else:
+            file_handler["items"].resize(
+                (file_handler["items"].shape[0] + items.shape[0]), axis=0
+            )
+            file_handler["items"][-items.shape[0] :] = items
+            file_handler["embeddings"].resize(
+                (file_handler["embeddings"].shape[0] + embeddings.shape[0]), axis=0
+            )
+            file_handler["embeddings"][-embeddings.shape[0] :] = embeddings

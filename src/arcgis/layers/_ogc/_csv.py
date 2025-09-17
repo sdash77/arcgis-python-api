@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 
 from arcgis.gis import GIS, Item
@@ -15,7 +16,7 @@ class CSVLayer(BaseOpenData):
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    url_or_item         Required String or Item. The web address or :class:`~arcgis.gis.Item` to the CSV resource.
+    url                 Required String or Item. The web address or :class:`~arcgis.gis.Item` to the CSV resource.
     ---------------     --------------------------------------------------------------------
     gis                 Optional :class:`~arcgis.gis.GIS`. The GIS used to reference the service. The :attr:`~arcgis.env.active_gis` is used if not specified.
     ---------------     --------------------------------------------------------------------
@@ -49,16 +50,21 @@ class CSVLayer(BaseOpenData):
     _type = "CSV"
 
     # ----------------------------------------------------------------------
-    def __init__(self, url_or_item: Item | str, gis: GIS | None = None, **kwargs):
+    def __init__(self, url: Item | str, gis: GIS | None = None, **kwargs):
         """initializer"""
         super(CSVLayer, self)
-        if isinstance(url_or_item, str):
-            self._url = url_or_item
+        if isinstance(url, str):
+            self._url = url
             self._item = None
-        elif isinstance(url_or_item, Item):
-            self._item = url_or_item
+        elif isinstance(url, Item):
+            self._item = url
             self._url = None
-        self._gis = gis or _env.active_gis or self._item._gis or GIS()
+        if self._item:
+
+            self._gis = gis or _env.active_gis or self._item._gis or GIS()
+        else:
+            self._gis = gis or _env.active_gis or GIS()
+
         self._copyright = kwargs.pop("copyright", None)
         self._delimiter = kwargs.pop("delimiter", ",")
         self._fields = kwargs.pop("fields", None)
@@ -186,7 +192,7 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @property
     def delimiter(self) -> str:
-        """
+        r"""
         Gets/Sets the delimiter for the CSV Layer.  The default is `,`
 
         ===========   ==========================================

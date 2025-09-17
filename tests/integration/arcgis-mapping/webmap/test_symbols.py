@@ -1,4 +1,4 @@
-from arcgis.gis import GIS
+from arcgis.layers import Service
 from arcgis.features import FeatureLayer
 from arcgis.map import Map
 from arcgis.map.symbols import (
@@ -11,42 +11,43 @@ from arcgis.map.symbols import (
     SimpleLineSymbolStyle,
     SimpleFillSymbolStyle,
     SimpleMarkerSymbolStyle,
+    TextFont
 )
 from arcgis.map.renderers import SimpleRenderer
 import unittest
 from utils.decorators import integration_test, profiles
 
 
-@profiles.agol
+@profiles.all
 @integration_test
 class TestSymbols(unittest.TestCase):
     """Test the symbols module"""
 
     def test_create_picture_fill_symbol(self):
         """Test the create_picture_fill_symbol function"""
-        fl = FeatureLayer(
-            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
-            gis=self.gis,
-        )
-        assert fl
+        fl = Service("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities_/FeatureServer/0")
+        assert isinstance(fl, FeatureLayer)
 
+        # create symbol
         symbol = PictureFillSymbolEsriPFS(
             url="https://static.arcgis.com/images/Symbols/Shapes/BluePin1LargeB.png",
             width=20,
             height=20,
         )
 
-        assert symbol
+        assert isinstance(symbol, PictureFillSymbolEsriPFS)
         assert symbol.type == "esriPFS"
+        assert symbol.url == "https://static.arcgis.com/images/Symbols/Shapes/BluePin1LargeB.png"
+        assert symbol.width == 20
 
+        # render symbol on map
         renderer = SimpleRenderer(symbol=symbol)
-
         m = Map(gis=self.gis)
-        assert m
+        assert isinstance(m, Map)
 
         m.content.add(fl, drawing_info={"renderer": renderer})
 
-        assert m.content.layers
+        assert m.content.layers[0].properties == fl.properties
         assert len(m.content.layers) == 1
         assert (
             m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
@@ -57,29 +58,29 @@ class TestSymbols(unittest.TestCase):
 
     def test_create_picture_marker_symbol(self):
         """Test the create_picture_marker_symbol function"""
-        fl = FeatureLayer(
-            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
-            gis=self.gis,
-        )
-        assert fl
+        fl = Service("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities_/FeatureServer/0")
+        assert isinstance(fl, FeatureLayer)
 
+        # create symbol
         symbol = PictureMarkerSymbolEsriPMS(
             url="https://static.arcgis.com/images/Symbols/Shapes/BluePin1LargeB.png",
             width=20,
             height=20,
         )
 
-        assert symbol
+        assert isinstance(symbol, PictureMarkerSymbolEsriPMS)
         assert symbol.type == "esriPMS"
+        assert symbol.url == "https://static.arcgis.com/images/Symbols/Shapes/BluePin1LargeB.png"
+        assert symbol.width == 20
 
+        # render symbol on map
         renderer = SimpleRenderer(symbol=symbol)
-
         m = Map(gis=self.gis)
         assert m
 
         m.content.add(fl, drawing_info={"renderer": renderer})
 
-        assert m.content.layers
+        assert m.content.layers[0].properties == fl.properties
         assert len(m.content.layers) == 1
         assert (
             m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
@@ -90,12 +91,10 @@ class TestSymbols(unittest.TestCase):
 
     def test_create_simple_fill_symbol(self):
         """Test the create_simple_fill_symbol function"""
-        fl = FeatureLayer(
-            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
-            gis=self.gis,
-        )
+        fl = Service("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities_/FeatureServer/0")
         assert fl
 
+        # create symbols
         outline = SimpleLineSymbolEsriSLS(
             color=[0, 0, 0, 255],
             style=SimpleLineSymbolStyle.esri_sls_solid,
@@ -107,17 +106,21 @@ class TestSymbols(unittest.TestCase):
             outline=outline,
         )
 
-        assert symbol
-        assert symbol.type == "esriSFS"
+        assert isinstance(outline, SimpleLineSymbolEsriSLS)
+        assert isinstance(symbol, SimpleFillSymbolEsriSFS)
+        assert outline.style == 'esriSLSSolid'
+        assert symbol.style == 'esriSFSSolid'
+        assert outline.width == 1
+        assert symbol.outline == outline
 
+        # render symbol on map
         renderer = SimpleRenderer(symbol=symbol)
-
         m = Map(gis=self.gis)
-        assert m
+        assert isinstance(m, Map)
 
         m.content.add(fl, drawing_info={"renderer": renderer})
 
-        assert m.content.layers
+        assert m.content.layers[0].properties == fl.properties
         assert len(m.content.layers) == 1
         assert (
             m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
@@ -128,11 +131,8 @@ class TestSymbols(unittest.TestCase):
 
     def test_create_simple_line_symbol(self):
         """Test the create_simple_line_symbol function"""
-        fl = FeatureLayer(
-            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
-            gis=self.gis,
-        )
-        assert fl
+        fl = Service("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities_/FeatureServer/0")
+        assert isinstance(fl, FeatureLayer)
 
         symbol = SimpleLineSymbolEsriSLS(
             color=[255, 0, 0, 255],
@@ -140,17 +140,19 @@ class TestSymbols(unittest.TestCase):
             width=1,
         )
 
-        assert symbol
+        assert isinstance(symbol, SimpleLineSymbolEsriSLS)
         assert symbol.type == "esriSLS"
+        assert symbol.style == "esriSLSSolid"
+        assert symbol.width == 1
 
+        # render symbol on map
         renderer = SimpleRenderer(symbol=symbol)
-
         m = Map(gis=self.gis)
         assert m
 
         m.content.add(fl, drawing_info={"renderer": renderer})
 
-        assert m.content.layers
+        assert m.content.layers[0].properties == fl.properties
         assert len(m.content.layers) == 1
         assert (
             m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
@@ -161,11 +163,8 @@ class TestSymbols(unittest.TestCase):
 
     def test_create_simple_marker_symbol(self):
         """Test the create_simple_marker_symbol function"""
-        fl = FeatureLayer(
-            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
-            gis=self.gis,
-        )
-        assert fl
+        fl = Service("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities_/FeatureServer/0")
+        assert isinstance(fl, FeatureLayer)
 
         outline = SimpleLineSymbolEsriSLS(
             color=[0, 0, 0, 255],
@@ -180,17 +179,24 @@ class TestSymbols(unittest.TestCase):
             outline=outline,
         )
 
-        assert symbol
+        assert isinstance(outline, SimpleLineSymbolEsriSLS)
+        assert isinstance(symbol, SimpleMarkerSymbolEsriSMS)
+        assert outline.style == "esriSLSSolid"
+        assert symbol.style == "esriSMSCircle"
+        assert outline.type == "esriSLS"
         assert symbol.type == "esriSMS"
+        assert outline.width == 1
+        assert symbol.size == 10
+        assert symbol.outline == outline
 
+        # render symbol on map
         renderer = SimpleRenderer(symbol=symbol)
-
         m = Map(gis=self.gis)
-        assert m
+        assert isinstance(m, Map)
 
         m.content.add(fl, drawing_info={"renderer": renderer})
 
-        assert m.content.layers
+        assert m.content.layers[0].properties == fl.properties
         assert len(m.content.layers) == 1
         assert (
             m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
@@ -201,11 +207,8 @@ class TestSymbols(unittest.TestCase):
 
     def test_create_text_symbol(self):
         """Test create_text_symbol function"""
-        fl = FeatureLayer(
-            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
-            gis=self.gis,
-        )
-        assert fl
+        fl = Service("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities_/FeatureServer/0")
+        assert isinstance(fl, FeatureLayer)
 
         font = {
             "family": "Arial",
@@ -221,13 +224,16 @@ class TestSymbols(unittest.TestCase):
             text="Test",
         )
 
-        assert symbol
+        assert isinstance(symbol, TextSymbolEsriTS)
         assert symbol.type == "esriTS"
+        assert isinstance(symbol.font, TextFont)
+        assert symbol.font.style == "normal"
+        assert symbol.horizontal_alignment == "center"
 
+        # render symbol on map
         renderer = SimpleRenderer(symbol=symbol)
-
         m = Map(gis=self.gis)
-        assert m
+        assert isinstance(m, Map)
 
         m.content.add(fl, drawing_info={"renderer": renderer})
 

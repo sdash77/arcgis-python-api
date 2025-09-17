@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import Optional, Union
+
 import uuid
 from arcgis.auth.tools import LazyLoader
 import re
 import os
 import copy
-from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -13,6 +12,7 @@ storymap = LazyLoader("arcgis.apps.storymap.story")
 json = LazyLoader("json")
 time = LazyLoader("time")
 utils = LazyLoader("arcgis.apps.storymap._utils")
+pd = LazyLoader("pandas")
 
 
 ###############################################################################################################
@@ -38,9 +38,9 @@ class Collection(object):
 
     def __init__(
         self,
-        item: Optional[Union[arcgis.gis.Item, str]] = None,
-        gis: Optional[arcgis.gis.GIS] = None,
-    ):
+        item: arcgis.gis.Item | str | None = None,
+        gis: arcgis.gis.GIS | None = None,
+    ) -> None:
         # Section: Set up gis
         if gis is None:
             # If no gis, find active env
@@ -87,7 +87,7 @@ class Collection(object):
         self._url = self._get_url()
 
     # ----------------------------------------------------------------------
-    def _create_existing_collection(self):
+    def _create_existing_collection(self) -> None:
         # Get properties from most recent resource file.
         # Can have multiple drafts so need to account for this.
         # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
@@ -128,7 +128,7 @@ class Collection(object):
             self._properties = data
 
     # ----------------------------------------------------------------------
-    def _create_new_collection(self):
+    def _create_new_collection(self) -> None:
         # Get template from _util module
         template = copy.deepcopy(utils._TEMPLATES["collection"])
         # Add correct by-line and locale
@@ -184,23 +184,23 @@ class Collection(object):
         self._resources = self._item.resources.list()
 
     # ----------------------------------------------------------------------
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """
         HTML Representation for IPython Notebook
         """
         return self._item._repr_html_()
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the url of the storymap"""
         return self._url
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def _refresh(self):
+    def _refresh(self) -> None:
         """Load the latest data from the item"""
         if self._item:
             self._properties = json.loads(self._item.get_data())
@@ -236,7 +236,7 @@ class Collection(object):
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
-    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+    def show(self, width: int | None = None, height: int | None = None) -> object:
         """
         Show a preview of the collection. The default is a width of 700 and height of 300.
 
@@ -255,52 +255,6 @@ class Collection(object):
         return utils.show(self._item, width, height)
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.4.0",
-        removed_in="2.4.2",
-        details="Use the `arcgis.apps.storymap.Cover` class that is accessed in the cover property.",
-    )
-    def cover(
-        self,
-        title: Optional[str] = None,
-        type: str = None,
-        summary: Optional[str] = None,
-        by_line: Optional[str] = None,
-    ):
-        """
-        A collection's cover is the first slide.
-        This method allows the cover to be edited by updating the title, byline, media, and more.
-        Changing one part of the collection cover will not change the rest of the cover. If just the
-        media is passed in then only the media will change.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the Collection cover.
-        ---------------     --------------------------------------------------------------------
-        type                Optional string. The type of collection cover to be used in the story.
-
-                            ``Values: "full" | "sidebyside" | "minimal"``
-        ---------------     --------------------------------------------------------------------
-        summary             Optional string. The description of the story.
-        ---------------     --------------------------------------------------------------------
-        by_line             Optional string. Crediting the author(s).
-        ===============     ====================================================================
-
-        :return: True if the cover was updated successfully.
-
-        .. code-block:: python
-
-            collection = Collection(<collection item>)
-            collection.cover(title="My Collection Title", type="sidebyside", summary="My little summary", by_line="python_dev")
-            collection.save()
-
-        """
-        # call method to update cover
-        utils.cover(self, title, type, summary, by_line)
-        return True
-
-    # ----------------------------------------------------------------------
     def get_theme(self) -> str:
         """
         Get the theme name or the theme item that is used in the collection.
@@ -310,7 +264,7 @@ class Collection(object):
         return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
+    def theme(self, theme: storymap.Themes | str | None = None) -> bool:
         """
         Each collection has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -331,6 +285,7 @@ class Collection(object):
             >>> collection = Collection()
             >>> collection.theme(Themes.TIDAL)
         """
+        theme = theme or storymap.Themes.SUMMIT
         # call method to update theme
         utils.theme(self, theme)
         return True
@@ -338,18 +293,18 @@ class Collection(object):
     # ----------------------------------------------------------------------
     def save(
         self,
-        title: Optional[str] = None,
-        tags: Optional[list] = None,
-        access: str = None,
+        title: str | None = None,
+        tags: list | None = None,
+        access: str | None = None,
         publish: bool = False,
-        make_copyable: bool = None,
-        no_seo: bool = None,
-    ):
+        make_copyable: bool | None = None,
+        no_seo: bool | None = None,
+    ) -> object:
         """
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
 
-        The title only needs to be specified if a change is wanted, otherwise exisiting title
+        The title only needs to be specified if a change is wanted, otherwise existing title
         is used.
 
         .. warning::
@@ -391,7 +346,7 @@ class Collection(object):
         return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
-    def delete_collection(self):
+    def delete_collection(self) -> bool:
         """
         Deletes the collection item.
         """
@@ -399,41 +354,157 @@ class Collection(object):
         return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
-    @property
-    def content(self):
+    def _get_content_type(self, obj) -> str:
         """
-        Returns the content of the collection. This includes the cover and navigation.
+        Determines the content type from a given object.
+        - If it's a known class instance, returns its type name.
+        - If it's a Portal Item, returns item.type.
+        - If it's a file-item dict, returns 'file-item'.
         """
-        # content is found in the collection-ui node.
+        if isinstance(obj, content.Cover):
+            return "Cover"
+        elif isinstance(obj, content.CollectionNavigation):
+            return "Collection Navigation"
+        elif isinstance(obj, content.Image):
+            return "Image"
+        elif hasattr(obj, "type"):
+            # Assuming this is an Item instance
+            return obj.type
+        elif isinstance(obj, dict) and obj.get("type") == "file-item":
+            return "file-item"
+        else:
+            return "Unknown"
+
+    def _iterate_content(self) -> object:
+        """
+        Internal generator method to iterate through the content of the collection.
+        """
         root_node = self._properties["root"]
         ui_node = self._properties["nodes"][root_node]["children"][0]
         ui = self._properties["nodes"][ui_node]
 
-        content = []
-        # first look in children
+        # children: no visibility info, assume True
         for child in ui["children"]:
-            # get the node id
             node = utils._assign_node_class(self, child)
-            content.append(node)
-        # then look in items
+            yield {
+                "type": self._get_content_type(node),
+                "instance": node,
+                "visibility": True,
+            }
+
+        # items: visibility info might be present in 'isHidden'
         for item in ui["data"]["items"]:
+            visible = not item.get("isHidden", False)  # defaults to True if key missing
+
             if "nodeId" in item:
-                # Either a node that is a story content type
                 node = utils._assign_node_class(self, item["nodeId"])
-                content.append(node)
+                yield {
+                    "type": self._get_content_type(node),
+                    "instance": node,
+                    "visibility": visible,
+                }
             elif "resourceId" in item:
-                # A resource, most likely a portal item or file resource
                 resource = self._properties["resources"][item["resourceId"]]
                 if resource["type"] == "file-item":
-                    # File resource
-                    content.append(resource["type"])
+                    yield {
+                        "type": "file-item",
+                        "instance": resource["data"]["name"],
+                        "visibility": visible,
+                    }
                 elif resource["type"] == "portal-item":
-                    # Portal item resource
-                    content.append(self._gis.content.get(resource["data"]["itemId"]))
-        return content
+                    portal_item = self._gis.content.get(resource["data"]["itemId"])
+                    yield {
+                        "type": self._get_content_type(portal_item),
+                        "instance": portal_item,
+                        "visibility": visible,
+                    }
 
     # ----------------------------------------------------------------------
-    def remove(self, index):
+    @property
+    def content(self) -> list:
+        """
+        Returns the content of the collection. This includes the cover and navigation.
+        """
+        return [item["instance"] for item in self._iterate_content()]
+
+    # ----------------------------------------------------------------------
+    @property
+    def content_info(self) -> object:
+        """
+        Returns the content as a table with the following columns:
+        - Index
+        - Type
+        - Content class instance
+        - Visibility
+
+        : return: A dataframe with the content information.
+        """
+        data = []
+        for entry in self._iterate_content():
+            # Skip the first two entries (cover and navigation) since we do not want them in the table
+            if entry["type"] in ["Cover", "Collection Navigation"]:
+                continue
+            data.append(
+                {
+                    "Type": entry["type"],
+                    "Instance": entry["instance"],
+                    "Visibility": entry["visibility"],
+                }
+            )
+
+        return pd.DataFrame(data)
+
+    # ----------------------------------------------------------------------
+    def update_content_info(
+        self,
+        index: int | list[int],
+        custom_title: str | list[str] | None = None,
+        visible: bool | None = None,
+    ) -> object:
+        """
+        Update the content item in the collection.
+
+        .. note::
+            Not all content types support visibility updates. For example, the cover and navigation
+            items do not have visibility properties. This method is primarily for items within the collection.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        index               Required integer or list of integers. The index position(s) of the item to update.
+        ---------------     --------------------------------------------------------------------
+        custom_title        Optional string or list of strings. The custom title to set for the item.
+        ---------------     --------------------------------------------------------------------
+        visible             Required boolean. If True, the item is visible. If False, the item is hidden.
+                            If a list of indices is passed, all items will be set to the same specified visibility.
+        ===============     ====================================================================
+
+        :return: DataFrame of content information with the updated changes.
+        """
+        if not isinstance(index, list):
+            index = [index]
+        root_node = self._properties["root"]
+        ui_node = self._properties["nodes"][root_node]["children"][0]
+        ui = self._properties["nodes"][ui_node]
+        items = ui["data"]["items"]
+
+        # Iterate through the items in the collection-ui node
+        for i, _ in enumerate(items):
+            if i in index:
+                if visible is not None:
+                    # Update the visibility of the item
+                    self._properties["nodes"][ui_node]["data"]["items"][i][
+                        "isHidden"
+                    ] = not visible
+                if custom_title is not None:
+                    # Update the custom title of the item
+                    self._properties["nodes"][ui_node]["data"]["items"][i][
+                        "customTitle"
+                    ] = custom_title
+        return self.content_info
+
+    # ----------------------------------------------------------------------
+    def remove(self, index: int) -> bool:
         """
         Remove an item from the collection. Specify this item with the index position
         of the item in the collection. The list of items in the collection can be found
@@ -480,11 +551,11 @@ class Collection(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        item: Union[content.Image, content.Video, content.Embed, _gis.Item, str],
-        title: Optional[str] = None,
-        thumbnail: Optional[str] = None,
-        position: Optional[int] = None,
-    ):
+        item: content.Image | content.Video | content.Embed | arcgis.gis.Item | str,
+        title: str | None = None,
+        thumbnail: str | None = None,
+        position: int | None = None,
+    ) -> object:
         """
         Add an item to the collection. Specify this item with the item object.
         The item can be a portal item, file resource, or a story content of type

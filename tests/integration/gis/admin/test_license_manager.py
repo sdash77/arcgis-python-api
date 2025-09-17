@@ -1,6 +1,7 @@
 import unittest
 from utils.decorators import profiles, integration_test
 from arcgis.gis.admin import AGOLAdminManager, PortalAdminManager
+import pandas as pd
 
 
 @profiles.admin_enterprise_and_agol
@@ -18,7 +19,8 @@ class TestLicenseClass(unittest.TestCase):
     def test_offline_report(self):
         licenses = self.admin.license.all()
         for lic in licenses:
-            assert lic.offline_report
+            assert isinstance(lic.offline_report, pd.DataFrame)
+            assert "Username" in lic.offline_report.columns
 
     def test_get_license(self):
         licenses = self.admin.license.all()
@@ -31,7 +33,10 @@ class TestLicenseClass(unittest.TestCase):
     def test_report(self):
         licenses = self.admin.license.all()
         for lic in licenses:
-            assert lic.report
+            assert isinstance(lic.report, pd.DataFrame)
+
+    def test_expired_license(self):
+        assert self.admin.license.expired_licenses
 
     def test_check(self):
         licenses = self.admin.license.all()
@@ -47,6 +52,8 @@ class TestLicenseClass(unittest.TestCase):
         user = self.gis.users.me
         lm = self.admin.license
         lic = lm.get("ArcGIS Pro")
+        if lic is None:
+            self.skipTest("The ArcGIS Pro license is not available, skipping.")
         assert lic.check(user) == lic.user_entitlement(user)['entitlements']
 
 

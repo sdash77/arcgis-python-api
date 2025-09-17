@@ -2,6 +2,7 @@
 IO operations for Feature Classes
 """
 
+from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 import io
 import os
@@ -30,7 +31,7 @@ from arcgis._impl._geometry_engine import (
     HAS_PYSHP,
 )
 
-USE_ARCPY = USE_FIONA = USE_GDAL = USE_PYSHP = False
+USE_ARCPY = USE_GDAL = USE_PYSHP = False
 
 if SELECTED_ENGINE == GeometryEngine.SHAPEFILE:
     import shapefile
@@ -41,10 +42,6 @@ elif SELECTED_ENGINE == GeometryEngine.GDAL:
     from osgeo import ogr, osr
 
     USE_GDAL = True
-elif SELECTED_ENGINE == GeometryEngine.FIONA:
-    import fiona
-
-    USE_FIONA = True
 elif SELECTED_ENGINE == GeometryEngine.ARCPY:
     import arcpy
 
@@ -146,10 +143,10 @@ def _infer_type(df, col):
 def _geojson_to_esrijson(geojson):
     """converts the geojson spec to esri json spec"""
     if geojson["type"] in ["Polygon", "MultiPolygon"]:
-        return {
-            "rings": geojson["coordinates"],
-            "spatialReference": {"wkid": 4326},
-        }
+        from arcgis._impl.common._geojson2arcgis import convert_polygon
+
+        esri_json = convert_polygon(geojson)
+        return esri_json
     elif geojson["type"] == "Point":
         return {
             "x": geojson["coordinates"][0],
@@ -177,10 +174,11 @@ def _geojson_to_esrijson(geojson):
 # --------------------------------------------------------------------------
 def _geometry_to_geojson(geom):
     """converts the esri json spec to geojson"""
-    if "rings" in geom and len(geom["rings"]) == 1:
-        return {"type": "Polygon", "coordinates": geom["rings"]}
-    elif "rings" in geom and len(geom["rings"]) > 1:
-        return {"type": "MultiPolygon", "coordinates": geom["rings"]}
+    if "rings" in geom:
+        # will always convert Esri Polygon to GeoJSON MultiPolygon
+        from arcgis._impl.common._arcgis2geojson import convertRingsToGeoJSONUnchecked
+
+        return convertRingsToGeoJSONUnchecked(geom["rings"])
     elif geom["type"] == "Point":
         return {"coordinates": [geom["x"], geom["y"]], "type": "Point"}
     elif geom["type"] == "MultiPoint":
@@ -282,7 +280,24 @@ def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None, **kw
 
 def _ensure_path_string(input_path):
     """Provide hander to facilitate file path inputs to be Path object instances."""
-    return str(input_path) if isinstance(input_path, Path) else input_path
+    if isinstance(input_path, Path):
+        return str(input_path)
+    if isinstance(input_path, str):
+        return input_path
+    if (
+        hasattr(input_path, "connectionProperties")
+        and getattr(input_path, "isWebLayer", None) == False
+        and getattr(input_path, "isFeatureLayer", None)
+    ):
+        if not USE_ARCPY:
+            raise ValueError(
+                "The input path entered requires the use of the ArcPy engine.  Please update your geometry engine settings."
+            )
+        return input_path
+    raise ValueError(
+        "Input path must be a string or a Path object. "
+        "Received type: {}".format(type(input_path))
+    )
 
 
 def from_url(url: str) -> list:
@@ -301,11 +316,17 @@ def from_url(url: str) -> list:
     :return: List[pd.DataFrame]
 
     """
-    if not HAS_GDAL and not HAS_PYSHP == False:
+    if not HAS_GDAL and not HAS_PYSHP:
         raise Exception("GDAL or pyshp is required to read hosted shapefiles.")
 
-    if HAS_GDAL:
-        return from_featureclass(url)
+    # unless we specify pyshp, default to GDAL
+    if not USE_PYSHP and HAS_GDAL:
+        return _http_workflow(url)
+
+    # this is the case where a user picks gdal or arcpy but they're not available
+    # have to import shapefile here since it hasn't been done yet
+    if not USE_PYSHP:
+        import shapefile
 
     r = requests.get(url)
     with closing(r), zipfile.ZipFile(io.BytesIO(r.content)) as archive:
@@ -324,7 +345,8 @@ def from_url(url: str) -> list:
         # build readers
         readers = []
         for key in datasets.keys():
-            if list(datasets[key].keys()) >= ["shp", "dbf"]:
+            shp_keys = list(datasets[key].keys())
+            if "shp" in shp_keys and "dbf" in shp_keys:
                 shx = None
                 if datasets[key].get("shx", None):
                     shx = io.BytesIO()
@@ -337,6 +359,10 @@ def from_url(url: str) -> list:
                 readers.append(shapefile.Reader(shp=shp, shx=shx, dbf=dbf))
         # construct SeDF from URL based datasets
         sdfs = []
+        if readers == []:
+            raise ValueError(
+                "No valid shapefile datasets found in the zip file. Please check the URL."
+            )
         for reader in readers:
             records = []
             fields = [field[0] for field in reader.fields if field[0] != "DeletionFlag"]
@@ -448,32 +474,45 @@ def from_table(filename, **kwargs):
     """
 
     filename = _ensure_path_string(filename)
+    where = kwargs.pop("where", None)
+    fields = kwargs.pop("fields", "*")
+    skip_nulls = kwargs.pop("skip_nulls", True)
+    null_value = kwargs.pop("null_value", None)
 
     if USE_ARCPY and not filename.lower().endswith(".dbf"):
-        where = kwargs.pop("where", None)
-        fields = kwargs.pop("fields", "*")
-        skip_nulls = kwargs.pop("skip_nulls", True)
-        null_value = kwargs.pop("null_value", None)
-        arr = arcpy.da.TableToNumPyArray(
-            in_table=filename,
-            field_names=fields,
-            where_clause=where,
-            skip_nulls=skip_nulls,
-            null_value=null_value,
-        )
-        return pd.DataFrame(arr)
+        desc: dict = arcpy.da.Describe(filename)
+        dtypes: dict = _fc2pandas_dtypes(describe=desc)
+        if skip_nulls:
+            arr = arcpy.da.TableToNumPyArray(
+                in_table=filename,
+                field_names=fields,
+                where_clause=where,
+                skip_nulls=skip_nulls,
+                null_value=null_value,
+            )
+            field_names: tuple = arr.dtype.names
+            dtypes = {k: v for k, v in dtypes.items() if k in field_names}
+        else:
+            with arcpy.da.SearchCursor(
+                in_table=filename,
+                field_names=kwargs.pop("fields", "*"),
+                where_clause=kwargs.pop("where", None),
+            ) as scur:
+                dtypes = {k: v for k, v in dtypes.items() if k in scur.fields}
+                arr = [row for row in scur]
+        return pd.DataFrame(arr, columns=list(dtypes.keys())).astype(dtypes)
     elif USE_ARCPY and filename.lower().endswith(".dbf"):
+        desc: dict = arcpy.da.Describe(filename)
+        dtypes: dict = _fc2pandas_dtypes(describe=desc)
         with arcpy.da.SearchCursor(
             in_table=filename,
             field_names=kwargs.pop("fields", "*"),
             where_clause=kwargs.pop("where", None),
         ) as scur:
             array = [row for row in scur]
-            df = pd.DataFrame(array, columns=scur.fields)
-            try:
-                return df.convert_dtypes()
-            except:
-                return df
+            filter_dtypes = {k: v for k, v in dtypes.items() if k in scur.fields}
+            df = pd.DataFrame(array, columns=scur.fields).astype(filter_dtypes)
+            return df
         return None
     elif filename.lower().endswith(".dbf") and USE_GDAL:
         return _gdal_to_sedf(file_path=filename)
@@ -722,42 +761,53 @@ def from_featureclass(filename, **kwargs):
 
     """
     if isinstance(filename, str) and ("http://" in filename or "https://" in filename):
-        return _http_workflow(filename)
+        return from_url(filename)
 
     filename = _ensure_path_string(filename)
 
     if USE_ARCPY:
         return _arcpy_workflow(filename, **kwargs)
     if USE_GDAL:
-        return _gdal_workflow(filename)
+        return _gdal_workflow(filename, **kwargs)
     if USE_PYSHP and filename.lower().endswith(".shp"):
         return _shapefile_workflow(filename)
-    if USE_FIONA and (
-        filename.lower().endswith(".shp")
-        or os.path.dirname(filename).lower().endswith(".gdb")
-    ):
-        return _fiona_workflow(filename)
     raise Exception(
-        "Unsupported data format or missing required libraries. Please ensure you either have arcpy, shapely, fiona, or GDAL installed."
+        "Unsupported data format or missing required libraries. Please ensure you either have arcpy, shapely, or GDAL installed."
     )
 
 
 def _http_workflow(filename):
-    r = requests.get(filename)
+    if arcgis.env.active_gis:
+        r = arcgis.env.active_gis._con.get(filename)
+    else:
+        r = requests.get(filename)
+    df_array = []
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.zip")
         with open(archive_path, "wb") as f:
             f.write(r.content)
 
-        shutil.unpack_archive(archive_path, temp_dir)
+        try:
+            shutil.unpack_archive(archive_path, temp_dir)
+        except:
+            raise ValueError(
+                "The provided URL is not accessible with current credentials."
+            )
+        shp_path = None
+        for root, dirs, files in os.walk(temp_dir):
+            for file in files:
+                if file.endswith(".shp"):
+                    shp_path = os.path.join(root, file)
+                    df = _gdal_to_sedf(file_path=shp_path)
+                    df.spatial._meta.source = filename
+                    df_array.append(df)
+        if not df_array:
+            raise ValueError("No accessible shapefile found at the input URL.")
+    return df_array
 
-        df = _gdal_to_sedf(file_path=temp_dir)
-    df.spatial._meta.source = filename
-    return df
 
-
-def _gdal_workflow(filename):
-    df = _gdal_to_sedf(file_path=filename)
+def _gdal_workflow(filename, **kwargs):
+    df = _gdal_to_sedf(file_path=filename, **kwargs)
     df.spatial._meta.source = filename
     return df
 
@@ -819,6 +869,7 @@ def _arcpy_workflow(filename, **kwargs):
     df_fields = fields + ["SHAPE"]
 
     dfs = []
+    dtypes = pandas_dtypes
     with arcpy.da.SearchCursor(
         filename,
         field_names=cursor_fields,
@@ -827,6 +878,7 @@ def _arcpy_workflow(filename, **kwargs):
         spatial_reference=sr,
         datum_transformation=datum_transformation,
     ) as rows:
+        dtypes = {k: v for k, v in dtypes.items() if k in rows.fields}
         batch = []
         for row in rows:
             batch.append(row)
@@ -835,9 +887,9 @@ def _arcpy_workflow(filename, **kwargs):
                 batch = []
         if batch:
             dfs.append(pd.DataFrame(batch, columns=df_fields))
-
+    dtypes = {k: v for k, v in pandas_dtypes.items() if k in rows.fields}
     df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame(columns=df_fields)
-
+    df = df.astype(dtypes)
     q = df.SHAPE.notnull()
     none_q = ~q  # preserve the null geometries after processing
     geom_type = desc["shapeType"].lower()
@@ -864,7 +916,7 @@ def _arcpy_workflow(filename, **kwargs):
             elif data_type == np.dtype("<M8[us]"):
                 df[key] = pd.to_datetime(df[key], utc=True)
 
-    return df.convert_dtypes()
+    return df
 
 
 def _shapefile_workflow(filename):
@@ -886,38 +938,6 @@ def _shapefile_workflow(filename):
     sdf.reset_index(inplace=True)
     sdf.spatial._meta.source = filename
     return sdf
-
-
-def _fiona_workflow(filename):
-    from arcgis.geometry import _types
-
-    is_gdb = ".gdb" in os.path.dirname(filename).lower()
-
-    def _create_df(source):
-        geom_mapping = []
-        atts = []
-        cols = list(source.schema["properties"].keys())
-        for _, row in source.items():
-            geom_mapping.append(_types.Geometry(row["geometry"]))
-            atts.append(list(row["properties"].values()))
-        df = pd.DataFrame(data=atts, columns=cols)
-        df.spatial.set_geometry(geom_mapping)
-        df.spatial._meta.source = filename
-        return df
-
-        # file geodatabase workflow
-
-    with fiona.Env():
-        if is_gdb:
-            # file geodatabase workflow
-            fp = os.path.dirname(filename)
-            fn = os.path.basename(filename)
-            with fiona.open(fp, layer=fn) as source:
-                return _create_df(source)
-        else:
-            # shapefile workflow
-            with fiona.open(filename) as source:
-                return _create_df(source)
 
 
 # --------------------------------------------------------------------------
@@ -1240,8 +1260,6 @@ def to_featureclass(
                 replace_mappings = {
                     pd.NA: None,
                     np.nan: None,
-                    np.NaN: None,
-                    np.NAN: None,
                     pd.NaT: None,
                 }
                 np.apply_along_axis(
@@ -1498,7 +1516,7 @@ def _zip_dir(path, dir_name):
 
 
 # --------------------------------------------------------------------------
-def _gdal_to_sedf(file_path):
+def _gdal_to_sedf(file_path, **kwargs):
     def parse_datetime(value):
         """Attempt to parse a datetime string into a Python datetime object."""
         try:
@@ -1584,7 +1602,25 @@ def _gdal_to_sedf(file_path):
         for field in out_layer.schema
         if field.type in [ogr.OFTDate, ogr.OFTDateTime]
     ]
-    spatial_ref = out_layer.GetSpatialRef()
+    if kwargs.get("sr"):
+        sr = kwargs.get("sr")
+        spatial_ref = osr.SpatialReference()
+
+        if isinstance(sr, dict):
+            sr = sr.get("wkid") or sr.get("wkt")  # Extract WKID or WKT if present
+
+        if isinstance(sr, int):
+            # If sr is an integer EPSG code (e.g., 3857), create SpatialReference from EPSG code
+            spatial_ref.ImportFromEPSG(sr)
+        elif isinstance(sr, str) and sr.startswith("EPSG:"):
+            # If sr is a string and starts with "EPSG:", extract EPSG code and create SpatialReference
+            epsg_code = int(sr.split(":")[1])
+            spatial_ref.ImportFromEPSG(epsg_code)
+        elif isinstance(sr, str):
+            # If sr is a WKT string, use ImportFromWkt
+            spatial_ref.ImportFromWkt(sr)
+    else:
+        spatial_ref = out_layer.GetSpatialRef()
     sr_code = int(spatial_ref.GetAuthorityCode(None)) if spatial_ref else 4326
 
     # Precompute field indices to avoid repeated calls to GetFieldIndex
@@ -1606,6 +1642,13 @@ def _gdal_to_sedf(file_path):
         # Process geometry as WKB, if needed
         geom = feature.geometry()
         if geom is not None:
+            if kwargs.get("sr"):
+                # If a user provided a spatial reference, reproject the geometry
+                out_layer_sr = out_layer.GetSpatialRef()
+                if out_layer_sr and not out_layer_sr.IsSame(spatial_ref):
+                    transform = osr.CoordinateTransformation(out_layer_sr, spatial_ref)
+                    geom.Transform(transform)
+
             # Export geometry to JSON and parse with ujson
             gj = geom.ExportToJson()
             if not gj:
@@ -1905,8 +1948,8 @@ def _handle_none_type_geometry(df, geom_type, geom_column):
                 if geom_type == "Point":
                     df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
                         {
-                            "x": np.NAN,
-                            "y": np.NAN,
+                            "x": np.nan,
+                            "y": np.nan,
                             "spatialReference": df.spatial.sr,
                         }
                     )

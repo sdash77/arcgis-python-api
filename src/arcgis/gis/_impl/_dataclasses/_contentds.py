@@ -170,6 +170,8 @@ class ItemTypeEnum(Enum):
     WORKFLOW_MANAGER_PACKAGE = "Workflow Manager Package"
     TILES_SERVICE_3D = "3DTiles Service"
     TILES_PACKAGE_3D = "3DTiles Package"
+    MOBILE_BASEMAP_PACKAGE = "Mobile Basemap Package"
+    MOBILE_MAP_PACKAGE = "Mobile Map Package"
 
 
 ###########################################################################
@@ -199,7 +201,7 @@ class ItemProperties:
 
     title: str
     item_type: ItemTypeEnum | str
-    tags: list[str] | None = None
+    tags: list[str] | str | None = None
     thumbnail: str | None = None
     thumbnail_url: str | None = None
     metadata: str | None = None
@@ -247,7 +249,9 @@ class ItemProperties:
         self._dict_data = {
             "title": self.title,
             "type": _parse_enum(self.item_type),
-            "tags": ",".join(self.tags or []),
+            "tags": (
+                ",".join(self.tags or []) if isinstance(self.tags, list) else self.tags
+            ),
             "thumbnail": self.thumbnail,
             "thumbnailurl": self.thumbnail_url,
             "metadata": self.metadata,
@@ -267,7 +271,7 @@ class ItemProperties:
             "serviceUsername": self.service_username,
             "servicePassword": self.service_password,
             "serviceProxyFilter": self.service_proxy,
-            "categories": ",".join(self.categories or []),
+            "categories": self.categories or [],
             "text": self.text or None,
             "extension": self.extension or None,
             "fileName": self.file_name or None,
@@ -296,7 +300,9 @@ class ItemProperties:
         data: dict[str, Any] = {
             "title": self.title,
             "type": _parse_enum(self.item_type),
-            "tags": ",".join(self.tags or []),
+            "tags": (
+                ",".join(self.tags or []) if isinstance(self.tags, list) else self.tags
+            ),
             "thumbnail": self.thumbnail,
             "thumbnailurl": self.thumbnail_url,
             "metadata": self.metadata,
@@ -316,7 +322,7 @@ class ItemProperties:
             "serviceUsername": self.service_username,
             "servicePassword": self.service_password,
             "serviceProxyFilter": self.service_proxy,
-            "categories": ",".join(self.categories or []),
+            "categories": self.categories or [],
             "text": self.text or None,
             "extension": self.extension or None,
             "overwrite": self.overwrite or None,
@@ -477,7 +483,9 @@ class CreateServiceParameter:
             "isView": self.is_view,
             "description": self.description or "",
             "snippet": self.snippet or "",
-            "tags": ",".join(self.tags or []),
+            "tags": (
+                ",".join(self.tags or []) if isinstance(self.tags, list) else self.tags
+            ),
             "itemIdToCreate": self.itemid_to_create or None,
             "createParameters": {
                 "name": self.name,

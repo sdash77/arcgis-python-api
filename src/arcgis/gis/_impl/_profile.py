@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import logging
 import datetime as _datetime
@@ -999,7 +1000,7 @@ class ProfileManager(object):
 
         """
 
-        url = gis._url
+        url = gis.url
         u = gis._username
         p = gis._password
         kf = gis._key_file

@@ -10,7 +10,13 @@ try:
 except Exception as e:
     print(e)
 
-object_detection_models = ["FasterRCNN", "MMDetection", "MMSegmentation", "DETReg"]
+object_detection_models = [
+    "FasterRCNN",
+    "MMDetection",
+    "MMSegmentation",
+    "DETReg",
+    "RTDetrV2",
+]
 pixel_classification_models = ["MaskRCNN"]
 image_translation_models = [
     "Pix2Pix",
@@ -43,7 +49,6 @@ unsupported_models = [
     "AutoML",
     "AutoDL",
     "ImageryModel",
-    "EfficientDet",
     "PSETAE",
     "EntityRecognizer",
     "SequenceToSequence",
@@ -72,16 +77,15 @@ def estimate_batch_size(model, mode="train", **kwargs):
                             instance for which batch size should be estimated.
                             Not supported for text, tabular, timeseries
                             or tracking models such as FullyConnectedNetwork,
-                            MLModel, TimeSeriesModel, SiamMask, PSETAE
-                            and EfficientDet models.
+                            MLModel, TimeSeriesModel, SiamMask and PSETAE models.
     ---------------------   -------------------------------------------
     mode                    Optional string. Default train. The mode for
                             which batch size is estimated. Supported 'train'
                             and 'eval' mode for calculating batch size in
                             training mode and evaluation mode respectively.
-                            Note: max_batchsize is capped at 1024 for train
-                            and eval mode and recommended_batchsize is
-                            capped at 64 for train mode.
+                            Note: In 'train' mode max_batchsize is capped at
+                            20% of the training dataset, and recommended_batchsize
+                            is capped at 64.
     =====================   ===========================================
 
     :return: Named tuple of recommended_batchsize and max_batchsize
@@ -91,6 +95,7 @@ def estimate_batch_size(model, mode="train", **kwargs):
     exception = None
     channel = 3
     verbose = kwargs.get("verbose", True)
+    flag = False
 
     if model.__class__.__name__ in unsupported_models:
         raise Exception("unsupported model {}".format(model.__class__.__name__))
@@ -115,15 +120,18 @@ def estimate_batch_size(model, mode="train", **kwargs):
         train_ds_val = math.floor(len(model._data.train_ds) * 0.2)
         max_batchsize = int(math.pow(2, (math.log(train_ds_val) // math.log(2))))
     elif mode == "eval":
-        max_batchsize = 1024
+        max_batchsize = 2
     else:
         raise Exception("please select proper mode")
     breakwhile = False
 
     try:
         while not breakwhile:
+            torch.cuda.reset_peak_memory_stats()
+            free_memory, total_memory = torch.cuda.mem_get_info()
             try:
                 if mode == "train":
+                    flag = True
                     model._data.train_dl.batch_size = max_batchsize
                     if model.__class__.__name__ == "PTv3Seg":
                         from arcgis.learn._utils.pointcloud_serialization import (
@@ -192,29 +200,28 @@ def estimate_batch_size(model, mode="train", **kwargs):
                     if model.__class__.__name__ in point_cloud_models:
                         height = model.sample_point_num
                         channel = model._data.extra_dim + 3
-                        blank_img = np.ones(
+                        tblank_img = torch.ones(
                             (
                                 max_batchsize,
                                 height,
                                 channel,
                             ),
-                            np.uint8,
+                            device=model._device,
                         )
                         if model.__class__.__name__ == "PTv3Seg":
                             point_nums = torch.randint(
                                 1, height + 1, size=(max_batchsize,)
                             )
                     else:
-                        blank_img = np.ones(
+                        tblank_img = torch.ones(
                             (
                                 max_batchsize,
                                 channel,
                                 height,
                                 width,
                             ),
-                            np.uint8,
+                            device=model._device,
                         )
-                    tblank_img = torch.Tensor(blank_img).to(model._device)
                     eval_model = model.learn.model.to(model._device)
                     eval_model.eval()
                     if model.__class__.__name__ in object_detection_models:
@@ -239,6 +246,7 @@ def estimate_batch_size(model, mode="train", **kwargs):
                         eval_model(tblank_img)
 
                 elif mode == "none":
+                    flag = True
                     model._data.train_dl.batch_size = max_batchsize
                     model._data.valid_dl.batch_size = max_batchsize
                     if model.__class__.__name__ == "PTv3Seg":
@@ -316,7 +324,16 @@ def estimate_batch_size(model, mode="train", **kwargs):
 
                 gc.collect()
                 torch.cuda.empty_cache()
-                breakwhile = True
+                if flag:
+                    breakwhile = True
+                else:
+                    flag = True
+                    peak_memory = torch.cuda.max_memory_allocated()
+                    left_memory = free_memory / peak_memory
+                    batch_can_be_processed = left_memory * max_batchsize
+                    max_batchsize = int(
+                        math.pow(2, (math.log(batch_can_be_processed) // math.log(2)))
+                    )
 
             except Exception as E:
                 if (
@@ -338,6 +355,7 @@ def estimate_batch_size(model, mode="train", **kwargs):
                     exception = str(E)
                     breakwhile = True
             finally:
+                torch.cuda.reset_peak_memory_stats()
                 gc.collect()
                 torch.cuda.empty_cache()
 
@@ -364,7 +382,6 @@ def estimate_batch_size(model, mode="train", **kwargs):
         batch_size = output(64, max_batchsize)
     else:
         if mode == "eval":
-            max_batchsize = max_batchsize // 2
             batch_size = output(max_batchsize, max_batchsize)
         else:
             batch_size = output(max_batchsize, max_batchsize)

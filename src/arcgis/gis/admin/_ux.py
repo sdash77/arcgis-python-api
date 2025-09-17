@@ -1,20 +1,18 @@
 from __future__ import annotations
 
 import concurrent.futures
-import uuid
-import tempfile
 from enum import Enum
 import os
 import json
 import logging
 from typing import Any
-from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
 from arcgis.gis.clone._ux import UXCloner
 import requests
 
-_basemap_definitions = LazyLoader("arcgis.layers._basemap_definitions")
+_basemap_definitions = LazyLoader("arcgis.map._definitions._basemap_definitions")
+_basemap_definitions_3d = LazyLoader("arcgis.map._definitions._3d_basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
 _cm = LazyLoader("arcgis.gis._impl._content_manager")
 
@@ -109,6 +107,19 @@ class UX(object):
         if self._cloner is None:
             self._cloner = UXCloner(gis=self._gis)
         return self._cloner.load_offline_configuration(package)
+
+    # ----------------------------------------------------------------------
+    @property
+    def ai_assistants_enabled(self) -> bool:
+        """gets and sets the AI Assistant support"""
+        return self._gis.org_settings.get("aiAssistantsEnabled", False)
+
+    # ----------------------------------------------------------------------
+    @ai_assistants_enabled.setter
+    def ai_assistants_enabled(self, value: bool) -> None:
+        """gets and sets the AI Assistant support"""
+        self._gis.org_settings = {"aiAssistantsEnabled": value}
+        self._gis._properties = None
 
     # ----------------------------------------------------------------------
     @property
@@ -390,7 +401,7 @@ class UX(object):
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        visiblity         Required boolean. If True, the desciptive text will show on the
+        visibility         Required boolean. If True, the descriptive text will show on the
                           home page. If False, the descriptive text will not be displayed
         ================  ===============================================================
 
@@ -404,11 +415,11 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @description_visibility.setter
-    def description_visibility(self, visiblity: bool):
+    def description_visibility(self, visibility: bool):
         """
         See main ``description_visibility`` property docstring
         """
-        return self._gis.update_properties({"showHomePageDescription": visiblity})
+        return self._gis.update_properties({"showHomePageDescription": visibility})
 
     # ----------------------------------------------------------------------
     @property
@@ -443,7 +454,7 @@ class UX(object):
         """
         Gets/Sets the featured content group information.
 
-        If you set the featured content, reinstantiate to update the gis properties and see the updated
+        If you set the featured content, re-instantiate to update the gis properties and see the updated
         list of featured_content.
 
         ================  ===============================================================
@@ -745,7 +756,7 @@ class UX(object):
     def map_settings(self):
         """
         Get an instance of the :class:`~arcgis.gis.admin.MapSettings` class to
-        make edits to the org's default map settings such as extent, basemap, etc.
+        make edits to the org's default map and scene settings such as extent, basemap, etc.
         """
         return MapSettings(gis=self._gis)
 
@@ -1381,12 +1392,12 @@ class MapSettings(object):
     @property
     def default_extent(self):
         """
-        Get/Set the site's default extent
+        Get/Set the site's default extent. This is used when a new map or scene is created.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        extent            Required dictionary. The default extent defines where a webmap
+        extent            Required dictionary. The default extent defines where a webmap or webscene
                           will open.
                           If a value of None is given, the default extent will be provided.
                           Example Extent (default):
@@ -1454,6 +1465,43 @@ class MapSettings(object):
         except:
             raise ValueError(
                 "Valid Basemaps: 'dark-gray-vector', 'gray-vector', 'hybrid', 'oceans', 'osm', 'satellite', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo-vector'"
+            )
+
+    # ----------------------------------------------------------------------
+    @property
+    def default_3d_basemap(self):
+        """
+        Get/Set the site's default 3D basemap.
+
+        The Default 3D Basemap opens when users click New Scene.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        basemap           Required string. The new default 3D basemap to set. If None, the
+                          default will be the 2D default basemap.
+        ================  ===============================================================
+
+        :return: dictionary
+
+        """
+        return self._gis.properties.get("default3DBasemap", self.default_basemap)
+
+    # ----------------------------------------------------------------------
+    @default_3d_basemap.setter
+    def default_3d_basemap(self, value: str):
+        """
+        See main ``default_basemap_3d`` property docstring
+        """
+        try:
+            basemap = {
+                "baseMapLayers": _basemap_definitions_3d.basemap_dict[value],
+                "title": value.replace("-", " ").title(),
+            }
+            return self._gis.update_properties({"default3DBasemap": basemap})
+        except:
+            raise ValueError(
+                "Valid 3D Basemaps: 'topo-3d', 'navigation-3d', 'streets-3d', 'osm-3d', 'gray-3d', 'navigation-dark-3d', 'streets-dark-3d', 'dark-gray-3d'"
             )
 
     # ----------------------------------------------------------------------
@@ -1551,6 +1599,48 @@ class MapSettings(object):
 
     # ----------------------------------------------------------------------
     @property
+    def basemap_gallery_3d_group(self):
+        """
+        Select the group whose web maps will be shown in the 3D basemap gallery.
+        To change the group, assign either an instance of Group or the group id.
+        Setting to None will revert to default.
+
+        :return: An instance of Group if a group is set, else the default or None
+        """
+        group_id = self._gis.properties.get("3DBasemapGalleryGroupQuery")
+        if group_id:
+            if "id:" in group_id:
+                # must use [3::] to slice string since format of: "id:123abc"
+                groups = self._gis.groups.search(group_id[3::])
+                if groups:
+                    return groups[0]
+                else:
+                    return None
+            else:
+                return group_id
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @basemap_gallery_3d_group.setter
+    def basemap_gallery_3d_group(self, group: Group | str | None):
+        if isinstance(group, Group):
+            group = "id:" + group.id
+        elif isinstance(group, str):
+            res = self._gis.groups.search(group)
+            if len(res) == 0:
+                raise ValueError(
+                    "The group id provided could not be found in your org."
+                )
+            else:
+                group = "id:" + group
+        elif group is None:
+            group = None
+
+        self._gis.update_properties({"3DBasemapGalleryGroupQuery": group})
+
+    # ----------------------------------------------------------------------
+    @property
     def use_3D_basemaps(self) -> bool:
         """
         Include Esri default 3D basemaps. The 3D basemaps can be used as a
@@ -1580,7 +1670,7 @@ class MapSettings(object):
         ):
             self._gis.update_properties({"use3dBasemaps": value})
             assert self._gis.properties["use3dBasemaps"] == value
-        elif self._gis._is_arcgisonline == False:
+        elif self._gis._is_arcgisonline is False:
             _log.warning("This property only works with ArcGIS Online.")
 
     # ----------------------------------------------------------------------
@@ -2533,7 +2623,7 @@ class SecuritySettings(object):
         =========================       ==================================================
         **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
-        smtp_host                       Requried string. The IP address, or the fully
+        smtp_host                       Required string. The IP address, or the fully
                                         qualified domain name (FDQN), of the SMTP Server.
 
                                         Example: smtpServer=smtp.myorg.org
@@ -2638,7 +2728,7 @@ class SecuritySettings(object):
         =========================       ==================================================
         **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
-        mail_to                         Requried string. The email the test message will
+        mail_to                         Required string. The email the test message will
                                         be sent to.
         =========================       ==================================================
 
@@ -2998,7 +3088,7 @@ class UtilityServicesSettings:
         self._portal_resources = gis.admin.resources
 
     # ----------------------------------------------------------------------
-    def add_from_online(self, services: list[str], gis: _gis.GIS, folder=None):
+    def add_from_online(self, services: list[str], gis: _arcgis_gis.GIS, folder=None):
         """
         Set the Enterprise routing service to that of an ArcGIS Online routing service.
 

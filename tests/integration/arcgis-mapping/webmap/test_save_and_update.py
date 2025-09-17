@@ -1,5 +1,5 @@
 from arcgis.features import FeatureLayer
-from arcgis.gis import GIS, Item
+from arcgis.gis import Item
 from arcgis.map import Map
 import unittest
 from utils.decorators import integration_test, profiles

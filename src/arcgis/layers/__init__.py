@@ -42,6 +42,8 @@ from ._ogc._service import OGCCollection, OGCFeatureService
 
 from ._service_factory._layerfactory import Service, ServiceFactory
 
+from ._symbol import SymbolService
+
 __all__ = [
     "MapImageLayer",
     "MapImageLayerManager",
@@ -75,4 +77,5 @@ __all__ = [
     "ServiceFactory",
     "BasemapServices",
     "BasemapService",
+    "SymbolService",
 ]

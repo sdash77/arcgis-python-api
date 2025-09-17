@@ -3,11 +3,12 @@ Generates Layer Types from the given inputs.
 
 """
 
+from __future__ import annotations
 from __future__ import absolute_import
 import os
 from arcgis.auth.tools import LazyLoader
 
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 from arcgis.gis import GIS
 from arcgis.features.layer import (
     FeatureLayer,
@@ -31,9 +32,9 @@ from ...gis._impl._con import Connection
 from ...gis.server._service._geodataservice import GeoData
 import requests
 from types import LambdaType
+from arcgis.gis._impl._util import _get_item_url
 
 _arcgis = LazyLoader("arcgis")
-from arcgis.gis._impl._util import _get_item_url
 
 
 ###########################################################################
@@ -77,7 +78,7 @@ class _DataServiceUrlFactory(type):
             elif data["type"] == "CSV":
                 from .._ogc import CSVLayer
 
-                return CSVLayer(url_or_item=url, gis=gis)
+                return CSVLayer(url=url, gis=gis)
         else:
             raise ValueError("Invalid URL. The URL for this factory must end in /data")
 

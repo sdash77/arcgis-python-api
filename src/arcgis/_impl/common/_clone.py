@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 import re
 import tempfile
@@ -143,21 +144,9 @@ class _DeepCloner:
                 "The item_mapping parameter is not supported when cloning ArcGIS"
                 " Dashboards. Use item data to remap values and update item."
             )
-        if "desktopView" in dashboard_item.get_data():
-            widgets = dashboard_item.get_data()["desktopView"]["widgets"]
-        else:
-            widgets = dashboard_item.get_data()["widgets"]
-        item_list = []
+        item_list = dashboard_item.get_dependencies(out_format="id")
         cloned_item_list = []
         map_dict = {}
-        for widget in widgets:
-            for k, v in widget.items():
-                if k == "itemId" and v not in item_list:
-                    item_list.append(v)
-                if k == "datasets":
-                    for dataset in v:
-                        if dataset["dataSource"]["itemId"] not in item_list:
-                            item_list.append(dataset["dataSource"]["itemId"])
 
         for item_id in item_list:
             item = dashboard_item._gis.content.get(item_id)
@@ -179,9 +168,10 @@ class _DeepCloner:
                         new_item = cloned_item
             else:
                 new_item = _search_org_for_existing_item(self.target, item)
-                logging.info(
-                    item.title + " not cloned; already existent in target org."
-                )
+                if new_item:
+                    logging.info(
+                        item.title + " not cloned; already existent in target org."
+                    )
                 if not self._print_warning:
                     self._print_warning = True
                     print(
@@ -201,21 +191,40 @@ class _DeepCloner:
         if cloned_db_list:
             cloned_db = cloned_db_list[0]
             cloned_item_list.append(cloned_db)
-            cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
+            dash_url = (
+                self.target.properties["helperServices"]
+                .get("dashboardsUtility", {})
+                .get("url")
+            )
+            if not dash_url:
+                cdb_data = cloned_db.get_data()
+                selectors = _deep_get(cdb_data, "desktopView", "header", "selectors")
+                if selectors:
+                    for selector in selectors:
+                        for dataset in selector.get("datasets", []):
+                            if "groupByFields" in dataset:
+                                gbf_fields = dataset["groupByFields"]
+                                for field in gbf_fields:
+                                    map_dict[field] = field.lower()
+                            if "statisticDefinitions" in dataset:
+                                for stat_def in dataset["statisticDefinitions"]:
+                                    if "onStatisticField" in stat_def:
+                                        map_dict[stat_def["onStatisticField"]] = (
+                                            stat_def["onStatisticField"].lower()
+                                        )
 
-            for widget in cloned_widgets:
-                for k, v in widget.items():
-                    if k == "itemId":
-                        widget["itemId"] = map_dict[v]
-                    if k == "datasets":
-                        for dataset in v:
-                            dataset["dataSource"]["itemId"] = map_dict[
-                                dataset["dataSource"]["itemId"]
-                            ]
-
-            new_data = cloned_db.get_data()
-            new_data["desktopView"]["widgets"] = cloned_widgets
-            cloned_db.update(item_properties={}, data=new_data)
+                cloned_db.remap_data(item_mapping=map_dict, force=True)
+            else:
+                try:
+                    mappings = []
+                    for k, v in map_dict.items():
+                        m = {"sourceItemId": k, "targetItemId": v}
+                        mappings.append(m)
+                    cloned_db.remap_data(
+                        item_mapping={}, force=True, db_mapping=mappings
+                    )
+                except:
+                    cloned_db.remap_data(item_mapping=map_dict, force=True)
 
         return cloned_item_list
 
@@ -1741,7 +1750,7 @@ class _DeepCloner:
                 resources=item.resources.export(),
                 preserve_item_id=self._preserve_item_id,
             )
-        elif item["type"] == "Web Experience":
+        elif item["type"] in ["Web Experience", "Web Experience Template"]:
             from arcgis._impl.common._itemdef._expbuilder import _WebExperience
 
             return _WebExperience(
@@ -2143,7 +2152,7 @@ class _ItemDefinition(CloneNode):
             return "url"
         return "text"
 
-    def _add_new_item(self, item_properties, data=None):
+    def _add_new_item(self, item_properties, data=None, **kwargs):
         """Add the new item to the portal"""
         thumbnail = self.thumbnail
         if not thumbnail and self.portal_item:
@@ -2163,12 +2172,14 @@ class _ItemDefinition(CloneNode):
         if thumbnail:
             item_properties["thumbnail"] = thumbnail
 
+        stream = kwargs.pop("stream", True)
         if data:
             job = folder.add(
                 **{
                     "item_properties": item_properties,
                     "item_id": item_id,
                     self._data_type_lu(data): data,
+                    "stream": stream,
                 }
             )
         else:
@@ -2176,6 +2187,7 @@ class _ItemDefinition(CloneNode):
                 **{
                     "item_properties": item_properties,
                     "item_id": item_id,
+                    "stream": stream,
                 }
             )
         new_item = job.result()
@@ -2713,10 +2725,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 continue
 
             properties = layers[layer_id].properties
-            if "globalIdField" not in properties:
-                continue
 
-            global_id_field = properties["globalIdField"]
+            global_id_field = properties.get("globalIdField", "")
+            if not global_id_field:
+                use_gids = False
+            else:
+                use_gids = self._copy_global_ids
             object_id_field = properties["objectIdField"]
             relates = [
                 relate
@@ -2740,7 +2754,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 for i in range(0, len(layer_features), chunk_size)
             ]:
                 edits = layer.edit_features(
-                    adds=features_chunk, use_global_ids=self._copy_global_ids
+                    adds=features_chunk, use_global_ids=use_gids
                 )
                 if self._logger:
                     self._logger.debug(edits)
@@ -2829,6 +2843,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         for layer_id in layer_ids:
             pre_fields = copy.deepcopy(layers[layer_id].properties["fields"])
             new_fields = copy.deepcopy(layers[layer_id].properties["fields"])
+            if (
+                not "globalIdField" in layers[layer_id].properties
+                or not layers[layer_id].properties["globalIdField"]
+            ):
+                use_gids = False
+            else:
+                use_gids = self._copy_global_ids
             read_only_update = False
             for field in new_fields:
                 if field["type"] != "esriFieldTypeOID" and field["editable"] == False:
@@ -2857,7 +2878,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 try:
                     edits = layers[layer_id].edit_features(
                         adds=features_chunk,
-                        use_global_ids=self._copy_global_ids,
+                        use_global_ids=use_gids,
                     )
 
                     if self._logger:
@@ -2874,7 +2895,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         for i in range(0, len(features_chunk), temp_chunk)
                     ]:
                         edits = layers[layer_id].edit_features(
-                            adds=chunk, use_global_ids=self._copy_global_ids
+                            adds=chunk, use_global_ids=use_gids
                         )
                         add_results += edits["addResults"]
             object_id_field = layers[layer_id].properties["objectIdField"]
@@ -3047,8 +3068,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 if not name or not isinstance(name, str):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
-                name = re.sub("\W+", "_", name)
-                name = self._get_unique_name(self.target, name)
+                name = re.sub(r"\W+", "_", name)
+                if not self.target.content.is_service_name_available(
+                    name, "featureService"
+                ):
+                    name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
                 if self.folder:
                     folder = self.target.content.folders.get(
@@ -3325,6 +3349,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ):
                         # Need to remove relationships first and add them back individually
                         # after all layers and tables have been added to the definition
+                        if "serviceItemId" in layer:
+                            layer["serviceItemId"] = new_item.id
                         if (
                             "relationships" in layer
                             and layer["relationships"] is not None
@@ -3671,19 +3697,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             field_mapping[
                                                 original_editor_field_name
                                             ] = new_editor_field_name
-                                            # Delete old editor tracking fields
-                                            if self.is_view == False:
-                                                try:
-                                                    new_delete_field = new_fields[
-                                                        new_fields_lower.index(
-                                                            original_editor_field_name.lower()
-                                                        )
-                                                    ]
-                                                    del_fields.append(
-                                                        new_delete_field["name"]
-                                                    )
-                                                except ValueError:
-                                                    pass
 
                         original_oid_field = _deep_get(layer, "objectIdField")
                         new_oid_field = _deep_get(new_layer_properties, "objectIdField")
@@ -4420,16 +4433,17 @@ class _WebMapDefinition(_TextItemDefinition):
                         and vector_tile["itemId"] in self._clone_mapping["Item IDs"]
                     ):
                         new_id = self._clone_mapping["Item IDs"][vector_tile["itemId"]]
-                        portal_url = "http://www.arcgis.com/"
+                        new_item = self.target.content.get(new_id)
                         if self.target.properties.isPortal:
-                            portal_url = _get_org_url(self.target)
-                        if self.target.properties.isPortal:
-                            portal_url = _get_org_url(self.target)
-                            root_json = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
-                                portal_url, new_id
-                            )
+                            if new_item:
+                                root_json = new_item.url + "/resources/styles/root.json"
+                            else:
+                                portal_url = _get_org_url(self.target)
+                                root_json = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
+                                    portal_url, new_id
+                                )
                         else:
-                            new_item = self.target.content.get(new_id)
+                            portal_url = "http://www.arcgis.com/"
                             root_json = f"https://tiles.arcgis.com/tiles/{self.target.properties.id}/arcgis/rest/services/{new_item.layers[0].properties.name}/VectorTileServer/resources/styles/root.json"
                         vector_tile["styleUrl"] = root_json
                         vector_tile["itemId"] = new_id
@@ -5418,7 +5432,7 @@ class _FormDefinition(_ItemDefinition):
         with open(xml_file_path, "w") as xml_file:
             xml_string = ElementTree.tostring(xml, encoding="unicode")
             xml_string = re.sub(
-                "<h:html\s.*>?",
+                r"<h:html\s.*>?",
                 "<h:html "
                 + " ".join(
                     [
@@ -5573,9 +5587,18 @@ class _FormDefinition(_ItemDefinition):
                                             os.path.join(zip_dir, path),
                                             field_mapping,
                                         )
-
+                        try:
+                            connect_version = original_item["properties"][
+                                "websiteVersion"
+                            ]
+                        except:
+                            connect_version = original_item["properties"].get(
+                                "connectVersion", None
+                            )
                         SurveyManager._xform2webform(
-                            os.path.join(zip_dir, path), self.target.url
+                            os.path.join(zip_dir, path),
+                            self.target.url,
+                            connect_version,
                         )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
@@ -5738,9 +5761,12 @@ class _FormDefinition(_ItemDefinition):
             zip_file.close()
 
             # Upload the zip to the item
+            rand_suffix = "_".join(
+                random.choices(string.ascii_uppercase + string.digits, k=5)
+            )
             new_form = shutil.copy2(
                 form_zip,
-                os.path.join(temp_dir, new_item["id"] + "-1" + ".zip"),
+                os.path.join(temp_dir, new_item["id"] + rand_suffix + ".zip"),
             )
             new_item.update(data=new_form)
         except Exception as ex:
@@ -5802,7 +5828,7 @@ class _QuickCaptureDefinition(_ItemDefinition):
                 data = self._get_item_data()
 
                 # Add the new item
-                new_item = self._add_new_item(item_properties, data)
+                new_item = self._add_new_item(item_properties, data, stream=False)
 
                 # Get the Quick Capture json resource
                 qc_json = new_item.resources.get("qc.project.json", try_json=True)
@@ -6914,9 +6940,9 @@ def _find_and_replace_fields_sql(text, field_mapping):
     for field in field_mapping:
         replace = field_mapping[field]
 
-        results = set(re.findall('([{{("\[ ])({0})([}})"\] ])'.format(field), text))
-        start = re.findall('(^{0})([}})"\] ])'.format(field), text)
-        end = re.findall('([{{("\[ ])({0}$)'.format(field), text)
+        results = set(re.findall(r'([{{("\[ ])({0})([}})"\] ])'.format(field), text))
+        start = re.findall(r'(^{0})([}})"\] ])'.format(field), text)
+        end = re.findall(r'([{{("\[ ])({0}$)'.format(field), text)
         for element in results:
             text = text.replace(
                 "".join(element), "".join([element[0], replace, element[2]])
@@ -7145,7 +7171,7 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
             for label_info in labeling_infos:
                 label_expression = _deep_get(label_info, "labelExpression")
                 if label_expression is not None:
-                    results = re.findall("\[(.*?)\]", label_expression)
+                    results = re.findall(r"\[(.*?)\]", label_expression)
                     for result in results:
                         if result in field_mapping:
                             label_info["labelExpression"] = str(
@@ -7325,7 +7351,11 @@ def _deep_get(dictionary, *keys):
     dictionary - The dictionary to search for the value
     *keys - The keys used to fetch the desired value"""
 
-    return reduce(lambda d, key: d.get(key) if d else None, keys, dictionary)
+    return reduce(
+        lambda d, key: d.get(key) if d and isinstance(d, dict) else None,
+        keys,
+        dictionary,
+    )
 
 
 # endregion

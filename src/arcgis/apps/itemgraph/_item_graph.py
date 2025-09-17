@@ -1,3 +1,4 @@
+from __future__ import annotations
 import networkx as nx
 from arcgis.gis import Item, GIS
 import arcgis
@@ -67,7 +68,7 @@ class ItemNode:
         # if returning items instead of just id's...
         items = []
         for n in node_list:
-            node = self.graph.get_item(n)
+            node = self.graph.get_node(n)
             # if node format, append node
             if out_format == "node":
                 items.append(node)
@@ -273,7 +274,7 @@ class ItemGraph(nx.DiGraph):
         """
         Adds an item to the graph. The item ID is required, but the item itself is optional.
         Creates an ItemNode with the item ID and item. Will usually be called by other functions
-        and not by users.
+        and not by users. Note that this does not add any relationships to the graph.
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -298,7 +299,7 @@ class ItemGraph(nx.DiGraph):
         """
         self.remove_node(itemid)
 
-    def get_item(self, itemid: str):
+    def get_node(self, itemid: str):
         """
         Method gets an :class:`~arcgis.apps.itemgraph.ItemNode` instance for the item contained
         in the graph with the given item ID. *None* will be returned if the item is not
@@ -307,7 +308,7 @@ class ItemGraph(nx.DiGraph):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        itemid              Required string. The item ID of the item to retrieve.
+        itemid              Required string. The item ID of the item node to retrieve.
         ===============     ====================================================================
 
         :return:
@@ -317,6 +318,65 @@ class ItemGraph(nx.DiGraph):
             return self.nodes[itemid]["node"]
         except:
             return None
+
+    def add_dependencies(self, item_list, outside_org: bool = True, **kwargs):
+        """
+        Adds a list of items to the graph and their dependencies, or merges another graph into the
+        existent graph. For new items, the function recursively explores the dependencies of each
+        item that is accesible with the graph's GIS object, encompassing the full dependency
+        tree of each item.
+
+        .. note::
+            If the *outside_org* argument is set to *True*, items external to the organization
+            are incuded in the results, but are not explored for dependencies.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_list           Required list of :class:`items <arcgis.gis.Item>`, list of *Item ID*
+                            values, or an :class:`ItemGraph <arcgis.apps.itemgraph.ItemGraph>`
+                            to include in the graph. If a graph is provided, the two graphs'
+                            nodes and edges will be merged together. If a list of item (id's)
+                            is provided, the dependencies of all the new items will be explored
+                            and added to the graph.
+        ---------------     --------------------------------------------------------------------
+        outside_org         Optional boolean.
+
+                            * When *True*, items outside of the organization will
+                            be included in the graph (but still not explored for their
+                            dependencies). Default is *True*.
+                            * When *False*, only items owned by users in the org will
+                            be included in the graph.
+        ===============     ====================================================================
+
+        In addition to explicitly named parameters, this function supports optional key word
+        arguments:
+
+        ===============     ========================================================================
+        **kwargs**          **Description**
+        ---------------     ------------------------------------------------------------------------
+        include_reverse     Optional boolean.
+
+                            * When *True*, the graph will include reverse relationships found
+                            found when calling the :meth:`~arcgis.gis.Item.related_items`
+                            method on an *item* with the *item.related_items(direction="reverse")*
+                            argument
+                            * When *False*, only includes *item.related_items(direction="forward")*
+                            relationships
+        ===============     ========================================================================
+        """
+        if isinstance(item_list, list):
+            create_dependency_graph(
+                self.gis, item_list, outside_org, graph=self, **kwargs
+            )
+        elif isinstance(item_list, ItemGraph):
+            self.update(item_list)
+            for node in self.all_items():
+                node.graph = self
+        else:
+            raise ValueError(
+                "item_list must be a list of items/item ID's or an ItemGraph."
+            )
 
     def all_items(self, out_format: str = "node"):
         """
@@ -421,7 +481,10 @@ def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
     def destringize_node(data):
         if not data.startswith("node_"):
             return data
-        itemid = data.split("_")[1]
+        if data.endswith("_item"):
+            itemid = data[5:-5]
+        else:
+            itemid = data[5:]
         item = None
         if include_items and data.endswith("_item"):
             item = gis.content.get(itemid)
@@ -486,14 +549,20 @@ def create_dependency_graph(
         and relationships.
     """
 
-    graph = ItemGraph(gis)
+    graph = kwargs.get("graph", None)
+    if not isinstance(graph, ItemGraph):
+        graph = ItemGraph(gis)
     rev = kwargs.get("include_reverse", False)
 
     def _add_deps(item: Item):
-        if rev is True:
-            deps, rev_deps = _get_item_dependencies(item, gis, True, True)
-        else:
-            deps = _get_item_dependencies(item, gis)
+        try:
+            if rev is True:
+                deps, rev_deps = _get_item_dependencies(item, gis, True, True)
+            else:
+                deps = _get_item_dependencies(item, gis)
+                rev_deps = None
+        except:
+            deps = []
             rev_deps = None
 
         def _handle_deps(item, deps, forward):
@@ -509,15 +578,17 @@ def create_dependency_graph(
                             graph.add_relationship(dep, item.itemid)
                     finally:
                         continue
-
-                if "http://" in dep or "https://" in dep:
+                try:
+                    if "http://" in dep or "https://" in dep:
+                        dep_item = None
+                    else:
+                        dep_item = gis.content.get(dep)
+                except:
                     dep_item = None
-                else:
-                    dep_item = gis.content.get(dep)
 
                 # check if item is outside of the organization
-                if not dep_item or gis.url not in dep_item.homepage:
-                    if not outside_org:
+                if not dep_item or not dep_item.get("isOrgItem", False):
+                    if not dep or not outside_org:
                         continue
                     graph.add_item(dep, dep_item)
                     if forward:

@@ -158,27 +158,31 @@ class ArcGISObjectDetector:
             [
                 {
                     "name": "test_time_augmentation",
-                    "dataType": "string",
-                    "required": False,
+                    "dataType": "GPString",
+                    "domain": [
+                        "True",
+                        "False"
+                    ],
+                    "required": True,
                     "value": (
                         "False"
                         if "test_time_augmentation" not in self.json_info
                         else str(self.json_info["test_time_augmentation"])
                     ),
-                    "displayName": "Perform test time augmentation while predicting",
-                    "description": "If True, will merge predictions from flipped and rotated images.",
+                    "displayName": "Test Time Augmentation",
+                    "description": "Performs test time augmentation while predicting. If true, predictions of flipped and rotated variants of the input image will be merged into the final output.",
                 },
                 {
                     "name": "tta_scales",
-                    "dataType": "string",
-                    "required": False,
+                    "dataType": "GPStringKeyword",
+                    "required": True,
                     "value": (
                         "1"
                         if "tta_scales" not in self.json_info
                         else str(self.json_info["tta_scales"])
                     ),
-                    "displayName": "Perform test time augmentation while predicting using different scales",
-                    "description": "provide different scales separated by comma e.g. 0.9,1,1.1",
+                    "displayName": "TTA Scales",
+                    "description": "Performs test-time augmentation by resampling the input imagery at different scales. Each scale value specifies how the image will be resized before inference. The default is 1 (no scaling). For example, specifying 0.9,1,1.1 means the pixel block will be processed three times: once at 90% of the original resolution, once at the original resolution, and once at 110% of the original resolution. The predictions from these multiple scales are then aggregated, which helps the model adapt to variations in resolution and improves robustness.",
                 },
             ]
         )
@@ -356,13 +360,14 @@ class ArcGISObjectDetector:
         transforms = [0]
 
         if self.use_tta:
-            if self.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+            image_space_used = self.json_info.get("ImageSpaceUsed")
+            if image_space_used  == "MAP_SPACE":
                 transforms = list(range(8))
             else:
                 transforms = [
                     0,
                     2,
-                ]  # no vertical flips for pixel space (oriented imagery)
+                ]  # no vertical flips for pixel space (oriented imagery / missing key)
 
         for k in transforms:
             out = dihedral_affine(Image(torch.tensor(input_image.copy() / 256.0)), k)
@@ -561,7 +566,6 @@ features = {
     'displayFieldName': '',
     'fieldAliases': {
         'OID': 'OID',
-        'Class': 'Class',
         'Confidence': 'Confidence',
         'Shape':'Shape',
         'Label':'Label',
@@ -572,11 +576,6 @@ features = {
             'name': 'OID',
             'type': 'esriFieldTypeOID',
             'alias': 'OID'
-        },
-        {
-            'name': 'Class',
-            'type': 'esriFieldTypeString',
-            'alias': 'Class'
         },
         {
             'name': 'Confidence',
@@ -705,11 +704,11 @@ class ArcGISObjectClassifier:
              required_parameters.append(
                  {
                      'name': 'batch_size',
-                     'dataType': 'numeric',
-                     'required': False,
+                     'dataType': 'GPLong',
+                     'required': True,
                      'value': 4,
                      'displayName': 'Batch Size',
-                     'description': 'Batch Size'
+                     'description': 'Number of image tiles processed in each step of the model inference. This depends on the memory of your graphic card.'
                  }
              )
 
@@ -726,6 +725,10 @@ class ArcGISObjectClassifier:
 
         if 'DataRange' in self.json_info:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
+
+        self.exp_map = False
+        if 'explainability_map' in configuration:
+            self.exp_map = configuration['explainability_map']
 
         configuration['inheritProperties'] = 2|4|8
         configuration['inputMask'] = True
@@ -757,7 +760,10 @@ class ArcGISObjectClassifier:
         pixelBlocks['rasters_pixels'] = rasters_pixels
 
         try:
-            polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
+            if self.exp_map:
+                polygon_list, scores, labels, exp_map_blob = self.child_object_detector.vectorize(**pixelBlocks)
+            else:
+                polygon_list, scores, labels = self.child_object_detector.vectorize(**pixelBlocks)
         except RuntimeError as e:
             if 'out of memory' in str(e):
                 # arcpy.AddError('Runtime Error: ran out of GPU memory, please try a smaller batch size')
@@ -788,6 +794,16 @@ class ArcGISObjectClassifier:
             for item in features['fields']:
                 if item['name'] == 'Confidence':
                     item['type'] = 'esriFieldTypeString'
+        
+        if self.exp_map:
+            expMapField = {
+                    'name': 'ExpMap',
+                    'type': 'esriFieldTypeBlob',
+                    'alias': 'ExpMap'
+                }
+            if not expMapField in features['fields']:
+               features['fields'].append(expMapField)
+               features['fieldAliases'].update({'ExpMap':'ExpMap'})
 
         for i in range(len(polygon_list)):
 
@@ -800,12 +816,17 @@ class ArcGISObjectClassifier:
                     ]
                 )
 
+            attributes = {
+               'OID': i + 1,
+               'Confidence': str(scores[i]),
+               'Label': labels[i]
+               }
+
+            if self.exp_map:
+                attributes['ExpMap'] = exp_map_blob[i]
+
             features['features'].append({
-                'attributes': {
-                    'OID': i + 1,
-                    'Confidence': str(scores[i]),
-                    'Label': labels[i],
-                },
+                'attributes': attributes,
                 'geometry': {
                     'rings': rings
                 }
@@ -1012,6 +1033,23 @@ class ArcGISImageClassifier:
                 if param['name'] == 'predict_background':
                     param['value'] = 'False'
                     break
+                    
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                params.append(
+                    {
+                            "name": "radiometric_offset_correction",
+                            "dataType": "GPString",
+                            "required": False,
+                            "domain": ["True", "False"],
+                            "value": "False"
+                            if "radiometric_offset_correction" not in self.json_info
+                            else str(self.json_info["radiometric_offset_correction"]),
+                            "displayName": "Radiometric Offset Correction",
+                            "description": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
+                    }
+                )
+
         return params
 
     def getConfiguration(self, **scalars):
@@ -1020,6 +1058,16 @@ class ArcGISImageClassifier:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
         configuration['inheritProperties'] = 2|4|8
         configuration['inputMask'] = True
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                self.correct_offset = scalars.get("radiometric_offset_correction", "false").lower() in [
+                    "true",
+                    "1",
+                    "t",
+                    "y",
+                    "yes",
+                ]
+
         return configuration
 
     def updateRasterInfo(self, **kwargs):
@@ -1056,6 +1104,21 @@ class ArcGISImageClassifier:
         raster_mask = pixelBlocks['raster_mask']
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
+
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "LandsatService": 
+                if raster_pixels.shape[0] == 7 and raster_pixels.dtype == np.float32: # conversion for esri service
+                    raster_pixels = np.clip(raster_pixels, 0, 1)
+                    raster_pixels =  (raster_pixels + 0.2) / 0.0000275
+
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                if raster_pixels.shape[0] == 12 and raster_pixels.dtype == np.float32: # conversion for esri service
+                    raster_pixels = np.round(raster_pixels * 10000)
+                    raster_pixels = np.clip(raster_pixels, 0, 65535)
+                if self.correct_offset: # for sentinel imagery released after jan 2022
+                    raster_pixels -= 1000
+
         pixelBlocks['raster_pixels'] = raster_pixels
 
         if self.json_info['ModelName'] == 'MultiTaskRoadExtractor':
@@ -1270,8 +1333,26 @@ class ArcGISInstanceDetector:
                 'displayName': 'Device ID',
                 'description': 'Device ID'
             }
-        ]     
-        return self.child_instance_detector.getParameterInfo(required_parameters)
+        ]
+
+        params = self.child_instance_detector.getParameterInfo(required_parameters)
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                params.append(
+                    {
+                            "name": "radiometric_offset_correction",
+                            "dataType": "GPString",
+                            "required": False,
+                            "domain": ["True", "False"],
+                            "value": "False"
+                            if "radiometric_offset_correction" not in self.json_info
+                            else str(self.json_info["radiometric_offset_correction"]),
+                            "displayName": "Radiometric Offset Correction",
+                            "description": "Corrects radiometric offset of -1000 in imageries sensed after 25th January 2022.",
+                    }
+                )
+
+        return params
 
 
     def getConfiguration(self, **scalars):         
@@ -1280,6 +1361,16 @@ class ArcGISInstanceDetector:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
         configuration['inheritProperties'] = 2|4|8
         configuration['inputMask'] = True
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                self.correct_offset = scalars.get("radiometric_offset_correction", "false").lower() in [
+                    "true",
+                    "1",
+                    "t",
+                    "y",
+                    "yes",
+                ]
+
         return configuration
 
     def getFields(self):
@@ -1293,6 +1384,21 @@ class ArcGISInstanceDetector:
         raster_mask = pixelBlocks['raster_mask']
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
+
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "LandsatService": 
+                if raster_pixels.shape[0] == 7 and raster_pixels.dtype == np.float32: # conversion for esri service
+                    raster_pixels = np.clip(raster_pixels, 0, 1)
+                    raster_pixels =  (raster_pixels + 0.2) / 0.0000275
+
+        if "Preprocessing" in self.json_info:
+            if self.json_info["Preprocessing"] == "SentinelService":
+                if raster_pixels.shape[0] == 12 and raster_pixels.dtype == np.float32: # conversion for esri service
+                    raster_pixels = np.round(raster_pixels * 10000)
+                    raster_pixels = np.clip(raster_pixels, 0, 65535)
+                if self.correct_offset: # for sentinel imagery released after jan 2022
+                    raster_pixels -= 1000
+
         pixelBlocks['raster_pixels'] = raster_pixels
 
         masks, pred_class, pred_score = self.child_instance_detector.vectorize(**pixelBlocks)
@@ -1713,6 +1819,7 @@ import numpy as np
 import json
 import sys, os, importlib
 import math
+import random
 
 def get_available_device(max_memory=0.8):
     '''
@@ -1766,12 +1873,30 @@ attribute_table = {
     "fieldAliases": {
         "OID": "OID",
         "Value": "Value",
-        "Class": "Class"
+        "Class": "Class",
+        'Red': 'Red',
+        'Green': 'Green',
+        'Blue': 'Blue'
     },
     "fields": [
         {"name": "OID", "type": "esriFieldTypeOID", "alias": "OID"},
         {"name": "Value", "type": "esriFieldTypeInteger", "alias": "Value"},
-        {"name": "Class", "type": "esriFieldTypeString", "alias": "Class"}
+        {"name": "Class", "type": "esriFieldTypeString", "alias": "Class"},
+        {
+            'name': 'Red',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Red'
+        },
+        {
+            'name': 'Green',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Green'
+        },
+        {
+            'name': 'Blue',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Blue'
+        }
     ],
     "features": [],
 }
@@ -1872,6 +1997,7 @@ class ArcGISImageTsClassifier:
     def updateRasterInfo(self, **kwargs):
         kwargs["output_info"]["bandCount"] = 1
         kwargs["output_info"]["pixelType"] = "i4"
+        color_mapping = self.json_info.get("color_mapping", None)
         class_info = self.json_info.get("Class_mapping", None)
         num_class_info = self.json_info.get("Num_class_mapping", None)
         if num_class_info == None:
@@ -1879,12 +2005,21 @@ class ArcGISImageTsClassifier:
         key_vals, num_key_vals = list(class_info.items()), list(num_class_info.items())
         attribute_table["features"] = []
         for i, c in enumerate(class_info):
+            if color_mapping:
+                red, green, blue = color_mapping.get(key_vals[i][0], (random.randint(0, 255),
+                                                                      random.randint(0, 255),
+                                                                      random.randint(0, 255)))
+            else:
+                red, green, blue = [random.randint(0, 255) for _ in range(3)]
             attribute_table["features"].append(
                 {
                     "attributes": {
                         "OID": i + 1,
                         "Value": num_key_vals[i][1],
                         "Class": key_vals[i][1],
+                        "Red": red,
+                        "Green": green,
+                        "Blue": blue, 
                     }
                 }
             )
@@ -2090,11 +2225,11 @@ class ArcGISImageCaptioner:
              required_parameters.append(
                  {
                      'name': 'batch_size',
-                     'dataType': 'numeric',
-                     'required': False,
+                     'dataType': 'GPLong',
+                     'required': True,
                      'value': 4,
                      'displayName': 'Batch Size',
-                     'description': 'Batch Size'
+                     'description': 'Number of image tiles processed in each step of the model inference. This depends on the memory of your graphic card.'
                  }
              )
 
@@ -2667,6 +2802,13 @@ class ArcGISImageClassifier:
         raster_mask = pixelBlocks['raster_mask']
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
+
+        if "Preprocessing" in self.json_info
+            if self.json_info["Preprocessing"] == "LandsatService":
+                if raster_pixels.shape[0] == 7 and raster_pixels.dtype == np.float32:
+                    raster_pixels = np.clip(raster_pixels, 0, 1)
+                    raster_pixels =  (raster_pixels + 0.2) / 0.0000275
+                    
         pixelBlocks['raster_pixels'] = raster_pixels
 
         xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   

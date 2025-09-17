@@ -212,6 +212,7 @@ class MMDetection(ModelExtension):
         if not data_passed:
             frcnn.learn.data.single_ds.classes = frcnn._data.classes
             frcnn.learn.data.single_ds.y.classes = frcnn._data.classes
+        frcnn._model_emd = emd
 
         return frcnn
 
@@ -404,3 +405,85 @@ class MMDetection(ModelExtension):
         =====================   ===========================================
 
         """
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        mixed_precision=False,
+        **kwargs,
+    ):
+        """
+        Train the model for the specified number of epochs and using the
+        specified learning rates
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        epochs                  Required integer. Number of cycles of training
+                                on the data. Increase it if underfitting.
+        ---------------------   -------------------------------------------
+        lr                      Optional float or slice of floats. Learning rate
+                                to be used for training the model. If ``lr=None``,
+                                an optimal learning rate is automatically deduced
+                                for training the model.
+        ---------------------   -------------------------------------------
+        one_cycle               Optional boolean. Parameter to select 1cycle
+                                learning rate schedule. If set to `False` no
+                                learning rate schedule is used.
+        ---------------------   -------------------------------------------
+        early_stopping          Optional boolean. Parameter to add early stopping.
+                                If set to 'True' training will stop if parameter
+                                `monitor` value stops improving for 5 epochs.
+                                A minimum difference of 0.001 is required for
+                                it to be considered an improvement.
+        ---------------------   -------------------------------------------
+        checkpoint              Optional boolean or string.
+                                Parameter to save checkpoint during training.
+                                If set to `True` the best model
+                                based on `monitor` will be saved during
+                                training. If set to 'all', all checkpoints
+                                are saved. If set to False, checkpointing will
+                                be off. Setting this parameter loads the best
+                                model at the end of training.
+        ---------------------   -------------------------------------------
+        tensorboard             Optional boolean. Parameter to write the training log.
+                                If set to 'True' the log will be saved at
+                                `<dataset-path>/training_log` which can be visualized in
+                                tensorboard. Required tensorboardx version=2.1
+
+                                The default value is 'False'.
+
+                                .. note::
+                                    Not applicable for Text Models
+        ---------------------   -------------------------------------------
+        monitor                 Optional string. Parameter specifies
+                                which metric to monitor while checkpointing
+                                and early stopping. Defaults to 'valid_loss'. Value
+                                should be one of the metric that is displayed in
+                                the training table. Use `{model_name}.available_metrics`
+                                to list the available metrics to set here.
+        ---------------------   -------------------------------------------
+        mixed_precision         Optional boolean. Parameter to enable/disable mixed precision
+                                training. If set to `True`, model training will be done in
+                                mixed precision mode. Only `Pytorch` based models are supported.
+                                This feature is experimental.
+                                The default value is 'False'.
+        =====================   ===========================================
+        """
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            mixed_precision=False,
+            **kwargs,
+        )

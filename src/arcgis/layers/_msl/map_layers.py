@@ -12,6 +12,7 @@ from arcgis._impl.common._filters import (
 )
 from arcgis._impl.common._mixins import PropertyMap
 
+from arcgis._impl.common._output_to_file import handle_response
 from arcgis.gis import Item, Layer
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis._impl._util import _get_item_url
@@ -589,7 +590,7 @@ class MapFeatureLayer(Layer):
         out_sr: int | None = None,
         geometry_precision: int | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict[str, Any]] | None = None,
         return_z: bool = False,
         return_m: bool = False,
@@ -702,7 +703,7 @@ class MapFeatureLayer(Layer):
                                             `False`. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is `true`.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names by which to order the
+        order_by_fields                     Optional string or list of strings. One or more field names by which to order the
                                             results. Use ``ASC`` or ``DESC`` for ascending
                                             or descending, respectively, following every field to be ordered:
 
@@ -716,7 +717,7 @@ class MapFeatureLayer(Layer):
 
                                             .. code-block:: python
 
-                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+                                                >>> group_by_fields_for_statistics = "STATE_NAME, GENDER"
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional List. The definitions for one or more field-based
                                             statistics to be calculated.
@@ -1323,7 +1324,7 @@ class MapTable(MapFeatureLayer):
         result_record_count: int | None = None,
         object_ids: str | None = None,
         gdb_version: str | None = None,
-        order_by_fields: str | None = None,
+        order_by_fields: list[str] | str | None = None,
         out_statistics: list[dict] | None = None,
         return_all_records: bool = True,
         historic_moment: int | _dt.datetime | None = None,
@@ -1363,7 +1364,7 @@ class MapTable(MapFeatureLayer):
 
                                                 >>> import _dt.datetime as dt
 
-                                                >>> time_filter = [dt._dt.datetime(2022, 1, 1), dt.dateime(2022, 1, 12)]
+                                                >>> time_filter = [dt._dt.datetime(2022, 1, 1), dt.datetime(2022, 1, 12)]
 
         -------------------------------     --------------------------------------------------------------------
         gdb_version                         Optional string. The geodatabase version to query. This parameter
@@ -1389,7 +1390,7 @@ class MapTable(MapFeatureLayer):
                                             `return_ids_only` parameter. If `return_count_only = True`, the
                                             response will return both the count and the extent.
         -------------------------------     --------------------------------------------------------------------
-         order_by_fields                    Optional string. One or more field names by which to order the
+        order_by_fields                     Optional string or list of strings. One or more field names by which to order the
                                             results. Use ``ASC`` or ``DESC`` for ascending
                                             or descending, respectively, following every field to be ordered:
 
@@ -1403,7 +1404,7 @@ class MapTable(MapFeatureLayer):
 
                                             .. code-block:: python
 
-                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+                                                >>> group_by_fields_for_statistics = "STATE_NAME, GENDER"
 
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional string. The definitions for one or more field-based
@@ -1724,6 +1725,126 @@ class EnterpriseMapImageLayerManager(_gis._GISResource):
         super(EnterpriseMapImageLayerManager, self).__init__(url, gis)
         self._ms = map_img_lyr
 
+    @property
+    def lifecycleinfo(self) -> dict:
+        """Returns the date and time information (in Unix format) of when a service was created or updated."""
+        url: str = f"{self.url}/lifecycleinfos"
+        params: dict = {
+            "f": "json",
+        }
+        return self._gis.session.get(url, params=params).json()
+
+    def build_cache(
+        self,
+        levels: float = None,
+        extent: list[float] | None = None,
+        area_of_interest: _geometry.Polygon | None = None,
+    ) -> str:
+        """"""
+        if area_of_interest is None and extent is None:
+            raise ValueError("An `extent` or `area_of_interest` must be provided.")
+        values = self._ms.url.split("/rest/services/")[1].split("/")
+        if len(values) == 2:
+            service_url: str = f"{values[0]}:{values[1]}"
+        elif len(values) == 3:
+            service_url: str = f"{values[0]}/{values[1]}:{values[2]}"
+
+        update_mode: str = "RECREATE_ALL_TILES"
+        return self._enterprise_cache_tool(
+            service_url=service_url,
+            levels=levels,
+            update_mode=update_mode,
+            thread_count=-1,
+            extent=extent,
+            job_id=None,
+            area_of_interest=area_of_interest,
+        )
+
+    def _enterprise_cache_tool(
+        self,
+        service_url: str,
+        levels: float | int,
+        update_mode: str,
+        thread_count: int = -1,
+        extent: list[float] | None = None,
+        job_id: str | None = None,
+        area_of_interest: _geometry.Polygon | None = None,
+    ) -> str:
+        """ """
+        update_modes: list[str] = [
+            "RECREATE_EMPTY_TILES",
+            "RECREATE_ALL_TILES",
+            "DELETE_TILES",
+            "COMPLETE_JOB",
+            "FIX_JOB",
+            "RESUME_JOB",
+        ]
+        if not update_mode in update_modes:
+            raise ValueError(
+                f"{update_mode} is not a valid value for `update_mode`. Allowed values are: {','.join(update_modes)}"
+            )
+
+        base_url: str = self._ms.url.split("/rest/services/")[0]
+        url: str = base_url + "/rest/services/System/CachingControllers/GPServer"
+        reporting_url: str = base_url + "/rest/services/System/ReportingTools/GPServer"
+        from arcgis.layers import Service
+
+        gp = Service(url_or_item=url, server=self._ms._gis)
+        reporting_gp = Service(url_or_item=reporting_url, server=self._ms._gis)
+        job = gp.manage_map_cache_tiles(
+            service_url=service_url,
+            levels=levels,
+            thread_count=thread_count,
+            update_mode=update_mode,
+            constraining_extent=extent,
+            jobid=job_id,
+            area_of_interest=area_of_interest,
+            future=True,
+        )
+
+        result = job.result()
+
+        status_result = reporting_gp.report_cache_status(
+            service_url=result,
+            report_mode="esriCacheStatus",
+            job_id=None,
+            level_id=None,
+            error_start=None,
+            error_count=None,
+            gis=None,
+            future=False,
+            estimate=False,
+        )
+        while status_result.get("status") in [
+            "EXISTS",
+            "NONE",
+            "COMPLETED",
+            "FAILED",
+            "FAILURE",
+            "FAILING",
+        ]:
+            if status_result.get("status") in [
+                "EXISTS",
+                "NONE",
+                "COMPLETED",
+                "FAILED",
+                "FAILURE",
+                "FAILING",
+            ]:
+                return status_result
+            status_result = reporting_gp.report_cache_status(
+                service_url=result,
+                report_mode="esriCacheStatus",
+                job_id=None,
+                level_id=None,
+                error_start=None,
+                error_count=None,
+                gis=None,
+                future=False,
+                estimate=False,
+            )
+        return status_result
+
     # ----------------------------------------------------------------------
     def edit(self, service_dictionary: dict) -> bool:
         """
@@ -2017,10 +2138,8 @@ class MapImageLayerManager(_gis._GISResource):
             <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
-            if self._gis.version >= [10, 3]:
-                url = "%s/update" % self._url
-            else:
-                url = "%s/updateTiles" % self._url
+
+            url = "%s/updateTiles" % self._url
 
             params = {
                 "f": "json",
@@ -2463,11 +2582,13 @@ class MapImageLayer(_gis.Layer):
         resp: requests.Response = self._session.get(
             url=url,
             params=params,
-            file_name="mapImage.kmz",
-            out_folder=tempfile.gettempdir(),
         )
-        resp.raise_for_status()
-        return resp.json()
+        return handle_response(
+            resp=resp,
+            file_name="mapImage.kmz",
+            out_path=tempfile.gettempdir(),
+            try_json=True,
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -2534,14 +2655,12 @@ class MapImageLayer(_gis.Layer):
         if out_path is None:
             out_path = tempfile.gettempdir()
         url = "{url}/info/thumbnail".format(url=self._url)
-        params = {"f": "json"}
         if out_path is None:
             out_path = tempfile.gettempdir()
-        resp: requests.Response = self._session.post(
-            url=url, out_folder=out_path, file_name="thumbnail.png"
+        resp: requests.Response = self._session.post(url, {"f": "json"})
+        return handle_response(
+            out_path=out_path, file_name="thumbnail.png", try_json=True, resp=resp
         )
-        resp.raise_for_status()
-        return resp.json()
 
     # ----------------------------------------------------------------------
     def identify(
@@ -2858,7 +2977,7 @@ class MapImageLayer(_gis.Layer):
                                those layers. Definition expression for a layer that is
                                published with the service will be always honored.
         ------------------     --------------------------------------------------------------------
-        return_geometry        Optional boolean. If true, the resultset will include the geometries
+        return_geometry        Optional boolean. If true, the result set will include the geometries
                                associated with each result. The default is true.
         ------------------     --------------------------------------------------------------------
         max_offset             Optional integer. This option can be used to specify the maximum
@@ -3254,11 +3373,10 @@ class MapImageLayer(_gis.Layer):
                 resp: requests.Response = self._session.post(
                     url=url,
                     data=params,
-                    out_folder=save_folder,
-                    file_name=save_file,
                 )
-                resp.raise_for_status()
-                return resp.json()
+                return handle_response(
+                    resp=resp, out_path=save_folder, file_name=save_file, try_json=True
+                )
             else:
                 resp: requests.Response = self._session.post(
                     url=url, data=params, force_bytes=True
@@ -3269,11 +3387,10 @@ class MapImageLayer(_gis.Layer):
             resp: requests.Response = self._session.post(
                 url=url,
                 data=params,
-                out_folder=save_folder,
-                file_name=save_file,
             )
-            resp.raise_for_status()
-            return resp.json()
+            return handle_response(
+                resp=resp, out_path=save_folder, file_name=save_file, try_json=True
+            )
         else:
             print("Unsupported output format")
 
@@ -3623,12 +3740,14 @@ class MapImageLayer(_gis.Layer):
                                 name = f["name"]
                                 dlURL = f["url"]
                                 files.append(
-                                    self._session.get(
-                                        url=dlURL,
-                                        params=params,
-                                        out_folder=tempfile.gettempdir(),
+                                    handle_response(
+                                        resp=self._session.get(
+                                            url=dlURL, params=params
+                                        ),
+                                        out_path=tempfile.gettempdir(),
                                         file_name=name,
-                                    ).json()
+                                        try_json=True,
+                                    )
                                 )
                             return files
                         else:

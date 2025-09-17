@@ -1,0 +1,60 @@
+name: Cleanup Published Items
+on:
+  schedule:
+    - cron: '0 22 * * 5'   # Every Friday
+    - cron: '0 22 * * 6'   # Every Saturday
+    - cron: '0 22 * * 0'   # Every Sunday
+
+  workflow_dispatch:
+    inputs:
+      gis_profile:
+        description: "The GIS profile name (e.g your_enterprise_profile)"
+        required: true
+        type: string
+      day_difference:
+        description: "How many days before 'now' to look for items"
+        required: false
+        default: 7
+        type: number
+      dry_run:
+        description: "Report only, do not delete items"
+        required: false
+        default: true
+        type: boolean
+jobs:
+  cleanup-items:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.10
+        with:
+          pixi-version: v0.48.2 
+          environments: >-
+            local
+          frozen: true
+          activate-environment: true
+      - name: Generate GIS profiles
+        run: pixi run test:config:profiles
+      - name: Run cleanup job
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            PROFILE="${{ github.event.inputs.gis_profile }}"
+            DAY_DIFFERENCE="${{ github.event.inputs.day_difference }}"
+            DRY_RUN="${{ github.event.inputs.dry_run }}"
+          elif [ "${{ github.event.schedule }}" == "0 22 * * 5" ]; then
+            PROFILE="your_online_profile"
+            DAY_DIFFERENCE=7
+            DRY_RUN=${{ vars.ARCGIS_CLEANUP_SCHEDULE_DRY_RUN }}
+          elif [ "${{ github.event.schedule }}" == "0 22 * * 6" ]; then
+            PROFILE="your_enterprise_profile"
+            DAY_DIFFERENCE=7
+            DRY_RUN=${{ vars.ARCGIS_CLEANUP_SCHEDULE_DRY_RUN }}
+          elif [ "${{ github.event.schedule }}" == "0 22 * * 0" ]; then
+            PROFILE="your_k8s_profile"
+            DAY_DIFFERENCE=7
+            DRY_RUN=${{ vars.ARCGIS_CLEANUP_SCHEDULE_DRY_RUN }}
+          else
+            echo "No matching schedule, skipping."
+            exit 0
+          fi
+          cd tests && python -m utils.cleanup_published_items --gis_profile=$PROFILE --day_difference=$DAY_DIFFERENCE --dry_run=$DRY_RUN

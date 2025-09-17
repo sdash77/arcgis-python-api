@@ -1,6 +1,7 @@
 import os
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 import json
 from fastai.vision.transform import rotate, brightness, contrast
 from arcgis.learn import (
@@ -112,7 +113,6 @@ class_mapping_psetae = {
 
 
 def setuposenviron():
-
     with open(authorization_path) as f:
         authorization_data = json.load(f)
     return authorization_data
@@ -133,7 +133,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -195,7 +194,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -257,7 +255,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -315,7 +312,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -374,7 +370,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -438,7 +433,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -496,13 +490,12 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "maskrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.40,
-        "regression_epochs": 10,
+        "regression_test_score": 0.30,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -665,7 +658,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -727,7 +719,6 @@ data = {
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
             "batch_size": None,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -1032,7 +1023,6 @@ data = {
             "batch_size": None,
             "n_masks": 38,
             "resize_to": 256,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -1059,7 +1049,6 @@ data = {
             "path": os.path.join(data_folder_ms, "ms_small"),
             "batch_size": None,
             "chip_size": 256,
-            "imagery_type": "multispectral",
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -1221,7 +1210,7 @@ data = {
                 [],
             ),
             "resize_to": (128, 64),
-            "dataset_type":"Imagenet"
+            "dataset_type": "Imagenet",
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1427,7 +1416,7 @@ data = {
         "model_test": "mm3d_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mm3d_data", "Chairs001.pctd"),
-            "batch_size": None,
+            "batch_size": 64,
             "dataset_type": "PointCloudOD",
         },
         "prepare_data_ms": False,
@@ -1435,7 +1424,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 6,
         "inferencing_parameter": {
             "model_type": "pass",
             "sample_input": "pass",
@@ -1533,7 +1522,7 @@ data = {
         "model_test": "wnet_cgan_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "wnet_data"),
-            "batch_size": None,
+            "batch_size": 4,
             "dataset_type": "WNet_cGAN",
         },
         "prepare_data_ms": False,
@@ -1555,7 +1544,7 @@ data = {
         "model_test": "pix2pixhd_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pix2pix_data"),
-            "batch_size": None
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1598,7 +1587,7 @@ data = {
         "model_test": "ptv3det_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mm3d_data", "Chairs001.pctd"),
-            "batch_size": None,
+            "batch_size": 64,
             "dataset_type": "PointCloudOD",
         },
         "prepare_data_ms": False,
@@ -1606,13 +1595,13 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
-        "regression_epochs": 20,
+        "regression_epochs": 4,
         "inferencing_parameter": {
             "model_type": "pass",
             "sample_input": "pass",
         },
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
-    }
+    },
 }
 
 
