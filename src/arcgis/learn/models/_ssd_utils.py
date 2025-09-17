@@ -460,7 +460,7 @@ def compute_class_AP(
             clas.extend(clas1)
 
     aps = compute_ap_score(tps, p_scores, clas, n_gts, n_classes)
-    return aps.tolist()
+    return aps
 
 
 def compute_cm(
@@ -550,7 +550,7 @@ def compute_ap(precision, recall):
         precision[i - 1] = np.maximum(precision[i - 1], precision[i])
     idx = np.where(recall[1:] != recall[:-1])[0]
     ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
-    return ap
+    return ap.item()
 
 
 def iou(ann, centroids):
