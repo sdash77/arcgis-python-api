@@ -6,10 +6,6 @@ from utils.decorators import integration_test, profiles
 from arcgis.gis import GIS
 from arcgis.gis.nb._dataaccess import DATAACCESSTYPE, NotebookFolder, NotebookFile, NotebookDataAccess
 from integration.config import get_resource_path
-from utils._logging import enable_verbose_logging
-
-
-enable_verbose_logging()
 
 
 @profiles.admin_enterprise_and_agol
@@ -34,6 +30,18 @@ class TestNotebookDataAccess(unittest.TestCase):
             open_notebook = gis.notebook_server[0].notebooks.open_notebook(nb_id)
         if open_notebook["status"] == "COMPLETED":
             return gis.notebook_server[0].data_access
+
+    def _shutdown_containers(self, gis) -> None:
+        if gis._is_agol:
+            containers = gis.notebook_server[0].containers.list()['containers']
+            for container in containers:
+                if container:
+                    container = gis.notebook_server[0].containers.get(container['id'])
+                    container.shutdown()
+        else:
+            for container in gis.notebook_server[0].system.containers:
+                if container:
+                    container.shutdown()
 
     def test_folders_property(self):
         folders = self.da.folders
@@ -221,6 +229,8 @@ class TestNotebookDataAccess(unittest.TestCase):
             fp = get_resource_path("staging_data/USA_Major_Cities.zip")
             file = user_da.folders[0].upload(fp)
             folder = user_da.folders[0].create_folder("transfer_folder")
+            self._shutdown_containers(user_src_gis)
+            self._shutdown_containers(self.gis)
 
             # transfer
             result = self.da.transfer(user_src, self.gis.users.me)
