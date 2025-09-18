@@ -2788,7 +2788,8 @@ def _extract_embeddings(
         }
     else:
         column_prefix = {"text": "emb_", "image": "emb_", "location": "emb_"}
-
+    # Check if location column name is valid
+    location_values = [i for i in location_values if len(i)]
     for cnt1, var in enumerate(text_variables + image_variables + location_values):
         if var in text_variables:
             embeddings = Embeddings(dataset_type="text")
