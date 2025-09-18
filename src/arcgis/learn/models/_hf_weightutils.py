@@ -4,7 +4,7 @@ from timm.models.resnet import (
     Bottleneck,
     ResNet,
 )
-from timm.models.helpers import build_model_with_cfg
+from timm.models import build_model_with_cfg
 from timm.models.vision_transformer import VisionTransformer
 from timm.models.vision_transformer import (
     checkpoint_filter_fn as vit_checkpoint_filter_fn,

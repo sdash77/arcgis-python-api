@@ -1522,7 +1522,7 @@ data = {
         "model_test": "wnet_cgan_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "wnet_data"),
-            "batch_size": 4,
+            "batch_size": None,
             "dataset_type": "WNet_cGAN",
         },
         "prepare_data_ms": False,
