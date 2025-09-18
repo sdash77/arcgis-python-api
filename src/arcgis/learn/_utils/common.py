@@ -182,7 +182,7 @@ class ArcGISMSImage(Image):
         except ImportError as e:
             message = f"""
             {e}\n\nPlease install gdal using the following command
-            \nconda install gdal=2.3.3
+            \nconda install gdal -c esri
             """
             raise Exception(message)
         path = str(os.path.abspath(path))
