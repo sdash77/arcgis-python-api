@@ -36,6 +36,7 @@ try:
         process_text,
     )
     from typing import List
+    from .env import _raise_fastai_import_error
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -61,18 +62,6 @@ except:
     HAS_NUMPY = False
 
 max_len = 100
-
-
-def _raise_fastai_exception(exception):
-    error_message = (
-        f"{exception}\n\nThis module requires fastai, PyTorch and transformers as its dependencies.\n"
-        "Install them using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.2 "
-        "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
-        "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
-        "\n'conda install gdal=2.3.3'"
-        "\n'pip install transformers==3.3.0'"
-    )
-    raise Exception(error_message)
 
 
 # Overriding show_text_xys function of TextList to display the dataframe in desired fashion
@@ -256,7 +245,7 @@ class TextDataObject:
         label2id=None,
     ):
         if not HAS_FASTAI:
-            _raise_fastai_exception(import_exception)
+            _raise_fastai_import_error(import_exception)
 
         text_data = cls("ner")
         random.seed(seed)
@@ -310,7 +299,7 @@ class TextDataObject:
         **kwargs,
     ):
         if not HAS_FASTAI:
-            _raise_fastai_exception(import_exception)
+            _raise_fastai_import_error(import_exception)
 
         text_data = cls("classification")
         if not os.path.exists(data):
@@ -419,7 +408,7 @@ class TextDataObject:
         remove_urls=False,
     ):
         if not HAS_FASTAI:
-            _raise_fastai_exception(import_exception)
+            _raise_fastai_import_error(import_exception)
 
         text_data = cls("sequence_translation")
         if not os.path.exists(data):
@@ -487,7 +476,7 @@ class TextDataObject:
         Wrapper to create fastai TextDataBunch Object
         """
         if not HAS_FASTAI:
-            _raise_fastai_exception(import_exception)
+            _raise_fastai_import_error(import_exception)
 
         logger = kwargs.get("logger")
         classes = kwargs.get("classes", None)

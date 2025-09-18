@@ -11,7 +11,7 @@ on:
       env_name:
         description: "Name of Conda environment"
         required: false
-        default: "jenkins_03_April_25"
+        default: "pr_tests_17_sept"
       test_file:
         description: "Path to test file"
         required: false
@@ -35,7 +35,7 @@ jobs:
 
       - name: Run tests in arcgis_learn supported conda env - Linux
         run: |
-          ENV_NAME="${{ github.event.inputs.env_name || 'jenkins_03_April_25' }}"
+          ENV_NAME="${{ github.event.inputs.env_name || 'pr_tests_17_sept' }}"
           TEST_FILE="${{ github.event.inputs.test_file || 'tests/integration/arcgis_learn/test_common.py' }}"
           source /root/anaconda3/etc/profile.d/conda.sh
           conda activate $ENV_NAME
