@@ -343,7 +343,7 @@ class Embeddings:
         if not HAS_TRANSFORMER:
             raise Exception("This module requires transformers library.")
         if backbone is None:
-            backbone = "sentence-transformers/distilbert-base-nli-stsb-mean-tokens"
+            backbone = "sentence-transformers/all-MiniLM-L6-v2"
         self.backbone = backbone
         try:
             model = AutoModel.from_pretrained(backbone)
@@ -521,6 +521,22 @@ class Embeddings:
                 iterable_numpy_loc[0], (list, tuple, np.ndarray)
             ) and isinstance(iterable_numpy_loc[0][0], Geometry):
                 item_list = [Geometry(i[0]) for i in iterable_numpy_loc]
+
+            elif isinstance(iterable_numpy_loc[0], Geometry) and isinstance(
+                iterable_numpy_loc, (list, tuple, np.ndarray)
+            ):
+                item_list = [Geometry(i) for i in iterable_numpy_loc]
+
+            elif isinstance(
+                iterable_numpy_loc, (list, tuple, np.ndarray)
+            ) and isinstance(iterable_numpy_loc[0], dict):
+                try:
+                    Geometry(iterable_numpy_loc[0])
+                except Exception as e:
+                    raise Exception(
+                        "Input field contains invalid geometry values. Kindly fix the input field or pass the correct Geometry."
+                    )
+                item_list = [Geometry(i) for i in iterable_numpy_loc]
             else:
                 raise Exception(
                     "Input field is not of type Point, Polyline, or Polygon Geometry. Either disable process geometry or pass a field with valid Geometry."
