@@ -670,7 +670,7 @@ def compute_ap(precision, recall):
         precision[i - 1] = np.maximum(precision[i - 1], precision[i])
     idx = np.where(recall[1:] != recall[:-1])[0]
     ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
-    return ap
+    return ap.item()
 
 
 try:
