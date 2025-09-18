@@ -22,18 +22,17 @@ try:
     from matplotlib import pyplot as plt
     import numpy as np
     import fnmatch
-    from timm.models.hub import (
-        has_hf_hub,
+    from timm.models._hub import (
+        download_cached_file,
+        load_custom_from_hf,
         load_state_dict_from_hf,
-        hf_split,
-        hf_hub_url,
-        # _download_from_hf,
-        load_state_dict_from_url,
     )
-    from huggingface_hub import hf_hub_download
-    from timm.models._helpers import (
+    from timm.models._builder import _resolve_pretrained_source
+    from torch.hub import load_state_dict_from_url
+    from timm.models import (
         adapt_input_conv,
         build_model_with_cfg,
+        load_state_dict,
         overlay_external_default_cfg,
     )
     from torch.hub import get_dir
@@ -142,104 +141,138 @@ hosted_weights = {
 }
 
 
-# def load_state_dict_from_hf(model_id: str, filename: str = "pytorch_model.bin"):
-#     assert has_hf_hub(True)
-#     cached_file = _download_from_hf(model_id, filename)
-#     state_dict = torch.load(cached_file, map_location="cpu")
-#     return state_dict
+def get_weight_from_item_page(pretrained_cfg, model_url):
+    pretrained_url = pretrained_cfg.get("url", None)
+    model_dir = os.path.join(get_dir(), "checkpoints")
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    cached_file = os.path.join(model_dir, pretrained_url.split("/")[-1])
+    if not os.path.exists(cached_file):
+        sys.stderr.write(
+            'Downloading: "{}" pretrained weights to {}\n'.format(
+                pretrained_cfg.get("architecture"), cached_file
+            )
+        )
+        from arcgis.gis import GIS
 
+        gis = GIS(set_active=False)
+        item = gis.content.get(model_url)
+        item.download(model_dir)
+        zipped_file = os.path.join(
+            model_dir, pretrained_url.split("/")[-1][:-3] + "zip"
+        )
+        with zipfile.ZipFile(zipped_file) as f:
+            f.extractall(model_dir)
+        os.remove(zipped_file)
 
-def _download_from_hf(model_id: str, filename: str):
-    hf_model_id, hf_revision = hf_split(model_id)
-    url = hf_hub_url(hf_model_id, filename, revision=hf_revision)
-    # return hf_hub_download(hf_model_id, filename, revision=hf_revision)
-    cached_file = hf_hub_download(hf_model_id, filename, revision=hf_revision)
-    return cached_file
-
-
-def load_state_dict_from_hf(model_id: str, filename: str = "pytorch_model.bin"):
-    assert has_hf_hub(True)
-    cached_file = _download_from_hf(model_id, filename)
     state_dict = torch.load(cached_file, map_location="cpu")
     return state_dict
 
 
-timm.models.hub.load_state_dict_from_hf = load_state_dict_from_hf
-
-
-# same function with modification timm.models.helpers.load_pretrained
-def load_timm_bckbn_pretrained(
+def load_pretrained(
     model,
-    default_cfg=None,
+    pretrained_cfg=None,
     num_classes=1000,
     in_chans=3,
     filter_fn=None,
     strict=True,
+    cache_dir=None,
     progress=True,
 ):
-    default_cfg = default_cfg or getattr(model, "default_cfg", None) or {}
-    pretrained_url = default_cfg.get("url", None)
-    hf_hub_id = default_cfg.get("hf_hub", None)
-    if not pretrained_url and not hf_hub_id:
-        _logger.warning(
-            "No pretrained weights exist for this model. Using random initialization."
+    """Load pretrained checkpoint
+
+    Args:
+        model: PyTorch module
+        pretrained_cfg: Configuration for pretrained weights / target dataset
+        num_classes: Number of classes for target model. Will adapt pretrained if different.
+        in_chans: Number of input chans for target model. Will adapt pretrained if different.
+        filter_fn: state_dict filter fn for load (takes state_dict, model as args)
+        strict: Strict load of checkpoint
+        cache_dir: Override model checkpoint cache dir for this load
+    """
+    pretrained_cfg = pretrained_cfg or getattr(model, "pretrained_cfg", None)
+    if not pretrained_cfg:
+        raise RuntimeError(
+            "Invalid pretrained config, cannot load weights. Use `pretrained=False` for random init."
         )
-        return
 
-    model_url = hosted_weights.get(default_cfg["architecture"], False)
     try:
-        if model_url:
-            model_dir = os.path.join(get_dir(), "checkpoints")
-            if not os.path.exists(model_dir):
-                os.makedirs(model_dir)
-            cached_file = os.path.join(model_dir, pretrained_url.split("/")[-1])
-            if not os.path.exists(cached_file):
-                sys.stderr.write(
-                    'Downloading: "{}" pretrained weights to {}\n'.format(
-                        default_cfg["architecture"], cached_file
-                    )
-                )
-                from arcgis.gis import GIS
-
-                gis = GIS(set_active=False)
-                item = gis.content.get(model_url)
-                item.download(model_dir)
-                zipped_file = os.path.join(
-                    model_dir, pretrained_url.split("/")[-1][:-3] + "zip"
-                )
-                with zipfile.ZipFile(zipped_file) as f:
-                    f.extractall(model_dir)
-                os.remove(zipped_file)
-
-            state_dict = torch.load(cached_file, map_location="cpu")
-
-        elif hf_hub_id and has_hf_hub(necessary=not pretrained_url):
-            _logger.info(
-                f"Loading pretrained weights from Hugging Face hub ({hf_hub_id})"
-            )
-            hf_filename = default_cfg.get("filename", None)
-            if hf_filename is not None:
-                state_dict = load_state_dict_from_hf(hf_hub_id, hf_filename)
+        load_from, pretrained_loc = _resolve_pretrained_source(pretrained_cfg)
+        if load_from == "state_dict":
+            _logger.info(f"Loading pretrained weights from state dict")
+            state_dict = pretrained_loc  # pretrained_loc is the actual state dict for this override
+        elif load_from == "file":
+            _logger.info(f"Loading pretrained weights from file ({pretrained_loc})")
+            if pretrained_cfg.get("custom_load", False):
+                model.load_pretrained(pretrained_loc)
+                return
             else:
-                state_dict = load_state_dict_from_hf(hf_hub_id)
-        else:
-            _logger.info(f"Loading pretrained weights from url ({pretrained_url})")
-            state_dict = load_state_dict_from_url(
-                pretrained_url, progress=progress, map_location="cpu"
+                state_dict = load_state_dict(pretrained_loc)
+        elif load_from == "url":
+            _logger.info(f"Loading pretrained weights from url ({pretrained_loc})")
+            if pretrained_cfg.get("custom_load", False):
+                pretrained_loc = download_cached_file(
+                    pretrained_loc,
+                    progress=progress,
+                    cache_dir=cache_dir,
+                )
+                model.load_pretrained(pretrained_loc)
+                return
+            else:
+                try:
+                    state_dict = load_state_dict_from_url(
+                        pretrained_loc,
+                        map_location="cpu",
+                        progress=progress,
+                        weights_only=True,
+                        model_dir=cache_dir,
+                    )
+                except TypeError:
+                    state_dict = load_state_dict_from_url(
+                        pretrained_loc,
+                        map_location="cpu",
+                        progress=progress,
+                        model_dir=cache_dir,
+                    )
+        elif load_from == "hf-hub":
+            _logger.info(
+                f"Loading pretrained weights from Hugging Face hub ({pretrained_loc})"
             )
+            if isinstance(pretrained_loc, (list, tuple)):
+                custom_load = pretrained_cfg.get("custom_load", False)
+                if isinstance(custom_load, str) and custom_load == "hf":
+                    load_custom_from_hf(*pretrained_loc, model, cache_dir=cache_dir)
+                    return
+                else:
+                    state_dict = load_state_dict_from_hf(
+                        *pretrained_loc, cache_dir=cache_dir
+                    )
+            else:
+                state_dict = load_state_dict_from_hf(
+                    pretrained_loc, weights_only=True, cache_dir=cache_dir
+                )
+        else:
+            model_name = pretrained_cfg.get("architecture", "this model")
+            model_url = hosted_weights.get(model_name, False)
+            if model_url:
+                state_dict = get_weight_from_item_page(pretrained_cfg, model_url)
+            else:
+                raise RuntimeError(
+                    f"No pretrained weights exist for {model_name}. Use `pretrained=False` for random init."
+                )
     except requests.exceptions.ConnectionError as e:
         raise ConnectionError(
             f"Error - {e}. Unable to download backbone weights due to network issues. For offline installation of the supported backbones, visit: https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment."
         )
 
     if filter_fn is not None:
-        # for backwards compat with filter fn that take one arg, try one first, the two
         try:
-            state_dict = filter_fn(state_dict)
-        except TypeError:
             state_dict = filter_fn(state_dict, model)
+        except TypeError as e:
+            # for backwards compat with filter fn that take one arg
+            state_dict = filter_fn(state_dict)
 
-    input_convs = default_cfg.get("first_conv", None)
+    input_convs = pretrained_cfg.get("first_conv", None)
     if input_convs is not None and in_chans != 3:
         if isinstance(input_convs, str):
             input_convs = (input_convs,)
@@ -259,16 +292,16 @@ def load_timm_bckbn_pretrained(
                     f"Unable to convert pretrained {input_conv_name} weights, using random init for this layer."
                 )
 
-    classifiers = default_cfg.get("classifier", None)
-    label_offset = default_cfg.get("label_offset", 0)
+    classifiers = pretrained_cfg.get("classifier", None)
+    label_offset = pretrained_cfg.get("label_offset", 0)
     if classifiers is not None:
         if isinstance(classifiers, str):
             classifiers = (classifiers,)
-        if num_classes != default_cfg["num_classes"]:
+        if num_classes != pretrained_cfg["num_classes"]:
             for classifier_name in classifiers:
                 # completely discard fully connected if model num_classes doesn't match pretrained weights
-                del state_dict[classifier_name + ".weight"]
-                del state_dict[classifier_name + ".bias"]
+                state_dict.pop(classifier_name + ".weight", None)
+                state_dict.pop(classifier_name + ".bias", None)
             strict = False
         elif label_offset > 0:
             for classifier_name in classifiers:
@@ -280,10 +313,20 @@ def load_timm_bckbn_pretrained(
                 classifier_bias = state_dict[classifier_name + ".bias"]
                 state_dict[classifier_name + ".bias"] = classifier_bias[label_offset:]
 
-    model.load_state_dict(state_dict, strict=strict)
+    load_result = model.load_state_dict(state_dict, strict=strict)
+    if load_result.missing_keys:
+        _logger.info(
+            f'Missing keys ({", ".join(load_result.missing_keys)}) discovered while loading pretrained weights.'
+            f" This is expected if model is being adapted."
+        )
+    if load_result.unexpected_keys:
+        _logger.warning(
+            f'Unexpected keys ({", ".join(load_result.unexpected_keys)}) found while loading pretrained weights.'
+            f" This may be expected if model is being adapted."
+        )
 
 
-timm.models._helpers.load_pretrained = load_timm_bckbn_pretrained
+timm.models.load_pretrained = load_pretrained
 
 
 def _default_split(m):

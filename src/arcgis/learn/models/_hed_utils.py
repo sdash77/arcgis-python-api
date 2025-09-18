@@ -317,9 +317,9 @@ def accuracies(model, dl, detect_thresh=0.5, buffer=3, show_progress=True):
             precision.append(prec)
             recall.append(rec)
             f1score.append(2 * prec * rec / (prec + rec + 1e-12))
-    acc["Precision"] = np.mean(precision)
-    acc["Recall"] = np.mean(recall)
-    acc["F1 Score"] = np.mean(f1score)
+    acc["Precision"] = np.mean(precision).item()
+    acc["Recall"] = np.mean(recall).item()
+    acc["F1 Score"] = np.mean(f1score).item()
 
     return acc
 

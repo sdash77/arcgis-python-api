@@ -198,7 +198,7 @@ class Embeddings:
         else:
             self.working_dir = Path.cwd()
 
-        _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
+        # _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
 
         self._file_path = None
         self.backbone = None
@@ -254,9 +254,9 @@ class Embeddings:
     @staticmethod
     def _get_text_compatible_backbones():
         return [
-            "sentence-transformers/distilbert-base-nli-stsb-mean-tokens",
-            "sentence-transformers/bert-base-nli-max-tokens",
-            "sentence-transformers/bert-base-nli-cls-token",
+            "sentence-transformers/all-MiniLM-L6-v2",
+            "sentence-transformers/all-mpnet-base-v2",
+            "sentence-transformers/all-MiniLM-L12-v2",
         ] + [
             "See all `TextEmbedding` models at https://huggingface.co/sentence-transformers"
         ]
@@ -457,14 +457,6 @@ class Embeddings:
         """
         if not HAS_NUMPY:
             raise Exception("This module requires numpy.")
-
-        file_name = f"embeddings_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.h5"
-        self._file_path = os.path.join(self.working_dir, "embeddings", file_name)
-        if os.path.exists(self._file_path):
-            raise Exception(
-                f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
-                f"or move the file to another location to proceed."
-            )
         text_img_df = kwargs.get("dataframe", False)
         spatial_reference = kwargs.get("spatial_reference", 4326)
         if isinstance(text_img_df, pd.DataFrame):
@@ -541,6 +533,15 @@ class Embeddings:
                     out_sr=SpatialReference(4326),
                 )
             item_list = [i.centroid for i in item_list]
+        # create the filepath as it is base on the return embeddings
+        if not return_embeddings:
+            file_name = f"embeddings_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.h5"
+            self._file_path = os.path.join(self.working_dir, "embeddings", file_name)
+            if os.path.exists(self._file_path):
+                raise Exception(
+                    f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
+                    f"or move the file to another location to proceed."
+                )
         if self._dataset_type == "image":
             ret = self._get_image(
                 item_list, batch_size, show_progress, return_embeddings, **kwargs
@@ -958,12 +959,20 @@ class Embeddings:
         remove_html_tags = kwargs.get("remove_html_tags", False)
         pooling_strategy = kwargs.get("pooling_strategy", "mean")
 
-        all_batch_embedding = np.empty([0, 768])
+        all_batch_embedding = []
         if any([remove_urls, remove_html_tags]):
             item_list = TextModule.preprocess_text_list(
                 item_list, remove_urls, remove_html_tags
             )
-        # batch_embedding_list = []
+        if isinstance(item_list, pd.Series):
+            item_list = item_list.tolist()
+        elif isinstance(item_list, pd.DataFrame):
+            item_list = item_list.values.tolist()
+        elif isinstance(item_list, (np.ndarray, list)):
+            item_list = item_list
+        else:
+            raise Exception("Input item_list is not of valid type.")
+
         try:
             for i in progress_bar(
                 range(0, len(item_list), batch_size), display=show_progress
@@ -1009,13 +1018,12 @@ class Embeddings:
                     .detach()
                     .numpy()
                 )
-                all_batch_embedding = np.append(
-                    all_batch_embedding, batch_embeddings, axis=0
-                )
+                all_batch_embedding.append(batch_embeddings)
 
         except Exception as e:
             raise Exception(e)
-        return all_batch_embedding
+
+        return np.concatenate(all_batch_embedding, axis=0)
 
     @staticmethod
     def _do_clustering(embeddings, item_list=None, n_clusters=5, dimensions=3):
@@ -1143,7 +1151,6 @@ class Embeddings:
             np.array(items_dataset).tolist(),
         )
         hf.close()
-
         # For using DBSCAN clustering take `eps`, `metric` and `min_samples` in **kwargs and pass to below method
         cluster_df = self._do_clustering(
             embeddings, item_list, n_clusters=n_clusters, dimensions=dimensions
