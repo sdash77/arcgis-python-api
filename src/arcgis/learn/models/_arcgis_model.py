@@ -862,8 +862,9 @@ class ArcGISModel(object):
         # take slice to handule layer_gropus to take multiple lrs
         start_lr = kwargs.get("start_lr", 1e-6)
         end_lr = kwargs.get("end_lr", 0.1)
-        start_lr = slice(start_lr / 10, start_lr)
-        end_lr = slice(end_lr / 10, end_lr)
+        if self._slice_lr is True and len(self.learn.layer_groups) > 1:
+            start_lr = slice(start_lr / 10, start_lr)
+            end_lr = slice(end_lr / 10, end_lr)
         num_it = min(150, len(self.learn.data.train_dl))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
@@ -912,7 +913,8 @@ class ArcGISModel(object):
             lr, index = self._find_lr()
             if allow_plot:
                 self._show_lr_plot(index)
-
+        if isinstance(lr, np.floating):
+            lr = lr.item()
         return lr
 
     def _show_lr_plot(
