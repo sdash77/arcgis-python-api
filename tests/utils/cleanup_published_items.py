@@ -149,7 +149,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    gis = GIS(profile=args.gis_profile)
+    gis = GIS(profile=args.gis_profile, verify_cert=False)
     cleanup = CleanupTestData(
         gis=gis, day_difference=args.day_difference, dry_run=args.dry_run
     )
