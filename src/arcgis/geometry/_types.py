@@ -998,7 +998,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             elif "curveRings" in self:
                 return len(self["curveRings"]) == 0
         elif isinstance(self, Polyline):
+            if "curvePaths" in self:
+                return len(self["curvePaths"]) == 0
             return len(self["paths"]) == 0
+
         elif isinstance(self, MultiPoint):
             return len(self["points"]) == 0
         return True
