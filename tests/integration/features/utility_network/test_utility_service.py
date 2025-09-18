@@ -432,7 +432,9 @@ class TestUtilityNetworkManager(unittest.TestCase):
         )
         assert export
         assert export["success"] is True
-        result_type_query = urllib.request.urlopen(export.get("url"))
+        result_type_query = urllib.request.urlopen(
+            f"{export.get("url")}?token={self.gis._con.token}"
+        )
         result_type_result = json.loads(result_type_query.read())
         self.assertEqual(
             1708,
@@ -463,7 +465,9 @@ class TestUtilityNetworkManager(unittest.TestCase):
         export = result.result()
         assert export
         assert export["success"] is True
-        result_type_query = urllib.request.urlopen(export.get("url"))
+        result_type_query = urllib.request.urlopen(
+            f"{export.get("url")}?token={self.gis._con.token}"
+        )
         result_type_result = json.loads(result_type_query.read())
         self.assertEqual(
             1708,
