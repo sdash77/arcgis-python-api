@@ -168,6 +168,7 @@ def get_weight_from_item_page(pretrained_cfg, model_url):
     state_dict = torch.load(cached_file, map_location="cpu")
     return state_dict
 
+
 def load_pretrained(
     model,
     pretrained_cfg=None,
