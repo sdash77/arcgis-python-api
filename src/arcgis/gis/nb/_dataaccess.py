@@ -62,7 +62,7 @@ class NotebookFile:
         return InsensitiveDict(self._definition)
 
     # ---------------------------------------------------------------------
-    def rename(self, name: str) -> bool:
+    def rename(self, name: str) -> bool | dict[str, Any]:
         """
         Rename the file on the server.
 
@@ -72,7 +72,7 @@ class NotebookFile:
         name                 Required String. The new name of the file.
         ===================  ==========================================================================
 
-        :return: True if the file was renamed, False or an error if it was not.
+        :return: True if the file was renamed, False or an error as a dictionary if it was not.
         """
         return self._da._rename(
             folder_name=self._definition.get("Name"),
@@ -112,7 +112,7 @@ class NotebookFile:
         return self._da._delete(filename=self._definition.get("Name"))
 
     # ---------------------------------------------------------------------
-    def move(self, target_folder: NotebookFolder) -> bool:
+    def move(self, target_folder: NotebookFolder) -> bool | dict[str, Any]:
         """
         Moves the file to another NotebookFolder.
 
@@ -122,7 +122,7 @@ class NotebookFile:
         target_folder        Required NotebookFolder. The target folder to move the file to.
         ===================  ============================================================
 
-        :return: True if the file was moved successfully, False otherwise.
+        :return: True if the file was moved successfully, False or an error dictionary otherwise.
         """
         target_folder_path = target_folder._folder_name or ""
         if not target_folder_path.endswith("/"):
@@ -215,7 +215,7 @@ class NotebookFolder:
         return self._folder_name.strip("/").split("/")[-1] or "Home"
 
     # ---------------------------------------------------------------------
-    def rename(self, name: str) -> bool:
+    def rename(self, name: str) -> bool | dict[str, Any]:
         """
         Rename the folder.
 
@@ -226,7 +226,7 @@ class NotebookFolder:
                              The name must be a simple, non-empty name without slashes.
         ===================  ==========================================================================
 
-        :return: True if the folder was renamed, False or an error if it was not.
+        :return: True if the folder was renamed, False or an error as a dictionary if it was not.
         """
         if self.name == "Home":
             raise ValueError(
@@ -449,7 +449,7 @@ class NotebookFolder:
         return self._da._rename(folder_name=self._folder_name, new_name=new_name)
 
     # ---------------------------------------------------------------------
-    def transfer(self, target_user: User | str | None = None) -> bool:
+    def transfer(self, target_user: User | str | None = None) -> bool | dict[str, Any]:
         """
         Transfer the folder to another user in the organization. This can only be done by an administrator.
         The folder will be renamed to `_transferred_{folder_name}` and moved to the target user's Home folder.
@@ -461,7 +461,7 @@ class NotebookFolder:
                              If a string is provided, it should be the username of the target user.
         ===================  ==========================================================================
 
-        :return: True if the folder was transferred successfully, False or an error if it was not.
+        :return: True if the folder was transferred successfully. If not then, False or an error dictionary.
         """
         if isinstance(target_user, User):
             target_username = target_user.username
@@ -945,7 +945,7 @@ class NotebookDataAccess:
     # ---------------------------------------------------------------------
     def _rename(
         self, folder_name: str, new_name: str, username: str | None = None
-    ) -> bool:
+    ) -> bool | dict[str, Any]:
         """
         Renames a folder in the notebook workspace.
 
@@ -966,7 +966,10 @@ class NotebookDataAccess:
             url = f"{self._url}/{self._username}/notebookworkspace/move"
             params["targetUsername"] = username or self._username
 
-        return self._gis.session.post(url, params).json().get("status") == "success"
+        resp = self._gis.session.post(url, params).json()
+        if resp.get("status") == "success":
+            return True
+        return resp["error"]
 
     # ---------------------------------------------------------------------
     @property
