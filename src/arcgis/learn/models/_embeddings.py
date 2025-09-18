@@ -555,7 +555,7 @@ class Embeddings:
             self._file_path = os.path.join(self.working_dir, "embeddings", file_name)
             if os.path.exists(self._file_path):
                 raise Exception(
-                    f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
+                    f"File to save the embeddings already present at - {self._file_path}. Rename the file "
                     f"or move the file to another location to proceed."
                 )
         if self._dataset_type == "image":
