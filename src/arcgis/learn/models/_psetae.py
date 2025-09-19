@@ -268,8 +268,8 @@ class PSETAE(ArcGISModel):
             self._data, self.learn.model, class_dict, self._data._convertmap
         )
         return {
-            "mIOU": "{}".format(miou),
-            "Accuracy (OA)": "{}".format(mats[1]["Accuracy"]),
+            "mIoU": "{}".format(miou),
+            "accuracy": "{}".format(mats[1]["Accuracy"]),
         }
 
     def accuracy(self):
@@ -287,7 +287,7 @@ class PSETAE(ArcGISModel):
         mats, miou = model_eval(
             self._data, self.learn.model, class_dict, self._data._convertmap
         )
-        return {"Accuracy (OA)": "{}".format(mats[1]["Accuracy"])}
+        return {"accuracy": "{}".format(mats[1]["Accuracy"])}
 
     def mIOU(self):
         """
@@ -304,7 +304,7 @@ class PSETAE(ArcGISModel):
         mats, miou = model_eval(
             self._data, self.learn.model, class_dict, self._data._convertmap
         )
-        return {"mIOU": "{}".format(miou)}
+        return {"mIoU": "{}".format(miou)}
 
     def per_class_metrics(self):
         """
