@@ -1185,34 +1185,71 @@ class GeoAccessor(object):
         <arcgis.features.geo._accessor.GeoAccessor object at <mem_addr>>
 
     .. note::
-        **Setting the Geometry Engine:**
-        By default, the library used for spatial transformations (e.g., reading/writing
-        shapefiles, file geodatabases, or spatial DataFrames) is determined by the
+        **Setting the I/O Engine:**
+        By default, the libraries used for spatial transformations (e.g., reading/writing
+        shapefiles, file geodatabases, or spatial DataFrames) are determined by the
         available libraries in the environment. You can explicitly set the library used
-        for certain spatial operations through an environment variable called
-        `ARCGIS_GEOMETRY_ENGINE`. The variable **MUST** be set at the top of the script.
-        The options available are:
+        for certain spatial operations through the environment variable:
 
-        * *shapefile* - for the `Python Shapefile Library (PyShp) <https://github.com/GeospatialPython/pyshp>`_
-          A lightweight option that works well for simple shapefile operations but lacks advanced capabilities
-          of *gdal* or *arcpy*.
-        * *arcpy* - for the Esri `ArcPy <https://pro.arcgis.com/en/pro-app/latest/arcpy/get-started/what-is-arcpy-.htm>`_
-          library. **Requires** a license for use. Best for full compatibility with Esri's ArcGIS ecosystem,
-          including advanced geoprocessing tools.
-        * *gdal* - for the `Open Source Geospatial Foundation gdal <https://gdal.org/en/stable/>`_ translator
-          library. A good balance of performance and compatibility with multiple GIS formats. Ideal
-          for working with large datasets and open-source workflows.
+        - `ARCGIS_IO_ENGINE` (**I/O operations**):
+            * *arcpy* - for the Esri `ArcPy <https://pro.arcgis.com/en/pro-app/latest/arcpy/get-started/what-is-arcpy-.htm>`_
+            library. **Requires** a license for use. Best for full compatibility with Esri's ArcGIS ecosystem,
+            including advanced geoprocessing tools.
+            * *gdal* - for the `Open Source Geospatial Foundation gdal <https://gdal.org/en/stable/>`_ translator
+            library. A good balance of performance and compatibility with multiple GIS formats. Ideal
+            for working with large datasets and open-source workflows.
+            * *shapefile* - for the `Python Shapefile Library (PyShp) <https://github.com/GeospatialPython/pyshp>`_
+            A lightweight option that works well for simple shapefile operations but lacks advanced capabilities
+            of *gdal* or *arcpy*.
+
+        The variable **MUST** be set at the top of the script. If not set, the first available library in the environment will be used for each engine.
+        The default order is: ARCPY > GDAL > SHAPEFILE.
 
         To set environment at the top of the script, add:
 
         .. code-block:: python
 
             import os
-            os.environ["ARCGIS_GEOMETRY_ENGINE"] = "<engine of choice>"
+            os.environ["ARCGIS_IO_ENGINE"] = "<engine of choice>"  # e.g., "gdal"
 
     .. note::
         If you are using shapely in conjunction with shapefiles instead of arcpy or gdal, you will have to
         do all reprojections manually. Shapely does not support projections.
+
+        See Shapely's docs for applying coordinate transforms with ``shapely.transform`` and pyproj's
+        ``Transformer`` for CRS reprojection:
+
+            - Shapely transform: https://shapely.readthedocs.io/en/stable/reference/shapely.transform.html
+            - pyproj Transformer: https://pyproj4.github.io/pyproj/stable/api/transformer.html
+
+        Example (reproject WGS84 lon/lat to UTM Zone 18N):
+
+        .. code-block:: python
+
+            from shapely import Point, transform  # Shapely >= 2.0
+            from pyproj import Transformer
+
+            # Build a reusable transformer (always_xy=True keeps lon/lat order)
+            tfm = Transformer.from_crs("EPSG:4326", "EPSG:32618", always_xy=True)
+
+            pt_wgs84 = Point(-75.0, 50.0)
+            pt_utm = transform(pt_wgs84, tfm.transform, interleaved=False)
+            # -> POINT (500000 5538630.703)
+
+        For Shapely 1.8.x, use ``shapely.ops.transform`` instead:
+
+        .. code-block:: python
+
+            from shapely.geometry import Point
+            from shapely.ops import transform
+            from pyproj import Transformer
+
+            tfm = Transformer.from_crs("EPSG:4326", "EPSG:32618", always_xy=True)
+            pt_utm = transform(tfm.transform, Point(-75.0, 50.0))
+
+        Note: Shapely geometries do not carry any CRS (Coordinate Reference System) information.
+        They are simply collections of coordinates in a flat (Cartesian) space.
+        It's up to you (either in your code or through a wrapper like GeoPandas) to track and apply the CRS.
 
     """
 
@@ -1242,15 +1279,15 @@ class GeoAccessor(object):
         from arcgis._impl._geometry_engine import (
             HAS_ARCPY,
             HAS_SHAPELY,
-            SELECTED_ENGINE,
-            GeometryEngine,
+            SELECTED_IO_ENGINE,
+            IOEngine,
         )
 
         self._HASARCPY = self._HASARCPY or HAS_ARCPY
         self._HASSHAPELY = self._HASSHAPELY or HAS_SHAPELY
-        self._USE_ARCPY = self._USE_ARCPY or SELECTED_ENGINE == GeometryEngine.ARCPY
-        self._USE_PYSHP = self._USE_PYSHP or SELECTED_ENGINE == GeometryEngine.SHAPEFILE
-        self._USE_GDAL = self._USE_GDAL or SELECTED_ENGINE == GeometryEngine.GDAL
+        self._USE_ARCPY = self._USE_ARCPY or SELECTED_IO_ENGINE == IOEngine.ARCPY
+        self._USE_PYSHP = self._USE_PYSHP or SELECTED_IO_ENGINE == IOEngine.SHAPEFILE
+        self._USE_GDAL = self._USE_GDAL or SELECTED_IO_ENGINE == IOEngine.GDAL
         return self._HASARCPY, self._HASSHAPELY
 
     # ----------------------------------------------------------------------
@@ -1986,8 +2023,8 @@ class GeoAccessor(object):
             Inserting table data is not supported for ArcGIS Enterprise deployments.
 
         .. note::
-            The geometry engine used for this operation can be set with the
-            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+            The IO engine used for this operation can be set with the
+            the `ARCGIS_IO_ENGINE` environment variable. Available options:
 
             * `"shapefile"`
             * `"gdal"`
@@ -2160,8 +2197,8 @@ class GeoAccessor(object):
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
 
         .. note::
-            The geometry engine used for this operation can be set with the
-            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+            The IO engine used for this operation can be set with the
+            the `ARCGIS_IO_ENGINE` environment variable. Available options:
 
             * `"shapefile"`
             * `"gdal"`
@@ -2227,8 +2264,9 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         .. note::
-            The geometry engine used for this operation can be set with the
-            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+            The IO engine used for this operation can be set with the
+            the `ARCGIS_IO_ENGINE` environment variable. Available options:
+            (note that `"shapefile"` is not supported for this method)
 
             * `"gdal"`
             * `"arcpy"`
@@ -2389,8 +2427,8 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         .. note::
-            The geometry engine used for this operation can be set with the
-            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+            The IO engine used for this operation can be set with the
+            the `ARCGIS_IO_ENGINE` environment variable. Available options:
 
             * `"shapefile"`
             * `"gdal"`
@@ -2725,8 +2763,8 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         .. note::
-            The geometry engine used for this operation can be set with the
-            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+            The IO engine used for this operation can be set with the
+            the `ARCGIS_IO_ENGINE` environment variable. Available options:
 
             * `"shapefile"`
             * `"gdal"`
@@ -2779,8 +2817,8 @@ class GeoAccessor(object):
         The ``from_table`` method allows a :class:`~arcgis.gis.User` to read from a non-spatial table
 
         .. note::
-            The geometry engine used for this operation can be set with the
-            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options:
+            The IO engine used for this operation can be set with the
+            the `ARCGIS_IO_ENGINE` environment variable. Available options:
 
             * `"shapefile"`
             * `"gdal"`
