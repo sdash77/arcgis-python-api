@@ -27,7 +27,7 @@ import torch
 import torch.nn as nn
 import spconv.pytorch as spconv
 import torch_scatter
-from timm.models.layers import DropPath, Mlp
+from timm.layers import DropPath, Mlp
 from collections import OrderedDict
 from .._utils.pointcloud_serialization import PointBatchPreprocess as Point
 from .._utils.pointcloud_serialization import offset2bincount
