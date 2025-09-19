@@ -15,7 +15,7 @@
 import torch
 import torch.nn as nn
 from functools import partial
-from timm.models.layers import to_2tuple
+from timm.layers import to_2tuple
 from timm.models.vision_transformer import VisionTransformer
 from collections import OrderedDict
 from mmengine.runner.checkpoint import load_state_dict

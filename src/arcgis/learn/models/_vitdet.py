@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from fastai.torch_core import ParameterModule
 from fastai.vision import flatten_model
-from timm.models.layers import DropPath, Mlp
+from timm.layers import DropPath, Mlp
 import math
 from functools import partial
 from collections import OrderedDict
