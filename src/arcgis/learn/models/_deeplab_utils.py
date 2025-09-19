@@ -323,5 +323,6 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
         model, dl, len(num_classes), show_progress, ignore_mapped_class
     )
 
-    iou = total_area_intersect.numpy() / (total_area_union.numpy() + 1e-7)
+    iou = (total_area_intersect.numpy() / (total_area_union.numpy() + 1e-7)).tolist()
+
     return iou

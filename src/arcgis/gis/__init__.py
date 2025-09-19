@@ -9384,10 +9384,13 @@ class ContentManager(object):
             dataframes. This limit isn't there for spatial dataframes.
 
         .. note::
-            The geometry engine used for spatial transformations can be specified by setting
-            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
-            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
-            the environment will be used.
+            The geometry engine and I/O engine used for spatial transformations can be specified by setting
+            the `ARCGIS_IO_ENGINE` environment variable.
+
+            - `ARCGIS_IO_ENGINE` options: `"arcpy"`, `"gdal"`, `"shapefile"`
+
+            If not set, the first available library in the environment will be used for each engine.
+            The priority is as the above order.
 
         ================  ==========================================================================
         **Parameter**      **Description**
@@ -9805,10 +9808,15 @@ class ContentManager(object):
         the same time. Share the staging service with a smaller set of users and QA the staging service.
 
         2. The item properties (ex: thumbnail, iteminfo, metadata) of the production item will be preserved.
-        If you need to update them use the `Item.update()` method.
+        If you need to update them use the `Item.update()` method. The extent will be updated to that of the
+        replacement service.
 
         3. Call the replace_service operation. The service running on the hosting server gets replaced
         (for example, its cache).
+
+        4. It is the responsibility of the user to ensure that the replacement layer uses similar
+        content and cartography to the replaced layer. This will ensure that dependent layers with
+        modified styles continue to work.
 
         .. note::
             It is the responsibility of the user to ensure both services are functionally equivalent for clients
@@ -17124,6 +17132,11 @@ class Item(dict):
         # Handle Vector Tile Service
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
+
+        # Handle Map Service (hosted tile layers)
+        if self.type == "Map Service" and "Hosted Service" in self.typeKeywords:
+            params["name"] = self.title.replace(" ", "_")
+            params["stype"] = "tiles"
 
         # Date Range Handling
         if isinstance(date_range, (tuple, list)) and len(date_range) == 2:

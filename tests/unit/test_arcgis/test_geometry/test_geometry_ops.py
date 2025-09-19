@@ -413,6 +413,32 @@ class TestPolylineGeometry(unittest.TestCase):
             }
         )
 
+        cls.geom_curved = Polyline(
+            {
+                "curvePaths": [
+                    [
+                        [[-97.06138, 32.837], [-97.06133, 32.836], [-97.06124, 32.834], [-97.06127, 32.832]],
+                    ],
+                    [[-97.06326, 32.759], [-97.06298, 32.755]],
+                ],
+                "spatialReference": {"wkid": 4326}
+            }
+        )
+
+        cls.empty = Polyline(
+            {
+                "paths": [], 
+                "spatialReference": {"wkid": 4326}
+            }
+        )
+
+        cls.empty_curved = Polyline(
+            {
+                "curvePaths": [], 
+                "spatialReference": {"wkid": 4326}
+            }
+        )
+
         cls.pt2 = Geometry(
             {"x": 2.22, "y": -1.5, "spatialReference": {"wkid": 4326}}
         )
@@ -450,7 +476,10 @@ class TestPolylineGeometry(unittest.TestCase):
         assert self.geom.hull_rectangle
 
     def test_is_empty(self):
-        assert self.geom.is_empty in [True, False]
+        self.assertEqual(self.geom.is_empty, False)
+        self.assertEqual(self.empty.is_empty, True)
+        self.assertEqual(self.geom_curved.is_empty, False)
+        self.assertEqual(self.empty_curved.is_empty, True)
 
     @unittest.skipIf(SKIP_ARCPY, "No arcpy")
     def test_is_multipart(self):

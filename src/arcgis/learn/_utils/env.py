@@ -68,7 +68,7 @@ def do_fastai_imports():
 
 
 def fastai_installation_command():
-    installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
+    installation_steps = "Install them using the ArcGIS installer"
 
     return installation_steps
 
@@ -79,7 +79,7 @@ def raise_fastai_import_error(
     if installation_steps is None:
         installation_steps = fastai_installation_command()
     if message is None:
-        message = "This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies."
+        message = "This module requires a compatible ArcGIS deep-learning-environment"
     raise Exception(f"""{import_exception} \n\n{message}\n{installation_steps}""")
 
 
@@ -87,7 +87,7 @@ HAS_GDAL = False
 gdal_import_exception = None
 GDAL_INSTALL_MESSAGE = f"""
 \nPlease install gdal using the following command
-\nconda install gdal=2.3.3
+\nconda install gdal -c esri
 """.strip()
 
 try:

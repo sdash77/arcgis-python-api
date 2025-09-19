@@ -12,15 +12,15 @@ class TestUserManagerCreate(unittest.TestCase):
     """
     Test UserManager create() method
     """
-
+                      
     def setUp(self):
         self.username = f"test_create_user_{uuid.uuid4().hex[:4]}"
         self.password = "IL0veMyGI$_4Ever"
-        self.firstname = "user"
-        self.lastname = "geosaurus"
-        self.role = "org_publisher"
-        self.user_type = "creator"
-        self.email = "amani@esri.com"
+        self.firstname = "Ntgrtn-tst"
+        self.lastname = "PythonAPI"
+        self.role = "org_user"
+        self.user_type = "GISProfessionalAdvUT"
+        self.email = "jyaist@esri.com"
 
         self.created_user = None
 
@@ -28,11 +28,7 @@ class TestUserManagerCreate(unittest.TestCase):
         """
         Delete test user
         """
-        if self.created_user:
-            try:
-                self.created_user.delete()
-            except Exception as e:
-                print(f"Failed to delete user {self.username}: {e}")
+        self.assertTrue(self.created_user.delete(), f"Could not delete test user {self.created_user.username}")
 
     def test_create_user_use_defaults(self):
         """
@@ -72,12 +68,11 @@ class TestUserManagerCreate(unittest.TestCase):
                     [g.id for g in self.created_user.groups],
                     "Group not found in user groups",
                 )
-
-    def test_create_user_with_thumbnail(self):
+        
+    def test_create_user_use_defaults_false(self):
         """
-        Test create user with thumbnail
+        Test create user without use_defaults argument.
         """
-        thumbnail_path = get_resource_path("staging_data/users/Basemaps.png")
         self.created_user = self.gis.users.create(
             username=self.username,
             password=self.password,
@@ -86,27 +81,23 @@ class TestUserManagerCreate(unittest.TestCase):
             email=self.email,
             user_type=self.user_type,
             role=self.role,
-            thumbnail=thumbnail_path,
+            use_defaults=False
         )
         self.assertIsInstance(self.created_user, User)
-        self.assertIsNotNone(
-            self.created_user.get_thumbnail(),
-            "Thumbnail object was not found for the new user",
-        )
         self.assertEqual(
             self.created_user.role,
-            "org_publisher",
+            "org_user",
             "Role value does not match role argument.",
         )
         self.assertEqual(
             self.created_user.userLicenseTypeId,
-            "creatorUT",
+            "GISProfessionalAdvUT",
             "User license type ID does not match user_type.",
         )
 
-    def test_create_user_user_defaults_false(self):
+    def test_create_user_with_thumbnail(self):
         """
-        Test create user with defaults false
+        Test create user with thumbnail and use_defaults to false.
         """
         if self.gis.version < [2025, 1]:
             self.skipTest(
@@ -119,8 +110,8 @@ class TestUserManagerCreate(unittest.TestCase):
             self.firstname,
             self.lastname,
             self.email,
-            role="org_user",
-            user_type="GISProfessionalStdUT",
+            role=self.role,
+            user_type=self.user_type,
             use_defaults=False,
             thumbnail=thumbnail_path,
         )
@@ -130,12 +121,11 @@ class TestUserManagerCreate(unittest.TestCase):
             "org_user",
             "Role value does not match role argument",
         )
-        self.assertEqual(self.created_user.userLicenseTypeId, "GISProfessionalStdUT")
+        self.assertEqual(self.created_user.userLicenseTypeId, "GISProfessionalAdvUT", "User type value does not match user_type argument.")
         self.assertIsNotNone(
             self.created_user.get_thumbnail(),
             "Thumbnail object was not found for the new user",
         )
-
 
 if __name__ == "__main__":
     unittest.main()
