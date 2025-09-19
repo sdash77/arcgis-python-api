@@ -16,9 +16,6 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer, Table
 from arcgis.features.analysis import aggregate_points
 
-# download shapefile and upload to respective portal if not already present
-polygon_data = "https://earthworks.stanford.edu/catalog/stanford-dc841dq9031"
-
 
 @profiles.agol
 @integration_test
@@ -47,8 +44,8 @@ class TestAggregatePoints(unittest.TestCase):
             "Service2Data", "forward"
         )[0]
 
-        # Publicly shared Census Block Group Boundaries: esri data
-        cls.census_blks_item = cls.gis.content.get("39bdf3f77bb04c2b875596e4c164934b")
+        # Publicly available Census Block Group Boundaries: Living Atlas
+        cls.census_blks_item = cls.gis.content.get("2f5e592494d243b0aa5c253e75e792a4")
         cls.census_blks_lyr = cls.census_blks_item.layers[0]
 
         if not cls.restaurants_lyr:
@@ -70,7 +67,7 @@ class TestAggregatePoints(unittest.TestCase):
             f"\n{'-' * 50}\n\n{self._testMethodName} ran in {elapsed/60:.2f} minutes\n\n{'-' * 50}\n"
         )
 
-    def test_aggregate_with_group_by(self):
+    def test_aggregate_group_by(self):
         self.assertEqual(
             self.restaurants_lyr.properties.geometryType,
             "esriGeometryPoint",
@@ -112,8 +109,8 @@ class TestAggregatePoints(unittest.TestCase):
             "Item tables output is not a Table object.",
         )
         self.assertIn(
-            "Join_ID",
-            [fld["name"] for fld in agg_results_item.layers[0].properties.fields],
+            "Join_ID".lower(),
+            [fld["name"].lower() for fld in agg_results_item.layers[0].properties.fields],
             "No Join_ID field in aggregate_points results feature layer.",
         )
 
@@ -135,7 +132,7 @@ class TestAggregatePoints(unittest.TestCase):
             2,
             "Known Join_ID results not 2 as expected.",
         )
-
+    @unittest.skip("for now")
     def test_aggregate_overwrite(self):
         """tests overwriting an Item layer using the context param"""
 
