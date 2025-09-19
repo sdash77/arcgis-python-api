@@ -4,34 +4,61 @@
 # -------------------------------------------------------------------
 
 
-import os
+import os, sys
 import glob
 import warnings
+import logging
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 warnings.filterwarnings('ignore')
 import sys
+import subprocess
+
+import sys
 from pathlib import Path
-script_dir = os.path.dirname(os.path.abspath(__file__))
-if script_dir not in sys.path:
-    sys.path.insert(0, script_dir)
 
-parent_dir = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(parent_dir))
+repo_root = Path(__file__).resolve().parents[2] / "src"
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
 
-from utils._common import *
-print("Smoke tests are running...")
-TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
-smoke_test_paths = glob.glob(
-        os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
-    )
-smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
-run_unittest_on(
-    smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
-)
-print("Smoke tests Ends...")
 
+test_dir = Path(__file__).parent.resolve()
+sys.path.insert(0, str(test_dir))
+
+
+logging.info("Using arcgis from:")
 import arcgis
-print("Working arcgis file:", arcgis.__file__)
+logging.info("Using arcgis from:", arcgis.__file__)
+
+from properties import (
+    data,
+    data_folder,
+    setuposenviron,
+    data_folder_ms,
+    data_inference_only,
+)
+
+
+
+
+
+# from utils._common import *
+# try:
+#     print("Smoke tests are running...")
+#     TESTFOLDERPATH = os.environ.get('TESTFOLDERPATH')
+#     smoke_test_paths = glob.glob(
+#             os.path.join(TESTFOLDERPATH, "smoke", "**", "*.py"), recursive=True
+#         )
+#     smoke_test_xml_output = os.path.join(TESTFOLDERPATH, "_output", "smoke_test.xml")
+#     run_unittest_on(
+#         smoke_test_paths, smoke_test_xml_output, max_fail=0, throw_exc_on_fail=True
+#     )
+#     print("Smoke tests Ends...")
+
+#     import arcgis
+#     print("Working arcgis file:", arcgis.__file__)
+# except Exception as E:
+#     raise Exception(str(E))
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -44,13 +71,8 @@ import string
 import gc
 from sys import platform
 import pandas as pd
-from properties import (
-    data,
-    data_folder,
-    setuposenviron,
-    data_folder_ms,
-    data_inference_only,
-)
+
+# import arcgis
 from arcgis.learn import classify_pixels, detect_objects, classify_objects
 from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
 from arcgis.learn import AutoDL, ImageryModel
@@ -1007,6 +1029,30 @@ class TestTraining(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("Inside Setup Class!!!")
+        # try:
+        #     test_folder = Path(os.environ.get("TESTFOLDERPATH", "."))
+        #     smoke_tests = list(test_folder.glob("smoke/**/*.py"))
+        #     output_file = test_folder / "_output" / "smoke_test.xml"
+
+        #     print("Smoke tests are running...")
+
+        #     cmd = [
+        #         sys.executable,
+        #         "-m", "pytest", "-v",
+        #         *[str(p) for p in smoke_tests],
+        #         f"--junitxml={output_file}"
+        #     ]
+        #     subprocess.run(cmd, check=True)
+
+        #     print("Smoke tests finished successfully.")
+        #     import arcgis
+        #     print("Working arcgis file:", arcgis.__file__)
+
+        # except subprocess.CalledProcessError as e:
+        #     raise RuntimeError(
+        #         f"Smoke tests failed with exit code {e.returncode}"
+        #     ) from e
+
 
     def setUp(self):
         print("Test: " + self._testMethodName)
@@ -1096,6 +1142,24 @@ class TestTraining(unittest.TestCase):
         print("Test:" + self._testMethodName + "is completed.\n")
         print("------------------------------------------------------------------\n")
 
+    def test_smoke(skip_on_empty=True):
+        test_folder = Path(os.environ.get("TESTFOLDERPATH", "."))
+        smoke_tests = list(test_folder.glob("smoke/**/*.py"))
+        output_file = test_folder / "_output" / "smoke_test.xml"
+
+        print("Smoke tests are running...")
+
+        cmd = [
+            sys.executable,
+            "-m", "pytest", "-v",
+            *[str(p) for p in smoke_tests],
+            f"--junitxml={output_file}"
+        ]
+        subprocess.run(cmd, check=True)
+
+        print("Smoke tests finished successfully.")
+
+    
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter, skip_on_empty=True)
     def test(
