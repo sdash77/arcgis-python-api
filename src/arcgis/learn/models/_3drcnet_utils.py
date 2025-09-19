@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from einops import rearrange
 from fastai.callback import Callback
 from fastai.torch_core import add_metrics
-from timm.models.layers import trunc_normal_, DropPath
+from timm.layers import trunc_normal_, DropPath
 from sklearn.metrics import accuracy_score
 from einops.layers.torch import Rearrange
 
