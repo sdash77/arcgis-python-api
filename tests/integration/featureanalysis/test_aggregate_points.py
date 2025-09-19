@@ -7,7 +7,6 @@ import pandas as pd
 from utils.decorators import integration_test, profiles
 from utils.data_utils import cleanup_folders
 from integration.config import (
-    get_resource_path,
     get_json_resource,
     INTEGRATION_TEST_ITEM_TAG,
 )
@@ -117,7 +116,7 @@ class TestAggregatePoints(unittest.TestCase):
         join_value = (
             agg_results_item.layers[0]
             .query(
-                where="TRACT_FIPS = '011710' AND BLOCKGROUP = '1'",
+                where="TRACT_FIPS = '011710' AND BLOCKGROUP_FIPS = '1'",
                 out_fields=["Join_ID"],
                 as_df=True,
             )
@@ -132,7 +131,7 @@ class TestAggregatePoints(unittest.TestCase):
             2,
             "Known Join_ID results not 2 as expected.",
         )
-    @unittest.skip("for now")
+
     def test_aggregate_overwrite(self):
         """tests overwriting an Item layer using the context param"""
 
