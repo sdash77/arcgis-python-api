@@ -36,7 +36,7 @@ try:
         process_text,
     )
     from typing import List
-    from .env import _raise_fastai_import_error
+    from .env import raise_fastai_import_error
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
