@@ -603,7 +603,9 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 dtypes.append((col, "<m8[us]"))
             elif df[col].dtype.name.find("datetime") > -1:
                 dtypes.append((col, "<M8[us]"))
-                df[col] = df[col].dt.to_pydatetime()
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    df[col] = df[col].dt.to_pydatetime()
             elif df[col].dtype.name.find("timedelta") > -1:
                 dtypes.append((col, float))
                 df[col] = df[col].dt.total_seconds() * 1000

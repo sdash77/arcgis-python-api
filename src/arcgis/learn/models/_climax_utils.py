@@ -12,7 +12,7 @@ from timm.models.vision_transformer import Block, trunc_normal_
 import numpy as np
 import math
 import torch.nn.functional as F
-from timm.models.layers.helpers import to_2tuple
+from timm.layers import to_2tuple
 
 
 # --------------------------------------------------------
@@ -23,8 +23,6 @@ from timm.models.layers.helpers import to_2tuple
 # --------------------------------------------------------
 
 from torch import nn as nn
-
-from timm.models.layers.helpers import to_2tuple
 
 
 class PatchEmbed(nn.Module):

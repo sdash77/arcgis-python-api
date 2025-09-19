@@ -9805,10 +9805,15 @@ class ContentManager(object):
         the same time. Share the staging service with a smaller set of users and QA the staging service.
 
         2. The item properties (ex: thumbnail, iteminfo, metadata) of the production item will be preserved.
-        If you need to update them use the `Item.update()` method.
+        If you need to update them use the `Item.update()` method. The extent will be updated to that of the
+        replacement service.
 
         3. Call the replace_service operation. The service running on the hosting server gets replaced
         (for example, its cache).
+
+        4. It is the responsibility of the user to ensure that the replacement layer uses similar
+        content and cartography to the replaced layer. This will ensure that dependent layers with
+        modified styles continue to work.
 
         .. note::
             It is the responsibility of the user to ensure both services are functionally equivalent for clients

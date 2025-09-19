@@ -863,13 +863,13 @@ def compute_class_AP(
                             aps[k - 1].append(ap)
     if mean:
         if aps != []:
-            aps = np.mean(aps, axis=0)
+            aps = np.mean(aps, axis=0).item()
         else:
             return 0.0
     else:
         for i in range(n_classes):
             if aps[i] != []:
-                aps[i] = np.mean(aps[i])
+                aps[i] = np.mean(aps[i]).item()
             else:
                 aps[i] = 0.0
     if model._device == torch.device("cuda"):
