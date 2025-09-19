@@ -9384,10 +9384,13 @@ class ContentManager(object):
             dataframes. This limit isn't there for spatial dataframes.
 
         .. note::
-            The geometry engine used for spatial transformations can be specified by setting
-            the `ARCGIS_GEOMETRY_ENGINE` environment variable. Available options are
-            `"shapefile"`, `"gdal"`, and `"arcpy"`. If not set, the first available library in
-            the environment will be used.
+            The geometry engine and I/O engine used for spatial transformations can be specified by setting
+            the `ARCGIS_IO_ENGINE` environment variable.
+
+            - `ARCGIS_IO_ENGINE` options: `"arcpy"`, `"gdal"`, `"shapefile"`
+
+            If not set, the first available library in the environment will be used for each engine.
+            The priority is as the above order.
 
         ================  ==========================================================================
         **Parameter**      **Description**
