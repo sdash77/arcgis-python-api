@@ -31,7 +31,7 @@ class TestFolderAddContent(unittest.TestCase):
             "staging_data/folders/shapefile.zip", unique_copy=True
         )
         cls.large_sd = get_web_resource_path(
-            "data/servicedefinition.sd", unique_copy=True
+            "servicedefinition.sd", unique_copy=True
         )
 
         cls.folder_mgr = cls.gis.content.folders
