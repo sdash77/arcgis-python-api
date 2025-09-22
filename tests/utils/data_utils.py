@@ -250,4 +250,4 @@ def cleanup_folders(gis: GIS, folder_names: list):
     for folder_name in folder_names:
         for folder in list(gis.content.folders.list()):
             if folder.name.startswith(folder_name):
-                folder.delete()
+                folder.delete(permanent=True)
