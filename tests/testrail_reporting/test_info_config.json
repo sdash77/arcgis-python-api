@@ -18,6 +18,12 @@
       "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.features"
   },
   {
+      "testrail_run": "28232",
+      "xml_path": "./geocoding/*.xml",
+      "environment": "Windows",
+      "jenkins_url": "http://jenkinsaurus.esri.com:8080/job/Geosaurus-v2/job/Integration-Test/job/arcgis.geocoding"
+  },
+  {
       "testrail_run": "27715",
       "xml_path": "./geoenrichment/*.xml",
       "environment": "Windows",
