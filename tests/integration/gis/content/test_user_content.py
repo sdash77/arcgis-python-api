@@ -13,7 +13,7 @@ from arcgis.gis import GIS, User, Item, Group, Folder, ItemTypeEnum
 enable_verbose_logging()
 
 
-@profiles.admin_enterprise_and_agol
+@profiles.admin_all
 @integration_test
 class TestUserContentMethods(unittest.TestCase):
     @classmethod
@@ -36,12 +36,23 @@ class TestUserContentMethods(unittest.TestCase):
             user
             for user in cls.gis.users.search("NOT username:esri*")
             if len(list(user.folders)) > 1
+            and "portal:user:receiveItems" in user.privileges
         ]
+
+    def setUp(self):
+        self.start_t = time.perf_counter()
+
+    def tearDown(self):
+        end_t = time.perf_counter()
+        elapsed = end_t - self.start_t
+        print(
+            f"\n{'-' * 50}\n  {self._testMethodName} took {elapsed/60:.2f} minutes to run.\n"
+        )
 
     def test_user_folders(self):
         gis: GIS = self.gis
         if not self.user_list:
-            self.skipTest("No valid users, skipping")
+            self.skipTest("No users with custom folders. Skipping.")
         user: User = self.user_list[-1]
         self.published_item.reassign_to(user)
         self.assertNotEqual(
@@ -50,20 +61,35 @@ class TestUserContentMethods(unittest.TestCase):
             "Item owner should be different than initial owner.",
         )
         folder_gen = user.folders
-        assert isinstance(user.folders, GeneratorType)
+        self.assertIsInstance(
+            user.folders,
+            GeneratorType,
+            "Folders does not return generator as expected.",
+        )
         folder = next(folder_gen)
-        assert isinstance(folder, Folder)
-        assert folder.name == "Root Folder"
-        assert len(list(folder.list(item_type=ItemTypeEnum.SHAPEFILE))) >= 1
-        assert (
-            len(
-                [
-                    i
-                    for i in user.items(folder)
-                    if i.title.startswith("ntgrtn_tst_user_content_")
-                ]
-            )
-            >= 2
+        self.assertIsInstance(
+            folder,
+            Folder,
+            "Folders generator did not yield a folder object as expected.",
+        )
+        self.assertEqual(
+            folder.name, "Root Folder", "Folder is not named Root Folder as expected."
+        )
+        self.assertGreaterEqual(
+            len(list(folder.list(item_type=ItemTypeEnum.SHAPEFILE.value))),
+            1,
+            "Folder does not have a least one shapefile.",
+        )
+        root_folder_list = user.items(folder=folder, max_items=-1)
+        test_content_list = [
+            i
+            for i in root_folder_list
+            if i.title.startswith("ntgrtn_tst_user_content_")
+        ]
+        self.assertEqual(
+            len(test_content_list),
+            2,
+            "Folder does not have shapefile and source item as expected.",
         )
         pfolder = next(folder_gen)
         self.assertIsNotNone(pfolder.properties["id"], "Folder must have ID.")
@@ -74,15 +100,27 @@ class TestUserContentMethods(unittest.TestCase):
         user = next((user for user in self.user_list if len(user.groups) > 0), None)
         if not user:
             self.skipTest("No user who with groups configured.")
-        assert isinstance(user.groups[0], Group)
+        self.assertIsInstance(
+            user.groups[0],
+            Group,
+            "Groups property does not return list of group objects.",
+        )
 
     def test_user_items(self):
+        if not self.user_list:
+            self.skipTest("No users with custom folders. Skipping.")
         user = self.user_list[-1]
         f = [fld for fld in user.folders if len(list(user.items(fld))) > 0][0]
         if not f:
             self.skipTest(f"No items in any folders for {user.username}.")
-        assert isinstance(user.items(f), GeneratorType)
-        assert isinstance(list(user.items(f))[0], Item)
+        self.assertIsInstance(
+            user.items(f), GeneratorType, "Items method is not a generator as expected."
+        )
+        self.assertIsInstance(
+            list(user.items(f))[0],
+            Item,
+            "Items generator did not return items as expected.",
+        )
 
     @classmethod
     def tearDownClass(cls):
