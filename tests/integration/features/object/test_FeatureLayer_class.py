@@ -11,7 +11,7 @@ from utils.data_utils import publish_test_item, cleanup_published_items
 from integration.config import get_resource_path
 
 
-@profiles.all
+@profiles.enterprise_and_agol
 @integration_test
 class TestFeatureLayerClass(unittest.TestCase):
     """
