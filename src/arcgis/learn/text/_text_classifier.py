@@ -974,7 +974,7 @@ class TextClassifier(ArcGISModel):
             else:
                 metric = self._calculate_model_metric()
             if isinstance(metric, np.floating):
-                metric =  round(metric.item(), 4)
+                metric = round(metric.item(), 4)
             return metric
 
     def _calculate_model_metric(self):
