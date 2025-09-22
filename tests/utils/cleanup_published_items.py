@@ -45,7 +45,7 @@ class CleanupTestData:
         :return: void
         """
         self.gis = gis
-        self.username = self.gis.properties.user["username"]
+        self.username = self.gis.properties.user.get("username", "arcgis_python")
         self.tags = tags
         self.search_str = search_str
         self.day_difference = day_difference
@@ -76,7 +76,7 @@ class CleanupTestData:
 
         item_count = 0
         items_to_process = [
-            i for i in all_items if i.modified > timestamp_previous_date
+            i for i in all_items if i.modified < timestamp_previous_date
         ]
 
         print(f"Search found {len(items_to_process)} items...")
@@ -131,8 +131,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--gis_profile",
-        required=True,
         type=str,
+        default="your_enterprise_profile",
         help="The existing profile name of the target enterprise",
     )
     parser.add_argument(
