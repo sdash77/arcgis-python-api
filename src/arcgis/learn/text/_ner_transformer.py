@@ -813,8 +813,8 @@ class _TransformerEntityRecognizer(ArcGISModel):
                     lambda x: list(OrderedDict.fromkeys(x))
                 )  # added this in place of the set because of order
                 temp_df = temp_df.explode(
-                    "Address"
-                )  # other fields are submsumed. Adress needs to be split into multiple rows
+                    self._address_tag
+                )  # other fields are submsumed. Address needs to be split into multiple rows
                 temp_df.drop(columns=["auxillary_index"], inplace=True)
                 temp_df.reset_index(drop=True, inplace=True)
                 # convert all the list into string
@@ -937,7 +937,8 @@ class _TransformerEntityRecognizer(ArcGISModel):
 
         columns.discard("O")
         address_tag, text_tag = self._address_tag, "Text"
-        has_address = True if address_tag in self.entities else False
+
+        has_address = True if address_tag in columns else False
 
         if has_address:
             cols = [x for x in columns if x not in [text_tag, address_tag]]
