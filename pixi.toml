@@ -120,7 +120,7 @@ channels = ["conda-forge"]
 # fastai = {channel = "fastai"}
 fastprogress = {channel = "conda-forge"}
 pytorch = {channel = "conda-forge"}
-timm = {channel = "esri", version = "~=0.4.12"}
+timm = {channel = "esri-build", version = "~=1.0.14"}
 torchvision = {channel = "conda-forge"}
 nodejs = {channel = "conda-forge", version = "~=22.0"}
 minizip = ">=4,<5" # for zipping up docs

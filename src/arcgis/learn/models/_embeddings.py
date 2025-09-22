@@ -343,7 +343,7 @@ class Embeddings:
         if not HAS_TRANSFORMER:
             raise Exception("This module requires transformers library.")
         if backbone is None:
-            backbone = "sentence-transformers/distilbert-base-nli-stsb-mean-tokens"
+            backbone = "sentence-transformers/all-MiniLM-L6-v2"
         self.backbone = backbone
         try:
             model = AutoModel.from_pretrained(backbone)
@@ -521,6 +521,22 @@ class Embeddings:
                 iterable_numpy_loc[0], (list, tuple, np.ndarray)
             ) and isinstance(iterable_numpy_loc[0][0], Geometry):
                 item_list = [Geometry(i[0]) for i in iterable_numpy_loc]
+
+            elif isinstance(iterable_numpy_loc[0], Geometry) and isinstance(
+                iterable_numpy_loc, (list, tuple, np.ndarray)
+            ):
+                item_list = [Geometry(i) for i in iterable_numpy_loc]
+
+            elif isinstance(
+                iterable_numpy_loc, (list, tuple, np.ndarray)
+            ) and isinstance(iterable_numpy_loc[0], dict):
+                try:
+                    Geometry(iterable_numpy_loc[0])
+                except Exception as e:
+                    raise Exception(
+                        "Input field contains invalid geometry values. Kindly fix the input field or pass the correct Geometry."
+                    )
+                item_list = [Geometry(i) for i in iterable_numpy_loc]
             else:
                 raise Exception(
                     "Input field is not of type Point, Polyline, or Polygon Geometry. Either disable process geometry or pass a field with valid Geometry."
@@ -539,7 +555,7 @@ class Embeddings:
             self._file_path = os.path.join(self.working_dir, "embeddings", file_name)
             if os.path.exists(self._file_path):
                 raise Exception(
-                    f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
+                    f"File to save the embeddings already present at - {self._file_path}. Rename the file "
                     f"or move the file to another location to proceed."
                 )
         if self._dataset_type == "image":
