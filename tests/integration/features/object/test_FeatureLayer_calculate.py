@@ -9,7 +9,7 @@ from integration.config import get_resource_path
 from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 
 
-@profiles.all
+@profiles.enterprise_and_agol
 @integration_test
 class TestFeatureLayerCalculate(unittest.TestCase):
     @classmethod

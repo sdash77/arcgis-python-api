@@ -11,7 +11,7 @@ from arcgis.gis._impl._dataclasses._contentds import ItemTypeEnum
 FILE_PATH = QALAB_ROOT_PATH + r"\ContingentValues\CV_Gas_forTest.zip"
 
 
-@profiles.all
+@profiles.enterprise_and_agol
 @integration_test
 class TestContingentValues(unittest.TestCase):
 
