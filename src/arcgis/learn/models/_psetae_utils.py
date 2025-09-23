@@ -471,32 +471,30 @@ class miou(Callback):
         return add_metrics(last_metrics, miou.detach().cpu().numpy())
 
 
-def mIou_new(y_true, y_pred, cls_list):
+def mIou_new(y_true, y_pred, cls_list, mean=False):
     """
     Mean Intersect over Union metric.
-    Computes the one versus all IoU for each class and returns the average.
-    Classes that do not appear in the provided set are not counted in the average.
-    Args:
-        y_true (1D-array): True labels
-        y_pred (1D-array): Predicted labels
-        n_classes (int): Total number of classes
-    Returns:
-        mean Iou (float)
     """
-    iou = 0
-    n_observed = len(cls_list)
+    results = {}
     for i in cls_list:
         y_t = (np.array(y_true) == i).astype(int)
         y_p = (np.array(y_pred) == i).astype(int)
 
         inter = np.sum(y_t * y_p)
-        union = np.sum((y_t + y_p > 0).astype(int))
+        union = np.sum((y_t + y_p) > 0)
 
         if union == 0:
-            n_observed -= 1
+            iou_val = 0.0
         else:
-            iou += inter / union
-    return iou / n_observed
+            iou_val = float(inter / union)
+
+        results[str(i)] = iou_val
+
+    if mean:
+        valid = [v for v in results.values() if not np.isnan(v)]
+        return np.mean(valid) if valid else 0.0
+    else:
+        return results
 
 
 def weight_init(m):
@@ -665,7 +663,7 @@ def get_ntrainparams(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def model_eval(data, model, class_dict, convertmap):
+def model_eval(data, model, class_dict, convertmap, mean):
     validarr = torch.cat([i[0][None, :, :, :] for i, j in data.valid_ds], axis=0)
     batch_size = data.batch_size
     labsarr = torch.stack([j for i, j in data.valid_ds])
@@ -700,7 +698,7 @@ def model_eval(data, model, class_dict, convertmap):
     preds = np.array([class_dict.get(item, item) for item in prediction])
     trues = np.array([class_dict.get(item, item) for item in final_labs])
     mats = confusion_matrix_analysis(confusion_matrix(preds, trues), class_dict)
-    miou = mIou_new(preds, trues, list(class_dict.values()))
+    miou = mIou_new(preds, trues, list(class_dict.values()), mean)
     return mats, miou
 
 

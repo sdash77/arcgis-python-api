@@ -222,7 +222,7 @@ class PSETAE(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return self.compute_metrics()
+        return {"mIOU": self.mIOU(mean=True)}
 
     @property
     def supported_datasets(self):
@@ -251,27 +251,6 @@ class PSETAE(ArcGISModel):
         """
         show_results(self, rows, **kwargs)
 
-    def compute_metrics(self):
-        """
-        Computes mean intersection over union (mIOU) and
-        overall accuracy (OA) on validation set.
-
-        """
-        if not hasattr(self._data, "load_empty"):
-            raise Exception("Dataset is required for compute metrics")
-        class_dict = (
-            self._data._num_class_map_dict
-            if self._data._num_class_map_dict
-            else self._data._class_map_dict
-        )
-        mats, miou = model_eval(
-            self._data, self.learn.model, class_dict, self._data._convertmap
-        )
-        return {
-            "mIoU": "{}".format(miou),
-            "accuracy": "{}".format(mats[1]["Accuracy"]),
-        }
-
     def accuracy(self):
         """
         Computes overall accuracy (OA) on validation set.
@@ -285,11 +264,11 @@ class PSETAE(ArcGISModel):
             else self._data._class_map_dict
         )
         mats, miou = model_eval(
-            self._data, self.learn.model, class_dict, self._data._convertmap
+            self._data, self.learn.model, class_dict, self._data._convertmap, False
         )
-        return {"accuracy": "{}".format(mats[1]["Accuracy"])}
+        return float(mats[1]["Accuracy"])
 
-    def mIOU(self):
+    def mIOU(self, mean=False):
         """
         Computes mean intersection over union (mIOU) on validation set.
 
@@ -302,14 +281,13 @@ class PSETAE(ArcGISModel):
             else self._data._class_map_dict
         )
         mats, miou = model_eval(
-            self._data, self.learn.model, class_dict, self._data._convertmap
+            self._data, self.learn.model, class_dict, self._data._convertmap, mean
         )
-        return {"mIoU": "{}".format(miou)}
+        return miou
 
     def per_class_metrics(self):
         """
-        Computes IoU, Precision, Recall, F1-score for all classes.
-
+        Computes Precision, Recall, and F1-score for all classes.
         """
         if not hasattr(self._data, "load_empty"):
             raise Exception("Dataset is required for compute metrics")
@@ -319,10 +297,10 @@ class PSETAE(ArcGISModel):
             else self._data._class_map_dict
         )
         mats, _ = model_eval(
-            self._data, self.learn.model, class_dict, self._data._convertmap
+            self._data, self.learn.model, class_dict, self._data._convertmap, False
         )
 
-        mat_types = ["IoU", "Precision", "Recall", "F1-score"]
+        mat_types = ["Precision", "Recall", "F1-score"]
 
         mat = []
         for i in class_dict.values():
@@ -330,16 +308,25 @@ class PSETAE(ArcGISModel):
                 if str(i) in mats[0].keys():
                     mat.append(mats[0][str(i)][j])
 
-        matrix_1 = np.reshape(np.array(mat), (len(mats[0].keys()), 4))
+        matrix_1 = np.reshape(np.array(mat), (len(mats[0].keys()), len(mat_types)))
 
-        display(
-            pd.DataFrame(
-                matrix_1,
-                index=[
-                    self._data._class_map_dict.get(i)
-                    for i, j in class_dict.items()
-                    if str(j) in mats[0].keys()
-                ],
-                columns=mat_types,
-            )
-        )
+        # original class-name ordering (same as before)
+        class_names = [
+            self._data._class_map_dict.get(i)
+            for i, j in class_dict.items()
+            if str(j) in mats[0].keys()
+        ]
+        matrix_df = pd.DataFrame(matrix_1, index=class_names, columns=mat_types)
+
+        mapping = {
+            "Precision": "precision",
+            "Recall": "recall",
+            "F1-score": "f1",
+        }
+        df = matrix_df.T.rename(index=mapping)
+
+        desired_index = ["precision", "recall", "f1"]
+        df = df.reindex(desired_index)
+        df = df.round(4)
+
+        return df
